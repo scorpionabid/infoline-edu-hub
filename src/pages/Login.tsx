@@ -9,7 +9,7 @@ import LoadingScreen from '@/components/auth/LoadingScreen';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
 const Login = () => {
-  const { isAuthenticated, loading, error, clearError, user } = useAuth();
+  const { user, loading, isAuthenticated, error, clearError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
@@ -28,22 +28,22 @@ const Login = () => {
       } : null
     });
     
-    // Autentifikasiya olunmuş istifadəçiləri dashboard-a yönləndirmək
+    // İstifadəçi autentifikasiya olubsa dashboard'a yönləndirək
     if (isAuthenticated && user && !loading) {
       console.log(`Redirecting authenticated user to ${from}`, {
         role: userRole || user.role || 'unknown'
       });
       
-      // Yönləndirmə vaxtını 100ms gecikdirək - bu sessiya məlumatlarının tam yüklənməsi üçündür
+      // Yönləndirilməni gecikdirək ki, session məlumatları tam yüklənsin
       const redirectTimer = setTimeout(() => {
         navigate(from, { replace: true });
-      }, 100);
+      }, 300);
 
       return () => clearTimeout(redirectTimer);
     }
   }, [isAuthenticated, loading, navigate, from, user, userRole]);
 
-  // Loading vəziyyətində yüklənmə göstəricisi
+  // Yüklənmə zamanı LoadingScreen göstərək
   if (loading) {
     return <LoadingScreen />;
   }

@@ -32,8 +32,7 @@ interface AuthContextType {
   createUser: (userData: UserFormData) => Promise<{ error?: any }>;
 }
 
-// Yeni və köhnə kontekst arasında körpü yaradaq
-// Bu köhnə kontekst referanslarını qorumaq üçündür
+// Köhnə kontekst
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
@@ -46,9 +45,8 @@ const AuthContext = createContext<AuthContextType>({
   createUser: async () => ({ error: null }),
 });
 
-// Yeni provider-ı istifadə edən yeni provider yaradaq
+// Köhnədən yeniyə köpü konteksti
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // Köhnə konteksti yeni kontekstə əlaqələndirək
   const newAuth = useAuthFromNewContext();
   const [error, setError] = useState<string | null>(null);
 
@@ -111,10 +109,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Köhnə API uyğunluğunu təmin etmək üçün signIn/signOut wrapper-ləri
+  // Adapter funksiyaları - köhnə API funksiyaları yeni kontekst funksiyalarına yönləndirir
   const signIn = async (email: string, password: string) => {
     try {
-      setError(null); // Əvvəlki xətaları təmizləyirik
+      setError(null);
       const success = await newAuth.login(email, password);
       return success ? { data: {} } : { error: newAuth.error };
     } catch (error: any) {
@@ -127,7 +125,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await newAuth.logout();
   };
 
-  // Xəta təmizləmə funksiyası
   const clearError = () => {
     if (newAuth.clearError) {
       newAuth.clearError();
@@ -135,7 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
   };
 
-  // Login və logout funksiyalarını doğrudan yeni kontekstdən alaq
+  // Login və logout funksiyaları
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setError(null);
@@ -154,6 +151,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Kontekst dəyərini təqdim edirik
   return (
     <AuthContext.Provider value={{
       user: newAuth.user,
@@ -171,4 +169,5 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// Köhnə useAuth hook'u saxlayırıq ki, mövcud komponentlər işləsin
 export const useAuth = () => useContext(AuthContext);

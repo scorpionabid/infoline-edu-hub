@@ -44,39 +44,30 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
     setError: setFormError
   } = useForm<FormValues>();
 
-  // Hər dəfə giriş formu göstərildikdə xəta mesajlarını təmizləyək
+  // Səhifə yüklənəndə xəta mesajını təmizləyək
   useEffect(() => {
     if (error) {
       clearError();
     }
-  }, [error, clearError]);
+  }, []);
 
   const onSubmit = async (data: FormValues) => {
     try {
-      if (clearError) clearError(); // Əgər clearError funksiyası mövcuddursa istifadə et
+      if (clearError) clearError();
       setLoginInProgress(true);
       console.log('Giriş cəhdi edilir...', data.email);
       
-      if (login) { // Əgər login funksiyası mövcuddursa istifadə et
-        const success = await login(data.email, data.password);
-        
-        if (success) {
-          console.log('Giriş uğurlu oldu, yönləndirmə edilir...');
-          toast.success(t('loginSuccess'));
-          navigate('/dashboard');
-        } else {
-          console.log('Giriş uğursuz oldu');
-          // Xüsusi səhvləri göstərək, burada auth kontekstindən gələn error'dan istifadə edirik
-          setFormError('root', { 
-            type: 'manual',
-            message: t('invalidCredentials')
-          });
-        }
+      const success = await login(data.email, data.password);
+      
+      if (success) {
+        console.log('Giriş uğurlu oldu, yönləndirmə edilir...');
+        toast.success(t('loginSuccess'));
+        // Yönləndirməyi burada etmirik, çünki useEffect hook-da ediləcək
       } else {
-        console.error('Login funksiyası təyin edilməyib');
+        console.log('Giriş uğursuz oldu');
         setFormError('root', { 
           type: 'manual',
-          message: 'Sistem xətası: Giriş funksiyası mövcud deyil'
+          message: t('invalidCredentials')
         });
       }
     } catch (err: any) {
