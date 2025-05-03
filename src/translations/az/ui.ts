@@ -1,246 +1,177 @@
-/**
- * UI elementlər ilə bağlı tərcümələr
- */
-const ui = {
-  // Button Labels
-  save: "Saxla",
-  saving: "Saxlanılır...",
-  cancel: "Ləğv et",
-  close: "Bağla",
-  confirm: "Təsdiqlə",
-  discard: "İmtina et",
-  add: "Əlavə et",
-  remove: "Sil",
-  search: "Axtar",
-  filter: "Filtrlə",
-  apply: "Tətbiq et",
-  clear: "Təmizlə",
-  upload: "Yüklə",
-  download: "Endir",
-  submit: "Təqdim et",
-  edit: "Redaktə et",
-  create: "Yarat",
-  delete: "Sil",
-  resetPassword: "Şifrəni sıfırla",
-  changePassword: "Şifrəni dəyiş",
-  signIn: "Daxil ol",
-  signUp: "Qeydiyyatdan keç",
-  signOut: "Çıxış",
-  
-  // General UI elements
-  loadMore: "Daha çox yüklə",
-  showMore: "Daha çox göstər",
-  showLess: "Daha az göstər",
-  searchResults: "Axtarış nəticələri",
-  noResults: "Nəticə tapılmadı",
-  loading: "Yüklənir...",
-  success: "Uğurlu",
-  error: "Xəta",
-  warning: "Xəbərdarlıq",
-  info: "Məlumat",
-  status: "Status",
-  actions: "Əməliyyatlar",
-  details: "Detallar",
-  summary: "Xülasə",
-  description: "Təsvir",
-  
-  // Status texts
-  active: "Aktiv",
-  inactive: "Deaktiv",
-  pending: "Gözləmədə",
-  completed: "Tamamlanmış",
-  draft: "Qaralama",
-  published: "Dərc edilmiş",
-  archived: "Arxivlənmiş",
-  deleted: "Silinmiş",
-  all: "Hamısı",
-  
-  // Filter labels
-  allStatuses: "Bütün statuslar",
-  allTypes: "Bütün tiplər",
-  allCategories: "Bütün kateqoriyalar",
-  allAssignments: "Bütün təyinatlar",
-  allDeadlines: "Bütün son tarixlər",
-  filterByStatus: "Statusa görə filtr",
-  filterByType: "Tipə görə filtr",
-  filterByCategory: "Kateqoriyaya görə filtr",
-  filterByAssignment: "Təyinata görə filtr",
-  
-  // Deadline related
-  upcomingDeadlines: "Yaxınlaşan son tarixlər",
-  pastDeadlines: "Keçmiş son tarixlər",
-  selectDate: "Tarix seçin",
-  noDueDate: "Son tarix yoxdur",
-  priority: "Prioritet",
-  priorityDescription: "Daha yüksək rəqəm daha yüksək prioritet deməkdir",
-  
-  // Data table elements
-  rowsPerPage: "Səhifə başına sətir",
-  of: "dən", // e.g. "1-10 of 100"
-  previous: "Əvvəlki",
-  next: "Növbəti",
-  first: "İlk",
-  last: "Son",
-  page: "Səhifə",
-  sortAscending: "Artan sıralama",
-  sortDescending: "Azalan sıralama",
-  
-  // Stats
-  totalCategories: "Ümumi kateqoriyalar",
-  activeCategories: "Aktiv kateqoriyalar",
-  inactiveCategories: "Deaktiv kateqoriyalar",
-  draftCategories: "Qaralama kateqoriyalar",
-  categoriesForAllSchools: "Bütün məktəblər üçün",
-  categoriesForSectors: "Sektorlar üçün",
-  categoriesWithDeadline: "Son tarixli kateqoriyalar",
-  
-  // Form elements
-  required: "Tələb olunur",
-  optional: "İxtiyari",
-  defaultValue: "Standart dəyər",
-  placeholder: "Placeholder",
-  helpText: "Köməkçi mətn",
-  
-  // Error messages
-  errorOccurred: "Xəta baş verdi",
-  pleaseTryAgain: "Zəhmət olmasa yenidən cəhd edin",
-  somethingWentWrong: "Nəsə səhv getdi",
-  pleaseTryAgainLater: "Zəhmət olmasa daha sonra yenidən cəhd edin",
-  couldNotLoadData: "Məlumatlar yüklənə bilmədi",
-  couldNotSaveData: "Məlumatlar saxlanıla bilmədi",
-  couldNotDeleteData: "Məlumatlar silinə bilmədi",
-  couldNotLoadCategories: "Kateqoriyalar yüklənə bilmədi",
-  someDataMayNotBeSaved: "Bəzi məlumatlar saxlanılmaya bilər",
-  
-  // Time related
-  today: "Bu gün",
-  yesterday: "Dünən",
-  tomorrow: "Sabah",
-  thisWeek: "Bu həftə",
-  lastWeek: "Keçən həftə",
-  thisMonth: "Bu ay",
-  lastMonth: "Keçən ay",
-  thisYear: "Bu il",
-  lastYear: "Keçən il",
-  
-  // Notifications
-  notificationsEmpty: "Bildiriş yoxdur",
-  markAllAsRead: "Hamısını oxunmuş kimi işarələ",
-  clearAllNotifications: "Bütün bildirişləri təmizlə",
-  newNotification: "Yeni bildiriş",
-  
-  // Auth related
-  welcomeBack: "Xoş gəlmisiniz",
-  loginToYourAccount: "Hesabınıza daxil olun",
-  emailAddress: "E-poçt ünvanı",
-  password: "Şifrə",
-  forgotPassword: "Şifrəni unutmusunuz?",
-  rememberMe: "Məni xatırla",
-  dontHaveAccount: "Hesabınız yoxdur?",
-  createAccount: "Hesab yaradın",
-  alreadyHaveAccount: "Artıq hesabınız var?",
-  loginHere: "Buradan daxil olun",
-  loggedInAs: "Daxil olub:",
-  logout: "Çıxış",
-  profile: "Profil",
-  settings: "Tənzimləmələr",
-  
-  // Theme
-  lightMode: "İşıqlı rejim",
-  darkMode: "Qaranlıq rejim",
-  systemMode: "Sistem rejimi",
-  
-  // Language
-  language: "Dil",
-  azerbaijani: "Azərbaycan",
-  english: "İngilis",
-  russian: "Rus",
-  turkish: "Türk",
-  
-  // Validation
-  invalidEmail: "Yanlış e-poçt ünvanı",
-  invalidPhoneNumber: "Yanlış telefon nömrəsi",
-  passwordTooShort: "Şifrə çox qısadır",
-  fieldRequired: "Bu sahə tələb olunur",
-  mustBeNumber: "Rəqəm olmalıdır",
-  mustBePositive: "Müsbət rəqəm olmalıdır",
-  mustBeDate: "Tarix olmalıdır",
-  invalidFormat: "Yanlış format",
-  
-  // Not found
-  pageNotFound: "Səhifə tapılmadı",
-  resourceNotFound: "Resurs tapılmadı",
-  goBackHome: "Ana səhifəyə qayıt",
-  
-  // Bulk actions
-  bulkActions: "Toplu əməliyyatlar",
-  selected: "seçilib",
-  selectAll: "Hamısını seç",
-  deselectAll: "Seçimi ləğv et",
-  
-  // Modal titles
-  confirmAction: "Əməliyyatı təsdiqləyin",
-  confirmDelete: "Silməyi təsdiqləyin",
-  confirmCancel: "İmtinanı təsdiqləyin",
-  
-  // Import/Export
-  import: "İdxal",
-  export: "İxrac",
-  importExport: "İdxal/İxrac",
-  importFromExcel: "Excel-dən idxal et",
-  exportToExcel: "Excel-ə ixrac et",
-  importData: "Məlumatları idxal et",
-  exportData: "Məlumatları ixrac et",
-  downloadTemplate: "Şablon yüklə",
-  uploadFile: "Faylı yüklə",
-  dropFileHere: "Faylı buraya atın və ya seçin",
-  processing: "Emal edilir...",
-  
-  // Category changed
-  categoryChanged: "Kateqoriya dəyişdirildi",
 
-  // Navigation və Menu
-  menu: {
-    toggle: "Menyunu aç/bağla",
-    main: "Əsas menyu",
-    user: "İstifadəçi menyusu",
-    admin: "Admin menyusu",
-    settings: "Tənzimləmələr menyusu"
+const ui = {
+  // UI Elementləri
+  button: {
+    primary: "Əsas",
+    secondary: "İkincil",
+    success: "Uğurlu",
+    danger: "Təhlükəli",
+    warning: "Xəbərdarlıq",
+    info: "Məlumat",
+    light: "Açıq",
+    dark: "Tünd",
   },
   
-  // Form elementləri
+  // Layout
+  layout: {
+    header: "Başlıq",
+    footer: "Alt hissə",
+    sidebar: "Yan panel",
+    content: "Məzmun",
+    main: "Əsas",
+  },
+  
+  // Form
   form: {
-    submit: "Təsdiq et",
-    save: "Saxla",
-    cancel: "Ləğv et",
+    label: "Etiket",
+    input: "Giriş",
+    placeholder: "Nümunə mətn",
+    submit: "Göndər",
     reset: "Sıfırla",
+    select: "Seç",
+    checkbox: "Yoxlama qutusu",
+    radio: "Radio düymə",
+    dropdown: "Açılan siyahı",
+    textarea: "Mətn sahəsi",
+    file: "Fayl",
+    date: "Tarix",
+    time: "Vaxt",
+  },
+  
+  // Alert
+  alert: {
+    success: "Uğurlu!",
+    error: "Xəta!",
+    warning: "Diqqət!",
+    info: "Məlumat!",
+    close: "Bağla",
+  },
+  
+  // Modal
+  modal: {
+    title: "Başlıq",
+    close: "Bağla",
+    save: "Yadda saxla",
+    cancel: "Ləğv et",
+    confirm: "Təsdiqlə",
+    confirmDelete: "Silməyi təsdiqləyin",
+    confirmDeleteMessage: "Bu əməliyyat geri qaytarıla bilməz. Davam etmək istədiyinizə əminsiniz?",
+    confirmCancel: "Ləğv etməyi təsdiqləyin",
+    confirmCancelMessage: "Dəyişikliklər yadda saxlanılmayacaq. Davam etmək istədiyinizə əminsiniz?",
+  },
+  
+  // Pagination
+  pagination: {
+    previous: "Əvvəlki",
+    next: "Sonrakı",
+    page: "Səhifə",
+    of: "/",
+    perPage: "Səhifə üzrə",
+    showing: "Göstərilir",
+    to: "-",
+    total: "cəmi",
+    results: "nəticə",
+  },
+  
+  // Table
+  table: {
+    header: "Başlıq",
+    row: "Sətir",
+    column: "Sütun",
+    cell: "Hücrə",
+    noData: "Məlumat yoxdur",
+    loading: "Yüklənir...",
     search: "Axtar",
     filter: "Filtrlə",
-    select: "Seç",
-    upload: "Yüklə",
-    remove: "Sil",
+    sort: "Sırala",
+    sortAsc: "Artan sıra",
+    sortDesc: "Azalan sıra",
+    actions: "Əməliyyatlar",
     edit: "Redaktə et",
-    add: "Əlavə et"
+    delete: "Sil",
+    view: "Bax",
+    add: "Əlavə et",
+    export: "İxrac et",
+    print: "Çap et",
   },
   
-  // Modal və Dialog
-  modal: {
-    close: "Bağla",
-    confirm: "Təsdiqlə",
-    cancel: "Ləğv et",
-    ok: "OK",
-    yes: "Bəli",
-    no: "Xeyr"
+  // Card
+  card: {
+    title: "Başlıq",
+    subtitle: "Alt başlıq",
+    content: "Məzmun",
+    actions: "Əməliyyatlar",
+    link: "Keçid",
+    more: "Daha çox",
+  },
+  
+  // Navigation
+  navigation: {
+    menu: "Menyu",
+    submenu: "Alt menyu",
+    item: "Element",
+    dropdown: "Açılan siyahı",
+    breadcrumb: "Çörək qırıntıları",
+    previous: "Əvvəlki",
+    next: "Sonrakı",
+    back: "Geri",
+    forward: "İrəli",
+    home: "Ana səhifə",
+    search: "Axtar",
   },
   
   // Loading və Progress
   loading: {
     default: "Yüklənir...",
     data: "Məlumatlar yüklənir...",
-    submitting: "Göndərilir...",
+    page: "Səhifə yüklənir...",
+    file: "Fayl yüklənir...",
+    image: "Şəkil yüklənir...",
     processing: "Emal edilir...",
-    saving: "Saxlanılır...",
-    waiting: "Xahiş edirik gözləyin..."
+    submitting: "Göndərilir...",
+    saving: "Yadda saxlanılır...",
+    loadingMore: "Daha çox yüklənir...",
+    almostDone: "Demək olar ki hazırdır...",
+  },
+  
+  // Tooltip
+  tooltip: {
+    clickToCopy: "Kopyalamaq üçün klikləyin",
+    copied: "Kopyalandı!",
+    moreInfo: "Daha çox məlumat",
+    showPassword: "Şifrəni göstər",
+    hidePassword: "Şifrəni gizlət",
+  },
+  
+  // Date və Time
+  datetime: {
+    today: "Bu gün",
+    yesterday: "Dünən",
+    tomorrow: "Sabah",
+    now: "İndi",
+    select: "Tarix seçin",
+    selectTime: "Vaxt seçin",
+    format: "Format",
+  },
+  
+  // Naviqasiya menyu
+  menu: {
+    dashboard: "İdarəetmə Paneli",
+    profile: "Profil",
+    settings: "Tənzimləmələr",
+    logout: "Çıxış",
+    theme: "Tema",
+    language: "Dil",
+  },
+  
+  // İnteraktiv
+  interactive: {
+    clickToEdit: "Redaktə etmək üçün klikləyin",
+    dragToMove: "Köçürmək üçün sürükləyin",
+    dropToUpload: "Yükləmək üçün buraxın",
+    clickToSelect: "Seçmək üçün klikləyin",
+    scrollToLoad: "Yükləmək üçün sürüşdürün",
+    moreOptions: "Daha çox seçim",
   }
 };
 

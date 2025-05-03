@@ -39,9 +39,8 @@ const az = {
   ...validation,
   ...categories,
   
-  // Spesifik tərcümələr (əgər lazımdırsa)
+  // Əlavə tərcümələr (əgər lazımdırsa)
   selectLanguage: 'Dil seçin',
-  loading: 'Yüklənir...',
   more: 'Daha çox',
   less: 'Daha az',
   

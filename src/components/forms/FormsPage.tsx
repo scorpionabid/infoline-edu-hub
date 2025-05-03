@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { CategoryCard } from '@/components/forms/CategoryCard';
@@ -9,7 +9,6 @@ import SidebarLayout from '@/components/layout/SidebarLayout';
 import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
 import { useLanguage } from '@/context/LanguageContext';
 import EmptyState from '@/components/common/EmptyState';
-import { AlertCircle } from 'lucide-react';
 
 export const FormsPage: React.FC = () => {
   const { t } = useLanguage();
