@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { FullUserData, UserRole } from '@/types/supabase';
 
 // NodeJS.Timeout tipini düzəltmək üçün
