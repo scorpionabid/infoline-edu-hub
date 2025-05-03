@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -30,10 +31,11 @@ const DataEntryFormComponent: React.FC<{ categoryId?: string }> = ({ categoryId 
 
   const {
     categories,
-    isLoading: isLoadingCategories,
+    loading: isLoading,
     error: categoriesError,
-    loading: categoriesLoading
+    refreshCategories
   } = useCategoryData();
+  
   const { school, isLoading: isLoadingSchool, error: schoolError } = useSchool();
 
   const category = React.useMemo(() => {
@@ -161,7 +163,7 @@ const DataEntryFormComponent: React.FC<{ categoryId?: string }> = ({ categoryId 
     setSelectedCategoryId(newCategoryId);
   };
 
-  if (isLoadingCategories || isLoadingSchool) {
+  if (isLoading || isLoadingSchool) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -175,14 +177,6 @@ const DataEntryFormComponent: React.FC<{ categoryId?: string }> = ({ categoryId 
         <p className="text-red-500">
           {t('errorLoadingData')}
         </p>
-      </div>
-    );
-  }
-
-  if (categoriesLoading) {
-    return (
-      <div className="flex items-center justify-center h-60">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -257,14 +251,20 @@ const DataEntryFormComponent: React.FC<{ categoryId?: string }> = ({ categoryId 
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4">
-            <CategoryForm
-              category={category}
-              values={formValues}
-              onChange={handleValueChange}
-              onSubmit={() => setIsSubmitDialogOpen(true)}
-              isDisabled={saveStatus === DataEntrySaveStatus.SAVING || saveStatus === DataEntrySaveStatus.SUBMITTING}
-              isLoading={saveStatus === DataEntrySaveStatus.SAVING || saveStatus === DataEntrySaveStatus.SUBMITTING}
-            />
+            {/* Burada CategoryForm əvəzinə məlumat giriş formasını göstəririk */}
+            <div className="space-y-4">
+              {category.columns?.map(column => (
+                <div key={column.id} className="form-group">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{column.name}</label>
+                  <input 
+                    type="text"
+                    className="w-full p-2 border rounded"
+                    placeholder={column.placeholder || ''}
+                    onChange={(e) => handleValueChange(column.id, e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
           </CardContent>
           <CardFooter className="flex justify-between items-center p-4 border-t">
             <Button

@@ -66,19 +66,30 @@ export interface PendingApprovalItem {
 
 // DashboardData interfeysi üçün approvalRate əlavə edək
 export interface DashboardData {
-  // ... əvvəlki xassələr
   approvalRate: number;
+  // ... əvvəlki xassələr
 }
 
 // DashboardNotification interfeysi üçün createdAt əlavə edək
 export interface DashboardNotification {
-  // ... əvvəlki xassələr
   createdAt: string;
+  // ... əvvəlki xassələr
 }
 
 // Report interfeysi əlavə edək
 export interface Report {
-  // ... əvvəlki xassələr
+  id: string;
+  title: string;
+  description?: string;
+  type: ReportType;
+  content: any;
+  filters?: any;
+  created_by?: string;
+  created_at: string;
+  updated_at?: string;
+  status: string;
+  is_template?: boolean;
+  shared_with?: string[];
   name: string;
   summary: string;
 }
@@ -100,5 +111,16 @@ export interface PageHeaderProps {
 
 // RegionStats interfeysi əlavə edək
 export interface RegionStats {
-  // ... əvvəlki xassələr
+  id: string;
+  name: string;
+  totalSchools: number;
+  completionRate: number;
+}
+
+// ReportItemProps interfeysi əlavə edək
+export interface ReportItemProps {
+  report: Report;
+  onPreview: (report: Report) => void;
+  onDownload: (report: Report) => Promise<void>;
+  onShare: (report: Report) => void;
 }

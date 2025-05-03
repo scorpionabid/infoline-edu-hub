@@ -1,103 +1,120 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
-import LanguageSelector from '../LanguageSelector';
+import { ModeToggle } from '@/components/ui/theme-toggle';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+import { useLanguage } from '@/context/LanguageContext';
+import { ArrowLeft, Menu, X } from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { getInitials } from '@/utils/helpers';
-import { LogOut, User, Settings } from 'lucide-react';
-import ThemeToggle from '../ThemeToggle';
-import NotificationComponent from '../notifications/NotificationComponent';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  toggleSidebar: () => void;
+  isSidebarOpen: boolean;
+}
+
+export const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const { t } = useLanguage();
-  const { user, logout } = useAuth();
-  
-  const userFullName = user?.full_name || user?.email || '';
-  
-  // İstifadəçinin aid olduğu müəssisə adını hazırlayaq
-  const getEntityName = () => {
-    if (!user) return '';
-    
-    if (user.role === 'schooladmin' && user.adminEntity?.name) {
-      return `${user.adminEntity.name} - ${t('schoolAdmin')}`;
-    } else if (user.role === 'sectoradmin' && user.adminEntity?.name) {
-      return `${user.adminEntity.name} - ${t('sectorAdmin')}`;
-    } else if (user.role === 'regionadmin' && user.adminEntity?.name) {
-      return `${user.adminEntity.name} - ${t('regionAdmin')}`;
-    } else if (user.role === 'superadmin') {
-      return t('superAdmin');
+
+  // Adminlik məlumatlarını göstərmək
+  const renderAdminInfo = () => {
+    if (!user) return null;
+
+    // adminEntity istifadə edərkən null olub-olmadığını yoxlayırıq
+    if (user.role === 'schooladmin' && user.adminEntity?.schoolName) {
+      return <span className="font-semibold text-lg hidden md:block">{user.adminEntity.schoolName}</span>;
     }
     
-    return 'InfoLine';
+    if (user.role === 'sectoradmin' && user.adminEntity?.sectorName) {
+      return <span className="font-semibold text-lg hidden md:block">{user.adminEntity.sectorName}</span>;
+    }
+    
+    if (user.role === 'regionadmin' && user.adminEntity?.regionName) {
+      return <span className="font-semibold text-lg hidden md:block">{user.adminEntity.regionName}</span>;
+    }
+    
+    if (user.role === 'superadmin') {
+      return <span className="font-semibold text-lg hidden md:block">İnfoLine Admin</span>;
+    }
+    
+    return <span className="font-semibold text-lg hidden md:block">{t('dashboard')}</span>;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
-    <header className="border-b bg-background">
-      <div className="flex h-16 items-center px-4 justify-between">
-        <div className="font-semibold text-lg hidden md:block truncate max-w-md">
-          {getEntityName()}
-        </div>
+    <header className="border-b px-4 py-2 h-16 flex items-center justify-between bg-background">
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          onClick={toggleSidebar}
+          className="h-9 w-9 p-0 rounded-md"
+        >
+          {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          <span className="sr-only">Toggle Menu</span>
+        </Button>
+
+        {renderAdminInfo()}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <LanguageSwitcher />
+        <ModeToggle />
         
-        <div className="flex items-center gap-4">
-          <ThemeToggle />
-          <LanguageSelector />
-          
-          {user && <NotificationComponent />}
-          
-          {user && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar || ''} alt={userFullName} />
-                    <AvatarFallback>{getInitials(userFullName)}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{userFullName}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <a href="/profile" className="flex items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>{t('profile')}</span>
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a href="/settings" className="flex items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>{t('settings')}</span>
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => logout()}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>{t('logout')}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Avatar className="cursor-pointer h-8 w-8">
+              <AvatarImage src={user?.avatar} />
+              <AvatarFallback>{user?.full_name?.charAt(0) || '?'}</AvatarFallback>
+            </Avatar>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem 
+              onClick={() => navigate('/profile')}
+              className="cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <span className="material-icons text-sm">person</span>
+                <span>{t('profile')}</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => navigate('/settings')}
+              className="cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <span className="material-icons text-sm">settings</span>
+                <span>{t('settings')}</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="cursor-pointer"
+            >
+              <div className="flex items-center gap-2 text-red-500">
+                <span className="material-icons text-sm">logout</span>
+                <span>{t('signOut')}</span>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );
 };
-
-export default Header;

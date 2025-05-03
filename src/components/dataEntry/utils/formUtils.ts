@@ -7,7 +7,7 @@ export const validateEntryValue = (value: string, columnType: string, validation
   if (!validation) return null;
   
   // Required check
-  if (validation.required && (!value || value.trim() === '')) {
+  if (validation.required !== undefined && validation.required && (!value || value.trim() === '')) {
     return 'Bu sahə tələb olunur';
   }
   

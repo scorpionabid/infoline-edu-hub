@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -336,6 +335,7 @@ export const useColumnForm = (
         is_required: values.is_required,
         order_index: values.order_index,
         status: editColumn?.status || 'active',
+        // String'dən Date'ə çevrilmə problemini aradan qaldıraq
         created_at: editColumn?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
         options: convertOptionsToColumn(values.options),
@@ -353,6 +353,7 @@ export const useColumnForm = (
       setIsLoading(false);
     }
   };
+  
   
   return {
     form,

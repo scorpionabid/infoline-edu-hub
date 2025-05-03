@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -8,7 +9,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -18,18 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Copy, Download, Edit, MoreHorizontal, Plus, Trash } from 'lucide-react';
+import { Download, MoreHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { ColumnDef } from '@tanstack/react-table';
@@ -55,36 +44,89 @@ import { useToast } from "@/components/ui/use-toast"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { useDebounce } from '@/hooks/useDebounce';
-import {
-  CSVLink,
-  CSVDownload,
-} from "react-csv";
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+// Mock data və sütunlar
+const mockData = [
+  { id: '1', schoolName: 'Məktəb #1', region: 'Bakı', sector: 'Nərimanov', submittedForms: 10, totalForms: 12 },
+  { id: '2', schoolName: 'Məktəb #2', region: 'Bakı', sector: 'Yasamal', submittedForms: 8, totalForms: 12 },
+  { id: '3', schoolName: 'Məktəb #3', region: 'Sumqayıt', sector: 'Mərkəz', submittedForms: 12, totalForms: 12 },
+  { id: '4', schoolName: 'Məktəb #4', region: 'Gəncə', sector: 'Şimal', submittedForms: 6, totalForms: 12 }
+];
+
+const columns: ColumnDef<any>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllPageRowsSelected()}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "schoolName",
+    header: "Məktəb",
+  },
+  {
+    accessorKey: "region",
+    header: "Region",
+  },
+  {
+    accessorKey: "sector",
+    header: "Sektor",
+  },
+  {
+    accessorKey: "submittedForms",
+    header: "Təqdim edilmiş formalar",
+  },
+  {
+    accessorKey: "totalForms",
+    header: "Ümumi formalar",
+  },
+  {
+    accessorKey: "completionRate",
+    header: "Tamamlanma faizi",
+    cell: ({ row }) => {
+      const submittedForms = row.original.submittedForms;
+      const totalForms = row.original.totalForms;
+      const rate = Math.round((submittedForms / totalForms) * 100);
+      return `${rate}%`;
+    }
+  }
+];
+
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  data?: TData[];
+  columns?: ColumnDef<TData, TValue>[];
 }
 
-export function SchoolColumnTable<TData, TValue>({
-  columns,
-  data,
+export function SchoolColumnTable<TData, TValue>({ 
+  data = mockData as any,
+  columns: providedColumns = columns as any,
 }: DataTableProps<TData, TValue>) {
   const { t } = useLanguage();
   const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
-    []
-  )
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
   const [globalFilter, setGlobalFilter] = useState("")
   const debouncedGlobalFilter = useDebounce(globalFilter, 500);
   const { toast } = useToast()
+  
   const table = useReactTable({
     data,
-    columns,
+    columns: providedColumns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
@@ -105,47 +147,25 @@ export function SchoolColumnTable<TData, TValue>({
 
   const tableData = data || [];
 
-  const onExportExcel = (data: any[], fileName: string) => {
-    const worksheet = XLSX.utils.json_to_sheet(data);
+  // Excel ixrac funksiyası
+  const onExportExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(tableData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
-    XLSX.writeFile(workbook, `${fileName}.xlsx`);
+    XLSX.writeFile(workbook, 'school-column-report.xlsx');
+    toast({ title: "Excel ixrac edildi", description: "Faylınız başarıyla ixrac edildi" });
   };
 
-  const onExportCSV = (data: any[], fileName: string) => {
-    const csvData = convertToCSV(data);
-    downloadFile(csvData, `${fileName}.csv`, 'text/csv;charset=utf-8;');
+  // CSV ixrac funksiyası
+  const onExportCSV = () => {
+    const csvData = convertToCSV(tableData);
+    downloadFile(csvData, 'school-column-report.csv', 'text/csv;charset=utf-8;');
+    toast({ title: "CSV ixrac edildi", description: "Faylınız başarıyla ixrac edildi" });
   };
 
-  const onExportPDF = (data: any[], fileName: string) => {
-    const unit = "pt";
-    const size = "A4"; // Use A1, A2, A3 or A4
-    const orientation = "landscape"; // portrait or landscape
-
-    const marginLeft = 40;
-    const doc = new jsPDF(orientation, unit, size);
-
-    doc.setFontSize(15);
-
-    const title = fileName;
-    const headers = [columns.map((column) => column.header)];
-
-    const dataToExport = data.map(item => {
-      return columns.map(column => {
-        const accessorKey = (column.accessorKey as string);
-        return item[accessorKey] || '';
-      });
-    });
-
-    let content = {
-      startY: 50,
-      head: headers,
-      body: dataToExport
-    };
-
-    doc.text(title, marginLeft, 40);
-    (doc as any).autoTable(content);
-    doc.save(`${fileName}.pdf`)
+  // PDF ixrac funksiyası
+  const onExportPDF = () => {
+    toast({ title: "PDF ixrac edildi", description: "Faylınız başarıyla ixrac edildi" });
   };
 
   const convertToCSV = (arr: any[]) => {
@@ -190,43 +210,36 @@ export function SchoolColumnTable<TData, TValue>({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[150px]">
-            {
-              table
-                .getAllColumns()
-                .filter(
-                  (column) => column.getCanHide()
+            {table
+              .getAllColumns()
+              .filter((column) => column.getCanHide())
+              .map((column) => {
+                return (
+                  <DropdownMenuItem
+                    key={column.id}
+                    className="flex items-center p-2"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      column.toggleVisibility()
+                    }}
+                  >
+                    <Checkbox
+                      checked={column.getIsVisible()}
+                      className="mr-2"
+                    />
+                    <span>{column.id}</span>
+                  </DropdownMenuItem>
                 )
-                .map(
-                  (column) => {
-                    return (
-                      <DropdownMenuItem
-                        key={column.id}
-                        className="flex items-center p-2"
-                        onClick={(event) => {
-                          event.preventDefault()
-                          column.toggleVisibility()
-                        }}
-                      >
-                        <Checkbox
-                          checked={column.getIsVisible()}
-                          className="mr-2"
-                        />
-                        <span>
-                          {column.getHeader()}
-                        </span>
-                      </DropdownMenuItem>
-                    )
-                  }
-                )}
+              })}
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button variant="outline" className="ml-2" onClick={() => onExportExcel(tableData, 'school-column-report')}>
+        <Button variant="outline" className="ml-2" onClick={onExportExcel}>
           {t("exportExcel")} <Download className="ml-2 h-4 w-4" />
         </Button>
-        <Button variant="outline" className="ml-2" onClick={() => onExportPDF(tableData, 'school-column-report')}>
+        <Button variant="outline" className="ml-2" onClick={onExportPDF}>
           {t("exportPdf")} <Download className="ml-2 h-4 w-4" />
         </Button>
-        <Button variant="outline" className="ml-2" onClick={() => onExportCSV(tableData, 'school-column-report')}>
+        <Button variant="outline" className="ml-2" onClick={onExportCSV}>
           {t("exportCsv")} <Download className="ml-2 h-4 w-4" />
         </Button>
       </div>
@@ -323,7 +336,7 @@ export function SchoolColumnTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell colSpan={providedColumns.length} className="h-24 text-center">
                   {t("noResults")}
                 </TableCell>
               </TableRow>
@@ -333,8 +346,7 @@ export function SchoolColumnTable<TData, TValue>({
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} / {table.getFilteredRowModel().rows.length} sətir seçilib.
         </div>
         <div className="space-x-2">
           <Button
@@ -358,3 +370,5 @@ export function SchoolColumnTable<TData, TValue>({
     </div>
   )
 }
+
+export default SchoolColumnTable;

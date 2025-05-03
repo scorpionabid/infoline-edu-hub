@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '@/context/LanguageContext';
-import { ReportType } from '@/types/form';
+import { Report, ReportType } from '@/types/form';
 
 interface ReportChartProps {
   data: any[];
@@ -62,16 +63,11 @@ const ReportChart: React.FC<ReportChartProps> = ({ data, type }) => {
     return <p>{t('noChartData')}</p>;
   };
 
-  const report = {
-    name: "Example Report",
-    summary: "This is a summary of the report."
-  };
-
   return (
     <div className="mt-4">
-      <h3 className="text-lg font-medium">{report.name}</h3>
-      <p className="text-muted-foreground text-sm mb-4">{report.summary}</p>
-      <div className="text-sm text-muted-foreground mb-2">{report.summary}</div>
+      <h3 className="text-lg font-medium">Example Report</h3>
+      <p className="text-muted-foreground text-sm mb-4">This is a summary of the report.</p>
+      <div className="text-sm text-muted-foreground mb-2">Report summary information</div>
       {renderChart()}
     </div>
   );

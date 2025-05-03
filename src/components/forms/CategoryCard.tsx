@@ -60,7 +60,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onClick })
     return null;
   };
   
-  // Tamamlanma faizi
+  // Tamamlanma faizi - completionRate adını istifadə edək
   const completionPercentage = category.completionRate || 0;
   
   // Son tarix
