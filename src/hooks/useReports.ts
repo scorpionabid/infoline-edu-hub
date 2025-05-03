@@ -1,219 +1,94 @@
-
-import { useState, useEffect, useCallback } from 'react';
-import { Report, ReportType } from '@/types/report';
-import { 
-  fetchReports, 
-  fetchReportTemplates, 
-  addReport,
-  editReport, 
-  createReportTemplate, 
-  exportReport,
-  exportReportAsPdf,
-  exportReportAsCsv,
-  shareReportWithUsers
-} from '@/services/reportService';
-import { useAuth } from '@/context/auth';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { Report } from '@/types/report';
 import { toast } from 'sonner';
 
 export const useReports = () => {
-  const [reports, setReports] = useState<Report[]>([]);
+  const queryClient = useQueryClient();
   const [templates, setTemplates] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [filteredReports, setFilteredReports] = useState<Report[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState<ReportType | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published' | 'archived'>('all');
-  const { user } = useAuth();
 
-  const loadReports = useCallback(async () => {
+  // Hesabatları əldə etmə
+  const { data: reports, isLoading, error } = useQuery({
+    queryKey: ['reports'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('reports')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        return data as Report[];
+      } catch (error) {
+        console.error('Hesabatlar yüklənərkən xəta baş verdi:', error);
+        throw error;
+      }
+    }
+  });
+
+  // Hesabat əlavə etmə
+  const addReport = async (newReport: Partial<Report>) => {
     setLoading(true);
-    setError(null);
     try {
-      const data = await fetchReports();
-      setReports(data);
-      applyFilters(data, searchTerm, typeFilter, statusFilter);
-    } catch (err: any) {
-      setError(err.message || 'Hesabatlar yüklənərkən xəta baş verdi');
-    } finally {
-      setLoading(false);
-    }
-  }, [searchTerm, typeFilter, statusFilter]);
-
-  const loadTemplates = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchReportTemplates();
-      setTemplates(data);
-    } catch (err: any) {
-      setError(err.message || 'Hesabat şablonları yüklənərkən xəta baş verdi');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const applyFilters = useCallback((data: Report[], search: string, type: ReportType | 'all', status: 'all' | 'draft' | 'published' | 'archived') => {
-    let filtered = [...data];
-    
-    // Axtarış filtrini tətbiq et
-    if (search) {
-      filtered = filtered.filter(report => 
-        report.title?.toLowerCase().includes(search.toLowerCase()) ||
-        report.description?.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-    
-    // Növ filtrini tətbiq et
-    if (type !== 'all') {
-      filtered = filtered.filter(report => report.type === type);
-    }
-    
-    // Status filtrini tətbiq et
-    if (status !== 'all') {
-      filtered = filtered.filter(report => report.status === status);
-    }
-    
-    setFilteredReports(filtered);
-  }, []);
-
-  const createNewReport = useCallback(async (report: Partial<Report>): Promise<Report | null> => {
-    setLoading(true);
-    setError(null);
-    try {
-      // İstifadəçi id-sini əlavə et
-      const reportWithUser = {
-        ...report,
-        createdBy: user?.id || ''
+      // Supabase-ə hesabatı əlavə etmək üçün funksiya burada olacaq
+      // Hal-hazırda demo məqsədi ilə mock data yaradırıq
+      const mockReport: Report = {
+        id: `report-${Date.now()}`,
+        title: newReport.title || 'Yeni hesabat',
+        description: newReport.description || '',
+        type: newReport.type || 'custom',
+        status: newReport.status || 'draft',
+        content: newReport.content || {},
+        created_at: new Date().toISOString(),
+        filters: newReport.filters || {}
       };
       
-      const newReport = await addReport(reportWithUser);
-      if (newReport) {
-        setReports(prev => [newReport, ...prev]);
-        applyFilters([newReport, ...reports], searchTerm, typeFilter, statusFilter);
-      }
-      return newReport;
-    } catch (err: any) {
-      setError(err.message || 'Hesabat yaradılarkən xəta baş verdi');
-      return null;
+      return mockReport;
+    } catch (error) {
+      console.error('Hesabat əlavə edilərkən xəta:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
-  }, [user, reports, searchTerm, typeFilter, statusFilter, applyFilters]);
+  };
 
-  const updateReport = useCallback(async (id: string, report: Partial<Report>): Promise<Report | null> => {
+  // Hesabatı yeniləmə
+  const updateReport = async (id: string, updates: Partial<Report>) => {
     setLoading(true);
-    setError(null);
     try {
-      const updatedReport = await editReport(id, report);
-      
-      if (updatedReport) {
-        setReports(prev => prev.map(r => r.id === id ? updatedReport : r));
-        applyFilters(reports.map(r => r.id === id ? updatedReport : r), searchTerm, typeFilter, statusFilter);
-      }
-      return updatedReport;
-    } catch (err: any) {
-      setError(err.message || 'Hesabat yenilənərkən xəta baş verdi');
-      return null;
+      // Supabase-də hesabat yeniləmə funksiyası burada olacaq
+      return { id, ...updates };
+    } catch (error) {
+      console.error('Hesabat yenilənərkən xəta:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
-  }, [reports, searchTerm, typeFilter, statusFilter, applyFilters]);
+  };
 
-  const addTemplate = useCallback(async (template: Partial<Report>): Promise<Report | null> => {
+  // Hesabat silmə
+  const deleteReport = async (id: string) => {
     setLoading(true);
-    setError(null);
     try {
-      // İstifadəçi id-sini əlavə et
-      const templateWithUser = {
-        ...template,
-        createdBy: user?.id || ''
-      };
-      
-      const newTemplate = await createReportTemplate(templateWithUser);
-      if (newTemplate) {
-        setTemplates(prev => [newTemplate, ...prev]);
-      }
-      return newTemplate;
-    } catch (err: any) {
-      setError(err.message || 'Şablon yaradılarkən xəta baş verdi');
-      return null;
+      // Supabase-dən hesabat silmə funksiyası burada olacaq
+      return id;
+    } catch (error) {
+      console.error('Hesabat silinərkən xəta:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
-  }, [user]);
-
-  const downloadReport = useCallback(async (reportId: string, format?: 'pdf' | 'csv'): Promise<string | null> => {
-    setLoading(true);
-    setError(null);
-    try {
-      let url;
-      
-      // Format seçiminə əsaslanaraq müvafiq funksiyanı çağırırıq
-      if (format === 'pdf') {
-        url = await exportReportAsPdf(reportId);
-      } else if (format === 'csv') {
-        url = await exportReportAsCsv(reportId);
-      } else {
-        url = await exportReport(reportId);
-      }
-      
-      return url;
-    } catch (err: any) {
-      setError(err.message || 'Hesabat ixrac edilərkən xəta baş verdi');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Funksiya adını dəyişdik ki, eyni adlandırma problemi yaranmasın
-  const shareReport = useCallback(async (reportId: string, userIds: string[]): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const success = await shareReportWithUsers(reportId, userIds);
-      if (success) {
-        toast.success('Hesabat uğurla paylaşıldı');
-      }
-      return success;
-    } catch (err: any) {
-      setError(err.message || 'Hesabat paylaşılarkən xəta baş verdi');
-      toast.error('Hesabat paylaşılarkən xəta baş verdi');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadReports();
-    loadTemplates();
-  }, [loadReports, loadTemplates]);
-
-  // Search və filter dəyişdikdə tətbiq et
-  useEffect(() => {
-    applyFilters(reports, searchTerm, typeFilter, statusFilter);
-  }, [reports, searchTerm, typeFilter, statusFilter, applyFilters]);
+  };
 
   return {
-    reports,
-    filteredReports,
+    reports: reports || [],
     templates,
-    loading,
+    loading: isLoading || loading,
     error,
-    searchTerm,
-    setSearchTerm,
-    typeFilter,
-    setTypeFilter,
-    statusFilter,
-    setStatusFilter,
-    loadReports,
-    loadTemplates,
-    addReport: createNewReport,
-    editReport: updateReport,
-    addTemplate,
-    downloadReport,
-    shareReport
+    addReport,
+    updateReport,
+    deleteReport
   };
 };
