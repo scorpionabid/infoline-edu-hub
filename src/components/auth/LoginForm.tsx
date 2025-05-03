@@ -53,21 +53,29 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      clearError(); // Əvvəlki xətaları təmizləyək
+      if (clearError) clearError(); // Əgər clearError funksiyası mövcuddursa istifadə et
       setLoginInProgress(true);
       console.log('Giriş cəhdi edilir...', data.email);
       
-      const success = await login(data.email, data.password);
-      
-      if (success) {
-        console.log('Giriş uğurlu oldu, yönləndirmə edilir...');
-        toast.success(t('loginSuccess'));
-        navigate('/dashboard');
+      if (login) { // Əgər login funksiyası mövcuddursa istifadə et
+        const success = await login(data.email, data.password);
+        
+        if (success) {
+          console.log('Giriş uğurlu oldu, yönləndirmə edilir...');
+          toast.success(t('loginSuccess'));
+          navigate('/dashboard');
+        } else {
+          console.log('Giriş uğursuz oldu - əlavə xəta yoxdur');
+          setFormError('root', { 
+            type: 'manual',
+            message: t('invalidCredentials')
+          });
+        }
       } else {
-        console.log('Giriş uğursuz oldu - əlavə xəta yoxdur');
+        console.error('Login funksiyası təyin edilməyib');
         setFormError('root', { 
           type: 'manual',
-          message: t('invalidCredentials')
+          message: 'Sistem xətası: Giriş funksiyası mövcud deyil'
         });
       }
     } catch (err: any) {

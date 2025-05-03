@@ -18,5 +18,5 @@ export interface AuthContextType {
   signOut?: () => Promise<void>;
   updateUser?: (updates: Partial<FullUserData>) => Promise<boolean>;
   createUser?: (userData: any) => Promise<any>;
-  clearError?: () => void;
+  clearError: () => void;
 }

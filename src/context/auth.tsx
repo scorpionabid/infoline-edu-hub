@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserFormData } from '@/types/user';
+import { useAuth as useAuthFromNewContext } from './auth/useAuth';
 
 interface FullUserData {
   id: string;
@@ -23,125 +24,37 @@ interface AuthContextType {
   user: FullUserData | null;
   loading: boolean;
   error: string | null;
+  clearError: () => void;
   signIn: (email: string, password: string) => Promise<{ error?: any }>;
   signOut: () => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   createUser: (userData: UserFormData) => Promise<{ error?: any }>;
 }
 
+// Yeni və köhnə kontekst arasında körpü yaradaq
+// Bu köhnə kontekst referanslarını qorumaq üçündür
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   error: null,
+  clearError: () => {},
   signIn: async () => ({ error: null }),
   signOut: async () => {},
+  login: async () => false,
+  logout: async () => {},
   createUser: async () => ({ error: null }),
 });
 
+// Yeni provider-ı istifadə edən yeni provider yaradaq
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<FullUserData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Köhnə konteksti yeni kontekstə əlaqələndirək
+  const newAuth = useAuthFromNewContext();
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const { data, error } = await supabase.auth.getUser();
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (data?.user) {
-          const { data: userProfile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single();
-          
-          if (profileError) {
-            throw profileError;
-          }
-          
-          setUser({
-            id: userProfile.id,
-            email: userProfile.email || data.user.email || '',
-            full_name: userProfile.full_name || '',
-            role: userProfile.role || 'user',
-            avatar: userProfile.avatar_url,
-            region_id: userProfile.region_id,
-            sector_id: userProfile.sector_id,
-            school_id: userProfile.school_id,
-            adminEntity: userProfile.admin_entity || {
-              schoolName: '',
-              sectorName: '',
-              regionName: ''
-            }
-          });
-        }
-      } catch (error: any) {
-        console.error('Auth error:', error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        fetchUser();
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-      }
-    });
-
-    return () => {
-      listener?.subscription.unsubscribe();
-    };
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      return { data };
-    } catch (error: any) {
-      console.error('Sign in error:', error);
-      setError(error.message);
-      return { error };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      setLoading(true);
-      await supabase.auth.signOut();
-      setUser(null);
-    } catch (error: any) {
-      console.error('Sign out error:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // İstifadəçi yaratma funksiyası
   const createUser = async (userData: UserFormData) => {
     try {
-      setLoading(true);
       setError(null);
       
       // Supabase auth system üzərindən istifadəçi yaratmaq
@@ -195,13 +108,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Create user error:', error);
       setError(error.message);
       return { error };
-    } finally {
-      setLoading(false);
     }
   };
 
+  // Köhnə API uyğunluğunu təmin etmək üçün signIn/signOut wrapper-ləri
+  const signIn = async (email: string, password: string) => {
+    try {
+      const success = await newAuth.login(email, password);
+      return success ? { data: {} } : { error: newAuth.error };
+    } catch (error: any) {
+      return { error };
+    }
+  };
+
+  const signOut = async () => {
+    await newAuth.logout();
+  };
+
+  // Xəta təmizləmə funksiyası
+  const clearError = () => {
+    if (newAuth.clearError) {
+      newAuth.clearError();
+    }
+    setError(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, signIn, signOut, createUser }}>
+    <AuthContext.Provider value={{
+      user: newAuth.user,
+      loading: newAuth.isLoading,
+      error: newAuth.error || error,
+      clearError,
+      signIn,
+      signOut,
+      login: newAuth.login,
+      logout: newAuth.logout,
+      createUser
+    }}>
       {children}
     </AuthContext.Provider>
   );
