@@ -116,7 +116,20 @@ const common = {
   
   // Əlavə
   more: "Daha çox",
-  less: "Daha az"
+  less: "Daha az",
+  
+  // Sütun tipləri
+  primaryTypes: "Əsas tiplər",
+  advancedTypes: "Əlavə tiplər",
+  
+  // Məlumat daxiletmə
+  forms: "Formlar",
+  fillForm: "Formu doldurun",
+  viewForm: "Formu göstər",
+  pendingForms: "Gözləyən formlar",
+  approvedForms: "Təsdiqlənmiş formlar",
+  rejectedForms: "Rədd edilmiş formlar",
+  draftForms: "Qaralama formlar"
 };
 
 export default common;
