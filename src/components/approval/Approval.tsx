@@ -172,8 +172,8 @@ export const Approval: React.FC = () => {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <PageHeader
-        title={t("approvalPage")}
-        description={t("approvalPageDescription")}
+        heading={t("approvalPage")}
+        subheading={t("approvalPageDescription")}
       />
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>

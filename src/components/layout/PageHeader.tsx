@@ -1,42 +1,49 @@
 
 import React from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 export interface PageHeaderProps {
   title: string;
   description?: string;
+  backButtonUrl?: string;
   children?: React.ReactNode;
-  // Əlavə olaraq heading və subheading adları ilə də istifadə oluna bilər
-  heading?: string;
-  subheading?: string;
 }
 
-const PageHeader: React.FC<PageHeaderProps> = ({ 
-  title, 
-  heading,
-  description, 
-  subheading,
-  children 
+const PageHeader: React.FC<PageHeaderProps> = ({
+  title,
+  description,
+  backButtonUrl,
+  children
 }) => {
-  // heading və title eyni məqsədlə istifadə olunur
-  const displayTitle = heading || title;
-  // subheading və description eyni məqsədlə istifadə olunur
-  const displayDescription = subheading || description;
-  
+  const navigate = useNavigate();
+
   return (
-    <div className="flex items-center justify-between mb-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{displayTitle}</h1>
-        {displayDescription && (
-          <p className="text-muted-foreground">{displayDescription}</p>
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 mb-6 border-b">
+      <div className="flex flex-col">
+        {backButtonUrl && (
+          <Button
+            variant="link"
+            className="p-0 h-auto font-normal flex items-center gap-1 mb-2 text-muted-foreground hover:text-foreground"
+            onClick={() => navigate(backButtonUrl)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Geri qayıt</span>
+          </Button>
+        )}
+        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        {description && (
+          <p className="text-muted-foreground mt-1">{description}</p>
         )}
       </div>
       {children && (
-        <div>{children}</div>
+        <div className="flex flex-wrap gap-2 ml-auto">
+          {children}
+        </div>
       )}
     </div>
   );
 };
 
-// Həm default export, həm də adlı export təmin edirik
 export default PageHeader;
-export { PageHeader };

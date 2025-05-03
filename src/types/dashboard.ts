@@ -1,6 +1,5 @@
 
 import { FormItem } from "./form";
-import { Notification } from "./notification";
 
 export interface DashboardSummary {
   totalForms: number;
@@ -20,17 +19,13 @@ export interface ActivityItem {
   entityId?: string;
 }
 
-export interface DashboardNotification {
+export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'success' | 'error' | 'deadline' | 'approval' | 'rejection' | 'comment' | 'system';
+  type: 'info' | 'warning' | 'success' | 'error';
   read: boolean;
-  isRead?: boolean;
   createdAt: string;
-  timestamp?: string;
-  date?: string;
-  time?: string;
 }
 
 export interface RegionStats {
@@ -75,7 +70,6 @@ export interface DashboardData {
   recentActivity: ActivityItem[];
   notifications: DashboardNotification[];
   approvalRate?: number;
-  completionRate?: number;
 }
 
 export interface SuperAdminDashboardData extends DashboardData {
@@ -83,41 +77,17 @@ export interface SuperAdminDashboardData extends DashboardData {
   totalSchools: number;
   totalUsers: number;
   stats?: any;
-  completionRate?: number;
-  regionCount?: number;
-  sectorCount?: number;
-  schoolCount?: number;
-  userCount?: number;
-  formsByStatus?: any;
-  pendingApprovals?: any[];
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
   sectors: SectorStats[];
   totalSchools: number;
   stats?: any;
-  sectorStats?: {
-    total: number;
-    active: number;
-  };
-  schoolStats?: {
-    total: number;
-    active: number;
-    incomplete: number;
-  };
-  pendingItems?: any[];
-  categories?: any[];
-  completionRate?: number;
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
   schools: SchoolStats[];
   stats?: any;
-  schoolsStats?: any[];
-  pendingItems?: any[];
-  categories?: any[];
-  schoolStats?: any;
-  completionRate?: number;
 }
 
 export interface SchoolAdminDashboardData extends DashboardData {
@@ -125,28 +95,18 @@ export interface SchoolAdminDashboardData extends DashboardData {
   recentForms: FormItem[];
   formStats?: any;
   completionRate?: number;
-  categories?: any[];
-  completion?: {
-    percentage: number;
-    total: number;
-    completed: number;
-  };
-  status?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    total: number;
-  };
-  upcoming?: any[];
-  forms?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    dueSoon: number;
-    overdue: number;
-    total: number;
-  };
-  pendingForms?: any[];
+}
+
+export interface DashboardNotification {
+  id: string;
+  message: string;
+  createdAt: string;
+  type: 'deadline' | 'approval' | 'rejection' | 'comment' | 'system';
+  read: boolean;
+  title?: string;
+  timestamp?: string;
+  date?: string;
+  isRead?: boolean;
 }
 
 export interface PendingApprovalItem {
@@ -168,6 +128,4 @@ export interface SchoolStat {
   sectorName: string;
   completionRate: number;
   total?: number;
-  active?: number;
-  incomplete?: number;
 }

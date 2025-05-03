@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
@@ -59,20 +60,15 @@ export function SchoolAdminDashboard({
     );
   }
   
-  // Bildirişləri uyğunlaşdırırıq
-  const formattedNotifications = data.notifications?.map(n => ({
+  // Bildiriş formatını düzəldək
+  const formattedNotifications = data.notifications.map(n => ({
     id: n.id,
     title: n.title,
     message: n.message,
     date: new Date(n.timestamp || Date.now()).toLocaleDateString(),
-    // Notification sisteminin gözlədiyi əsas tiplərə çeviririk
-    type: (
-      n.type === 'error' ? 'error' :
-      n.type === 'warning' ? 'warning' :
-      n.type === 'success' ? 'success' : 'info'
-    ) as 'error' | 'info' | 'warning' | 'success',
-    isRead: n.isRead ?? !n.read ?? false
-  })) || [];
+    type: n.type,
+    isRead: !n.read
+  }));
   
   return (
     <div className="space-y-6">

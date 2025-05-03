@@ -1,46 +1,22 @@
+
 import { DataEntryStatus } from './dataEntry';
 
 export type DashboardRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
 export interface DashboardData {
-  stats?: {
-    regions?: number;
-    sectors?: number;
-    schools?: number;
-    users?: number;
+  stats: {
+    regions: number;
+    sectors: number;
+    schools: number;
+    users: number;
   };
   completionRate: number;
   approvalRate?: number;
-  notifications?: DashboardNotification[];
-  pendingApprovals?: PendingApprovalItem[];
-  completionTrend?: CompletionTrendItem[];
-  categories?: CategoryStatusItem[];
-  userCount?: number;
-  
-  // Dashboard kontentindəki propertiləri qarşılamaq üçün əlavə sahələr
-  regions?: number;
-  sectors?: number;
-  schools?: number;
-  users?: number;
-  activeSectors?: number;
-  activeSchools?: number;
-  incompleteSchools?: number;
-  totalForms?: number;
-  approvedForms?: number;
-  pendingForms?: number;
-  rejectedForms?: number;
-  incompleteForms?: number;
-  draftForms?: number;
-  
-  // Əskik olan sahələr
-  completedForms?: number;
-  overdueForms?: number;
-  formStats?: {
-    approved: number;
-    pending: number;
-    rejected: number;
-    incomplete: number;
-  };
+  notifications: DashboardNotification[];
+  pendingApprovals: PendingApprovalItem[];
+  completionTrend: CompletionTrendItem[];
+  categories: CategoryStatusItem[];
+  userCount: number;
 }
 
 export interface SuperAdminDashboardData extends DashboardData {
@@ -108,10 +84,8 @@ export interface DashboardNotification {
   title: string;
   message: string;
   createdAt: string;
-  timestamp?: string;
-  type: "error" | "info" | "warning" | "success" | "deadline" | "approval" | "rejection" | "comment" | "system";
+  type: string;
   read: boolean;
-  isRead?: boolean;
 }
 
 export interface PendingApprovalItem {

@@ -39,10 +39,28 @@ const az = {
   ...validation,
   ...categories,
   
-  // Əlavə tərcümələr (əgər lazımdırsa)
+  // Spesifik tərcümələr (əgər lazımdırsa)
   selectLanguage: 'Dil seçin',
+  loading: 'Yüklənir...',
   more: 'Daha çox',
   less: 'Daha az',
+  
+  // Hesabat əlavə tərcümələr
+  allReports: 'Bütün hesabatlar',
+  createNewReport: 'Yeni hesabat yarat',
+  reportType: 'Hesabat növü',
+  statistics: 'Statistika',
+  column: 'Sütun',
+  school: 'Məktəb',
+  region: 'Region',
+  sector: 'Sektor',
+  custom: 'Fərdi',
+  allTypes: 'Bütün növlər',
+  searchReports: 'Hesabatları axtar',
+  preview: 'Önizləmə',
+  download: 'Yüklə',
+  noReportsFound: 'Hesabat tapılmadı',
+  createYourFirstReport: 'İlk hesabatınızı yaradın'
 };
 
 export default az;

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,32 +19,32 @@ export const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDow
   const { t } = useLanguage();
   
   const getReportIcon = () => {
-    if (report.type === "STATISTICS") {
+    if (report.type === ReportType.STATISTICS) {
       return <BarChart3 className="h-5 w-5 text-primary" />;
     }
-    else if (report.type === "COMPLETION") {
+    else if (report.type === ReportType.COMPLETION) {
       return <PieChart className="h-5 w-5 text-primary" />;
     }
-    else if (report.type === "COMPARISON") {
+    else if (report.type === ReportType.COMPARISON) {
       return <LineChart className="h-5 w-5 text-primary" />;
     }
-    else if (report.type === "COLUMN") {
+    else if (report.type === ReportType.COLUMN) {
       return <Table2 className="h-5 w-5 text-primary" />;
     }
     return <BarChart3 className="h-5 w-5 text-primary" />;
   };
   
   const getReportTypeBadge = () => {
-    if (report.type === "STATISTICS") {
+    if (report.type === ReportType.STATISTICS) {
       return <Badge variant="outline">Statistika</Badge>;
     }
-    else if (report.type === "COMPLETION") {
+    else if (report.type === ReportType.COMPLETION) {
       return <Badge variant="outline">Tamamlanma</Badge>;
     }
-    else if (report.type === "COMPARISON") {
+    else if (report.type === ReportType.COMPARISON) {
       return <Badge variant="outline">Müqayisə</Badge>;
     }
-    else if (report.type === "COLUMN") {
+    else if (report.type === ReportType.COLUMN) {
       return <Badge variant="outline">Sütun</Badge>;
     }
     return <Badge variant="outline">Hesabat</Badge>;
@@ -53,14 +52,6 @@ export const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDow
   
   const formattedDate = report.created_at 
     ? format(new Date(report.created_at), 'dd.MM.yyyy')
-    : '';
-  
-  // Author üçün adaptor
-  const authorName = report.created_by_name || t('system');
-  
-  // Son yenilənmə tarixi üçün adaptor
-  const lastUpdated = report.updated_at 
-    ? format(new Date(report.updated_at), 'dd.MM.yyyy')
     : '';
   
   return (
@@ -86,13 +77,15 @@ export const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDow
           
           <div className="flex justify-between">
             <span className="text-muted-foreground">{t('author')}:</span>
-            <span className="font-medium">{authorName}</span>
+            <span className="font-medium">{report.author || t('system')}</span>
           </div>
           
-          {lastUpdated && (
+          {report.last_updated && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('lastUpdated')}:</span>
-              <span className="font-medium">{lastUpdated}</span>
+              <span className="font-medium">
+                {format(new Date(report.last_updated), 'dd.MM.yyyy')}
+              </span>
             </div>
           )}
         </div>

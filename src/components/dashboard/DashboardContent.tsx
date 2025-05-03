@@ -56,10 +56,9 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       message: 'Təhsil statistikası kateqoriyası sistemə əlavə edildi',
       date: new Date().toLocaleDateString(),
       timestamp: new Date().toISOString(),
-      type: 'info', // Burada artıq yeni tip uyğundur
+      type: 'info',
       isRead: false,
-      read: false,
-      createdAt: new Date().toISOString()
+      read: false
     },
     {
       id: '2',
@@ -67,10 +66,9 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       message: 'Məktəb məlumatlarını doldurmaq üçün son 3 gün qalıb',
       date: new Date().toLocaleDateString(),
       timestamp: new Date().toISOString(),
-      type: 'warning', // Burada artıq yeni tip uyğundur
+      type: 'warning',
       isRead: false,
-      read: false,
-      createdAt: new Date().toISOString()
+      read: false
     }
   ], []);
 
@@ -106,21 +104,11 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       notifications: mockNotifications,
       regions: [],
       pendingApprovals: [],
-      approvalRate: 0,
+      approvalRate: dashboardData.approvalRate || 0,
       regionCount: dashboardData.regions || 0,
       sectorCount: dashboardData.sectors || 0,
       schoolCount: dashboardData.schools || 0,
       userCount: dashboardData.users || 0,
-      totalSchools: dashboardData.schools || 0,
-      totalUsers: dashboardData.users || 0,
-      summary: {
-        totalForms: dashboardData.totalForms || 0,
-        completedForms: 0,
-        pendingForms: dashboardData.pendingForms || 0,
-        overdueForms: 0,
-        completionRate: dashboardData.completionRate || 0
-      },
-      recentActivity: [],
       formsByStatus: {
         pending: dashboardData.pendingForms || 0,
         approved: dashboardData.approvedForms || 0,
@@ -145,15 +133,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       pendingItems: [],
       categories: [],
       sectors: [],
-      summary: {
-        totalForms: dashboardData.totalForms || 0,
-        completedForms: 0,
-        pendingForms: dashboardData.pendingForms || 0,
-        overdueForms: 0,
-        completionRate: dashboardData.completionRate || 0
-      },
-      recentActivity: [],
-      totalSchools: dashboardData.schools || 0,
       sectorStats: {
         total: dashboardData.sectors || 0,
         active: dashboardData.activeSectors || 0
@@ -171,11 +150,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
   // SectorAdmin Dashboard
   if (userRole === 'sectoradmin') {
     const schoolsStatItem: SchoolStat = {
-      id: '0',
-      name: 'All Schools',
-      sectorId: sectorId || '',
-      sectorName: 'Current Sector',
-      completionRate: dashboardData.completionRate || 0,
       total: dashboardData.schools || 0,
       active: dashboardData.activeSchools || 0,
       incomplete: dashboardData.incompleteSchools || 0
@@ -191,14 +165,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       pendingItems: [],
       schools: [],
       categories: [],
-      summary: {
-        totalForms: dashboardData.totalForms || 0,
-        completedForms: 0,
-        pendingForms: dashboardData.pendingForms || 0,
-        overdueForms: 0,
-        completionRate: dashboardData.completionRate || 0
-      },
-      recentActivity: [],
       schoolsStats: [schoolsStatItem]
     };
 
@@ -218,17 +184,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       },
       completionRate: dashboardData.completionRate || 0,
       notifications: mockNotifications,
-      categories: dashboardData.categories || [],
-      summary: {
-        totalForms: dashboardData.totalForms || 0,
-        completedForms: 0,
-        pendingForms: dashboardData.pendingForms || 0,
-        overdueForms: 0,
-        completionRate: dashboardData.completionRate || 0
-      },
-      recentActivity: [],
-      upcomingDeadlines: [],
-      recentForms: []
+      categories: dashboardData.categories || []
     };
 
     return (
@@ -238,7 +194,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         error={error}
         onRefresh={refetch}
         navigateToDataEntry={navigateToDataEntry}
-        handleFormClick={() => handleFormClick('')}
+        handleFormClick={handleFormClick}
       />
     );
   }

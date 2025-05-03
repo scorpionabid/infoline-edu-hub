@@ -1,10 +1,11 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/supabase';
 import { useRegions } from '@/hooks/useRegions';
 import { useSectors } from '@/hooks/useSectors';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
@@ -24,7 +25,7 @@ export const useSchoolsStore = () => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   const { user } = useAuth();
   const { userRole, sectorId, regionId } = usePermissions();
   const [isOperationComplete, setIsOperationComplete] = useState(false);

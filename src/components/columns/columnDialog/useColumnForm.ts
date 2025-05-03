@@ -336,9 +336,7 @@ export const useColumnForm = (
         order_index: values.order_index,
         status: editColumn?.status || 'active',
         // String'dən Date'ə çevrilmə problemini aradan qaldıraq
-        created_at: typeof editColumn?.created_at === 'string' 
-          ? editColumn.created_at 
-          : (editColumn?.created_at || new Date().toISOString()),
+        created_at: editColumn?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
         options: convertOptionsToColumn(values.options),
         validation: convertValidationToColumn(values.validation, values.type),

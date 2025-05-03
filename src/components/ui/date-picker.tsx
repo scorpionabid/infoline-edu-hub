@@ -1,5 +1,5 @@
 
-import React from "react";
+import * as React from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,49 +12,46 @@ import {
 } from "@/components/ui/popover";
 
 export interface DatePickerProps {
-  value?: Date;
-  onChange?: (date: Date | undefined) => void;
-  placeholder?: string;
-  disabled?: boolean;
-  // Əski istifadə üçün props-lar da əlavə edək
-  date?: Date;
   onSelect?: (date: Date) => void;
+  defaultDate?: Date;
+  placeholder?: string;
+  id?: string;
 }
 
-export function DatePicker({
-  value,
-  onChange,
-  placeholder = "Tarix seçin",
-  disabled = false,
-  date,
-  onSelect,
+export function DatePicker({ 
+  onSelect, 
+  defaultDate, 
+  placeholder = "Tarix seçin", 
+  id 
 }: DatePickerProps) {
-  // Əski API uyğunluğu üçün
-  const selectedDate = value || date;
-  const handleSelect = (date: Date | undefined) => {
-    if (onChange) onChange(date);
-    if (onSelect && date) onSelect(date);
+  const [date, setDate] = React.useState<Date | undefined>(defaultDate);
+
+  const handleSelect = (selectedDate: Date | undefined) => {
+    setDate(selectedDate);
+    if (selectedDate && onSelect) {
+      onSelect(selectedDate);
+    }
   };
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant={"outline"}
           className={cn(
             "w-full justify-start text-left font-normal",
-            !selectedDate && "text-muted-foreground"
+            !date && "text-muted-foreground"
           )}
-          disabled={disabled}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {selectedDate ? format(selectedDate, "PPP") : <span>{placeholder}</span>}
+          {date ? format(date, "PPP") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
         <Calendar
           mode="single"
-          selected={selectedDate}
+          selected={date}
           onSelect={handleSelect}
           initialFocus
         />
@@ -62,3 +59,5 @@ export function DatePicker({
     </Popover>
   );
 }
+
+export default DatePicker;

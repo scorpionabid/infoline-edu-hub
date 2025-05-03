@@ -1,25 +1,44 @@
+
 import React from 'react';
 import { Progress } from '@/components/ui/progress';
-import { Card } from '@/components/ui/card';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { Column } from '@/types/column';
 
-interface DataEntryProgressProps {
+export interface DataEntryProgressProps {
+  total?: number;
+  completed?: number;
   percentage: number;
+  columns?: Column[];
+  completionPercentage?: number;
 }
 
-const DataEntryProgress: React.FC<DataEntryProgressProps> = ({ percentage }) => {
-  const { t } = useLanguage();
+const DataEntryProgress: React.FC<DataEntryProgressProps> = ({ 
+  total = 0, 
+  completed = 0, 
+  columns, 
+  percentage, 
+  completionPercentage 
+}) => {
+  const { t } = useLanguageSafe();
+  
+  // Əgər percentage dəyəri verilməyibsə və completionPercentage varsa, onu istifadə et
+  const displayPercentage = percentage || completionPercentage || 0;
+  
+  // Əgər tələb olunan sütunlar verilərsə, onları hesabla
+  const calculatedTotal = total || (columns?.length || 0);
+  const calculatedCompleted = completed || Math.round((calculatedTotal * displayPercentage) / 100);
 
   return (
-    <Card>
-      <div className="flex flex-col space-y-1.5 p-6">
-        <div className="flex items-center justify-between text-sm font-medium">
-          <div>{t('completion')}</div>
-          <div>{percentage}%</div>
-        </div>
-        <Progress value={percentage} />
+    <div className="space-y-2 w-full max-w-xs">
+      <div className="flex justify-between text-sm">
+        <span className="font-medium">{t('progress')}</span>
+        <span>{displayPercentage}%</span>
       </div>
-    </Card>
+      <Progress value={displayPercentage} className="h-2" />
+      <p className="text-xs text-muted-foreground">
+        {t('completedCategories').replace('{completed}', calculatedCompleted.toString()).replace('{total}', calculatedTotal.toString())}
+      </p>
+    </div>
   );
 };
 

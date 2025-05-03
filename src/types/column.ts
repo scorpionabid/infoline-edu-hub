@@ -169,8 +169,8 @@ export interface Column {
   is_required: boolean;
   is_visible?: boolean;
   status: 'active' | 'inactive' | 'draft';
-  created_at: string;
-  updated_at: string;
+  created_at: Date;
+  updated_at: Date;
   order_index: number;
   validation?: any;
   options?: ColumnOption[];

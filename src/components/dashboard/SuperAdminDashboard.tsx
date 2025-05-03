@@ -13,19 +13,6 @@ interface SuperAdminDashboardProps {
 }
 
 export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
-  // Notification tipini uyğunlaşdırma
-  const mappedNotifications = data.notifications.map(n => ({
-    id: n.id,
-    title: n.title || '',
-    message: n.message,
-    date: new Date(n.timestamp || n.createdAt || Date.now()).toLocaleDateString(),
-    // Tipi uyğunlaşdırırıq
-    type: (n.type === 'deadline' || n.type === 'approval' || n.type === 'rejection' || n.type === 'comment' || n.type === 'system')
-      ? 'info' // deadline, approval -> info
-      : (n.type as 'info' | 'warning' | 'success' | 'error'),
-    isRead: n.isRead ?? n.read ?? false
-  }));
-
   return (
     <div className="space-y-6">
       <Grid columns={4} className="gap-6">
@@ -65,12 +52,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
 
       <Grid columns={2} className="gap-6">
         <CompletionRateCard
-          completionRate={data.completionRate || 0}
+          completionRate={data.completionRate}
           title="Ümumi Tamamlama Faizi"
         />
         <NotificationsCard
           title="Bildirişlər"
-          notifications={mappedNotifications}
+          notifications={data.notifications}
         />
       </Grid>
     </div>

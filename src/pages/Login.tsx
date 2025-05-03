@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import LoginForm from '@/components/auth/LoginForm';
@@ -9,8 +9,7 @@ import LoadingScreen from '@/components/auth/LoadingScreen';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
 const Login = () => {
-  const { user, isLoading, isAuthenticated, error, clearError } = useAuth();
-  const [redirecting, setRedirecting] = useState(false);
+  const { isAuthenticated, isLoading, error, clearError, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
@@ -29,26 +28,23 @@ const Login = () => {
       } : null
     });
     
-    // İstifadəçi autentifikasiya olubsa və məlumatlar yüklənibsə dashboard'a yönləndirək
-    if (isAuthenticated && user && !isLoading && !redirecting) {
+    // Autentifikasiya olunmuş istifadəçiləri dashboard-a yönləndirmək
+    if (isAuthenticated && user && !isLoading) {
       console.log(`Redirecting authenticated user to ${from}`, {
         role: userRole || user.role || 'unknown'
       });
       
-      setRedirecting(true);
-      
-      // Yönləndirilməni gecikdirək ki, session məlumatları tam yüklənsin
+      // Yönləndirmə vaxtını 100ms gecikdirək - bu sessiya məlumatlarının tam yüklənməsi üçündür
       const redirectTimer = setTimeout(() => {
         navigate(from, { replace: true });
-      }, 500);
+      }, 100);
 
       return () => clearTimeout(redirectTimer);
     }
-  }, [isAuthenticated, isLoading, navigate, from, user, userRole, redirecting, error]);
+  }, [isAuthenticated, isLoading, navigate, from, user, userRole]);
 
-  // Yüklənmə zamanı LoadingScreen göstərək, amma autentifikasiya zamanı göstərməyək
-  // Bu səbəbdən isLoading && !user kombinasiyasını istifadə edirik
-  if (isLoading && !user) {
+  // Loading vəziyyətində yüklənmə göstəricisi
+  if (isLoading) {
     return <LoadingScreen />;
   }
 

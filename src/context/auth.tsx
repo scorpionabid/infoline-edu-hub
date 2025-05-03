@@ -1,8 +1,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { UserFormData } from '@/types/user';
-import { useAuth as useAuthFromNewContext } from './auth/useAuth';
 
 interface FullUserData {
   id: string;
@@ -13,18 +12,6 @@ interface FullUserData {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  name?: string;
-  phone?: string;
-  position?: string;
-  twoFactorEnabled?: boolean;
-  notificationSettings?: {
-    email: boolean;
-    push: boolean;
-    sms: boolean;
-  };
   adminEntity?: {
     schoolName?: string;
     sectorName?: string;
@@ -36,37 +23,125 @@ interface AuthContextType {
   user: FullUserData | null;
   loading: boolean;
   error: string | null;
-  clearError: () => void;
   signIn: (email: string, password: string) => Promise<{ error?: any }>;
   signOut: () => Promise<void>;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
   createUser: (userData: UserFormData) => Promise<{ error?: any }>;
-  isAuthenticated?: boolean;
 }
 
-// Köhnə kontekst
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   error: null,
-  isAuthenticated: false,
-  clearError: () => {},
   signIn: async () => ({ error: null }),
   signOut: async () => {},
-  login: async () => false,
-  logout: async () => {},
   createUser: async () => ({ error: null }),
 });
 
-// Köhnədən yeniyə köpü konteksti
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const newAuth = useAuthFromNewContext();
+  const [user, setUser] = useState<FullUserData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data?.user) {
+          const { data: userProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+          
+          if (profileError) {
+            throw profileError;
+          }
+          
+          setUser({
+            id: userProfile.id,
+            email: userProfile.email || data.user.email || '',
+            full_name: userProfile.full_name || '',
+            role: userProfile.role || 'user',
+            avatar: userProfile.avatar_url,
+            region_id: userProfile.region_id,
+            sector_id: userProfile.sector_id,
+            school_id: userProfile.school_id,
+            adminEntity: userProfile.admin_entity || {
+              schoolName: '',
+              sectorName: '',
+              regionName: ''
+            }
+          });
+        }
+      } catch (error: any) {
+        console.error('Auth error:', error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        fetchUser();
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return { data };
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      setError(error.message);
+      return { error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      setLoading(true);
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error: any) {
+      console.error('Sign out error:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // İstifadəçi yaratma funksiyası
   const createUser = async (userData: UserFormData) => {
     try {
+      setLoading(true);
       setError(null);
       
       // Supabase auth system üzərindən istifadəçi yaratmaq
@@ -120,69 +195,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Create user error:', error);
       setError(error.message);
       return { error };
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Adapter funksiyaları - köhnə API funksiyaları yeni kontekst funksiyalarına yönləndirir
-  const signIn = async (email: string, password: string) => {
-    try {
-      setError(null);
-      const success = await newAuth.login(email, password);
-      return success ? { data: {} } : { error: newAuth.error };
-    } catch (error: any) {
-      setError(error.message);
-      return { error };
-    }
-  };
-
-  const signOut = async () => {
-    await newAuth.logout();
-  };
-
-  const clearError = () => {
-    if (newAuth.clearError) {
-      newAuth.clearError();
-    }
-    setError(null);
-  };
-
-  // Login və logout funksiyaları
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      setError(null);
-      return await newAuth.login(email, password);
-    } catch (error: any) {
-      setError(error.message);
-      return false;
-    }
-  };
-
-  const logout = async (): Promise<void> => {
-    try {
-      await newAuth.logout();
-    } catch (error: any) {
-      setError(error.message);
-    }
-  };
-
-  // Kontekst dəyərini təqdim edirik
   return (
-    <AuthContext.Provider value={{
-      user: newAuth.user,
-      loading: newAuth.isLoading,
-      error: newAuth.error || error,
-      clearError,
-      signIn,
-      signOut,
-      login,
-      logout,
-      createUser,
-      isAuthenticated: newAuth.isAuthenticated
-    }}>
+    <AuthContext.Provider value={{ user, loading, error, signIn, signOut, createUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Köhnə useAuth hook'u saxlayırıq ki, mövcud komponentlər işləsin
 export const useAuth = () => useContext(AuthContext);

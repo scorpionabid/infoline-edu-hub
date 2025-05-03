@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, CheckCircle, X } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { useApprovalProcess } from '@/hooks/useApprovalProcess';
 
 interface ApprovalActionCardProps {
@@ -21,7 +22,7 @@ const ApprovalActionCard: React.FC<ApprovalActionCardProps> = ({
   categoryName,
   onComplete
 }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   const { approveEntries, rejectEntries, loading } = useApprovalProcess();
   const [rejectionReason, setRejectionReason] = useState('');
   const [isRejecting, setIsRejecting] = useState(false);
