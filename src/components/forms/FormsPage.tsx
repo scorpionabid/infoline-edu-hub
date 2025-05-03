@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +11,7 @@ import { CategoryCard } from './CategoryCard';
 import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { DataEntryStatus } from '@/types/dataEntry';
+import { Alert, AlertCircle, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 export const FormsPage: React.FC = () => {
   const { t } = useLanguage();
@@ -42,7 +42,7 @@ export const FormsPage: React.FC = () => {
     navigate(`/forms/${categoryId}`);
   };
 
-  if (error) {
+  if (categories.loading) {
     return (
       <div className="py-6 px-4">
         <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
@@ -55,6 +55,18 @@ export const FormsPage: React.FC = () => {
           {t('tryAgain')}
         </Button>
       </div>
+    );
+  }
+
+  if (categories.error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Xəta</AlertTitle>
+        <AlertDescription>
+          {categories.error}
+        </AlertDescription>
+      </Alert>
     );
   }
 

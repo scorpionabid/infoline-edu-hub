@@ -1,9 +1,9 @@
 
-import { Column, ColumnValidation } from '@/types/column';
-import { DataEntry, DataEntryStatus, EntryValue, ColumnValidation } from '@/types/dataEntry';
+import { Column } from '@/types/column';
+import { DataEntry, DataEntryStatus, EntryValue } from '@/types/dataEntry';
 
 // Form dəyərinin validasiyası
-export const validateEntryValue = (value: string, columnType: string, validation?: ColumnValidation): string | null => {
+export const validateEntryValue = (value: string, columnType: string, validation?: any): string | null => {
   if (!validation) return null;
   
   // Required check
@@ -68,14 +68,14 @@ export const validateEntries = (entries: EntryValue[], columns: Column[]): Entry
     }
     // Əgər validasiya varsa
     else if (column.validation) {
-      let validation: ColumnValidation;
+      let validationRules: any;
       
       try {
-        validation = typeof column.validation === 'string' 
+        validationRules = typeof column.validation === 'string' 
           ? JSON.parse(column.validation) 
-          : column.validation as ColumnValidation;
+          : column.validation;
           
-        error = validateEntryValue(entry.value, column.type, validation);
+        error = validateEntryValue(entry.value, column.type, validationRules);
       } catch(e) {
         console.error('Validasiya parsing xətası:', e);
       }

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, CheckCircle, Clock, XCircle, FileEdit } from 'lucide-react';
 import { format } from 'date-fns';
-import { CategoryWithColumns } from '@/types/column';
+import { CategoryWithColumns } from '@/types/category';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface CategoryCardProps {
@@ -19,7 +19,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onClick })
   const getStatusBadge = () => {
     if (!category.status) return null;
     
-    const status = category.status;
+    const status = category.status.toString();
     
     if (status === 'draft') {
       return (
@@ -61,7 +61,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onClick })
   };
   
   // Tamamlanma faizi
-  const completionPercentage = category.completionPercentage || 0;
+  const completionPercentage = category.completionRate || 0;
   
   // Son tarix
   const deadlineFormatted = category.deadline 
@@ -101,7 +101,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onClick })
       </CardContent>
       <CardFooter className="p-5 pt-3 flex justify-end">
         <Button onClick={onClick} className="w-full">
-          {category.status === 'approved' ? t('viewForm') : t('fillForm')}
+          {category.status && category.status.toString() === 'approved' ? t('viewForm') : t('fillForm')}
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </CardFooter>

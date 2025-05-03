@@ -1,117 +1,109 @@
-
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, Eye, Share2, BarChart2, PieChart, TrendingUp } from 'lucide-react';
-import { Report, ReportType } from '@/types/report';
+import { Button } from '@/components/ui/button';
+import { BarChart3, PieChart, LineChart, Table2, Eye, Download, Share2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { Report } from '@/types/report';
+import { ReportType } from '@/types/form';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ReportItemProps {
   report: Report;
   onPreview: (report: Report) => void;
   onDownload: (report: Report) => void;
+  onShare: (report: Report) => void;
 }
 
-const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDownload }) => {
+export const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDownload, onShare }) => {
   const { t } = useLanguage();
   
-  // Report type icon mapping
-  const getReportIcon = (type: ReportType) => {
-    switch (type) {
-      case 'statistics':
-        return <BarChart2 className="h-5 w-5 text-blue-500" />;
-      case 'completion':
-        return <PieChart className="h-5 w-5 text-green-500" />;
-      case 'comparison':
-        return <TrendingUp className="h-5 w-5 text-purple-500" />;
-      default:
-        return <BarChart2 className="h-5 w-5 text-gray-500" />;
+  const getReportIcon = () => {
+    if (report.type === ReportType.STATISTICS) {
+      return <BarChart3 className="h-5 w-5 text-primary" />;
     }
+    else if (report.type === ReportType.COMPLETION) {
+      return <PieChart className="h-5 w-5 text-primary" />;
+    }
+    else if (report.type === ReportType.COMPARISON) {
+      return <LineChart className="h-5 w-5 text-primary" />;
+    }
+    else if (report.type === ReportType.COLUMN) {
+      return <Table2 className="h-5 w-5 text-primary" />;
+    }
+    return <BarChart3 className="h-5 w-5 text-primary" />;
   };
   
-  // Hesabat növü tərcüməsi
-  const getReportTypeTranslation = (type: ReportType): string => {
-    switch (type) {
-      case 'statistics':
-        return t('statistics');
-      case 'completion':
-        return t('completion');
-      case 'comparison':
-        return t('comparison');
-      case 'column':
-        return t('column');
-      case 'category':
-        return t('category');
-      case 'school':
-        return t('school');
-      case 'region':
-        return t('region');
-      case 'sector':
-        return t('sector');
-      case 'custom':
-        return t('custom');
-      default:
-        return type;
+  const getReportTypeBadge = () => {
+    if (report.type === ReportType.STATISTICS) {
+      return <Badge variant="outline">Statistika</Badge>;
     }
+    else if (report.type === ReportType.COMPLETION) {
+      return <Badge variant="outline">Tamamlanma</Badge>;
+    }
+    else if (report.type === ReportType.COMPARISON) {
+      return <Badge variant="outline">Müqayisə</Badge>;
+    }
+    else if (report.type === ReportType.COLUMN) {
+      return <Badge variant="outline">Sütun</Badge>;
+    }
+    return <Badge variant="outline">Hesabat</Badge>;
   };
+  
+  const formattedDate = report.created_at 
+    ? format(new Date(report.created_at), 'dd.MM.yyyy')
+    : '';
   
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div className="h-32 bg-muted flex items-center justify-center relative overflow-hidden">
-          {getReportIcon(report.type)}
-          <div className="absolute top-2 right-2">
-            <Badge
-              variant={
-                report.type === 'statistics'
-                  ? 'default'
-                  : report.type === 'completion'
-                  ? 'success'
-                  : 'secondary'
-              }
-            >
-              {getReportTypeTranslation(report.type)}
-            </Badge>
+    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+      <CardHeader className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {getReportIcon()}
+            <CardTitle className="text-lg">{report.title}</CardTitle>
           </div>
+          {getReportTypeBadge()}
         </div>
-        <div className="p-4">
-          <h3 className="font-semibold text-lg mb-1">{report.title || report.name}</h3>
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-            {report.description}
-          </p>
-          <div className="flex items-center text-xs text-muted-foreground">
-            <div className="h-3 w-3 mr-1" />
-            {new Date(report.createdAt || report.created || report.dateCreated || '').toLocaleDateString()}
+        <CardDescription className="line-clamp-2">
+          {report.description}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-4 pt-0">
+        <div className="text-sm space-y-2">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t('createdAt')}:</span>
+            <span className="font-medium">{formattedDate}</span>
           </div>
+          
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t('author')}:</span>
+            <span className="font-medium">{report.author || t('system')}</span>
+          </div>
+          
+          {report.last_updated && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">{t('lastUpdated')}:</span>
+              <span className="font-medium">
+                {format(new Date(report.last_updated), 'dd.MM.yyyy')}
+              </span>
+            </div>
+          )}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between p-4 pt-0 gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={() => onPreview(report)}
-        >
+      <CardFooter className="p-4 pt-2 flex justify-between">
+        <Button variant="ghost" size="sm" onClick={() => onPreview(report)}>
           <Eye className="h-4 w-4 mr-1" />
           {t('preview')}
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={() => onDownload(report)}
-        >
-          <Download className="h-4 w-4 mr-1" />
-          {t('download')}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-auto px-2"
-        >
-          <Share2 className="h-4 w-4" />
-        </Button>
+        
+        <div className="flex space-x-2">
+          <Button variant="outline" size="sm" onClick={() => onDownload(report)}>
+            <Download className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => onShare(report)}>
+            <Share2 className="h-4 w-4" />
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

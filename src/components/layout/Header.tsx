@@ -28,12 +28,12 @@ const Header: React.FC = () => {
   const getEntityName = () => {
     if (!user) return '';
     
-    if (user.role === 'schooladmin' && user.schoolName) {
-      return `${user.schoolName} - ${t('schoolAdmin')}`;
-    } else if (user.role === 'sectoradmin' && user.sectorName) {
-      return `${user.sectorName} - ${t('sectorAdmin')}`;
-    } else if (user.role === 'regionadmin' && user.regionName) {
-      return `${user.regionName} - ${t('regionAdmin')}`;
+    if (user.role === 'schooladmin' && user.adminEntity?.name) {
+      return `${user.adminEntity.name} - ${t('schoolAdmin')}`;
+    } else if (user.role === 'sectoradmin' && user.adminEntity?.name) {
+      return `${user.adminEntity.name} - ${t('sectorAdmin')}`;
+    } else if (user.role === 'regionadmin' && user.adminEntity?.name) {
+      return `${user.adminEntity.name} - ${t('regionAdmin')}`;
     } else if (user.role === 'superadmin') {
       return t('superAdmin');
     }
@@ -59,7 +59,7 @@ const Header: React.FC = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar_url || ''} alt={userFullName} />
+                    <AvatarImage src={user.avatar || ''} alt={userFullName} />
                     <AvatarFallback>{getInitials(userFullName)}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -74,13 +74,17 @@ const Header: React.FC = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem as="a" href="/profile">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>{t('profile')}</span>
+                <DropdownMenuItem asChild>
+                  <a href="/profile" className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>{t('profile')}</span>
+                  </a>
                 </DropdownMenuItem>
-                <DropdownMenuItem as="a" href="/settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>{t('settings')}</span>
+                <DropdownMenuItem asChild>
+                  <a href="/settings" className="flex items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>{t('settings')}</span>
+                  </a>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logout()}>

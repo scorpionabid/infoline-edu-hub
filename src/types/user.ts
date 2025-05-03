@@ -1,3 +1,4 @@
+
 import { FullUserData as SupabaseFullUserData, UserRole } from './supabase';
 
 export interface User {
@@ -16,6 +17,7 @@ export interface User {
   position?: string;
   language?: string;
   avatar?: string;
+  avatar_url?: string;
   status?: 'active' | 'inactive' | 'blocked';
   last_login?: string;
   lastLogin?: string; // legacy support
@@ -30,6 +32,7 @@ export interface User {
     status?: string;
     regionName?: string;
     sectorName?: string;
+    schoolName?: string;
     schoolType?: string;
   };
   notificationSettings?: {

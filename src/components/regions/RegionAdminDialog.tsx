@@ -1,205 +1,120 @@
-import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Region } from '@/types/supabase';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useCreateUser } from '@/hooks/useCreateUser';
-import { AlertCircle, Loader2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-
-// Admin təyin etmək üçün schema
-const adminSchema = z.object({
-  adminName: z.string().min(2, {
-    message: "Admin adı ən azı 2 simvol olmalıdır.",
-  }),
-  adminEmail: z.string().email({
-    message: "Düzgün email formatı daxil edin.",
-  }),
-  adminPassword: z.string().min(6, {
-    message: "Şifrə ən azı 6 simvol olmalıdır.",
-  }),
-});
-
-type AdminSchemaType = z.infer<typeof adminSchema>;
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/context/auth';
 
 interface RegionAdminDialogProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  region: Region | null;
-  onSuccess?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  regionId: string;
 }
 
-export const RegionAdminDialog: React.FC<RegionAdminDialogProps> = ({ 
-  open, 
-  setOpen, 
-  region,
-  onSuccess
+export const RegionAdminDialog: React.FC<RegionAdminDialogProps> = ({
+  isOpen,
+  onClose,
+  regionId,
 }) => {
-  const { t } = useLanguage();
-  const { createUser, loading } = useCreateUser();
-  const [error, setError] = React.useState<string | null>(null);
-  
-  const form = useForm<AdminSchemaType>({
-    resolver: zodResolver(adminSchema),
-    defaultValues: {
-      adminName: "",
-      adminEmail: "",
-      adminPassword: "",
-    },
-  });
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createUser } = useAuth();
+  const { toast } = useToast();
 
-  React.useEffect(() => {
-    // Dialog açıldığında xəta mesajlarını sıfırla
-    if (open) {
-      setError(null);
-      form.reset({
-        adminName: "",
-        adminEmail: "",
-        adminPassword: "",
-      });
-    }
-  }, [form, open]);
-
-  const handleFormSubmit = async (values: AdminSchemaType) => {
-    if (!region) {
-      setError('Region mövcud deyil');
-      return;
-    }
-    
+  const handleAddRegionAdmin = async () => {
     try {
-      setError(null);
-      
-      // Yeni istifadəçi yaradıb region admini təyin edirik
+      setIsSubmitting(true);
       const result = await createUser({
-        name: values.adminName,
-        email: values.adminEmail,
-        password: values.adminPassword,
+        email,
+        full_name: name,
+        password,
         role: 'regionadmin',
-        regionId: region.id
+        region_id: regionId,
       });
-      
-      if (result.success) {
-        setOpen(false);
-        if (onSuccess) {
-          onSuccess();
-        }
-      } else if (result.error) {
-        setError(result.error);
+
+      if (result?.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Xəta!',
+          description: `İstifadəçi yaradıla bilmədi: ${result.error.message}`,
+        });
+      } else {
+        toast({
+          title: 'Uğurlu!',
+          description: 'İstifadəçi uğurla əlavə edildi.',
+        });
+        onClose();
       }
     } catch (error: any) {
-      console.error('Form submit xətası:', error);
-      setError(error.message || 'Admin təyin edilərkən xəta baş verdi');
+      toast({
+        variant: 'destructive',
+        title: 'Xəta!',
+        description: `Gözlənilməz xəta baş verdi: ${error.message}`,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (!region) {
-    return null;
-  }
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('assignRegionAdmin') || 'Region admini təyin et'}</DialogTitle>
+          <DialogTitle>Yeni Region Admin</DialogTitle>
           <DialogDescription>
-            {t("assignRegionAdminDesc") || `"${region.name}" regionu üçün admin təyin edin`}
+            Region admin məlumatlarını daxil edin.
           </DialogDescription>
         </DialogHeader>
-        
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="adminName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("adminName") || 'Admin adı'}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={t("adminName") || 'Admin adı'} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="name">Ad Soyad</Label>
+            <Input
+              id="name"
+              placeholder="Ad Soyad"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
-            <FormField
-              control={form.control}
-              name="adminEmail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("adminEmail") || 'Admin email'}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={t("adminEmail") || 'Admin email'} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              placeholder="admin@example.com"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
-            <FormField
-              control={form.control}
-              name="adminPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("adminPassword") || 'Admin şifrəsi'}</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="password" 
-                      placeholder={t("adminPassword") || 'Admin şifrəsi'} 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Şifrə</Label>
+            <Input
+              id="password"
+              placeholder="Şifrə"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
-            
-            <div className="flex justify-end">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setOpen(false)}
-                className="mr-2"
-                disabled={loading}
-              >
-                {t("cancel") || 'Ləğv et'}
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("loading") || 'Yüklənir...'}
-                  </>
-                ) : (
-                  t("assignAdmin") || 'Admin təyin et'
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
+          </div>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="secondary">Ləğv et</Button>
+          </DialogClose>
+          <Button onClick={handleAddRegionAdmin} disabled={isSubmitting}>
+            {isSubmitting ? 'Yaratılır...' : 'Yarat'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

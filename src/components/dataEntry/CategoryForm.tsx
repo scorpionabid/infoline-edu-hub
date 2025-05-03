@@ -1,166 +1,282 @@
-
-import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { FormFields } from './FormFields';
-import { CategoryWithColumns } from '@/types/column';
-import { DataEntryStatus, EntryValue } from '@/types/dataEntry'; 
-import { StatusIndicator } from './StatusIndicators';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/auth';
+import { supabase } from '@/integrations/supabase/client';
+import { CategoryWithColumns } from '@/types/category';
+import { Column } from '@/types/column';
+import { DataEntry } from '@/types/dataEntry';
+import { useCategoryStatus } from '@/hooks/categories/useCategoryStatus';
+import { validateEntries, convertEntryValuesToDataEntries } from '@/components/dataEntry/utils/formUtils';
+import DataEntryForm from './DataEntryForm';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
-interface CategoryFormProps {
-  category: CategoryWithColumns;
-  values: EntryValue[];
-  onChange: (columnId: string, value: string) => void;
-  onSubmit: () => void;
-  onApprove?: () => void;
-  onReject?: () => void;
-  isDisabled?: boolean;
-  isLoading?: boolean;
-}
-
-export function CategoryForm({
-  category,
-  values,
-  onChange,
-  onSubmit,
-  onApprove,
-  onReject,
-  isDisabled = false,
-  isLoading = false
-}: CategoryFormProps) {
+const CategoryForm: React.FC = () => {
+  const { categoryId } = useParams<{ categoryId: string }>();
+  const navigate = useNavigate();
   const { t } = useLanguage();
-  
-  // Status və tamamlama faizini hesabla
-  const status: DataEntryStatus | 'partial' = 'pending';
-  const completionPercentage = calculateCompletionPercentage(category.columns, values);
-  
-  // Status badge rəngini qaytarır
-  const getStatusBadgeColor = (status: DataEntryStatus | 'partial') => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800 border-green-300';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-300';
-      case 'draft':
-        return 'bg-gray-100 text-gray-800 border-gray-300';
-      case 'partial':
-        return 'bg-blue-100 text-blue-800 border-blue-300';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [category, setCategory] = useState<CategoryWithColumns | null>(null);
+  const [columns, setColumns] = useState<Column[]>([]);
+  const [entries, setEntries] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+  const [status, setStatus] = useState<string>('');
+
+  // Kateqoriya statusunu idarə etmək üçün hook
+  const {
+    status: calculatedStatus,
+    completionPercentage,
+    getStatusBadgeColor,
+    getStatusLabel
+  } = useCategoryStatus(category || { columns: [] }, { entries });
+
+  // Məlumatları əldə et
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // Kateqoriyanı əldə et
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('id', categoryId)
+        .single();
+
+      if (categoryError) {
+        throw new Error(categoryError.message);
+      }
+
+      if (!categoryData) {
+        navigate('/404');
+        return;
+      }
+
+      const categoryWithColumns: CategoryWithColumns = {
+        ...categoryData,
+        columns: []
+      };
+      setCategory(categoryWithColumns);
+      setStatus(categoryWithColumns.status || 'draft');
+
+      // Sütunları əldə et
+      const { data: columnsData, error: columnsError } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('category_id', categoryId)
+        .order('order_index', { ascending: true });
+
+      if (columnsError) {
+        throw new Error(columnsError.message);
+      }
+
+      setColumns(columnsData as Column[]);
+      categoryWithColumns.columns = columnsData as Column[];
+
+      // Mövcud məlumatları əldə et
+      const { data: entriesData, error: entriesError } = await supabase
+        .from('data_entries')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('school_id', user?.school_id);
+
+      if (entriesError) {
+        throw new Error(entriesError.message);
+      }
+
+      setEntries(entriesData as DataEntry[]);
+    } catch (err: any) {
+      setError(err.message);
+      toast({
+        variant: 'destructive',
+        title: t('errorFetchingData'),
+        description: err.message
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [categoryId, navigate, t, toast, user?.school_id]);
+
+  // Komponent mount olduqda məlumatları əldə et
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Dəyişiklikləri yadda saxla
+  const handleSave = async (newEntries: any[]) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // Əvvəlcə bütün səhvləri yoxla
+      const validatedEntries = validateEntries(newEntries, columns);
+
+      // Əgər səhv varsa, saxla
+      if (validatedEntries.some(entry => !entry.isValid)) {
+        setEntries(validatedEntries);
+        toast({
+          variant: 'destructive',
+          title: t('errorSavingForm'),
+          description: t('pleaseCorrectErrors')
+        });
+        return;
+      }
+
+      // DataEntry obyektlərinə çevir
+      const dataToSave = convertEntryValuesToDataEntries(validatedEntries, categoryId || '', user?.school_id || '');
+
+      // Əgər data varsa, update et, yoxsa əlavə et
+      for (const entry of dataToSave) {
+        const existingEntry = entries.find(e => e.column_id === entry.column_id);
+
+        if (existingEntry) {
+          // Update
+          const { error: updateError } = await supabase
+            .from('data_entries')
+            .update({ value: entry.value, updated_at: new Date().toISOString() })
+            .eq('column_id', entry.column_id)
+            .eq('category_id', categoryId)
+            .eq('school_id', user?.school_id);
+
+          if (updateError) {
+            throw new Error(updateError.message);
+          }
+        } else {
+          // Insert
+          const { error: insertError } = await supabase
+            .from('data_entries')
+            .insert({
+              ...entry,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (insertError) {
+            throw new Error(insertError.message);
+          }
+        }
+      }
+
+      toast({
+        title: t('formSavedSuccessfully'),
+        description: t('formDataSaved')
+      });
+    } catch (err: any) {
+      setError(err.message);
+      toast({
+        variant: 'destructive',
+        title: t('errorSavingForm'),
+        description: err.message
+      });
+    } finally {
+      setLoading(false);
+      fetchData();
     }
   };
 
-  // Statusun mətnini qaytarır
-  const getStatusLabel = (status: DataEntryStatus | 'partial') => {
-    switch (status) {
-      case 'approved':
-        return t('approved');
-      case 'pending':
-        return t('pending');
-      case 'rejected':
-        return t('rejected');
-      case 'draft':
-        return t('draft');
-      case 'partial':
-        return t('partial');
-      default:
-        return t('unknown');
+  // Statusu dəyiş
+  const handleStatusChange = async (newStatus: string) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // Statusu dəyiş
+      const { error: updateError } = await supabase
+        .from('categories')
+        .update({ status: newStatus })
+        .eq('id', categoryId);
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+
+      setStatus(newStatus);
+      toast({
+        title: t('statusUpdatedSuccessfully'),
+        description: t('categoryStatusUpdated')
+      });
+    } catch (err: any) {
+      setError(err.message);
+      toast({
+        variant: 'destructive',
+        title: t('errorUpdatingStatus'),
+        description: err.message
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Hesabla - validasiya xətaları varmı
-  const hasValidationErrors = values.some(v => v.isValid === false);
-  
-  return (
-    <Card className="shadow-sm">
-      <CardHeader className="bg-muted/50">
-        <div className="flex items-center justify-between">
-          <CardTitle>{category.name}</CardTitle>
-          <div className="flex items-center space-x-2">
-            <StatusIndicator 
-              status={status} 
-              label={getStatusLabel(status)} 
-              color={getStatusBadgeColor(status)} 
-            />
-            <div className="text-sm font-medium text-muted-foreground">
-              {completionPercentage || 0}% tamamlanıb
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="py-4">
-        <FormFields 
-          columns={category.columns} 
-          values={values} 
-          onChange={onChange}
-          disabled={isDisabled || status === 'approved'} 
-        />
-      </CardContent>
-      <CardFooter className="flex justify-between border-t bg-muted/50 px-6 py-3">
-        <div className="text-sm text-muted-foreground">
-          {category.deadline && (
-            <span>Son tarix: {new Date(category.deadline).toLocaleDateString()}</span>
-          )}
-        </div>
-        <div className="flex space-x-2">
-          {onApprove && (
-            <Button 
-              variant="default" 
-              size="sm" 
-              onClick={onApprove}
-              disabled={isLoading || isDisabled || hasValidationErrors}
-            >
-              Təsdiqlə
-            </Button>
-          )}
-          {onReject && (
-            <Button 
-              variant="destructive" 
-              size="sm" 
-              onClick={onReject}
-              disabled={isLoading || isDisabled}
-            >
-              Rədd et
-            </Button>
-          )}
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={onSubmit}
-            disabled={isLoading || isDisabled || hasValidationErrors}
-          >
-            {isLoading ? 'İşləyir...' : 'Göndər'}
-          </Button>
-        </div>
-      </CardFooter>
-    </Card>
-  );
-}
-
-// Tamamlanma faizini hesablamaq üçün funksiya
-function calculateCompletionPercentage(columns: any[], values: EntryValue[]): number {
-  if (!columns.length) return 0;
-  
-  // Məcburi sütunları tap
-  const requiredColumns = columns.filter(col => col.is_required);
-  
-  // Tamamlanmış sütunları tap
-  const completedEntries = values.filter(entry => entry.value && entry.value.trim() !== '');
-  
-  // Əgər heç bir məcburi sütun yoxdursa
-  if (!requiredColumns.length) {
-    return completedEntries.length > 0 ? 100 : 0;
+  // Əgər məlumatlar yüklənirsə
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-60">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
-  
-  // Məcburi sütunların neçəsi doldurulub
-  const filledRequiredColumns = requiredColumns.filter(column => 
-    values.some(entry => entry.columnId === column.id && entry.value && entry.value.trim() !== '')
+
+  // Əgər xəta varsa
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-60 text-red-500">
+        {t('errorMessage')}: {error}
+      </div>
+    );
+  }
+
+  // Əgər kateqoriya yoxdursa
+  if (!category) {
+    return (
+      <div className="flex items-center justify-center h-60">
+        {t('categoryNotFound')}
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto py-10">
+      <h1 className="text-2xl font-bold mb-5">{category.name}</h1>
+      <div className="mb-5">
+        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(calculatedStatus)}`}>
+          {getStatusLabel(calculatedStatus)} ({completionPercentage}%)
+        </span>
+      </div>
+
+      <DataEntryForm
+        columns={columns}
+        initialEntries={entries}
+        onSave={handleSave}
+        loading={loading}
+      />
+
+      <div className="mt-5 flex justify-end gap-2">
+        {status === 'pending' ? null : (
+          <Button
+            variant="secondary"
+            onClick={() => handleStatusChange('pending')}
+            disabled={loading}
+          >
+            {t('submitForApproval')}
+          </Button>
+        )}
+        {status === 'approved' ? null : (
+          <Button
+            onClick={() => handleStatusChange('approved')}
+            disabled={loading}
+          >
+            {t('approve')}
+          </Button>
+        )}
+      </div>
+    </div>
   );
-  
-  return Math.round((filledRequiredColumns.length / requiredColumns.length) * 100);
-}
+};
 
 export default CategoryForm;

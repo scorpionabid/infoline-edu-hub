@@ -38,14 +38,14 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
   category,
   onSave,
 }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const { updateCategory, createCategory, isLoading } = useCategoryActions();
+  const [name, setName] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
   const [assignment, setAssignment] = useState<CategoryAssignment>('all');
   const [status, setStatus] = useState<CategoryStatus>('active');
-  const [priority, setPriority] = useState(0);
-  const [deadline, setDeadline] = useState<string>('');
+  const [priority, setPriority] = useState<number>(0);
+  const [deadline, setDeadline] = useState<Date | undefined>(undefined);
 
-  // Load category data when editing
   useEffect(() => {
     if (category) {
       setName(category.name || '');
@@ -53,56 +53,80 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
       setAssignment(category.assignment || 'all');
       setStatus(category.status || 'active');
       setPriority(category.priority || 0);
-      setDeadline(category.deadline || '');
+      
+      // Deadline tarixi string kimi gəlirsə, onu Date obyektinə çeviririk
+      if (category.deadline) {
+        setDeadline(new Date(category.deadline));
+      } else {
+        setDeadline(undefined);
+      }
     } else {
-      // Reset form for new category
-      setName('');
-      setDescription('');
-      setAssignment('all');
-      setStatus('active');
-      setPriority(0);
-      setDeadline('');
+      resetForm();
     }
   }, [category, isOpen]);
 
-  const { createCategory, updateCategory, isLoading } = useCategoryActions({
-    onSuccess: () => {
-      if (onSave) onSave();
-      onClose();
-    },
-  });
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setAssignment('all');
+    setStatus('active');
+    setPriority(0);
+    setDeadline(undefined);
+  };
 
-  const handleSave = async () => {
-    const categoryData = {
-      name,
-      description,
-      assignment,
-      status,
-      priority: priority || 0,
-      deadline
-    };
-
+  const handleSubmit = async () => {
+    const now = new Date().toISOString();
+    
     if (category?.id) {
-      await updateCategory({ ...categoryData, id: category.id });
+      // Update
+      const result = await updateCategory({
+        id: category.id,
+        name,
+        description,
+        assignment,
+        status,
+        priority,
+        deadline: deadline ? deadline.toISOString() : null,
+        created_at: category.created_at || now,
+        updated_at: now,
+        archived: category.archived || false
+      });
+      
+      if (result.success) {
+        onSave && onSave();
+        onClose();
+      }
     } else {
-      await createCategory(categoryData);
+      // Create
+      const result = await createCategory({
+        name,
+        description,
+        assignment,
+        status,
+        priority,
+        deadline: deadline ? deadline.toISOString() : null,
+        created_at: now,
+        updated_at: now,
+        archived: false
+      });
+      
+      if (result.success) {
+        onSave && onSave();
+        onClose();
+      }
     }
   };
 
-  const handleDateSelect = (date: Date) => {
-    setDeadline(date.toISOString());
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{category ? 'Kateqoriya redaktə et' : 'Yeni kateqoriya'}</DialogTitle>
+          <DialogTitle>{category ? 'Kateqoriyanı Düzəlt' : 'Yeni Kateqoriya'}</DialogTitle>
           <DialogDescription>
-            Kateqoriya məlumatlarını daxil edin və yadda saxlayın
+            Kateqoriya məlumatlarını doldurun və yadda saxlamaq üçün təsdiqləyin.
           </DialogDescription>
         </DialogHeader>
-
+        
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="name">Ad</Label>
@@ -113,79 +137,78 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
               placeholder="Kateqoriya adı"
             />
           </div>
-
+          
           <div className="grid gap-2">
             <Label htmlFor="description">Təsvir</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Təsvir əlavə edin (istəyə bağlı)"
+              placeholder="Kateqoriya haqqında təsvir"
             />
           </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="assignment">Təyinat</Label>
-            <Select value={assignment} onValueChange={(value: any) => setAssignment(value)}>
-              <SelectTrigger id="assignment">
-                <SelectValue placeholder="Təyinat seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Hamı</SelectItem>
-                <SelectItem value="sectors">Yalnız Sektorlar</SelectItem>
-              </SelectContent>
-            </Select>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="assignment">Təyinat</Label>
+              <Select value={assignment} onValueChange={(value) => setAssignment(value as CategoryAssignment)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Təyinat seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Bütün istifadəçilər</SelectItem>
+                  <SelectItem value="sectors">Yalnız sektorlar</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={(value) => setStatus(value as CategoryStatus)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Aktiv</SelectItem>
+                  <SelectItem value="inactive">Deaktiv</SelectItem>
+                  <SelectItem value="draft">Qaralama</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={(value: any) => setStatus(value)}>
-              <SelectTrigger id="status">
-                <SelectValue placeholder="Status seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Aktiv</SelectItem>
-                <SelectItem value="inactive">Qeyri-aktiv</SelectItem>
-                <SelectItem value="draft">Qaralama</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="priority">Prioritet</Label>
-            <Input
-              id="priority"
-              type="number"
-              value={priority}
-              onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
-              placeholder="Prioritet (0, 1, 2, ...)"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="deadline">Son tarix</Label>
-            <DatePicker 
-              id="deadline"
-              onSelect={handleDateSelect}
-              defaultDate={deadline ? new Date(deadline) : undefined} 
-            />
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="priority">Prioritet</Label>
+              <Input
+                id="priority"
+                type="number"
+                min="0"
+                value={priority}
+                onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="deadline">Son tarix</Label>
+              <DatePicker
+                date={deadline}
+                onSelect={setDeadline}
+                disabled={false}
+              />
+            </div>
           </div>
         </div>
-
+        
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Ləğv et</Button>
+            <Button type="button" variant="outline">İmtina</Button>
           </DialogClose>
-          <Button 
-            onClick={handleSave} 
-            disabled={!name || isLoading}
-          >
-            {isLoading ? 'Gözləyin...' : category ? 'Yadda saxla' : 'Əlavə et'}
+          <Button type="button" onClick={handleSubmit} disabled={isLoading}>
+            {isLoading ? 'Yüklənir...' : category ? 'Yadda saxla' : 'Əlavə et'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
-
-export default EditCategoryDialog;

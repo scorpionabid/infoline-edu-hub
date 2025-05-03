@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -32,7 +31,8 @@ const DataEntryFormComponent: React.FC<{ categoryId?: string }> = ({ categoryId 
   const {
     categories,
     isLoading: isLoadingCategories,
-    error: categoriesError
+    error: categoriesError,
+    loading: categoriesLoading
   } = useCategoryData();
   const { school, isLoading: isLoadingSchool, error: schoolError } = useSchool();
 
@@ -175,6 +175,14 @@ const DataEntryFormComponent: React.FC<{ categoryId?: string }> = ({ categoryId 
         <p className="text-red-500">
           {t('errorLoadingData')}
         </p>
+      </div>
+    );
+  }
+
+  if (categoriesLoading) {
+    return (
+      <div className="flex items-center justify-center h-60">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
