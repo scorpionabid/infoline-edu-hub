@@ -1,19 +1,78 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Report, ReportType } from '@/types/report';
-import { 
-  fetchReports, 
-  fetchReportTemplates, 
-  addReport,
-  editReport, 
-  createReportTemplate, 
-  exportReport,
-  exportReportAsPdf,
-  exportReportAsCsv,
-  shareReportWithUsers
-} from '@/services/reportService';
 import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
+
+// Müvəqqəti funksiyalar - real servislə əvəzlənəcək
+const fetchReports = async (): Promise<Report[]> => {
+  // Müvəqqəti geri qaytarılan məlumatlar
+  return Promise.resolve([]);
+};
+
+const fetchReportTemplates = async (): Promise<Report[]> => {
+  // Müvəqqəti geri qaytarılan məlumatlar
+  return Promise.resolve([]);
+};
+
+const addReport = async (report: Partial<Report>): Promise<Report> => {
+  // Müvəqqəti geri qaytarılan məlumatlar
+  return Promise.resolve({
+    id: Math.random().toString(),
+    title: report.title || '',
+    description: report.description || '',
+    type: report.type || 'basic',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: report.createdBy || '',
+  });
+};
+
+const editReport = async (id: string, report: Partial<Report>): Promise<Report> => {
+  // Müvəqqəti geri qaytarılan məlumatlar
+  return Promise.resolve({
+    id,
+    title: report.title || '',
+    description: report.description || '',
+    type: report.type || 'basic',
+    updatedAt: new Date(),
+    createdAt: new Date(),
+    createdBy: report.createdBy || '',
+  });
+};
+
+const createReportTemplate = async (template: Partial<Report>): Promise<Report> => {
+  // Müvəqqəti geri qaytarılan məlumatlar
+  return Promise.resolve({
+    id: Math.random().toString(),
+    title: template.title || '',
+    description: template.description || '',
+    type: template.type || 'basic',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: template.createdBy || '',
+  });
+};
+
+const exportReport = async (reportId: string): Promise<string> => {
+  // Müvəqqəti geri qaytarılan məlumatlar
+  return Promise.resolve('https://example.com/report.xlsx');
+};
+
+const exportReportAsPdf = async (reportId: string): Promise<string> => {
+  // Müvəqqəti geri qaytarılan məlumatlar
+  return Promise.resolve('https://example.com/report.pdf');
+};
+
+const exportReportAsCsv = async (reportId: string): Promise<string> => {
+  // Müvəqqəti geri qaytarılan məlumatlar
+  return Promise.resolve('https://example.com/report.csv');
+};
+
+const shareReportWithUsers = async (reportId: string, userIds: string[]): Promise<boolean> => {
+  // Müvəqqəti geri qaytarılan məlumatlar
+  return Promise.resolve(true);
+};
 
 export const useReports = () => {
   const [reports, setReports] = useState<Report[]>([]);
@@ -69,7 +128,7 @@ export const useReports = () => {
       filtered = filtered.filter(report => report.type === type);
     }
     
-    // Status filtrini tətbiq et
+    // Status filtrini tətbiq et (report.status əlavə edilərsə)
     if (status !== 'all') {
       filtered = filtered.filter(report => report.status === status);
     }
@@ -167,7 +226,6 @@ export const useReports = () => {
     }
   }, []);
 
-  // Funksiya adını dəyişdik ki, eyni adlandırma problemi yaranmasın
   const shareReport = useCallback(async (reportId: string, userIds: string[]): Promise<boolean> => {
     setLoading(true);
     setError(null);

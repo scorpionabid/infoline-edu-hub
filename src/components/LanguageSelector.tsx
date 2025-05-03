@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useLanguage, Language } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,7 @@ const LanguageSelector: React.FC = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={t('language')}>
+        <Button variant="ghost" size="icon" aria-label={t('selectLanguage')}>
           <Globe className="h-4 w-4" />
           <span className="ml-2 hidden md:inline">{languages[currentLanguage].nativeName}</span>
         </Button>

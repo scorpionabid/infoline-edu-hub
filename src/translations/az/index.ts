@@ -41,7 +41,6 @@ const az = {
   
   // Spesifik tərcümələr (əgər lazımdırsa)
   selectLanguage: 'Dil seçin',
-  loading: 'Yüklənir...',
   more: 'Daha çox',
   less: 'Daha az',
   

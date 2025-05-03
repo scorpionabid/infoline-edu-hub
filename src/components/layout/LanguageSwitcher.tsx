@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/select";
 
 export const LanguageSwitcher = () => {
-  const { t, changeLanguage, currentLanguage } = useLanguage();
+  const { t, setLanguage, currentLanguage } = useLanguage();
   
   return (
-    <Select value={currentLanguage} onValueChange={changeLanguage}>
+    <Select value={currentLanguage} onValueChange={setLanguage}>
       <SelectTrigger className="w-[100px]" aria-label={t('selectLanguage')}>
         <div className="flex items-center gap-2">
           <Globe className="h-4 w-4" />

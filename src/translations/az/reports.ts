@@ -1,5 +1,5 @@
 
-export const reports = {
+const reports = {
   // Ana başlıqlar
   reportsTitle: "Hesabatlar",
   reportsDescription: "Məlumat analizi və hesabatları idarə edin",
@@ -84,3 +84,5 @@ export const reports = {
   insufficientData: "Hesabat üçün kifayət qədər məlumat yoxdur",
   dataValidationError: "Məlumat təsdiqlənməsində xəta",
 };
+
+export default reports;
