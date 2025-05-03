@@ -17,7 +17,7 @@ export interface DashboardData {
   categories?: CategoryStatusItem[];
   userCount?: number;
   
-  // DashboardContent.tsx faylında istifadə edilən xüsusiyyətlər üçün
+  // Dashboard kontentindəki propertiləri qarşılamaq üçün əlavə sahələr
   regions?: number;
   sectors?: number;
   schools?: number;
@@ -31,6 +31,16 @@ export interface DashboardData {
   rejectedForms?: number;
   incompleteForms?: number;
   draftForms?: number;
+  
+  // Əskik olan sahələr
+  completedForms?: number;
+  overdueForms?: number;
+  formStats?: {
+    approved: number;
+    pending: number;
+    rejected: number;
+    incomplete: number;
+  };
 }
 
 export interface SuperAdminDashboardData extends DashboardData {

@@ -30,15 +30,11 @@ export interface FullUserData {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  regionId?: string;  // Əlavə edilən alternatif ad
-  sectorId?: string;  // Əlavə edilən alternatif ad
-  schoolId?: string;  // Əlavə edilən alternatif ad
-  adminEntity?: {
-    schoolName?: string;
-    sectorName?: string;
-    regionName?: string;
-  };
-  // ProfileSettings komponentində istifadə olunan xüsusiyyətlər
+  // Əlavə edilən alternativ adlar
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  // Profile parametrləri
   name?: string;
   phone?: string;
   position?: string;
@@ -48,4 +44,14 @@ export interface FullUserData {
     push: boolean;
     sms: boolean;
   };
+  adminEntity?: {
+    schoolName?: string;
+    sectorName?: string;
+    regionName?: string;
+  };
+  // Report üçün əlavə sahələr
+  created_by_name?: string;
+  created_by?: string;
+  author?: string;
+  last_updated?: string;
 }

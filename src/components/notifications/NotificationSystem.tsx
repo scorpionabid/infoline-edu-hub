@@ -11,7 +11,7 @@ const NotificationSystem: React.FC = () => {
   useEffect(() => {
     if (!isLoading && !error && notifications && notifications.length > 0) {
       notifications.forEach(notification => {
-        if (!notification.is_read) {
+        if (!(notification.is_read || notification.read)) {
           toast(notification.title, {
             description: notification.message || t('noDescription'),
             duration: 5000,
