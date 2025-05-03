@@ -90,18 +90,6 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               </Button>
             </div>
             
-            {/* User Info */}
-            {user && isSidebarOpen && (
-              <div className="px-4 py-3 border-b">
-                <div className="font-medium truncate">
-                  {user.full_name}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {t(user.role as string)}
-                </div>
-              </div>
-            )}
-            
             {/* Navigation */}
             <div className="flex-1 overflow-y-auto py-2">
               <SidebarNav onItemClick={() => isMobile && setIsSidebarOpen(false)} isSidebarOpen={isSidebarOpen} />
