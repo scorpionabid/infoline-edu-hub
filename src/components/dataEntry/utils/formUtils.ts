@@ -1,128 +1,106 @@
 
 import { Column, ColumnValidation } from '@/types/column';
-import { DataEntry } from '@/types/dataEntry';
-import { EntryValue } from '@/types/dataEntry';
+import { DataEntry, DataEntryStatus, EntryValue } from '@/types/dataEntry';
 
-// Validasiya xətalarının yoxlanılması
-export const validateField = (value: any, column: Column): string | null => {
-  if (!column.validation) return null;
-  
-  let columnValidation: ColumnValidation;
-  
-  // Əgər validation string formatındadırsa, parse edirik
-  if (typeof column.validation === 'string') {
-    try {
-      columnValidation = JSON.parse(column.validation);
-    } catch (e) {
-      console.error('Validation parsing error:', e);
-      return null;
-    }
-  } else {
-    columnValidation = column.validation;
-  }
+// Form dəyərinin validasiyası
+export const validateEntryValue = (value: string, columnType: string, validation?: ColumnValidation): string | null => {
+  if (!validation) return null;
   
   // Required check
-  if (column.is_required) {
-    if (
-      value === null || 
-      value === undefined || 
-      value === '' ||
-      (Array.isArray(value) && value.length === 0)
-    ) {
-      return 'Bu sahə məcburidir';
-    }
+  if (validation.required && (!value || value.trim() === '')) {
+    return 'Bu sahə tələb olunur';
   }
   
   // Text validations
-  if (typeof value === 'string') {
+  if (columnType === 'text' || columnType === 'textarea') {
     // Min length
-    if (columnValidation.minLength && value.length < columnValidation.minLength) {
-      return `Minimum ${columnValidation.minLength} simvol olmalıdır`;
+    if (validation.minLength && value.length < validation.minLength) {
+      return `Minimum ${validation.minLength} simvol olmalıdır`;
     }
     
     // Max length
-    if (columnValidation.maxLength && value.length > columnValidation.maxLength) {
-      return `Maksimum ${columnValidation.maxLength} simvol olmalıdır`;
+    if (validation.maxLength && value.length > validation.maxLength) {
+      return `Maksimum ${validation.maxLength} simvol olmalıdır`;
     }
     
     // Pattern
-    if (columnValidation.pattern) {
-      const regex = new RegExp(columnValidation.pattern);
+    if (validation.pattern) {
+      const regex = new RegExp(validation.pattern);
       if (!regex.test(value)) {
-        return columnValidation.customError || 'Düzgün formatda deyil';
+        return validation.customError || 'Düzgün formatda deyil';
       }
     }
   }
   
   // Number validations
-  if (typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)))) {
-    const numValue = typeof value === 'string' ? Number(value) : value;
+  if (columnType === 'number') {
+    const numValue = Number(value);
+    
+    if (isNaN(numValue)) {
+      return 'Düzgün rəqəm daxil edin';
+    }
     
     // Min value
-    if (columnValidation.minValue !== undefined && numValue < columnValidation.minValue) {
-      return `Minimum dəyər ${columnValidation.minValue} olmalıdır`;
+    if (validation.minValue !== undefined && numValue < validation.minValue) {
+      return `Minimum dəyər ${validation.minValue} olmalıdır`;
     }
     
     // Max value
-    if (columnValidation.maxValue !== undefined && numValue > columnValidation.maxValue) {
-      return `Maksimum dəyər ${columnValidation.maxValue} olmalıdır`;
+    if (validation.maxValue !== undefined && numValue > validation.maxValue) {
+      return `Maksimum dəyər ${validation.maxValue} olmalıdır`;
     }
   }
   
   return null;
 };
 
-// Sahə tipinə görə boş dəyəri təyin edirik
-export const getEmptyValueByType = (column: Column): any => {
-  switch(column.type) {
-    case 'checkbox':
-      return [];
-    case 'number':
-      return null;
-    case 'date':
-      return null;
-    case 'select':
-    case 'radio':
-      return '';
-    default:
-      return '';
-  }
+// Bütün sahələri validasiya et
+export const validateEntries = (entries: EntryValue[], columns: Column[]): EntryValue[] => {
+  return entries.map(entry => {
+    const column = columns.find(col => col.id === entry.columnId);
+    if (!column) return entry;
+    
+    let error: string | null = null;
+    
+    // Əgər sahə məcburidirsə və boşdursa
+    if (column.is_required && (!entry.value || entry.value.trim() === '')) {
+      error = 'Bu sahə tələb olunur';
+    }
+    // Əgər validasiya varsa
+    else if (column.validation) {
+      let validation: ColumnValidation;
+      
+      try {
+        validation = typeof column.validation === 'string' 
+          ? JSON.parse(column.validation) 
+          : column.validation;
+          
+        error = validateEntryValue(entry.value, column.type, validation);
+      } catch(e) {
+        console.error('Validasiya parsing xətası:', e);
+      }
+    }
+    
+    return {
+      ...entry,
+      isValid: !error,
+      error: error || undefined
+    };
+  });
 };
 
-// Form dəyərlərini DataEntry obyektlərinə çevirir
+// EntryValue obyektlərini DataEntry obyektlərinə çevirmək
 export const convertEntryValuesToDataEntries = (
   values: EntryValue[],
+  categoryId: string,
   schoolId: string,
-  userId: string
+  status: DataEntryStatus = 'draft'
 ): Partial<DataEntry>[] => {
   return values.map(entry => ({
-    category_id: entry.categoryId,
     column_id: entry.columnId,
+    category_id: categoryId,
     school_id: schoolId,
-    value: String(entry.value),
-    status: 'pending',
-    created_by: userId
+    value: entry.value || '',
+    status,
   }));
-};
-
-// DataEntry obyektlərini EntryValue'ya çevirir
-export const convertDataEntriesToEntryValues = (entries: DataEntry[]): EntryValue[] => {
-  return entries.map(entry => ({
-    columnId: entry.column_id,
-    categoryId: entry.category_id,
-    value: entry.value
-  }));
-};
-
-// Tarix formatını çevirir
-export const formatDate = (date: string | Date): string => {
-  if (!date) return '';
-  
-  try {
-    const d = new Date(date);
-    return d.toISOString().split('T')[0];
-  } catch (e) {
-    console.error('Date formatting error:', e);
-    return '';
-  }
 };

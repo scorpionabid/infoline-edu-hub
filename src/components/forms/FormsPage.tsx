@@ -3,21 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Clock, CheckCircle, AlertCircle, FileText, ArrowRight, Filter } from 'lucide-react';
+import { Search, FileText, ArrowRight, Filter } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
 import { CategoryCard } from './CategoryCard';
-import { useCategories } from '@/hooks/dataEntry/useCategories';
+import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import { DataEntryStatus } from '@/types/dataEntry';
 
 export const FormsPage: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { categories, isLoading, error } = useCategories();
+  const { categories, isLoading, error } = useCategoryData();
   const { isSchoolAdmin, isSectorAdmin } = usePermissions();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -32,10 +31,10 @@ export const FormsPage: React.FC = () => {
     }
     
     return matchesSearch && (
-      (activeTab === 'pending' && category.status === 'pending') ||
-      (activeTab === 'approved' && category.status === 'approved') ||
-      (activeTab === 'rejected' && category.status === 'rejected') ||
-      (activeTab === 'draft' && category.status === 'draft')
+      (activeTab === 'pending' && String(category.status) === 'pending') ||
+      (activeTab === 'approved' && String(category.status) === 'approved') ||
+      (activeTab === 'rejected' && String(category.status) === 'rejected') ||
+      (activeTab === 'draft' && String(category.status) === 'draft')
     );
   });
 
@@ -48,7 +47,6 @@ export const FormsPage: React.FC = () => {
       <div className="py-6 px-4">
         <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
           <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
             <p className="text-red-700">{t('errorLoadingCategories')}</p>
           </div>
           <p className="text-sm text-red-600 mt-2">{error.message}</p>
@@ -98,23 +96,23 @@ export const FormsPage: React.FC = () => {
           </TabsList>
           
           <TabsContent value="all" className="mt-0">
-            {renderCategoryGrid(filteredCategories, isLoading, handleCategoryClick)}
+            {renderCategoryGrid(filteredCategories, isLoading, handleCategoryClick, t)}
           </TabsContent>
           
           <TabsContent value="draft" className="mt-0">
-            {renderCategoryGrid(filteredCategories, isLoading, handleCategoryClick)}
+            {renderCategoryGrid(filteredCategories, isLoading, handleCategoryClick, t)}
           </TabsContent>
           
           <TabsContent value="pending" className="mt-0">
-            {renderCategoryGrid(filteredCategories, isLoading, handleCategoryClick)}
+            {renderCategoryGrid(filteredCategories, isLoading, handleCategoryClick, t)}
           </TabsContent>
           
           <TabsContent value="approved" className="mt-0">
-            {renderCategoryGrid(filteredCategories, isLoading, handleCategoryClick)}
+            {renderCategoryGrid(filteredCategories, isLoading, handleCategoryClick, t)}
           </TabsContent>
           
           <TabsContent value="rejected" className="mt-0">
-            {renderCategoryGrid(filteredCategories, isLoading, handleCategoryClick)}
+            {renderCategoryGrid(filteredCategories, isLoading, handleCategoryClick, t)}
           </TabsContent>
         </Tabs>
       </div>
@@ -122,7 +120,7 @@ export const FormsPage: React.FC = () => {
   );
 };
 
-function renderCategoryGrid(categories: any[], isLoading: boolean, onClick: (id: string) => void) {
+function renderCategoryGrid(categories: any[], isLoading: boolean, onClick: (id: string) => void, t: any) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

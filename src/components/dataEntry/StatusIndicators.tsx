@@ -1,28 +1,19 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { DataEntryStatus } from '@/types/dataEntry';
-import { ColumnValidation } from '@/types/column';
 
 interface StatusIndicatorProps {
-  status: DataEntryStatus | 'partial';
-  color: string;
+  status: DataEntryStatus | 'partial' | string;
   label: string;
+  color: string;
 }
 
-export const StatusIndicator: React.FC<StatusIndicatorProps> = ({ 
-  status, 
-  color,
-  label 
-}) => {
+export function StatusIndicator({ status, label, color }: StatusIndicatorProps) {
   return (
-    <Badge 
-      variant="outline" 
-      className={`${color} font-medium`}
-    >
+    <Badge className={cn("px-2 py-1 rounded-full", color)}>
       {label}
     </Badge>
   );
-};
-
-export default StatusIndicator;
+}

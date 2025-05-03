@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import { Loader2, Menu, X, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SidebarNav } from './SidebarNav'; // Burada named export istifadə edirik
+import { SidebarNav } from './SidebarNav'; 
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import Header from './Header';
@@ -61,6 +61,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     return null;
   }
 
+  const handleItemClick = () => {
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">  
       <Header />
@@ -92,7 +98,11 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             
             {/* Navigation */}
             <div className="flex-1 overflow-y-auto py-2">
-              <SidebarNav onItemClick={() => isMobile && setIsSidebarOpen(false)} isSidebarOpen={isSidebarOpen} />
+              <SidebarNav 
+                onItemClick={handleItemClick} 
+                isSidebarOpen={isSidebarOpen} 
+                isCollapsed={!isSidebarOpen}
+              />
             </div>
           </div>
         </div>

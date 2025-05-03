@@ -1,5 +1,5 @@
 
-export type FormStatus = 'completed' | 'pending' | 'rejected' | 'dueSoon' | 'overdue' | 'approved' | 'draft';
+export type FormStatus = 'completed' | 'pending' | 'approved' | 'rejected' | 'dueSoon' | 'overdue' | 'draft' | 'incomplete';
 
 export interface FormStatusCount {
   completed: number;
@@ -9,5 +9,6 @@ export interface FormStatusCount {
   overdue: number;
   approved: number;
   draft: number;
+  incomplete: number;
   total: number;
 }

@@ -23,6 +23,7 @@ import {
   LogOut,
   BookOpen,
   Columns,
+  PenSquare,
 } from 'lucide-react';
 
 interface SidebarNavProps {
@@ -83,6 +84,12 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
       href: '/forms',
       icon: <ClipboardList />,
       label: t('forms'),
+      show: isSchoolAdmin || isSectorAdmin,
+    },
+    {
+      href: '/data-entry',
+      icon: <PenSquare />,
+      label: t('dataEntry'),
       show: isSchoolAdmin || isSectorAdmin,
     },
     {
@@ -148,8 +155,10 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
   ];
 
   const handleLogout = () => {
-    logout?.();
-    navigate('/login');
+    if (logout) {
+      logout();
+      navigate('/login');
+    }
   };
 
   return (

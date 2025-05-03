@@ -19,41 +19,48 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onClick })
   const getStatusBadge = () => {
     if (!category.status) return null;
     
-    switch(category.status) {
-      case 'draft':
-        return (
-          <Badge variant="outline" className="flex items-center">
-            <FileEdit className="h-3 w-3 mr-1" />
-            {t('draft')}
-          </Badge>
-        );
-      case 'pending':
-        return (
-          <Badge variant="secondary" className="flex items-center">
-            <Clock className="h-3 w-3 mr-1" />
-            {t('pending')}
-          </Badge>
-        );
-      case 'approved':
-        return (
-          <Badge variant="success" className="flex items-center">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            {t('approved')}
-          </Badge>
-        );
-      case 'rejected':
-        return (
-          <Badge variant="destructive" className="flex items-center">
-            <XCircle className="h-3 w-3 mr-1" />
-            {t('rejected')}
-          </Badge>
-        );
-      default:
-        return null;
+    const status = category.status;
+    
+    if (status === 'draft') {
+      return (
+        <Badge variant="outline" className="flex items-center">
+          <FileEdit className="h-3 w-3 mr-1" />
+          {t('draft')}
+        </Badge>
+      );
     }
+    
+    if (status === 'pending') {
+      return (
+        <Badge variant="secondary" className="flex items-center">
+          <Clock className="h-3 w-3 mr-1" />
+          {t('pending')}
+        </Badge>
+      );
+    }
+    
+    if (status === 'approved') {
+      return (
+        <Badge variant="success" className="flex items-center">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          {t('approved')}
+        </Badge>
+      );
+    }
+    
+    if (status === 'rejected') {
+      return (
+        <Badge variant="destructive" className="flex items-center">
+          <XCircle className="h-3 w-3 mr-1" />
+          {t('rejected')}
+        </Badge>
+      );
+    }
+    
+    return null;
   };
   
-  // Tamamlanma faizini göstər
+  // Tamamlanma faizi
   const completionPercentage = category.completionPercentage || 0;
   
   // Son tarix

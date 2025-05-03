@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,67 +8,45 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
-export interface CategoryConfirmationDialogProps {
+interface CategoryConfirmationDialogProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void> | void;
+  onConfirm: () => void;
   title: string;
   description: string;
-  confirmText?: string;
-  cancelText?: string;
+  confirmText: string;
+  cancelText: string;
 }
 
-export const CategoryConfirmationDialog: React.FC<CategoryConfirmationDialogProps> = ({
+export function CategoryConfirmationDialog({
   open,
   onClose,
   onConfirm,
   title,
   description,
-  confirmText = 'Təsdiq et',
-  cancelText = 'İmtina et'
-}) => {
-  const [loading, setLoading] = React.useState(false);
-
-  const handleConfirm = async () => {
-    setLoading(true);
-    try {
-      await onConfirm();
-    } catch (error) {
-      console.error('Təsdiq xətası:', error);
-    } finally {
-      setLoading(false);
-      onClose();
-    }
-  };
-
+  confirmText,
+  cancelText,
+}: CategoryConfirmationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
             {description}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={loading}
-          >
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
             {cancelText}
           </Button>
-          <Button
-            type="button"
-            onClick={handleConfirm}
-            disabled={loading}
-          >
-            {loading ? 'İcra olunur...' : confirmText}
+          <Button onClick={onConfirm}>
+            {confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
+}

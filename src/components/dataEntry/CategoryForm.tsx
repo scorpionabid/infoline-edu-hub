@@ -3,11 +3,10 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FormFields } from './FormFields';
-import { CategoryWithColumns } from '@/types/category';
-import { DataEntry, DataEntryStatus, EntryValue } from '@/types/dataEntry'; 
+import { CategoryWithColumns } from '@/types/column';
+import { DataEntryStatus, EntryValue } from '@/types/dataEntry'; 
 import { StatusIndicator } from './StatusIndicators';
-import { useCategoryStatus } from '@/hooks/categories/useCategoryStatus';
-import { convertEntryValuesToDataEntries } from './utils/formUtils';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface CategoryFormProps {
   category: CategoryWithColumns;
@@ -30,14 +29,47 @@ export function CategoryForm({
   isDisabled = false,
   isLoading = false
 }: CategoryFormProps) {
-  // Mövcud useCategoryStatus hook-nu istifadə edəcək
-  const dataEntries = React.useMemo(() => {
-    return convertEntryValuesToDataEntries(values, category.id, '', 'pending');
-  }, [values, category.id]);
+  const { t } = useLanguage();
+  
+  // Status və tamamlama faizini hesabla
+  const status: DataEntryStatus | 'partial' = 'pending';
+  const completionPercentage = calculateCompletionPercentage(category.columns, values);
+  
+  // Status badge rəngini qaytarır
+  const getStatusBadgeColor = (status: DataEntryStatus | 'partial') => {
+    switch (status) {
+      case 'approved':
+        return 'bg-green-100 text-green-800 border-green-300';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 border-red-300';
+      case 'draft':
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+      case 'partial':
+        return 'bg-blue-100 text-blue-800 border-blue-300';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
 
-  const { status, completionPercentage, getStatusBadgeColor, getStatusLabel } = useCategoryStatus(category, { 
-    entries: dataEntries
-  });
+  // Statusun mətnini qaytarır
+  const getStatusLabel = (status: DataEntryStatus | 'partial') => {
+    switch (status) {
+      case 'approved':
+        return t('approved');
+      case 'pending':
+        return t('pending');
+      case 'rejected':
+        return t('rejected');
+      case 'draft':
+        return t('draft');
+      case 'partial':
+        return t('partial');
+      default:
+        return t('unknown');
+    }
+  };
 
   // Hesabla - validasiya xətaları varmı
   const hasValidationErrors = values.some(v => v.isValid === false);
@@ -106,6 +138,29 @@ export function CategoryForm({
       </CardFooter>
     </Card>
   );
+}
+
+// Tamamlanma faizini hesablamaq üçün funksiya
+function calculateCompletionPercentage(columns: any[], values: EntryValue[]): number {
+  if (!columns.length) return 0;
+  
+  // Məcburi sütunları tap
+  const requiredColumns = columns.filter(col => col.is_required);
+  
+  // Tamamlanmış sütunları tap
+  const completedEntries = values.filter(entry => entry.value && entry.value.trim() !== '');
+  
+  // Əgər heç bir məcburi sütun yoxdursa
+  if (!requiredColumns.length) {
+    return completedEntries.length > 0 ? 100 : 0;
+  }
+  
+  // Məcburi sütunların neçəsi doldurulub
+  const filledRequiredColumns = requiredColumns.filter(column => 
+    values.some(entry => entry.columnId === column.id && entry.value && entry.value.trim() !== '')
+  );
+  
+  return Math.round((filledRequiredColumns.length / requiredColumns.length) * 100);
 }
 
 export default CategoryForm;
