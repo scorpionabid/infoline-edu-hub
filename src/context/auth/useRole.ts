@@ -1,16 +1,23 @@
 
+import { useMemo } from 'react';
 import { Role } from './types';
 import { useAuth } from './useAuth';
 
-// Helper hook to check for specific role
-export const useRole = (role: Role | Role[]) => {
-  const { user } = useAuth();
+/**
+ * İstifadəçinin müəyyən bir rola və ya rollara sahib olub-olmadığını yoxlayan hook
+ * @param {Role | Role[]} role - Yoxlanılacaq rol və ya rollar
+ * @returns {boolean} İstifadəçinin həmin rola sahib olub-olmadığı
+ */
+export const useRole = (role: Role | Role[]): boolean => {
+  const { user, isAuthenticated } = useAuth();
   
-  if (!user) return false;
-  
-  if (Array.isArray(role)) {
-    return role.includes(user.role as Role);
-  }
-  
-  return user.role === role;
+  return useMemo(() => {
+    if (!user || !isAuthenticated || !user.role) return false;
+    
+    if (Array.isArray(role)) {
+      return role.includes(user.role as Role);
+    }
+    
+    return user.role === role;
+  }, [user, isAuthenticated, role]);
 };

@@ -6,7 +6,7 @@ import { PermissionCheckResult, PermissionLevel, UsePermissionsResult } from './
 import { UserRole } from '@/types/supabase';
 
 export const usePermissions = (): UsePermissionsResult => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   // Əsas istifadəçi məlumatları
   const userId = useMemo(() => user?.id, [user]);
@@ -16,10 +16,10 @@ export const usePermissions = (): UsePermissionsResult => {
   const schoolId = useMemo(() => user?.school_id, [user]);
 
   // Rol yoxlamaları
-  const isSuperAdmin = useMemo(() => userRole === 'superadmin', [userRole]);
-  const isRegionAdmin = useMemo(() => userRole === 'regionadmin', [userRole]);
-  const isSectorAdmin = useMemo(() => userRole === 'sectoradmin', [userRole]);
-  const isSchoolAdmin = useMemo(() => userRole === 'schooladmin', [userRole]);
+  const isSuperAdmin = useMemo(() => isAuthenticated && userRole === 'superadmin', [isAuthenticated, userRole]);
+  const isRegionAdmin = useMemo(() => isAuthenticated && userRole === 'regionadmin', [isAuthenticated, userRole]);
+  const isSectorAdmin = useMemo(() => isAuthenticated && userRole === 'sectoradmin', [isAuthenticated, userRole]);
+  const isSchoolAdmin = useMemo(() => isAuthenticated && userRole === 'schooladmin', [isAuthenticated, userRole]);
 
   // Region əlçatanlığı yoxlama
   const checkRegionAccess = async (targetRegionId: string, level: PermissionLevel = 'read'): Promise<boolean> => {

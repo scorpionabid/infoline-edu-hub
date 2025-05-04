@@ -1,65 +1,100 @@
 
-// Common Azerbaijani translations
 export default {
-  // Auth related translations
-  login: 'Daxil ol',
-  loginTitle: 'Sistemə giriş',
-  loginDescription: 'Zəhmət olmasa giriş məlumatlarınızı daxil edin.',
+  // Login related
+  loginTitle: 'Daxil ol',
   loginButton: 'Daxil ol',
-  loginSuccess: 'Uğurla daxil oldunuz',
+  loginDescription: 'Hesabınıza daxil olun',
   loggingIn: 'Daxil olunur...',
-  logout: 'Çıxış',
-  logoutSuccess: 'Uğurla çıxış edildi',
-  
-  // Form related translations
-  email: 'E-poçt',
-  emailRequired: 'E-poçt daxil edilməlidir',
-  emailInvalid: 'Düzgün e-poçt daxil edin',
-  invalidEmail: 'Düzgün e-poçt daxil edin',
-  password: 'Şifrə',
-  passwordRequired: 'Şifrə daxil edilməlidir',
-  passwordTooShort: 'Şifrə ən azı 6 simvol olmalıdır',
-  forgotPassword: 'Şifrəni unutmusunuz?',
-  invalidCredentials: 'Yanlış istifadəçi adı və ya şifrə',
+  loginSuccess: 'Uğurla daxil oldunuz',
+  invalidCredentials: 'Yanlış email və ya şifrə',
   unexpectedError: 'Gözlənilməz xəta baş verdi',
+
+  // Form validation
+  email: 'E-poçt',
+  password: 'Şifrə',
+  emailRequired: 'E-poçt ünvanı daxil edilməlidir',
+  passwordRequired: 'Şifrə daxil edilməlidir',
+  invalidEmail: 'Düzgün e-poçt ünvanı daxil edin',
+  passwordTooShort: 'Şifrə minimum 6 simvol olmalıdır',
+  forgotPassword: 'Şifrəni unutmusunuz?',
+
+  // Dashboard related
+  dashboard: 'İdarəetmə Paneli',
+  overview: 'Ümumi Məlumat',
+  statistics: 'Statistika',
   
-  // General translations
-  loading: 'Yüklənir...',
-  save: 'Yadda saxla',
-  cancel: 'İmtina',
+  // User roles
+  superadmin: 'Əsas Admin',
+  regionadmin: 'Region Admini',
+  sectoradmin: 'Sektor Admini',
+  schooladmin: 'Məktəb Admini',
+  user: 'İstifadəçi',
+  
+  // Sections
+  regions: 'Regionlar',
+  sectors: 'Sektorlar',
+  schools: 'Məktəblər',
+  categories: 'Kateqoriyalar',
+  columns: 'Sütunlar',
+  users: 'İstifadəçilər',
+  dataEntries: 'Məlumat Girişləri',
+  reports: 'Hesabatlar',
+  settings: 'Parametrlər',
+  
+  // Actions
+  add: 'Əlavə et',
   edit: 'Redaktə et',
   delete: 'Sil',
-  confirm: 'Təsdiq et',
+  save: 'Yadda saxla',
+  cancel: 'Ləğv et',
   search: 'Axtar',
-  filter: 'Filtrlə',
-  yes: 'Bəli',
-  no: 'Xeyr',
-  back: 'Geri',
-  next: 'İrəli',
-  actions: 'Əməliyyatlar',
-  status: 'Status',
-  submit: 'Göndər',
-  dashboard: 'İdarəetmə paneli',
+  filter: 'Filtr',
+  refresh: 'Yenilə',
+  upload: 'Yüklə',
+  download: 'Endir',
+  submit: 'Təsdiq et',
+  confirm: 'Təsdiqlə',
+  reject: 'Rədd et',
   
-  // Error messages
-  errorOccurred: 'Xəta baş verdi',
-  pageNotFound: 'Səhifə tapılmadı',
-  accessDenied: 'Giriş qadağandır',
-  sessionExpired: 'Sessiya başa çatdı, zəhmət olmasa yenidən daxil olun',
+  // Statuses
+  active: 'Aktiv',
+  inactive: 'Qeyri-aktiv',
+  pending: 'Gözləyən',
+  approved: 'Təsdiqlənmiş',
+  rejected: 'Rədd edilmiş',
+  expired: 'Vaxtı bitmiş',
   
   // Time related
   today: 'Bu gün',
   yesterday: 'Dünən',
-  tomorrow: 'Sabah',
-  
-  // Status
-  active: 'Aktiv',
-  inactive: 'Deaktiv',
-  pending: 'Gözləmədə',
-  completed: 'Tamamlandı',
+  lastWeek: 'Keçən həftə',
+  lastMonth: 'Keçən ay',
+  custom: 'Xüsusi',
   
   // Notifications
   notifications: 'Bildirişlər',
   markAllAsRead: 'Hamısını oxunmuş kimi işarələ',
-  noNotifications: 'Bildiriş yoxdur'
+  noNotifications: 'Bildiriş yoxdur',
+  
+  // Errors
+  error: 'Xəta',
+  serverError: 'Server xətası',
+  connectionError: 'Əlaqə xətası',
+  authError: 'Autentifikasiya xətası',
+  
+  // Success messages
+  success: 'Uğur',
+  savedSuccessfully: 'Uğurla yadda saxlanıldı',
+  updatedSuccessfully: 'Uğurla yeniləndi',
+  deletedSuccessfully: 'Uğurla silindi',
+  
+  // Profile
+  profile: 'Profil',
+  logout: 'Çıxış',
+  changePassword: 'Şifrəni dəyiş',
+  language: 'Dil',
+  theme: 'Tema',
+  lightTheme: 'İşıqlı',
+  darkTheme: 'Qaranlıq',
+  systemTheme: 'Sistem'
 };

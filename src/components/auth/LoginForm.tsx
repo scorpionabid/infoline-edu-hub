@@ -30,7 +30,7 @@ interface FormValues {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
-  const { login } = useAuth();
+  const { login, isLoading } = useAuth();
   const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
@@ -60,7 +60,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       if (success) {
         console.log('Giriş uğurlu oldu, autentifikasiya tamamlandı');
         toast.success(t('loginSuccess'));
-        // Yönləndirmə məntiqini çıxarırıq - bu artıq Login komponentində olacaq
       } else {
         console.log('Giriş uğursuz oldu');
         setFormError('root', { 
@@ -107,6 +106,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
               id="email"
               type="email"
               placeholder="name@example.com"
+              autoComplete="email"
               {...register('email', { 
                 required: t('emailRequired'),
                 pattern: {
@@ -127,6 +127,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
                 {...register('password', { 
                   required: t('passwordRequired'),
                   minLength: {
@@ -159,9 +160,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
           <Button 
             type="submit" 
             className="w-full"
-            disabled={loginInProgress}
+            disabled={loginInProgress || isLoading}
           >
-            {loginInProgress ? (
+            {(loginInProgress || isLoading) ? (
               <>
                 <span className="mr-2">{t('loggingIn')}</span>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />

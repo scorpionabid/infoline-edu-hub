@@ -16,7 +16,7 @@ const Login = () => {
   const { userRole } = usePermissions();
   
   useEffect(() => {
-    console.log('Login page state:', {
+    console.log('Login səhifəsi state:', {
       isAuthenticated,
       isLoading,
       userRole,
@@ -32,11 +32,11 @@ const Login = () => {
     if (isAuthenticated && user && user.role && !isLoading) {
       console.log(`Authenticated user with role: ${user.role}, preparing redirection`);
       
-      // Yönləndirmə vaxtını 500ms gecikdirək - bu sessiya məlumatlarının tam yüklənməsi üçündür
+      // Yönləndirmə vaxtını 300ms gecikdirək - bu sessiya məlumatlarının tam yüklənməsi üçündür
       const redirectTimer = setTimeout(() => {
         console.log(`Redirecting user with role ${user.role} to ${from}`);
         navigate(from, { replace: true });
-      }, 500);
+      }, 300);
 
       return () => clearTimeout(redirectTimer);
     }
