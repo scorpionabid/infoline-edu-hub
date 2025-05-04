@@ -1,67 +1,87 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+import { Session, User } from '@supabase/supabase-js';
 
-export interface Region {
-  id: string;
-  name: string;
-  description?: string;
-  admin_id?: string;
-  admin_email?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
-export interface Sector {
+export interface Profile {
   id: string;
-  name: string;
-  description?: string;
-  region_id: string;
-  admin_id?: string;
-  admin_email?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-  completion_rate?: number;
-}
-
-export interface School {
-  id: string;
-  name: string;
-  region_id: string;
-  sector_id: string;
-  address?: string;
   email?: string;
+  full_name?: string;
+  avatar?: string;
   phone?: string;
-  principal_name?: string;
-  admin_id?: string;
-  admin_email?: string;
-  status?: string;
-  type?: string;
+  position?: string;
   language?: string;
-  student_count?: number;
-  teacher_count?: number;
-  logo?: string;
-  completion_rate?: number;
+  status?: 'active' | 'inactive' | 'blocked';
+  last_login?: string | null;
   created_at?: string;
   updated_at?: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  role?: UserRole;
+  admin_entity?: any;
+}
+
+export interface UserRole {
+  id?: string;
+  user_id: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AdminEntity {
+  type?: string;
+  name?: string;
+  status?: string;
+  schoolType?: string;
+  sectorName?: string;
+  regionName?: string;
 }
 
 export interface FullUserData {
   id: string;
   email: string;
   full_name?: string;
+  name?: string;
   role?: UserRole;
+  avatar?: string;
   region_id?: string;
-  region_name?: string;
+  regionId?: string;
   sector_id?: string;
-  sector_name?: string;
+  sectorId?: string;
   school_id?: string;
-  school_name?: string;
-  language?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
+  schoolId?: string;
   phone?: string;
   position?: string;
+  language?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+  last_login?: string | null;
+  lastLogin?: string | null;
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
+  adminEntity?: AdminEntity;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+  };
+  twoFactorEnabled?: boolean;
+}
+
+export interface SignInCredentials {
+  email: string;
+  password: string;
+}
+
+export interface AuthState {
+  user: FullUserData | null;
+  session: Session | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
 }

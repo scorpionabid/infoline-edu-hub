@@ -1,41 +1,22 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserFormData } from '@/types/user';
-
-interface FullUserData {
-  id: string;
-  email: string;
-  full_name: string;
-  role: string;
-  avatar?: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  adminEntity?: {
-    schoolName?: string;
-    sectorName?: string;
-    regionName?: string;
-  };
-}
-
-interface AuthContextType {
-  user: FullUserData | null;
-  loading: boolean;
-  isLoading: boolean; // Login.tsx-də istifadə olunur
-  error: string | null;
-  isAuthenticated: boolean; // Login.tsx-də istifadə olunur
-  signIn: (email: string, password: string) => Promise<{ error?: any }>;
-  signOut: () => Promise<void>;
-  createUser: (userData: UserFormData) => Promise<{ error?: any }>;
-  clearError: () => void;
-}
+import { FullUserData } from '@/types/supabase';
+import { AuthContextType } from './auth/types';
+import { Session } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  session: null,
   loading: true,
   isLoading: true,
   error: null,
   isAuthenticated: false,
+  login: async () => false,
+  logout: async () => {},
+  updateUser: async () => false,
   signIn: async () => ({ error: null }),
   signOut: async () => {},
   createUser: async () => ({ error: null }),
@@ -44,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<FullUserData | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,6 +62,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               schoolName: '',
               sectorName: '',
               regionName: ''
+            },
+            // İnterfeys tələblərinə uyğun əlavə sahələr
+            name: userProfile.full_name || '',
+            regionId: userProfile.region_id,
+            sectorId: userProfile.sector_id,
+            schoolId: userProfile.school_id,
+            lastLogin: userProfile.last_login,
+            createdAt: userProfile.created_at,
+            updatedAt: userProfile.updated_at,
+            notificationSettings: {
+              email: true,
+              system: true,
             }
           });
         }
@@ -91,21 +85,109 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    fetchUser();
-
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        fetchUser();
+    // Auth statusunu izləmək
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
+      setSession(session);
+      
+      if (session?.user) {
+        // Əgər sessiya yox deyilsə istifadəçi məlumatlarını əldə et
+        try {
+          const { data: userProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profileError) {
+            if (profileError.code !== 'PGRST116') {  // Məlumat tapılmadı xətası deyilsə
+              throw profileError;
+            }
+            
+            // Profil tapılmadı, boş istifadəçi təyin et
+            setUser(null);
+            return;
+          }
+          
+          setUser({
+            id: userProfile.id,
+            email: userProfile.email || session.user.email || '',
+            full_name: userProfile.full_name || '',
+            role: userProfile.role || 'user',
+            avatar: userProfile.avatar_url,
+            region_id: userProfile.region_id,
+            sector_id: userProfile.sector_id,
+            school_id: userProfile.school_id,
+            adminEntity: userProfile.admin_entity || {
+              schoolName: '',
+              sectorName: '',
+              regionName: ''
+            },
+            // İnterfeys tələblərinə uyğun əlavə sahələr
+            name: userProfile.full_name || '',
+            regionId: userProfile.region_id,
+            sectorId: userProfile.sector_id,
+            schoolId: userProfile.school_id,
+            lastLogin: userProfile.last_login,
+            createdAt: userProfile.created_at,
+            updatedAt: userProfile.updated_at,
+            notificationSettings: {
+              email: true,
+              system: true,
+            }
+          });
+        } catch (error: any) {
+          console.error('Profile fetch error:', error);
+          setUser(null);
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        setSession(null);
+      }
+    });
+
+    // İlk yüklənmə zamanı sessiya vəziyyətini yoxla
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      if (data.session) {
+        fetchUser();
+      } else {
+        setLoading(false);
       }
     });
 
     return () => {
-      listener?.subscription.unsubscribe();
+      authListener?.subscription.unsubscribe();
     };
   }, []);
 
+  // Login funksiyası - həm köhnə signIn həm də yeni login interfeysi ilə uyğunlaşır
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        setError(error.message);
+        return false;
+      }
+      
+      return true;
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      setError(error.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Compatibility function for old interface
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
@@ -130,17 +212,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signOut = async () => {
+  // Çıxış funksiyası - həm köhnə signOut həm də yeni logout interfeysi ilə uyğunlaşır
+  const logout = async () => {
     try {
       setLoading(true);
       await supabase.auth.signOut();
       setUser(null);
+      setSession(null);
     } catch (error: any) {
       console.error('Sign out error:', error);
       setError(error.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Compatibility function for old interface
+  const signOut = async () => {
+    await logout();
   };
 
   // İstifadəçi yaratma funksiyası
@@ -205,13 +294,65 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // İstifadəçi məlumatlarını yeniləmək
+  const updateUser = async (updates: Partial<FullUserData>): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: updates.full_name,
+          phone: updates.phone,
+          position: updates.position,
+          language: updates.language,
+          avatar: updates.avatar,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+        
+      if (error) {
+        throw error;
+      }
+      
+      // İstifadəçi məlumatlarını yenilə
+      setUser({ ...user, ...updates });
+      toast.success('Profil uğurla yeniləndi');
+      return true;
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      toast.error('Profil yeniləmə xətası', { description: error.message });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Xəta mesajlarını təmizləmək üçün funksiya
   const clearError = () => {
     setError(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, isLoading: loading, error, isAuthenticated: !!user, signIn, signOut, createUser, clearError }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        session,
+        loading, 
+        isLoading: loading, 
+        error, 
+        isAuthenticated: !!user, 
+        login,
+        logout,
+        updateUser,
+        signIn,
+        signOut,
+        createUser,
+        clearError 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

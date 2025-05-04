@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -29,7 +30,7 @@ interface FormValues {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
-  const { signIn } = useAuth();
+  const { login } = useAuth();
   const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
@@ -54,17 +55,17 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       setLoginInProgress(true);
       console.log('Giriş cəhdi edilir...', data.email);
       
-      const { error } = await signIn(data.email, data.password);
+      const success = await login(data.email, data.password);
       
-      if (!error) {
+      if (success) {
         console.log('Giriş uğurlu oldu, autentifikasiya tamamlandı');
         toast.success(t('loginSuccess'));
         // Yönləndirmə məntiqini çıxarırıq - bu artıq Login komponentində olacaq
       } else {
-        console.log('Giriş uğursuz oldu:', error);
+        console.log('Giriş uğursuz oldu');
         setFormError('root', { 
           type: 'manual',
-          message: error.message || t('invalidCredentials')
+          message: t('invalidCredentials')
         });
       }
     } catch (err: any) {
