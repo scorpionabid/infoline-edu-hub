@@ -4,7 +4,7 @@ import { Grid } from '@/components/ui/grid';
 import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
 import { NotificationsCard } from '../common/NotificationsCard';
-import { SectorAdminDashboardData, UINotification } from '@/types/dashboard';
+import { SectorAdminDashboardData, Notification } from '@/types/dashboard';
 
 interface SectorAdminDashboardProps {
   data: SectorAdminDashboardData;
@@ -17,8 +17,8 @@ export const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data
     incomplete: 0 
   };
 
-  // Bildirişləri UI formatına çeviririk
-  const convertedNotifications: UINotification[] = data.notifications.map(notification => ({
+  // Bildirişləri Notification tipinə çevirik (artıq UINotification əvəzinə)
+  const convertedNotifications: Notification[] = data.notifications.map(notification => ({
     id: notification.id,
     title: notification.title || 'Bildiriş',
     message: notification.message,

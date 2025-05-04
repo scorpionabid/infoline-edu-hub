@@ -4,7 +4,7 @@ import { Grid } from '@/components/ui/grid';
 import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
 import { NotificationsCard } from '../common/NotificationsCard';
-import { RegionAdminDashboardData, UINotification } from '@/types/dashboard';
+import { RegionAdminDashboardData, Notification } from '@/types/dashboard';
 
 interface RegionAdminDashboardProps {
   data: RegionAdminDashboardData;
@@ -18,8 +18,8 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
     Math.round((sectorStatsActive / sectorStatsTotal) * 100) : 
     100;
 
-  // Bildirişləri UI formatına çeviririk
-  const convertedNotifications: UINotification[] = data.notifications.map(notification => ({
+  // Bildirişləri Notification tipinə çevirik (artıq UINotification əvəzinə)
+  const convertedNotifications: Notification[] = data.notifications.map(notification => ({
     id: notification.id,
     title: notification.title || 'Bildiriş',
     message: notification.message,

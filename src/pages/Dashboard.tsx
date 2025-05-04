@@ -5,24 +5,25 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [initialCheck, setInitialCheck] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   
+  // Yalnız bir dəfə yüklənmə zamanı yoxlama
   useEffect(() => {
-    // İstifadəçi autentifikasiya olmadıqda yönləndirmə
-    if (!isLoading && !isAuthenticated) {
-      console.log("Dashboard: İstifadəçi autentifikasiya olmayıb, login səhifəsinə yönləndirilir");
-      navigate('/login');
-      return;
-    }
-
-    // İlk dəfə yüklənmə zamanı bir dəfə yoxlama
-    if (initialCheck && !isLoading) {
+    if (!isLoading) {
       setInitialCheck(false);
+      
+      // İstifadəçi autentifikasiya olmadıqda yönləndirmə
+      if (!isAuthenticated) {
+        console.log("Dashboard: İstifadəçi autentifikasiya olmayıb, login səhifəsinə yönləndirilir");
+        navigate('/login', { state: { from: location } });
+        return;
+      }
       
       // Autentifikasiya olunub, amma user məlumatları yoxdursa, xəta göstəririk
       if (isAuthenticated && !user) {
@@ -32,7 +33,7 @@ const Dashboard: React.FC = () => {
         });
       }
     }
-  }, [isAuthenticated, isLoading, user, navigate, initialCheck]);
+  }, [isAuthenticated, isLoading, user, navigate, location]);
   
   // Yüklənmə halında spinner göstəririk
   if (isLoading || initialCheck) {

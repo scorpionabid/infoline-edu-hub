@@ -3,7 +3,7 @@ import React from 'react';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import { NotificationsCard } from './common/NotificationsCard';
-import { SchoolAdminDashboardData, UINotification } from '@/types/dashboard';
+import { SchoolAdminDashboardData, Notification } from '@/types/dashboard';
 import { Grid } from '@/components/ui/grid';
 import { CheckCircle, AlertTriangle, Clock, XCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
@@ -60,17 +60,17 @@ export function SchoolAdminDashboard({
     );
   }
   
-  // Bildirişləri tələb olunan UI formata çevirir
-  const convertedNotifications: UINotification[] = data.notifications.map(notification => ({
-    id: notification.id,
-    title: notification.title || "Bildiriş",
-    message: notification.message,
-    date: notification.date,
-    isRead: notification.isRead,
-    type: notification.type === 'system' ? 'info' : 
-           notification.type === 'deadline' ? 'warning' :
-           notification.type === 'approval' ? 'success' :
-           notification.type === 'rejection' ? 'error' : 'info'
+  // Bildirişləri Notification tipinə çevirik (artıq UINotification əvəzinə)
+  const formattedNotifications: Notification[] = data.notifications.map(n => ({
+    id: n.id,
+    title: n.title,
+    message: n.message,
+    date: n.date,
+    type: n.type === 'system' ? 'info' : 
+           n.type === 'deadline' ? 'warning' :
+           n.type === 'approval' ? 'success' :
+           n.type === 'rejection' ? 'error' : 'info',
+    isRead: n.isRead
   }));
   
   return (
@@ -118,7 +118,7 @@ export function SchoolAdminDashboard({
         />
         <NotificationsCard 
           title={t('notifications')} 
-          notifications={convertedNotifications}
+          notifications={formattedNotifications}
         />
       </Grid>
     </div>

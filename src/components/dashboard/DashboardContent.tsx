@@ -15,7 +15,7 @@ import {
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-  UINotification,
+  Notification,
   SchoolStat
 } from '@/types/dashboard';
 
@@ -51,8 +51,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
     refetchOnWindowFocus: false // Focus dəyişəndə yenidən məlumat almırıq
   });
 
-  // Mock notifications - UI tipinə uyğunlaşdırılmış
-  const mockNotifications = useMemo<UINotification[]>(() => [
+  // Mock notifications - Notification tipinə uyğunlaşdırılmış
+  const mockNotifications = useMemo<Notification[]>(() => [
     {
       id: '1',
       title: 'Yeni kateqoriya əlavə edildi',

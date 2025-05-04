@@ -1,10 +1,7 @@
 
-import React from 'react';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/auth';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,94 +9,162 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useAuth } from '@/context/auth';
-import { useLanguage } from '@/context/LanguageContext';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { MoonIcon, SunIcon } from '@radix-ui/react-icons';
-import { useTheme } from '@/components/ui/theme-provider';
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { Moon, Sun, User, LogOut, Settings, Bell } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-const Header = () => {
-  const { user, logout, isAuthenticated } = useAuth();
-  const { t } = useLanguage();
+const Header: React.FC = () => {
+  const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isLoginPage = pathname.includes('/login');
-  const isForgotPasswordPage = pathname.includes('/forgot-password');
-  const { setTheme } = useTheme();
+  const [loading, setLoading] = useState(false);
   
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+    try {
+      setLoading(true);
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Çıxış zamanı xəta baş verdi:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  let title = '';
-  let subtitle = '';
-
-  // Login səhifəsində və ya unudulmuş şifrə səhifəsindədirsə, header göstərmirik
-  if (isLoginPage || isForgotPasswordPage) return null;
-
-  // İstifadəçi autentifikasiya olmayıbsa, header-i göstərmirik
-  if (!isAuthenticated || !user) return null;
-
-  // İstifadəçi məlumatlarını təhlükəsiz şəkildə idarə edirik
-  if (user) {
-    if (user.role === 'regionadmin') {
-      title = user.full_name || '';
-      subtitle = t('regionAdmin');
-    } else if (user.role === 'sectoradmin') {
-      title = user.full_name || '';
-      subtitle = t('sectorAdmin');
-    } else if (user.role === 'schooladmin') {
-      title = user.full_name || '';
-      subtitle = t('schoolAdmin');
-    } else if (user.role === 'superadmin') {
-      title = user.full_name || '';
-      subtitle = t('superAdmin');
-    }
-  }
+  const navigateToProfile = () => {
+    navigate('/profile');
+  };
   
-  // User avatar üçün təhlükəsiz yoxlama
-  const userInitials = user?.full_name ? user.full_name.substring(0, 2).toUpperCase() : 'U';
+  const navigateToSettings = () => {
+    navigate('/settings');
+  };
   
+  // İstifadəçi adı üçün fallback dəyəri
+  const userDisplayName = user?.full_name || user?.name || (user?.email?.split('@')[0]) || '';
+  
+  // Avatar için fallback (baş hərfləri)
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .slice(0, 2)
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
+  
+  const fallbackInitials = getInitials(userDisplayName);
+  
+  // Agər user yoxdursa heç bir şey göstərmirik
+  if (!user) return null;
+
   return (
-    <div className="flex items-center justify-between p-4 bg-background sticky top-0 z-50 border-b">
-      <div className="flex flex-col">
-        <span className="font-bold">{title || t('dashboard')}</span>
-        {subtitle && <span className="text-sm text-muted-foreground">{subtitle}</span>}
-      </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback>{userInitials}</AvatarFallback>
-            </Avatar>
+    <header className="border-b bg-background sticky top-0 z-40">
+      <div className="container flex items-center justify-between h-16 px-4">
+        <div className="text-xl font-bold">InfoLine</div>
+        
+        <div className="flex items-center gap-4">
+          {/* Bildirişlər */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuLabel>{t('notifications')}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="max-h-80 overflow-y-auto py-2">
+                <div className="text-center text-sm text-muted-foreground py-4">
+                  {t('noNotifications')}
+                </div>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Dil seçimi */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-8 px-0">
+                {language.toUpperCase()}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setLanguage('az')}>
+                Azərbaycan
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguage('en')}>
+                English
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguage('ru')}>
+                Русский
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguage('tr')}>
+                Türkçe
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Tema dəyişdirmə */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? t('lightMode') : t('darkMode')}
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
-          <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate('/profile')}>{t('profile')}</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/settings')}>{t('settings')}</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout}>{t('logout')}</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setTheme("light")}>
-            <SunIcon className="mr-2 h-4 w-4" />
-            <span>{t('light')}</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme("dark")}>
-            <MoonIcon className="mr-2 h-4 w-4" />
-            <span>{t('dark')}</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme("system")}>
-            <SunIcon className="mr-2 h-4 w-4" />
-            <span>{t('system')}</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+
+          {/* İstifadəçi menüsü */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="relative h-8 w-8 rounded-full"
+              >
+                <Avatar>
+                  <AvatarImage src={user?.avatar || ''} alt={userDisplayName} />
+                  <AvatarFallback>{fallbackInitials}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{userDisplayName}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={navigateToProfile}>
+                <User className="mr-2 h-4 w-4" />
+                <span>{t('profile')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={navigateToSettings}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>{t('settings')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleLogout}
+                disabled={loading}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>{loading ? t('loggingOut') : t('logout')}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </header>
   );
 };
 

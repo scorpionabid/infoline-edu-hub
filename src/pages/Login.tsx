@@ -12,20 +12,18 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
-  const [redirectInProgress, setRedirectInProgress] = useState(false);
   
   // İstifadəçi autentifikasiya olduqda yönləndirmə
   useEffect(() => {
-    // Əgər yönləndirmə artıq başlamışsa və ya hələ yüklənmə prosesindədirsə, çıxırıq
-    if (redirectInProgress || isLoading) return;
+    // Əgər hələ yüklənmə prosesindədirsə, çıxırıq
+    if (isLoading) return;
     
     // İstifadəçi artıq autentifikasiya olunubsa və user məlumatları varsa, dashboard-a yönləndiririk
     if (isAuthenticated && user && user.role) {
       console.log(`İstifadəçi autentifikasiya olunub, rolu: ${user.role}, yönləndirilir: ${from}`);
-      setRedirectInProgress(true);
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate, from, user, redirectInProgress]);
+  }, [isAuthenticated, isLoading, navigate, from, user]);
 
   // Loading vəziyyətində yüklənmə göstəricisi
   if (isLoading) {

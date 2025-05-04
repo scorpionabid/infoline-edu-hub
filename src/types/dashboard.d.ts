@@ -17,9 +17,12 @@ export interface DashboardNotification extends BaseNotification {
   createdAt?: string;
 }
 
-export interface UINotification extends BaseNotification {
+export interface Notification extends BaseNotification {
   type: "error" | "info" | "warning" | "success";
 }
+
+// UINotification artıq Notification ilə əvəz olunur
+export type UINotification = Notification;
 
 export interface BasicStats {
   regions?: number;
@@ -117,7 +120,7 @@ export interface SuperAdminDashboardData {
     rejected: number;
     total: number;
   };
-  notifications: UINotification[];
+  notifications: Notification[];
   approvalRate?: number;
   completionRate?: number;
 }
@@ -131,7 +134,7 @@ export interface RegionAdminDashboardData {
   pendingItems?: any[];
   categories?: any[];
   sectors?: any[];
-  notifications: UINotification[];
+  notifications: Notification[];
   sectorStats?: {
     total: number;
     active: number;
@@ -153,14 +156,14 @@ export interface SectorAdminDashboardData {
   schools?: any[];
   categories?: any[];
   schoolsStats?: SchoolStat[];
-  notifications: UINotification[];
+  notifications: Notification[];
   completionRate?: number;
 }
 
 export interface SchoolAdminDashboardData {
   formStats: FormStatus;
   categories?: CategorySummary[];
-  notifications: UINotification[];
+  notifications: Notification[];
   completionRate: number;
 }
 

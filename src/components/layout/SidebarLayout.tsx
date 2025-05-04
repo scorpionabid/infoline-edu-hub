@@ -14,7 +14,7 @@ export interface SidebarLayoutProps {
 }
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { t } = useLanguage();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -50,12 +50,22 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
 
   // İstifadəçi autentifikasiya olmayıbsa, istifadəçini login səhifəsinə yönləndiririk
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login', { replace: true });
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+      return;
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
-  // User məlumatları yoxdursa, sadəcə çıxış komponentini qaytarırıq
+  // Yükləmə halında
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  
+  // İstifadəçi autentifikasiya olmayıbsa, sadəcə çıxış komponentini qaytarırıq
   if (!isAuthenticated || !user) {
     return <Outlet />;
   }
