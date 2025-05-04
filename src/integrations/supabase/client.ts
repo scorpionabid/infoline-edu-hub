@@ -23,12 +23,14 @@ export const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
 
-// Normal istifadəçilər üçün Supabase klienti
+// Supabase klienti yaratmaq
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
+    persistSession: true, // Sesiyaların saxlanmasını təmin edir
+    storageKey: 'infoline-auth-storage', // Saxlama açarını təyin edir
+    autoRefreshToken: true, // Token-in avtomatik yenilənməsini təmin edir
+    detectSessionInUrl: true, // URL-də sesiya məlumatlarını aşkarlayır
+    storage: localStorage // Lokal saxlama istifadə edir
   },
   global: {
     headers: {
@@ -186,7 +188,8 @@ export const supabaseWithRetry = {
           }
           
           // Keş yoxdursa və ya köhnədirsə, sorğu göndər
-          const result = await originalFrom.select(...args);
+          const query = originalFrom.select(...args);
+          const result = await query;
           
           // Uğurlu nəticəni keşlə
           if (!result.error && result.data) {
@@ -223,7 +226,8 @@ export const supabaseWithRetry = {
           }
           
           // Keş yoxdursa və ya köhnədirsə, sorğu göndər
-          const result = await originalFrom.order(...args);
+          const query = originalFrom.select();
+          const result = await query.order(args[0], { ascending: args[1] });
           
           // Uğurlu nəticəni keşlə
           if (!result.error && result.data) {
@@ -282,7 +286,7 @@ export const createRealTimeChannel = (channelName: string, table: string, event:
   return supabase
     .channel(channelName)
     .on(
-      'postgres_changes',
+      'postgres_changes' as any,
       {
         event,
         schema: 'public',

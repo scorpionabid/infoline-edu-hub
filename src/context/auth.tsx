@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserFormData } from '@/types/user';
@@ -22,19 +21,25 @@ interface FullUserData {
 interface AuthContextType {
   user: FullUserData | null;
   loading: boolean;
+  isLoading: boolean; // Login.tsx-də istifadə olunur
   error: string | null;
+  isAuthenticated: boolean; // Login.tsx-də istifadə olunur
   signIn: (email: string, password: string) => Promise<{ error?: any }>;
   signOut: () => Promise<void>;
   createUser: (userData: UserFormData) => Promise<{ error?: any }>;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  isLoading: true,
   error: null,
+  isAuthenticated: false,
   signIn: async () => ({ error: null }),
   signOut: async () => {},
   createUser: async () => ({ error: null }),
+  clearError: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -200,8 +205,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Xəta mesajlarını təmizləmək üçün funksiya
+  const clearError = () => {
+    setError(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, signIn, signOut, createUser }}>
+    <AuthContext.Provider value={{ user, loading, isLoading: loading, error, isAuthenticated: !!user, signIn, signOut, createUser, clearError }}>
       {children}
     </AuthContext.Provider>
   );

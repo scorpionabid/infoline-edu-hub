@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
@@ -29,15 +28,20 @@ const Login = () => {
     });
     
     // Autentifikasiya olunmuş istifadəçiləri dashboard-a yönləndirmək
-    if (isAuthenticated && user && !isLoading) {
-      console.log(`Redirecting authenticated user to ${from}`, {
-        role: userRole || user.role || 'unknown'
-      });
+    if (isAuthenticated && user && user.role && !isLoading) {
+      console.log(`Authenticated user with role: ${user.role}, preparing redirection`);
       
-      // Yönləndirmə vaxtını 100ms gecikdirək - bu sessiya məlumatlarının tam yüklənməsi üçündür
+      // İstifadəçi roluna əsasən hədəf səhifəni müəyyən edirik
+      let targetPath = '/dashboard';
+      
+      // Əlavə debug məlumatı
+      console.log(`User role for redirection: ${user.role}, session active`);
+      
+      // Yönləndirmə vaxtını 500ms gecikdirək - bu sessiya məlumatlarının tam yüklənməsi üçündür
       const redirectTimer = setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 100);
+        console.log(`Redirecting user with role ${user.role} to ${targetPath}`);
+        navigate(targetPath, { replace: true });
+      }, 500);
 
       return () => clearTimeout(redirectTimer);
     }

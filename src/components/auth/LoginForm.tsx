@@ -1,6 +1,4 @@
-
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
@@ -31,9 +29,8 @@ interface FormValues {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
-  const { login } = useAuth();
+  const { signIn } = useAuth();
   const { t } = useLanguage();
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
   
@@ -57,17 +54,17 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       setLoginInProgress(true);
       console.log('Giriş cəhdi edilir...', data.email);
       
-      const success = await login(data.email, data.password);
+      const { error } = await signIn(data.email, data.password);
       
-      if (success) {
-        console.log('Giriş uğurlu oldu, yönləndirmə edilir...');
+      if (!error) {
+        console.log('Giriş uğurlu oldu, autentifikasiya tamamlandı');
         toast.success(t('loginSuccess'));
-        navigate('/dashboard');
+        // Yönləndirmə məntiqini çıxarırıq - bu artıq Login komponentində olacaq
       } else {
-        console.log('Giriş uğursuz oldu - əlavə xəta yoxdur');
+        console.log('Giriş uğursuz oldu:', error);
         setFormError('root', { 
           type: 'manual',
-          message: t('invalidCredentials')
+          message: error.message || t('invalidCredentials')
         });
       }
     } catch (err: any) {
