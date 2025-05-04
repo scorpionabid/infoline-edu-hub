@@ -4,13 +4,14 @@ import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import { NotificationsCard } from './common/NotificationsCard';
-import { SuperAdminDashboardData, Notification } from '@/types/dashboard';
+import { SuperAdminDashboardData } from '@/types/dashboard';
 
 interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
 }
 
 export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
+  // formsByStatus sahəsini kontrol edək
   const pendingCount = data.formsByStatus?.pending || 0;
   const approvedCount = data.formsByStatus?.approved || 0;
   const rejectedCount = data.formsByStatus?.rejected || 0;

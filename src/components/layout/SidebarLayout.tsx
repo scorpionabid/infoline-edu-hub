@@ -97,8 +97,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
         <div
           className={cn(
             "bg-background border-r z-40 transition-all duration-300 ease-in-out",
-            isSidebarOpen ? "w-[240px]" : "w-[70px]",
-            isMobile ? "fixed h-screen" : "h-full relative",
+            isSidebarOpen ? "w-64" : "w-[70px]",
+            isMobile ? "fixed h-full" : "h-full relative",
             isMobile && !isSidebarOpen && "hidden"
           )}
         >
@@ -106,7 +106,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
             <div className={cn("transition-opacity", isSidebarOpen ? "opacity-100" : "opacity-0 hidden")}>
               <h2 className="text-xl font-bold">InfoLine</h2>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleSidebarToggle}>
+            <Button variant="ghost" size="icon" onClick={handleSidebarToggle} className="flex-shrink-0">
               <ChevronLeft className={cn("h-5 w-5 transition-transform", !isSidebarOpen && "rotate-180")} />
             </Button>
           </div>
@@ -134,7 +134,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
         <div 
           className={cn(
             "flex-1 p-6 overflow-y-auto transition-all duration-300",
-            isMobile ? "w-full" : (isSidebarOpen ? "ml-[240px]" : "ml-[70px]")
+            isMobile ? "w-full" : (isSidebarOpen ? "ml-64" : "ml-[70px]")
           )}
         >
           <Outlet />

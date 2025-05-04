@@ -12,8 +12,9 @@ import {
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-  Notification
-} from '@/types/dashboard.d';
+  Notification,
+  RecentForm
+} from '@/types/dashboard';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
@@ -106,6 +107,7 @@ const DashboardContent: React.FC = () => {
           message: 'Növbəti toplantı sabah saat 10:00-da keçiriləcək', 
           type: 'info',
           isRead: false,
+          read: false,
           date: new Date().toISOString().split('T')[0],
           createdAt: new Date().toISOString()
         }
@@ -154,6 +156,7 @@ const DashboardContent: React.FC = () => {
           message: 'Yeni sektor əlavə edildi', 
           type: 'success',
           isRead: false,
+          read: false,
           date: new Date().toISOString().split('T')[0],
           createdAt: new Date().toISOString()
         }
@@ -203,6 +206,7 @@ const DashboardContent: React.FC = () => {
           message: 'Məktəb #22 formu gecikdirir', 
           type: 'warning',
           isRead: false,
+          read: false,
           date: new Date().toISOString().split('T')[0],
           createdAt: new Date().toISOString()
         }
@@ -247,6 +251,7 @@ const DashboardContent: React.FC = () => {
           message: 'İllik hesabatın son təqdim tarixi yaxınlaşır', 
           type: 'warning',
           isRead: false,
+          read: false,
           date: new Date().toISOString().split('T')[0],
           createdAt: new Date().toISOString()
         }

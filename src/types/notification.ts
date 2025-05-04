@@ -1,5 +1,5 @@
 
-export type NotificationType = 'system' | 'category' | 'deadline' | 'approval' | 'form' | 'warning' | 'error' | 'success' | 'info';
+export type NotificationType = 'system' | 'category' | 'deadline' | 'approval' | 'form' | 'warning' | 'error' | 'success' | 'info' | 'rejection' | 'comment';
 export type NotificationPriority = 'low' | 'normal' | 'high';
 
 export interface Notification {
@@ -8,6 +8,7 @@ export interface Notification {
   title: string;
   message: string;
   isRead: boolean;
+  read?: boolean; // Geriyə uyğunluq üçün
   createdAt: string;
   userId: string;
   priority: NotificationPriority;
@@ -21,12 +22,13 @@ export interface Notification {
 export const adaptDbNotificationToApp = (dbNotification: any): Notification => {
   return {
     id: dbNotification.id,
-    title: dbNotification.title,
+    title: dbNotification.title || 'Bildiriş',
     message: dbNotification.message,
     type: dbNotification.type as NotificationType, 
     priority: dbNotification.priority as NotificationPriority,
     userId: dbNotification.user_id,
     isRead: dbNotification.is_read,
+    read: dbNotification.is_read,
     createdAt: dbNotification.created_at,
     relatedId: dbNotification.related_entity_id,
     relatedType: dbNotification.related_entity_type,

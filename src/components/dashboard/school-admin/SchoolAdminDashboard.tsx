@@ -60,16 +60,6 @@ export function SchoolAdminDashboard({
     );
   }
   
-  // Bildiriş formatını düzəldək
-  const formattedNotifications = data.notifications.map(n => ({
-    id: n.id,
-    title: n.title,
-    message: n.message,
-    date: new Date(n.timestamp || Date.now()).toLocaleDateString(),
-    type: n.type,
-    isRead: !n.read
-  }));
-  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -87,24 +77,24 @@ export function SchoolAdminDashboard({
       <Grid columns={4} className="gap-6">
         <StatsCard 
           title={t('approved')} 
-          value={data.formStats.approved} 
+          value={data.formStats?.approved} 
           icon={<CheckCircle size={18} />}
           trendDirection="up"
         />
         <StatsCard 
           title={t('pending')} 
-          value={data.formStats.pending} 
+          value={data.formStats?.pending} 
           icon={<Clock size={18} />}
         />
         <StatsCard 
           title={t('rejected')} 
-          value={data.formStats.rejected} 
+          value={data.formStats?.rejected} 
           icon={<XCircle size={18} />}
           trendDirection="down"
         />
         <StatsCard 
           title={t('incomplete')} 
-          value={data.formStats.incomplete} 
+          value={data.formStats?.incomplete || 0} 
           icon={<AlertTriangle size={18} />}
         />
       </Grid>
@@ -115,7 +105,7 @@ export function SchoolAdminDashboard({
         />
         <NotificationsCard 
           title={t('notifications')} 
-          notifications={formattedNotifications}
+          notifications={data.notifications}
         />
       </Grid>
     </div>

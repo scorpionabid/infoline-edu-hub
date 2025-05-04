@@ -27,13 +27,18 @@ export function NotificationsCard({
   const getIconColor = (type: string) => {
     switch (type) {
       case 'error':
+      case 'rejection':
       case 'danger':
         return 'text-destructive';
       case 'warning':
+      case 'deadline':
         return 'text-warning';
       case 'success':
+      case 'approval':
         return 'text-success';
       case 'info':
+      case 'system':
+      case 'comment':
       default:
         return 'text-info';
     }
@@ -72,7 +77,7 @@ export function NotificationsCard({
                 key={notification.id} 
                 className={cn(
                   "flex space-x-3 p-3 rounded-lg transition-colors",
-                  notification.isRead 
+                  (notification.isRead || notification.read)
                     ? "bg-background hover:bg-secondary/20" 
                     : "bg-secondary/10 hover:bg-secondary/20"
                 )}
@@ -83,7 +88,7 @@ export function NotificationsCard({
                 <div>
                   <h4 className={cn(
                     "font-medium mb-1",
-                    !notification.isRead && "font-bold"
+                    !(notification.isRead || notification.read) && "font-bold"
                   )}>
                     {notification.title}
                   </h4>
@@ -102,3 +107,5 @@ export function NotificationsCard({
     </Card>
   );
 }
+
+export default NotificationsCard;
