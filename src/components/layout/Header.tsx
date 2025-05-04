@@ -37,16 +37,20 @@ const Header = () => {
   let title = '';
   let subtitle = '';
 
-  if (user && user.adminEntity) {
+  // İstifadəçi məlumatlarını təhlükəsiz şəkildə idarə edirik
+  if (user) {
     if (user.role === 'regionadmin') {
-      title = user.adminEntity.name || '';
-      subtitle = user.adminEntity.type === 'regionadmin' ? t('regionAdmin') : '';
+      title = user.full_name || '';
+      subtitle = t('regionAdmin');
     } else if (user.role === 'sectoradmin') {
-      title = user.adminEntity.name || '';
-      subtitle = user.adminEntity.type === 'sectoradmin' ? t('sectorAdmin') : '';
+      title = user.full_name || '';
+      subtitle = t('sectorAdmin');
     } else if (user.role === 'schooladmin') {
-      title = user.adminEntity.name || '';
-      subtitle = user.adminEntity.type === 'schooladmin' ? t('schoolAdmin') : '';
+      title = user.full_name || '';
+      subtitle = t('schoolAdmin');
+    } else if (user.role === 'superadmin') {
+      title = user.full_name || '';
+      subtitle = t('superAdmin');
     }
   }
   

@@ -10,6 +10,7 @@ import { Session } from '@supabase/supabase-js';
 // Keşləmə üçün sabitlər
 const USER_CACHE_KEY = 'infolineUserCache';
 const CACHE_EXPIRY = 30 * 60 * 1000; // 30 dəqiqə (millisaniyə ilə)
+const DEBOUNCE_DELAY = 100; // Debounce gecikməsi (millisaniyə ilə)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<FullUserData | null>(null);
@@ -90,12 +91,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return user;
     }
     
+    // İstifadəçi keşdən əldə edilməsə, bazadan əldə edirik
     try {
       // Auth token yeniləmə
       if (currentSession.access_token) {
         await supabase.auth.setSession({
           access_token: currentSession.access_token,
-          refresh_token: currentSession.refresh_token
+          refresh_token: currentSession.refresh_token || ''
         });
       }
       
@@ -154,6 +156,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: profile.full_name || currentSession.user.email?.split('@')[0] || ''
       };
 
+      // Extra entity details for different admin types
+      if (userRole === 'regionadmin' && region_id) {
+        try {
+          const { data } = await supabase
+            .from('regions')
+            .select('name')
+            .eq('id', region_id)
+            .single();
+            
+          if (data) {
+            adminEntity.name = data.name || adminEntity.name;
+            adminEntity.regionName = data.name;
+          }
+        } catch (error) {
+          console.warn('Region məlumatları əldə edilə bilmədi:', error);
+        }
+      } else if (userRole === 'sectoradmin' && sector_id) {
+        try {
+          const { data } = await supabase
+            .from('sectors')
+            .select('name, regions(name)')
+            .eq('id', sector_id)
+            .single();
+            
+          if (data) {
+            adminEntity.name = data.name || adminEntity.name;
+            adminEntity.sectorName = data.name;
+            adminEntity.regionName = data.regions?.name;
+          }
+        } catch (error) {
+          console.warn('Sektor məlumatları əldə edilə bilmədi:', error);
+        }
+      } else if (userRole === 'schooladmin' && school_id) {
+        try {
+          const { data } = await supabase
+            .from('schools')
+            .select('name, sectors(name), regions(name)')
+            .eq('id', school_id)
+            .single();
+            
+          if (data) {
+            adminEntity.name = data.name || adminEntity.name;
+            adminEntity.schoolName = data.name;
+            adminEntity.sectorName = data.sectors?.name;
+            adminEntity.regionName = data.regions?.name;
+          }
+        } catch (error) {
+          console.warn('Məktəb məlumatları əldə edilə bilmədi:', error);
+        }
+      }
+
       // İstifadəçi məlumatlarını birləşdirik
       const fullUserData: FullUserData = {
         id: userId,
@@ -171,7 +224,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         last_login: profile.last_login || null,
         created_at: profile.created_at || new Date().toISOString(),
         updated_at: profile.updated_at || new Date().toISOString(),
-        adminEntity: adminEntity
+        adminEntity: adminEntity,
+        // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
+        name: profile.full_name || currentSession.user.email?.split('@')[0] || '',
+        regionId: region_id,
+        sectorId: sector_id,
+        schoolId: school_id,
+        lastLogin: profile.last_login || null,
+        createdAt: profile.created_at || new Date().toISOString(),
+        updatedAt: profile.updated_at || new Date().toISOString(),
       };
 
       // Keş və referans dəyərlərini yeniləyirik
@@ -205,6 +266,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Keşdən istifadəçi məlumatı istifadə olunur');
       setUser(cachedUser);
       lastFetchedUserId.current = cachedUser.id;
+      setAuthState(prev => ({ ...prev, isAuthenticated: true }));
     }
 
     // Auth state dinləyicisini quraşdırırıq
@@ -218,11 +280,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearTimeout(debounceTimer.current);
       }
       
+      // Dəyişən event-ə görə müvafiq əməliyyatlar
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         // Debounce mexanizmi ilə fetchUserData çağırırıq
         debounceTimer.current = setTimeout(() => {
           fetchUserData(currentSession);
-        }, 100);
+        }, DEBOUNCE_DELAY);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setAuthState({
@@ -230,6 +293,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isLoading: false
         });
         setCachedUser(null);
+        lastFetchedUserId.current = null;
       }
     });
     
@@ -243,18 +307,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Sessiya varsa və keşdə istifadəçi məlumatı yoxdursa
       // və ya keşdəki istifadəçi IDsi ilə sessiya istifadəçi IDsi fərqlidirsə
-      if (currentSession?.user && 
-          (!cachedUser || cachedUser.id !== currentSession.user.id)) {
-        fetchUserData(currentSession);
-      } else if (!currentSession) {
+      if (currentSession?.user) {
+        if (!cachedUser || cachedUser.id !== currentSession.user.id) {
+          fetchUserData(currentSession);
+        } else {
+          // Keşdən əldə edilmiş istifadəçi olsa da, arxa planda yeniləyirik
+          setTimeout(() => {
+            fetchUserData(currentSession, true);
+          }, 1000);
+          
+          setAuthState({
+            isAuthenticated: true,
+            isLoading: false
+          });
+        }
+      } else {
         setAuthState({
           isAuthenticated: false,
-          isLoading: false
-        });
-      } else if (cachedUser) {
-        // Əgər keşdə istifadəçi məlumatı varsa və sessiya mövcuddursa
-        setAuthState({
-          isAuthenticated: true,
           isLoading: false
         });
       }
@@ -271,7 +340,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [fetchUserData, getCachedUser, setCachedUser]);
 
-  // Giriş funksiyası - KRİTİK: əvvəlcə signOut çağırmırıq!
+  // Giriş funksiyası - artıq signOut çağırmırıq!
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
       setError(null);
@@ -285,7 +354,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
       
-      // Birbaşa giriş edirik, əvvəlcə çıxış etmədən!
+      // Birbaşa giriş edirik
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -308,7 +377,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
       
-      console.log('Giriş uğurlu oldu');
+      console.log('Giriş uğurlu oldu, session təyin olunur');
+      // Yeni sessiya təyin edirik (bu avtomatik olaraq onAuthStateChange triggerləyəcək)
+      if (data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+        
+        // Sessiyanı təyin edirik və istifadəçi məlumatlarını yeniləyirik
+        setSession(data.session);
+        
+        // fetchUserData çağırmağa ehtiyac yoxdur - onAuthStateChange bunu edəcək
+      }
+      
       return true;
     } catch (error: any) {
       console.error('Gözlənilməz giriş xətası:', error);
@@ -327,13 +409,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
       setAuthState(prev => ({ ...prev, isLoading: true }));
       
+      // Öncə keşi təmizləyirik
+      setCachedUser(null);
+      lastFetchedUserId.current = null;
+      
+      // Sonra çıxış edirik
       await supabase.auth.signOut();
       
       // Məlumatları təmizləyirik
       setUser(null);
       setSession(null);
-      setCachedUser(null);
-      lastFetchedUserId.current = null;
       
       console.log('Çıxış uğurlu oldu');
     } catch (error: any) {
@@ -392,7 +477,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // İstifadəçi profilini manual yeniləmək
   const refreshProfile = useCallback(async (): Promise<FullUserData | null> => {
-    if (!session) return null;
+    if (!session) {
+      // Sessiyanı yenidən əldə etməyə çalışırıq
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        console.warn('refreshProfile: Session məlumatları tapılmadı');
+        return null;
+      }
+      
+      // Sessiya tapıldıqda onu təyin edir və istifadəçi məlumatlarını yeniləyirik
+      setSession(data.session);
+      return await fetchUserData(data.session, true);
+    }
     
     try {
       const updatedUser = await fetchUserData(session, true);

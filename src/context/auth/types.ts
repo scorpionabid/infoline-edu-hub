@@ -1,5 +1,5 @@
 
-import { Session, User } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { FullUserData } from '@/types/supabase';
 
 export type AuthErrorType = string | null;

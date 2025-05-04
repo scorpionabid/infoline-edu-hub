@@ -1,7 +1,6 @@
 
 import { useMemo } from 'react';
 import { useAuth } from '@/context/auth';
-import { Role } from '@/context/auth/types';
 import { UserRole } from '@/types/supabase';
 import { PermissionCheckResult, UsePermissionsResult } from './permissionTypes';
 
