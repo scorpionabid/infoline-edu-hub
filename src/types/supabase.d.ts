@@ -40,6 +40,7 @@ export interface AdminEntity {
   schoolType?: string;
   sectorName?: string;
   regionName?: string;
+  schoolName?: string;
 }
 
 export interface FullUserData {

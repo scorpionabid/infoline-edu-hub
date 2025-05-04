@@ -1,109 +1,99 @@
-
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useAuth } from '@/context/auth';
-import { ModeToggle } from '@/components/ui/theme-toggle';
-import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useLanguage } from '@/context/LanguageContext';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { MoonIcon, SunIcon } from '@radix-ui/react-icons';
+import { useTheme } from '@/components/ui/theme-provider';
+import { Button } from '@/components/ui/button';
 
-interface HeaderProps {
-  toggleSidebar?: () => void;
-}
-
-export const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+const Header = () => {
+  const { user, logout, isAuthenticated } = useAuth();
   const { t } = useLanguage();
-
-  // Adminlik məlumatlarını göstərmək
-  const renderAdminInfo = () => {
-    if (!user) return null;
-
-    // adminEntity istifadə edərkən null olub-olmadığını yoxlayırıq
-    if (user.role === 'schooladmin' && user.adminEntity?.schoolName) {
-      return <span className="font-semibold text-lg hidden md:block">{user.adminEntity.schoolName}</span>;
-    }
-    
-    if (user.role === 'sectoradmin' && user.adminEntity?.sectorName) {
-      return <span className="font-semibold text-lg hidden md:block">{user.adminEntity.sectorName}</span>;
-    }
-    
-    if (user.role === 'regionadmin' && user.adminEntity?.regionName) {
-      return <span className="font-semibold text-lg hidden md:block">{user.adminEntity.regionName}</span>;
-    }
-    
-    if (user.role === 'superadmin') {
-      return <span className="font-semibold text-lg hidden md:block">İnfoLine Admin</span>;
-    }
-    
-    return <span className="font-semibold text-lg hidden md:block">{t('dashboard')}</span>;
-  };
-
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isLoginPage = pathname.includes('/login');
+  const isForgotPasswordPage = pathname.includes('/forgot-password');
+  const { setTheme } = useTheme();
+  
   const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    await logout();
+    navigate('/login');
   };
 
-  return (
-    <header className="border-b px-4 py-2 h-16 flex items-center justify-between bg-background">
-      <div className="flex items-center gap-4">
-        {renderAdminInfo()}
-      </div>
+  let title = '';
+  let subtitle = '';
 
-      <div className="flex items-center gap-2">
-        <LanguageSwitcher />
-        <ModeToggle />
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Avatar className="cursor-pointer h-8 w-8">
-              <AvatarImage src={user?.avatar} />
-              <AvatarFallback>{user?.full_name?.charAt(0) || '?'}</AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem 
-              onClick={() => navigate('/profile')}
-              className="cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <span className="material-icons text-sm">person</span>
-                <span>{t('profile')}</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => navigate('/settings')}
-              className="cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <span className="material-icons text-sm">settings</span>
-                <span>{t('settings')}</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={handleLogout}
-              className="cursor-pointer"
-            >
-              <div className="flex items-center gap-2 text-red-500">
-                <span className="material-icons text-sm">logout</span>
-                <span>{t('signOut')}</span>
-              </div>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+  if (user && user.adminEntity) {
+    if (user.role === 'regionadmin') {
+      title = user.adminEntity.name || '';
+      subtitle = user.adminEntity.type === 'regionadmin' ? t('regionAdmin') : '';
+    } else if (user.role === 'sectoradmin') {
+      title = user.adminEntity.name || '';
+      subtitle = user.adminEntity.type === 'sectoradmin' ? t('sectorAdmin') : '';
+    } else if (user.role === 'schooladmin') {
+      title = user.adminEntity.name || '';
+      subtitle = user.adminEntity.type === 'schooladmin' ? t('schoolAdmin') : '';
+    }
+  }
+  
+  if (isLoginPage || isForgotPasswordPage) return null;
+
+  const userImage = user?.avatar || '';
+  
+  return (
+    <div className="flex items-center justify-between p-4 bg-background sticky top-0 z-50 border-b">
+      <div className="flex flex-col">
+        <span className="font-bold">{title || t('dashboard')}</span>
+        {subtitle && <span className="text-sm text-muted-foreground">{subtitle}</span>}
       </div>
-    </header>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="h-8 w-8">
+              {userImage ? (
+                <AvatarImage src={userImage} alt={user?.full_name} />
+              ) : (
+                <AvatarFallback>{user?.full_name?.substring(0, 2)?.toUpperCase()}</AvatarFallback>
+              )}
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate('/profile')}>{t('profile')}</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/settings')}>{t('settings')}</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleLogout}>{t('logout')}</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setTheme("light")}>
+            <SunIcon className="mr-2 h-4 w-4" />
+            <span>{t('light')}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("dark")}>
+            <MoonIcon className="mr-2 h-4 w-4" />
+            <span>{t('dark')}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("system")}>
+            <SunIcon className="mr-2 h-4 w-4" />
+            <span>{t('system')}</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 };
 
