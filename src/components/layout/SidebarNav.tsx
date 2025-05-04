@@ -33,13 +33,14 @@ interface SidebarNavProps {
   onItemClick?: () => void;
 }
 
-export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onItemClick }: SidebarNavProps) {
+export function SidebarNav({ className, isCollapsed = false, onItemClick }: SidebarNavProps) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
   const { isSuperAdmin, isRegionAdmin, isSectorAdmin, isSchoolAdmin } = usePermissions();
 
+  // Aktiv naviqasiya linkini müəyyən edir
   const isActive = useCallback((href: string) => {
     if (href === '/dashboard' && location.pathname === '/') {
       return true;
@@ -59,18 +60,26 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
     }
   }, [navigate, location.pathname, onItemClick]);
 
+  // Link klikini idarə edir
   const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
+    e.stopPropagation();
     handleNavigation(href);
   }, [handleNavigation]);
 
+  // Çıxış funksiyası
   const handleLogout = useCallback(async () => {
     if (logout) {
-      await logout();
-      navigate('/login');
+      try {
+        await logout();
+        navigate('/login', { replace: true });
+      } catch (error) {
+        console.error("Çıxış zamanı xəta:", error);
+      }
     }
   }, [logout, navigate]);
 
+  // Naviqasiya elementini render edir
   const renderNavItem = useCallback((item: { href: string; icon: React.ReactElement; label: string; show: boolean }) => {
     if (!item.show) {
       return null;
@@ -100,6 +109,7 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
     );
   }, [isCollapsed, isActive, handleLinkClick]);
 
+  // Naviqasiya elementləri
   const navItems = useMemo(() => [
     {
       href: '/dashboard',

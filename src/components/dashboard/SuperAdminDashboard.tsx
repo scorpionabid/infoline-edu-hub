@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatsCard } from './common/StatsCard';
 import { NotificationsCard } from './common/NotificationsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
-import { SuperAdminDashboardData } from '@/types/dashboard';
+import { SuperAdminDashboardData, UINotification } from '@/types/dashboard';
 import { Building, Users, Landmark, School } from 'lucide-react';
 
 interface SuperAdminDashboardProps {
@@ -13,6 +13,19 @@ interface SuperAdminDashboardProps {
 }
 
 export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
+  // Bildirişləri UI formatına çeviririk
+  const convertedNotifications: UINotification[] = data.notifications.map(notification => ({
+    id: notification.id,
+    title: notification.title || 'Bildiriş',
+    message: notification.message,
+    date: notification.date,
+    isRead: notification.isRead,
+    type: notification.type === 'system' ? 'info' : 
+           notification.type === 'deadline' ? 'warning' :
+           notification.type === 'approval' ? 'success' :
+           notification.type === 'rejection' ? 'error' : 'info'
+  }));
+
   return (
     <div className="space-y-6">
       <Grid columns={4} className="gap-6">
@@ -52,14 +65,16 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
 
       <Grid columns={2} className="gap-6">
         <CompletionRateCard
-          completionRate={data.completionRate}
+          completionRate={data.completionRate || 0}
           title="Ümumi Tamamlama Faizi"
         />
         <NotificationsCard
           title="Bildirişlər"
-          notifications={data.notifications}
+          notifications={convertedNotifications}
         />
       </Grid>
     </div>
   );
 };
+
+export default SuperAdminDashboard;

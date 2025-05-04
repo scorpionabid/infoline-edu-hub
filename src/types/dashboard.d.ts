@@ -1,8 +1,7 @@
 
 import { ColumnType } from "./supabase";
 
-// UI bildiriş tipi ilə DashboardNotification tipi arasında uyğunsuzluq var
-// Bunu düzəltmək üçün ortaq tip yaradırıq
+// UI və Dashboard bildiriş tipləri arasında ortaq interfeys
 export interface BaseNotification {
   id: string;
   title: string;
@@ -30,15 +29,22 @@ export interface BasicStats {
 }
 
 export interface SectorStat {
+  id?: string;
+  name?: string;
   total: number;
   incomplete?: number;
   active?: number;
 }
 
 export interface SchoolStat {
+  id?: string;
+  name?: string;
+  sectorId?: string;
+  sectorName?: string;
   total: number;
   incomplete?: number;
   active?: number;
+  completionRate?: number;
 }
 
 export interface FormStatus {
@@ -105,11 +111,7 @@ export interface SuperAdminDashboardData {
   };
   regions?: any[];
   pendingApprovals?: any[];
-  regionCount?: number;
-  sectorCount?: number;
-  schoolCount?: number;
-  userCount?: number;
-  formsByStatus: {
+  formsByStatus?: {
     pending: number;
     approved: number;
     rejected: number;

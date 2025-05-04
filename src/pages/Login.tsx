@@ -20,8 +20,8 @@ const Login = () => {
     if (redirectInProgress || isLoading) return;
     
     // İstifadəçi artıq autentifikasiya olunubsa və user məlumatları varsa, dashboard-a yönləndiririk
-    if (isAuthenticated && user?.role) {
-      console.log(`User is authenticated with role: ${user.role}, redirecting to ${from}`);
+    if (isAuthenticated && user && user.role) {
+      console.log(`İstifadəçi autentifikasiya olunub, rolu: ${user.role}, yönləndirilir: ${from}`);
       setRedirectInProgress(true);
       navigate(from, { replace: true });
     }

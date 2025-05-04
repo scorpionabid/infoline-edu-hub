@@ -13,15 +13,17 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // İstifadəçi autentifikasiya olmayıbsa, login səhifəsinə yönləndiririk
+    // İstifadəçi autentifikasiya olmadıqda yönləndirmə
     if (!isLoading && !isAuthenticated) {
       console.log("Dashboard: İstifadəçi autentifikasiya olmayıb, login səhifəsinə yönləndirilir");
       navigate('/login');
       return;
     }
 
-    // Yalnız bir dəfə yoxlama aparırıq - initial render zamanı
+    // İlk dəfə yüklənmə zamanı bir dəfə yoxlama
     if (initialCheck && !isLoading) {
+      setInitialCheck(false);
+      
       // Autentifikasiya olunub, amma user məlumatları yoxdursa, xəta göstəririk
       if (isAuthenticated && !user) {
         console.error("Dashboard: İstifadəçi autentifikasiya olunub, lakin user məlumatları yoxdur");
@@ -29,8 +31,6 @@ const Dashboard: React.FC = () => {
           description: 'Zəhmət olmasa, yenidən daxil olun',
         });
       }
-      
-      setInitialCheck(false);
     }
   }, [isAuthenticated, isLoading, user, navigate, initialCheck]);
   
@@ -43,9 +43,9 @@ const Dashboard: React.FC = () => {
     );
   }
   
-  // İstifadəçi autentifikasiya olmayıbsa, boş div qaytarırıq
+  // İstifadəçi autentifikasiya olmayıbsa, null qaytarırıq
   // Redirect işi useEffect-də edilir
-  if (!isAuthenticated || !user || !user.role) {
+  if (!isAuthenticated || !user) {
     return null;
   }
   

@@ -1,6 +1,6 @@
 
 import React, { ReactNode, useState, useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import { ChevronLeft, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,11 +13,12 @@ export interface SidebarLayoutProps {
   children?: ReactNode;
 }
 
-const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
-  const { user } = useAuth();
+const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
+  const { user, isAuthenticated } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { t } = useLanguage();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const navigate = useNavigate();
   
   // Ekran ölçüsü dəyişikliklərinə reaksiya vermək üçün
   useEffect(() => {
@@ -47,8 +48,15 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     }
   }, [isMobile]);
 
-  // User məlumatları yoxdursa, boş komponent qaytarırıq (AppRoutes-da ProtectedRoute bunu yönləndirir)
-  if (!user) {
+  // İstifadəçi autentifikasiya olmayıbsa, istifadəçini login səhifəsinə yönləndiririk
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  // User məlumatları yoxdursa, sadəcə çıxış komponentini qaytarırıq
+  if (!isAuthenticated || !user) {
     return <Outlet />;
   }
 
@@ -58,65 +66,56 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     }
   };
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div 
+      
+      <div className="flex-1 flex">
+        <div
           className={cn(
-            "bg-background border-r transition-all duration-300 ease-in-out z-20 h-full",
-            isSidebarOpen ? "w-64" : "w-0 md:w-16",
-            isMobile && isSidebarOpen ? "fixed inset-y-0 left-0 h-full" : "",
+            "bg-background border-r h-full transition-all duration-300 ease-in-out",
+            isSidebarOpen ? "w-[240px]" : "w-[70px]",
+            isMobile && isSidebarOpen ? "fixed z-40 h-screen" : "",
             isMobile && !isSidebarOpen ? "hidden" : ""
           )}
         >
-          <div className="flex flex-col h-full">
-            <div className="p-4 flex items-center justify-between border-b">
-              <div className={cn("flex items-center", !isSidebarOpen && "md:hidden")}>
-                <div className="bg-primary w-8 h-8 rounded-md flex items-center justify-center text-primary-foreground font-bold text-lg">
-                  I
-                </div>
-                <span className={cn("font-semibold text-lg ml-2", !isSidebarOpen && "md:hidden")}>InfoLine</span>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={toggleSidebar}
-              >
-                {isSidebarOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
-              </Button>
+          <div className="flex items-center justify-between p-4">
+            <div className={cn("transition-opacity", isSidebarOpen ? "opacity-100" : "opacity-0 hidden")}>
+              <h2 className="text-xl font-bold">InfoLine</h2>
             </div>
-            
-            {/* Navigation */}
-            <div className="flex-1 overflow-y-auto py-2">
-              <SidebarNav 
-                onItemClick={handleItemClick} 
-                isSidebarOpen={isSidebarOpen} 
-                isCollapsed={!isSidebarOpen}
-              />
-            </div>
+            <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+              <ChevronLeft className={cn("h-5 w-5 transition-transform", !isSidebarOpen && "rotate-180")} />
+            </Button>
           </div>
-        </div>
-        
-        {/* Mobile overlay */}
-        {isSidebarOpen && isMobile && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-10" 
-            onClick={() => setIsSidebarOpen(false)}
+          
+          <SidebarNav 
+            isCollapsed={!isSidebarOpen} 
+            isSidebarOpen={isSidebarOpen}
+            onItemClick={handleItemClick}
           />
+        </div>
+
+        {/* Mobile sidebar toggle */}
+        {isMobile && !isSidebarOpen && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="fixed top-16 left-4 z-30"
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
         )}
-        
+
         {/* Main content */}
-        <main className="flex-1 overflow-auto">
-          <div className="p-4">
-            {children || <Outlet />}
-          </div>
-        </main>
+        <div 
+          className={cn(
+            "flex-1 p-6 overflow-y-auto transition-all duration-300", 
+            isMobile && isSidebarOpen ? "ml-[240px]" : ""
+          )}
+        >
+          <Outlet />
+        </div>
       </div>
     </div>
   );

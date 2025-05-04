@@ -60,10 +60,10 @@ export function SchoolAdminDashboard({
     );
   }
   
-  // Bildirişləri tələb olunan formata çevirir
+  // Bildirişləri tələb olunan UI formata çevirir
   const convertedNotifications: UINotification[] = data.notifications.map(notification => ({
     id: notification.id,
-    title: notification.title,
+    title: notification.title || "Bildiriş",
     message: notification.message,
     date: notification.date,
     isRead: notification.isRead,

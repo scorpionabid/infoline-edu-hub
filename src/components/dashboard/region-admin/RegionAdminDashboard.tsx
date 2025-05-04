@@ -4,13 +4,33 @@ import { Grid } from '@/components/ui/grid';
 import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
 import { NotificationsCard } from '../common/NotificationsCard';
-import { RegionAdminDashboardData } from '@/types/dashboard';
+import { RegionAdminDashboardData, UINotification } from '@/types/dashboard';
 
 interface RegionAdminDashboardProps {
   data: RegionAdminDashboardData;
 }
 
 export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
+  // Sektör statistikası üçün default dəyərlər təyin edirik
+  const sectorStatsTotal = data.sectorStats?.total || data.stats.sectors;
+  const sectorStatsActive = data.sectorStats?.active || data.stats.sectors;
+  const activePercentage = sectorStatsTotal > 0 ? 
+    Math.round((sectorStatsActive / sectorStatsTotal) * 100) : 
+    100;
+
+  // Bildirişləri UI formatına çeviririk
+  const convertedNotifications: UINotification[] = data.notifications.map(notification => ({
+    id: notification.id,
+    title: notification.title || 'Bildiriş',
+    message: notification.message,
+    date: notification.date,
+    isRead: notification.isRead,
+    type: notification.type === 'system' ? 'info' : 
+           notification.type === 'deadline' ? 'warning' :
+           notification.type === 'approval' ? 'success' :
+           notification.type === 'rejection' ? 'error' : 'info'
+  }));
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Region Dashboard</h2>
@@ -21,7 +41,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
           value={data.stats.sectors}
           icon="S"
           description="Toplam sektor sayı"
-          trend={`${data.sectorStats?.active / data.sectorStats?.total * 100 || 0}% aktiv`}
+          trend={`${activePercentage}% aktiv`}
           trendDirection="up"
         />
         <StatsCard
@@ -44,13 +64,13 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
 
       <Grid columns={2} className="gap-6">
         <CompletionRateCard
-          completionRate={data.completionRate}
+          completionRate={data.completionRate || 0}
           title="Ümumi Tamamlanma"
         />
                 
         <NotificationsCard
           title="Bildirişlər"
-          notifications={data.notifications}
+          notifications={convertedNotifications}
         />
       </Grid>
     </div>
