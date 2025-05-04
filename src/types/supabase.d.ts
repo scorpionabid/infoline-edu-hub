@@ -19,7 +19,7 @@ export interface Profile {
   sector_id?: string;
   school_id?: string;
   role?: UserRole;
-  admin_entity?: any;
+  admin_entity?: AdminEntity;
 }
 
 export interface UserRoleData {
