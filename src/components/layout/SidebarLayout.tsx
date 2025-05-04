@@ -77,18 +77,29 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
     return <Outlet />;
   }
 
+  // Sidebarın mobillik əsasında görünməsini təmin edən overlay
+  const sidebarOverlay = isMobile && isSidebarOpen && (
+    <div 
+      className="fixed inset-0 bg-black/50 z-30"
+      onClick={() => setIsSidebarOpen(false)}
+    />
+  );
+
   return (
     <div className="min-h-screen flex flex-col w-full">
       <Header />
       
       <div className="flex-1 flex">
+        {/* Overlay arxa fonu */}
+        {sidebarOverlay}
+        
         {/* Sidebar */}
         <div
           className={cn(
-            "bg-background border-r h-full transition-all duration-300 ease-in-out relative",
+            "bg-background border-r z-40 transition-all duration-300 ease-in-out",
             isSidebarOpen ? "w-[240px]" : "w-[70px]",
-            isMobile && isSidebarOpen ? "fixed z-40 h-screen" : "",
-            isMobile && !isSidebarOpen ? "hidden" : ""
+            isMobile ? "fixed h-screen" : "h-full relative",
+            isMobile && !isSidebarOpen && "hidden"
           )}
         >
           <div className="flex items-center justify-between p-4">
@@ -123,7 +134,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
         <div 
           className={cn(
             "flex-1 p-6 overflow-y-auto transition-all duration-300",
-            isMobile && isSidebarOpen ? "ml-[240px]" : ""
+            isMobile ? "w-full" : (isSidebarOpen ? "ml-[240px]" : "ml-[70px]")
           )}
         >
           <Outlet />

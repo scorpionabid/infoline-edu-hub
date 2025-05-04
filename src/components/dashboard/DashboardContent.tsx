@@ -1,219 +1,310 @@
 
-import React, { useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { SuperAdminDashboard } from './SuperAdminDashboard';
-import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
-import { SectorAdminDashboard } from './sector-admin/SectorAdminDashboard';
-import { SchoolAdminDashboard } from './SchoolAdminDashboard';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { fetchDashboardData } from '@/api/dashboardApi';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-
-// Düzgün tip konversiyaları
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/context/auth';
+import { useLanguage } from '@/context/LanguageContext';
+import SuperAdminDashboard from './SuperAdminDashboard';
+import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
+import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
+import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
 import { 
+  DashboardData, 
   SuperAdminDashboardData,
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-} from '@/types/dashboard';
+  Notification
+} from '@/types/dashboard.d';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+import { Loader2 } from 'lucide-react';
 
-// Notification tipi
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  createdAt: string;
-  type: "deadline" | "approval" | "rejection" | "comment" | "system";
-  read: boolean;
-}
+const DashboardContent: React.FC = () => {
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-// Bildiriş məlumatlarını konvertasiya edən yardımçı funksiya
-const convertToDashboardNotification = (notification: Notification) => ({
-  id: notification.id,
-  title: notification.title,
-  message: notification.message,
-  date: notification.createdAt,
-  type: notification.type,
-  isRead: !notification.read
-});
+  // Dashboard məlumatlarını yükləyirik
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user || !user.role) {
+        console.error('İstifadəçi və ya rol məlumatları mövcud deyil');
+        return;
+      }
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        let data: any = {};
+        
+        // İstifadəçinin roluna uyğun dashboard məlumatlarını yükləyirik
+        switch (user.role) {
+          case 'superadmin':
+            data = await fetchSuperAdminData();
+            break;
+          case 'regionadmin':
+            data = await fetchRegionAdminData(user.id);
+            break;
+          case 'sectoradmin':
+            data = await fetchSectorAdminData(user.id);
+            break;
+          case 'schooladmin':
+            data = await fetchSchoolAdminData(user.id);
+            break;
+          default:
+            throw new Error('Naməlum istifadəçi rolu');
+        }
+        
+        console.log(`${user.role} dashboard məlumatları yükləndi:`, data);
+        setDashboardData(data);
+      } catch (error: any) {
+        console.error('Dashboard məlumatlarını yükləyərkən xəta baş verdi:', error);
+        setError(error.message || 'Dashboard məlumatlarını yükləyərkən xəta baş verdi');
+        toast.error(t('errorLoadingDashboard'), {
+          description: error.message || t('unexpectedError')
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-export interface DashboardContentProps {
-  // Hər hansı bir prop tanımı
-}
+    fetchDashboardData();
+  }, [user, t]);
 
-export const DashboardContent: React.FC<DashboardContentProps> = () => {
-  const { userRole, regionId, sectorId, schoolId } = usePermissions();
-  const navigate = useNavigate();
-  
-  // Məlumat daxil etmə səhifəsinə keçid funksiyası
-  const navigateToDataEntry = useCallback(() => {
-    navigate('/data-entry');
-  }, [navigate]);
-  
-  // Form elementinə klik funksiyası
-  const handleFormClick = useCallback((formId: string) => {
-    navigate(`/data-entry?categoryId=${formId}`);
-  }, [navigate]);
-
-  // Rol əsasında dashboard datasını əldə edirik
-  const { 
-    data: dashboardData, 
-    isLoading, 
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['dashboard', userRole, regionId, sectorId, schoolId],
-    queryFn: () => fetchDashboardData({ userRole, regionId, sectorId, schoolId }),
-    staleTime: 30000, // 30 saniyə cache
-    retry: 1, // Xəta halında maksimum 1 dəfə cəhd et
-    refetchOnWindowFocus: false // Focus dəyişəndə yenidən məlumat almırıq
-  });
-
-  // Mock notifications
-  const mockNotifications = useMemo(() => [
-    {
-      id: '1',
-      title: 'Yeni kateqoriya əlavə edildi',
-      message: 'Təhsil statistikası kateqoriyası sistemə əlavə edildi',
-      createdAt: new Date().toISOString(),
-      type: 'system' as const,
-      read: false
-    },
-    {
-      id: '2',
-      title: 'Son müddət xəbərdarlığı',
-      message: 'Məktəb məlumatlarını doldurmaq üçün son 3 gün qalıb',
-      createdAt: new Date().toISOString(),
-      type: 'deadline' as const,
-      read: false
-    }
-  ], []);
-
-  // Xəta və ya yüklənmə halları
-  if (error) {
-    console.error('Dashboard data yüklənmə xətası:', error);
+  // SuperAdmin Dashboard məlumatlarını əldə etmək
+  const fetchSuperAdminData = async (): Promise<SuperAdminDashboardData> => {
+    // İmitasiya edilmiş məlumatlar (daha sonra real API endpoint istifadə ediləcək)
+    const mockData: SuperAdminDashboardData = {
+      regions: [
+        { id: '1', name: 'Bakı', totalSchools: 150, completionRate: 85, sectorCount: 5, schoolCount: 150 },
+        { id: '2', name: 'Sumqayıt', totalSchools: 75, completionRate: 72, sectorCount: 3, schoolCount: 75 },
+      ],
+      stats: {
+        regions: 10,
+        sectors: 25,
+        schools: 450,
+        users: 1200
+      },
+      totalSchools: 450,
+      totalUsers: 1200,
+      summary: {
+        totalForms: 850,
+        completedForms: 720,
+        pendingForms: 80,
+        overdueForms: 50,
+        completionRate: 85
+      },
+      recentActivity: [
+        { id: '1', type: 'form_submitted', title: 'Form təqdim edildi', description: 'Bakı, Məktəb #45', timestamp: new Date().toISOString(), user: 'Admin' }
+      ],
+      notifications: [
+        { 
+          id: '1', 
+          title: 'Yeni bildiriş', 
+          message: 'Növbəti toplantı sabah saat 10:00-da keçiriləcək', 
+          type: 'info',
+          isRead: false,
+          date: new Date().toISOString().split('T')[0],
+          createdAt: new Date().toISOString()
+        }
+      ],
+      formsByStatus: {
+        pending: 80,
+        approved: 720,
+        rejected: 50,
+        total: 850
+      },
+      approvalRate: 85,
+      completionRate: 85
+    };
     
-    return (
-      <div className="p-4 text-center text-red-500">Dashboard məlumatları yüklənərkən xəta baş verdi</div>
-    );
-  }
+    return mockData;
+  };
 
-  // Dashboard datası əldə edilənə qədər yüklənmə göstəririk
-  if (isLoading || !dashboardData) {
+  // RegionAdmin Dashboard məlumatlarını əldə etmək
+  const fetchRegionAdminData = async (userId: string): Promise<RegionAdminDashboardData> => {
+    // İmitasiya edilmiş məlumatlar (daha sonra real API endpoint istifadə ediləcək)
+    const mockData: RegionAdminDashboardData = {
+      sectors: [
+        { id: '1', name: 'Yasamal', regionId: 'r1', regionName: 'Bakı', totalSchools: 45, completionRate: 92 },
+        { id: '2', name: 'Nizami', regionId: 'r1', regionName: 'Bakı', totalSchools: 38, completionRate: 78 }
+      ],
+      stats: {
+        sectors: 8,
+        schools: 120,
+        users: 350
+      },
+      totalSchools: 120,
+      summary: {
+        totalForms: 350,
+        completedForms: 280,
+        pendingForms: 40,
+        overdueForms: 30,
+        completionRate: 80
+      },
+      recentActivity: [
+        { id: '1', type: 'form_approved', title: 'Form təsdiqləndi', description: 'Yasamal, Məktəb #12', timestamp: new Date().toISOString(), user: 'Region Admin' }
+      ],
+      notifications: [
+        { 
+          id: '1', 
+          title: 'Yeni bildiriş', 
+          message: 'Yeni sektor əlavə edildi', 
+          type: 'success',
+          isRead: false,
+          date: new Date().toISOString().split('T')[0],
+          createdAt: new Date().toISOString()
+        }
+      ],
+      sectorStats: {
+        total: 8,
+        active: 7
+      },
+      schoolStats: {
+        total: 120,
+        active: 115,
+        incomplete: 20
+      },
+      approvalRate: 82,
+      completionRate: 80
+    };
+    
+    return mockData;
+  };
+
+  // SectorAdmin Dashboard məlumatlarını əldə etmək
+  const fetchSectorAdminData = async (userId: string): Promise<SectorAdminDashboardData> => {
+    // İmitasiya edilmiş məlumatlar (daha sonra real API endpoint istifadə ediləcək)
+    const mockData: SectorAdminDashboardData = {
+      schools: [
+        { id: '1', name: 'Məktəb #45', sectorId: 's1', sectorName: 'Yasamal', regionId: 'r1', regionName: 'Bakı', completedForms: 35, totalForms: 40, completionRate: 87.5 },
+        { id: '2', name: 'Məktəb #28', sectorId: 's1', sectorName: 'Yasamal', regionId: 'r1', regionName: 'Bakı', completedForms: 28, totalForms: 40, completionRate: 70 }
+      ],
+      stats: {
+        schools: 45,
+        users: 150
+      },
+      summary: {
+        totalForms: 180,
+        completedForms: 140,
+        pendingForms: 25,
+        overdueForms: 15,
+        completionRate: 78
+      },
+      recentActivity: [
+        { id: '1', type: 'form_submitted', title: 'Form təqdim edildi', description: 'Məktəb #28', timestamp: new Date().toISOString(), user: 'Məktəb Admin' }
+      ],
+      notifications: [
+        { 
+          id: '1', 
+          title: 'Təcili bildiriş', 
+          message: 'Məktəb #22 formu gecikdirir', 
+          type: 'warning',
+          isRead: false,
+          date: new Date().toISOString().split('T')[0],
+          createdAt: new Date().toISOString()
+        }
+      ],
+      schoolsStats: [
+        { id: '1', name: 'Məktəb #45', sectorId: 's1', sectorName: 'Yasamal', completionRate: 87.5, total: 40 },
+        { id: '2', name: 'Məktəb #28', sectorId: 's1', sectorName: 'Yasamal', completionRate: 70, total: 40 }
+      ],
+      approvalRate: 75,
+      completionRate: 78
+    };
+    
+    return mockData;
+  };
+
+  // SchoolAdmin Dashboard məlumatlarını əldə etmək
+  const fetchSchoolAdminData = async (userId: string): Promise<SchoolAdminDashboardData> => {
+    // İmitasiya edilmiş məlumatlar (daha sonra real API endpoint istifadə ediləcək)
+    const mockData: SchoolAdminDashboardData = {
+      upcomingDeadlines: [
+        { id: '1', title: 'İllik hesabat', status: 'pending', progress: 65, dueDate: new Date(Date.now() + 86400000 * 2).toISOString() },
+        { id: '2', title: 'Şagird məlumatları', status: 'pending', progress: 30, dueDate: new Date(Date.now() + 86400000 * 5).toISOString() }
+      ],
+      recentForms: [
+        { id: '3', title: 'Müəllim məlumatları', status: 'approved', progress: 100 },
+        { id: '4', title: 'İnfrastruktur hesabatı', status: 'rejected', progress: 80 }
+      ],
+      summary: {
+        totalForms: 12,
+        completedForms: 8,
+        pendingForms: 3,
+        overdueForms: 1,
+        completionRate: 67
+      },
+      recentActivity: [
+        { id: '1', type: 'form_rejected', title: 'Form rədd edildi', description: 'İnfrastruktur hesabatı', timestamp: new Date().toISOString(), user: 'Sektor Admin' }
+      ],
+      notifications: [
+        { 
+          id: '1', 
+          title: 'Təcili bildiriş', 
+          message: 'İllik hesabatın son təqdim tarixi yaxınlaşır', 
+          type: 'warning',
+          isRead: false,
+          date: new Date().toISOString().split('T')[0],
+          createdAt: new Date().toISOString()
+        }
+      ],
+      formStats: {
+        pending: 3,
+        approved: 8,
+        rejected: 1,
+        total: 12,
+        incomplete: 2,
+        drafts: 1,
+        dueSoon: 2,
+        overdue: 1
+      },
+      approvalRate: 80,
+      completionRate: 67
+    };
+    
+    return mockData;
+  };
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <span className="ml-2 text-lg">{t('loadingDashboard')}</span>
       </div>
     );
   }
 
-  // SuperAdmin Dashboard
-  if (userRole === 'superadmin') {
-    const formsByStatus = {
-      pending: dashboardData.pendingForms || 0,
-      approved: dashboardData.approvedForms || 0,
-      rejected: dashboardData.rejectedForms || 0,
-      total: dashboardData.totalForms || 0
-    };
-
-    const superAdminData: SuperAdminDashboardData = {
-      stats: {
-        regions: dashboardData.regions || 0,
-        sectors: dashboardData.sectors || 0,
-        schools: dashboardData.schools || 0,
-        users: dashboardData.users || 0,
-      },
-      // Bildirişlər üçün uyğun konversiya edirik
-      notifications: mockNotifications.map(convertToDashboardNotification),
-      formsByStatus,
-      completionRate: dashboardData.completionRate || 0,
-      approvalRate: dashboardData.approvalRate || 0
-    };
-
-    return <SuperAdminDashboard data={superAdminData} />;
-  }
-
-  // RegionAdmin Dashboard
-  if (userRole === 'regionadmin') {
-    const sectorStats = {
-      total: dashboardData.sectors || 0,
-      active: dashboardData.activeSectors || 0
-    };
-
-    const schoolStats = {
-      total: dashboardData.schools || 0, 
-      active: dashboardData.activeSchools || 0,
-      incomplete: dashboardData.incompleteSchools || 0
-    };
-
-    const regionAdminData: RegionAdminDashboardData = {
-      stats: {
-        sectors: dashboardData.sectors || 0,
-        schools: dashboardData.schools || 0,
-        users: dashboardData.users || 0,
-      },
-      notifications: mockNotifications.map(convertToDashboardNotification),
-      sectorStats,
-      schoolStats,
-      completionRate: dashboardData.completionRate || 0
-    };
-
-    return <RegionAdminDashboard data={regionAdminData} />;
-  }
-
-  // SectorAdmin Dashboard
-  if (userRole === 'sectoradmin') {
-    const schoolsStats = [{
-      total: dashboardData.schools || 0,
-      incomplete: dashboardData.incompleteSchools || 0,
-      active: dashboardData.activeSchools || 0
-    }];
-    
-    const sectorAdminData: SectorAdminDashboardData = {
-      stats: {
-        schools: dashboardData.schools || 0,
-        users: dashboardData.users || 0
-      },
-      schoolsStats,
-      notifications: mockNotifications.map(convertToDashboardNotification),
-      completionRate: dashboardData.completionRate || 0
-    };
-
-    return <SectorAdminDashboard data={sectorAdminData} />;
-  }
-
-  // SchoolAdmin Dashboard
-  if (userRole === 'schooladmin') {
-    const formStats = {
-      total: dashboardData.totalForms || 0,
-      approved: dashboardData.approvedForms || 0,
-      pending: dashboardData.pendingForms || 0,
-      rejected: dashboardData.rejectedForms || 0,
-      incomplete: dashboardData.incompleteForms || 0,
-      drafts: dashboardData.draftForms || 0
-    };
-
-    const schoolAdminData: SchoolAdminDashboardData = {
-      formStats,
-      notifications: mockNotifications.map(convertToDashboardNotification),
-      categories: dashboardData.categories || [],
-      completionRate: dashboardData.completionRate || 0
-    };
-
+  if (error) {
     return (
-      <SchoolAdminDashboard 
-        data={schoolAdminData}
-        isLoading={isLoading}
-        error={error}
-        onRefresh={refetch}
-        navigateToDataEntry={navigateToDataEntry}
-        handleFormClick={handleFormClick}
-      />
+      <div className="bg-destructive/10 p-6 rounded-lg flex flex-col items-center justify-center h-64">
+        <h3 className="text-xl font-medium text-destructive mb-2">{t('dashboardLoadError')}</h3>
+        <p className="text-muted-foreground">{error}</p>
+      </div>
     );
   }
 
-  return <div className="p-4 text-center">Məlumat tapılmadı</div>;
+  // İstifadəçinin roluna uyğun dashboard komponentini göstəririk
+  if (!user || !dashboardData) return null;
+
+  switch (user.role) {
+    case 'superadmin':
+      return <SuperAdminDashboard data={dashboardData as SuperAdminDashboardData} />;
+    case 'regionadmin':
+      return <RegionAdminDashboard data={dashboardData as RegionAdminDashboardData} />;
+    case 'sectoradmin':
+      return <SectorAdminDashboard data={dashboardData as SectorAdminDashboardData} />;
+    case 'schooladmin':
+      return <SchoolAdminDashboard data={dashboardData as SchoolAdminDashboardData} isLoading={false} />;
+    default:
+      return (
+        <div className="bg-destructive/10 p-6 rounded-lg">
+          <p className="text-destructive">{t('unknownUserRole')} {user.role}</p>
+        </div>
+      );
+  }
 };
 
 export default DashboardContent;

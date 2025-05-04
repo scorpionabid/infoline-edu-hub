@@ -1,140 +1,97 @@
 
-import { ColumnType } from "./supabase";
+import { FormItem } from "./form";
 
-// UI və Dashboard bildiriş tipləri arasında ortaq interfeys
-export interface BaseNotification {
+export interface DashboardSummary {
+  totalForms: number;
+  completedForms: number;
+  pendingForms: number;
+  overdueForms: number;
+  completionRate: number;
+}
+
+export interface ActivityItem {
+  id: string;
+  type: 'form_submitted' | 'form_approved' | 'form_rejected' | 'comment_added';
+  title: string;
+  description: string;
+  timestamp: string;
+  user?: string;
+  entityId?: string;
+}
+
+export interface Notification {
   id: string;
   title: string;
   message: string;
-  date: string;
+  type: 'info' | 'warning' | 'success' | 'error';
   isRead: boolean;
+  read?: boolean; // Geriyə uyğunluq üçün
+  createdAt: string;
+  date?: string; // UI rahatılığı üçün
 }
 
-export interface DashboardNotification extends BaseNotification {
-  timestamp?: string;
-  type: "system" | "deadline" | "approval" | "rejection" | "comment";
-  read?: boolean;
-  createdAt?: string;
-}
-
-export interface Notification extends BaseNotification {
-  type: "error" | "info" | "warning" | "success";
-}
-
-// UINotification artıq Notification ilə əvəz olunur
-export type UINotification = Notification;
-
-export interface BasicStats {
-  regions?: number;
-  sectors?: number;
-  schools?: number;
-  users?: number;
-}
-
-export interface SectorStat {
-  id?: string;
-  name?: string;
-  total: number;
-  incomplete?: number;
-  active?: number;
-}
-
-export interface SchoolStat {
-  id?: string;
-  name?: string;
-  sectorId?: string;
-  sectorName?: string;
-  total: number;
-  incomplete?: number;
-  active?: number;
-  completionRate?: number;
-}
-
-export interface FormStatus {
-  pending: number;
-  approved: number;
-  rejected: number;
-  total: number;
-  incomplete?: number;
-  drafts?: number;
-  dueSoon?: number;
-  overdue?: number;
-}
-
-export interface CompletionStats {
-  percentage: number;
-  total: number;
-  completed: number;
-}
-
-export interface FormItem {
+export interface RegionStats {
   id: string;
-  title: string;
-  status: "pending" | "approved" | "rejected" | "draft" | "incomplete";
-  dueDate?: string;
-  progress: number;
-  category?: string;
+  name: string;
+  totalSchools: number;
+  schoolCount?: number;
+  sectorCount?: number;
+  completionRate: number;
+  sectors?: number;
+}
+
+export interface SectorStats {
+  id: string;
+  name: string;
+  regionId: string;
+  regionName: string;
+  totalSchools: number;
+  completionRate: number;
+}
+
+export interface SchoolStats {
+  id: string;
+  name: string;
+  sectorId: string;
+  sectorName: string;
+  regionId: string;
+  regionName: string;
+  completedForms: number;
+  totalForms: number;
+  completionRate: number;
+}
+
+export interface RecentForm extends FormItem {
+  schoolName?: string;
+  sectorName?: string;
+  regionName?: string;
 }
 
 export interface DashboardData {
-  regions?: number;
-  sectors?: number;
-  schools?: number;
-  users?: number;
-  activeSectors?: number;
-  activeSchools?: number;
-  incompleteSchools?: number;
-  pendingForms?: number;
-  approvedForms?: number;
-  rejectedForms?: number;
-  totalForms?: number;
-  incompleteForms?: number;
-  draftForms?: number;
-  completionRate?: number;
+  summary: DashboardSummary;
+  recentActivity: ActivityItem[];
+  notifications: Notification[];
   approvalRate?: number;
-  categories?: CategorySummary[];
+  completionRate?: number;
 }
 
-export interface CategorySummary {
-  id: string;
-  name: string;
-  description?: string;
-  deadline?: string;
-  status: string;
-  completion: number;
-  hasPendingItems?: boolean;
-}
-
-export interface SuperAdminDashboardData {
-  stats: {
-    regions: number;
-    sectors: number;
-    schools: number;
-    users: number;
-  };
-  regions?: any[];
-  pendingApprovals?: any[];
+export interface SuperAdminDashboardData extends DashboardData {
+  regions: RegionStats[];
+  totalSchools: number;
+  totalUsers: number;
+  stats?: any;
   formsByStatus?: {
     pending: number;
     approved: number;
     rejected: number;
     total: number;
   };
-  notifications: Notification[];
-  approvalRate?: number;
-  completionRate?: number;
 }
 
-export interface RegionAdminDashboardData {
-  stats: {
-    sectors: number;
-    schools: number;
-    users: number;
-  };
-  pendingItems?: any[];
-  categories?: any[];
-  sectors?: any[];
-  notifications: Notification[];
+export interface RegionAdminDashboardData extends DashboardData {
+  sectors: SectorStats[];
+  totalSchools: number;
+  stats?: any;
   sectorStats?: {
     total: number;
     active: number;
@@ -144,34 +101,54 @@ export interface RegionAdminDashboardData {
     active: number;
     incomplete: number;
   };
-  completionRate?: number;
 }
 
-export interface SectorAdminDashboardData {
-  stats: {
-    schools: number;
-    users: number;
-  };
-  pendingItems?: any[];
-  schools?: any[];
-  categories?: any[];
+export interface SectorAdminDashboardData extends DashboardData {
+  schools: SchoolStats[];
+  stats?: any;
   schoolsStats?: SchoolStat[];
-  notifications: Notification[];
+}
+
+export interface SchoolAdminDashboardData extends DashboardData {
+  upcomingDeadlines: FormItem[];
+  recentForms: FormItem[];
+  formStats?: any;
   completionRate?: number;
 }
 
-export interface SchoolAdminDashboardData {
-  formStats: FormStatus;
-  categories?: CategorySummary[];
-  notifications: Notification[];
-  completionRate: number;
+// Dashboard bildiriş interfeysi
+export interface DashboardNotification {
+  id: string;
+  title?: string;
+  message: string;
+  createdAt?: string;
+  type: 'deadline' | 'approval' | 'rejection' | 'comment' | 'system';
+  read?: boolean;
+  isRead?: boolean; // Geriyə uyğunluq üçün
+  timestamp?: string;
+  date?: string;
 }
 
-export interface SchoolAdminDashboardProps {
-  data: SchoolAdminDashboardData;
-  isLoading?: boolean;
-  error?: any;
-  onRefresh?: () => void;
-  navigateToDataEntry?: () => void;
-  handleFormClick?: (formId: string) => void;
+// UI bildiriş interfeysi
+export type UINotification = Notification;
+
+export interface PendingApprovalItem {
+  id: string;
+  formId: string;
+  categoryId: string;
+  schoolId: string;
+  categoryName?: string;
+  schoolName?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt?: string;
+  submittedBy: string;
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  sectorId: string;
+  sectorName?: string;
+  completionRate: number;
+  total?: number;
 }

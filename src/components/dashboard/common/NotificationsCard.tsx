@@ -1,94 +1,104 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  AlertTriangle, 
-  Info, 
-  Bell 
-} from 'lucide-react';
+import { Bell, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/context/LanguageContext';
+import { Notification } from '@/types/dashboard';
+import { cn } from '@/lib/utils';
 
 export interface NotificationsCardProps {
-  title: string;
-  notifications: {
-    id: string;
-    title: string;
-    message: string;
-    date: string;
-    type: 'info' | 'warning' | 'success' | 'error';
-    isRead: boolean;
-  }[];
+  title?: string;
+  notifications: Notification[];
+  showViewAll?: boolean;
+  className?: string;
 }
 
-export const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
-  title, 
-  notifications = []
-}) => {
-  const getIconByType = (type: string) => {
+export function NotificationsCard({
+  title = 'Bildirişlər',
+  notifications,
+  showViewAll = true,
+  className
+}: NotificationsCardProps) {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  const getIconColor = (type: string) => {
     switch (type) {
-      case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'error':
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
+      case 'danger':
+        return 'text-destructive';
       case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+        return 'text-warning';
+      case 'success':
+        return 'text-success';
       case 'info':
       default:
-        return <Info className="h-5 w-5 text-blue-500" />;
+        return 'text-info';
     }
   };
 
+  const getIcon = (type: string) => {
+    return <Bell className={cn("h-5 w-5", getIconColor(type))} />;
+  };
+
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-center">
-          <CardTitle className="flex items-center">
-            <Bell className="h-5 w-5 mr-2" />
-            {title}
-          </CardTitle>
-          {notifications.length > 0 ? (
-            <Button variant="outline" size="sm" className="text-xs">
-              Hamısına bax
-            </Button>
-          ) : null}
-        </div>
+    <Card className={className}>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-xl font-bold">
+          {title}
+        </CardTitle>
+        {showViewAll && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate('/notifications')}
+          >
+            {t('viewAll')}
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+        )}
       </CardHeader>
-      <CardContent className="flex-grow overflow-hidden">
-        <ScrollArea className="h-full p-0">
-          <div className="space-y-2 pr-4">
-            {notifications.length === 0 ? (
-              <div className="text-center text-muted-foreground p-4">
-                Bildirişiniz yoxdur
-              </div>
-            ) : (
-              notifications.map((notification) => (
-                <div 
-                  key={notification.id}
-                  className={`py-3 border-b last:border-0 ${notification.isRead ? 'opacity-70' : ''}`}
-                >
-                  <div className="flex gap-3">
-                    <div className="shrink-0 self-start pt-1">
-                      {getIconByType(notification.type)}
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <h4 className="font-medium text-sm">{notification.title}</h4>
-                        <span className="text-xs text-muted-foreground">{notification.date}</span>
-                      </div>
-                      <p className="text-sm line-clamp-2 text-muted-foreground mt-1">
-                        {notification.message}
-                      </p>
-                    </div>
+      <CardContent>
+        {notifications.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            {t('noNotifications')}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {notifications.slice(0, 5).map((notification) => (
+              <div 
+                key={notification.id} 
+                className={cn(
+                  "flex space-x-3 p-3 rounded-lg transition-colors",
+                  notification.isRead 
+                    ? "bg-background hover:bg-secondary/20" 
+                    : "bg-secondary/10 hover:bg-secondary/20"
+                )}
+              >
+                <div className="bg-background rounded-full p-2 flex-shrink-0">
+                  {getIcon(notification.type)}
+                </div>
+                <div>
+                  <h4 className={cn(
+                    "font-medium mb-1",
+                    !notification.isRead && "font-bold"
+                  )}>
+                    {notification.title}
+                  </h4>
+                  <p className="text-muted-foreground text-sm">
+                    {notification.message}
+                  </p>
+                  <div className="text-xs text-muted-foreground mt-2">
+                    {notification.date || new Date(notification.createdAt).toLocaleDateString()}
                   </div>
                 </div>
-              ))
-            )}
+              </div>
+            ))}
           </div>
-        </ScrollArea>
+        )}
       </CardContent>
     </Card>
   );
-};
+}

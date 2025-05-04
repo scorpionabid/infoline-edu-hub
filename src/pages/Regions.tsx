@@ -206,7 +206,6 @@ const Regions = () => {
           setOpen={setOpenRegionDialog}
           selectedRegion={selectedRegion}
           onSubmit={handleFormSubmit}
-          onSuccess={handleRegionCreated}
         />
         
         {/* Köhnə admin təyin etmə dialoqu - yeni admin yaratmaq üçün */}
