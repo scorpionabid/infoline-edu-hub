@@ -12,9 +12,9 @@ export interface BaseNotification {
 }
 
 export interface DashboardNotification extends BaseNotification {
-  timestamp: string;
+  timestamp?: string;
   type: "system" | "deadline" | "approval" | "rejection" | "comment";
-  read: boolean;
+  read?: boolean;
   createdAt?: string;
 }
 
@@ -29,9 +29,15 @@ export interface BasicStats {
   users?: number;
 }
 
+export interface SectorStat {
+  total: number;
+  incomplete?: number;
+  active?: number;
+}
+
 export interface SchoolStat {
   total: number;
-  incomplete: number;
+  incomplete?: number;
   active?: number;
 }
 
@@ -97,12 +103,12 @@ export interface SuperAdminDashboardData {
     schools: number;
     users: number;
   };
-  regions: any[];
-  pendingApprovals: any[];
-  regionCount: number;
-  sectorCount: number;
-  schoolCount: number;
-  userCount: number;
+  regions?: any[];
+  pendingApprovals?: any[];
+  regionCount?: number;
+  sectorCount?: number;
+  schoolCount?: number;
+  userCount?: number;
   formsByStatus: {
     pending: number;
     approved: number;
@@ -110,7 +116,7 @@ export interface SuperAdminDashboardData {
     total: number;
   };
   notifications: UINotification[];
-  approvalRate: number;
+  approvalRate?: number;
   completionRate?: number;
 }
 
@@ -120,20 +126,20 @@ export interface RegionAdminDashboardData {
     schools: number;
     users: number;
   };
-  pendingItems: any[];
-  categories: any[];
-  sectors: any[];
+  pendingItems?: any[];
+  categories?: any[];
+  sectors?: any[];
   notifications: UINotification[];
-  sectorStats: {
+  sectorStats?: {
     total: number;
     active: number;
   };
-  schoolStats: {
+  schoolStats?: {
     total: number;
     active: number;
     incomplete: number;
   };
-  completionRate: number;
+  completionRate?: number;
 }
 
 export interface SectorAdminDashboardData {
@@ -141,12 +147,12 @@ export interface SectorAdminDashboardData {
     schools: number;
     users: number;
   };
-  pendingItems: any[];
-  schools: any[];
-  categories: any[];
-  schoolsStats: SchoolStat[];
+  pendingItems?: any[];
+  schools?: any[];
+  categories?: any[];
+  schoolsStats?: SchoolStat[];
   notifications: UINotification[];
-  completionRate: number;
+  completionRate?: number;
 }
 
 export interface SchoolAdminDashboardData {
@@ -158,9 +164,9 @@ export interface SchoolAdminDashboardData {
 
 export interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
-  isLoading: boolean;
-  error: any;
-  onRefresh: () => void;
-  navigateToDataEntry: () => void;
-  handleFormClick: (formId: string) => void;
+  isLoading?: boolean;
+  error?: any;
+  onRefresh?: () => void;
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (formId: string) => void;
 }

@@ -16,12 +16,9 @@ const Login = () => {
   
   // İstifadəçi autentifikasiya olduqda yönləndirmə
   useEffect(() => {
-    // Əgər yönləndirmə artıq başlamışsa, çıxırıq
-    if (redirectInProgress) return;
+    // Əgər yönləndirmə artıq başlamışsa və ya hələ yüklənmə prosesindədirsə, çıxırıq
+    if (redirectInProgress || isLoading) return;
     
-    // Əgər hələ yüklənmə prosesindədirsə, gözləyirik
-    if (isLoading) return;
-
     // İstifadəçi artıq autentifikasiya olunubsa və user məlumatları varsa, dashboard-a yönləndiririk
     if (isAuthenticated && user?.role) {
       console.log(`User is authenticated with role: ${user.role}, redirecting to ${from}`);

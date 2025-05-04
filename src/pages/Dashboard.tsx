@@ -12,16 +12,16 @@ const Dashboard: React.FC = () => {
   const [initialCheck, setInitialCheck] = useState(true);
   const navigate = useNavigate();
   
-  // İlk yüklənmə zamanı yalnız bir dəfə yoxlama aparırıq
   useEffect(() => {
-    if (!isLoading) {
-      // İstifadəçi autentifikasiya olmayıbsa və yükləmə tamamlanıbsa, login səhifəsinə yönləndiririk
-      if (!isAuthenticated) {
-        console.log("Dashboard: İstifadəçi autentifikasiya olmayıb, login səhifəsinə yönləndirilir");
-        navigate('/login');
-        return;
-      }
+    // İstifadəçi autentifikasiya olmayıbsa, login səhifəsinə yönləndiririk
+    if (!isLoading && !isAuthenticated) {
+      console.log("Dashboard: İstifadəçi autentifikasiya olmayıb, login səhifəsinə yönləndirilir");
+      navigate('/login');
+      return;
+    }
 
+    // Yalnız bir dəfə yoxlama aparırıq - initial render zamanı
+    if (initialCheck && !isLoading) {
       // Autentifikasiya olunub, amma user məlumatları yoxdursa, xəta göstəririk
       if (isAuthenticated && !user) {
         console.error("Dashboard: İstifadəçi autentifikasiya olunub, lakin user məlumatları yoxdur");
@@ -32,7 +32,7 @@ const Dashboard: React.FC = () => {
       
       setInitialCheck(false);
     }
-  }, [isAuthenticated, isLoading, user, navigate]);
+  }, [isAuthenticated, isLoading, user, navigate, initialCheck]);
   
   // Yüklənmə halında spinner göstəririk
   if (isLoading || initialCheck) {
@@ -43,7 +43,7 @@ const Dashboard: React.FC = () => {
     );
   }
   
-  // İstifadəçi autentifikasiya olmayıbsa və ya rol məlumatı yoxdursa, boş qaytarırıq
+  // İstifadəçi autentifikasiya olmayıbsa, boş div qaytarırıq
   // Redirect işi useEffect-də edilir
   if (!isAuthenticated || !user || !user.role) {
     return null;

@@ -98,12 +98,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0,
       },
-      regions: [],
-      pendingApprovals: [],
-      regionCount: dashboardData.regions || 0,
-      sectorCount: dashboardData.sectors || 0,
-      schoolCount: dashboardData.schools || 0,
-      userCount: dashboardData.users || 0,
       formsByStatus: {
         pending: dashboardData.pendingForms || 0,
         approved: dashboardData.approvedForms || 0,
@@ -126,9 +120,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0,
       },
-      pendingItems: [],
-      categories: [],
-      sectors: [],
       notifications: mockNotifications,
       sectorStats: {
         total: dashboardData.sectors || 0,
@@ -158,9 +149,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0
       },
-      pendingItems: [],
-      schools: [],
-      categories: [],
       schoolsStats: [schoolsStatItem],
       notifications: mockNotifications,
       completionRate: dashboardData.completionRate || 0

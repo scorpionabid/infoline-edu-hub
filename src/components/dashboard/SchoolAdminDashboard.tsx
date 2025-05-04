@@ -60,6 +60,19 @@ export function SchoolAdminDashboard({
     );
   }
   
+  // Bildirişləri tələb olunan formata çevirir
+  const convertedNotifications: UINotification[] = data.notifications.map(notification => ({
+    id: notification.id,
+    title: notification.title,
+    message: notification.message,
+    date: notification.date,
+    isRead: notification.isRead,
+    type: notification.type === 'system' ? 'info' : 
+           notification.type === 'deadline' ? 'warning' :
+           notification.type === 'approval' ? 'success' :
+           notification.type === 'rejection' ? 'error' : 'info'
+  }));
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -105,7 +118,7 @@ export function SchoolAdminDashboard({
         />
         <NotificationsCard 
           title={t('notifications')} 
-          notifications={data.notifications}
+          notifications={convertedNotifications}
         />
       </Grid>
     </div>

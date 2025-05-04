@@ -49,23 +49,24 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
 
   // Naviqasiya əməliyyatını ayrı bir funksiya kimi təyin edirik
   const handleNavigation = useCallback((href: string) => {
-    if (onItemClick) {
-      onItemClick();
-    }
     // Əvvəlcə yoxlayırıq ki, istifadəçi eyni səhifəyə getmir
     if (location.pathname !== href) {
       navigate(href);
+      // mobile görünüşdə sidbarı gizlədirik
+      if (onItemClick) {
+        onItemClick();
+      }
     }
-  }, [onItemClick, navigate, location.pathname]);
+  }, [navigate, location.pathname, onItemClick]);
 
   const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     handleNavigation(href);
   }, [handleNavigation]);
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
     if (logout) {
-      logout();
+      await logout();
       navigate('/login');
     }
   }, [logout, navigate]);
