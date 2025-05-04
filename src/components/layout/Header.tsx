@@ -56,7 +56,8 @@ const Header = () => {
   
   if (isLoginPage || isForgotPasswordPage) return null;
 
-  const userImage = user?.avatar || '';
+  // User avatar üçün təhlükəsiz yoxlama
+  const userInitials = user?.full_name ? user.full_name.substring(0, 2)?.toUpperCase() : 'U';
   
   return (
     <div className="flex items-center justify-between p-4 bg-background sticky top-0 z-50 border-b">
@@ -68,11 +69,7 @@ const Header = () => {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
-              {userImage ? (
-                <AvatarImage src={userImage} alt={user?.full_name} />
-              ) : (
-                <AvatarFallback>{user?.full_name?.substring(0, 2)?.toUpperCase()}</AvatarFallback>
-              )}
+              <AvatarFallback>{userInitials}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>

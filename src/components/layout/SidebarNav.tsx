@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
@@ -40,11 +40,26 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
   const { user, logout } = useAuth();
   const { isSuperAdmin, isRegionAdmin, isSectorAdmin, isSchoolAdmin } = usePermissions();
 
-  const isActive = (href: string) => {
+  const isActive = useCallback((href: string) => {
     return location.pathname === href || (href !== '/' && location.pathname.startsWith(href));
-  };
+  }, [location.pathname]);
 
-  const renderNavItem = (item: { href: string; icon: React.ReactElement; label: string; show: boolean }) => {
+  const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    if (onItemClick) {
+      onItemClick();
+    }
+    navigate(href);
+  }, [onItemClick, navigate]);
+
+  const handleLogout = useCallback(() => {
+    if (logout) {
+      logout();
+      navigate('/login');
+    }
+  }, [logout, navigate]);
+
+  const renderNavItem = useCallback((item: { href: string; icon: React.ReactElement; label: string; show: boolean }) => {
     if (!item.show) {
       return null;
     }
@@ -61,7 +76,7 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
           isCollapsed ? 'justify-center' : 'justify-start',
           'h-10'
         )}
-        onClick={onItemClick}
+        onClick={(e) => handleLinkClick(e, item.href)}
       >
         <div className="flex items-center">
           {React.cloneElement(item.icon, {
@@ -71,9 +86,9 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
         </div>
       </Link>
     );
-  };
+  }, [isCollapsed, isActive, handleLinkClick]);
 
-  const navItems = [
+  const navItems = React.useMemo(() => [
     {
       href: '/dashboard',
       icon: <Home />,
@@ -152,14 +167,7 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
       label: t('settings'),
       show: true,
     },
-  ];
-
-  const handleLogout = () => {
-    if (logout) {
-      logout();
-      navigate('/login');
-    }
-  };
+  ], [t, isSuperAdmin, isRegionAdmin, isSectorAdmin, isSchoolAdmin]);
 
   return (
     <div className={cn('flex flex-col', className)}>
@@ -184,7 +192,7 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
               isCollapsed ? 'justify-center' : 'justify-start',
               'h-10'
             )}
-            onClick={onItemClick}
+            onClick={(e) => handleLinkClick(e, '/profile')}
           >
             <div className="flex items-center">
               <User className={cn('h-4 w-4', isCollapsed ? '' : 'mr-2')} />

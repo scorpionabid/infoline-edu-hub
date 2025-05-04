@@ -10,7 +10,7 @@ import {
 import { useAuth } from '@/context/auth';
 import { useLanguage } from '@/context/LanguageContext';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { LogOut } from 'lucide-react';
@@ -18,7 +18,6 @@ import { useTheme } from '@/context/ThemeContext';
 import { MoonIcon, SunIcon } from '@radix-ui/react-icons';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { useNavigate } from 'react-router-dom';
 import {
   Select,
   SelectContent,
@@ -58,6 +57,9 @@ const NavigationMenuDemo = () => {
   const changeLanguage = (lng: Language) => {
     i18n.changeLanguage(lng);
   };
+  
+  // User initials for avatar
+  const userInitials = user?.full_name ? user.full_name.substring(0, 2)?.toUpperCase() : 'U';
 
   return (
     <NavigationMenu>
@@ -139,8 +141,7 @@ const NavigationMenuDemo = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar || ""} alt={user?.full_name || "User"} />
-                <AvatarFallback>{user?.full_name?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback>{userInitials}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>

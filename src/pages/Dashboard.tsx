@@ -1,7 +1,6 @@
 
 import React, { useEffect } from 'react';
 import { useAuth } from '@/context/auth';
-import SidebarLayout from '@/components/layout/SidebarLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
@@ -47,34 +46,16 @@ const Dashboard: React.FC = () => {
     );
   }
   
-  // İstifadəçi autentifikasiya olmayıbsa və ya rol məlumatı yoxdursa, xəta göstəririk
+  // İstifadəçi autentifikasiya olmayıbsa və ya rol məlumatı yoxdursa, null qaytarırıq
+  // Yönləndirilmə useEffect-də həyata keçirilir
   if (!isAuthenticated || !user || !user.role) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="text-red-500 text-5xl mb-4">
-            <span className="icon">error</span>
-          </div>
-          <h1 className="text-xl font-semibold">İstifadəçi məlumatları tapılmadı</h1>
-          <p className="text-gray-500 mt-2">Zəhmət olmasa yenidən daxil olun</p>
-          <button 
-            onClick={() => {
-              localStorage.clear(); // Lokal keşi təmizləyirik
-              navigate('/login');
-            }} 
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Yenidən daxil olun
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
   
   console.log(`Dashboard: İstifadəçi rolu - ${user.role}`);
   
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4">
       <DashboardHeader />
       
       {isSchoolAdmin && <SchoolAdminSetupCheck />}

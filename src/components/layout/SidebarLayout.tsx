@@ -13,9 +13,9 @@ export interface SidebarLayoutProps {
   children?: ReactNode;
 }
 
-const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
+const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { t } = useLanguage();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -48,7 +48,16 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
     }
   }, []);
 
-  if (!user) {
+  // Yükləmə halında spinner göstəririk
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
     navigate('/login');
     return null;
   }
@@ -115,7 +124,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
         {/* Main content */}
         <main className="flex-1 overflow-auto">
           <div className="p-4">
-            <Outlet />
+            {children || <Outlet />}
           </div>
         </main>
       </div>

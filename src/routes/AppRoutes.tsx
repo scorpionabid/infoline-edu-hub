@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/auth";
@@ -82,191 +83,142 @@ const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false 
   return <>{children}</>;
 };
 
-const AppRoutes = [
-  {
-    path: "/login",
-    element: (
+const AppRoutes = () => (
+  <Routes>
+    {/* Public Routes */}
+    <Route path="/login" element={
       <PublicRoute restricted>
         <Login />
       </PublicRoute>
-    ),
-  },
-  {
-    path: "/register",
-    element: (
+    } />
+    
+    <Route path="/register" element={
       <PublicRoute restricted>
         <Register />
       </PublicRoute>
-    ),
-  },
-  {
-    path: "/register-success",
-    element: (
+    } />
+    
+    <Route path="/register-success" element={
       <PublicRoute restricted>
         <RegisterSuccess />
       </PublicRoute>
-    ),
-  },
-  {
-    path: "/forgot-password",
-    element: (
+    } />
+    
+    <Route path="/forgot-password" element={
       <PublicRoute restricted>
         <ForgotPassword />
       </PublicRoute>
-    ),
-  },
-  {
-    path: "/reset-password",
-    element: (
+    } />
+    
+    <Route path="/reset-password" element={
       <PublicRoute>
         <ResetPassword />
       </PublicRoute>
-    ),
-  },
-  {
-    path: "/dashboard",
-    element: (
+    } />
+
+    {/* Protected Routes with SidebarLayout */}
+    <Route element={
       <ProtectedRoute>
-        <Dashboard />
+        <SidebarLayout />
       </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/sectors",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-        <Sectors />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/regions",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin']}>
-        <Regions />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/schools",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
-        <Schools />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/categories",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']}>
-        <Categories />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/categories/:id",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-        <Categories />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/columns",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-        <Columns />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/columns/:id",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-        <Columns />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/users",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
-        <Users />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/reports",
-    element: (
-      <ProtectedRoute>
-        <Reports />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/settings",
-    element: (
-      <ProtectedRoute>
-        <Settings />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/profile",
-    element: (
-      <ProtectedRoute>
-        <Profile />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/forms",
-    element: (
-      <ProtectedRoute allowedRoles={['sectoradmin', 'schooladmin']}>
-        <SidebarLayout>
+    }>
+      <Route path="/dashboard" element={<Dashboard />} />
+      
+      <Route path="/sectors" element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+          <Sectors />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/regions" element={
+        <ProtectedRoute allowedRoles={['superadmin']}>
+          <Regions />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/schools" element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
+          <Schools />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/categories" element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']}>
+          <Categories />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/categories/:id" element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+          <Categories />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/columns" element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+          <Columns />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/columns/:id" element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+          <Columns />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/users" element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
+          <Users />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/reports" element={
+        <ProtectedRoute>
+          <Reports />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/forms" element={
+        <ProtectedRoute allowedRoles={['sectoradmin', 'schooladmin']}>
           <Forms />
-        </SidebarLayout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/approvals",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
-        <SidebarLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/approvals" element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
           <Approvals />
-        </SidebarLayout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/data-entry",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'sectoradmin', 'schooladmin']}>
-        <SidebarLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/data-entry" element={
+        <ProtectedRoute allowedRoles={['superadmin', 'sectoradmin', 'schooladmin']}>
           <DataEntry />
-        </SidebarLayout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/data-entry/:categoryId",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'sectoradmin', 'schooladmin']}>
-        <SidebarLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/data-entry/:categoryId" element={
+        <ProtectedRoute allowedRoles={['superadmin', 'sectoradmin', 'schooladmin']}>
           <DataEntry />
-        </SidebarLayout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/",
-    element: <Navigate to="/dashboard" replace />,
-  },
-  {
-    path: "*",
-    element: <NotFound />,
-  },
-];
+        </ProtectedRoute>
+      } />
+    </Route>
+    
+    {/* Default Routes */}
+    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+);
 
 export { AppRoutes, ProtectedRoute, PublicRoute };
