@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserRole } from '@/types/supabase';
+import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 import { AuthContext } from './context';
 import { AuthContextType, AuthErrorType } from './types';
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setAuthState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
       setCachedUser(null);
-      return;
+      return null;
     }
     
     const userId = currentSession.user.id;
@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         now - lastFetchTime.current < CACHE_EXPIRY) {
       console.log('Keşdən istifadəçi məlumatı istifadə olunur:', userId);
       setAuthState(prev => ({ ...prev, isLoading: false, isAuthenticated: true }));
-      return;
+      return user;
     }
     
     try {
@@ -115,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ]);
 
       // Rol məlumatları
-      const userRole = userRolesResult.data?.role as UserRole || 'user';
+      const userRole = userRolesResult.data?.role || 'user';
       const region_id = userRolesResult.data?.region_id || null;
       const sector_id = userRolesResult.data?.sector_id || null;
       const school_id = userRolesResult.data?.school_id || null;
@@ -149,37 +149,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // AdminEntity məlumatlarını əldə etmək 
-      let adminEntity = { type: userRole };
+      let adminEntity = { 
+        type: userRole,
+        name: profile.full_name || currentSession.user.email?.split('@')[0] || ''
+      };
 
       // İstifadəçi məlumatlarını birləşdirik
       const fullUserData: FullUserData = {
         id: userId,
         email: currentSession.user.email || profile.email || '',
         full_name: profile.full_name || currentSession.user.email?.split('@')[0] || '',
-        name: profile.full_name || currentSession.user.email?.split('@')[0] || '',
         role: userRole,
         avatar: profile.avatar || '',
         region_id: region_id,
         sector_id: sector_id,
         school_id: school_id,
-        regionId: region_id,
-        sectorId: sector_id,
-        schoolId: school_id,
         phone: profile.phone || '',
         position: profile.position || '',
         language: profile.language || 'az',
         status: profile.status || 'active',
         last_login: profile.last_login || null,
-        lastLogin: profile.last_login || null,
         created_at: profile.created_at || new Date().toISOString(),
         updated_at: profile.updated_at || new Date().toISOString(),
-        createdAt: profile.created_at || new Date().toISOString(),
-        updatedAt: profile.updated_at || new Date().toISOString(),
-        adminEntity: adminEntity,
-        notificationSettings: {
-          email: true,
-          system: true,
-        }
+        adminEntity: adminEntity
       };
 
       // Keş və referans dəyərlərini yeniləyirik
@@ -212,8 +204,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (cachedUser) {
       console.log('Keşdən istifadəçi məlumatı istifadə olunur');
       setUser(cachedUser);
-      // Keş məlumatı tapıldıqda, backend-dən də məlumatları yeniləyirik
-      // amma istifadəçini gözlətmirik
       lastFetchedUserId.current = cachedUser.id;
     }
 
@@ -406,7 +396,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const updatedUser = await fetchUserData(session, true);
-      return updatedUser || null;
+      return updatedUser;
     } catch (error) {
       console.error('Profil yeniləmə xətası:', error);
       return null;
