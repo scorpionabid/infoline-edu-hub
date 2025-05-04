@@ -22,7 +22,7 @@ export interface Profile {
   admin_entity?: any;
 }
 
-export interface UserRole {
+export interface UserRoleData {
   id?: string;
   user_id: string;
   role: UserRole;

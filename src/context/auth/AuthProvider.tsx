@@ -1,13 +1,14 @@
+
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSupabaseAuth } from '@/hooks/auth/useSupabaseAuth';
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 import { AuthContext } from './context';
-import { AuthContextType } from './types';
+import { AuthContextType, AuthErrorType } from './types';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, session, loading, signIn, signOut, updateProfile } = useSupabaseAuth();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AuthErrorType>(null);
   const [authState, setAuthState] = useState({
     isAuthenticated: false,
     isLoading: true
@@ -16,13 +17,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // İstifadəçi və yüklənmə vəziyyəti dəyişdikdə auth vəziyyətini yenilə
   useEffect(() => {
     // Development mühitində loqlaşdırma
-    if (process.env.NODE_ENV === 'development') {
-      console.log('AuthProvider state updated:', {
-        isAuthenticated: !!user,
-        user: user ? { id: user.id, email: user.email, role: user.role } : null,
-        isLoading: loading
-      });
-    }
+    console.log('AuthProvider state updated:', {
+      isAuthenticated: !!user && !!session,
+      user: user ? { id: user.id, email: user.email, role: user.role } : null,
+      session: session ? 'Session exists' : 'No session',
+      isLoading: loading
+    });
 
     // Xəta yoxlaması - istifadəçi var, lakin rolu yoxdursa
     if (user && !user.role) {
@@ -36,10 +36,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setAuthState({
-      isAuthenticated: !!user,
+      isAuthenticated: !!user && !!session,
       isLoading: loading
     });
-  }, [user, loading, error]);
+  }, [user, session, loading, error]);
 
   // Login funksiyası - mövcud interfeysi saxlamaq üçün boolean qaytarır
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
@@ -52,6 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
       
+      console.log('Login attempt with email:', email);
       const { data, error } = await signIn(email, password);
       
       if (error) {
@@ -71,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
       
+      console.log('Login successful, data:', data ? 'Data exists' : 'No data');
       return true;
     } catch (error: any) {
       console.error('Unexpected login error:', error);
@@ -86,7 +88,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(async () => {
     try {
       setError(null);
+      console.log('Logout attempt');
       await signOut();
+      console.log('Logout successful');
     } catch (error: any) {
       console.error('Logout error:', error);
       setError(error.message || 'Gözlənilməz xəta baş verdi');

@@ -32,16 +32,10 @@ const Login = () => {
     if (isAuthenticated && user && user.role && !isLoading) {
       console.log(`Authenticated user with role: ${user.role}, preparing redirection`);
       
-      // İstifadəçi roluna əsasən hədəf səhifəni müəyyən edirik
-      let targetPath = '/dashboard';
-      
-      // Əlavə debug məlumatı
-      console.log(`User role for redirection: ${user.role}, session active`);
-      
       // Yönləndirmə vaxtını 500ms gecikdirək - bu sessiya məlumatlarının tam yüklənməsi üçündür
       const redirectTimer = setTimeout(() => {
-        console.log(`Redirecting user with role ${user.role} to ${targetPath}`);
-        navigate(targetPath, { replace: true });
+        console.log(`Redirecting user with role ${user.role} to ${from}`);
+        navigate(from, { replace: true });
       }, 500);
 
       return () => clearTimeout(redirectTimer);

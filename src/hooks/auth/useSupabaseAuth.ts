@@ -1,11 +1,11 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserRole } from '@/types/supabase';
+import { FullUserData, Profile } from '@/types/supabase';
 
 // NodeJS.Timeout tipini düzəltmək üçün
-import type { Timeout } from 'node:timers';
-type TimeoutType = Timeout;
+type TimeoutType = ReturnType<typeof setTimeout>;
 
 interface UseSupabaseAuthReturn {
   user: FullUserData | null;
@@ -17,10 +17,9 @@ interface UseSupabaseAuthReturn {
 }
 
 export const useSupabaseAuth = (
-  client = supabase,
-  initialSession?: Session | null
+  client = supabase
 ): UseSupabaseAuthReturn => {
-  const [session, setSession] = useState<Session | null>(initialSession || null);
+  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<FullUserData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
@@ -32,16 +31,17 @@ export const useSupabaseAuth = (
   const fetchUserData = useCallback(async (sessionData: Session | null, forceRefresh = false) => {
     try {
       if (!sessionData?.user) {
+        console.log('No session or user, clearing state');
         setUser(null);
         setLoading(false);
         return;
       }
 
       const userId = sessionData.user.id;
+      console.log(`Fetching user data for ID: ${userId}`);
       const now = Date.now();
       
-      // Daha güclü keşləmə yoxlaması - son sorğudan 1 dəqiqə keçməyibsə, 
-      // məcburi yeniləmə tələb olunmursa və eyni istifadəçi ID-si üçün sorğu göndərilirsə
+      // Daha güclü keşləmə yoxlaması
       if (!forceRefresh && 
           user && 
           lastFetchedUserId === userId && 
@@ -55,30 +55,26 @@ export const useSupabaseAuth = (
       setLastFetchTime(now);
       setLastFetchedUserId(userId);
 
-      console.log('Fetching user profile for:', userId);
-
-      // Token-u yoxla və set et
       try {
         if (sessionData?.access_token) {
-          client.auth.setSession({
+          await client.auth.setSession({
             access_token: sessionData.access_token,
             refresh_token: sessionData.refresh_token || ''
           });
+          console.log('Session token set successfully');
         }
       } catch (tokenErr) {
         console.warn('Error setting session token:', tokenErr);
       }
 
       // Paralel sorğular göndər
-      const [roleResult, profileResult] = await Promise.all([
-        // Metod 1: user_roles cədvəlini sorğula
+      const [userRolesResult, profileResult] = await Promise.all([
         client
           .from('user_roles')
           .select('role, region_id, sector_id, school_id')
           .eq('user_id', userId)
           .maybeSingle(),
         
-        // Metod 2: profiles cədvəlini sorğula
         client
           .from('profiles')
           .select('*')
@@ -86,40 +82,62 @@ export const useSupabaseAuth = (
           .maybeSingle()
       ]);
 
-      // Rol məlumatlarını əldə et
-      let userRole: UserRole = 'user';
+      // Rol məlumatları
+      let userRole = 'user';
       let region_id = null;
       let sector_id = null; 
       let school_id = null;
       
-      if (!roleResult.error && roleResult.data) {
-        userRole = roleResult.data.role as UserRole;
-        region_id = roleResult.data.region_id;
-        sector_id = roleResult.data.sector_id;
-        school_id = roleResult.data.school_id;
-        console.log('Role fetched via direct query:', userRole);
+      if (!userRolesResult.error && userRolesResult.data) {
+        userRole = userRolesResult.data.role;
+        region_id = userRolesResult.data.region_id;
+        sector_id = userRolesResult.data.sector_id;
+        school_id = userRolesResult.data.school_id;
+        console.log('Role data fetched:', userRole);
       } else {
-        console.warn('Direct role query error:', roleResult.error);
+        console.warn('Role fetch error:', userRolesResult.error);
       }
 
-      // Profil məlumatlarını əldə et
+      // Profil məlumatları
       let profile: any = null;
       
       if (!profileResult.error && profileResult.data) {
         profile = profileResult.data;
+        console.log('Profile data fetched');
       } else {
         console.warn('Profile fetch error:', profileResult.error);
-      }
-      
-      // Uğursuz olduqda mock data istifadə edək
-      if (!profile) {
-        profile = {
-          full_name: sessionData.user.email?.split('@')[0] || 'İstifadəçi',
-          language: 'az',
-          status: 'active',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
+        
+        // Profil tapılmadı, yaratmağa cəhd et
+        console.log('Attempting to create profile for user:', userId);
+        const createResult = await client
+          .from('profiles')
+          .insert({
+            id: userId,
+            full_name: sessionData.user.email?.split('@')[0] || 'İstifadəçi',
+            email: sessionData.user.email,
+            language: 'az',
+            status: 'active',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .maybeSingle();
+        
+        if (!createResult.error && createResult.data) {
+          profile = createResult.data;
+          console.log('Profile created successfully');
+        } else {
+          console.error('Failed to create profile:', createResult.error);
+          profile = {
+            id: userId,
+            full_name: sessionData.user.email?.split('@')[0] || 'İstifadəçi',
+            email: sessionData.user.email,
+            language: 'az',
+            status: 'active',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+        }
       }
 
       // İstifadəçi məlumatlarını birləşdir
@@ -130,35 +148,29 @@ export const useSupabaseAuth = (
         region_id: region_id,
         sector_id: sector_id,
         school_id: school_id,
-        regionId: region_id,
-        sectorId: sector_id,
-        schoolId: school_id,
         full_name: profile?.full_name || sessionData.user.email?.split('@')[0] || '',
-        name: profile?.full_name || sessionData.user.email?.split('@')[0] || '',
+        avatar: profile?.avatar || '',
         phone: profile?.phone || '',
         position: profile?.position || '',
         language: profile?.language || 'az',
-        avatar: profile?.avatar || '',
         status: profile?.status || 'active',
         last_login: profile?.last_login || null,
-        lastLogin: profile?.last_login || null,
         created_at: profile?.created_at || new Date().toISOString(),
         updated_at: profile?.updated_at || new Date().toISOString(),
-        createdAt: profile?.created_at || new Date().toISOString(),
-        updatedAt: profile?.updated_at || new Date().toISOString(),
-        notificationSettings: {
-          email: true,
-          system: true,
-        },
+        adminEntity: {
+          type: userRole,
+          name: profile?.full_name || '',
+          schoolName: '',
+          sectorName: '',
+          regionName: ''
+        }
       };
 
-      console.log('User data fetched successfully:', { 
+      console.log('User data compiled:', { 
         id: userData.id,
         email: userData.email,
         role: userData.role,
-        region_id: userData.region_id,
-        sector_id: userData.sector_id,
-        school_id: userData.school_id 
+        isAuthenticated: true
       });
       
       setUser(userData);
@@ -179,8 +191,8 @@ export const useSupabaseAuth = (
       (event, currentSession) => {
         console.log('Auth state changed:', event);
         
-        // Yalnız əhəmiyyətli hadisələrdə məlumatları yenilə
         if (event === 'SIGNED_IN') {
+          console.log('SIGNED_IN event detected, session:', currentSession?.user?.email);
           setSession(currentSession);
           
           // Əvvəlki timer-i təmizlə
@@ -189,26 +201,25 @@ export const useSupabaseAuth = (
           // Yeni timer qur
           const timer = setTimeout(() => {
             fetchUserData(currentSession);
-          }, 300); // 300ms debounce
+          }, 100);
           
           setDebounceTimer(timer);
         } else if (event === 'TOKEN_REFRESHED') {
-          // Token yeniləndikdə yalnız session-u yenilə, məlumatları yeniləmə
+          console.log('TOKEN_REFRESHED event detected');
           setSession(currentSession);
-          console.log('Token refreshed, session updated but not fetching user data again');
         } else if (event === 'USER_UPDATED') {
+          console.log('USER_UPDATED event detected');
           setSession(currentSession);
           
-          // Əvvəlki timer-i təmizlə
           if (debounceTimer) clearTimeout(debounceTimer);
           
-          // Yeni timer qur
           const timer = setTimeout(() => {
-            fetchUserData(currentSession, true); // forceRefresh=true
-          }, 300); // 300ms debounce
+            fetchUserData(currentSession, true);
+          }, 100);
           
           setDebounceTimer(timer);
         } else if (event === 'SIGNED_OUT') {
+          console.log('SIGNED_OUT event detected');
           setUser(null);
           setSession(null);
           setLoading(false);
@@ -261,27 +272,41 @@ export const useSupabaseAuth = (
       console.log('Attempting to sign in with:', email);
       setLoading(true);
       
+      // Əvvəlcə çıxış etdiyimizdən əmin olaq
+      await client.auth.signOut();
+      
+      // Kiçik gözləmə ilə yeni giriş
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const result = await client.auth.signInWithPassword({
         email,
         password
       });
 
-      console.log('Sign in result:', result.error ? `Error: ${result.error.message}` : 'Success');
+      console.log('Sign in result:', result.error 
+        ? `Error: ${result.error.message}` 
+        : 'Success, user: ' + result.data?.user?.email);
+        
       return result;
     } catch (error: any) {
       console.error('Sign in error:', error);
-      throw error;
+      return { data: null, error };
+    } finally {
+      // Loading state will be updated by auth state listener
     }
   };
 
   // Çıxış funksiyası
   const signOut = async () => {
     try {
+      console.log('Signing out...');
       setLoading(true);
-      // Əvvəlki timer-i təmizlə
+      
       if (debounceTimer) clearTimeout(debounceTimer);
       
       await client.auth.signOut();
+      
+      console.log('Signed out successfully');
       setUser(null);
       setSession(null);
       setLastFetchedUserId(null);
@@ -298,50 +323,31 @@ export const useSupabaseAuth = (
     if (!user) return false;
     
     try {
-      // Paralel sorğular göndər
-      const [profileResult, roleResult] = await Promise.all([
-        // 1. profiles cədvəlini yenilə
-        client
-          .from('profiles')
-          .update({
-            full_name: updates.full_name,
-            phone: updates.phone,
-            position: updates.position,
-            language: updates.language,
-            avatar: updates.avatar,
-            status: updates.status,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user.id),
-        
-        // 2. user_roles cədvəlini yenilə (əgər rol, region, sektor və ya məktəb dəyişibsə)
-        (updates.role || updates.region_id || updates.sector_id || updates.school_id) 
-          ? client
-              .from('user_roles')
-              .update({
-                role: updates.role || user.role,
-                region_id: updates.region_id || user.region_id,
-                sector_id: updates.sector_id || user.sector_id,
-                school_id: updates.school_id || user.school_id,
-                updated_at: new Date().toISOString()
-              })
-              .eq('user_id', user.id)
-          : { error: null } // Əgər rol məlumatları dəyişməyibsə, heç bir sorğu göndərmə
-      ]);
+      console.log('Updating profile for user:', user.id);
+      
+      const updateData: Partial<Profile> = {
+        full_name: updates.full_name,
+        phone: updates.phone,
+        position: updates.position,
+        language: updates.language,
+        avatar: updates.avatar,
+        status: updates.status,
+        updated_at: new Date().toISOString()
+      };
+      
+      const { error } = await client
+        .from('profiles')
+        .update(updateData)
+        .eq('id', user.id);
 
-      if (profileResult.error) {
-        console.error('Error updating profile:', profileResult.error);
-        return false;
-      }
-
-      if (roleResult.error) {
-        console.error('Error updating user role:', roleResult.error);
+      if (error) {
+        console.error('Error updating profile:', error);
         return false;
       }
 
       // Yenilənmiş məlumatları əldə edək
       if (session) {
-        await fetchUserData(session, true); // forceRefresh=true
+        await fetchUserData(session, true);
       }
       
       return true;
