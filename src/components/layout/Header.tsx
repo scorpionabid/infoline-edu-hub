@@ -4,7 +4,7 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/components/ui/avatar"
+} from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/auth';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -57,7 +57,9 @@ const Header = () => {
   if (isLoginPage || isForgotPasswordPage) return null;
 
   // User avatar üçün təhlükəsiz yoxlama
-  const userInitials = user?.full_name ? user.full_name.substring(0, 2)?.toUpperCase() : 'U';
+  const userInitials = user?.full_name ? user.full_name.substring(0, 2).toUpperCase() : 'U';
+  // Avatar URL-ni təhlükəsiz şəkildə əldə edirik
+  const avatarUrl = user?.avatar || '';
   
   return (
     <div className="flex items-center justify-between p-4 bg-background sticky top-0 z-50 border-b">
@@ -69,6 +71,7 @@ const Header = () => {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={user?.full_name || 'User'} />}
               <AvatarFallback>{userInitials}</AvatarFallback>
             </Avatar>
           </Button>

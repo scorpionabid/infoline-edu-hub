@@ -1,6 +1,6 @@
 
-import React, { useCallback } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useCallback, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -41,16 +41,27 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
   const { isSuperAdmin, isRegionAdmin, isSectorAdmin, isSchoolAdmin } = usePermissions();
 
   const isActive = useCallback((href: string) => {
-    return location.pathname === href || (href !== '/' && location.pathname.startsWith(href));
+    if (href === '/dashboard' && location.pathname === '/') {
+      return true;
+    }
+    return location.pathname === href || (href !== '/dashboard' && location.pathname.startsWith(href));
   }, [location.pathname]);
 
-  const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
+  // Naviqasiya əməliyyatını ayrı bir funksiya kimi təyin edirik
+  const handleNavigation = useCallback((href: string) => {
     if (onItemClick) {
       onItemClick();
     }
-    navigate(href);
-  }, [onItemClick, navigate]);
+    // Əvvəlcə yoxlayırıq ki, istifadəçi eyni səhifəyə getmir
+    if (location.pathname !== href) {
+      navigate(href);
+    }
+  }, [onItemClick, navigate, location.pathname]);
+
+  const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    handleNavigation(href);
+  }, [handleNavigation]);
 
   const handleLogout = useCallback(() => {
     if (logout) {
@@ -65,9 +76,10 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
     }
 
     return (
-      <Link
+      <a
         key={item.href}
-        to={item.href}
+        href={item.href}
+        onClick={(e) => handleLinkClick(e, item.href)}
         className={cn(
           buttonVariants({ variant: 'ghost', size: isCollapsed ? 'icon' : 'default' }),
           isActive(item.href)
@@ -76,7 +88,6 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
           isCollapsed ? 'justify-center' : 'justify-start',
           'h-10'
         )}
-        onClick={(e) => handleLinkClick(e, item.href)}
       >
         <div className="flex items-center">
           {React.cloneElement(item.icon, {
@@ -84,11 +95,11 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
           })}
           {!isCollapsed && <span>{item.label}</span>}
         </div>
-      </Link>
+      </a>
     );
   }, [isCollapsed, isActive, handleLinkClick]);
 
-  const navItems = React.useMemo(() => [
+  const navItems = useMemo(() => [
     {
       href: '/dashboard',
       icon: <Home />,
@@ -182,8 +193,8 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
         </div>
         <Separator className="my-2" />
         <div className="flex flex-col gap-1 py-2">
-          <Link
-            to="/profile"
+          <a
+            href="/profile"
             className={cn(
               buttonVariants({ variant: 'ghost', size: isCollapsed ? 'icon' : 'default' }),
               isActive('/profile')
@@ -198,7 +209,7 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
               <User className={cn('h-4 w-4', isCollapsed ? '' : 'mr-2')} />
               {!isCollapsed && <span>{t('profile')}</span>}
             </div>
-          </Link>
+          </a>
           <button
             onClick={handleLogout}
             className={cn(

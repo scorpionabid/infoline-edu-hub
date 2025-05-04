@@ -17,7 +17,6 @@ const Dashboard: React.FC = () => {
     if (!isAuthenticated && !isLoading) {
       console.log("Dashboard: İstifadəçi autentifikasiya olmayıb, login səhifəsinə yönləndirilir");
       navigate('/login');
-      return;
     }
 
     // Autentifikasiya olunub, amma user məlumatları yoxdursa, xəta göstəririk
@@ -27,14 +26,6 @@ const Dashboard: React.FC = () => {
         description: 'Zəhmət olmasa, yenidən daxil olun',
       });
     }
-    
-    // Məlumatları loglamaq
-    console.log('Dashboard səhifəsi yükləndi:', {
-      isAuthenticated,
-      isLoading,
-      userRole: user?.role || 'unknown',
-      userId: user?.id || 'unknown'
-    });
   }, [isAuthenticated, isLoading, user, navigate]);
   
   // Yüklənmə halında spinner göstəririk
@@ -47,12 +38,9 @@ const Dashboard: React.FC = () => {
   }
   
   // İstifadəçi autentifikasiya olmayıbsa və ya rol məlumatı yoxdursa, null qaytarırıq
-  // Yönləndirilmə useEffect-də həyata keçirilir
   if (!isAuthenticated || !user || !user.role) {
     return null;
   }
-  
-  console.log(`Dashboard: İstifadəçi rolu - ${user.role}`);
   
   return (
     <div className="space-y-4">

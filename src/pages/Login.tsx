@@ -15,56 +15,41 @@ const Login = () => {
   const from = location.state?.from?.pathname || '/dashboard';
   const { userRole } = usePermissions();
   const [loginAttempt, setLoginAttempt] = useState(0);
+  const [redirectInProgress, setRedirectInProgress] = useState(false);
   
   useEffect(() => {
-    console.log('Login səhifəsi state:', {
-      isAuthenticated,
-      isLoading,
-      userRole,
-      error,
-      user: user ? {
-        id: user.id,
-        email: user.email,
-        role: user.role || 'unknown'
-      } : null
-    });
-    
-    // Əgər istifadəçi autentifikasiya olunubsa
+    if (redirectInProgress) return;
+
+    // Əgər istifadəçi autentifikasiya olunubsa və yüklənmə başa çatıbsa
     if (isAuthenticated && !isLoading) {
-      console.log(`Authenticated user with role: ${user?.role}, preparing redirection`);
+      console.log('Authenticated user detected, preparing to redirect');
       
-      // Əgər istifadəçi məlumatları yoxdursa, onları əldə etmək üçün cəhd edirik
-      if (!user?.role && loginAttempt < 3) {
-        console.log('User profile data is missing, attempting to refresh...');
-        setLoginAttempt(prev => prev + 1);
-        
-        // Profil məlumatlarını yeniləyirik
-        const fetchProfile = async () => {
-          try {
-            const updatedUser = await refreshProfile();
-            if (updatedUser && updatedUser.role) {
-              // Profil məlumatları uğurla əldə edildikdən sonra istifadəçini yönləndiririk
-              navigate(from, { replace: true });
-            }
-          } catch (err) {
-            console.error('Error refreshing profile:', err);
-          }
-        };
-        
-        fetchProfile();
+      // İstifadəçi məlumatları varsa və tam yüklənibsə
+      if (user?.role && userRole) {
+        console.log(`User has role: ${userRole}, redirecting to ${from}`);
+        setRedirectInProgress(true);
+        navigate(from, { replace: true });
         return;
       }
       
-      // Əgər profil məlumatları varsa və ya maksimum cəhd sayına çatmışıqsa
-      // Yönləndirmə vaxtını 300ms gecikdirək - bu sessiya məlumatlarının tam yüklənməsi üçündür
-      const redirectTimer = setTimeout(() => {
-        console.log(`Redirecting user with role ${user?.role || 'unknown'} to ${from}`);
-        navigate(from, { replace: true });
-      }, 300);
-
-      return () => clearTimeout(redirectTimer);
+      // İstifadəçi məlumatları yoxdursa və ya tam yüklənməyibsə, profile update etməyə çalışaq
+      if (!user?.role && loginAttempt < 3) {
+        console.log('User profile data is missing, attempting to refresh...');
+        setLoginAttempt(prev => prev + 1);
+        refreshProfile()
+          .then(updatedUser => {
+            if (updatedUser && updatedUser.role) {
+              console.log('Profile refreshed, user role:', updatedUser.role);
+              setRedirectInProgress(true);
+              navigate(from, { replace: true });
+            }
+          })
+          .catch(err => {
+            console.error('Profile refresh failed:', err);
+          });
+      }
     }
-  }, [isAuthenticated, isLoading, navigate, from, user, userRole, refreshProfile, loginAttempt]);
+  }, [isAuthenticated, isLoading, navigate, from, user, userRole, refreshProfile, loginAttempt, redirectInProgress]);
 
   // Loading vəziyyətində yüklənmə göstəricisi
   if (isLoading) {

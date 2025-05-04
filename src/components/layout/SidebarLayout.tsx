@@ -1,8 +1,8 @@
 
 import React, { ReactNode, useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
-import { Loader2, Menu, X, ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SidebarNav } from './SidebarNav';
 import { Button } from '@/components/ui/button';
@@ -14,11 +14,12 @@ export interface SidebarLayoutProps {
 }
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
-  const navigate = useNavigate();
   const { user, isAuthenticated, isLoading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { t } = useLanguage();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const navigate = useNavigate();
+  const location = useLocation();
   
   // Ekran ölçüsü dəyişikliklərinə reaksiya vermək üçün
   useEffect(() => {
@@ -48,7 +49,14 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     }
   }, []);
 
-  // Yükləmə halında spinner göstəririk
+  // Autentifikasiya yoxlaması
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  // Yüklənmə halında spinner göstəririk
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -58,7 +66,6 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   }
 
   if (!isAuthenticated || !user) {
-    navigate('/login');
     return null;
   }
 

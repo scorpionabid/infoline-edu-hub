@@ -8,6 +8,7 @@ import { FullUserData, UserRole } from '@/types/supabase';
 const USER_PROFILE_CACHE_KEY = 'user_profile';
 const USER_SESSION_CACHE_KEY = 'user_session';
 const CACHE_EXPIRY_MS = 30 * 60 * 1000; // 30 dəqiqə
+const DEBOUNCE_MS = 300; // Debounce vaxtı millisaniyə ilə
 
 interface UseOptimizedAuthReturn {
   user: FullUserData | null;
@@ -17,6 +18,8 @@ interface UseOptimizedAuthReturn {
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<FullUserData>) => Promise<boolean>;
   refreshProfile: () => Promise<FullUserData | null>;
+  isAuthenticated: boolean;
+  clearError: () => void;
 }
 
 export const useOptimizedAuth = (
@@ -26,6 +29,19 @@ export const useOptimizedAuth = (
   const [session, setSession] = useState<Session | null>(initialSession || null);
   const [user, setUser] = useState<FullUserData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [isAuthStateChangeActive, setIsAuthStateChangeActive] = useState<boolean>(false);
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // İstifadəçinin autentifikasiya statusunu hesablayırıq
+  const isAuthenticated = useMemo(() => {
+    return !!session && !!user;
+  }, [session, user]);
+
+  // Xətanı təmizləmə funksiyası
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
 
   // Profil keşini əldə et
   const getCachedProfile = useCallback(() => {
@@ -37,6 +53,7 @@ export const useOptimizedAuth = (
       const now = new Date().getTime();
       
       if (cachedProfile.expiry && cachedProfile.expiry > now) {
+        console.log('Keşdən istifadəçi məlumatı istifadə olunur');
         return cachedProfile.data;
       }
       
@@ -44,7 +61,7 @@ export const useOptimizedAuth = (
       localStorage.removeItem(USER_PROFILE_CACHE_KEY);
       return null;
     } catch (e) {
-      console.warn('Profile cache read error:', e);
+      console.warn('Profil keşi oxuma xətası:', e);
       return null;
     }
   }, []);
@@ -66,31 +83,30 @@ export const useOptimizedAuth = (
         })
       );
     } catch (e) {
-      console.warn('Profile cache write error:', e);
+      console.warn('Profil keşi yazma xətası:', e);
     }
   }, []);
 
   // İstifadəçi profil məlumatlarını əldə et
   const fetchUserProfile = useCallback(async (userId: string): Promise<FullUserData | null> => {
     try {
-      console.log('Fetching user profile for:', userId);
+      console.log('İstifadəçi profili üçün sorğu:', userId);
       
       // Əvvəlcə keşdən yoxla
       const cachedProfile = getCachedProfile();
       if (cachedProfile && cachedProfile.id === userId) {
-        console.log('Using cached profile');
+        console.log('Keşlənmiş profil istifadə edilir');
         return cachedProfile;
       }
 
-      // RPC funksiyası ilə istifadəçi rolunu əldə et
+      // Alternativ RPC funksiyası ilə istifadəçi rolunu əldə et
       const { data: roleData, error: roleError } = await client.rpc('get_user_role_safe');
-      let userRole: UserRole = 'user';
       
+      let userRole: UserRole = 'user';
       if (!roleError && roleData) {
         userRole = roleData as UserRole;
-        console.log('Role fetched via RPC:', userRole);
       } else {
-        console.warn('RPC role fetch error:', roleError);
+        console.warn('RPC role sorğu xətası:', roleError);
       }
 
       // İstifadəçi profilini əldə et
@@ -101,7 +117,7 @@ export const useOptimizedAuth = (
         .single();
         
       if (profileError) {
-        console.error('Profile fetch error:', profileError);
+        console.error('Profil sorğu xətası:', profileError);
       }
       
       // İstifadəçi rolunu əldə et
@@ -112,7 +128,7 @@ export const useOptimizedAuth = (
         .single();
         
       if (userRoleError) {
-        console.warn('User role fetch error:', userRoleError);
+        console.warn('İstifadəçi rolu sorğu xətası:', userRoleError);
       }
 
       // İstifadəçi e-poçtunu əldə et
@@ -157,25 +173,32 @@ export const useOptimizedAuth = (
       
       return fullUserData;
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('İstifadəçi məlumatlarını əldə etmə xətası:', error);
       return null;
     }
   }, [client, getCachedProfile, setCachedProfile]);
 
   // İstifadəçi sessiyasını və profilini fetch edən əsas funksiya
   const fetchUserData = useCallback(async (sessionData: Session | null) => {
+    if (isAuthStateChangeActive) {
+      console.log('Auth state dəyişikliyi aktivdir, sorğu dayandırıldı');
+      return;
+    }
+    
+    setIsAuthStateChangeActive(true);
     setLoading(true);
     
     try {
       if (!sessionData?.user) {
         setUser(null);
         setCachedProfile(null);
+        setLoading(false);
+        setIsAuthStateChangeActive(false);
         return;
       }
 
       const userId = sessionData.user.id;
       
-      // Auth token-ı təyin et
       try {
         if (sessionData?.access_token) {
           await client.auth.setSession({
@@ -184,7 +207,7 @@ export const useOptimizedAuth = (
           });
         }
       } catch (tokenErr) {
-        console.warn('Error setting session token:', tokenErr);
+        console.warn('Session tokenini təyin edərkən xəta:', tokenErr);
       }
 
       // İstifadəçi profilini əldə et
@@ -195,50 +218,68 @@ export const useOptimizedAuth = (
       } else {
         setUser(null);
       }
-    } catch (error) {
-      console.error('Error in fetchUserData:', error);
+    } catch (error: any) {
+      console.error('fetchUserData xətası:', error);
+      setError(error);
       setUser(null);
     } finally {
       setLoading(false);
+      setTimeout(() => {
+        setIsAuthStateChangeActive(false);
+      }, 500);
     }
-  }, [client, fetchUserProfile, setCachedProfile]);
+  }, [client, fetchUserProfile, setCachedProfile, isAuthStateChangeActive]);
 
   // Auth state listener
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
+    console.info('Auth state dinləyicisi quraşdırılır');
     
-    console.log('Setting up auth state listener and checking session');
-
-    // Əvvəlcə listener-i quraşdır
+    // Auth state dəyişikliklərinə abunə olmaq
     const { data: { subscription } } = client.auth.onAuthStateChange(
       (event, currentSession) => {
-        console.log('Auth state changed:', event);
+        if (!isMounted) return;
         
-        if (isMounted) {
+        // Debounce tətbiq et
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+        }
+        
+        const timer = setTimeout(() => {
+          console.log('Auth state dəyişdi:', event);
+          
           setSession(currentSession);
           
-          // Əlavə sorğular üçün setTimeout istifadə et - async olaraq çağırma!
           if (currentSession) {
+            const cachedProfile = getCachedProfile();
+            if (cachedProfile && cachedProfile.id === currentSession.user.id) {
+              setUser(cachedProfile);
+              // Yüklənməni dayandır, profili arxa planda yeniləyərik
+              setLoading(false);
+            }
+            
+            // İstifadəçi məlumatlarını çəkmək üçün 100ms gözlə
             setTimeout(() => {
               fetchUserData(currentSession);
-            }, 0);
+            }, 100);
           } else {
             setUser(null);
             setCachedProfile(null);
             setLoading(false);
           }
-        }
+        }, DEBOUNCE_MS);
+        
+        setDebounceTimer(timer);
       }
     );
 
-    // Sonra cari sessiyanı yoxla
+    // İlk sessiya yoxlaması
     const checkSession = async () => {
       try {
         const { data, error } = await client.auth.getSession();
         
         if (error) {
-          console.error('Error getting session:', error);
+          console.error('Sessiya əldə etmə xətası:', error);
           if (isMounted) {
             setSession(null);
             setUser(null);
@@ -248,64 +289,74 @@ export const useOptimizedAuth = (
           return;
         }
         
-        console.log('Initial session check:', data.session ? 'Session exists' : 'No session');
+        console.log('İlkin sessiya yoxlaması:', data.session ? 'Sessiya mövcuddur' : 'Sessiya yoxdur');
         
         if (isMounted) {
           setSession(data.session);
           
           if (data.session) {
-            // Əvvəlcə keşdən profili əldə etməyə çalışaq
+            // Əvvəlcə keşdən profili əldə et
             const cachedProfile = getCachedProfile();
             if (cachedProfile && cachedProfile.id === data.session.user.id) {
               setUser(cachedProfile);
               setLoading(false);
-              
-              // Arxa planda profili yenilə, amma gözləmə
-              setTimeout(() => {
-                fetchUserProfile(data.session.user.id);
-              }, 0);
-            } else {
-              // Keşdə olmadığı halda serverdən gətir
-              fetchUserData(data.session);
             }
+            
+            // Arxa planda profili yenilə
+            setTimeout(() => {
+              fetchUserData(data.session);
+            }, 100);
           } else {
             setUser(null);
+            setCachedProfile(null);
             setLoading(false);
           }
         }
       } catch (error) {
-        console.error('Session check error:', error);
+        console.error('Sessiya yoxlama xətası:', error);
         if (isMounted) {
           setLoading(false);
         }
       }
     };
 
+    // İlkin yüklənmədə sessiyanı yoxla
     checkSession();
 
-    // Cleanup
+    // Təmizləmə
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
     };
-  }, [client, fetchUserData, getCachedProfile, setCachedProfile]);
+  }, [client, fetchUserData, getCachedProfile, setCachedProfile, debounceTimer]);
 
   // Login funksiyası
   const signIn = useCallback(async (email: string, password: string) => {
     try {
-      console.log('Attempting to sign in with:', email);
+      console.log('Giriş cəhdi:', email);
       setLoading(true);
+      setError(null);
       
       const result = await client.auth.signInWithPassword({
         email,
         password
       });
 
-      console.log('Sign in result:', result.error ? `Error: ${result.error.message}` : 'Success');
+      if (result.error) {
+        setError(result.error);
+        console.error('Giriş xətası:', result.error.message);
+      } else {
+        console.log('Uğurlu giriş:', result.data.user?.email);
+      }
+      
       return result;
     } catch (error: any) {
-      console.error('Sign in error:', error);
-      throw error;
+      console.error('Giriş xətası:', error);
+      setError(error);
+      return { data: null, error };
     } finally {
       // Loading halını dəyişmə, çünki auth state listener zaten bunu edir
     }
@@ -319,9 +370,9 @@ export const useOptimizedAuth = (
       setUser(null);
       setSession(null);
       setCachedProfile(null);
-    } catch (error) {
-      console.error('Sign out error:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('Çıxış xətası:', error);
+      setError(error);
     } finally {
       setLoading(false);
     }
@@ -346,7 +397,7 @@ export const useOptimizedAuth = (
         .eq('id', user.id);
 
       if (error) {
-        console.error('Error updating profile:', error);
+        console.error('Profil yeniləmə xətası:', error);
         return false;
       }
 
@@ -358,7 +409,7 @@ export const useOptimizedAuth = (
       
       return true;
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('Profil yeniləmə xətası:', error);
       return false;
     }
   }, [user, client, fetchUserProfile]);
@@ -374,7 +425,7 @@ export const useOptimizedAuth = (
       }
       return updatedProfile;
     } catch (error) {
-      console.error('Error refreshing profile:', error);
+      console.error('Profil yeniləmə xətası:', error);
       return null;
     }
   }, [session, fetchUserProfile]);
@@ -386,8 +437,22 @@ export const useOptimizedAuth = (
     signIn,
     signOut,
     updateProfile,
-    refreshProfile
-  }), [user, session, loading, signIn, signOut, updateProfile, refreshProfile]);
+    refreshProfile,
+    isAuthenticated,
+    clearError,
+    error
+  }), [
+    user, 
+    session, 
+    loading, 
+    signIn, 
+    signOut, 
+    updateProfile, 
+    refreshProfile, 
+    isAuthenticated, 
+    clearError,
+    error
+  ]);
 
   return authValue;
 };
