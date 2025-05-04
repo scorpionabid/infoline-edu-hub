@@ -55,11 +55,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       setLoginInProgress(true);
       console.log('Giriş cəhdi edilir...', data.email);
       
+      // Login çağırışından əvvəl bir qısa gecikmə əlavə edirik
+      // Bu, əvvəlki login cəhdlərinin təmizlənməsini təmin edir
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const success = await login(data.email, data.password);
       
       if (success) {
         console.log('Giriş uğurlu oldu, autentifikasiya tamamlandı');
         toast.success(t('loginSuccess'));
+        // Birbaşa yönləndirmə etmirik - AuthContext vasitəsilə vəziyyət dəyişikliyi gözlənilir
       } else {
         console.log('Giriş uğursuz oldu');
         setFormError('root', { 

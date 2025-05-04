@@ -90,7 +90,7 @@ const Header: React.FC = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="w-8 px-0">
-                {language.toUpperCase()}
+                {language ? language.toUpperCase() : 'AZ'}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

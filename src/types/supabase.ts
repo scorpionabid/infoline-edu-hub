@@ -46,18 +46,41 @@ export interface School {
   updated_at: string;
 }
 
+// AdminEntity interfeysi
+export interface AdminEntity {
+  type?: string;
+  name?: string;
+  status?: string;
+  schoolType?: string;
+  sectorName?: string;
+  regionName?: string;
+  schoolName?: string;
+}
+
 export interface FullUserData {
   id: string;
   email?: string;
   full_name?: string;
+  name?: string; // Alias for full_name
   role?: UserRole;
   region_id?: string;
+  regionId?: string; // Alias for region_id
   sector_id?: string;
+  sectorId?: string; // Alias for sector_id
   school_id?: string;
+  schoolId?: string; // Alias for school_id
   status?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
   created_at?: string;
+  createdAt?: string; // Alias for created_at
   updated_at?: string;
+  updatedAt?: string; // Alias for updated_at
   last_login?: string;
+  lastLogin?: string; // Alias for last_login
+  adminEntity?: AdminEntity; // Admin entity məlumatları
 }
 
 export type Language = 'az' | 'en' | 'ru' | 'tr';
