@@ -10,14 +10,33 @@ import { fetchDashboardData } from '@/api/dashboardApi';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
+// Düzgün tip konversiyaları
 import { 
   SuperAdminDashboardData,
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-  Notification,
-  SchoolStat
 } from '@/types/dashboard';
+
+// Notification tipi
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  createdAt: string;
+  type: "deadline" | "approval" | "rejection" | "comment" | "system";
+  read: boolean;
+}
+
+// Bildiriş məlumatlarını konvertasiya edən yardımçı funksiya
+const convertToDashboardNotification = (notification: Notification) => ({
+  id: notification.id,
+  title: notification.title,
+  message: notification.message,
+  date: notification.createdAt,
+  type: notification.type,
+  isRead: !notification.read
+});
 
 export interface DashboardContentProps {
   // Hər hansı bir prop tanımı
@@ -51,23 +70,23 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
     refetchOnWindowFocus: false // Focus dəyişəndə yenidən məlumat almırıq
   });
 
-  // Mock notifications - Notification tipinə uyğunlaşdırılmış
-  const mockNotifications = useMemo<Notification[]>(() => [
+  // Mock notifications
+  const mockNotifications = useMemo(() => [
     {
       id: '1',
       title: 'Yeni kateqoriya əlavə edildi',
       message: 'Təhsil statistikası kateqoriyası sistemə əlavə edildi',
-      date: new Date().toLocaleDateString(),
-      type: 'info',
-      isRead: false
+      createdAt: new Date().toISOString(),
+      type: 'system' as const,
+      read: false
     },
     {
       id: '2',
       title: 'Son müddət xəbərdarlığı',
       message: 'Məktəb məlumatlarını doldurmaq üçün son 3 gün qalıb',
-      date: new Date().toLocaleDateString(),
-      type: 'warning',
-      isRead: false
+      createdAt: new Date().toISOString(),
+      type: 'deadline' as const,
+      read: false
     }
   ], []);
 
@@ -91,6 +110,13 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
 
   // SuperAdmin Dashboard
   if (userRole === 'superadmin') {
+    const formsByStatus = {
+      pending: dashboardData.pendingForms || 0,
+      approved: dashboardData.approvedForms || 0,
+      rejected: dashboardData.rejectedForms || 0,
+      total: dashboardData.totalForms || 0
+    };
+
     const superAdminData: SuperAdminDashboardData = {
       stats: {
         regions: dashboardData.regions || 0,
@@ -98,15 +124,11 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0,
       },
-      formsByStatus: {
-        pending: dashboardData.pendingForms || 0,
-        approved: dashboardData.approvedForms || 0,
-        rejected: dashboardData.rejectedForms || 0,
-        total: dashboardData.totalForms || 0
-      },
-      notifications: mockNotifications,
-      approvalRate: dashboardData.approvalRate || 0,
-      completionRate: dashboardData.completionRate || 0
+      // Bildirişlər üçün uyğun konversiya edirik
+      notifications: mockNotifications.map(convertToDashboardNotification),
+      formsByStatus,
+      completionRate: dashboardData.completionRate || 0,
+      approvalRate: dashboardData.approvalRate || 0
     };
 
     return <SuperAdminDashboard data={superAdminData} />;
@@ -114,22 +136,26 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
 
   // RegionAdmin Dashboard
   if (userRole === 'regionadmin') {
+    const sectorStats = {
+      total: dashboardData.sectors || 0,
+      active: dashboardData.activeSectors || 0
+    };
+
+    const schoolStats = {
+      total: dashboardData.schools || 0, 
+      active: dashboardData.activeSchools || 0,
+      incomplete: dashboardData.incompleteSchools || 0
+    };
+
     const regionAdminData: RegionAdminDashboardData = {
       stats: {
         sectors: dashboardData.sectors || 0,
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0,
       },
-      notifications: mockNotifications,
-      sectorStats: {
-        total: dashboardData.sectors || 0,
-        active: dashboardData.activeSectors || 0
-      },
-      schoolStats: {
-        total: dashboardData.schools || 0, 
-        active: dashboardData.activeSchools || 0,
-        incomplete: dashboardData.incompleteSchools || 0
-      },
+      notifications: mockNotifications.map(convertToDashboardNotification),
+      sectorStats,
+      schoolStats,
       completionRate: dashboardData.completionRate || 0
     };
 
@@ -138,19 +164,19 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
 
   // SectorAdmin Dashboard
   if (userRole === 'sectoradmin') {
-    const schoolsStatItem: SchoolStat = {
+    const schoolsStats = [{
       total: dashboardData.schools || 0,
       incomplete: dashboardData.incompleteSchools || 0,
       active: dashboardData.activeSchools || 0
-    };
+    }];
     
     const sectorAdminData: SectorAdminDashboardData = {
       stats: {
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0
       },
-      schoolsStats: [schoolsStatItem],
-      notifications: mockNotifications,
+      schoolsStats,
+      notifications: mockNotifications.map(convertToDashboardNotification),
       completionRate: dashboardData.completionRate || 0
     };
 
@@ -159,16 +185,18 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
 
   // SchoolAdmin Dashboard
   if (userRole === 'schooladmin') {
+    const formStats = {
+      total: dashboardData.totalForms || 0,
+      approved: dashboardData.approvedForms || 0,
+      pending: dashboardData.pendingForms || 0,
+      rejected: dashboardData.rejectedForms || 0,
+      incomplete: dashboardData.incompleteForms || 0,
+      drafts: dashboardData.draftForms || 0
+    };
+
     const schoolAdminData: SchoolAdminDashboardData = {
-      formStats: {
-        total: dashboardData.totalForms || 0,
-        approved: dashboardData.approvedForms || 0,
-        pending: dashboardData.pendingForms || 0,
-        rejected: dashboardData.rejectedForms || 0,
-        incomplete: dashboardData.incompleteForms || 0,
-        drafts: dashboardData.draftForms || 0
-      },
-      notifications: mockNotifications,
+      formStats,
+      notifications: mockNotifications.map(convertToDashboardNotification),
       categories: dashboardData.categories || [],
       completionRate: dashboardData.completionRate || 0
     };

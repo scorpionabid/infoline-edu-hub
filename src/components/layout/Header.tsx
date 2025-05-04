@@ -50,6 +50,7 @@ const Header: React.FC = () => {
   const getInitials = (name: string) => {
     return name
       .split(' ')
+      .filter(Boolean)
       .slice(0, 2)
       .map(n => n[0])
       .join('')
@@ -131,8 +132,10 @@ const Header: React.FC = () => {
                 className="relative h-8 w-8 rounded-full"
               >
                 <Avatar>
-                  <AvatarImage src={user?.avatar || ''} alt={userDisplayName} />
-                  <AvatarFallback>{fallbackInitials}</AvatarFallback>
+                  {user?.avatar ? (
+                    <AvatarImage src={user.avatar} alt={userDisplayName} />
+                  ) : null}
+                  <AvatarFallback>{fallbackInitials || "U"}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>

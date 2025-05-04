@@ -1,15 +1,11 @@
 
 import { useCallback } from 'react';
-import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
-import { AdminEntity } from '../types';
-
-// Sabitlər
-const FETCH_TIMEOUT = 15000; // 15 saniyə maksimum sorğu müddəti
+import { Session } from '@supabase/supabase-js';
 
 /**
- * Auth ilə əlaqəli sorğuları idarə edən hook
+ * İstifadəçi məlumatlarını əldə etmək üçün hook
  */
 export const useAuthFetch = (
   setCachedUser: (userData: FullUserData | null) => void,
@@ -17,310 +13,275 @@ export const useAuthFetch = (
   lastFetchTime: React.MutableRefObject<number>,
   fetchingUserData: React.MutableRefObject<boolean>,
   fetchAbortController: React.MutableRefObject<AbortController | null>,
-  fetchTimeoutTimer: React.MutableRefObject<NodeJS.Timeout | null>,
+  fetchTimeoutTimer: React.MutableRefObject<NodeJS.Timeout | null>
 ) => {
   /**
-   * Əvvəlki sorğuları ləğv edən funksiya
+   * Əvvəlki sorğuları ləğv etmək
    */
   const cancelPreviousFetch = useCallback(() => {
+    if (fetchAbortController.current) {
+      fetchAbortController.current.abort();
+      fetchAbortController.current = null;
+    }
+    
     if (fetchTimeoutTimer.current) {
       clearTimeout(fetchTimeoutTimer.current);
       fetchTimeoutTimer.current = null;
     }
     
-    if (fetchAbortController.current) {
-      fetchAbortController.current.abort();
-      fetchAbortController.current = null;
-    }
-  }, [fetchTimeoutTimer, fetchAbortController]);
-  
+    fetchingUserData.current = false;
+  }, [fetchAbortController, fetchTimeoutTimer, fetchingUserData]);
+
   /**
-   * İstifadəçi məlumatlarını əldə edən əsas funksiya
+   * İstifadəçi məlumatlarını əldə etmək
    */
   const fetchUserData = useCallback(async (
-    currentSession: Session | null, 
-    forceRefresh = false,
+    session: Session | null, 
+    forceRefresh: boolean,
     setUser: (user: FullUserData | null) => void,
     setAuthState: (state: any) => void,
     setError: (error: string | null) => void,
-    user: FullUserData | null
+    currentUser: FullUserData | null
   ): Promise<FullUserData | null> => {
-    // Əgər artıq sorğu icra olunursa, təkrar sorğuya ehtiyac yoxdur
-    if (fetchingUserData.current && !forceRefresh) {
-      console.log('Artıq istifadəçi məlumatları sorğusu icra olunur, gözləyirik...');
-      return user;
-    }
-    
-    // Sessiya yoxdursa, istifadəçi məlumatlarını təmizləyirik
-    if (!currentSession?.user) {
-      console.log('Session yoxdur, istifadəçi məlumatlarını təmizləyirik');
-      setUser(null);
-      setAuthState({ isLoading: false, isAuthenticated: false });
-      setCachedUser(null);
-      return null;
-    }
-    
-    const userId = currentSession.user.id;
-    
-    // Keş yoxlaması
-    const now = Date.now();
-    const shouldUseCache = !forceRefresh && 
-                        user && 
-                        lastFetchedUserId.current === userId && 
-                        now - lastFetchTime.current < (30 * 60 * 1000); // 30 dəqiqə
-                        
-    if (shouldUseCache) {
-      console.log('Keşdən istifadəçi məlumatı istifadə olunur:', userId);
-      
-      if (!user?.isAuthenticated) {
-        setAuthState({ isLoading: false, isAuthenticated: true });
-      }
-      return user;
-    }
-    
-    // Əvvəlki sorğuları ləğv edirik
-    cancelPreviousFetch();
-    
-    // Yeni sorğu üçün abort controller yaradırıq
-    fetchAbortController.current = new AbortController();
-    
-    // Sorğunun vaxtını keçməməsi üçün timeout qururuq
-    fetchTimeoutTimer.current = setTimeout(() => {
-      if (fetchingUserData.current) {
-        console.warn('İstifadəçi məlumatlarını əldə etmə vaxtı keçdi');
-        cancelPreviousFetch();
-        fetchingUserData.current = false;
-        
-        // User artıq varsa, onu saxlayırıq, yoxdursa yüklənmə vəziyyətini sonlandırırıq
-        if (user) {
-          setAuthState({ isLoading: false, isAuthenticated: true });
-        } else {
-          setAuthState({ isLoading: false, isAuthenticated: false });
-        }
-      }
-    }, FETCH_TIMEOUT);
-    
-    // Yüklənmə vəziyyətini təyin edirik
-    fetchingUserData.current = true;
-    setAuthState(prev => ({ ...prev, isLoading: true }));
-    
     try {
-      // Auth token yeniləməsi - session-un hələ də etibarlı olduğundan əmin oluruq
-      try {
-        if (currentSession.access_token) {
-          await supabase.auth.setSession({
-            access_token: currentSession.access_token,
-            refresh_token: currentSession.refresh_token || ''
-          });
-        }
-      } catch (tokenError) {
-        console.warn('Token yeniləmə xətası:', tokenError);
+      // Session yoxdursa, istifadəçi yoxdur
+      if (!session?.user?.id) {
+        setUser(null);
+        setAuthState({
+          isAuthenticated: false,
+          isLoading: false
+        });
+        return null;
       }
       
-      // Rol və profil məlumatlarını paralel şəkildə əldə edirik
+      const userId = session.user.id;
+      const now = Date.now();
+      
+      // Əgər sorğu artıq göndərilibsə, yenisini göndərməyə ehtiyac yoxdur
+      if (fetchingUserData.current) {
+        console.log('Məlumatlar artıq yüklənir, yeni sorğu edilmir');
+        return currentUser;
+      }
+      
+      // Əgər eyni istifadəçi üçün məlumat son 5 saniyə ərzində əldə edilibsə və forceRefresh=false,
+      // keşlənmiş məlumatlardan istifadə edirik
+      if (!forceRefresh &&
+          lastFetchedUserId.current === userId &&
+          now - lastFetchTime.current < 5000 &&
+          currentUser
+      ) {
+        console.log('Son 5 saniyədə əldə edilmiş istifadəçi məlumatları istifadə olunur');
+        return currentUser;
+      }
+      
+      // Əvvəlki sorğuları təmizləyirik
+      cancelPreviousFetch();
+      
+      // Yeni sorğu göndəririk
+      fetchingUserData.current = true;
+      fetchAbortController.current = new AbortController();
+      
+      // Timeout təyin edirik - 10 saniyədən çox çəkərsə, sorğunu ləğv edirik
+      fetchTimeoutTimer.current = setTimeout(() => {
+        console.warn('İstifadəçi məlumatlarının əldə edilməsi üçün timeout - 10 saniyə keçdi');
+        cancelPreviousFetch();
+        
+        // Əgər istifadəçi hələ də yoxdursa, xəta göstəririk
+        if (!currentUser) {
+          setError('İstifadəçi məlumatlarını yükləmək mümkün olmadı. Şəbəkə bağlantısını yoxlayın.');
+          setAuthState(prev => ({ ...prev, isLoading: false }));
+        }
+      }, 10000);
+      
+      console.log(`İstifadəçi məlumatları əldə edilir: ${userId}`);
+      
+      // İstifadəçi profili və rolunu paralel sorğularla əldə edirik
       const [userRolesResult, profileResult] = await Promise.all([
         supabase
           .from('user_roles')
           .select('role, region_id, sector_id, school_id')
           .eq('user_id', userId)
+          .abortSignal(fetchAbortController.current?.signal)
           .maybeSingle(),
         
         supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
+          .abortSignal(fetchAbortController.current?.signal)
           .maybeSingle()
       ]);
-
-      // Rol məlumatları
-      const userRole = userRolesResult.data?.role || 'user';
-      const region_id = userRolesResult.data?.region_id || null;
-      const sector_id = userRolesResult.data?.sector_id || null;
-      const school_id = userRolesResult.data?.school_id || null;
       
-      // Xəta halında rolları yaratmağa çalışaq
-      if (userRolesResult.error && userRolesResult.error.code === 'PGRST116') {
-        try {
-          // Default rol yaratmağa cəhd edirik
-          console.log('İstifadəçi rolu tapılmadı, default rol yaratmağa cəhd edilir');
-          await supabase.from('user_roles').insert({
-            user_id: userId,
-            role: 'user',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-        } catch (createRoleError) {
-          console.warn('Rol yaratma xətası:', createRoleError);
-        }
+      // Sorğular tamamlandığından fetchingUserData-nı false edirik və timer-ı təmizləyirik
+      fetchingUserData.current = false;
+      
+      if (fetchTimeoutTimer.current) {
+        clearTimeout(fetchTimeoutTimer.current);
+        fetchTimeoutTimer.current = null;
       }
-      
-      // Profil məlumatları
-      const profile = profileResult.data || {
-        id: userId,
-        full_name: currentSession.user.email?.split('@')[0] || 'İstifadəçi',
-        email: currentSession.user.email,
-        language: 'az',
-        status: 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
 
-      // Profil tapılmadısa profil yaratmağa çalışırıq
-      if (profileResult.error && profileResult.error.code === 'PGRST116') {
+      // İstifadəçi rolu
+      let userRole = 'user';
+      let region_id = null;
+      let sector_id = null; 
+      let school_id = null;
+      
+      // Rol məlumatlarını emal edirik
+      if (!userRolesResult.error && userRolesResult.data) {
+        userRole = userRolesResult.data.role;
+        region_id = userRolesResult.data.region_id;
+        sector_id = userRolesResult.data.sector_id;
+        school_id = userRolesResult.data.school_id;
+        console.log('Rol məlumatları əldə edildi:', userRole);
+      } else if (userRolesResult.error) {
+        console.warn('Rol məlumatlarını əldə edərkən xəta:', userRolesResult.error);
+      } else {
+        console.warn('İstifadəçi üçün rol məlumatı tapılmadı');
+      }
+
+      // Profil məlumatları
+      let profile: any = null;
+      
+      // Profil məlumatlarını emal edirik
+      if (!profileResult.error && profileResult.data) {
+        profile = profileResult.data;
+        console.log('Profil məlumatları əldə edildi');
+      } else if (profileResult.error) {
+        console.warn('Profil məlumatlarını əldə edərkən xəta:', profileResult.error);
+      } else {
+        console.warn('İstifadəçi üçün profil məlumatı tapılmadı');
+        
+        // Profil tapılmadı, yaratmağa cəhd et (asenkron)
         try {
-          console.log('İstifadəçi profili tapılmadı, profil yaratmağa cəhd edilir');
-          await supabase
+          console.log('İstifadəçi üçün profil yaradılır:', userId);
+          const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .insert({
               id: userId,
-              full_name: currentSession.user.email?.split('@')[0] || 'İstifadəçi',
-              email: currentSession.user.email,
+              full_name: session.user.email?.split('@')[0] || 'İstifadəçi',
+              email: session.user.email,
               language: 'az',
               status: 'active',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
-            });
-        } catch (createProfileError) {
-          console.warn('Profil yaratma xətası:', createProfileError);
+            })
+            .select()
+            .single();
+          
+          if (!createError && newProfile) {
+            profile = newProfile;
+            console.log('Profil uğurla yaradıldı');
+          } else {
+            console.error('Profil yaradıla bilmədi:', createError);
+          }
+        } catch (err) {
+          console.error('Profil yaradıla bilmədi:', err);
         }
       }
 
-      // Admin qurumuna aid məlumatlar
-      let adminEntity: AdminEntity = { 
-        type: userRole,
-        name: profile.full_name || currentSession.user.email?.split('@')[0] || ''
-      };
-
-      // Rola görə əlavə admin qurumu məlumatları
-      if (userRole === 'regionadmin' && region_id) {
-        try {
-          const { data } = await supabase
-            .from('regions')
-            .select('name')
-            .eq('id', region_id)
-            .single();
-            
-          if (data) {
-            adminEntity.name = data.name || adminEntity.name;
-            adminEntity.regionName = data.name;
-          }
-        } catch (error) {
-          console.warn('Region məlumatları əldə edilə bilmədi:', error);
-        }
-      } else if (userRole === 'sectoradmin' && sector_id) {
-        try {
-          const { data } = await supabase
-            .from('sectors')
-            .select('name, regions(name)')
-            .eq('id', sector_id)
-            .single();
-            
-          if (data) {
-            adminEntity.name = data.name || adminEntity.name;
-            adminEntity.sectorName = data.name;
-            adminEntity.regionName = data.regions?.name;
-          }
-        } catch (error) {
-          console.warn('Sektor məlumatları əldə edilə bilmədi:', error);
-        }
-      } else if (userRole === 'schooladmin' && school_id) {
-        try {
-          const { data } = await supabase
-            .from('schools')
-            .select('name, sectors(name), regions(name)')
-            .eq('id', school_id)
-            .single();
-            
-          if (data) {
-            adminEntity.name = data.name || adminEntity.name;
-            adminEntity.schoolName = data.name;
-            adminEntity.sectorName = data.sectors?.name;
-            adminEntity.regionName = data.regions?.name;
-          }
-        } catch (error) {
-          console.warn('Məktəb məlumatları əldə edilə bilmədi:', error);
-        }
+      // Əgər hələ də profil məlumatı yoxdursa, ən azından minimal dəyərləri təyin edirik
+      if (!profile) {
+        profile = {
+          id: userId,
+          full_name: session.user.email?.split('@')[0] || 'İstifadəçi',
+          email: session.user.email,
+          language: 'az',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        console.log('Profil məlumatları üçün default dəyərlər istifadə edilir');
       }
 
-      // Xəta baş verə bilər - Abort signal ilə yoxlayırıq
-      if (fetchAbortController.current?.signal.aborted) {
-        console.log('İstifadəçi məlumatları sorğusu ləğv edildi');
-        return null;
-      }
-
-      // İstifadəçi məlumatlarını birləşdirik
-      const fullUserData: FullUserData = {
+      // İstifadəçi məlumatlarını birləşdir
+      const userData: FullUserData = {
         id: userId,
-        email: currentSession.user.email || profile.email || '',
-        full_name: profile.full_name || currentSession.user.email?.split('@')[0] || '',
+        email: session.user.email || profile?.email || '',
         role: userRole,
-        avatar: profile.avatar || '',
         region_id: region_id,
         sector_id: sector_id,
         school_id: school_id,
-        phone: profile.phone || '',
-        position: profile.position || '',
-        language: profile.language || 'az',
-        status: profile.status || 'active',
-        last_login: profile.last_login || null,
-        created_at: profile.created_at || new Date().toISOString(),
-        updated_at: profile.updated_at || new Date().toISOString(),
-        adminEntity: adminEntity,
-        // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-        name: profile.full_name || currentSession.user.email?.split('@')[0] || '',
-        regionId: region_id,
-        sectorId: sector_id,
-        schoolId: school_id,
-        lastLogin: profile.last_login || null,
-        createdAt: profile.created_at || new Date().toISOString(),
-        updatedAt: profile.updated_at || new Date().toISOString(),
+        full_name: profile?.full_name || session.user.email?.split('@')[0] || '',
+        avatar: profile?.avatar || '',
+        phone: profile?.phone || '',
+        position: profile?.position || '',
+        language: profile?.language || 'az',
+        status: profile?.status || 'active',
+        last_login: profile?.last_login || null,
+        created_at: profile?.created_at || new Date().toISOString(),
+        updated_at: profile?.updated_at || new Date().toISOString()
       };
 
-      // Sorğu artıq ləğv edilməyibsə, yeni məlumatları tətbiq edirik
-      if (!fetchAbortController.current?.signal.aborted) {
-        // Keş və referansları yeniləyirik
-        lastFetchedUserId.current = userId;
-        lastFetchTime.current = now;
-        setCachedUser(fullUserData);
-        
-        // Render sayını optimallaşdırmaq üçün əvvəlcə istifadəçi məlumatlarını təyin edirik
-        setUser(fullUserData);
-        
-        // Sonra autentifikasiya vəziyyətini yeniləyirik
-        setAuthState({
-          isAuthenticated: true,
-          isLoading: false
-        });
+      console.log('İstifadəçi məlumatları formalaşdırıldı:', { 
+        id: userData.id,
+        email: userData.email,
+        role: userData.role
+      });
+      
+      // Məlumatları saxla və state-i yenilə
+      setUser(userData);
+      setCachedUser(userData);
+      
+      // Son sorğunun məlumatlarını saxla
+      lastFetchedUserId.current = userId;
+      lastFetchTime.current = Date.now();
+      
+      // Auth state-i yenilə
+      setAuthState({
+        isAuthenticated: true,
+        isLoading: false
+      });
+
+      return userData;
+    } catch (error: any) {
+      // Əgər abort error deyilsə, xətanı emal et
+      if (error.name !== 'AbortError') {
+        console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', error);
+        setError(`İstifadəçi məlumatlarını əldə edərkən xəta: ${error.message}`);
+      } else {
+        console.log('İstifadəçi məlumatlarını əldə etmək üçün sorğu ləğv edildi');
       }
       
-      return fullUserData;
-    } catch (error) {
-      console.error('İstifadəçi məlumatları yükləmə xətası:', error);
-      setError(error instanceof Error ? error.message : String(error));
+      // Sorğu statusunu sıfırla
+      fetchingUserData.current = false;
       
-      // Əgər istifadəçi məlumatları varsa, autentifikasiya vəziyyətini saxlayırıq
-      if (user) {
+      // State-i yenilə
+      if (session?.user) {
+        // Session var, amma məlumatları əldə etmək mümkün olmadı
+        // Minimum məlumatlar ilə istifadəçini təyin et
+        const minimalUser: FullUserData = {
+          id: session.user.id,
+          email: session.user.email || '',
+          role: 'user',
+          full_name: session.user.email?.split('@')[0] || 'İstifadəçi',
+          language: 'az',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        setUser(minimalUser);
         setAuthState({
           isAuthenticated: true,
           isLoading: false
         });
+        
+        return minimalUser;
       } else {
+        // Session yoxdur, istifadəçi də yoxdur
+        setUser(null);
         setAuthState({
           isAuthenticated: false,
           isLoading: false
         });
+        
+        return null;
       }
-      
-      return null;
-    } finally {
-      // Clean-up
-      fetchingUserData.current = false;
-      cancelPreviousFetch();
     }
-  }, [cancelPreviousFetch, setCachedUser]);
+  }, [cancelPreviousFetch, fetchAbortController, fetchTimeoutTimer, fetchingUserData, lastFetchedUserId, lastFetchTime]);
 
   return {
     fetchUserData,
-    cancelPreviousFetch,
+    cancelPreviousFetch
   };
 };

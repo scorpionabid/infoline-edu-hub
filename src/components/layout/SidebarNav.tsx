@@ -47,14 +47,14 @@ const NavItem = ({ href, label, icon, isActive, isCollapsed, onClick }: NavItemP
     <Button
       variant={isActive ? "secondary" : "ghost"}
       className={cn(
-        "w-full justify-start",
+        "w-full justify-start mb-1",
         isActive ? "bg-muted" : "hover:bg-muted/50",
-        isCollapsed && "justify-center"
+        isCollapsed && "justify-center px-2"
       )}
       onClick={handleClick}
     >
       <div className="flex items-center">
-        <div className="mr-2">{icon}</div>
+        <div className={cn(isCollapsed ? "mx-auto" : "mr-2")}>{icon}</div>
         {!isCollapsed && <span>{label}</span>}
       </div>
       {isActive && !isCollapsed && (

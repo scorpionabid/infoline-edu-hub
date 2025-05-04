@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { usePermissions } from "@/hooks/auth/usePermissions";
@@ -41,6 +41,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { userRole } = usePermissions();
   const location = useLocation();
   
+  // İlk yüklənmə zamanı və hər location dəyişdikdə 
+  // scrollu yuxarı qaytarırıq (mirror effect problemini həll etmək üçün)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+  
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -69,6 +75,13 @@ interface PublicRouteProps {
 
 const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+  
+  // İlk yüklənmə zamanı və hər location dəyişdikdə 
+  // scrollu yuxarı qaytarırıq (mirror effect problemini həll etmək üçün)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
   
   if (isLoading) {
     return (
