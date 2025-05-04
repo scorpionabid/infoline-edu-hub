@@ -21,7 +21,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
           value={data.stats.sectors}
           icon="S"
           description="Toplam sektor sayı"
-          trend={`${data.sectorStats?.total ? data.sectorStats?.active / data.sectorStats?.total * 100 : 0}% aktiv`}
+          trend={`${data.sectorStats?.active / data.sectorStats?.total * 100 || 0}% aktiv`}
           trendDirection="up"
         />
         <StatsCard

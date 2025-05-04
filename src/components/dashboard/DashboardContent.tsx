@@ -15,7 +15,7 @@ import {
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-  DashboardNotification,
+  UINotification,
   SchoolStat
 } from '@/types/dashboard';
 
@@ -36,7 +36,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
   const handleFormClick = useCallback((formId: string) => {
     navigate(`/data-entry?categoryId=${formId}`);
   }, [navigate]);
-  
+
   // Rol əsasında dashboard datasını əldə edirik
   const { 
     data: dashboardData, 
@@ -45,36 +45,34 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
     refetch
   } = useQuery({
     queryKey: ['dashboard', userRole, regionId, sectorId, schoolId],
-    queryFn: () => fetchDashboardData({ userRole, regionId, sectorId, schoolId })
+    queryFn: () => fetchDashboardData({ userRole, regionId, sectorId, schoolId }),
+    staleTime: 30000, // 30 saniyə cache
+    retry: 1, // Xəta halında maksimum 1 dəfə cəhd et
+    refetchOnWindowFocus: false // Focus dəyişəndə yenidən məlumat almırıq
   });
 
-  // Mock notifications
-  const mockNotifications = useMemo<DashboardNotification[]>(() => [
+  // Mock notifications - UI tipinə uyğunlaşdırılmış
+  const mockNotifications = useMemo<UINotification[]>(() => [
     {
       id: '1',
       title: 'Yeni kateqoriya əlavə edildi',
       message: 'Təhsil statistikası kateqoriyası sistemə əlavə edildi',
       date: new Date().toLocaleDateString(),
-      timestamp: new Date().toISOString(),
-      type: 'system', // "error" | "info" | "warning" | "success" tiplərinə uyğunlaşdıraq
-      isRead: false,
-      read: false
+      type: 'info',
+      isRead: false
     },
     {
       id: '2',
       title: 'Son müddət xəbərdarlığı',
       message: 'Məktəb məlumatlarını doldurmaq üçün son 3 gün qalıb',
       date: new Date().toLocaleDateString(),
-      timestamp: new Date().toISOString(),
-      type: 'deadline', // "error" | "info" | "warning" | "success" tiplərinə uyğunlaşdıraq
-      isRead: false,
-      read: false
+      type: 'warning',
+      isRead: false
     }
   ], []);
 
   // Xəta və ya yüklənmə halları
   if (error) {
-    toast.error('Məlumatları yükləyərkən xəta baş verdi');
     console.error('Dashboard data yüklənmə xətası:', error);
     
     return (
@@ -112,11 +110,9 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         rejected: dashboardData.rejectedForms || 0,
         total: dashboardData.totalForms || 0
       },
-      notifications: mockNotifications.map(notification => ({
-        ...notification,
-        type: mapNotificationTypeToUIType(notification.type)
-      })),
-      approvalRate: dashboardData.approvalRate || 0
+      notifications: mockNotifications,
+      approvalRate: dashboardData.approvalRate || 0,
+      completionRate: dashboardData.completionRate || 0
     };
 
     return <SuperAdminDashboard data={superAdminData} />;
@@ -133,10 +129,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       pendingItems: [],
       categories: [],
       sectors: [],
-      notifications: mockNotifications.map(notification => ({
-        ...notification,
-        type: mapNotificationTypeToUIType(notification.type)
-      })),
+      notifications: mockNotifications,
       sectorStats: {
         total: dashboardData.sectors || 0,
         active: dashboardData.activeSectors || 0
@@ -156,7 +149,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
   if (userRole === 'sectoradmin') {
     const schoolsStatItem: SchoolStat = {
       total: dashboardData.schools || 0,
-      incomplete: dashboardData.incompleteSchools || 0
+      incomplete: dashboardData.incompleteSchools || 0,
+      active: dashboardData.activeSchools || 0
     };
     
     const sectorAdminData: SectorAdminDashboardData = {
@@ -168,10 +162,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       schools: [],
       categories: [],
       schoolsStats: [schoolsStatItem],
-      notifications: mockNotifications.map(notification => ({
-        ...notification,
-        type: mapNotificationTypeToUIType(notification.type)
-      })),
+      notifications: mockNotifications,
       completionRate: dashboardData.completionRate || 0
     };
 
@@ -189,10 +180,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         incomplete: dashboardData.incompleteForms || 0,
         drafts: dashboardData.draftForms || 0
       },
-      notifications: mockNotifications.map(notification => ({
-        ...notification,
-        type: mapNotificationTypeToUIType(notification.type)
-      })),
+      notifications: mockNotifications,
       categories: dashboardData.categories || [],
       completionRate: dashboardData.completionRate || 0
     };
@@ -211,23 +199,5 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
 
   return <div className="p-4 text-center">Məlumat tapılmadı</div>;
 };
-
-// Notification tiplərini UI tiplərinə çevirmək üçün funksiya
-function mapNotificationTypeToUIType(type: string): "error" | "info" | "warning" | "success" {
-  switch (type) {
-    case 'system':
-      return 'info';
-    case 'deadline':
-      return 'warning';
-    case 'approval':
-      return 'success';
-    case 'rejection':
-      return 'error';
-    case 'comment':
-      return 'info';
-    default:
-      return 'info';
-  }
-}
 
 export default DashboardContent;

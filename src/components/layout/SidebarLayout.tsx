@@ -14,12 +14,10 @@ export interface SidebarLayoutProps {
 }
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { t } = useLanguage();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const navigate = useNavigate();
-  const location = useLocation();
   
   // Ekran ölçüsü dəyişikliklərinə reaksiya vermək üçün
   useEffect(() => {
@@ -47,26 +45,11 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     if (isMobile) {
       setIsSidebarOpen(false);
     }
-  }, []);
+  }, [isMobile]);
 
-  // Autentifikasiya yoxlaması
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, isLoading, navigate]);
-
-  // Yüklənmə halında spinner göstəririk
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || !user) {
-    return null;
+  // User məlumatları yoxdursa, boş komponent qaytarırıq (AppRoutes-da ProtectedRoute bunu yönləndirir)
+  if (!user) {
+    return <Outlet />;
   }
 
   const handleItemClick = () => {

@@ -1,9 +1,11 @@
+
 import React from 'react';
-import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
-import { NotificationsCard } from './common/NotificationsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
-import { SchoolAdminDashboardData } from '@/types/dashboard';
+import { NotificationsCard } from './common/NotificationsCard';
+import { SchoolAdminDashboardData, UINotification } from '@/types/dashboard';
+import { Grid } from '@/components/ui/grid';
+import { CheckCircle, AlertTriangle, Clock, XCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface SchoolAdminDashboardProps {
@@ -12,29 +14,26 @@ interface SchoolAdminDashboardProps {
   error?: any;
   onRefresh?: () => void;
   navigateToDataEntry?: () => void;
-  handleFormClick?: () => void;
+  handleFormClick?: (id: string) => void;
 }
 
-export const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ 
+export function SchoolAdminDashboard({ 
   data, 
   isLoading,
   error,
   onRefresh,
   navigateToDataEntry,
   handleFormClick
-}) => {
+}: SchoolAdminDashboardProps) {
   const { t } = useLanguage();
   
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    </div>;
   }
 
   if (error) {
-    // Xəta mesajını təhlükəsiz şəkildə əldə edirik
     let errorMessage = 'Məlumatları yükləmək mümkün olmadı';
     
     if (typeof error === 'string') {
@@ -42,7 +41,6 @@ export const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     } else if (error instanceof Error) {
       errorMessage = error.message;
     } else if (typeof error === 'object' && error !== null) {
-      // Əgər error bir obyektdirsə və message xüsusiyyəti varsa
       errorMessage = error.message || JSON.stringify(error);
     }
     
@@ -77,58 +75,41 @@ export const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       </div>
       
       <Grid columns={4} className="gap-6">
-        <StatsCard
-          title={t('approved')}
-          value={data.formStats.approved}
-          icon="A"
-          description={t('approvedForms')}
-          trend={`${Math.round((data.formStats.approved / (data.formStats.approved + data.formStats.pending + data.formStats.rejected + data.formStats.incomplete)) * 100)}% ${t('completion')}`}
+        <StatsCard 
+          title={t('approved')} 
+          value={data.formStats.approved} 
+          icon={<CheckCircle size={18} />}
           trendDirection="up"
         />
-        <StatsCard
-          title={t('pending')}
-          value={data.formStats.pending}
-          icon="P" 
-          description={t('pendingForms')}
-          trend={`${t('requiresAction')}`}
-          trendDirection="neutral"
+        <StatsCard 
+          title={t('pending')} 
+          value={data.formStats.pending} 
+          icon={<Clock size={18} />}
         />
-        <StatsCard
-          title={t('rejected')}
-          value={data.formStats.rejected}
-          icon="R"
-          description={t('rejectedForms')}
-          trend={`${t('needsCorrection')}`}
+        <StatsCard 
+          title={t('rejected')} 
+          value={data.formStats.rejected} 
+          icon={<XCircle size={18} />}
           trendDirection="down"
         />
-        <StatsCard
-          title={t('incomplete')}
-          value={data.formStats.incomplete}
-          icon="I"
-          description={t('incompleteForms')}
-          trend={`${t('fillTheseForms')}`}
-          trendDirection="down"
+        <StatsCard 
+          title={t('incomplete')} 
+          value={data.formStats.incomplete || 0} 
+          icon={<AlertTriangle size={18} />}
         />
       </Grid>
-
       <Grid columns={2} className="gap-6">
-        <CompletionRateCard
-          completionRate={data.completionRate}
-          title={t('overallCompletion')}
+        <CompletionRateCard 
+          completionRate={data.completionRate} 
+          title={t('overallCompletion')} 
         />
-                
-        <NotificationsCard
-          title={t('notifications')}
-          notifications={data.notifications.map(n => ({
-            id: n.id,
-            title: n.title,
-            message: n.message,
-            date: new Date(n.timestamp || n.createdAt || Date.now()).toLocaleDateString(),
-            type: n.type,
-            isRead: n.isRead ?? n.read ?? false
-          }))}
+        <NotificationsCard 
+          title={t('notifications')} 
+          notifications={data.notifications}
         />
       </Grid>
     </div>
   );
-};
+}
+
+export default SchoolAdminDashboard;

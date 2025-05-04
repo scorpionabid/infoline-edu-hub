@@ -1,24 +1,25 @@
 
 import { ColumnType } from "./supabase";
 
-export interface DashboardNotification {
+// UI bildiriş tipi ilə DashboardNotification tipi arasında uyğunsuzluq var
+// Bunu düzəltmək üçün ortaq tip yaradırıq
+export interface BaseNotification {
   id: string;
   title: string;
   message: string;
   date: string;
-  timestamp: string;
-  type: "system" | "deadline" | "approval" | "rejection" | "comment";
   isRead: boolean;
-  read: boolean;
 }
 
-export interface UINotification {
-  id: string;
-  title: string;
-  message: string;
-  date: string;
+export interface DashboardNotification extends BaseNotification {
+  timestamp: string;
+  type: "system" | "deadline" | "approval" | "rejection" | "comment";
+  read: boolean;
+  createdAt?: string;
+}
+
+export interface UINotification extends BaseNotification {
   type: "error" | "info" | "warning" | "success";
-  isRead: boolean;
 }
 
 export interface BasicStats {
@@ -110,6 +111,7 @@ export interface SuperAdminDashboardData {
   };
   notifications: UINotification[];
   approvalRate: number;
+  completionRate?: number;
 }
 
 export interface RegionAdminDashboardData {

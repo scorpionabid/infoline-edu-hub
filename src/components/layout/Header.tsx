@@ -37,6 +37,12 @@ const Header = () => {
   let title = '';
   let subtitle = '';
 
+  // Login səhifəsində və ya unudulmuş şifrə səhifəsindədirsə, header göstərmirik
+  if (isLoginPage || isForgotPasswordPage) return null;
+
+  // İstifadəçi autentifikasiya olmayıbsa, header-i göstərmirik
+  if (!isAuthenticated || !user) return null;
+
   // İstifadəçi məlumatlarını təhlükəsiz şəkildə idarə edirik
   if (user) {
     if (user.role === 'regionadmin') {
@@ -54,8 +60,6 @@ const Header = () => {
     }
   }
   
-  if (isLoginPage || isForgotPasswordPage) return null;
-
   // User avatar üçün təhlükəsiz yoxlama
   const userInitials = user?.full_name ? user.full_name.substring(0, 2).toUpperCase() : 'U';
   // Avatar URL-ni təhlükəsiz şəkildə əldə edirik
