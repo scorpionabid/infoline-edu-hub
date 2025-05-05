@@ -1,7 +1,5 @@
-
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { School } from '@/types/school';
 
 /**
  * Excel faylından məktəbləri idxal edir
@@ -9,43 +7,32 @@ import { School } from '@/types/school';
  * @param file Excel faylı
  * @returns Məktəb obyektləri massivi
  */
-export const importSchoolsFromExcel = async (file: File): Promise<Partial<School>[]> => {
+export const importSchoolsFromExcel = async (file: File): Promise<any[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
-    reader.onload = (e) => {
+    reader.onload = (e: ProgressEvent<FileReader>) => {
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        if (!e.target?.result) {
+          reject(new Error('Fayl oxunmadı'));
+          return;
+        }
+        
+        const data = e.target.result;
         const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
         
-        // İlk worksheet-i götürürük
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        
-        // JSON-a çeviririk
-        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
-        
-        // Məktəb obyektlərinə çeviririk
-        const schools = jsonData.map(row => {
-          return {
-            name: row.name || row.Name || row.SchoolName || row['Məktəbin adı'] || '',
-            address: row.address || row.Address || row['Ünvan'] || '',
-            principalName: row.principalName || row.PrincipalName || row['Direktor'] || '',
-            phone: row.phone || row.Phone || row['Telefon'] || '',
-            email: row.email || row.Email || row['E-poçt'] || '',
-            studentCount: row.studentCount || row.StudentCount || row['Şagird sayı'] || 0,
-            teacherCount: row.teacherCount || row.TeacherCount || row['Müəllim sayı'] || 0,
-          };
-        });
-        
-        resolve(schools);
+        resolve(jsonData);
       } catch (error) {
-        console.error('Excel faylını oxuma xətası:', error);
-        reject(new Error('Excel faylını oxuma xətası'));
+        console.error('Excel import xətası:', error);
+        reject(new Error('Excel faylı oxunarkən xəta baş verdi'));
       }
     };
     
     reader.onerror = () => {
-      reject(new Error('Fayl oxuma xətası'));
+      reject(new Error('Fayl oxunarkən xəta baş verdi'));
     };
     
     reader.readAsArrayBuffer(file);
@@ -143,3 +130,89 @@ export const importColumnsFromExcel = async (file: File) => {
     reader.readAsArrayBuffer(file);
   });
 };
+
+export const exportDataToExcel = async (data: any[], fileName: string = 'export.xlsx', sheetName: string = 'Sheet1') => {
+  try {
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, fileName);
+    
+    return true;
+  } catch (error) {
+    console.error('Excel ixrac xətası:', error);
+    throw new Error('Məlumatlar Excel formatına çevrilərkən xəta baş verdi');
+  }
+};
+
+export const exportSchoolDataToExcel = async (
+  data: any[],
+  selectedSchools: string[] = [],
+  selectedColumns: string[] = [],
+  fileName: string = 'schools-export.xlsx'
+) => {
+  try {
+    let processedData = [...data];
+    
+    if (selectedSchools.length > 0) {
+      processedData = processedData.filter(item => selectedSchools.includes(item.schoolId));
+    }
+    
+    if (selectedColumns.length > 0) {
+      processedData = processedData.map(item => {
+        const filteredColumnData = item.columnData.filter(col => selectedColumns.includes(col.columnId));
+        return { ...item, columnData: filteredColumnData };
+      });
+    }
+    
+    return exportDataToExcel(processedData, fileName);
+  } catch (error) {
+    console.error('Məktəb datası ixrac xətası:', error);
+    throw new Error('Məktəb məlumatları Excel formatına çevrilərkən xəta baş verdi');
+  }
+};
+
+export const validateSchoolExcelData = (data: any[]): { valid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  
+  // Burada yoxlama məntiqi olacaq
+  if (!data || data.length === 0) {
+    errors.push('Excel faylı boşdur və ya məlumat yoxdur');
+    return { valid: false, errors };
+  }
+  
+  // Məcburi sütunların yoxlanılması
+  const requiredColumns = ['name', 'region', 'sector'];
+  const firstRow = data[0];
+  
+  for (const col of requiredColumns) {
+    if (!firstRow.hasOwnProperty(col)) {
+      errors.push(`Məcburi sütun '${col}' tapılmadı`);
+    }
+  }
+  
+  return { valid: errors.length === 0, errors };
+};
+
+export function downloadExcelTemplate(templateName: string = 'template') {
+  const templateData = [
+    {
+      name: 'Məktəb adı',
+      principal_name: 'Direktor adı',
+      region: 'Region',
+      sector: 'Sektor',
+      address: 'Ünvan',
+      phone: 'Telefon',
+      email: 'E-poçt',
+      student_count: 'Şagird sayı',
+      teacher_count: 'Müəllim sayı',
+      type: 'Məktəb növü',
+      language: 'Tədris dili'
+    }
+  ];
+  
+  exportDataToExcel(templateData, `${templateName}.xlsx`, 'Template');
+}

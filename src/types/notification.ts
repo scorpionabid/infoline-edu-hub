@@ -1,19 +1,6 @@
 
-// Bu fayl əvvəldən mövcud olmaya bilər, tam olaraq yaradaq
-import { Notification, UINotification } from './dashboard';
-
-// Dashboard bildirişlərini tətbiq bildirişlərinə çevirmək üçün adapter
-export const adaptDashboardNotificationToApp = (notification: Notification): UINotification => {
-  return {
-    id: notification.id,
-    title: notification.title,
-    message: notification.message,
-    type: notification.type || 'info',
-    isRead: notification.isRead || notification.read || false,
-    date: notification.date || new Date().toISOString().split('T')[0],
-    createdAt: notification.createdAt || new Date().toISOString(),
-  };
-};
+// Müxtəlif bildiriş tipləri arasında uyğunluğu təmin edir
+import { UINotification } from './dashboard';
 
 export interface NotificationType {
   id: string;
@@ -26,5 +13,21 @@ export interface NotificationType {
   relatedId?: string;
   relatedType?: string;
 }
+
+// Dashboard bildirişlərini tətbiq bildirişlərinə çevirmək üçün adapter
+export const adaptDashboardNotificationToApp = (notification: UINotification): NotificationType => {
+  return {
+    id: notification.id,
+    title: notification.title,
+    message: notification.message,
+    type: notification.type || 'info',
+    isRead: notification.isRead || notification.read || false,
+    date: notification.date || new Date().toISOString().split('T')[0],
+    createdAt: notification.createdAt || new Date().toISOString(),
+  };
+};
+
+// Geriyə uyğunluq üçün Notification tipini də təyin edirik
+export type Notification = NotificationType;
 
 export default NotificationType;

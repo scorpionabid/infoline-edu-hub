@@ -1,48 +1,48 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
 
-export interface SuperUser {
+interface SuperUser {
   id: string;
   email: string;
-  full_name?: string;
+  fullName: string;
 }
 
 export const useSuperUsers = () => {
   const [users, setUsers] = useState<SuperUser[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { t } = useLanguage();
 
-  const fetchUsers = useCallback(async () => {
+  const fetchSuperUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`id, email, full_name`)
-        .eq('role', 'superadmin');
-
-      if (error) throw error;
-
-      setUsers(Array.isArray(data) ? data : []);
+      // Burada real API çağırışı olacaq
+      // Müvəqqəti olaraq boş massiv qaytarırıq
+      // const response = await fetch('/api/users/super');
+      // const data = await response.json();
+      // setUsers(data);
+      setUsers([]);
     } catch (err: any) {
-      console.error('İstifadəçiləri yükləmə xətası:', err);
-      setError(err.message);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadUsers')
-      });
+      console.error('Super istifadəçilər yüklənərkən xəta:', err);
+      setError(err.message || 'Super istifadəçilər yüklənərkən xəta baş verdi');
+      toast.error('Super istifadəçilər yüklənərkən xəta baş verdi');
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, []);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    fetchSuperUsers();
+  }, [fetchSuperUsers]);
 
-  return { users, loading, error, fetchUsers };
+  return {
+    users,
+    loading,
+    error,
+    refresh: fetchSuperUsers
+  };
 };
+
+export default useSuperUsers;

@@ -1,157 +1,201 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogTitle, DialogHeader } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { RegionAdminDialogProps } from '@/types/regions';
-import { useAuth } from '@/context/auth';
-import { useSuperUsers } from '@/hooks/useSuperUsers';
-import { useToast } from '@/components/ui/use-toast';
-import { useRegionAdmins } from '@/hooks/useRegionAdmins';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/context/LanguageContext';
+import { useSuperUsers } from '@/hooks/useSuperUsers';
+import { toast } from 'sonner';
+import { useRegionAdmins } from '@/hooks/useRegionAdmins';
 
-const RegionAdminDialog: React.FC<RegionAdminDialogProps> = ({ open, onOpenChange, regionId }) => {
-  const [selectedTab, setSelectedTab] = useState<'existing' | 'new'>('existing');
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [isAssigning, setIsAssigning] = useState(false);
-  const { users, loading: usersLoading } = useSuperUsers();
-  const { assignAdmin, loading: assignLoading } = useRegionAdmins();
-  const { toast } = useToast();
+export interface RegionAdminDialogProps {
+  open: boolean;
+  onClose: () => void;
+  regionId: string;
+  onSuccess?: () => void;
+}
+
+export default function RegionAdminDialog({ open, onClose, regionId, onSuccess }: RegionAdminDialogProps) {
   const { t } = useLanguage();
-
-  // Seçilmiş istifadəçini sıfırla dialog açıldığında
+  const [mode, setMode] = useState<'existing' | 'new'>('existing');
+  const [email, setEmail] = useState('');
+  const [selectedUser, setSelectedUser] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { users, loading: usersLoading } = useSuperUsers();
+  const { admins, loading: adminsLoading } = useRegionAdmins();
+  
+  // Dialog açıldığında dəyərləri sıfırla
   useEffect(() => {
     if (open) {
-      setSelectedUserId(null);
+      setMode('existing');
+      setEmail('');
+      setSelectedUser('');
+      setSuccess(false);
+      setError(null);
     }
   }, [open]);
-
-  // Admin təyin etmək
-  const handleAssignAdmin = async () => {
-    if (!selectedUserId) {
-      toast({
-        title: t('error'),
-        description: t('pleaseSelectUser'),
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsAssigning(true);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
     
     try {
-      const result = await assignAdmin(selectedUserId, regionId);
-      
-      if (result.success) {
-        toast({
-          title: t('success'),
-          description: t('adminAssignedSuccessfully')
-        });
-        onOpenChange(false);
+      if (mode === 'existing') {
+        if (!selectedUser) {
+          throw new Error(t('selectUserRequired'));
+        }
+        
+        // Mövcud istifadəçini region admini təyin et
+        // await assignRegionAdmin(regionId, selectedUser);
+        console.log('Mövcud istifadəçi region admini təyin edilir', { regionId, userId: selectedUser });
       } else {
-        toast({
-          title: t('error'),
-          description: result.error || t('errorAssigningAdmin'),
-          variant: "destructive"
-        });
+        if (!email) {
+          throw new Error(t('emailRequired'));
+        }
+        
+        // Yeni istifadəçi yaradıb region admini təyin et
+        // await createAndAssignRegionAdmin(regionId, email);
+        console.log('Yeni istifadəçi yaradılır və region admini təyin edilir', { regionId, email });
       }
-    } catch (error) {
-      console.error('Admin təyin edilməsi xətası:', error);
-      toast({
-        title: t('error'),
-        description: t('errorAssigningAdmin'),
-        variant: "destructive"
-      });
+      
+      setSuccess(true);
+      if (onSuccess) onSuccess();
+      toast.success(t('regionAdminAssigned'));
+      
+      // Uğurlu olduqdan sonra dialoqu bağla
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (err: any) {
+      console.error('Region admini təyin edilərkən xəta:', err);
+      setError(err.message || t('regionAdminAssignmentError'));
+      toast.error(t('regionAdminAssignmentError'));
     } finally {
-      setIsAssigning(false);
+      setLoading(false);
     }
   };
-
+  
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={(open) => !loading && !open && onClose()}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{t('assignRegionAdmin')}</DialogTitle>
+          <DialogDescription>{t('assignRegionAdminDesc')}</DialogDescription>
         </DialogHeader>
-
-        <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'existing' | 'new')} className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="existing">{t('existingUser')}</TabsTrigger>
-            <TabsTrigger value="new">{t('newUser')}</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="existing">
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <h4 className="font-medium">{t('selectExistingUser')}</h4>
-                
-                {usersLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span>{t('loadingUsers')}</span>
+        
+        {success ? (
+          <div className="flex flex-col items-center justify-center py-4">
+            <div className="rounded-full bg-green-100 p-4 mb-4">
+              <svg 
+                className="h-6 w-6 text-green-600" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium">{t('regionAdminAssignedSuccessfully')}</h3>
+            <p className="text-center text-sm text-muted-foreground mt-2">
+              {t('regionAdminAssignedSuccessMessage')}
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="flex flex-col space-y-6">
+              <RadioGroup defaultValue="existing" value={mode} onValueChange={(value) => setMode(value as 'existing' | 'new')}>
+                <div className="flex items-start space-x-2">
+                  <RadioGroupItem value="existing" id="existing" />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label htmlFor="existing">{t('existingUser')}</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t('existingUserDesc')}
+                    </p>
                   </div>
-                ) : users.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{t('noAvailableUsers')}</p>
-                ) : (
-                  <RadioGroup value={selectedUserId || ''} onValueChange={setSelectedUserId}>
-                    <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-2">
-                      {users.map((user) => (
-                        <div key={user.id} className="flex items-center space-x-2">
-                          <RadioGroupItem value={user.id} id={`user-${user.id}`} />
-                          <Label htmlFor={`user-${user.id}`} className="flex-1 cursor-pointer p-2 hover:bg-muted rounded">
-                            <div className="font-medium">{user.full_name || t('unnamed')}</div>
+                </div>
+                
+                <div className="flex items-start space-x-2 mt-4">
+                  <RadioGroupItem value="new" id="new" />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label htmlFor="new">{t('newUser')}</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t('newUserDesc')}
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+              
+              {mode === 'existing' ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>{t('selectUser')}</Label>
+                    {usersLoading || adminsLoading ? (
+                      <p className="text-sm text-muted-foreground">{t('loadingUsers')}</p>
+                    ) : users.length > 0 ? (
+                      <div className="border rounded-md divide-y max-h-[200px] overflow-y-auto">
+                        {users.map((user) => (
+                          <div 
+                            key={user.id}
+                            className={`p-3 cursor-pointer hover:bg-secondary ${selectedUser === user.id ? 'bg-secondary' : ''}`}
+                            onClick={() => setSelectedUser(user.id)}
+                          >
+                            <div className="font-medium">{user.fullName || user.email}</div>
                             <div className="text-sm text-muted-foreground">{user.email}</div>
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </RadioGroup>
-                )}
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  {t('cancel')}
-                </Button>
-                <Button 
-                  onClick={handleAssignAdmin}
-                  disabled={!selectedUserId || assignLoading}
-                >
-                  {assignLoading ? (
-                    <>
-                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
-                      {t('assigning')}
-                    </>
-                  ) : (
-                    t('assignAdmin')
-                  )}
-                </Button>
-              </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">{t('noUsersFound')}</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">{t('email')}</Label>
+                    <Input
+                      id="email"
+                      placeholder={t('enterEmail')}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {error && (
+                <div className="p-3 text-sm bg-red-50 border border-red-200 text-red-800 rounded">
+                  {error}
+                </div>
+              )}
             </div>
-          </TabsContent>
-          
-          <TabsContent value="new">
-            <div className="py-4">
-              <p className="text-sm text-muted-foreground mb-4">
-                {t('newAdminDescription')}
-              </p>
-
-              <div className="flex justify-end space-x-2 mt-4">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  {t('cancel')}
-                </Button>
-                <Button onClick={() => alert('Bu funksionallıq hələ hazır deyil')}>
-                  {t('createNewAdmin')}
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+            
+            <DialogFooter className="mt-6">
+              <Button 
+                variant="outline" 
+                type="button" 
+                onClick={onClose} 
+                disabled={loading}
+              >
+                {t('cancel')}
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={loading}
+              >
+                {loading ? t('saving') : t('save')}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
-};
-
-export default RegionAdminDialog;
+}

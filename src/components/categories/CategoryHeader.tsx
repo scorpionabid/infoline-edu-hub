@@ -34,14 +34,14 @@ export function CategoryHeader({
       />
       
       <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
-        {showAnalytics && (
+        {showAnalytics && onAnalyticsClick && (
           <Button variant="outline" onClick={onAnalyticsClick} className="flex items-center gap-2">
             <BarChart2 size={16} />
             {t('analytics')}
           </Button>
         )}
         
-        {showImport && (
+        {showImport && onImportClick && (
           <Button variant="outline" onClick={onImportClick} className="flex items-center gap-2">
             <UploadCloud size={16} />
             {t('import')}

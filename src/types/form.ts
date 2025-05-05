@@ -48,12 +48,13 @@ export interface ColumnOption {
   value: string;
 }
 
-// PageHeaderProps interfeysinə heading və subheading əlavə edirik
+// PageHeaderProps interfeysinə title, subtitle, heading və subheading əlavə edirik
+// Bu köhnə və yeni adlandırmaların hər ikisini dəstəkləyəcək
 export interface PageHeaderProps {
   title?: string;
   subtitle?: string;
-  heading?: string; 
-  subheading?: string; 
+  heading?: string; // title ilə eyni məqsəd üçün
+  subheading?: string; // subtitle ilə eyni məqsəd üçün
 }
 
 // ReportItemProps interfeysi

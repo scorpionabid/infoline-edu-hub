@@ -5,19 +5,29 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 export interface PageHeaderProps {
-  title: string;
-  description?: string;
+  title?: string;
+  subtitle?: string;
+  description?: string; // geriye uyğunluq üçün
+  heading?: string; // title ilə eynidir - geriye uyğunluq
+  subheading?: string; // subtitle ilə eynidir - geriye uyğunluq
   backButtonUrl?: string;
   children?: React.ReactNode;
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({
   title,
+  subtitle,
   description,
+  heading,
+  subheading,
   backButtonUrl,
   children
 }) => {
   const navigate = useNavigate();
+  
+  // heading və title, subtitle və subheading arasında uyğunluğun təmin edilməsi
+  const displayTitle = title || heading || '';
+  const displaySubtitle = subtitle || description || subheading || '';
 
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 mb-6 border-b">
@@ -32,9 +42,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <span>Geri qayıt</span>
           </Button>
         )}
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        {description && (
-          <p className="text-muted-foreground mt-1">{description}</p>
+        <h1 className="text-2xl font-bold tracking-tight">{displayTitle}</h1>
+        {displaySubtitle && (
+          <p className="text-muted-foreground mt-1">{displaySubtitle}</p>
         )}
       </div>
       {children && (

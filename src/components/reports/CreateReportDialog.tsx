@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { ReportType } from '@/types/report';
 import { useLanguage } from '@/context/LanguageContext';
 
-interface CreateReportDialogProps {
+export interface CreateReportDialogProps {
   open: boolean;
   onClose: () => void;
   onCreate: (data: {

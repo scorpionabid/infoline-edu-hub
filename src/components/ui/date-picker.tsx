@@ -42,10 +42,6 @@ export function DatePicker({
     if (onSelect) onSelect(date);
   };
 
-  const handleSelect = (date: Date | undefined) => {
-    effectiveOnChange(date);
-  };
-
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -66,7 +62,7 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={effectiveValue}
-          onSelect={handleSelect}
+          onSelect={effectiveOnChange}
           initialFocus
           className={cn("p-3 pointer-events-auto")}
         />

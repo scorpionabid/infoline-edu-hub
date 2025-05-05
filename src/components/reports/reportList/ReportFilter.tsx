@@ -36,10 +36,10 @@ export const ReportFilter: React.FC<ReportFilterProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('allTypes')}</SelectItem>
-            <SelectItem value={ReportType.STATISTICS}>{t('statistics')}</SelectItem>
-            <SelectItem value={ReportType.COMPLETION}>{t('completion')}</SelectItem>
-            <SelectItem value={ReportType.COMPARISON}>{t('comparison')}</SelectItem>
-            <SelectItem value={ReportType.COLUMN}>{t('column')}</SelectItem>
+            <SelectItem value={ReportType.STATISTICS.toString()}>{t('statistics')}</SelectItem>
+            <SelectItem value={ReportType.COMPLETION.toString()}>{t('completion')}</SelectItem>
+            <SelectItem value={ReportType.COMPARISON.toString()}>{t('comparison')}</SelectItem>
+            <SelectItem value={ReportType.COLUMN.toString()}>{t('column')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

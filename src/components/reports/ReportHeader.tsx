@@ -1,45 +1,69 @@
 
 import React, { useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
-import { BarChart2, Plus, FileDown } from 'lucide-react';
-import CreateReportDialog from './CreateReportDialog';
+import { Plus, FileText, Download } from 'lucide-react';
+import PageHeader from '@/components/layout/PageHeader';
+import { useLanguage } from '@/context/LanguageContext';
+import CreateReportDialog from '@/components/reports/CreateReportDialog';
+import { useReports } from '@/hooks/useReports';
+import { toast } from 'sonner';
 
-const ReportHeader: React.FC = () => {
+export function ReportHeader() {
   const { t } = useLanguage();
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  
-  const handleCreateClick = () => {
-    setShowCreateDialog(true);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const { addReport } = useReports();
+
+  const handleCreateReport = async (data: { title: string; description: string; type: string }) => {
+    try {
+      const result = await addReport({
+        title: data.title,
+        description: data.description,
+        type: data.type
+      });
+
+      if (result) {
+        toast.success(t('reportCreated'));
+        return;
+      }
+    } catch (error) {
+      console.error('Hesabat yaradılarkən xəta:', error);
+      toast.error(t('reportCreationFailed'));
+    }
   };
-  
-  const handleCloseDialog = () => {
-    setShowCreateDialog(false);
-  };
-  
+
   return (
-    <>
+    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
       <PageHeader 
-        title={t('reportTitle')}
-        description={t('reportDescription')}
-        children={
-          <div className="flex space-x-2">
-            <Button onClick={handleCreateClick}>
-              <Plus className="h-4 w-4 mr-2" />
-              {t('createReport')}
-            </Button>
-            <Button variant="outline">
-              <FileDown className="h-4 w-4 mr-2" />
-              {t('exportReport')}
-            </Button>
-          </div>
-        }
+        title={t('reports')}
+        subtitle={t('reportsDescription')}
       />
       
-      <CreateReportDialog open={showCreateDialog} onClose={handleCloseDialog} />
-    </>
+      <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          onClick={() => {}} 
+        >
+          <Download size={16} />
+          {t('exportAllReports')}
+        </Button>
+        
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => setCreateDialogOpen(true)}
+        >
+          <Plus size={16} />
+          {t('newReport')}
+        </Button>
+      </div>
+
+      <CreateReportDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onCreate={handleCreateReport}
+      />
+    </div>
   );
-};
+}
 
 export default ReportHeader;
