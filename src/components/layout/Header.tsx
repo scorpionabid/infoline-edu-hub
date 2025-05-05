@@ -18,10 +18,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const { language, setLanguage, t } = useLanguage();
+  const { theme, setTheme } = useTheme();
+  const { currentLanguage, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  
+  // Theme switch funksiyası əlavə edək
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
   
   const handleLogout = async () => {
     try {
@@ -91,7 +96,7 @@ const Header: React.FC = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="w-8 px-0">
-                {language ? language.toUpperCase() : 'AZ'}
+                {currentLanguage ? currentLanguage.toUpperCase() : 'AZ'}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

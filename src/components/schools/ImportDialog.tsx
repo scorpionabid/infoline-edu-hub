@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { Table } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ImportCircle, Download, AlertTriangle, FileWarning } from 'lucide-react';
+import { Download, AlertTriangle, FileWarning, FileUp } from 'lucide-react'; // ImportCircle əvəzinə FileUp istifadə edirik
 import { importSchoolsFromExcel, createSchoolExcelTemplate } from '@/utils/excelUtils';
 import { School } from '@/types/school';
 
@@ -94,7 +94,7 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ open, onClose, onImp
 
   const handleImport = async () => {
     if (!file || preview.length === 0) {
-      toast("error", { description: t('noDataToImport') });
+      toast.error(t('noDataToImport')); // toast error formatını düzəltdik
       return;
     }
 
@@ -132,7 +132,7 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ open, onClose, onImp
         <DialogHeader>
           <DialogTitle>
             <div className="flex items-center">
-              <ImportCircle className="mr-2 h-5 w-5" />
+              <FileUp className="mr-2 h-5 w-5" /> {/* ImportCircle əvəzinə FileUp istifadə edirik */}
               {t('importSchools')}
             </div>
           </DialogTitle>

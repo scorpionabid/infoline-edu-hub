@@ -47,88 +47,18 @@ export interface ColumnOption {
   value: string;
 }
 
-// PageHeaderProps interfeysi əlavə edək
+// PageHeaderProps interfeysi düzəliş
 export interface PageHeaderProps {
-  heading?: string;
-  subheading?: string;
   title?: string;
   subtitle?: string;
-}
-
-// ReportType enumu əlavə edək
-export enum ReportType {
-  STATISTICS = 'statistics',
-  COMPLETION = 'completion',
-  COMPARISON = 'comparison',
-  COLUMN = 'column'
-}
-
-// PendingApprovalItem interfeysi əlavə edək
-export interface PendingApprovalItem {
-  id: string;
-  categoryName: string;
-  schoolName: string;
-  submittedAt: string;
-  status: string;
-}
-
-// DashboardData interfeysi üçün approvalRate əlavə edək
-export interface DashboardData {
-  approvalRate?: number;
-  // ... əvvəlki xassələr
-}
-
-// DashboardNotification interfeysi üçün createdAt əlavə edək
-export interface DashboardNotification {
-  createdAt: string;
-  // ... əvvəlki xassələr
-}
-
-// Report interfeysi əlavə edək
-export interface Report {
-  id: string;
-  title: string;
-  description?: string;
-  type: ReportType;
-  content?: any;
-  filters?: any;
-  created_by?: string;
-  created_at: string;
-  updated_at?: string;
-  status?: string;
-  is_template?: boolean;
-  shared_with?: string[];
-  name?: string;
-  summary?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  createdBy?: string;
-  author?: string;
-  last_updated?: string;
-}
-
-// ReportPreviewDialogProps interfeysi əlavə edək
-export interface ReportPreviewDialogProps {
-  open?: boolean;
-  isOpen?: boolean;
-  onClose: () => void;
-  reportId: string;
-  reportTitle: string;
-  reportDescription: string;
-}
-
-// RegionStats interfeysi əlavə edək
-export interface RegionStats {
-  id: string;
-  name: string;
-  totalSchools: number;
-  completionRate: number;
+  heading?: string; // heading xassəsini əlavə edirik
+  subheading?: string; // subheading xassəsini əlavə edirik
 }
 
 // ReportItemProps interfeysi əlavə edək
 export interface ReportItemProps {
-  report: Report;
-  onPreview: (report: Report) => void;
-  onDownload: (report: Report) => Promise<void>;
-  onShare: (report: Report) => void;
+  report: import('./report').Report;
+  onPreview: (report: import('./report').Report) => void;
+  onDownload: (report: import('./report').Report) => Promise<void>;
+  onShare: (report: import('./report').Report) => void;
 }

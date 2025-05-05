@@ -33,15 +33,17 @@ export const useRegionAdmins = () => {
 
       if (regionError) throw regionError;
 
+      toast.success(t('adminAssignedSuccessfully'));
       return { success: true };
     } catch (err: any) {
       console.error('Admin təyin edilməsi xətası:', err);
       setError(err.message);
+      toast.error(t('errorAssigningAdmin'));
       return { success: false, error: err.message };
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   return { assignAdmin, loading, error };
 };

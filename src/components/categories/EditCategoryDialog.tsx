@@ -192,8 +192,8 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
             <div className="grid gap-2">
               <Label htmlFor="deadline">Son tarix</Label>
               <DatePicker
-                date={deadline}
-                onSelect={setDeadline}
+                value={deadline}
+                onChange={setDeadline}
                 disabled={false}
               />
             </div>

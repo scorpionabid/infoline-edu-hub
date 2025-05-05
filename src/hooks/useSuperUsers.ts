@@ -21,10 +21,10 @@ export const useSuperUsers = () => {
     setError(null);
 
     try {
-      // Super istifadəçiləri almalıdır - rolə əsaslanır
       const { data, error } = await supabase
         .from('profiles')
-        .select(`id, email, full_name`);
+        .select(`id, email, full_name`)
+        .eq('role', 'superadmin');
 
       if (error) throw error;
 

@@ -10,26 +10,28 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useLanguage } from "@/context/LanguageContext";
 
 export interface DatePickerProps {
-  onSelect?: (date: Date) => void;
-  defaultDate?: Date;
+  value?: Date;
+  onChange?: (date: Date | undefined) => void;
+  disabled?: boolean;
   placeholder?: string;
-  id?: string;
+  className?: string;
 }
 
-export function DatePicker({ 
-  onSelect, 
-  defaultDate, 
-  placeholder = "Tarix seçin", 
-  id 
+export function DatePicker({
+  value,
+  onChange,
+  disabled = false,
+  placeholder,
+  className,
 }: DatePickerProps) {
-  const [date, setDate] = React.useState<Date | undefined>(defaultDate);
-
-  const handleSelect = (selectedDate: Date | undefined) => {
-    setDate(selectedDate);
-    if (selectedDate && onSelect) {
-      onSelect(selectedDate);
+  const { t } = useLanguage();
+  
+  const handleSelect = (date: Date | undefined) => {
+    if (onChange) {
+      onChange(date);
     }
   };
 
@@ -37,27 +39,27 @@ export function DatePicker({
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          id={id}
           variant={"outline"}
           className={cn(
             "w-full justify-start text-left font-normal",
-            !date && "text-muted-foreground"
+            !value && "text-muted-foreground",
+            className
           )}
+          disabled={disabled}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>{placeholder}</span>}
+          {value ? format(value, "PPP") : <span>{placeholder || t("selectDate")}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
+      <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
-          selected={date}
+          selected={value}
           onSelect={handleSelect}
           initialFocus
+          className={cn("p-3 pointer-events-auto")}
         />
       </PopoverContent>
     </Popover>
   );
 }
-
-export default DatePicker;

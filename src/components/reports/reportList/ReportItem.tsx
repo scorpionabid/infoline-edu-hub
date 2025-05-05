@@ -1,111 +1,108 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BarChart3, PieChart, LineChart, Table2, Eye, Download, Share2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { Report, ReportType } from '@/types/report';
+import { BarChart2, FileText, PieChart, Table2, Download, Share2, Eye } from 'lucide-react';
+import { formatDistance } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
+import { Report, ReportType } from '@/types/report';
+import { Badge } from '@/components/ui/badge';
 
 interface ReportItemProps {
   report: Report;
   onPreview: (report: Report) => void;
-  onDownload: (report: Report) => void;
+  onDownload: (report: Report) => Promise<void>;
   onShare: (report: Report) => void;
 }
 
-export const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDownload, onShare }) => {
+const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDownload, onShare }) => {
   const { t } = useLanguage();
   
-  const getReportIcon = () => {
+  // İcon seçimi
+  const getIcon = () => {
     const reportType = typeof report.type === 'string' ? report.type : report.type.toString();
     
-    if (reportType === ReportType.STATISTICS || reportType === 'statistics') {
-      return <BarChart3 className="h-5 w-5 text-primary" />;
+    switch (reportType) {
+      case ReportType.STATISTICS:
+        return <BarChart2 className="h-12 w-12 text-blue-500" />;
+      case ReportType.COMPLETION:
+        return <PieChart className="h-12 w-12 text-green-500" />;
+      case ReportType.COMPARISON:
+        return <Table2 className="h-12 w-12 text-purple-500" />;
+      case ReportType.COLUMN:
+        return <FileText className="h-12 w-12 text-amber-500" />;
+      default:
+        return <FileText className="h-12 w-12 text-gray-500" />;
     }
-    else if (reportType === ReportType.COMPLETION || reportType === 'completion') {
-      return <PieChart className="h-5 w-5 text-primary" />;
-    }
-    else if (reportType === ReportType.COMPARISON || reportType === 'comparison') {
-      return <LineChart className="h-5 w-5 text-primary" />;
-    }
-    else if (reportType === ReportType.COLUMN || reportType === 'column') {
-      return <Table2 className="h-5 w-5 text-primary" />;
-    }
-    return <BarChart3 className="h-5 w-5 text-primary" />;
   };
   
-  const getReportTypeBadge = () => {
+  // Status rəngini təyin etmə
+  const getStatusBadge = () => {
     const reportType = typeof report.type === 'string' ? report.type : report.type.toString();
     
-    if (reportType === ReportType.STATISTICS || reportType === 'statistics') {
-      return <Badge variant="outline">Statistika</Badge>;
+    switch (reportType) {
+      case ReportType.STATISTICS:
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+          {t('statistics')}
+        </Badge>;
+      case ReportType.COMPLETION:
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          {t('completion')}
+        </Badge>;
+      case ReportType.COMPARISON:
+        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+          {t('comparison')}
+        </Badge>;
+      case ReportType.COLUMN:
+        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+          {t('column')}
+        </Badge>;
+      default:
+        return <Badge variant="outline">{t('report')}</Badge>;
     }
-    else if (reportType === ReportType.COMPLETION || reportType === 'completion') {
-      return <Badge variant="outline">Tamamlanma</Badge>;
-    }
-    else if (reportType === ReportType.COMPARISON || reportType === 'comparison') {
-      return <Badge variant="outline">Müqayisə</Badge>;
-    }
-    else if (reportType === ReportType.COLUMN || reportType === 'column') {
-      return <Badge variant="outline">Sütun</Badge>;
-    }
-    return <Badge variant="outline">Hesabat</Badge>;
   };
   
-  const formattedDate = report.created_at || report.createdAt 
-    ? format(new Date(report.created_at || report.createdAt || ''), 'dd.MM.yyyy')
-    : '';
-  
+  // Tarixi formatla
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    try {
+      return formatDistance(new Date(dateString), new Date(), { addSuffix: true });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <CardHeader className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            {getReportIcon()}
-            <CardTitle className="text-lg">{report.title}</CardTitle>
+    <Card className="overflow-hidden transition-all hover:shadow-md">
+      <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-2">
+        {getIcon()}
+        <div className="space-y-1 flex-1">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl">{report.title}</CardTitle>
+            {getStatusBadge()}
           </div>
-          {getReportTypeBadge()}
+          <CardDescription className="line-clamp-2">
+            {report.description || t('noDescription')}
+          </CardDescription>
         </div>
-        <CardDescription className="line-clamp-2">
-          {report.description}
-        </CardDescription>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="text-sm space-y-2">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">{t('createdAt')}:</span>
-            <span className="font-medium">{formattedDate}</span>
-          </div>
-          
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">{t('author')}:</span>
-            <span className="font-medium">{report.author || report.createdBy || report.created_by || t('system')}</span>
-          </div>
-          
-          {(report.last_updated || report.updatedAt || report.updated_at) && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t('lastUpdated')}:</span>
-              <span className="font-medium">
-                {format(new Date(report.last_updated || report.updatedAt || report.updated_at || ''), 'dd.MM.yyyy')}
-              </span>
-            </div>
-          )}
+      <CardContent className="text-sm text-muted-foreground">
+        <div className="flex justify-between">
+          <span>{t('created')}: {formatDate(report.createdAt || report.created_at)}</span>
+          <span>{report.author || t('system')}</span>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-2 flex justify-between">
-        <Button variant="ghost" size="sm" onClick={() => onPreview(report)}>
+      <CardFooter className="flex justify-between pt-2 pb-4">
+        <Button variant="outline" size="sm" onClick={() => onPreview(report)}>
           <Eye className="h-4 w-4 mr-1" />
           {t('preview')}
         </Button>
-        
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={() => onDownload(report)}>
-            <Download className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => onShare(report)}>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={() => onShare(report)}>
             <Share2 className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => onDownload(report)}>
+            <Download className="h-4 w-4" />
           </Button>
         </div>
       </CardFooter>

@@ -1,115 +1,114 @@
 
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React, { useEffect, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { useSuperUsers } from '@/hooks/useSuperUsers';
-import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
 import { useRegionAdmins } from '@/hooks/useRegionAdmins';
+import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-export interface RegionAdminDialogProps {
+interface RegionAdminDialogProps {
   open: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   regionId: string;
 }
 
-export const RegionAdminDialog: React.FC<RegionAdminDialogProps> = ({ 
-  open, 
-  onClose, 
-  regionId 
-}) => {
-  const { users, loading: usersLoading, error: usersError } = useSuperUsers();
-  const { assignAdmin, loading, error } = useRegionAdmins();
+const RegionAdminDialog: React.FC<RegionAdminDialogProps> = ({ open, onOpenChange, regionId }) => {
+  const { t } = useLanguage();
+  const { users, loading: loadingUsers } = useSuperUsers();
+  const { assignAdmin, loading: assigningAdmin } = useRegionAdmins();
+  
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   
+  // Dialog bağlandığında seçilmiş istifadəçini təmizləyirik
   useEffect(() => {
-    if (open) {
+    if (!open) {
       setSelectedUserId('');
     }
   }, [open]);
-  
+
   const handleAssignAdmin = async () => {
     if (!selectedUserId) {
-      toast.error('İstifadəçi seçilməlidir');
+      toast.error(t('pleaseSelectAdmin'));
       return;
     }
     
     try {
       const result = await assignAdmin(selectedUserId, regionId);
-      if (result && result.success) {
-        toast.success('Region admini uğurla təyin edildi');
-        onClose();
-      } else if (result && !result.success) {
-        toast.error(result.error || 'Xəta baş verdi');
+      
+      if (result.success) {
+        toast.success(t('adminAssignedSuccessfully'));
+        onOpenChange(false);
+      } else {
+        toast.error(t('errorAssigningAdmin'), {
+          description: result.error
+        });
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Admin təyin edilərkən xəta baş verdi');
+    } catch (error) {
+      toast.error(t('errorAssigningAdmin'));
     }
   };
-  
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Region Admini Təyin Et</DialogTitle>
+          <DialogTitle>{t('assignRegionAdmin')}</DialogTitle>
           <DialogDescription>
-            Regiona admin təyin etmək üçün istifadəçi seçin. Bu əməliyyat seçilən istifadəçiyə 
-            regionda tam idarəetmə səlahiyyəti verəcək.
+            {t('assignRegionAdminDescription')}
           </DialogDescription>
         </DialogHeader>
         
-        <div className="py-4 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="user">İstifadəçi</Label>
-            {usersLoading ? (
-              <div className="h-10 flex items-center">
-                <div className="w-5 h-5 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                <span className="ml-2">İstifadəçilər yüklənir...</span>
-              </div>
-            ) : usersError ? (
-              <div className="text-red-500">İstifadəçiləri yüklərkən xəta: {usersError}</div>
-            ) : (
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="İstifadəçi seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {users && users.length > 0 ? (
-                    users.map(user => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.full_name || user.email}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="no-users" disabled>
-                      İstifadəçi tapılmadı
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-          
-          {error && (
-            <div className="text-red-500 mt-2">
-              Xəta: {error}
-            </div>
-          )}
+        <div className="py-4">
+          <Select
+            value={selectedUserId}
+            onValueChange={setSelectedUserId}
+            disabled={loadingUsers}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={t('selectUser')} />
+            </SelectTrigger>
+            <SelectContent>
+              {loadingUsers ? (
+                <SelectItem value="loading" disabled>
+                  {t('loading')}
+                </SelectItem>
+              ) : users.length === 0 ? (
+                <SelectItem value="no-users" disabled>
+                  {t('noUsersFound')}
+                </SelectItem>
+              ) : (
+                users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name || user.email}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Ləğv et</Button>
           <Button 
-            onClick={handleAssignAdmin} 
-            disabled={!selectedUserId || loading}
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            disabled={assigningAdmin}
           >
-            {loading ? (
-              <div className="flex items-center">
-                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                Gözləyin
-              </div>
-            ) : 'Təyin et'}
+            {t('cancel')}
+          </Button>
+          <Button 
+            onClick={handleAssignAdmin}
+            disabled={!selectedUserId || assigningAdmin}
+          >
+            {assigningAdmin ? t('assigning') : t('assign')}
           </Button>
         </DialogFooter>
       </DialogContent>
