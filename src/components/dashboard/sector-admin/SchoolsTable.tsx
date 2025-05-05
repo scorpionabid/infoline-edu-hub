@@ -7,64 +7,129 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/table";
+import { SchoolStats } from '@/types/dashboard';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { useLanguage } from '@/context/LanguageContext';
-import { Eye, FileText } from 'lucide-react';
-import { SchoolStat } from '@/types/dashboard';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 interface SchoolsTableProps {
-  schools: SchoolStat[];
+  schools: SchoolStats[];
+  onViewDetails?: (schoolId: string) => void;
+  maxRows?: number;
+  isLoading?: boolean;
 }
 
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case 'completed':
-      return <Badge className="bg-green-500">Tamamlanıb</Badge>;
-    case 'in_progress':
-      return <Badge className="bg-blue-500">Davam edir</Badge>;
-    case 'pending':
-      return <Badge className="bg-amber-500">Gözləyir</Badge>;
-    case 'overdue':
-      return <Badge className="bg-red-500">Gecikib</Badge>;
-    default:
-      return <Badge className="bg-gray-500">Naməlum</Badge>;
+export const SchoolsTable: React.FC<SchoolsTableProps> = ({ 
+  schools, 
+  onViewDetails, 
+  maxRows = 5,
+  isLoading
+}) => {
+  const navigate = useNavigate();
+  
+  // Yükləmə statusu
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-2 text-muted-foreground">Məlumatlar yüklənir...</p>
+      </div>
+    );
   }
-};
-
-const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools }) => {
-  const { t } = useLanguage();
-
+  
+  // Məktəb məlumatları yoxdursa
+  if (!schools || schools.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        Məktəb məlumatları tapılmadı
+      </div>
+    );
+  }
+  
+  // Məlumatları limitlə göstər
+  const displayedSchools = maxRows ? schools.slice(0, maxRows) : schools;
+  
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{t('school')}</TableHead>
-          <TableHead>{t('region')}</TableHead>
-          <TableHead>{t('status')}</TableHead>
-          <TableHead>{t('completion')}</TableHead>
-          <TableHead>{t('lastUpdate')}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {schools.map((school) => (
-          <TableRow key={school.id}>
-            <TableCell className="font-medium">{school.name}</TableCell>
-            <TableCell>{school.region}</TableCell>
-            <TableCell>{getStatusBadge(school.formStatus)}</TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                <Progress value={school.completion} className="w-24 h-2" />
-                <span className="text-sm">{school.completion}%</span>
-              </div>
-            </TableCell>
-            <TableCell>{new Date(school.lastUpdate).toLocaleDateString()}</TableCell>
+    <div className="border rounded-md">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Məktəb adı</TableHead>
+            <TableHead>Tamamlanma</TableHead>
+            <TableHead>Formlar</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Əməliyyatlar</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {displayedSchools.map((school) => (
+            <TableRow key={school.id}>
+              <TableCell className="font-medium">{school.name}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Progress 
+                    value={school.completionRate} 
+                    className={cn(
+                      "h-2 w-16 md:w-24", 
+                      school.completionRate < 30 ? "bg-red-100" : 
+                      school.completionRate < 70 ? "bg-amber-100" : "bg-green-100"
+                    )}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {school.completionRate}%
+                  </span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <span className="text-xs text-muted-foreground">
+                  {school.formsCompleted}/{school.formsTotal}
+                </span>
+              </TableCell>
+              <TableCell>
+                <Badge 
+                  variant={
+                    school.completionRate === 100 ? "success" : 
+                    school.completionRate >= 50 ? "outline" : "destructive"
+                  }
+                  className="text-xs"
+                >
+                  {school.completionRate === 100 ? "Tamamlanıb" : 
+                   school.completionRate >= 50 ? "Davam edir" : "Geridə qalır"}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => onViewDetails 
+                    ? onViewDetails(school.id) 
+                    : navigate(`/schools/${school.id}`)
+                  }
+                >
+                  Ətraflı
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      
+      {maxRows && schools.length > maxRows && (
+        <div className="py-2 px-4 border-t text-center">
+          <Button 
+            variant="link" 
+            onClick={() => navigate('/schools')}
+          >
+            Bütün məktəbləri göstər ({schools.length})
+          </Button>
+        </div>
+      )}
+    </div>
   );
 };
 

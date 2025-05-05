@@ -8,15 +8,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { RegionStats } from '@/types/dashboard';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 
+interface Region {
+  id: string;
+  name: string;
+  totalSchools?: number;
+  schoolCount?: number;
+  sectors?: number;
+  sectorCount?: number;
+  completionRate: number;
+}
+
 interface RegionsListProps {
-  regions: RegionStats[];
+  regions: Region[];
 }
 
 export const RegionsList: React.FC<RegionsListProps> = ({ regions }) => {

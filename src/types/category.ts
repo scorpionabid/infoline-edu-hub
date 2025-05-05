@@ -1,7 +1,7 @@
 
 import { Column } from './column';
 
-export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'approved';
+export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'approved' | 'rejected' | 'pending' | 'due' | 'overdue';
 export type CategoryAssignment = 'all' | 'sectors';
 
 export interface Category {
@@ -19,6 +19,4 @@ export interface Category {
   completionRate?: number;
 }
 
-// CategoryWithColumns artıq column.ts faylında təyin edilib, burada import edirik
-import { CategoryWithColumns } from './column';
-export { CategoryWithColumns };
+// CategoryWithColumns artıq column.ts faylında təyin edilib

@@ -1,27 +1,24 @@
 
 import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { PendingApprovalItem } from '@/types/dashboard';
-import { useLanguage } from '@/context/LanguageContext';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, X } from 'lucide-react';
 
-interface EnhancedApprovalDialogProps {
+export interface EnhancedApprovalDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onApprove: (id: string, comments?: string) => void;
-  onReject: (id: string, reason: string) => void;
-  item?: PendingApprovalItem;
-  isProcessing?: boolean;
+  onApprove: () => Promise<void>;
+  onReject: (reason: string) => Promise<void>;
+  title: string;
+  description: string;
 }
 
 export const EnhancedApprovalDialog: React.FC<EnhancedApprovalDialogProps> = ({
@@ -29,146 +26,122 @@ export const EnhancedApprovalDialog: React.FC<EnhancedApprovalDialogProps> = ({
   onClose,
   onApprove,
   onReject,
-  item,
-  isProcessing = false
+  title,
+  description
 }) => {
-  const { t } = useLanguage();
-  const [comments, setComments] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
-  const [mode, setMode] = useState<'view' | 'approve' | 'reject'>('view');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'approve' | 'reject'>('approve');
 
-  // Reset the state when the dialog is closed
-  React.useEffect(() => {
-    if (!isOpen) {
-      setComments('');
-      setRejectionReason('');
-      setMode('view');
-    }
-  }, [isOpen]);
-
-  const handleApprove = () => {
-    if (item) {
-      onApprove(item.id, comments);
+  const handleApprove = async () => {
+    try {
+      setIsSubmitting(true);
+      await onApprove();
+      onClose();
+    } catch (error) {
+      console.error('Təsdiqlənmə xətası:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleReject = () => {
-    if (item && rejectionReason.trim()) {
-      onReject(item.id, rejectionReason);
+  const handleReject = async () => {
+    if (!rejectionReason.trim()) {
+      return; // Səbəb olmadan rədd edilə bilməz
+    }
+    
+    try {
+      setIsSubmitting(true);
+      await onReject(rejectionReason);
+      onClose();
+    } catch (error) {
+      console.error('Rədd etmə xətası:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  if (!item) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={() => !isSubmitting && onClose()}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {mode === 'view' 
-              ? t('pendingApprovalDetails') 
-              : mode === 'approve' 
-                ? t('approveSubmission') 
-                : t('rejectSubmission')
-            }
-          </DialogTitle>
-          <DialogDescription>
-            {mode === 'view' 
-              ? t('reviewSubmissionDetails') 
-              : mode === 'approve' 
-                ? t('addCommentsOptional') 
-                : t('explainRejectionReason')
-            }
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">{t('school')}</Label>
-            <div className="col-span-3">{item.schoolName}</div>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">{t('category')}</Label>
-            <div className="col-span-3">{item.categoryName}</div>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">{t('submittedBy')}</Label>
-            <div className="col-span-3">{item.submittedBy}</div>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">{t('submittedAt')}</Label>
-            <div className="col-span-3">{new Date(item.submittedAt).toLocaleString()}</div>
-          </div>
-
-          {mode === 'approve' && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right" htmlFor="comments">
-                {t('comments')}
-              </Label>
-              <Textarea
-                id="comments"
-                className="col-span-3"
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-                placeholder={t('optionalComments')}
-              />
-            </div>
-          )}
-
-          {mode === 'reject' && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right" htmlFor="rejectionReason">
-                {t('reason')}
-              </Label>
-              <Textarea
-                id="rejectionReason"
-                className="col-span-3"
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder={t('explainWhyRejecting')}
-                required
-              />
-            </div>
-          )}
+        
+        <div className="flex border-b mb-4">
+          <button
+            className={`px-4 py-2 flex items-center ${
+              activeTab === 'approve' ? 'border-b-2 border-primary font-medium text-primary' : 'text-muted-foreground'
+            }`}
+            onClick={() => setActiveTab('approve')}
+          >
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Təsdiqlə
+          </button>
+          <button
+            className={`px-4 py-2 flex items-center ${
+              activeTab === 'reject' ? 'border-b-2 border-destructive font-medium text-destructive' : 'text-muted-foreground'
+            }`}
+            onClick={() => setActiveTab('reject')}
+          >
+            <X className="w-4 h-4 mr-2" />
+            Rədd et
+          </button>
         </div>
+        
+        {activeTab === 'approve' ? (
+          <div className="py-4 flex items-center justify-center text-center">
+            <div>
+              <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-2" />
+              <p className="mb-4">Bu məlumatları təsdiqləyirsiniz?</p>
+              <p className="text-sm text-muted-foreground">
+                Təsdiqləndikdən sonra bu məlumatlar sistemdə qeydə alınacaq və statistikalarda göstəriləcək.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="py-4">
+            <div className="flex items-center gap-2 mb-4 text-amber-500">
+              <AlertTriangle className="h-5 w-5" />
+              <span className="font-medium">Rədd etmə səbəbini qeyd edin</span>
+            </div>
+            <Textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Rədd etmə səbəbini qeyd edin..."
+              className="min-h-[100px]"
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Bu məlumat məktəb admininə göndəriləcək.
+            </p>
+          </div>
+        )}
 
-        <DialogFooter>
-          {mode === 'view' ? (
-            <>
-              <Button variant="outline" onClick={onClose}>
-                {t('cancel')}
-              </Button>
-              <Button variant="destructive" onClick={() => setMode('reject')}>
-                <XCircle className="mr-2 h-4 w-4" />
-                {t('reject')}
-              </Button>
-              <Button onClick={() => setMode('approve')}>
-                <CheckCircle className="mr-2 h-4 w-4" />
-                {t('approve')}
-              </Button>
-            </>
-          ) : mode === 'approve' ? (
-            <>
-              <Button variant="outline" onClick={() => setMode('view')} disabled={isProcessing}>
-                {t('back')}
-              </Button>
-              <Button onClick={handleApprove} disabled={isProcessing}>
-                {isProcessing ? t('processing') : t('confirmApproval')}
-              </Button>
-            </>
+        <DialogFooter className="flex justify-between sm:justify-between">
+          <Button
+            variant="outline" 
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            İmtina et
+          </Button>
+          {activeTab === 'approve' ? (
+            <Button 
+              variant="default"
+              onClick={handleApprove}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Təsdiqlənir..." : "Təsdiqlə"}
+            </Button>
           ) : (
-            <>
-              <Button variant="outline" onClick={() => setMode('view')} disabled={isProcessing}>
-                {t('back')}
-              </Button>
-              <Button 
-                variant="destructive" 
-                onClick={handleReject} 
-                disabled={isProcessing || !rejectionReason.trim()}
-              >
-                {isProcessing ? t('processing') : t('confirmRejection')}
-              </Button>
-            </>
+            <Button 
+              variant="destructive"
+              onClick={handleReject}
+              disabled={isSubmitting || !rejectionReason.trim()}
+            >
+              {isSubmitting ? "Rədd edilir..." : "Rədd et"}
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

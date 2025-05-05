@@ -30,7 +30,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
       <Grid columns={4} className="gap-6">
         <StatsCard
           title="Regionlar"
-          value={data.stats.regions}
+          value={data.stats.totalRegions}
           icon="R"
           description="Toplam region sayı"
           trend="Aktiv"
@@ -38,7 +38,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
         />
         <StatsCard
           title="Sektorlar"
-          value={data.stats.sectors}
+          value={data.stats.totalSectors}
           icon="S"
           description="Toplam sektor sayı"
           trend="Aktiv"
@@ -46,7 +46,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
         />
         <StatsCard
           title="Məktəblər"
-          value={data.stats.schools}
+          value={data.stats.totalSchools}
           icon="M"
           description="Toplam məktəb sayı"
           trend="Aktiv"
@@ -54,7 +54,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
         />
         <StatsCard
           title="İstifadəçilər"
-          value={data.stats.users}
+          value={data.stats.totalUsers}
           icon="U"
           description="Toplam istifadəçi sayı"
           trend="Aktiv"

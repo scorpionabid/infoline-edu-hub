@@ -34,6 +34,7 @@ export interface Column {
   options?: ColumnOption[];
   created_at?: string;
   updated_at?: string;
+  section?: string; // Əlavə edildi, dataEntry/CategoryForm üçün
 }
 
 export interface ColumnTypeDefinition {
@@ -184,10 +185,11 @@ export const COLUMN_TYPE_DEFINITIONS: Record<string, ColumnTypeDefinition> = {
   }
 };
 
-// CategoryWithColumns tipini bu fayldan da ixrac edirik
+// CategoryWithColumns tipini category.ts'dən import edirik
 import { Category } from './category';
 
 export interface CategoryWithColumns extends Category {
   columns?: Column[];
   completionRate?: number;
+  related?: any[]; // CategoryForm komponenti bunu istifadə edir
 }

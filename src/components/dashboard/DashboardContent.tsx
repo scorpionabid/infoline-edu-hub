@@ -4,13 +4,12 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { SuperAdminDashboard } from './SuperAdminDashboard';
-import { RegionAdminDashboard } from './RegionAdminDashboard';
+import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
 import { SectorAdminDashboard } from './sector-admin/SectorAdminDashboard';
 import { SchoolAdminDashboard } from './SchoolAdminDashboard';
 import {
   SuperAdminDashboardData,
   RegionAdminDashboardData,
-  SectorAdminDashboardData,
   SchoolAdminDashboardData
 } from '@/types/dashboard';
 
@@ -21,44 +20,59 @@ const DashboardContent = () => {
   
   // Mock data obyektləri
   const superAdminData: SuperAdminDashboardData = {
-    statistics: {
-      users: { total: 0, active: 0, inactive: 0 },
-      regions: { total: 0, active: 0, inactive: 0 },
-      sectors: { total: 0, active: 0, inactive: 0 },
-      schools: { total: 0, active: 0, inactive: 0 },
-      categories: { total: 0, active: 0, inactive: 0, pending: 0, completed: 0 }
+    stats: {
+      totalUsers: 0,
+      totalSchools: 0,
+      totalRegions: 0,
+      totalSectors: 0,
     },
-    latestActivities: []
+    formsByStatus: {
+      draft: 0,
+      submitted: 0,
+      approved: 0,
+      rejected: 0
+    },
+    completionRate: 0,
+    notifications: []
   };
   
   const regionAdminData: RegionAdminDashboardData = {
-    statistics: {
-      sectors: { total: 0, active: 0, inactive: 0 },
-      schools: { total: 0, active: 0, inactive: 0 },
-      submissions: { total: 0, active: 0, inactive: 0, pending: 0, completed: 0 }
+    stats: {
+      totalSchools: 0,
+      totalSectors: 0,
+      totalForms: 0,
+      totalCategories: 0
     },
-    regions: [],
-    latestActivities: []
+    sectorStats: [],
+    schoolStats: [],
+    completionRate: 0,
+    notifications: []
   };
   
-  const sectorAdminData: SectorAdminDashboardData = { 
+  const sectorAdminData = { 
     statistics: {
       totalSchools: 0,
       activeSchools: 0,
       pendingSubmissions: 0,
       completedSubmissions: 0
     },
-    schools: [],
-    sectors: []
+    schools: []
   };
   
   const schoolAdminData: SchoolAdminDashboardData = {
-    statistics: {
-      categories: { total: 0, active: 0, inactive: 0 },
-      submissions: { total: 0, active: 0, inactive: 0, pending: 0, completed: 0 },
-      approvals: { total: 0, active: 0, inactive: 0 }
+    formStats: {
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      draft: 0,
+      total: 0,
+      incomplete: 0, // əlave edildi
+      dueSoon: 0, // əlavə edildi
+      overdue: 0 // əlavə edildi
     },
-    activities: [],
+    recentForms: [],
+    upcomingDeadlines: [], // əlavə edildi
+    completionRate: 0,
     notifications: []
   };
   

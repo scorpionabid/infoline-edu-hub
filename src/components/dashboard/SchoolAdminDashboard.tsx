@@ -1,13 +1,12 @@
 
 import React from 'react';
+import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import { NotificationsCard } from './common/NotificationsCard';
-import { SchoolAdminDashboardData } from '@/types/dashboard';
-import { Grid } from '@/components/ui/grid';
-import { CheckCircle, AlertTriangle, Clock, XCircle } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { adaptDashboardNotificationToApp, NotificationType } from '@/types/notification';
+import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
+import { Loader2 } from 'lucide-react';
+import { adaptDashboardNotificationToApp, DashboardNotification } from '@/types/notification';
 
 interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
@@ -26,12 +25,14 @@ export function SchoolAdminDashboard({
   navigateToDataEntry,
   handleFormClick
 }: SchoolAdminDashboardProps) {
-  const { t } = useLanguage();
   
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-    </div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Yüklənir...</span>
+      </div>
+    );
   }
 
   if (error) {
@@ -61,69 +62,66 @@ export function SchoolAdminDashboard({
     );
   }
 
-  // Bildirişləri adapter ilə çevirək - tip problemini həll edirik
-  const adaptedNotifications: NotificationType[] = Array.isArray(data.notifications) 
+  // Bildirişləri adapterlə çevirək - tip problemini həll edirik
+  const adaptedNotifications: DashboardNotification[] = Array.isArray(data.notifications) 
     ? data.notifications.map((notification) => {
-        // Əgər bəzi tələb olunan xüsusiyyətlər yoxdursa əlavə edirik
-        return {
-          ...adaptDashboardNotificationToApp({
-            ...notification,
-            createdAt: notification.createdAt || new Date().toISOString()
-          })
-        };
+        return adaptDashboardNotificationToApp({
+          ...notification,
+          createdAt: notification.createdAt || new Date().toISOString()
+        });
       })
     : [];
   
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">{t('dashboard')}</h2>
+        <h2 className="text-2xl font-bold">Dashboard</h2>
         {navigateToDataEntry && (
           <button
             onClick={navigateToDataEntry}
             className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
           >
-            {t('dataEntry')}
+            Məlumat Daxil Et
           </button>
         )}
       </div>
       
       <Grid columns={4} className="gap-6">
         <StatsCard 
-          title={t('approved')} 
+          title="Təsdiqlənmiş" 
           value={data.formStats?.approved || 0} 
-          icon={<CheckCircle size={18} />}
+          icon="✓"
           trendDirection="up"
         />
         <StatsCard 
-          title={t('pending')} 
+          title="Gözləmədə" 
           value={data.formStats?.pending || 0} 
-          icon={<Clock size={18} />}
+          icon="⏳"
         />
         <StatsCard 
-          title={t('rejected')} 
+          title="Rədd edilmiş" 
           value={data.formStats?.rejected || 0} 
-          icon={<XCircle size={18} />}
+          icon="✗"
           trendDirection="down"
         />
         <StatsCard 
-          title={t('incomplete')} 
+          title="Tamamlanmamış" 
           value={data.formStats?.incomplete || 0} 
-          icon={<AlertTriangle size={18} />}
+          icon="!"
         />
       </Grid>
       <Grid columns={2} className="gap-6">
         <CompletionRateCard 
           completionRate={data.completionRate || 0} 
-          title={t('overallCompletion')} 
+          title="Ümumi Tamamlanma" 
         />
         <NotificationsCard 
-          title={t('notifications')} 
+          title="Bildirişlər" 
           notifications={adaptedNotifications}
         />
       </Grid>
     </div>
   );
-}
+};
 
 export default SchoolAdminDashboard;

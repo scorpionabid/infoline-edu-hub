@@ -17,6 +17,7 @@ interface CategoryCardProps {
 export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onSelect }) => {
   const { t } = useLanguage();
 
+  // status'u CategoryStatus tipinə çeviririk
   const status = category.status || 'draft';
 
   const statusClass =

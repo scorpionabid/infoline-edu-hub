@@ -1,77 +1,90 @@
 
 import React from 'react';
+import { Grid } from '@/components/ui/grid';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { PendingApprovalItem } from '@/types/dashboard'; 
+import { CheckCircle, Clock, XCircle, CalendarCheck } from 'lucide-react';
 
 interface StatusCardsProps {
   approvalCount: number;
   rejectionCount: number;
   pendingCount: number;
   totalCount: number;
-  pendingItems?: PendingApprovalItem[];
 }
 
-export const StatusCards: React.FC<StatusCardsProps> = ({
-  approvalCount,
-  rejectionCount,
-  pendingCount,
-  totalCount,
-  pendingItems
+const StatusCards: React.FC<StatusCardsProps> = ({ 
+  approvalCount, 
+  rejectionCount, 
+  pendingCount, 
+  totalCount 
 }) => {
-  const approvalRate = totalCount ? Math.round((approvalCount / totalCount) * 100) : 0;
-  const rejectionRate = totalCount ? Math.round((rejectionCount / totalCount) * 100) : 0;
-  const pendingRate = totalCount ? Math.round((pendingCount / totalCount) * 100) : 0;
-
+  // Hesablamalar
+  const approvalPercentage = totalCount ? Math.round((approvalCount / totalCount) * 100) : 0;
+  const rejectionPercentage = totalCount ? Math.round((rejectionCount / totalCount) * 100) : 0;
+  const pendingPercentage = totalCount ? Math.round((pendingCount / totalCount) * 100) : 0;
+  
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card>
+    <Grid columns={4} className="gap-4">
+      <Card className="border-l-4 border-l-green-500">
         <CardHeader className="pb-2">
-          <CardTitle>Təsdiqlənmiş</CardTitle>
+          <CardTitle className="text-sm font-medium flex items-center">
+            <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+            Təsdiqlənmiş
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold mb-2">
-            {approvalCount}
-            <span className="text-sm font-normal text-muted-foreground ml-2">
-              ({approvalRate}%)
-            </span>
-          </div>
-          <Progress value={approvalRate} className="h-2" indicatorClassName="bg-green-500" />
+          <div className="text-2xl font-bold">{approvalCount}</div>
+          <p className="text-xs text-muted-foreground">
+            Toplam {approvalPercentage}%
+          </p>
         </CardContent>
       </Card>
-
-      <Card>
+      
+      <Card className="border-l-4 border-l-amber-500">
         <CardHeader className="pb-2">
-          <CardTitle>Rədd edilmiş</CardTitle>
+          <CardTitle className="text-sm font-medium flex items-center">
+            <Clock className="mr-2 h-4 w-4 text-amber-500" />
+            Gözləmədə
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold mb-2">
-            {rejectionCount}
-            <span className="text-sm font-normal text-muted-foreground ml-2">
-              ({rejectionRate}%)
-            </span>
-          </div>
-          <Progress value={rejectionRate} className="h-2" indicatorClassName="bg-red-500" />
+          <div className="text-2xl font-bold">{pendingCount}</div>
+          <p className="text-xs text-muted-foreground">
+            Toplam {pendingPercentage}%
+          </p>
         </CardContent>
       </Card>
-
-      <Card>
+      
+      <Card className="border-l-4 border-l-red-500">
         <CardHeader className="pb-2">
-          <CardTitle>Gözləmədə</CardTitle>
+          <CardTitle className="text-sm font-medium flex items-center">
+            <XCircle className="mr-2 h-4 w-4 text-red-500" />
+            Rədd edilmiş
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold mb-2">
-            {pendingCount}
-            <span className="text-sm font-normal text-muted-foreground ml-2">
-              ({pendingRate}%)
-            </span>
-          </div>
-          <Progress value={pendingRate} className="h-2" indicatorClassName="bg-yellow-500" />
+          <div className="text-2xl font-bold">{rejectionCount}</div>
+          <p className="text-xs text-muted-foreground">
+            Toplam {rejectionPercentage}%
+          </p>
         </CardContent>
       </Card>
-    </div>
+      
+      <Card className="border-l-4 border-l-blue-500">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium flex items-center">
+            <CalendarCheck className="mr-2 h-4 w-4 text-blue-500" />
+            Ümumi
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{totalCount}</div>
+          <p className="text-xs text-muted-foreground">
+            Toplam form sayı
+          </p>
+        </CardContent>
+      </Card>
+    </Grid>
   );
 };
 
 export default StatusCards;
-

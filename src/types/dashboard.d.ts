@@ -10,6 +10,9 @@ export interface PendingApprovalItem {
   status: 'pending' | 'approved' | 'rejected';
   schoolId?: string;
   categoryId?: string;
+  title?: string;
+  date?: string;
+  school?: string;
 }
 
 export interface RegionStats {
@@ -30,6 +33,9 @@ export interface FormItem {
   status: 'draft' | 'submitted' | 'approved' | 'rejected';
   completionRate: number;
   submittedAt?: string;
+  title?: string; // FormTabs üçün əlavə edildi
+  dueDate?: string; // FormTabs üçün əlavə edildi  
+  createdAt?: string; // FormTabs üçün əlavə edildi
 }
 
 export interface SchoolStats {
@@ -62,10 +68,10 @@ export interface DashboardStats {
   totalSchools: number;
   totalRegions: number;
   totalSectors: number;
-  totalForms: number;
-  totalCategories: number;
-  completionRate: number;
-  pendingApprovals: number;
+  totalForms?: number;
+  totalCategories?: number;
+  completionRate?: number;
+  pendingApprovals?: number;
 }
 
 export interface FormStatusStats {
@@ -73,6 +79,10 @@ export interface FormStatusStats {
   submitted: number;
   approved: number;
   rejected: number;
+  incomplete?: number;
+  dueSoon?: number;
+  overdue?: number;
+  total?: number;
 }
 
 interface BaseDashboardData {
@@ -94,6 +104,7 @@ export interface SuperAdminDashboardData extends BaseDashboardData {
   pendingApprovals?: PendingApprovalItem[];
   notifications?: Notification[];
   completionRate: number;
+  categories?: any[];
 }
 
 export interface RegionAdminDashboardData extends BaseDashboardData {
@@ -111,7 +122,7 @@ export interface RegionAdminDashboardData extends BaseDashboardData {
   completionRate: number;
 }
 
-export interface SectorAdminDashboardData extends BaseDashboardData {
+export interface SectorAdminDashboardData {
   statistics: {
     totalSchools: number;
     activeSchools: number;
@@ -123,10 +134,36 @@ export interface SectorAdminDashboardData extends BaseDashboardData {
 
 export interface SchoolAdminDashboardData extends BaseDashboardData {
   stats?: any;
-  formStats: FormStatusStats;
-  upcomingDeadlines: FormItem[];
+  formStats: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    draft: number;
+    total: number;
+    incomplete?: number;
+    dueSoon?: number;
+    overdue?: number;
+  };
+  upcomingDeadlines?: FormItem[];
   recentForms: FormItem[];
   pendingForms?: FormItem[];
   completedForms?: FormItem[];
   completionRate: number;
+}
+
+export interface CategoryStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  completion?: {
+    total: number;
+    completed: number;
+    percentage: number;
+  };
+}
+
+export interface ChartData {
+  activityData: Array<{ name: string; value: number }>;
+  regionSchoolsData: Array<{ name: string; value: number }>;
+  categoryCompletionData: Array<{ name: string; completed: number }>;
 }

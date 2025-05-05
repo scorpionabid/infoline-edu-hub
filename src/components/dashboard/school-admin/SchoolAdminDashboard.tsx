@@ -40,7 +40,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoa
     rejected: 0,
     total: 0,
     incomplete: 0,
-    drafts: 0,
+    draft: 0,
     dueSoon: 0,
     overdue: 0
   };
@@ -80,12 +80,11 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoa
       />
 
       <FormTabs 
-        upcomingForms={data.upcomingDeadlines as FormItem[]} 
-        recentForms={data.recentForms as FormItem[]}
+        upcomingForms={data.upcomingDeadlines || []} 
+        recentForms={data.recentForms || []}
       />
     </div>
   );
 };
 
 export default SchoolAdminDashboard;
-
