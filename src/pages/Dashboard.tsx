@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
@@ -53,7 +54,7 @@ const Dashboard: React.FC = () => {
   const isSchoolAdmin = user.role === 'schooladmin';
   
   return (
-    <div>
+    <div className="space-y-4">
       <DashboardHeader />
       
       {isSchoolAdmin && <SchoolAdminSetupCheck />}

@@ -123,7 +123,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
         <div
           className={cn(
             "h-screen bg-background border-r z-50 transition-all duration-300 ease-in-out",
-            isSidebarOpen ? "w-64" : "w-[70px]",
+            isSidebarOpen ? "w-60" : "w-[60px]",
             isMobile ? (
               isSidebarOpen ? "fixed left-0" : "fixed -left-full"
             ) : (
@@ -131,7 +131,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
             )
           )}
         >
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-between p-3">
             <div className={cn("transition-opacity", isSidebarOpen ? "opacity-100" : "opacity-0 md:hidden")}>
               <h2 className="text-xl font-bold">InfoLine</h2>
             </div>
@@ -162,8 +162,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
         {/* Main content */}
         <div 
           className={cn(
-            "flex-1 p-6 overflow-y-auto transition-all duration-300",
-            isMobile ? "ml-0" : (isSidebarOpen ? "md:ml-64" : "md:ml-[70px]")
+            "flex-1 overflow-y-auto transition-all duration-300",
+            isMobile ? "px-3 py-4" : (isSidebarOpen ? "md:ml-60 px-4 py-4" : "md:ml-[60px] px-4 py-4")
           )}
         >
           <Outlet />
