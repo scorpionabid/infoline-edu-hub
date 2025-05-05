@@ -29,14 +29,20 @@ interface EnhancedApprovalDialogProps {
   onApprove: (id: string, comment?: string) => Promise<void>;
   onReject: (id: string, reason: string) => Promise<void>;
   item?: ApprovalItem;
+  title?: string;
+  description?: string;
+  submissionData?: any;
 }
 
-const EnhancedApprovalDialog: React.FC<EnhancedApprovalDialogProps> = ({
+export const EnhancedApprovalDialog: React.FC<EnhancedApprovalDialogProps> = ({
   isOpen,
   onClose,
   onApprove,
   onReject,
-  item
+  item,
+  title,
+  description,
+  submissionData
 }) => {
   const { t } = useLanguage();
   const [reason, setReason] = useState('');
@@ -44,12 +50,16 @@ const EnhancedApprovalDialog: React.FC<EnhancedApprovalDialogProps> = ({
   const [comment, setComment] = useState('');
   const [activeTab, setActiveTab] = useState('details');
 
-  if (!item) return null;
+  if (!item && !submissionData) return null;
 
   const handleApprove = async () => {
     try {
       setIsSubmitting(true);
-      await onApprove(item.id, comment);
+      if (item) {
+        await onApprove(item.id, comment);
+      } else {
+        await onApprove('', comment);
+      }
       toast.success(t('approvalSuccess'));
       setComment('');
       onClose();
@@ -69,7 +79,11 @@ const EnhancedApprovalDialog: React.FC<EnhancedApprovalDialogProps> = ({
 
     try {
       setIsSubmitting(true);
-      await onReject(item.id, reason);
+      if (item) {
+        await onReject(item.id, reason);
+      } else {
+        await onReject('', reason);
+      }
       toast.success(t('rejectionSuccess'));
       setReason('');
       onClose();
@@ -81,13 +95,20 @@ const EnhancedApprovalDialog: React.FC<EnhancedApprovalDialogProps> = ({
     }
   };
 
+  const displayName = item?.schoolName || '';
+  const displayCategory = item?.categoryName || '';
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t('approvalRequest')}</DialogTitle>
+          <DialogTitle>{title || t('approvalRequest')}</DialogTitle>
           <DialogDescription>
-            {t('approvalRequestFrom')} <strong>{item.schoolName}</strong> {t('for')} <strong>{item.categoryName}</strong>
+            {description || (
+              <>
+                {t('approvalRequestFrom')} <strong>{displayName}</strong> {t('for')} <strong>{displayCategory}</strong>
+              </>
+            )}
           </DialogDescription>
         </DialogHeader>
         
@@ -95,11 +116,11 @@ const EnhancedApprovalDialog: React.FC<EnhancedApprovalDialogProps> = ({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="space-y-1">
               <p className="text-muted-foreground">{t('submittedBy')}</p>
-              <p className="font-medium">{item.submittedBy}</p>
+              <p className="font-medium">{item?.submittedBy || '-'}</p>
             </div>
             <div className="space-y-1">
               <p className="text-muted-foreground">{t('submittedAt')}</p>
-              <p className="font-medium">{new Date(item.submittedAt).toLocaleString()}</p>
+              <p className="font-medium">{item?.submittedAt ? new Date(item.submittedAt).toLocaleString() : '-'}</p>
             </div>
           </div>
 

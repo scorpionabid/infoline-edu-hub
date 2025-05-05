@@ -1,179 +1,183 @@
 
 import React from 'react';
-import { Column } from '@/types/column';
-import { Label } from '@/components/ui/label';
+import { FormControl, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { NumberInput } from '@/components/dataEntry/inputs/NumberInput';
-import { DateInput } from '@/components/ui/date-input';
-import { SelectInput } from '@/components/dataEntry/inputs/SelectInput';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import DateInput from '@/components/ui/date-input';
+import { Label } from '@/components/ui/label';
 import { FileInput } from '@/components/ui/file-input';
+import { Column } from '@/types/column';
+import NumberInput from './inputs/NumberInput';
+import SelectInput from './inputs/SelectInput';
 
-export interface EntryFieldProps {
+interface EntryFieldProps {
   column: Column;
   value: any;
   onChange: (value: any) => void;
   error?: string;
-  readOnly?: boolean;
+  disabled?: boolean;
 }
 
-const EntryField: React.FC<EntryFieldProps> = ({
+export const EntryField: React.FC<EntryFieldProps> = ({
   column,
   value,
   onChange,
   error,
-  readOnly = false
+  disabled = false
 }) => {
-  // Tip dəyərinə əsasən uyğun komponenti render et
   switch (column.type) {
     case 'text':
       return (
         <div className="space-y-2">
-          <Label htmlFor={column.id}>{column.name}{column.is_required && <span className="text-red-500">*</span>}</Label>
+          {column.name && <FormLabel>{column.name}</FormLabel>}
           <Input
-            id={column.id}
+            type="text"
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder={column.placeholder}
-            disabled={readOnly}
-            className={error ? 'border-red-500' : ''}
+            disabled={disabled}
+            className={error ? "border-red-500" : ""}
           />
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {column.help_text && (
+            <FormDescription>{column.help_text}</FormDescription>
+          )}
+          {error && <FormMessage>{error}</FormMessage>}
         </div>
       );
-    
+
     case 'textarea':
       return (
         <div className="space-y-2">
-          <Label htmlFor={column.id}>{column.name}{column.is_required && <span className="text-red-500">*</span>}</Label>
+          {column.name && <FormLabel>{column.name}</FormLabel>}
           <Textarea
-            id={column.id}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder={column.placeholder}
-            disabled={readOnly}
-            className={error ? 'border-red-500' : ''}
+            disabled={disabled}
+            className={error ? "border-red-500" : ""}
           />
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {column.help_text && (
+            <FormDescription>{column.help_text}</FormDescription>
+          )}
+          {error && <FormMessage>{error}</FormMessage>}
         </div>
       );
-    
+
     case 'number':
       return (
-        <div className="space-y-2">
-          <Label htmlFor={column.id}>{column.name}{column.is_required && <span className="text-red-500">*</span>}</Label>
-          <NumberInput
-            column={column}
-            value={value || ''}
-            onChange={onChange}
-            error={error}
-          />
-          {error && <p className="text-sm text-red-500">{error}</p>}
-        </div>
+        <NumberInput
+          column={column}
+          value={value}
+          onChange={onChange}
+          error={error}
+          disabled={disabled}
+        />
       );
-    
+
     case 'date':
       return (
         <div className="space-y-2">
-          <Label htmlFor={column.id}>{column.name}{column.is_required && <span className="text-red-500">*</span>}</Label>
+          {column.name && <FormLabel>{column.name}</FormLabel>}
           <DateInput
-            value={value ? new Date(value) : undefined}
-            onChange={(date) => onChange(date?.toISOString() || '')}
-            disabled={readOnly}
+            value={value || null}
+            onChange={(date) => onChange(date)}
+            disabled={disabled}
+            className={error ? "border-red-500" : ""}
           />
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {column.help_text && (
+            <FormDescription>{column.help_text}</FormDescription>
+          )}
+          {error && <FormMessage>{error}</FormMessage>}
         </div>
       );
-    
+
     case 'select':
       return (
-        <div className="space-y-2">
-          <Label htmlFor={column.id}>{column.name}{column.is_required && <span className="text-red-500">*</span>}</Label>
-          <SelectInput
-            column={column}
-            value={value || ''}
-            onChange={onChange}
-            error={error}
-          />
-          {error && <p className="text-sm text-red-500">{error}</p>}
-        </div>
+        <SelectInput
+          column={column}
+          value={value}
+          onChange={onChange}
+          error={error}
+          disabled={disabled}
+        />
       );
-    
+
     case 'checkbox':
       return (
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
-            <Checkbox 
+            <Checkbox
               id={column.id}
-              checked={value === 'true' || value === true}
-              onCheckedChange={(checked) => onChange(checked ? 'true' : 'false')}
-              disabled={readOnly}
+              checked={value === true}
+              onCheckedChange={onChange}
+              disabled={disabled}
             />
-            <Label htmlFor={column.id}>{column.name}{column.is_required && <span className="text-red-500">*</span>}</Label>
+            {column.name && <Label htmlFor={column.id}>{column.name}</Label>}
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {column.help_text && (
+            <FormDescription>{column.help_text}</FormDescription>
+          )}
+          {error && <FormMessage>{error}</FormMessage>}
         </div>
       );
 
     case 'radio':
-      const radioOptions = typeof column.options === 'string' 
-        ? JSON.parse(column.options) 
-        : column.options || [];
-        
       return (
         <div className="space-y-2">
-          <Label>{column.name}{column.is_required && <span className="text-red-500">*</span>}</Label>
-          <RadioGroup 
-            value={value || ''} 
+          {column.name && <FormLabel>{column.name}</FormLabel>}
+          <RadioGroup
+            value={value || ''}
             onValueChange={onChange}
-            disabled={readOnly}
+            disabled={disabled}
           >
-            {radioOptions.map((option: any) => (
+            {column.options && Array.isArray(column.options) && column.options.map((option: any) => (
               <div className="flex items-center space-x-2" key={option.value}>
                 <RadioGroupItem value={option.value} id={`${column.id}-${option.value}`} />
                 <Label htmlFor={`${column.id}-${option.value}`}>{option.label}</Label>
               </div>
             ))}
           </RadioGroup>
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {column.help_text && (
+            <FormDescription>{column.help_text}</FormDescription>
+          )}
+          {error && <FormMessage>{error}</FormMessage>}
         </div>
       );
-    
+
     case 'file':
-    case 'image':
       return (
         <div className="space-y-2">
-          <Label htmlFor={column.id}>{column.name}{column.is_required && <span className="text-red-500">*</span>}</Label>
-          <FileInput 
-            id={column.id}
-            disabled={readOnly}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                onChange(file.name);
-              }
-            }}
+          {column.name && <FormLabel>{column.name}</FormLabel>}
+          <FileInput
+            value={value}
+            onChange={(file) => onChange(file)}
+            disabled={disabled}
           />
-          {value && <p className="text-sm text-muted-foreground">{value}</p>}
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {column.help_text && (
+            <FormDescription>{column.help_text}</FormDescription>
+          )}
+          {error && <FormMessage>{error}</FormMessage>}
         </div>
       );
-    
+
     default:
       return (
         <div className="space-y-2">
-          <Label htmlFor={column.id}>{column.name}{column.is_required && <span className="text-red-500">*</span>}</Label>
+          {column.name && <FormLabel>{column.name}</FormLabel>}
           <Input
-            id={column.id}
+            type="text"
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder={column.placeholder}
-            disabled={readOnly}
-            className={error ? 'border-red-500' : ''}
+            disabled={disabled}
+            className={error ? "border-red-500" : ""}
           />
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {column.help_text && (
+            <FormDescription>{column.help_text}</FormDescription>
+          )}
+          {error && <FormMessage>{error}</FormMessage>}
         </div>
       );
   }

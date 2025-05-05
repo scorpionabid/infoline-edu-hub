@@ -1,232 +1,93 @@
 
-export type ColumnType = 
-  | 'text' 
-  | 'number' 
-  | 'date' 
-  | 'select' 
-  | 'checkbox' 
-  | 'radio' 
-  | 'file' 
-  | 'image'
-  | 'email'
-  | 'link'
-  | 'url'     // Əlavə edildi
-  | 'phone'
-  | 'tel'     // Əlavə edildi
-  | 'range'   // Əlavə edildi
-  | 'slider'
-  | 'color'
-  | 'time'
-  | 'password' // Əlavə edildi
-  | 'datetime'
-  | 'richtext' // Əlavə edildi
-  | 'textarea';
+export type ColumnType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image';
 
 export interface ColumnOption {
   label: string;
   value: string;
-  id?: string;    // Əlavə edildi
-  color?: string; // Əlavə edildi
 }
 
 export interface ColumnValidation {
   required?: boolean;
   min?: number;
   max?: number;
-  pattern?: string;
   minLength?: number;
   maxLength?: number;
-  message?: string;
+  pattern?: string;
+  format?: string;
 }
 
 export interface Column {
   id: string;
   category_id?: string;
   name: string;
-  description?: string;
   type: ColumnType;
-  order_index?: number;
   is_required?: boolean;
   placeholder?: string;
   help_text?: string;
-  default_value?: string;
-  options?: ColumnOption[] | string;
+  order_index?: number;
+  status?: string;
   validation?: ColumnValidation;
-  status?: 'active' | 'inactive';
+  default_value?: string;
+  options?: ColumnOption[];
   created_at?: string;
   updated_at?: string;
-  section?: string;
-  related?: string[];
 }
 
-export interface CategoryWithColumns {
-  id: string;
-  name: string;
-  description?: string;
-  deadline?: string;
-  status?: string;
-  columns?: Column[];
-  completionRate?: number;
-  related?: string[];
-  assignment?: 'all' | 'sectors';
-}
-
-// İcon tipləri və sütun tipi tərifləri
-interface ColumnTypeDefinition {
-  label: string;
-  description: string;
-  icon: string;
-  dataType: 'string' | 'number' | 'boolean' | 'date' | 'object' | 'array';
-  hasOptions?: boolean;
-  hasValidation?: boolean;
-}
-
-export const COLUMN_TYPE_DEFINITIONS: Record<ColumnType, ColumnTypeDefinition> = {
+export const COLUMN_TYPE_DEFINITIONS = {
   text: {
-    label: 'Mətn',
-    description: 'Qısa mətn daxil etmə sahəsi',
-    icon: 'text',
-    dataType: 'string',
-    hasValidation: true,
+    icon: 'TextIcon',
+    label: 'Text',
+    description: 'Short text like a name or title',
+    validations: ['required', 'minLength', 'maxLength', 'pattern'],
   },
   textarea: {
-    label: 'Mətn sahəsi',
-    description: 'Böyük mətn daxil etmə sahəsi',
-    icon: 'textAlignLeft',
-    dataType: 'string',
-    hasValidation: true,
+    icon: 'AlignLeftIcon',
+    label: 'Textarea',
+    description: 'Longer text content',
+    validations: ['required', 'minLength', 'maxLength'],
   },
   number: {
-    label: 'Rəqəm',
-    description: 'Rəqəm daxil etmə sahəsi',
-    icon: 'hash',
-    dataType: 'number',
-    hasValidation: true,
+    icon: 'HashIcon',
+    label: 'Number',
+    description: 'Numeric values',
+    validations: ['required', 'min', 'max'],
   },
   date: {
-    label: 'Tarix',
-    description: 'Tarix seçimi',
-    icon: 'calendar',
-    dataType: 'date',
-    hasValidation: true,
+    icon: 'CalendarIcon',
+    label: 'Date',
+    description: 'Date picker',
+    validations: ['required'],
   },
   select: {
-    label: 'Seçim',
-    description: 'Açılan siyahıdan seçim',
-    icon: 'listBox',
-    dataType: 'string',
-    hasOptions: true,
+    icon: 'ListIcon',
+    label: 'Select',
+    description: 'Selection from options',
+    validations: ['required'],
+    needsOptions: true,
   },
   checkbox: {
-    label: 'Çoxlu seçim',
-    description: 'Bir neçə variant seçimi',
-    icon: 'check',
-    dataType: 'array',
-    hasOptions: true,
+    icon: 'CheckSquareIcon',
+    label: 'Checkbox',
+    description: 'Boolean value',
+    validations: ['required'],
   },
   radio: {
-    label: 'Radio seçim',
-    description: 'Bir variant seçimi',
-    icon: 'circle',
-    dataType: 'string',
-    hasOptions: true,
+    icon: 'CircleDotIcon',
+    label: 'Radio',
+    description: 'Single selection from options',
+    validations: ['required'],
+    needsOptions: true,
   },
   file: {
-    label: 'Fayl yüklə',
-    description: 'Fayl yükləmək üçün',
-    icon: 'file',
-    dataType: 'string',
+    icon: 'FileIcon',
+    label: 'File',
+    description: 'File upload',
+    validations: ['required'],
   },
   image: {
-    label: 'Şəkil',
-    description: 'Şəkil yükləmək üçün',
-    icon: 'image',
-    dataType: 'string',
+    icon: 'ImageIcon',
+    label: 'Image',
+    description: 'Image upload',
+    validations: ['required'],
   },
-  email: {
-    label: 'Email',
-    description: 'Email daxil etmə sahəsi',
-    icon: 'mail',
-    dataType: 'string',
-    hasValidation: true,
-  },
-  link: {
-    label: 'Link',
-    description: 'URL daxil etmə sahəsi',
-    icon: 'link',
-    dataType: 'string',
-    hasValidation: true,
-  },
-  url: {
-    label: 'URL',
-    description: 'Veb sayt URL-i daxil etmə sahəsi',
-    icon: 'link',
-    dataType: 'string',
-    hasValidation: true,
-  },
-  phone: {
-    label: 'Telefon',
-    description: 'Telefon nömrəsi daxil etmə sahəsi',
-    icon: 'phone',
-    dataType: 'string',
-    hasValidation: true,
-  },
-  tel: {
-    label: 'Telefon',
-    description: 'Telefon nömrəsi daxil etmə sahəsi',
-    icon: 'phone',
-    dataType: 'string',
-    hasValidation: true,
-  },
-  slider: {
-    label: 'Slider',
-    description: 'Slayder ilə rəqəm seçimi',
-    icon: 'sliders',
-    dataType: 'number',
-    hasValidation: true,
-  },
-  range: {
-    label: 'Diapazon',
-    description: 'Minimum və maksimum dəyər seçimi',
-    icon: 'sliders',
-    dataType: 'string',
-    hasValidation: true,
-  },
-  color: {
-    label: 'Rəng',
-    description: 'Rəng seçimi',
-    icon: 'palette',
-    dataType: 'string',
-  },
-  password: {
-    label: 'Şifrə',
-    description: 'Gizli mətn daxil etmə sahəsi',
-    icon: 'lock',
-    dataType: 'string',
-    hasValidation: true,
-  },
-  time: {
-    label: 'Vaxt',
-    description: 'Vaxt seçimi',
-    icon: 'clock',
-    dataType: 'string',
-  },
-  datetime: {
-    label: 'Tarix və vaxt',
-    description: 'Tarix və vaxt seçimi',
-    icon: 'calendarClock',
-    dataType: 'date',
-    hasValidation: true,
-  },
-  richtext: {
-    label: 'Formatlaşdırılmış mətn',
-    description: 'Mətn formatlaşdırma ilə',
-    icon: 'formattingTwo',
-    dataType: 'string',
-  }
 };
-
-// Kateqoriya tipi tərifləri
-export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'approved';
-export type CategoryAssignment = 'all' | 'sectors';
-

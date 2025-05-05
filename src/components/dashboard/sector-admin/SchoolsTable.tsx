@@ -6,70 +6,65 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/context/LanguageContext';
-import { SchoolStats } from '@/types/dashboard';
+import { Eye, FileText } from 'lucide-react';
+import { SchoolStat } from '@/types/dashboard';
 
 interface SchoolsTableProps {
-  schools: SchoolStats[];
+  schools: SchoolStat[];
 }
 
-const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools }) => {
-  const navigate = useNavigate();
-  const { t } = useLanguage();
-  
-  if (!schools || schools.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        {t('noSchoolsFound')}
-      </div>
-    );
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return <Badge className="bg-green-500">Tamamlanıb</Badge>;
+    case 'in_progress':
+      return <Badge className="bg-blue-500">Davam edir</Badge>;
+    case 'pending':
+      return <Badge className="bg-amber-500">Gözləyir</Badge>;
+    case 'overdue':
+      return <Badge className="bg-red-500">Gecikib</Badge>;
+    default:
+      return <Badge className="bg-gray-500">Naməlum</Badge>;
   }
-  
+};
+
+const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools }) => {
+  const { t } = useLanguage();
+
   return (
-    <div className="border rounded-md">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t('schoolName')}</TableHead>
-            <TableHead>{t('formsCompleted')}</TableHead>
-            <TableHead>{t('completionRate')}</TableHead>
-            <TableHead>{t('actions')}</TableHead>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{t('school')}</TableHead>
+          <TableHead>{t('region')}</TableHead>
+          <TableHead>{t('status')}</TableHead>
+          <TableHead>{t('completion')}</TableHead>
+          <TableHead>{t('lastUpdate')}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {schools.map((school) => (
+          <TableRow key={school.id}>
+            <TableCell className="font-medium">{school.name}</TableCell>
+            <TableCell>{school.region}</TableCell>
+            <TableCell>{getStatusBadge(school.formStatus)}</TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                <Progress value={school.completion} className="w-24 h-2" />
+                <span className="text-sm">{school.completion}%</span>
+              </div>
+            </TableCell>
+            <TableCell>{new Date(school.lastUpdate).toLocaleDateString()}</TableCell>
           </TableRow>
-        </TableHeader>
-        <TableBody>
-          {schools.map((school) => (
-            <TableRow key={school.id}>
-              <TableCell className="font-medium">{school.name}</TableCell>
-              <TableCell>{school.formsCompleted} / {school.formsTotal}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Progress value={school.completionRate} className="h-2 w-24" />
-                  <span className="text-sm text-muted-foreground">
-                    {school.completionRate}%
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => navigate(`/schools/${school.id}`)}
-                >
-                  {t('details')}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+        ))}
+      </TableBody>
+    </Table>
   );
 };
 

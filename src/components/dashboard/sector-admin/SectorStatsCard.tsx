@@ -1,49 +1,69 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
+
+type IndicatorType = 'positive' | 'negative' | 'neutral' | 'warning';
 
 interface SectorStatsCardProps {
   title: string;
   value: number;
   description: string;
-  indicator?: 'positive' | 'negative' | 'neutral' | 'warning';
+  indicator: IndicatorType;
+  percentage?: number;
 }
 
-const SectorStatsCard: React.FC<SectorStatsCardProps> = ({
-  title,
-  value,
-  description,
-  indicator = 'neutral'
+const SectorStatsCard: React.FC<SectorStatsCardProps> = ({ 
+  title, 
+  value, 
+  description, 
+  indicator, 
+  percentage 
 }) => {
-  // İndikatora görə rəng təyinatı
-  const getIndicatorClass = () => {
+  const renderIndicator = () => {
     switch (indicator) {
       case 'positive':
-        return 'text-green-500';
+        return (
+          <div className="flex items-center text-green-600">
+            <TrendingUp className="mr-1 h-4 w-4" />
+            {percentage && <span>{percentage}%</span>}
+          </div>
+        );
       case 'negative':
-        return 'text-red-500';
+        return (
+          <div className="flex items-center text-red-600">
+            <TrendingDown className="mr-1 h-4 w-4" />
+            {percentage && <span>{percentage}%</span>}
+          </div>
+        );
       case 'warning':
-        return 'text-amber-500';
+        return (
+          <div className="flex items-center text-amber-600">
+            <TrendingUp className="mr-1 h-4 w-4" />
+            {percentage && <span>{percentage}%</span>}
+          </div>
+        );
       default:
-        return 'text-blue-500';
+        return (
+          <div className="flex items-center text-gray-500">
+            <Minus className="mr-1 h-4 w-4" />
+            {percentage && <span>{percentage}%</span>}
+          </div>
+        );
     }
   };
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <div className="flex justify-between">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          {renderIndicator()}
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between">
-          <div className={`text-3xl font-bold ${getIndicatorClass()}`}>
-            {value}
-          </div>
-          {indicator !== 'neutral' && (
-            <div className={`rounded-full w-3 h-3 ${indicator === 'positive' ? 'bg-green-500' : indicator === 'negative' ? 'bg-red-500' : 'bg-amber-500'}`} />
-          )}
-        </div>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className="text-xs text-muted-foreground mt-1">{description}</p>
       </CardContent>
     </Card>
   );

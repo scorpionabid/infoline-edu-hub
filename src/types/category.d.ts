@@ -21,4 +21,5 @@ export interface Category {
 
 export interface CategoryWithColumns extends Category {
   columns?: Column[];
+  completionRate?: number;
 }

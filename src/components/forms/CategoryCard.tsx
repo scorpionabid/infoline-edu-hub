@@ -1,107 +1,112 @@
-
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, ChevronRight, ClipboardList } from 'lucide-react';
-import { CategoryWithColumns } from '@/types/column';
+import { Calendar, CheckCircle, FileText, PenLine, Building } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { format } from 'date-fns';
+import StatusBadge from '../dataEntry/components/StatusBadge';
+import { Category } from '@/types/category';
 
 interface CategoryCardProps {
-  category: CategoryWithColumns;
-  onClick?: () => void;
-  disabled?: boolean;
+  category: Category;
+  onSelect: (category: Category) => void;
 }
 
-const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-  switch (status) {
-    case 'active':
-      return 'default';
-    case 'draft':
-      return 'secondary';
-    case 'inactive':
-      return 'destructive';
-    default:
-      return 'outline';
-  }
-};
-
-const getStatusText = (status: string, t: (key: string) => string): string => {
-  switch (status) {
-    case 'active':
-      return t('active');
-    case 'draft':
-      return t('draft');
-    case 'inactive':
-      return t('inactive');
-    default:
-      return status;
-  }
-};
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const getCompletionVariant = (completion: number): string => {
-  if (completion >= 75) return 'success';
-  if (completion >= 50) return 'warning';
-  return 'danger';
-};
-
-const CategoryCard: React.FC<CategoryCardProps> = ({ category, onClick, disabled = false }) => {
+export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onSelect }) => {
   const { t } = useLanguage();
-  
-  // Varsayılan olarak ya bir completionRate ya da 0 değeri kullan
-  const completionRate = category.completionRate !== undefined ? category.completionRate : 0;
-  
-  return (
-    <Card className={`overflow-hidden transition-all duration-200 ${disabled ? 'opacity-70' : 'hover:shadow-md cursor-pointer'}`} onClick={disabled ? undefined : onClick}>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg line-clamp-2">{category.name}</CardTitle>
-          <Badge variant={getStatusVariant(category.status || 'active')}>
-            {getStatusText(category.status || 'active', t)}
-          </Badge>
+
+  const status = category.status || 'draft';
+
+  const statusClass =
+    status === "approved"
+      ? "border-green-500"
+      : status === "active"
+        ? "border-blue-500"
+        : status === "draft"
+          ? "border-gray-500"
+          : "border-red-500";
+
+return (
+  <Card className={`hover:shadow-md transition-shadow ${statusClass}`}>
+    <CardHeader className="pb-1">
+      <div className="flex justify-between items-start">
+        <div className="space-y-1">
+          <CardTitle className="text-lg font-semibold">{category.name}</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">
+            {category.description || t('noDescription')}
+          </CardDescription>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {category.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">{category.description}</p>
-          )}
-          
-          <div className="flex items-center text-sm text-muted-foreground">
-            <ClipboardList className="h-4 w-4 mr-1" />
-            <span>{category.columns?.length || 0} {t('columns')}</span>
-          </div>
-          
+        <div className="flex flex-col items-end">
           {category.deadline && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4 mr-1" />
-              <span>{t('deadline')}: {format(new Date(category.deadline), 'dd.MM.yyyy')}</span>
-            </div>
-          )}
-          
-          <div className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span>{t('completion')}</span>
-              <span className={completionRate > 70 ? 'text-green-600' : completionRate > 30 ? 'text-amber-600' : 'text-red-600'}>
-                {completionRate}%
+            <div className="flex items-center mb-2">
+              <Calendar className="w-4 h-4 mr-1 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {new Date(category.deadline).toLocaleDateString()}
               </span>
             </div>
-            <Progress value={completionRate} className="h-2" />
+          )}
+
+          <div className="flex items-center space-x-1">
+            <StatusBadge status={status} />
           </div>
         </div>
-      </CardContent>
-      <CardFooter>
-        <Button variant="ghost" className="w-full justify-between" disabled={disabled}>
-          {/* active və approved fərqli tipləri müqayisə etməməlidir */}
-          {category.status === 'active' ? t('fillForm') : t('viewDetails')}
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-};
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <div className="text-sm">
+            <span className="font-medium">{category.column_count || 0}</span>{" "}
+            <span className="text-muted-foreground">{t('columns')}</span>
+          </div>
+          <div className="text-sm">
+            <span className="font-medium">{category.completionRate !== undefined ? category.completionRate : 0}%</span>{" "}
+            <span className="text-muted-foreground">{t('completed')}</span>
+          </div>
+        </div>
 
-export default CategoryCard;
+        <Progress 
+          value={category.completionRate !== undefined ? category.completionRate : 0} 
+          className="h-2 bg-muted" 
+        />
+      </div>
+
+      <div className="mt-4 flex justify-between items-center">
+        <div>
+          {category.assignment === 'sectors' && (
+            <Badge variant="secondary" className="text-xs mr-2">
+              <Building className="w-3 h-3 mr-1" />
+              {t('sectors')}
+            </Badge>
+          )}
+          {category.status === "active" && (
+            <Badge variant="secondary" className="text-xs bg-green-50 text-green-700 border-green-200">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              {t('active')}
+            </Badge>
+          )}
+        </div>
+
+        <Button 
+          size="sm" 
+          className="px-3"
+          onClick={() => onSelect(category)}
+        >
+          {status === "approved" ? (
+            <>
+              <FileText className="w-4 h-4 mr-1" />
+              {t('viewDetails')}
+            </>
+          ) : (
+            <>
+              <PenLine className="w-4 h-4 mr-1" />
+              {t('fillData')}
+            </>
+          )}
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+};

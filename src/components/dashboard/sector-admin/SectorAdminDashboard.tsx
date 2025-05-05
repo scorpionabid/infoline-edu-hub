@@ -6,7 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import SectorStatsCard from './SectorStatsCard';
 import SchoolsTable from './SchoolsTable';
 import { SectorAdminDashboardData, SchoolStat } from '@/types/dashboard';
-import { EnhancedApprovalDialog } from '../approval/EnhancedApprovalDialog';
+import EnhancedApprovalDialog from '../approval/EnhancedApprovalDialog';
 
 interface SectorAdminDashboardProps {
   data: SectorAdminDashboardData;
@@ -107,12 +107,6 @@ export const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data
         <CardContent>
           <SchoolsTable 
             schools={data.schools.length > 0 ? data.schools : mockSchools} 
-            onViewDetails={(school) => {
-              console.log('Məktəb detalları:', school);
-            }}
-            onViewSubmissions={(school) => {
-              console.log('Məktəb təqdimetmələri:', school);
-            }}
           />
         </CardContent>
       </Card>
@@ -129,3 +123,5 @@ export const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data
     </div>
   );
 };
+
+export default SectorAdminDashboard;

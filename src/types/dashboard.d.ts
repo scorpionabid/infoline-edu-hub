@@ -8,6 +8,8 @@ export interface PendingApprovalItem {
   submittedBy: string;
   submittedAt: string;
   status: 'pending' | 'approved' | 'rejected';
+  schoolId?: string;
+  categoryId?: string;
 }
 
 export interface RegionStats {
@@ -36,6 +38,15 @@ export interface SchoolStats {
   completionRate: number;
   formsCompleted: number;
   formsTotal: number;
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  region: string;
+  formStatus: string;
+  lastUpdate: string;
+  completion: number;
 }
 
 export interface SectorStats {
@@ -81,6 +92,8 @@ export interface SuperAdminDashboardData extends BaseDashboardData {
   regions?: RegionStats[];
   sectors?: SectorStats[];
   pendingApprovals?: PendingApprovalItem[];
+  notifications?: Notification[];
+  completionRate: number;
 }
 
 export interface RegionAdminDashboardData extends BaseDashboardData {
@@ -94,18 +107,18 @@ export interface RegionAdminDashboardData extends BaseDashboardData {
   schoolStats: SchoolStats[];
   pendingApprovals?: PendingApprovalItem[];
   formsByStatus?: FormStatusStats;
+  notifications?: Notification[];
+  completionRate: number;
 }
 
 export interface SectorAdminDashboardData extends BaseDashboardData {
-  stats: {
+  statistics: {
     totalSchools: number;
-    totalForms: number;
-    totalCategories: number;
-    pendingApprovals: number;
+    activeSchools: number;
+    pendingSubmissions: number;
+    completedSubmissions: number;
   };
-  schoolStats: SchoolStats[];
-  pendingApprovals?: PendingApprovalItem[];
-  recentActivities?: any[];
+  schools: SchoolStat[];
 }
 
 export interface SchoolAdminDashboardData extends BaseDashboardData {
@@ -115,4 +128,5 @@ export interface SchoolAdminDashboardData extends BaseDashboardData {
   recentForms: FormItem[];
   pendingForms?: FormItem[];
   completedForms?: FormItem[];
+  completionRate: number;
 }
