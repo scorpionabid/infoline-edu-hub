@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Copy, Edit, MoreVertical, Trash2, FileText } from 'lucide-react';
+import { Edit, MoreVertical, Trash2 } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Column, COLUMN_TYPE_DEFINITIONS } from '@/types/column.d';
+import { Column, columnTypes } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 import { Icons } from '@/components/ui/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -148,7 +148,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
             </TableHeader>
             <TableBody>
               {columns.map((column) => {
-                const typeInfo = COLUMN_TYPE_DEFINITIONS[column.type] || { 
+                const typeInfo = columnTypes[column.type] || { 
                   label: column.type, 
                   description: t('unknownColumnType'),
                   icon: 'circle'

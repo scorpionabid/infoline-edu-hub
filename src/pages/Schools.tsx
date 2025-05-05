@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
-import SidebarLayout from '@/components/layout/SidebarLayout';
 import SchoolsContainer from '@/components/schools/SchoolsContainer';
 import { Loader2 } from 'lucide-react';
 import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
@@ -184,34 +182,33 @@ const Schools = () => {
       <Helmet>
         <title>{t('schools')} | InfoLine</title>
       </Helmet>
-      <SidebarLayout>
-        <div className="container mx-auto py-6">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center h-64">
-              <p className="text-destructive text-lg">{t('errorOccurred')}</p>
-              <p className="text-muted-foreground">{t('couldNotLoadSchools')}</p>
-            </div>
-          ) : (
-            <SchoolsContainer
-              schools={schools || []}
-              regions={regions || []}
-              sectors={sectors || []}
-              isLoading={loading || sectorsLoading}
-              onRefresh={fetchSchools}
-              onCreate={handleCreateSchool}
-              onEdit={handleEditSchool}
-              onDelete={handleDeleteSchool}
-              onAssignAdmin={handleAssignAdmin}
-              regionNames={regionNames}
-              sectorNames={sectorNames}
-            />
-          )}
-        </div>
-      </SidebarLayout>
+
+      <div className="container mx-auto py-6">
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center h-64">
+            <p className="text-destructive text-lg">{t('errorOccurred')}</p>
+            <p className="text-muted-foreground">{t('couldNotLoadSchools')}</p>
+          </div>
+        ) : (
+          <SchoolsContainer
+            schools={schools || []}
+            regions={regions || []}
+            sectors={sectors || []}
+            isLoading={loading || sectorsLoading}
+            onRefresh={fetchSchools}
+            onCreate={handleCreateSchool}
+            onEdit={handleEditSchool}
+            onDelete={handleDeleteSchool}
+            onAssignAdmin={handleAssignAdmin}
+            regionNames={regionNames}
+            sectorNames={sectorNames}
+          />
+        )}
+      </div>
     </>
   );
 };

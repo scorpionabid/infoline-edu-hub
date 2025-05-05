@@ -1,6 +1,4 @@
-
 import React, { useState } from 'react';
-import SidebarLayout from '@/components/layout/SidebarLayout';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import SettingsTabs from '@/components/settings/SettingsTabs';
 import { useLanguage } from '@/context/LanguageContext';
@@ -55,7 +53,7 @@ const Settings: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast.success(t("dataExported"), {
-        description: t("dataExportedSuccess"),
+        description: t("dataExportSuccess"),
       });
     } catch (error) {
       console.error("Error exporting data:", error);
@@ -66,40 +64,28 @@ const Settings: React.FC = () => {
       setIsExportingData(false);
     }
   };
-  
+
   const handleImportData = async () => {
-    // Create file input and trigger click
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.xlsx, .xls, .csv';
-    
-    fileInput.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
+    setIsImportingData(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      setIsImportingData(true);
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        toast.success(t("dataImported"), {
-          description: t("dataImportedSuccess"),
-        });
-      } catch (error) {
-        console.error("Error importing data:", error);
-        toast.error(t("dataImportFailed"), {
-          description: t("dataImportFailedDesc"),
-        });
-      } finally {
-        setIsImportingData(false);
-      }
-    };
-    
-    fileInput.click();
+      toast.success(t("dataImported"), {
+        description: t("dataImportSuccess"),
+      });
+    } catch (error) {
+      console.error("Error importing data:", error);
+      toast.error(t("dataImportFailed"), {
+        description: t("dataImportFailedDesc"),
+      });
+    } finally {
+      setIsImportingData(false);
+    }
   };
-  
+
   return (
-    <SidebarLayout>
+    <>
       <div className="container max-w-5xl mx-auto py-6 px-4">
         <SettingsHeader />
         <Separator className="my-6" />
@@ -220,7 +206,7 @@ const Settings: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </SidebarLayout>
+    </>
   );
 };
 

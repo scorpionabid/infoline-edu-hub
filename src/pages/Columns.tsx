@@ -19,7 +19,6 @@ import { useColumns } from '@/hooks/columns';
 import ColumnList from '@/components/columns/ColumnList';
 import EmptyState from '@/components/common/EmptyState';
 import { useCategories } from '@/hooks/categories/useCategories';
-import SidebarLayout from '@/components/layout/SidebarLayout';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useColumnMutations } from '@/hooks/columns/useColumnMutations';
@@ -222,7 +221,7 @@ const Columns: React.FC = () => {
   };
 
   return (
-    <SidebarLayout>
+    <div className="container mx-auto py-6 space-y-6">
       <PageHeader
         title={t('columnsPageTitle')}
         description={t('columnsPageDescription')}
@@ -353,7 +352,7 @@ const Columns: React.FC = () => {
           isSubmitting={isSubmitting}
         />
       )}
-    </SidebarLayout>
+    </div>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
@@ -24,10 +23,10 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       <h2 className="text-2xl font-bold">Sistem Dashboard</h2>
       
-      <Grid columns={4} className="gap-6">
+      <Grid columns={4} className="gap-4">
         <StatsCard
           title="Regionlar"
           value={data.stats.totalRegions}
@@ -62,7 +61,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
         />
       </Grid>
       
-      <Grid columns={3} className="gap-6">
+      <Grid columns={3} className="gap-4">
         <StatsCard
           title="Təsdiq gözləyən"
           value={pendingCount}
@@ -89,7 +88,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
         />
       </Grid>
 
-      <Grid columns={2} className="gap-6">
+      <Grid columns={2} className="gap-4">
         <CompletionRateCard
           completionRate={data.completionRate || 0}
           title="Ümumi Tamamlanma"

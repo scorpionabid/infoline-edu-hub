@@ -1,6 +1,4 @@
-
 import React, { useState } from 'react';
-import SidebarLayout from '@/components/layout/SidebarLayout';
 import UserList from '@/components/users/UserList';
 import UserHeader from '@/components/users/UserHeader';
 import { useAuth } from '@/context/auth';
@@ -49,28 +47,29 @@ const Users = () => {
       return { sectorId, role: ['schooladmin'] };
     }
     if (isRegionAdmin && regionId) {
-      return { regionId };
+      return { regionId, role: ['sectoradmin', 'schooladmin'] };
     }
-    return undefined;
+    return {};
   })();
 
   return (
-    <SidebarLayout>
+    <>
       <Helmet>
-        <title>{t('usersManagement')} | InfoLine</title>
+        <title>{t('users')} | InfoLine</title>
       </Helmet>
+
       <div className="container mx-auto py-6 space-y-6">
         <UserHeader 
           entityTypes={entityTypes} 
-          onUserAddedOrEdited={handleUserAddedOrEdited}
-          filterParams={filterParams}
+          onUserAddedOrEdited={handleUserAddedOrEdited} 
         />
+
         <UserList 
           refreshTrigger={refreshTrigger} 
           filterParams={filterParams}
         />
       </div>
-    </SidebarLayout>
+    </>
   );
 };
 

@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { FormControl } from '@/components/ui/form';
-import { ColumnType, COLUMN_TYPE_DEFINITIONS } from '@/types/column';
+import { ColumnType, columnTypes } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -57,7 +56,7 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange
   const { t } = useLanguage();
 
   // Bütün mövcud tipləri əldə edirik
-  const columnTypes = Object.entries(COLUMN_TYPE_DEFINITIONS).map(([type, definition]) => ({
+  const availableColumnTypes = Object.entries(columnTypes).map(([type, definition]) => ({
     value: type as ColumnType,
     label: definition.label,
     description: definition.description,
@@ -75,8 +74,8 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange
           <Label className="text-sm font-medium mb-2 block">{t("primaryTypes")}</Label>
           <div className="grid grid-cols-3 gap-2">
             {primaryTypes.map((type) => {
-              const typeInfo = COLUMN_TYPE_DEFINITIONS[type];
-              const IconComponent = iconComponents[typeInfo.icon];
+              const typeInfo = availableColumnTypes.find((columnType) => columnType.value === type);
+              const IconComponent = typeInfo && iconComponents[typeInfo.icon];
               return (
                 <button
                   key={type}
@@ -91,7 +90,7 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange
                   )}
                 >
                   {IconComponent && <IconComponent className="h-5 w-5 mb-1" />}
-                  <span className="text-xs">{typeInfo.label}</span>
+                  <span className="text-xs">{typeInfo?.label}</span>
                 </button>
               );
             })}
@@ -102,8 +101,8 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange
           <Label className="text-sm font-medium mb-2 block">{t("advancedTypes")}</Label>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {advancedTypes.map((type) => {
-              const typeInfo = COLUMN_TYPE_DEFINITIONS[type];
-              const IconComponent = iconComponents[typeInfo.icon];
+              const typeInfo = availableColumnTypes.find((columnType) => columnType.value === type);
+              const IconComponent = typeInfo && iconComponents[typeInfo.icon];
               return (
                 <button
                   key={type}
@@ -118,7 +117,7 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange
                   )}
                 >
                   {IconComponent && <IconComponent className="h-4 w-4 mb-1" />}
-                  <span className="text-xs">{typeInfo.label}</span>
+                  <span className="text-xs">{typeInfo?.label}</span>
                 </button>
               );
             })}

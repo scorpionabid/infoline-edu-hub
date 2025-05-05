@@ -1,8 +1,6 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSectorsStore } from '@/hooks/useSectorsStore';
-import SidebarLayout from '@/components/layout/SidebarLayout';
 import { SectorDialog } from '@/components/sectors/SectorDialog';
 import { SectorAdminDialog } from '@/components/sectors/SectorAdminDialog';
 import SectorHeader from '@/components/sectors/SectorHeader';
@@ -153,7 +151,7 @@ const Sectors = () => {
   }
 
   return (
-    <SidebarLayout>
+    <>
       <Helmet>
         <title>{t('sectors')} | InfoLine</title>
       </Helmet>
@@ -201,11 +199,12 @@ const Sectors = () => {
         <SectorAdminDialog
           open={openAdminDialog}
           setOpen={setOpenAdminDialog}
-          sector={createdSector || selectedSector}
-          onSuccess={handleAdminAssigned}
+          sector={selectedSector}
+          createdSector={createdSector}
+          onAdminAssigned={handleAdminAssigned}
         />
       </div>
-    </SidebarLayout>
+    </>
   );
 };
 

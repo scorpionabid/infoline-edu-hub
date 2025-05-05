@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
@@ -34,7 +33,6 @@ import { format } from 'date-fns';
 import { CalendarIcon } from '@radix-ui/react-icons';
 import { useCategoryFilters } from '@/hooks/categories/useCategoryFilters';
 import { useCategoryOperations, AddCategoryFormData } from '@/hooks/categories/useCategoryOperations';
-import SidebarLayout from '@/components/layout/SidebarLayout';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { toast } from 'sonner';
 
@@ -150,52 +148,27 @@ const Categories: React.FC = () => {
   };
 
   const content = (
-    <div>
-      <PageHeader
-        title={t('categories')}
-        description={t('availableCategories')}
-      >
+    <div className="container mx-auto py-6 space-y-6">
+      <PageHeader 
+        title={t('categories')} 
+        description={t('categoriesDescription')}
+      />
+
+      <div className="flex justify-between items-center mb-4">
         {canManageCategories && (
           <Button onClick={handleOpenAddDialog}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4 mr-2" />
             {t('addCategory')}
           </Button>
         )}
-      </PageHeader>
 
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
-        <Input
-          type="search"
-          placeholder={t('search')}
-          className="max-w-sm"
-          value={searchQuery}
-          onChange={handleSearchChange}
-        />
-
-        <div className="flex flex-col md:flex-row gap-2">
-          <Label htmlFor="status">{t('status')}:</Label>
+        <div className="flex space-x-4">
           <Select 
-            value={filter.status} 
-            onValueChange={(value) => handleFilterChange({ status: value as any })}
+            value={filter.type} 
+            onValueChange={(value) => handleFilterChange({ type: value as any })}
           >
-            <SelectTrigger id="status">
-              <SelectValue placeholder={t('all')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('all')}</SelectItem>
-              <SelectItem value="active">{t('active')}</SelectItem>
-              <SelectItem value="inactive">{t('inactive')}</SelectItem>
-              <SelectItem value="draft">{t('draft')}</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Label htmlFor="assignment">{t('assignment')}:</Label>
-          <Select 
-            value={filter.assignment} 
-            onValueChange={(value) => handleFilterChange({ assignment: value as any })}
-          >
-            <SelectTrigger id="assignment">
-              <SelectValue placeholder={t('all')} />
+            <SelectTrigger>
+              <SelectValue placeholder={t('type')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('all')}</SelectItem>
@@ -203,7 +176,6 @@ const Categories: React.FC = () => {
             </SelectContent>
           </Select>
 
-          <Label htmlFor="deadline">{t('deadline')}:</Label>
           <Select 
             value={filter.deadline} 
             onValueChange={(value) => handleFilterChange({ deadline: value as any })}
@@ -307,9 +279,9 @@ const Categories: React.FC = () => {
   );
 
   return (
-    <SidebarLayout>
+    <>
       {content}
-    </SidebarLayout>
+    </>
   );
 };
 
