@@ -1,18 +1,23 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/auth';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import LoginForm from '@/components/auth/LoginForm';
 import LoginContainer from '@/components/auth/LoginContainer';
 import LoginHeader from '@/components/auth/LoginHeader';
 import LoadingScreen from '@/components/auth/LoadingScreen';
 
+/**
+ * Login səhifəsi - istifadəçi autentifikasiyasını idarə edir
+ */
 const Login = () => {
-  const { isAuthenticated, isLoading, error, clearError, user } = useAuth();
+  // Global auth state
+  const { user, session, isAuthenticated, isLoading, error, clearError } = useAuthStore();
+  
+  // Naviqasiya və yerləşmə
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
-  const [redirectAttempted, setRedirectAttempted] = useState(false);
   
   // Debug məlumatları
   useEffect(() => {
@@ -21,31 +26,28 @@ const Login = () => {
       isLoading, 
       userExists: !!user,
       userRole: user?.role || 'undefined',
-      redirectAttempted
+      sessionExists: !!session,
+      fromPath: from
     });
-  }, [isAuthenticated, isLoading, user, redirectAttempted]);
+  }, [isAuthenticated, isLoading, user, session, from]);
   
   // İstifadəçi autentifikasiya olduqda yönləndirmə
   useEffect(() => {
-    // Əgər hələ yüklənmə prosesindədirsə, çıxırıq
     if (isLoading) {
       console.log('Loading state active, waiting...');
       return;
     }
     
-    // İstifadəçi artıq autentifikasiya olunubsa və user məlumatları varsa, dashboard-a yönləndiririk
-    if (isAuthenticated && user && user.role && !redirectAttempted) {
+    // İstifadəçi artıq autentifikasiya olunubsa, dashboard-a yönləndirilir
+    if (isAuthenticated && user?.id) {
       console.log(`İstifadəçi autentifikasiya olunub, rolu: ${user.role}, yönləndirilir: ${from}`);
-      setRedirectAttempted(true); // Yönləndirməni bir dəfə izləyirik
       
-      // Bir qısa gecikmə əlavə edirik ki, istifadəçi məlumatları tam yüklənsin
-      const redirectTimer = setTimeout(() => {
+      // Qısa gecikmə əlavə edirik amma daha optimal
+      setTimeout(() => {
         navigate(from, { replace: true });
-      }, 300);
-      
-      return () => clearTimeout(redirectTimer);
+      }, 100);
     }
-  }, [isAuthenticated, isLoading, navigate, from, user, redirectAttempted]);
+  }, [isAuthenticated, isLoading, navigate, from, user]);
 
   // Loading vəziyyətində yüklənmə göstəricisi
   if (isLoading) {

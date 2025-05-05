@@ -1,10 +1,10 @@
-
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/context/auth";
+import { useAuthStore } from "@/hooks/auth/useAuthStore";
 import { usePermissions } from "@/hooks/auth/usePermissions";
 import AccessDenied from "@/components/AccessDenied";
 import SidebarLayout from "@/components/layout/SidebarLayout";
+import LoadingScreen from "@/components/auth/LoadingScreen";
 
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -37,22 +37,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
   redirectUrl = "/login" 
 }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuthStore();
   const { userRole } = usePermissions();
   const location = useLocation();
   
   // İlk yüklənmə zamanı və hər location dəyişdikdə 
-  // scrollu yuxarı qaytarırıq (mirror effect problemini həll etmək üçün)
+  // scrollu yuxarı qaytarırıq
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
   
+  // Yüklənmə halında LoadingScreen göstəririk
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingScreen message="Zəhmət olmasa gözləyin..." />;
   }
   
   // İstifadəçi autentifikasiya olmayıbsa, login səhifəsinə yönləndiririk
@@ -74,26 +71,25 @@ interface PublicRouteProps {
 }
 
 const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
   
   // İlk yüklənmə zamanı və hər location dəyişdikdə 
-  // scrollu yuxarı qaytarırıq (mirror effect problemini həll etmək üçün)
+  // scrollu yuxarı qaytarırıq
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
   
+  // Yüklənmə halında LoadingScreen göstəririk
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingScreen message="Zəhmət olmasa gözləyin..." />;
   }
   
   // İstifadəçi artıq autentifikasiya olunubsa və restricted route-dadırsa, dashboard-a yönləndiririk
   if (isAuthenticated && restricted) {
-    return <Navigate to="/dashboard" replace />;
+    // Əvvəlki marşrut varsa, ona qayıdırıq, əks halda dashboard-a yönləndiririk
+    const from = location.state?.from?.pathname || "/dashboard";
+    return <Navigate to={from} replace />;
   }
   
   return <>{children}</>;

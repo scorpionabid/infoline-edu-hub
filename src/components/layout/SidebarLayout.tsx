@@ -1,20 +1,21 @@
 
 import React, { ReactNode, useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/auth';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { ChevronLeft, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SidebarNav } from './SidebarNav';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import Header from './Header';
+import LoadingScreen from '@/components/auth/LoadingScreen';
 
 export interface SidebarLayoutProps {
   children?: ReactNode;
 }
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { t } = useLanguage();
   const [isMobile, setIsMobile] = useState(false);
@@ -46,7 +47,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
   // İstifadəçi autentifikasiya olmayıbsa, istifadəçini login səhifəsinə yönləndiririk
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      // Yönləndirmə zamanı cari səhifəni saxlayırıq
+      // Bir dəfə yoxlayırıq və dərhal çıxırıq
       navigate('/login', { state: { from: window.location.pathname } });
     }
   }, [isAuthenticated, isLoading, navigate]);
@@ -65,11 +66,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
 
   // Yüklənmə halında spinner göstəririk
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingScreen message="Zəhmət olmasa gözləyin..." />;
   }
   
   // İstifadəçi autentifikasiya olmayıbsa, sadəcə çıxış komponentini qaytarırıq
@@ -77,29 +74,25 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
     return <Outlet />;
   }
 
-  // Sidebarın mobillik əsasında görünməsini təmin edən overlay
-  const sidebarOverlay = isMobile && isSidebarOpen && (
-    <div 
-      className="fixed inset-0 bg-black/50 z-30"
-      onClick={() => setIsSidebarOpen(false)}
-    />
-  );
-
   return (
-    <div className="min-h-screen flex flex-col w-full">
+    <div className="min-h-screen flex flex-col w-full bg-background">
       <Header />
       
-      <div className="flex-1 flex">
-        {/* Overlay arxa fonu */}
-        {sidebarOverlay}
+      <div className="flex-1 flex relative">
+        {/* Mobil overlay arxa fonu */}
+        {isMobile && isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-30"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
         
         {/* Sidebar */}
-        <div
+        <aside
           className={cn(
             "bg-background border-r z-40 transition-all duration-300 ease-in-out",
             isSidebarOpen ? "w-64" : "w-[70px]",
-            isMobile ? "fixed h-full" : "h-full relative",
-            isMobile && !isSidebarOpen && "hidden"
+            isMobile ? (isSidebarOpen ? "fixed h-full" : "hidden") : "h-full"
           )}
         >
           <div className="flex items-center justify-between p-4">
@@ -116,7 +109,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
             isSidebarOpen={isSidebarOpen}
             onItemClick={handleItemClick}
           />
-        </div>
+        </aside>
 
         {/* Mobile sidebar toggle */}
         {isMobile && !isSidebarOpen && (

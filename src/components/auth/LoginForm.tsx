@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
-import { useAuth } from '@/context/auth';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,7 +30,7 @@ interface FormValues {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
-  const { login, isLoading, isAuthenticated } = useAuth();
+  const { login, isLoading, isAuthenticated } = useAuthStore();
   const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
@@ -41,19 +41,24 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
     formState: { errors },
     setError: setFormError,
     reset
-  } = useForm<FormValues>();
+  } = useForm<FormValues>({
+    defaultValues: {
+      email: '',
+      password: ''
+    }
+  });
 
   // Hər dəfə giriş formu göstərildikdə xəta mesajlarını təmizləyək
   useEffect(() => {
     if (error) {
       clearError();
     }
-    
-    // Əgər istifadəçi artıq autentifikasiya olunubsa, formu deaktiv edin
-    if (isAuthenticated) {
-      setLoginInProgress(true);
-    }
-  }, [error, clearError, isAuthenticated]);
+  }, [error, clearError]);
+  
+  // İstifadəçi autentifikasiya olunduqda formu deaktiv edirik
+  useEffect(() => {
+    setLoginInProgress(isAuthenticated);
+  }, [isAuthenticated]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -66,7 +71,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       if (success) {
         console.log('Giriş uğurlu oldu, autentifikasiya tamamlandı');
         toast.success(t('loginSuccess'));
-        // Birbaşa yönləndirmə etmirik - AuthContext vasitəsilə vəziyyət dəyişikliyi gözlənilir
         reset(); // Form sahələrini təmizləyirik
       } else {
         setLoginInProgress(false);
@@ -115,7 +119,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
               type="email"
               placeholder="name@example.com"
               autoComplete="email"
-              disabled={loginInProgress || isLoading || isAuthenticated}
+              disabled={loginInProgress || isLoading}
               {...register('email', { 
                 required: t('emailRequired'),
                 pattern: {
@@ -137,7 +141,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
-                disabled={loginInProgress || isLoading || isAuthenticated}
+                disabled={loginInProgress || isLoading}
                 {...register('password', { 
                   required: t('passwordRequired'),
                   minLength: {
@@ -152,7 +156,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
                 className="absolute inset-y-0 right-0 px-3 flex items-center"
                 onClick={togglePasswordVisibility}
                 tabIndex={-1}
-                disabled={loginInProgress || isLoading || isAuthenticated}
+                disabled={loginInProgress || isLoading}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -171,7 +175,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
           <Button 
             type="submit" 
             className="w-full"
-            disabled={loginInProgress || isLoading || isAuthenticated}
+            disabled={loginInProgress || isLoading}
           >
             {(loginInProgress || isLoading) ? (
               <>
