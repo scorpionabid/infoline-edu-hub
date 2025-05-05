@@ -13,8 +13,8 @@ interface RegionAdminDashboardProps {
 
 export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
   // Sektör statistikası üçün default dəyərlər təyin edirik
-  const sectorStatsTotal = data.sectorStats?.total || data.stats.sectors;
-  const sectorStatsActive = data.sectorStats?.active || data.stats.sectors;
+  const sectorStatsTotal = data.sectorStats?.total || (data.stats?.sectors || 0);
+  const sectorStatsActive = data.sectorStats?.active || (data.stats?.sectors || 0);
   const activePercentage = sectorStatsTotal > 0 ? 
     Math.round((sectorStatsActive / sectorStatsTotal) * 100) : 
     100;
@@ -31,7 +31,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
       <Grid columns={3} className="gap-6">
         <StatsCard
           title="Sektorlar"
-          value={data.stats.sectors}
+          value={data.stats?.sectors}
           icon="S"
           description="Toplam sektor sayı"
           trend={`${activePercentage}% aktiv`}
@@ -39,7 +39,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
         />
         <StatsCard
           title="Məktəblər"
-          value={data.stats.schools}
+          value={data.stats?.schools}
           icon="M"
           description="Toplam məktəb sayı"
           trend={`${data.schoolStats?.incomplete || 0} tamamlanmamış`}
@@ -47,7 +47,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
         />
         <StatsCard
           title="İstifadəçilər"
-          value={data.stats.users}
+          value={data.stats?.users}
           icon="U"
           description="Toplam istifadəçi sayı"
           trend="Tam tamamlanıb"

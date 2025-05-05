@@ -7,6 +7,7 @@ import { SchoolAdminDashboardData } from '@/types/dashboard';
 import { Grid } from '@/components/ui/grid';
 import { CheckCircle, AlertTriangle, Clock, XCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { adaptDashboardNotificationToApp } from '@/types/notification';
 
 interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
@@ -59,6 +60,11 @@ export function SchoolAdminDashboard({
       </div>
     );
   }
+
+  // Bildirişləri standart formata çeviririk
+  const adaptedNotifications = Array.isArray(data.notifications) 
+    ? data.notifications.map(notification => adaptDashboardNotificationToApp(notification))
+    : [];
   
   return (
     <div className="space-y-6">
@@ -105,7 +111,7 @@ export function SchoolAdminDashboard({
         />
         <NotificationsCard 
           title={t('notifications')} 
-          notifications={data.notifications}
+          notifications={adaptedNotifications}
         />
       </Grid>
     </div>

@@ -15,7 +15,8 @@ export interface FormStatusCount {
 
 export interface FormItem {
   id: string;
-  name: string;
+  name?: string;
+  title?: string;
   status: FormStatus;
   deadline?: string;
   submittedAt?: string;
@@ -66,7 +67,7 @@ export interface PendingApprovalItem {
 
 // DashboardData interfeysi üçün approvalRate əlavə edək
 export interface DashboardData {
-  approvalRate: number;
+  approvalRate?: number;
   // ... əvvəlki xassələr
 }
 
@@ -82,21 +83,27 @@ export interface Report {
   title: string;
   description?: string;
   type: ReportType;
-  content: any;
+  content?: any;
   filters?: any;
   created_by?: string;
   created_at: string;
   updated_at?: string;
-  status: string;
+  status?: string;
   is_template?: boolean;
   shared_with?: string[];
-  name: string;
-  summary: string;
+  name?: string;
+  summary?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  author?: string;
+  last_updated?: string;
 }
 
 // ReportPreviewDialogProps interfeysi əlavə edək
 export interface ReportPreviewDialogProps {
-  open: boolean;
+  open?: boolean;
+  isOpen?: boolean;
   onClose: () => void;
   reportId: string;
   reportTitle: string;
@@ -105,8 +112,10 @@ export interface ReportPreviewDialogProps {
 
 // PageHeaderProps interfeysi əlavə edək
 export interface PageHeaderProps {
-  heading: string;
-  subheading: string;
+  heading?: string;
+  subheading?: string;
+  title?: string;
+  subtitle?: string;
 }
 
 // RegionStats interfeysi əlavə edək

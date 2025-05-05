@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,39 +20,39 @@ export const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDow
   const { t } = useLanguage();
   
   const getReportIcon = () => {
-    if (report.type === ReportType.STATISTICS) {
+    if (report.type === ReportType.STATISTICS || report.type === 'statistics') {
       return <BarChart3 className="h-5 w-5 text-primary" />;
     }
-    else if (report.type === ReportType.COMPLETION) {
+    else if (report.type === ReportType.COMPLETION || report.type === 'completion') {
       return <PieChart className="h-5 w-5 text-primary" />;
     }
-    else if (report.type === ReportType.COMPARISON) {
+    else if (report.type === ReportType.COMPARISON || report.type === 'comparison') {
       return <LineChart className="h-5 w-5 text-primary" />;
     }
-    else if (report.type === ReportType.COLUMN) {
+    else if (report.type === ReportType.COLUMN || report.type === 'column') {
       return <Table2 className="h-5 w-5 text-primary" />;
     }
     return <BarChart3 className="h-5 w-5 text-primary" />;
   };
   
   const getReportTypeBadge = () => {
-    if (report.type === ReportType.STATISTICS) {
+    if (report.type === ReportType.STATISTICS || report.type === 'statistics') {
       return <Badge variant="outline">Statistika</Badge>;
     }
-    else if (report.type === ReportType.COMPLETION) {
+    else if (report.type === ReportType.COMPLETION || report.type === 'completion') {
       return <Badge variant="outline">Tamamlanma</Badge>;
     }
-    else if (report.type === ReportType.COMPARISON) {
+    else if (report.type === ReportType.COMPARISON || report.type === 'comparison') {
       return <Badge variant="outline">Müqayisə</Badge>;
     }
-    else if (report.type === ReportType.COLUMN) {
+    else if (report.type === ReportType.COLUMN || report.type === 'column') {
       return <Badge variant="outline">Sütun</Badge>;
     }
     return <Badge variant="outline">Hesabat</Badge>;
   };
   
-  const formattedDate = report.created_at 
-    ? format(new Date(report.created_at), 'dd.MM.yyyy')
+  const formattedDate = report.created_at || report.createdAt 
+    ? format(new Date(report.created_at || report.createdAt || ''), 'dd.MM.yyyy')
     : '';
   
   return (
@@ -77,14 +78,14 @@ export const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDow
           
           <div className="flex justify-between">
             <span className="text-muted-foreground">{t('author')}:</span>
-            <span className="font-medium">{report.author || t('system')}</span>
+            <span className="font-medium">{report.author || report.createdBy || report.created_by || t('system')}</span>
           </div>
           
-          {report.last_updated && (
+          {(report.last_updated || report.updatedAt || report.updated_at) && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('lastUpdated')}:</span>
               <span className="font-medium">
-                {format(new Date(report.last_updated), 'dd.MM.yyyy')}
+                {format(new Date(report.last_updated || report.updatedAt || report.updated_at || ''), 'dd.MM.yyyy')}
               </span>
             </div>
           )}

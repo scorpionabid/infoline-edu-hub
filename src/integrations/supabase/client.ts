@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase konfiqurasiyası
@@ -327,61 +328,57 @@ export const supabaseWithRetry = {
       
       // Order funksiyası düzəldilib - parametrlər düzgün işlənir və zəncirlənmə dəstəklənir
       order: function(column: string, options?: { ascending?: boolean }) {
-        console.log(`Ordering ${table} by ${column} with options:`, options);
         try {
-          // Supabase sorğusunu yaradaq
+          // Orijinal sorğunu yaradaq
           const query = originalFrom.order(column, options);
           
-          // Modifiyə edilmiş select metodunu əlavə edək
-          const wrappedSelect = async (...args: any[]) => {
-            try {
-              // Keş açarı yaradaq (sıralama parametrləri ilə)
-              const orderKey = `${column}_${options?.ascending !== false ? 'asc' : 'desc'}`;
-              const cacheKey = `cache_${table}_order_${orderKey}`;
-              
-              // Keşə baxaq
-              const cachedData = localStorage.getItem(cacheKey);
-              const cacheTime = localStorage.getItem(`${cacheKey}_time`);
-              
-              if (cachedData && cacheTime) {
-                const cacheAge = Date.now() - parseInt(cacheTime);
-                if (cacheAge < 5 * 60 * 1000) { // 5 dəqiqə
-                  console.log(`Using cached ${table} ordered data`);
-                  return { data: JSON.parse(cachedData), error: null };
-                }
-              }
-              
-              // Sorğu göndər
-              const result = await query.select(...args);
-              
-              // Uğurlu nəticəni keşlə
-              if (!result.error && result.data) {
-                localStorage.setItem(cacheKey, JSON.stringify(result.data));
-                localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
-              }
-              
-              return result;
-            } catch (error) {
-              console.error(`Error in ${table}.order.select:`, error);
-              
-              // Keşə bax
-              const orderKey = `${column}_${options?.ascending !== false ? 'asc' : 'desc'}`;
-              const cacheKey = `cache_${table}_order_${orderKey}`;
-              const cachedData = localStorage.getItem(cacheKey);
-              
-              if (cachedData) {
-                console.log(`Using cached ${table} ordered data due to error`);
-                return { data: JSON.parse(cachedData), error: null };
-              }
-              
-              return { data: null, error };
-            }
-          };
-          
-          // Supabase query obyektini qaytaraq, amma select metodunu override edək
+          // Daha əvvəlki zəncirləməni saxlamaq üçün orijinal sorğunu qaytarır
           return {
             ...query,
-            select: wrappedSelect
+            select: async (...args: any[]) => {
+              try {
+                // Keş açarı yaradaq (sıralama parametrləri ilə)
+                const orderKey = `${column}_${options?.ascending !== false ? 'asc' : 'desc'}`;
+                const cacheKey = `cache_${table}_order_${orderKey}`;
+                
+                // Keşə baxaq
+                const cachedData = localStorage.getItem(cacheKey);
+                const cacheTime = localStorage.getItem(`${cacheKey}_time`);
+                
+                if (cachedData && cacheTime) {
+                  const cacheAge = Date.now() - parseInt(cacheTime);
+                  if (cacheAge < 5 * 60 * 1000) { // 5 dəqiqə
+                    console.log(`Using cached ${table} ordered data`);
+                    return { data: JSON.parse(cachedData), error: null };
+                  }
+                }
+                
+                // Orijinal select çağırıb
+                const result = await query.select(...args);
+                
+                // Uğurlu nəticəni keşlə
+                if (!result.error && result.data) {
+                  localStorage.setItem(cacheKey, JSON.stringify(result.data));
+                  localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
+                }
+                
+                return result;
+              } catch (error) {
+                console.error(`Error in ${table}.order.select:`, error);
+                
+                // Xəta halında keşdən oxu
+                const orderKey = `${column}_${options?.ascending !== false ? 'asc' : 'desc'}`;
+                const cacheKey = `cache_${table}_order_${orderKey}`;
+                const cachedData = localStorage.getItem(cacheKey);
+                
+                if (cachedData) {
+                  console.log(`Using cached ${table} ordered data due to error`);
+                  return { data: JSON.parse(cachedData), error: null };
+                }
+                
+                return { data: null, error };
+              }
+            }
           };
         } catch (error) {
           console.error(`Error in ${table}.order:`, error);
@@ -389,14 +386,14 @@ export const supabaseWithRetry = {
           // Xəta halında boş select metodu ilə obyekt qaytaraq
           return {
             select: async (...args: any[]) => {
-              const cachedData = localStorage.getItem(`cache_${table}_order`);
+              const cachedData = localStorage.getItem(`cache_${table}_select`);
               
               if (cachedData) {
-                console.log(`Using cached ${table} ordered data due to error`);
+                console.log(`Using cached ${table} data due to error in order function`);
                 return { data: JSON.parse(cachedData), error: null };
               }
               
-              return { data: null, error };
+              return { data: null, error: new Error(`Order function error: ${error}`) };
             }
           };
         }
@@ -511,4 +508,4 @@ export const fetchData = async <T>(
   }
 };
 
-export default supabaseWithRetry;
+export default supabase;

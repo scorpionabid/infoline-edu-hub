@@ -51,7 +51,7 @@ export const adaptDashboardNotificationToApp = (notification: any): Notification
     id: notification.id || `temp-${Date.now()}`,
     title: notification.title || notification.message || 'Bildiriş',
     message: notification.message || '',
-    type: notification.type as NotificationType,
+    type: (notification.type || 'info') as NotificationType,
     isRead: notification.isRead || notification.read || false,
     read: notification.read || notification.isRead || false,
     createdAt: notification.createdAt || notification.timestamp || new Date().toISOString(),

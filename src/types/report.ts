@@ -1,5 +1,6 @@
 
-export type ReportType = 'basic' | 'advanced' | 'custom' | 'chart' | 'table';
+import { ReportType } from "./form";
+
 export type ReportStatus = 'draft' | 'published' | 'archived';
 
 export interface Report {
@@ -7,14 +8,19 @@ export interface Report {
   title: string;
   description?: string;
   type: ReportType;
-  content: any;
+  content?: any;
   filters?: any;
   created_by?: string;
   created_at: string;
   updated_at?: string;
-  status: ReportStatus;
+  status?: ReportStatus;
   is_template?: boolean;
   shared_with?: string[];
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  author?: string;
+  last_updated?: string;
 }
 
 export interface ReportChartProps {
@@ -30,6 +36,7 @@ export enum ReportTypeEnum {
 
 export interface ReportPreviewDialogProps {
   isOpen: boolean;
+  open?: boolean;
   onClose: () => void;
   reportId: string;
   reportTitle: string;

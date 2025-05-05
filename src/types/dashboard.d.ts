@@ -61,9 +61,9 @@ export interface RecentForm extends FormItem {
 }
 
 export interface DashboardData {
-  summary: DashboardSummary;
-  recentActivity: ActivityItem[];
-  notifications: Notification[];
+  summary?: DashboardSummary;
+  recentActivity?: ActivityItem[];
+  notifications?: Notification[];
   approvalRate?: number;
   completionRate?: number;
   formsByStatus?: {
@@ -76,14 +76,21 @@ export interface DashboardData {
 }
 
 export interface SuperAdminDashboardData extends DashboardData {
-  regions: RegionStats[];
-  totalSchools: number;
-  totalUsers: number;
+  regions?: RegionStats[];
+  totalSchools?: number;
+  totalUsers?: number;
+  completionRate?: number;
+  formsByStatus?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    total: number;
+  };
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
-  sectors: SectorStats[];
-  totalSchools: number;
+  sectors?: SectorStats[];
+  totalSchools?: number;
   sectorStats?: {
     total: number;
     active: number;
@@ -93,17 +100,20 @@ export interface RegionAdminDashboardData extends DashboardData {
     active: number;
     incomplete: number;
   };
+  completionRate?: number;
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
-  schools: SchoolStats[];
+  schools?: SchoolStats[];
   schoolsStats?: SchoolStat[];
+  completionRate?: number;
 }
 
 export interface SchoolAdminDashboardData extends DashboardData {
-  upcomingDeadlines: RecentForm[];
-  recentForms: RecentForm[];
+  upcomingDeadlines?: RecentForm[];
+  recentForms?: RecentForm[];
   formStats?: any;
+  completionRate?: number;
 }
 
 // Maintain backwards compatibility

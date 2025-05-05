@@ -1,181 +1,121 @@
 
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogHeader, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useLanguage } from '@/context/LanguageContext';
-import { EnhancedRegion } from '@/hooks/useRegionsStore';
-
-// Form şeması
-const regionFormSchema = z.object({
-  name: z.string().min(3, 'Ad minimum 3 hərf olmalıdır').max(50, 'Ad maksimum 50 hərf ola bilər'),
-  description: z.string().optional(),
-  status: z.string().min(1, 'Status seçilməlidir'),
-  addAdmin: z.boolean().optional()
-});
-
-type RegionFormValues = z.infer<typeof regionFormSchema>;
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 export interface RegionDialogProps {
   open: boolean;
-  setOpen: (open: boolean) => void;
-  selectedRegion: EnhancedRegion | null;
-  onSubmit: (values: RegionFormValues) => Promise<void>;
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: { name: string; description: string; status: string }) => Promise<any>;
+  initialData?: { name: string; description?: string; status?: string };
+  title?: string;
+  loading?: boolean;
 }
 
 export const RegionDialog: React.FC<RegionDialogProps> = ({
   open,
-  setOpen,
-  selectedRegion,
-  onSubmit
+  onOpenChange,
+  onSave,
+  initialData,
+  title = 'Region əlavə et',
+  loading = false
 }) => {
   const { t } = useLanguage();
+  const [name, setName] = useState(initialData?.name || '');
+  const [description, setDescription] = useState(initialData?.description || '');
+  const [status, setStatus] = useState(initialData?.status || 'active');
+  const [isSaving, setIsSaving] = useState(false);
 
-  // React Hook Form ilə form state-ni idarə edirik
-  const form = useForm<RegionFormValues>({
-    resolver: zodResolver(regionFormSchema),
-    defaultValues: {
-      name: selectedRegion?.name || '',
-      description: selectedRegion?.description || '',
-      status: selectedRegion?.status || 'active',
-      addAdmin: false
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!name.trim()) {
+      toast.error('Region adı boş ola bilməz');
+      return;
     }
-  });
-
-  // Selected region dəyişdikdə form dəyərlərini yeniləyirik
-  React.useEffect(() => {
-    if (selectedRegion) {
-      form.reset({
-        name: selectedRegion.name,
-        description: selectedRegion.description || '',
-        status: selectedRegion.status,
-        addAdmin: false
-      });
-    } else {
-      form.reset({
-        name: '',
-        description: '',
-        status: 'active',
-        addAdmin: false
-      });
+    
+    setIsSaving(true);
+    
+    try {
+      const result = await onSave({ name, description, status });
+      
+      if (result && result.success === false) {
+        toast.error(result.error || 'Xəta baş verdi');
+        return;
+      }
+      
+      toast.success(`Region ${initialData ? 'yeniləndi' : 'əlavə edildi'}`);
+      onOpenChange(false);
+    } catch (error: any) {
+      toast.error(error.message || 'Xəta baş verdi');
+    } finally {
+      setIsSaving(false);
     }
-  }, [selectedRegion, form]);
-
-  const handleSubmit = async (values: RegionFormValues) => {
-    await onSubmit(values);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
-            {selectedRegion ? t('editRegion') : t('createRegion')}
-          </DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('regionName')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder={t('enterRegionName')} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Ad</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Region adı"
             />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('description')}</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} placeholder={t('enterRegionDescription')} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Təsvir</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Region təsviri"
+              rows={3}
             />
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('status')}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('selectStatus')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">{t('statusActive')}</SelectItem>
-                      <SelectItem value="inactive">{t('statusInactive')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {!selectedRegion && (
-              <FormField
-                control={form.control}
-                name="addAdmin"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
-                        onCheckedChange={field.onChange} 
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        {t('addRegionAdmin')}
-                      </FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-                className="mr-2"
-              >
-                {t('cancel')}
-              </Button>
-              <Button
-                type="submit"
-                disabled={form.formState.isSubmitting}
-              >
-                {selectedRegion ? t('save') : t('create')}
-                {form.formState.isSubmitting && (
-                  <span className="ml-2 animate-spin">⏳</span>
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Status seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Aktiv</SelectItem>
+                <SelectItem value="inactive">Deaktiv</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)} 
+              disabled={isSaving || loading}
+            >
+              Ləğv et
+            </Button>
+            <Button type="submit" disabled={isSaving || loading} className="min-w-[80px]">
+              {isSaving || loading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                  Gözləyin
+                </div>
+              ) : initialData ? 'Yenilə' : 'Əlavə et'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

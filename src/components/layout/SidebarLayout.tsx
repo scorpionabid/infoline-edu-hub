@@ -110,25 +110,29 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
       <Header />
       
       <div className="flex-1 flex relative">
-        {/* Mobil overlay arxa fonu - fixed position ilə */}
+        {/* Mobil arxa fonu */}
         {isMobile && isSidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black/50 z-30"
+            className="fixed inset-0 bg-black/50 z-40"
             onClick={() => setIsSidebarOpen(false)}
             aria-hidden="true"
           />
         )}
         
-        {/* Sidebar - düzəldilmiş z-indeks və position */}
+        {/* Sidebar */}
         <div
           className={cn(
-            "fixed md:relative h-screen bg-background border-r z-40 transition-all duration-300 ease-in-out",
+            "h-screen bg-background border-r z-50 transition-all duration-300 ease-in-out",
             isSidebarOpen ? "w-64" : "w-[70px]",
-            isMobile && !isSidebarOpen && "transform -translate-x-full"
+            isMobile ? (
+              isSidebarOpen ? "fixed left-0" : "fixed -left-full"
+            ) : (
+              "relative"
+            )
           )}
         >
           <div className="flex items-center justify-between p-4">
-            <div className={cn("transition-opacity", isSidebarOpen ? "opacity-100" : "opacity-0 hidden md:block")}>
+            <div className={cn("transition-opacity", isSidebarOpen ? "opacity-100" : "opacity-0 md:hidden")}>
               <h2 className="text-xl font-bold">InfoLine</h2>
             </div>
             <Button variant="ghost" size="icon" onClick={handleSidebarToggle} className="flex-shrink-0">
@@ -143,23 +147,23 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
           />
         </div>
 
-        {/* Mobile sidebar toggle - fixed position ilə */}
+        {/* Mobile sidebar toggle button */}
         {isMobile && !isSidebarOpen && (
           <Button 
             variant="ghost" 
             size="icon" 
-            className="fixed top-16 left-4 z-30"
+            className="fixed top-16 left-4 z-50"
             onClick={handleSidebarToggle}
           >
             <Menu className="h-5 w-5" />
           </Button>
         )}
 
-        {/* Main content - düzəldilmiş margin dəyəri ilə */}
+        {/* Main content */}
         <div 
           className={cn(
             "flex-1 p-6 overflow-y-auto transition-all duration-300",
-            isMobile ? "w-full" : (isSidebarOpen ? "md:ml-64" : "md:ml-[70px]")
+            isMobile ? "ml-0" : (isSidebarOpen ? "md:ml-64" : "md:ml-[70px]")
           )}
         >
           <Outlet />
