@@ -1,25 +1,21 @@
 
-import { Column } from '@/types/column';
-
-export type CategoryStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'active' | 'inactive';
-export type CategoryAssignment = 'all' | 'sectors';
+import { Column } from './column';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  assignment: CategoryAssignment;
-  status: CategoryStatus;
-  priority: number;
+  assignment: 'all' | 'sectors';
+  status: 'active' | 'inactive' | 'draft';
+  priority?: number;
   deadline?: string;
   created_at: string;
   updated_at: string;
   archived: boolean;
-  column_count?: number; // Əlavə edildi
-  completionRate?: number;
+  column_count?: number;
 }
 
-export interface CategoryWithColumns extends Category {
-  columns: Column[];
-  completionRate?: number;
-}
+// CategoryWithColumns tipini column.ts faylından import edəcəyik
+// əlavə təriflərə ehtiyac yoxdur
+import { CategoryWithColumns } from './column';
+export { CategoryWithColumns };

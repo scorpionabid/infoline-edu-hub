@@ -9,13 +9,15 @@ interface ColumnEntryFormProps {
   value: string;
   onChange: (columnId: string, value: string) => void;
   error?: string;
+  categoryId?: string;
 }
 
 const ColumnEntryForm: React.FC<ColumnEntryFormProps> = ({
   column,
   value,
   onChange,
-  error
+  error,
+  categoryId
 }) => {
   const { t } = useLanguage();
   

@@ -6,7 +6,7 @@ import { CategoryWithColumns } from '@/types/column';
 import EntryField from './EntryField';
 import { Button } from '@/components/ui/button';
 import ColumnEntryForm from './ColumnEntryForm';
-import { validateEntry } from './utils/formUtils';
+import { validateEntries } from './utils/formUtils';
 import { toast } from 'sonner';
 import { AlertTriangle, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -66,11 +66,18 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
 
     const column = resolvedCategory.columns.find(c => c.id === columnId);
     if (column) {
-      const validationResult = validateEntry(column, value);
+      // validateEntry funksiyası əvəzinə validateEntries-dən istifadə edək
+      const validationResult = validateEntries([{
+        columnId,
+        value,
+        categoryId: column.category_id
+      }], [column]);
+      
+      const hasError = validationResult.some(result => !result.isValid);
       
       setErrors(prev => ({
         ...prev,
-        [columnId]: validationResult.isValid ? '' : validationResult.error
+        [columnId]: hasError ? 'Dəyər düzgün deyil' : ''
       }));
     }
   }, [resolvedCategory.columns]);
@@ -173,7 +180,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
         )}
       </div>
 
-      {/* Qruplaşdırılmamış sütunlar */}
+      {/* Qruplaşdırılmış sütunlar */}
       {Object.entries(groupedColumns).map(([section, columns]) => {
         const isExpanded = expandedSections[section] !== false; // Default açıq
 
@@ -222,11 +229,12 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
         </div>
       )}
       
-      {/* Kateqoriya ilə əlaqəli digər formlar */}
+      {/* Əgər əlaqəli komponentlər varsa */}
       {resolvedCategory.related && (
-        <ColumnEntryForm
-          categoryId={resolvedCategory.id}
-        />
+        <div className="mt-8 border-t pt-4">
+          <h3 className="text-lg font-semibold mb-4">{t('relatedData')}</h3>
+          {/* Burada əlaqəli komponentləri göstərə bilərik */}
+        </div>
       )}
     </form>
   );

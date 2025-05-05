@@ -8,7 +8,8 @@ import {
   ColumnTypeDefinition, 
   ValidationRules, 
   ColumnValidationError,
-  Column
+  Column,
+  DependsOnCondition
 } from './column';
 
 export {
@@ -20,5 +21,6 @@ export {
   ColumnTypeDefinition,
   ValidationRules,
   ColumnValidationError,
-  Column
+  Column,
+  DependsOnCondition
 };

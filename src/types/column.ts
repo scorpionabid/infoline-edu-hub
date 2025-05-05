@@ -163,6 +163,7 @@ export interface Column {
   parent_column_id?: string;
   dependencies?: string[];
   visibility_conditions?: any;
+  section?: string;
 }
 
 export interface ColumnOption {
@@ -223,5 +224,14 @@ export interface CategoryWithColumns {
   columns: Column[];
   entries?: any[];
   completionPercentage?: number;
+  related?: boolean;
+  column_count?: number;
 }
 
+export interface DependsOnCondition {
+  columnId: string;
+  condition: {
+    type: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan';
+    value: string | number;
+  };
+}
