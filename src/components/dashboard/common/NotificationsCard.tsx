@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { NotificationType } from '@/types/notification';
+import { DashboardNotification } from '@/types/notification';
 
 interface NotificationsCardProps {
-  notifications: NotificationType[];
+  notifications: DashboardNotification[];
   viewAllLink?: string;
   title?: string;
 }

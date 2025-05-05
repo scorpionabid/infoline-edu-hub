@@ -11,6 +11,7 @@ export interface Notification {
   relatedEntityId?: string;
   relatedEntityType?: string;
   createdAt?: string;
+  type?: string;
 }
 
 export type NotificationType = 
@@ -20,6 +21,21 @@ export type NotificationType =
   | 'rejection'
   | 'system'
   | 'update';
+
+// Dashboard üçün istifadə olunan bildiriş tipi
+export interface DashboardNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  date?: string;
+  isRead: boolean;
+  priority?: NotificationPriority;
+  relatedEntityId?: string;
+  relatedEntityType?: string;
+  createdAt?: string;
+  read?: boolean;
+}
 
 export interface DbNotification {
   id: string;
@@ -46,5 +62,22 @@ export function adaptDbNotificationToApp(dbNotification: DbNotification): Notifi
     relatedEntityId: dbNotification.related_entity_id,
     relatedEntityType: dbNotification.related_entity_type,
     createdAt: dbNotification.created_at,
+    type: dbNotification.type
+  };
+}
+
+// Dashboard bildirişlərini tətbiq formatına çevirir
+export function adaptDashboardNotificationToApp(dashboardNotification: any): DashboardNotification {
+  return {
+    id: dashboardNotification.id || `notification-${Date.now()}`,
+    type: dashboardNotification.type || 'info',
+    title: dashboardNotification.title || '',
+    message: dashboardNotification.message || '',
+    date: dashboardNotification.date || dashboardNotification.createdAt || new Date().toISOString(),
+    isRead: dashboardNotification.isRead || dashboardNotification.is_read || false,
+    priority: dashboardNotification.priority || 'normal',
+    relatedEntityId: dashboardNotification.relatedEntityId || dashboardNotification.related_entity_id,
+    relatedEntityType: dashboardNotification.relatedEntityType || dashboardNotification.related_entity_type,
+    createdAt: dashboardNotification.createdAt || dashboardNotification.created_at || new Date().toISOString()
   };
 }
