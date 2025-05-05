@@ -1,121 +1,81 @@
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Grid } from '@/components/ui/grid';
+import { StatsCard } from '../common/StatsCard';
+import { CompletionRateCard } from '../common/CompletionRateCard';
+import { NotificationsCard } from '../common/NotificationsCard';
 import { SectorAdminDashboardData, SchoolStats } from '@/types/dashboard';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SchoolsList } from './SchoolsList';
+import { ActivityLogCard } from './ActivityLogCard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { useLanguage } from '@/context/LanguageContext';
-import { Skeleton } from '@/components/ui/skeleton';
-import { School, AlertCircle } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { adaptDashboardNotificationToApp, NotificationType } from '@/types/notification';
+import { adaptDashboardNotificationToApp } from '@/types/notification';
 
 interface SectorAdminDashboardProps {
   data: SectorAdminDashboardData;
-  isLoading?: boolean;
-  error?: any;
-  onRefresh?: () => void;
 }
 
-export function SectorAdminDashboard({ 
-  data, 
-  isLoading,
-  error,
-  onRefresh
-}: SectorAdminDashboardProps) {
+export const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-
-  // Bildirişləri adapter ilə çevirək
-  const adaptedNotifications: NotificationType[] = Array.isArray(data?.notifications) 
-    ? data.notifications.map((notification) => ({
-        ...adaptDashboardNotificationToApp({
-          ...notification,
-          createdAt: notification.createdAt || new Date().toISOString()
-        })
-      }))
+  
+  // Məktəb statistikası üçün default dəyərlər
+  const schoolStats = data.schoolsStats || [];
+  const totalSchools = data.stats?.schools || 0;
+  
+  // Bildirişləri adapterlə çevirək
+  const adaptedNotifications = Array.isArray(data.notifications) 
+    ? data.notifications.map(notification => adaptDashboardNotificationToApp(notification))
     : [];
-
-  if (isLoading) {
-    return <div className="space-y-4">
-      <Skeleton className="h-12 w-full" />
-      <Skeleton className="h-64 w-full" />
-    </div>;
-  }
-
-  // SchoolStats tip xətasını həll edirik
-  const schoolStats = data?.schoolStats || { 
-    total: 0, 
-    active: 0, 
-    incomplete: 0 
-  };
-
-  // TypeScript-ə köməklik üçün tip dəqiqləşdiririk
-  const totalSchools = typeof schoolStats === 'object' && 'total' in schoolStats ? 
-    schoolStats.total : 0;
   
-  const activeSchools = typeof schoolStats === 'object' && 'active' in schoolStats ? 
-    schoolStats.active : 0;
-  
-  const incompleteSchools = typeof schoolStats === 'object' && 'incomplete' in schoolStats ? 
-    schoolStats.incomplete : 0;
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('error')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center text-destructive">
-            <AlertCircle className="mr-2" />
-            <p>{error}</p>
-          </div>
-          <Button onClick={onRefresh} className="mt-4">
-            {t('tryAgain')}
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Sektor Admin Dashboard</h2>
+      <h2 className="text-2xl font-bold">{t('sectoradminDashboard')}</h2>
       
-      <Grid columns={2} className="gap-6">
+      <Grid columns={3} className="gap-6">
         <StatsCard
-          title="Məktəblər"
-          value={data.stats?.schools || 0}
+          title={t('totalSchools')}
+          value={totalSchools}
           icon="M"
-          description="Toplam məktəb sayı"
-          trend={`${schoolStatsData.active || 0} aktiv məktəb`}
+          description={t('schoolsInSector')}
+          trend={`${schoolStats.length > 0 ? Math.round((schoolStats.filter(s => s.active || true).length / schoolStats.length) * 100) : 100}% ${t('active')}`}
           trendDirection="up"
         />
         <StatsCard
-          title="Tamamlanmamış Məktəblər"
-          value={schoolStatsData.incomplete || 0}
-          icon="I"
-          description="Məlumatları tamamlanmayan məktəblər"
-          trend={`${Math.round((schoolStatsData.incomplete || 0) / (schoolStatsData.total || 1) * 100)}% sektorda`}
-          trendDirection="down"
+          title={t('pendingApprovals')}
+          value={data.formsByStatus?.pending || 0}
+          icon="P"
+          description={t('pendingReviews')}
+          trend={`${schoolStats.length > 0 ? Math.round((schoolStats.filter(s => s.incomplete || false).length / schoolStats.length) * 100) : 0}% ${t('incomplete')}`}
+          trendDirection="neutral"
+        />
+        <StatsCard
+          title={t('approvalRate')}
+          value={data.approvalRate || 0}
+          icon="%"
+          description={t('approvalRate')}
+          trend={`${data.formsByStatus?.approved || 0} ${t('approved')}`}
+          trendDirection="up"
         />
       </Grid>
-
+      
       <Grid columns={2} className="gap-6">
         <CompletionRateCard
           completionRate={data.completionRate || 0}
-          title="Ümumi Tamamlanma"
+          title={t('overallCompletion')}
         />
-                
+        
         <NotificationsCard
-          title="Bildirişlər"
+          title={t('notifications')}
           notifications={adaptedNotifications}
         />
       </Grid>
+
+      {data.schools && data.schools.length > 0 && (
+        <SchoolsList schools={data.schools} />
+      )}
     </div>
   );
-}
+};
 
 export default SectorAdminDashboard;

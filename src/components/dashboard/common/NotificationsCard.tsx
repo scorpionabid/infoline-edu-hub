@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Notification } from '@/types/notification';
+import { NotificationType } from '@/types/notification';
 
 interface NotificationsCardProps {
-  notifications: Notification[];
+  notifications: NotificationType[];
   viewAllLink?: string;
   title?: string;
 }
@@ -77,7 +77,7 @@ export const NotificationsCard: React.FC<NotificationsCardProps> = ({
                     <p className="text-xs text-muted-foreground">
                       {notification.date || (notification.createdAt ? new Date(notification.createdAt).toLocaleDateString() : '')}
                     </p>
-                    {!((notification.isRead ?? false) || (notification.read ?? false)) && (
+                    {!(notification.isRead || notification.read) && (
                       <Badge variant="secondary" className="text-xs">
                         {t('new')}
                       </Badge>

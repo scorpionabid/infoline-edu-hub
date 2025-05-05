@@ -2,7 +2,7 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { az } from 'date-fns/locale';
-import { Notification } from '@/types/notification';
+import { NotificationType } from '@/types/notification';
 import { cn } from '@/lib/utils';
 import {
   Bell,
@@ -15,13 +15,13 @@ import {
 } from 'lucide-react';
 
 export interface NotificationItemProps {
-  notification: Notification;
+  notification: NotificationType;
   onMarkAsRead?: (id: string) => void;
 }
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMarkAsRead }) => {
   const handleClick = () => {
-    if (!notification.isRead && onMarkAsRead) {
+    if (!(notification.isRead || notification.read) && onMarkAsRead) {
       onMarkAsRead(notification.id);
     }
   };
@@ -61,18 +61,22 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
   };
   
   const getTimeAgo = () => {
-    return formatDistanceToNow(new Date(notification.createdAt), {
-      addSuffix: true,
-      locale: az
-    });
+    try {
+      return formatDistanceToNow(new Date(notification.createdAt), {
+        addSuffix: true,
+        locale: az
+      });
+    } catch (error) {
+      return 'İndicə';
+    }
   };
   
   return (
     <div 
       className={cn(
-        "p-3 border-l-4 bg-card rounded-md cursor-pointer hover:bg-accent/50 transition-colors flex gap-3",
+        "p-3 border-l-4 bg-card rounded-md cursor-pointer hover:bg-accent/50 transition-colors flex gap-3 mb-2",
         getPriorityClass(),
-        !notification.isRead && "bg-accent/20"
+        !(notification.isRead || notification.read) && "bg-accent/20"
       )}
       onClick={handleClick}
     >

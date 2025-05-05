@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useLanguage } from '@/context/LanguageContext';
 import NotificationList from './NotificationList';
-import { Notification } from '@/types/notification';
+import { NotificationType } from '@/types/notification';
 
 // Props interfeysi əlavə edildi
 interface NotificationControlProps {
-  notifications: Notification[];
+  notifications: NotificationType[];
   onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
   onClearAll: () => void;
@@ -24,7 +24,7 @@ const NotificationControl: React.FC<NotificationControlProps> = ({
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   
-  const unreadCount = notifications.filter(notification => !notification.isRead).length;
+  const unreadCount = notifications.filter(notification => !notification.isRead && !notification.read).length;
   
   return (
     <Popover open={open} onOpenChange={setOpen}>

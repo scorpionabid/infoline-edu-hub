@@ -1,13 +1,13 @@
 
 import React from 'react';
-import { Notification } from '@/types/notification';
+import { NotificationType } from '@/types/notification';
 import { NotificationItem } from './NotificationItem';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { BellOff } from 'lucide-react';
 
 interface NotificationListProps {
-  notifications: Notification[];
+  notifications: NotificationType[];
   onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
   onClearAll: () => void;

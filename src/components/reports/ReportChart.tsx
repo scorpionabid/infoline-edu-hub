@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bar, Pie, Line } from 'react-chartjs-2';
-import { Report, ReportType } from '@/types/report'; // report tipi əvəzləyirik
+import { Report, ReportType } from '@/types/report'; 
 
 interface ReportChartProps {
   report: Report;
