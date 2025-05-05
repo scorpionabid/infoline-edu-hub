@@ -1,34 +1,50 @@
 
+export type NotificationPriority = 'normal' | 'high' | 'critical';
+
 export interface Notification {
   id: string;
   title: string;
   message: string;
   timestamp: string;
-  createdAt?: string;
   isRead: boolean;
-  priority: "normal" | "high" | "critical";
-  type?: string;
-  entityId?: string;
-  entityType?: string;
-  date?: string; // Əlavə edildi
-  read?: boolean; // Əlavə edildi
+  priority: NotificationPriority;
+  relatedEntityId?: string;
+  relatedEntityType?: string;
+  createdAt?: string;
 }
 
-export type NotificationType = Notification;
+export type NotificationType = 
+  | 'new_category'
+  | 'deadline'
+  | 'approval'
+  | 'rejection'
+  | 'system'
+  | 'update';
 
-export function adaptDashboardNotificationToApp(notification: any): Notification {
+export interface DbNotification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message?: string;
+  related_entity_id?: string;
+  related_entity_type?: string;
+  is_read: boolean;
+  priority: NotificationPriority;
+  created_at: string;
+}
+
+// Verilənlər bazasından gələn bildirişləri tətbiq formatına çevirir
+export function adaptDbNotificationToApp(dbNotification: DbNotification): Notification {
   return {
-    id: notification.id || '',
-    title: notification.title || '',
-    message: notification.message || '',
-    timestamp: notification.timestamp || notification.createdAt || new Date().toISOString(),
-    createdAt: notification.createdAt || notification.timestamp || new Date().toISOString(),
-    date: notification.date || notification.timestamp || notification.createdAt || new Date().toISOString(),
-    isRead: notification.isRead || false,
-    read: notification.read || notification.isRead || false,
-    priority: notification.priority || "normal",
-    type: notification.type || 'info',
-    entityId: notification.entityId || notification.related_entity_id || '',
-    entityType: notification.entityType || notification.related_entity_type || '',
+    id: dbNotification.id,
+    title: dbNotification.title,
+    message: dbNotification.message || '',
+    timestamp: dbNotification.created_at,
+    isRead: dbNotification.is_read,
+    priority: dbNotification.priority,
+    relatedEntityId: dbNotification.related_entity_id,
+    relatedEntityType: dbNotification.related_entity_type,
+    createdAt: dbNotification.created_at,
   };
 }

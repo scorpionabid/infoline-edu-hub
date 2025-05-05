@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -80,7 +81,7 @@ return (
               {t('sectors')}
             </Badge>
           )}
-          {category.status === "active" && (
+          {status === "active" && (
             <Badge variant="secondary" className="text-xs bg-green-50 text-green-700 border-green-200">
               <CheckCircle className="w-3 h-3 mr-1" />
               {t('active')}

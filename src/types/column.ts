@@ -1,9 +1,12 @@
 
-export type ColumnType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image';
+export type ColumnType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image' | 'email' | 'url' | 'phone' | 'range' | 'color' | 'password' | 'time' | 'datetime' | 'richtext';
 
 export interface ColumnOption {
+  id?: string;
   label: string;
   value: string;
+  color?: string;
+  disabled?: boolean;
 }
 
 export interface ColumnValidation {
@@ -25,7 +28,7 @@ export interface Column {
   placeholder?: string;
   help_text?: string;
   order_index?: number;
-  status?: string;
+  status?: 'active' | 'inactive';
   validation?: ColumnValidation;
   default_value?: string;
   options?: ColumnOption[];
@@ -33,7 +36,42 @@ export interface Column {
   updated_at?: string;
 }
 
-export const COLUMN_TYPE_DEFINITIONS = {
+export interface ColumnTypeDefinition {
+  icon: string;
+  label: string;
+  description: string;
+  validations: string[];
+  needsOptions?: boolean;
+}
+
+export interface ValidationRules {
+  required?: boolean;
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string | RegExp;
+  email?: boolean;
+  url?: boolean;
+  numeric?: boolean;
+  integer?: boolean;
+  date?: boolean;
+  custom?: (value: any) => boolean | string;
+}
+
+export interface ColumnValidationError {
+  columnId: string;
+  message: string;
+  severity: 'error' | 'warning' | 'info';
+}
+
+export interface DependsOnCondition {
+  columnId: string;
+  operator: 'eq' | 'neq' | 'gt' | 'lt' | 'contains' | 'startsWith' | 'endsWith';
+  value: any;
+}
+
+export const COLUMN_TYPE_DEFINITIONS: Record<string, ColumnTypeDefinition> = {
   text: {
     icon: 'TextIcon',
     label: 'Text',
@@ -90,4 +128,66 @@ export const COLUMN_TYPE_DEFINITIONS = {
     description: 'Image upload',
     validations: ['required'],
   },
+  email: {
+    icon: 'MailIcon',
+    label: 'Email',
+    description: 'Email address input',
+    validations: ['required', 'email', 'pattern'],
+  },
+  url: {
+    icon: 'LinkIcon',
+    label: 'URL',
+    description: 'URL input',
+    validations: ['required', 'url', 'pattern'],
+  },
+  phone: {
+    icon: 'PhoneIcon',
+    label: 'Phone',
+    description: 'Phone number input',
+    validations: ['required', 'pattern'],
+  },
+  range: {
+    icon: 'SlidersIcon',
+    label: 'Range',
+    description: 'Range slider',
+    validations: ['required', 'min', 'max'],
+  },
+  color: {
+    icon: 'PaletteIcon',
+    label: 'Color',
+    description: 'Color picker',
+    validations: ['required'],
+  },
+  password: {
+    icon: 'LockIcon',
+    label: 'Password',
+    description: 'Password input',
+    validations: ['required', 'minLength', 'pattern'],
+  },
+  time: {
+    icon: 'ClockIcon',
+    label: 'Time',
+    description: 'Time picker',
+    validations: ['required'],
+  },
+  datetime: {
+    icon: 'CalendarClockIcon',
+    label: 'DateTime',
+    description: 'Date and time picker',
+    validations: ['required'],
+  },
+  richtext: {
+    icon: 'FormattingIcon',
+    label: 'Rich Text',
+    description: 'Rich text editor',
+    validations: ['required'],
+  }
 };
+
+// CategoryWithColumns tipini bu fayldan da ixrac edirik
+import { Category } from './category';
+
+export interface CategoryWithColumns extends Category {
+  columns?: Column[];
+  completionRate?: number;
+}
