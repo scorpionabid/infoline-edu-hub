@@ -1,57 +1,30 @@
 
-export interface NotificationType {
+export interface Notification {
   id: string;
   title: string;
-  message?: string;
-  type: 'info' | 'warning' | 'error' | 'success' | 'system' | 'category' | 'deadline' | 'approval';
+  message: string;
+  timestamp: string;
+  createdAt?: string;
   isRead: boolean;
-  read?: boolean; // geriyə uyğunluq üçün
-  createdAt: string;
-  date?: string; // geriyə uyğunluq üçün
-  relatedEntityId?: string;
-  relatedEntityType?: string;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
+  priority: "normal" | "high" | "critical";
+  type?: string;
+  entityId?: string;
+  entityType?: string;
 }
 
-// Notification tipini geriyə uyğunluq üçün export edirik
-export type Notification = NotificationType;
+export type NotificationType = Notification;
 
-export interface UINotification extends NotificationType {
-  // UI'da əlavə sahələr
-  icon?: React.ReactNode;
-  action?: React.ReactNode;
-}
-
-// Dashboard-dan alınan bildirişləri app formatına çevirən adapter
-export const adaptDashboardNotificationToApp = (notification: any): NotificationType => {
-  return {
-    id: notification.id || '',
-    title: notification.title || '',
-    message: notification.message || notification.description || '',
-    type: notification.type || 'info',
-    isRead: notification.isRead || notification.read || false,
-    read: notification.isRead || notification.read || false, // geriyə uyğunluq üçün
-    createdAt: notification.createdAt || notification.created_at || notification.date || new Date().toISOString(),
-    date: notification.createdAt || notification.created_at || notification.date || new Date().toISOString(), // geriyə uyğunluq üçün
-    relatedEntityId: notification.relatedEntityId || notification.entityId || '',
-    relatedEntityType: notification.relatedEntityType || notification.entityType || '',
-    priority: notification.priority || 'medium'
-  };
-};
-
-// db-dən gələn bildirişləri app formatına çevirən adapter
-export const adaptDbNotificationToApp = (notification: any): NotificationType => {
+export function adaptDashboardNotificationToApp(notification: any): Notification {
   return {
     id: notification.id || '',
     title: notification.title || '',
     message: notification.message || '',
+    timestamp: notification.timestamp || notification.createdAt || new Date().toISOString(),
+    createdAt: notification.createdAt || notification.timestamp || new Date().toISOString(),
+    isRead: notification.isRead || false,
+    priority: notification.priority || "normal",
     type: notification.type || 'info',
-    isRead: notification.is_read || false,
-    read: notification.is_read || false, // geriyə uyğunluq üçün  
-    createdAt: notification.created_at || new Date().toISOString(),
-    date: notification.created_at || new Date().toISOString(), // geriyə uyğunluq üçün
-    relatedEntityId: notification.related_entity_id || '',
-    relatedEntityType: notification.related_entity_type || '',
-    priority: notification.priority || 'medium'
+    entityId: notification.entityId || notification.related_entity_id || '',
+    entityType: notification.entityType || notification.related_entity_type || '',
   };
-};
+}

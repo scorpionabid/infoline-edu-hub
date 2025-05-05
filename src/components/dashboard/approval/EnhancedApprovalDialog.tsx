@@ -1,50 +1,45 @@
 
-import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
-import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
 
 interface EnhancedApprovalDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  schoolName?: string;
+  categoryName?: string;
+  data?: any[];
+  isProcessing?: boolean;
+  currentStatus?: string;
   onApprove: () => Promise<void>;
   onReject: (reason: string) => Promise<void>;
-  title?: string;
-  description?: string;
-  submissionData?: { [key: string]: any };
-  isLoading?: boolean;
 }
 
 export const EnhancedApprovalDialog: React.FC<EnhancedApprovalDialogProps> = ({
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
+  schoolName,
+  categoryName,
+  data,
+  isProcessing = false,
+  currentStatus,
   onApprove,
   onReject,
-  title = 'Təsdiq',
-  description = 'Bu məlumat daxil etməni təsdiq və ya rədd edə bilərsiniz',
-  submissionData,
-  isLoading = false,
 }) => {
-  const { t } = useLanguage();
-  const [rejectionReason, setRejectionReason] = React.useState('');
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [mode, setMode] = React.useState<'review' | 'approve' | 'reject'>('review');
+  const [reason, setReason] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'data' | 'review'>('data');
   
   const handleApprove = async () => {
-    setIsSubmitting(true);
     try {
+      setIsSubmitting(true);
       await onApprove();
-      onClose();
     } catch (error) {
       console.error('Təsdiq xətası:', error);
     } finally {
@@ -53,150 +48,138 @@ export const EnhancedApprovalDialog: React.FC<EnhancedApprovalDialogProps> = ({
   };
   
   const handleReject = async () => {
-    if (!rejectionReason.trim()) {
-      return;
-    }
+    if (!reason.trim()) return;
     
-    setIsSubmitting(true);
     try {
-      await onReject(rejectionReason);
-      onClose();
+      setIsSubmitting(true);
+      await onReject(reason);
     } catch (error) {
       console.error('Rədd xətası:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle className="flex items-center space-x-2">
+            <span>Təqdim olunan Məlumatlar</span>
+            {currentStatus && (
+              <Badge variant={currentStatus === 'approved' ? 'success' : currentStatus === 'rejected' ? 'destructive' : 'secondary'}>
+                {currentStatus === 'approved' ? 'Təsdiqlənib' : currentStatus === 'rejected' ? 'Rədd edilib' : 'Gözləmədə'}
+              </Badge>
+            )}
+          </DialogTitle>
+          <div className="text-sm text-muted-foreground">
+            <div><strong>Məktəb:</strong> {schoolName}</div>
+            <div><strong>Kateqoriya:</strong> {categoryName}</div>
+          </div>
         </DialogHeader>
         
-        {mode === 'review' && (
-          <>
-            {submissionData && (
-              <div className="space-y-4 max-h-80 overflow-y-auto">
-                {Object.entries(submissionData).map(([key, value]) => (
-                  <div key={key} className="grid grid-cols-3 gap-4 py-2 border-b">
-                    <div className="font-medium">{key}</div>
-                    <div className="col-span-2">{String(value)}</div>
-                  </div>
-                ))}
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'data' | 'review')} className="mt-2">
+          <TabsList className="grid grid-cols-2">
+            <TabsTrigger value="data">Məlumatlar</TabsTrigger>
+            <TabsTrigger value="review">Baxış və Təsdiq</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="data" className="mt-4">
+            {!data || data.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                <AlertCircle className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+                <p>Məlumat tapılmadı</p>
+              </div>
+            ) : (
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sahə</TableHead>
+                      <TableHead>Dəyər</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{item.label || item.columnName}</TableCell>
+                        <TableCell>{item.value || '-'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="review" className="mt-4 space-y-4">
+            {currentStatus !== 'approved' && currentStatus !== 'rejected' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="reason">İmtina səbəbi (Rədd etdikdə məcburidir)</Label>
+                  <Textarea
+                    id="reason"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="İmtina səbəbini daxil edin..."
+                    rows={4}
+                  />
+                </div>
+                
+                <div className="flex space-x-2 mt-4">
+                  <Button
+                    variant="success"
+                    disabled={isSubmitting || isProcessing}
+                    onClick={handleApprove}
+                    className="flex-1 bg-green-600 text-white hover:bg-green-700"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                    )}
+                    Təsdiqlə
+                  </Button>
+                  
+                  <Button
+                    variant="destructive"
+                    disabled={isSubmitting || isProcessing || !reason.trim()}
+                    onClick={handleReject}
+                    className="flex-1"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <X className="mr-2 h-4 w-4" />
+                    )}
+                    Rədd Et
+                  </Button>
+                </div>
+              </>
+            )}
+            
+            {currentStatus === 'approved' && (
+              <div className="py-8 text-center">
+                <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
+                <p className="text-lg font-medium">Bu məlumatlar artıq təsdiqlənib</p>
               </div>
             )}
             
-            <DialogFooter className="space-x-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setMode('reject')}
-                disabled={isLoading || isSubmitting}
-                className="border-red-300 text-red-600 hover:bg-red-50"
-              >
-                <XCircle className="w-4 h-4 mr-2" />
-                {t('reject')}
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={() => setMode('approve')}
-                disabled={isLoading || isSubmitting}
-                className="border-green-300 text-green-600 hover:bg-green-50"
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                {t('approve')}
-              </Button>
-              
-              <DialogClose asChild>
-                <Button variant="ghost" disabled={isLoading || isSubmitting}>
-                  {t('cancel')}
-                </Button>
-              </DialogClose>
-            </DialogFooter>
-          </>
-        )}
+            {currentStatus === 'rejected' && (
+              <div className="py-8 text-center">
+                <AlertCircle className="mx-auto h-16 w-16 text-red-500 mb-4" />
+                <p className="text-lg font-medium">Bu məlumatlar rədd edilib</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
         
-        {mode === 'approve' && (
-          <>
-            <div className="py-4 text-center">
-              <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
-              <h3 className="text-lg font-medium">{t('approveConfirmTitle')}</h3>
-              <p className="text-sm text-muted-foreground mt-2">
-                {t('approveConfirmDescription')}
-              </p>
-            </div>
-            
-            <DialogFooter>
-              <Button 
-                variant="outline" 
-                onClick={() => setMode('review')}
-                disabled={isLoading || isSubmitting}
-              >
-                {t('back')}
-              </Button>
-              
-              <Button 
-                onClick={handleApprove} 
-                disabled={isLoading || isSubmitting}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {isSubmitting ? t('processing') : t('confirmApprove')}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-        
-        {mode === 'reject' && (
-          <>
-            <div className="py-2 text-center">
-              <AlertTriangle className="mx-auto h-12 w-12 text-amber-500 mb-4" />
-              <h3 className="text-lg font-medium">{t('rejectConfirmTitle')}</h3>
-              <p className="text-sm text-muted-foreground mt-2">
-                {t('rejectConfirmDescription')}
-              </p>
-            </div>
-            
-            <div className="py-4">
-              <label className="block text-sm font-medium mb-2">
-                {t('rejectionReason')} <span className="text-red-500">*</span>
-              </label>
-              <Textarea 
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder={t('enterRejectionReason')}
-                rows={3}
-                disabled={isLoading || isSubmitting}
-              />
-              {rejectionReason.trim() === '' && mode === 'reject' && (
-                <p className="text-sm text-red-500 mt-1">
-                  {t('rejectionReasonRequired')}
-                </p>
-              )}
-            </div>
-            
-            <DialogFooter>
-              <Button 
-                variant="outline" 
-                onClick={() => setMode('review')}
-                disabled={isLoading || isSubmitting}
-              >
-                {t('back')}
-              </Button>
-              
-              <Button 
-                onClick={handleReject}
-                disabled={rejectionReason.trim() === '' || isLoading || isSubmitting}
-                variant="destructive"
-              >
-                {isSubmitting ? t('processing') : t('confirmReject')}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Bağla</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
+
+export default EnhancedApprovalDialog;
