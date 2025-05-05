@@ -1,6 +1,5 @@
 
-import { FormItem } from "./form";
-import { Notification, NotificationType } from "./notification";
+import { Notification } from "./notification";
 
 export interface DashboardSummary {
   totalForms: number;
@@ -134,4 +133,29 @@ export interface SchoolStat {
   total?: number;
   active?: number;
   incomplete?: number;
+}
+
+export interface FormItem {
+  id: string;
+  title?: string;
+  categoryId?: string;
+  status?: string;
+  dueDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
+}
+
+export interface ChartData {
+  activityData?: { name: string; value: number }[];
+  regionSchoolsData?: { name: string; value: number }[];
+  categoryCompletionData?: { name: string; completed: number }[];
+  [key: string]: any;
+}
+
+export interface CategoryStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  completion?: { total: number; completed: number; percentage: number };
 }

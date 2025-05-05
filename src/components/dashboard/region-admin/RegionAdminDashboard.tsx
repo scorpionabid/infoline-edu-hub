@@ -3,8 +3,9 @@ import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
-import NotificationsCard from '../common/NotificationsCard';
+import { NotificationsCard } from '../common/NotificationsCard';
 import { RegionAdminDashboardData } from '@/types/dashboard';
+import { adaptDashboardNotificationToApp } from '@/types/notification';
 
 interface RegionAdminDashboardProps {
   data: RegionAdminDashboardData;
@@ -17,6 +18,11 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
   const activePercentage = sectorStatsTotal > 0 ? 
     Math.round((sectorStatsActive / sectorStatsTotal) * 100) : 
     100;
+
+  // Bildirişleri adapterlə çevirək
+  const adaptedNotifications = Array.isArray(data.notifications) 
+    ? data.notifications.map((notification) => adaptDashboardNotificationToApp(notification))
+    : [];
 
   return (
     <div className="space-y-6">
@@ -57,7 +63,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
                 
         <NotificationsCard
           title="Bildirişlər"
-          notifications={data.notifications}
+          notifications={adaptedNotifications}
         />
       </Grid>
     </div>

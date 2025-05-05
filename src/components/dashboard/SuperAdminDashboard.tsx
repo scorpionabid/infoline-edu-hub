@@ -3,8 +3,9 @@ import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
-import NotificationsCard from './common/NotificationsCard';
+import { NotificationsCard } from './common/NotificationsCard';
 import { SuperAdminDashboardData } from '@/types/dashboard';
+import { adaptDashboardNotificationToApp } from '@/types/notification';
 
 interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
@@ -16,6 +17,11 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
   const approvedCount = data.formsByStatus?.approved || 0;
   const rejectedCount = data.formsByStatus?.rejected || 0;
   const totalForms = data.formsByStatus?.total || 0;
+
+  // Bildirişleri adapterlə çevirək
+  const adaptedNotifications = Array.isArray(data.notifications) 
+    ? data.notifications.map((notification) => adaptDashboardNotificationToApp(notification))
+    : [];
 
   return (
     <div className="space-y-6">
@@ -91,7 +97,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
                 
         <NotificationsCard
           title="Bildirişlər"
-          notifications={data.notifications}
+          notifications={adaptedNotifications}
         />
       </Grid>
     </div>

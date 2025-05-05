@@ -13,7 +13,7 @@ interface NotificationsCardProps {
   title?: string;
 }
 
-const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
+export const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
   notifications,
   viewAllLink = '/notifications',
   title
@@ -95,6 +95,4 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
   );
 };
 
-export { NotificationsCard };
 export default NotificationsCard;
-

@@ -3,9 +3,9 @@ import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
-import NotificationsCard from '../common/NotificationsCard';
+import { NotificationsCard } from '../common/NotificationsCard';
 import { SectorAdminDashboardData } from '@/types/dashboard';
-import { Notification, adaptDashboardNotificationToApp } from '@/types/notification';
+import { adaptDashboardNotificationToApp } from '@/types/notification';
 
 interface SectorAdminDashboardProps {
   data: SectorAdminDashboardData;
@@ -20,7 +20,7 @@ export const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data
   };
 
   // Dashboard notifikasiyalarını uyğunlaşdıraq
-  const adaptedNotifications: Notification[] = Array.isArray(data.notifications) 
+  const adaptedNotifications = Array.isArray(data.notifications) 
     ? data.notifications.map((notification) => adaptDashboardNotificationToApp(notification))
     : [];
 

@@ -27,9 +27,9 @@ export const adaptDbNotificationToApp = (dbNotification: any): Notification => {
   return {
     id: dbNotification.id,
     title: dbNotification.title || 'Bildiriş',
-    message: dbNotification.message,
+    message: dbNotification.message || '',
     type: dbNotification.type as NotificationType, 
-    priority: dbNotification.priority as NotificationPriority,
+    priority: dbNotification.priority as NotificationPriority || 'normal',
     userId: dbNotification.user_id,
     isRead: dbNotification.is_read,
     read: dbNotification.is_read,
@@ -49,7 +49,7 @@ export interface DashboardNotification extends Notification {}
 export const adaptDashboardNotificationToApp = (notification: any): Notification => {
   return {
     id: notification.id || `temp-${Date.now()}`,
-    title: notification.title || 'Bildiriş',
+    title: notification.title || notification.message || 'Bildiriş',
     message: notification.message || '',
     type: notification.type as NotificationType,
     isRead: notification.isRead || notification.read || false,

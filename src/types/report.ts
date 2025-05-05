@@ -1,4 +1,7 @@
 
+export type ReportType = 'basic' | 'advanced' | 'custom' | 'chart' | 'table';
+export type ReportStatus = 'draft' | 'published' | 'archived';
+
 export interface Report {
   id: string;
   title: string;
@@ -14,10 +17,21 @@ export interface Report {
   shared_with?: string[];
 }
 
-export type ReportType = 'basic' | 'advanced' | 'custom' | 'chart' | 'table';
-
-export type ReportStatus = 'draft' | 'published' | 'archived';
-
 export interface ReportChartProps {
   report: Report;
+}
+
+export enum ReportTypeEnum {
+  STATISTICS = 'statistics',
+  COMPLETION = 'completion',
+  COMPARISON = 'comparison',
+  COLUMN = 'column'
+}
+
+export interface ReportPreviewDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  reportId: string;
+  reportTitle: string;
+  reportDescription: string;
 }

@@ -3,10 +3,11 @@ import React from 'react';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import { NotificationsCard } from './common/NotificationsCard';
-import { SchoolAdminDashboardData, Notification } from '@/types/dashboard';
+import { SchoolAdminDashboardData } from '@/types/dashboard';
 import { Grid } from '@/components/ui/grid';
 import { CheckCircle, AlertTriangle, Clock, XCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { adaptDashboardNotificationToApp } from '@/types/notification';
 
 interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
@@ -59,19 +60,11 @@ export function SchoolAdminDashboard({
       </div>
     );
   }
-  
-  // Bildirişləri Notification tipinə çevirik (artıq UINotification əvəzinə)
-  const formattedNotifications: Notification[] = data.notifications.map(n => ({
-    id: n.id,
-    title: n.title,
-    message: n.message,
-    date: n.date,
-    type: n.type === 'system' ? 'info' : 
-           n.type === 'deadline' ? 'warning' :
-           n.type === 'approval' ? 'success' :
-           n.type === 'rejection' ? 'error' : 'info',
-    isRead: n.isRead
-  }));
+
+  // Bildirişləri adapter ilə çevirək
+  const adaptedNotifications = Array.isArray(data.notifications) 
+    ? data.notifications.map((notification) => adaptDashboardNotificationToApp(notification))
+    : [];
   
   return (
     <div className="space-y-6">
@@ -90,35 +83,35 @@ export function SchoolAdminDashboard({
       <Grid columns={4} className="gap-6">
         <StatsCard 
           title={t('approved')} 
-          value={data.formStats.approved} 
+          value={data.formStats?.approved || 0} 
           icon={<CheckCircle size={18} />}
           trendDirection="up"
         />
         <StatsCard 
           title={t('pending')} 
-          value={data.formStats.pending} 
+          value={data.formStats?.pending || 0} 
           icon={<Clock size={18} />}
         />
         <StatsCard 
           title={t('rejected')} 
-          value={data.formStats.rejected} 
+          value={data.formStats?.rejected || 0} 
           icon={<XCircle size={18} />}
           trendDirection="down"
         />
         <StatsCard 
           title={t('incomplete')} 
-          value={data.formStats.incomplete || 0} 
+          value={data.formStats?.incomplete || 0} 
           icon={<AlertTriangle size={18} />}
         />
       </Grid>
       <Grid columns={2} className="gap-6">
         <CompletionRateCard 
-          completionRate={data.completionRate} 
+          completionRate={data.completionRate || 0} 
           title={t('overallCompletion')} 
         />
         <NotificationsCard 
           title={t('notifications')} 
-          notifications={formattedNotifications}
+          notifications={adaptedNotifications}
         />
       </Grid>
     </div>

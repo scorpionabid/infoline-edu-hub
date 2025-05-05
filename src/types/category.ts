@@ -15,6 +15,7 @@ export interface Category {
   created_at: string;
   updated_at: string;
   archived: boolean;
+  column_count?: number; // Əlavə edildi
   completionRate?: number;
 }
 
