@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Table,
   TableBody,
@@ -9,7 +8,9 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,357 +19,218 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Download, MoreHorizontal } from 'lucide-react';
-import { toast } from 'sonner';
+import { Edit, Copy, Download, Upload, File, FilePlus, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { ColumnDef } from '@tanstack/react-table';
-import {
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from 'sonner';
+import { CategoryWithColumns, Column } from '@/types/column';
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { useToast } from "@/components/ui/use-toast"
+import { useAuth } from '@/context/auth';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DatePicker } from "@/components/ui/date-picker"
+import { CalendarIcon } from "@radix-ui/react-icons"
 import { cn } from "@/lib/utils"
-import { useDebounce } from '@/hooks/useDebounce';
-import * as XLSX from 'xlsx';
+import { format } from "date-fns"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Separator } from "@/components/ui/separator"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
+import { Checkbox as ShadCheckbox } from "@/components/ui/checkbox"
+import { Progress } from "@/components/ui/progress"
+import { useSuperAdminDashboard } from '@/hooks/useSuperAdminDashboard';
+import { useRegionAdminDashboard } from '@/hooks/useRegionAdminDashboard';
+import { useSectorAdminDashboard } from '@/hooks/useSectorAdminDashboard';
+import { useSchoolAdminDashboard } from '@/hooks/useSchoolAdminDashboard';
+import { useDashboard } from '@/hooks/useDashboard';
+import { useColumns } from '@/hooks/columns';
+import { useCategories } from '@/hooks/categories/useCategories';
+import { useDataEntries } from '@/hooks/dataEntry/useDataEntries';
+import { useSchool } from '@/hooks/dataEntry/useSchool';
+import { useSearchParams } from 'react-router-dom';
+import { adaptValidationRules } from '@/utils/typeMappings';
+import { supabase } from '@/integrations/supabase/client';
+import { ColumnType } from '@/types/column';
 
-// Mock data və sütunlar
-const mockData = [
-  { id: '1', schoolName: 'Məktəb #1', region: 'Bakı', sector: 'Nərimanov', submittedForms: 10, totalForms: 12 },
-  { id: '2', schoolName: 'Məktəb #2', region: 'Bakı', sector: 'Yasamal', submittedForms: 8, totalForms: 12 },
-  { id: '3', schoolName: 'Məktəb #3', region: 'Sumqayıt', sector: 'Mərkəz', submittedForms: 12, totalForms: 12 },
-  { id: '4', schoolName: 'Məktəb #4', region: 'Gəncə', sector: 'Şimal', submittedForms: 6, totalForms: 12 }
-];
-
-const columns: ColumnDef<any>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected()}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "schoolName",
-    header: "Məktəb",
-  },
-  {
-    accessorKey: "region",
-    header: "Region",
-  },
-  {
-    accessorKey: "sector",
-    header: "Sektor",
-  },
-  {
-    accessorKey: "submittedForms",
-    header: "Təqdim edilmiş formalar",
-  },
-  {
-    accessorKey: "totalForms",
-    header: "Ümumi formalar",
-  },
-  {
-    accessorKey: "completionRate",
-    header: "Tamamlanma faizi",
-    cell: ({ row }) => {
-      const submittedForms = row.original.submittedForms;
-      const totalForms = row.original.totalForms;
-      const rate = Math.round((submittedForms / totalForms) * 100);
-      return `${rate}%`;
-    }
-  }
-];
-
-interface DataTableProps<TData, TValue> {
-  data?: TData[];
-  columns?: ColumnDef<TData, TValue>[];
+interface SchoolColumnTableProps {
+  categoryId: string;
+  schoolId: string;
 }
 
-export function SchoolColumnTable<TData, TValue>({ 
-  data = mockData as any,
-  columns: providedColumns = columns as any,
-}: DataTableProps<TData, TValue>) {
+const SchoolColumnTable: React.FC<SchoolColumnTableProps> = ({ categoryId, schoolId }) => {
   const { t } = useLanguage();
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = useState({})
-  const [globalFilter, setGlobalFilter] = useState("")
-  const debouncedGlobalFilter = useDebounce(globalFilter, 500);
-  const { toast } = useToast()
-  
-  const table = useReactTable({
-    data,
-    columns: providedColumns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-      globalFilter: debouncedGlobalFilter,
-    },
-    onGlobalFilterChange: setGlobalFilter,
-  })
-
-  const tableData = data || [];
-
-  // Excel ixrac funksiyası
-  const onExportExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(tableData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
-    XLSX.writeFile(workbook, 'school-column-report.xlsx');
-    toast({ title: "Excel ixrac edildi", description: "Faylınız başarıyla ixrac edildi" });
-  };
-
-  // CSV ixrac funksiyası
-  const onExportCSV = () => {
-    const csvData = convertToCSV(tableData);
-    downloadFile(csvData, 'school-column-report.csv', 'text/csv;charset=utf-8;');
-    toast({ title: "CSV ixrac edildi", description: "Faylınız başarıyla ixrac edildi" });
-  };
-
-  // PDF ixrac funksiyası
-  const onExportPDF = () => {
-    toast({ title: "PDF ixrac edildi", description: "Faylınız başarıyla ixrac edildi" });
-  };
-
-  const convertToCSV = (arr: any[]) => {
-    const array = [Object.keys(arr[0])].concat(arr)
-
-    return array.map(it => {
-      return Object.values(it).map(value => {
-        return typeof value === "string" ? `"${value.replace(/"/g, '""')}"` : value;
-      }).join(',')
-    }).join('\n')
-  }
-
-  const downloadFile = (data: any, filename: string, type: string) => {
-    const file = new Blob([data], { type: type });
-    const a = document.createElement("a"),
-      url = URL.createObjectURL(file);
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function () {
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    }, 0);
-  }
-
-  return (
-    <div className="w-full">
-      <div className="flex items-center py-4">
-        <Input
-          placeholder={t("search")}
-          value={globalFilter ?? ""}
-          onChange={
-            (event) => setGlobalFilter(event.target.value)
-          }
-          className="ml-2 w-[300px]"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              {t("columns")} <MoreHorizontal className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[150px]">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuItem
-                    key={column.id}
-                    className="flex items-center p-2"
-                    onClick={(event) => {
-                      event.preventDefault()
-                      column.toggleVisibility()
-                    }}
-                  >
-                    <Checkbox
-                      checked={column.getIsVisible()}
-                      className="mr-2"
-                    />
-                    <span>{column.id}</span>
-                  </DropdownMenuItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Button variant="outline" className="ml-2" onClick={onExportExcel}>
-          {t("exportExcel")} <Download className="ml-2 h-4 w-4" />
-        </Button>
-        <Button variant="outline" className="ml-2" onClick={onExportPDF}>
-          {t("exportPdf")} <Download className="ml-2 h-4 w-4" />
-        </Button>
-        <Button variant="outline" className="ml-2" onClick={onExportCSV}>
-          {t("exportCsv")} <Download className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : (
-                          <div
-                            {...{
-                              className: cn(
-                                "flex cursor-pointer items-center gap-1",
-                                header.column.getCanSort()
-                                  ? "hover:underline"
-                                  : "",
-                              ),
-                              onClick:
-                                header.column.getCanSort()
-                                  ? () => {
-                                    header.column.toggleSorting(
-                                      header.column.getIsSorted() === "asc"
-                                        ? "desc"
-                                        : "asc"
-                                    )
-                                  }
-                                  : undefined,
-                            }}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                            {{
-                              asc:
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="20"
-                                  height="20"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="lucide lucide-arrow-down"
-                                >
-                                  <path d="M12 5v14" />
-                                  <path d="m5 12 7 7 7-7" />
-                                </svg>,
-                              desc:
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="20"
-                                  height="20"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="lucide lucide-arrow-up"
-                                >
-                                  <path d="M12 19V5" />
-                                  <path d="m5 12 7-7 7 7" />
-                                </svg>,
-                            }[header.column.getIsSorted() ?? null]}
-                          </div>
-                        )}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={providedColumns.length} className="h-24 text-center">
-                  {t("noResults")}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} / {table.getFilteredRowModel().rows.length} sətir seçilib.
-        </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {t("previous")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            {t("next")}
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default SchoolColumnTable;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [entries, setEntries] = useState<any[]>([]);
+  const [columns, setColumns] = useState<Column[]>([]);
+  const [category, setCategory] = useState<CategoryWithColumns | null>(null);
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
+  const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImportWithTemplateDialogOpen, setIsImportWithTemplateDialogOpen] = useState(false);
+  const [templateFile, setTemplateFile] = useState<File | null>(null);
+  const [isImportWithTemplateLoading, setIsImportWithTemplateLoading] = useState(false);
+  const [isImportWithTemplateSuccess, setIsImportWithTemplateSuccess] = useState(false);
+  const [isImportWithTemplateError, setIsImportWithTemplateError] = useState(false);
+  const [importWithTemplateErrorMessage, setImportWithTemplateErrorMessage] = useState('');
+  const [isImportWithTemplateProcessing, setIsImportWithTemplateProcessing] = useState(false);
+  const [importWithTemplateProgress, setImportWithTemplateProgress] = useState(0);
+  const [isImportWithTemplateCompleted, setIsImportWithTemplateCompleted] = useState(false);
+  const [importWithTemplateResults, setImportWithTemplateResults] = useState<any[]>([]);
+  const [isImportWithTemplateResultsDialogOpen, setIsImportWithTemplateResultsDialogOpen] = useState(false);
+  const [isImportWithTemplateResultsError, setIsImportWithTemplateResultsError] = useState(false);
+  const [importWithTemplateResultsErrorMessage, setImportWithTemplateResultsErrorMessage] = useState('');
+  const [isImportWithTemplateResultsSuccess, setIsImportWithTemplateResultsSuccess] = useState(false);
+  const [importWithTemplateResultsSuccessMessage, setImportWithTemplateResultsSuccessMessage] = useState('');
+  const [isImportWithTemplateResultsWarning, setIsImportWithTemplateResultsWarning] = useState(false);
+  const [importWithTemplateResultsWarningMessage, setImportWithTemplateResultsWarningMessage] = useState('');
+  const [isImportWithTemplateResultsWarningCount, setImportWithTemplateResultsWarningCount] = useState(0);
+  const [isImportWithTemplateResultsSuccessCount, setImportWithTemplateResultsSuccessCount] = useState(0);
+  const [isImportWithTemplateResultsErrorCount, setImportWithTemplateResultsErrorCount] = useState(0);
+  const [isImportWithTemplateResultsTotalCount, setImportWithTemplateResultsTotalCount] = useState(0);
+  const [isImportWithTemplateResultsSkippedCount, setImportWithTemplateResultsSkippedCount] = useState(0);
+  const [isImportWithTemplateResultsSkippedMessage, setImportWithTemplateResultsSkippedMessage] = useState('');
+  const [isImportWithTemplateResultsSkipped, setIsImportWithTemplateResultsSkipped] = useState(false);
+  const [isImportWithTemplateResultsSkippedDialogOpen, setIsImportWithTemplateResultsSkippedDialogOpen] = useState(false);
+  const [isImportWithTemplateResultsSkippedMessageDialogOpen, setIsImportWithTemplateResultsSkippedMessageDialogOpen] = useState(false);
+  const [isImportWithTemplateResultsSkippedMessageDialogMessage, setImportWithTemplateResultsSkippedMessageDialogMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogTitle, setImportWithTemplateResultsSkippedMessageDialogTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogType, setImportWithTemplateResultsSkippedMessageDialogType] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIcon, setImportWithTemplateResultsSkippedMessageDialogIcon] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconColor, setImportWithTemplateResultsSkippedMessageDialogIconColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconTitle, setImportWithTemplateResultsSkippedMessageDialogIconTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconDescription, setImportWithTemplateResultsSkippedMessageDialogIconDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageDescription] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageColor] = useState<'success' | 'warning' | 'error'>('success');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle, setImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageTitle] = useState('');
+  const [isImportWithTemplateResultsSkippedMessageDialogIconMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessageMessage

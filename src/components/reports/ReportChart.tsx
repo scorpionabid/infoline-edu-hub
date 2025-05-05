@@ -1,76 +1,61 @@
-
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useLanguage } from '@/context/LanguageContext';
-import { Report, ReportType } from '@/types/form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Bar, Pie, Line } from 'react-chartjs-2';
+import { Report, ReportType } from '@/types/report'; // form əvəzinə report istifadə edirik
 
 interface ReportChartProps {
-  data: any[];
-  type: ReportType;
+  report: Report;
 }
 
-const ReportChart: React.FC<ReportChartProps> = ({ data, type }) => {
-  const { t } = useLanguage();
+const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
+  if (!report || !report.content) {
+    return <Card>
+      <CardContent>
+        Məlumat yoxdur
+      </CardContent>
+    </Card>;
+  }
+
+  const chartData = report.content;
+  const chartType = report.type;
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: report.title,
+      },
+    },
+  };
 
   const renderChart = () => {
-    if (type === ReportType.STATISTICS) {
-      return (
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="value" fill="#8884d8" />
-          </BarChart>
-        </ResponsiveContainer>
-      );
+    switch (chartType) {
+      case 'bar':
+        return <Bar data={chartData} options={options} />;
+      case 'pie':
+        return <Pie data={chartData} options={options} />;
+      case 'line':
+        return <Line data={chartData} options={options} />;
+      default:
+        return <p>Grafik növü dəstəklənmir</p>;
     }
-
-    else if (type === ReportType.COMPLETION) {
-      return (
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="completed" fill="#82ca9d" />
-            <Bar dataKey="pending" fill="#8884d8" />
-          </BarChart>
-        </ResponsiveContainer>
-      );
-    }
-
-    else if (type === ReportType.COMPARISON) {
-      return (
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="groupA" fill="#8884d8" />
-            <Bar dataKey="groupB" fill="#82ca9d" />
-          </BarChart>
-        </ResponsiveContainer>
-      );
-    }
-
-    return <p>{t('noChartData')}</p>;
   };
 
   return (
-    <div className="mt-4">
-      <h3 className="text-lg font-medium">Example Report</h3>
-      <p className="text-muted-foreground text-sm mb-4">This is a summary of the report.</p>
-      <div className="text-sm text-muted-foreground mb-2">Report summary information</div>
-      {renderChart()}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>{report.title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {renderChart()}
+      </CardContent>
+    </Card>
   );
 };
 
 export default ReportChart;
+

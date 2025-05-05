@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PendingApprovalItem } from '@/types/dashboard';
+import { PendingApprovalItem } from '@/types/dashboard'; // Artıq dashboard.ts-də təyin edilib
 import { Button } from '@/components/ui/button';
 import { Clock, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

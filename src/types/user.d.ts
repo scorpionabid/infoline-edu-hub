@@ -16,3 +16,22 @@ export interface UserFormData {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface FullUserData extends UserFormData {
+  // UserSettings tiplərini əlavə edirik
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    browser: boolean;
+  };
+  adminEntity?: {
+    id: string;
+    name: string;
+    type: 'region' | 'sector' | 'school';
+  };
+  // UserFormData-dan camelCase uyğunluğunu təmin edək
+  fullName?: string; // full_name ilə eyni
+  regionId?: string; // region_id ilə eyni
+  sectorId?: string; // sector_id ilə eyni
+  schoolId?: string; // school_id ilə eyni
+}

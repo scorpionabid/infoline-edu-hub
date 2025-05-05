@@ -1,281 +1,234 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
-import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns } from '@/types/category';
 import { Column } from '@/types/column';
-import { DataEntry } from '@/types/dataEntry';
-import { useCategoryStatus } from '@/hooks/categories/useCategoryStatus';
-import { validateEntries, convertEntryValuesToDataEntries } from '@/components/dataEntry/utils/formUtils';
-import DataEntryForm from './DataEntryForm';
+import { CategoryWithColumns } from '@/types/column';
+import EntryField from './EntryField';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import ColumnEntryForm from './ColumnEntryForm';
+import { validateEntry } from './utils/formUtils';
+import { toast } from 'sonner';
+import { AlertTriangle, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const CategoryForm: React.FC = () => {
-  const { categoryId } = useParams<{ categoryId: string }>();
-  const navigate = useNavigate();
+interface CategoryFormProps {
+  category: CategoryWithColumns;
+  initialEntries?: any[];
+  onSave: (entries: any[]) => Promise<void>;
+  loading?: boolean;
+  readOnly?: boolean;
+}
+
+const CategoryForm: React.FC<CategoryFormProps> = ({
+  category,
+  initialEntries = [],
+  onSave,
+  loading = false,
+  readOnly = false
+}) => {
   const { t } = useLanguage();
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const [entries, setEntries] = useState<Record<string, any>>({});
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [category, setCategory] = useState<CategoryWithColumns | null>(null);
-  const [columns, setColumns] = useState<Column[]>([]);
-  const [entries, setEntries] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
-  const [status, setStatus] = useState<string>('');
+  // Təyin edək ki, category.columns boş deyilsə ondan istifadə edək, əks halda boş massiv
+  const resolvedCategory: CategoryWithColumns = {
+    ...category,
+    columns: category?.columns || [] as Column[]
+  };
 
-  // Kateqoriya statusunu idarə etmək üçün hook
-  const {
-    status: calculatedStatus,
-    completionPercentage,
-    getStatusBadgeColor,
-    getStatusLabel
-  } = useCategoryStatus(category || { columns: [] }, { entries });
+  // Qqruplaşdırılmış sütunları hesablamaq
+  const groupedColumns = React.useMemo(() => {
+    if (!resolvedCategory?.columns?.length) return {};
 
-  // Məlumatları əldə et
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError('');
+    return resolvedCategory.columns.reduce((groups, column) => {
+      const group = column.section || 'default';
+      groups[group] = [...(groups[group] || []), column];
+      return groups;
+    }, {} as Record<string, Column[]>);
+  }, [resolvedCategory]);
 
-    try {
-      // Kateqoriyanı əldə et
-      const { data: categoryData, error: categoryError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('id', categoryId)
-        .single();
-
-      if (categoryError) {
-        throw new Error(categoryError.message);
-      }
-
-      if (!categoryData) {
-        navigate('/404');
-        return;
-      }
-
-      const categoryWithColumns: CategoryWithColumns = {
-        ...categoryData,
-        columns: []
-      };
-      setCategory(categoryWithColumns);
-      setStatus(categoryWithColumns.status || 'draft');
-
-      // Sütunları əldə et
-      const { data: columnsData, error: columnsError } = await supabase
-        .from('columns')
-        .select('*')
-        .eq('category_id', categoryId)
-        .order('order_index', { ascending: true });
-
-      if (columnsError) {
-        throw new Error(columnsError.message);
-      }
-
-      setColumns(columnsData as Column[]);
-      categoryWithColumns.columns = columnsData as Column[];
-
-      // Mövcud məlumatları əldə et
-      const { data: entriesData, error: entriesError } = await supabase
-        .from('data_entries')
-        .select('*')
-        .eq('category_id', categoryId)
-        .eq('school_id', user?.school_id);
-
-      if (entriesError) {
-        throw new Error(entriesError.message);
-      }
-
-      setEntries(entriesData as DataEntry[]);
-    } catch (err: any) {
-      setError(err.message);
-      toast({
-        variant: 'destructive',
-        title: t('errorFetchingData'),
-        description: err.message
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [categoryId, navigate, t, toast, user?.school_id]);
-
-  // Komponent mount olduqda məlumatları əldə et
+  // İlkin dəyərləri yükləyirik
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (initialEntries?.length) {
+      const initialValues = initialEntries.reduce((values, entry) => {
+        values[entry.columnId] = entry.value;
+        return values;
+      }, {} as Record<string, any>);
+      setEntries(initialValues);
+    }
+  }, [initialEntries]);
 
-  // Dəyişiklikləri yadda saxla
-  const handleSave = async (newEntries: any[]) => {
-    setLoading(true);
-    setError('');
+  // Dəyər dəyişdikdə xətanı yoxlayırıq
+  const handleValueChange = useCallback((columnId: string, value: any) => {
+    setEntries(prev => ({ ...prev, [columnId]: value }));
 
+    const column = resolvedCategory.columns.find(c => c.id === columnId);
+    if (column) {
+      const validationResult = validateEntry(column, value);
+      
+      setErrors(prev => ({
+        ...prev,
+        [columnId]: validationResult.isValid ? '' : validationResult.error
+      }));
+    }
+  }, [resolvedCategory.columns]);
+
+  // Bölməni genişləndirmək/yığmaq
+  const toggleSection = useCallback((section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  }, []);
+
+  // Formu təqdim etmək
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Məcburi sahələri yoxlayırıq
+    const requiredColumns = resolvedCategory.columns.filter(column => column.is_required);
+    const newErrors: Record<string, string> = {};
+    
+    for (const column of requiredColumns) {
+      const value = entries[column.id];
+      if (value === undefined || value === null || value === '') {
+        newErrors[column.id] = t('fieldRequired');
+      }
+    }
+    
+    // Xətalar varsa, göstəririk və qayıdırıq
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error(t('formHasErrors'));
+      return;
+    }
+    
+    // Bütün dəyərləri uyğun formata çeviririk
+    setIsSaving(true);
     try {
-      // Əvvəlcə bütün səhvləri yoxla
-      const validatedEntries = validateEntries(newEntries, columns);
-
-      // Əgər səhv varsa, saxla
-      if (validatedEntries.some(entry => !entry.isValid)) {
-        setEntries(validatedEntries);
-        toast({
-          variant: 'destructive',
-          title: t('errorSavingForm'),
-          description: t('pleaseCorrectErrors')
-        });
-        return;
-      }
-
-      // DataEntry obyektlərinə çevir
-      const dataToSave = convertEntryValuesToDataEntries(validatedEntries, categoryId || '', user?.school_id || '');
-
-      // Əgər data varsa, update et, yoxsa əlavə et
-      for (const entry of dataToSave) {
-        const existingEntry = entries.find(e => e.column_id === entry.column_id);
-
-        if (existingEntry) {
-          // Update
-          const { error: updateError } = await supabase
-            .from('data_entries')
-            .update({ value: entry.value, updated_at: new Date().toISOString() })
-            .eq('column_id', entry.column_id)
-            .eq('category_id', categoryId)
-            .eq('school_id', user?.school_id);
-
-          if (updateError) {
-            throw new Error(updateError.message);
-          }
-        } else {
-          // Insert
-          const { error: insertError } = await supabase
-            .from('data_entries')
-            .insert({
-              ...entry,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-
-          if (insertError) {
-            throw new Error(insertError.message);
-          }
-        }
-      }
-
-      toast({
-        title: t('formSavedSuccessfully'),
-        description: t('formDataSaved')
-      });
-    } catch (err: any) {
-      setError(err.message);
-      toast({
-        variant: 'destructive',
-        title: t('errorSavingForm'),
-        description: err.message
-      });
+      const submittedEntries = resolvedCategory.columns.map(column => ({
+        columnId: column.id,
+        categoryId: column.category_id,
+        value: entries[column.id] !== undefined ? entries[column.id] : '',
+      }));
+      
+      await onSave(submittedEntries);
+      toast.success(t('dataSaved'));
+    } catch (error) {
+      console.error('Form təqdim etmə xətası:', error);
+      toast.error(t('errorOccurred'));
     } finally {
-      setLoading(false);
-      fetchData();
+      setIsSaving(false);
     }
   };
 
-  // Statusu dəyiş
-  const handleStatusChange = async (newStatus: string) => {
-    setLoading(true);
-    setError('');
-
-    try {
-      // Statusu dəyiş
-      const { error: updateError } = await supabase
-        .from('categories')
-        .update({ status: newStatus })
-        .eq('id', categoryId);
-
-      if (updateError) {
-        throw new Error(updateError.message);
-      }
-
-      setStatus(newStatus);
-      toast({
-        title: t('statusUpdatedSuccessfully'),
-        description: t('categoryStatusUpdated')
-      });
-    } catch (err: any) {
-      setError(err.message);
-      toast({
-        variant: 'destructive',
-        title: t('errorUpdatingStatus'),
-        description: err.message
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Əgər məlumatlar yüklənirsə
-  if (loading) {
+  // Kateqoriya yüklənmədisə
+  if (!category && loading) {
     return (
-      <div className="flex items-center justify-center h-60">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-1/2" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
       </div>
     );
   }
 
-  // Əgər xəta varsa
-  if (error) {
+  // Kateqoriya boşdursa
+  if (!resolvedCategory.columns?.length) {
     return (
-      <div className="flex items-center justify-center h-60 text-red-500">
-        {t('errorMessage')}: {error}
+      <div className="text-center py-10">
+        <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-2" />
+        <p className="text-lg font-medium">
+          {t('noCategoriesFound')}
+        </p>
       </div>
     );
   }
 
-  // Əgər kateqoriya yoxdursa
-  if (!category) {
-    return (
-      <div className="flex items-center justify-center h-60">
-        {t('categoryNotFound')}
-      </div>
-    );
-  }
+  // Son tarix varsa, formatlamasını edək
+  const deadline = resolvedCategory.deadline
+    ? new Date(resolvedCategory.deadline).toLocaleDateString()
+    : undefined;
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-5">{category.name}</h1>
-      <div className="mb-5">
-        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(calculatedStatus)}`}>
-          {getStatusLabel(calculatedStatus)} ({completionPercentage}%)
-        </span>
-      </div>
-
-      <DataEntryForm
-        columns={columns}
-        initialEntries={entries}
-        onSave={handleSave}
-        loading={loading}
-      />
-
-      <div className="mt-5 flex justify-end gap-2">
-        {status === 'pending' ? null : (
-          <Button
-            variant="secondary"
-            onClick={() => handleStatusChange('pending')}
-            disabled={loading}
-          >
-            {t('submitForApproval')}
-          </Button>
-        )}
-        {status === 'approved' ? null : (
-          <Button
-            onClick={() => handleStatusChange('approved')}
-            disabled={loading}
-          >
-            {t('approve')}
-          </Button>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Kateqoriya başlığı və deadline */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-semibold">{resolvedCategory.name}</h2>
+          {resolvedCategory.description && (
+            <p className="text-muted-foreground text-sm mt-1">
+              {resolvedCategory.description}
+            </p>
+          )}
+        </div>
+        {deadline && (
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Calendar className="h-4 w-4 mr-1" />
+            <span>{t('deadline')}: {deadline}</span>
+          </div>
         )}
       </div>
-    </div>
+
+      {/* Qruplaşdırılmamış sütunlar */}
+      {Object.entries(groupedColumns).map(([section, columns]) => {
+        const isExpanded = expandedSections[section] !== false; // Default açıq
+
+        return (
+          <div key={section} className="border rounded-md overflow-hidden mb-6">
+            {/* Bölmə başlığı - 'default' deyilsə göstəririk */}
+            {section !== 'default' && (
+              <div 
+                className="flex items-center justify-between bg-muted p-3 cursor-pointer"
+                onClick={() => toggleSection(section)}
+              >
+                <h3 className="font-medium">{section}</h3>
+                {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+              </div>
+            )}
+            
+            {/* Sütunlar */}
+            {(section === 'default' || isExpanded) && (
+              <div className="p-4 space-y-4">
+                {columns.map(column => (
+                  <EntryField
+                    key={column.id}
+                    column={column}
+                    value={entries[column.id] || ''}
+                    onChange={(value) => handleValueChange(column.id, value)}
+                    error={errors[column.id]}
+                    readOnly={readOnly}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      
+      {/* Submit düyməsi - readOnly rejimində göstərmirik */}
+      {!readOnly && (
+        <div className="flex justify-end">
+          <Button 
+            type="submit" 
+            disabled={isSaving || loading}
+            className="min-w-[120px]"
+          >
+            {isSaving ? t('saving') : t('save')}
+          </Button>
+        </div>
+      )}
+      
+      {/* Kateqoriya ilə əlaqəli digər formlar */}
+      {resolvedCategory.related && (
+        <ColumnEntryForm
+          categoryId={resolvedCategory.id}
+        />
+      )}
+    </form>
   );
 };
 

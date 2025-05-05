@@ -1,151 +1,97 @@
-
-import React, { useState, useEffect } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Card, CardContent } from '@/components/ui/card';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Report } from '@/types/form';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, ChartBarIcon, FileText, BarChart3, Share2, Trash, Edit, Eye } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { useLanguage } from '@/context/LanguageContext';
+import { Report } from '@/types/report'; // form əvəzinə report istifadə edirik
 
-// Mock data
-const mockReports: Report[] = [
-  {
-    id: '1',
-    title: 'Region Statistics',
-    description: 'Overall statistics about regions',
-    type: 'statistics' as any,
-    content: {},
-    created_at: new Date().toISOString(),
-    status: 'published',
-    name: 'Region Statistics Report',
-    summary: 'Overview of region statistics and performance metrics'
-  },
-  {
-    id: '2',
-    title: 'School Completion Rate',
-    description: 'Completion rates for schools',
-    type: 'completion' as any,
-    content: {},
-    created_at: new Date().toISOString(),
-    status: 'published',
-    name: 'School Completion Report',
-    summary: 'Analysis of school data completion rates'
-  }
-];
+interface ReportListProps {
+  reports: Report[];
+  onEdit: (report: Report) => void;
+  onDelete: (report: Report) => void;
+  onShare: (report: Report) => void;
+  onView: (report: Report) => void;
+}
 
-const ReportList: React.FC = () => {
+const ReportList: React.FC<ReportListProps> = ({ reports, onEdit, onDelete, onShare, onView }) => {
+  const navigate = useNavigate();
   const { t } = useLanguage();
-  const [reports, setReports] = useState<Report[]>(mockReports);
-  const [activeTab, setActiveTab] = useState('all');
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
-  const handlePreviewReport = (report: Report) => {
-    setSelectedReport(report);
-    setIsPreviewDialogOpen(true);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return 'bg-gray-100 text-gray-700 border-gray-300';
+      case 'published':
+        return 'bg-green-100 text-green-700 border-green-300';
+      case 'archived':
+        return 'bg-red-100 text-red-700 border-red-300';
+      default:
+        return 'bg-gray-50 text-gray-500 border-gray-100';
+    }
   };
 
-  const handleDownloadReport = async (report: Report) => {
-    // Simulate download
-    console.log('Downloading report:', report);
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return t('draft');
+      case 'published':
+        return t('published');
+      case 'archived':
+        return t('archived');
+      default:
+        return t('unknown');
+    }
   };
-
-  const handleShareReport = (report: Report) => {
-    // Simulate share functionality
-    console.log('Sharing report:', report);
-  };
-
-  const filteredReports = activeTab === 'all' 
-    ? reports 
-    : reports.filter(report => {
-      if (activeTab === 'templates') return report.is_template;
-      return report.type === activeTab;
-    });
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-md">
-          <TabsList className="grid grid-cols-4">
-            <TabsTrigger value="all">{t('all')}</TabsTrigger>
-            <TabsTrigger value="statistics">{t('statistics')}</TabsTrigger>
-            <TabsTrigger value="completion">{t('completion')}</TabsTrigger>
-            <TabsTrigger value="templates">{t('templates')}</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <Button onClick={() => setIsCreateDialogOpen(true)} size="sm">
-          <Plus className="mr-1 h-4 w-4" /> {t('createReport')}
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredReports.map(report => (
-          <Card key={report.id} className="overflow-hidden hover:shadow-md transition-shadow">
-            <CardContent className="p-0">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold mb-2">{report.title}</h3>
-                <p className="text-muted-foreground text-sm mb-4">{report.description}</p>
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handlePreviewReport(report)}
-                  >
-                    {t('preview')}
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    onClick={() => handleDownloadReport(report)}
-                  >
-                    {t('download')}
-                  </Button>
-                </div>
+    <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {reports.map((report) => (
+        <Card key={report.id} className="bg-white shadow-md rounded-md overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{report.title}</CardTitle>
+            <Badge variant="secondary" className={getStatusColor(report.status)}>
+              {getStatusText(report.status)}
+            </Badge>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-muted-foreground">
+              <div className="flex items-center mb-1">
+                {report.type === 'table' ? (
+                  <FileText className="h-4 w-4 mr-2" />
+                ) : (
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                )}
+                {t('type')}: {report.type}
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Create Report Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('createNewReport')}</DialogTitle>
-            <DialogDescription>
-              {t('selectReportType')}
-            </DialogDescription>
-          </DialogHeader>
-          {/* Create report form will go here */}
-        </DialogContent>
-      </Dialog>
-
-      {/* Preview Report Dialog */}
-      {selectedReport && (
-        <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
-          <DialogContent className="sm:max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>{selectedReport.title}</DialogTitle>
-              <DialogDescription>
-                {selectedReport.description}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              {/* Report preview content will go here */}
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-muted-foreground">Report preview placeholder</p>
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-2" />
+                {t('lastUpdated')}: {formatDistanceToNow(new Date(report.updatedAt), { addSuffix: true })}
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button variant="ghost" size="sm" onClick={() => onView(report)}>
+                <Eye className="h-4 w-4 mr-2" />
+                {t('view')}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => onEdit(report)}>
+                <Edit className="h-4 w-4 mr-2" />
+                {t('edit')}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => onShare(report)}>
+                <Share2 className="h-4 w-4 mr-2" />
+                {t('share')}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => onDelete(report)}>
+                <Trash className="h-4 w-4 mr-2" />
+                {t('delete')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };

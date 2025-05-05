@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { Column, ColumnOption } from '@/types/columns';
-import { useToast } from '@/components/ui/use-toast';
+import { ColumnType } from '@/types/column';
+import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,7 +32,7 @@ const columnFormSchema = z.object({
 export type ColumnFormValues = z.infer<typeof columnFormSchema>;
 
 export const useColumnForm = (categories: { id: string; name: string }[], editColumn: Column | null, onSaveColumn: (columnData: any) => Promise<boolean>) => {
-  const [selectedType, setSelectedType] = useState<string>(editColumn?.type || 'text');
+  const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type || 'text');
   const [options, setOptions] = useState<ColumnOption[]>(editColumn?.options || []);
   const [newOption, setNewOption] = useState<string>('');
   const isEditMode = !!editColumn;
@@ -54,8 +55,8 @@ export const useColumnForm = (categories: { id: string; name: string }[], editCo
   const { t } = useLanguage();
 
   // Handle type change
-  const handleTypeChange = (type: string) => {
-    setSelectedType(type);
+  const handleTypeChange = (type: ColumnType) => {
+    setSelectedType(type as ColumnType);
     form.setValue('type', type);
     
     // Reset options if not a type that supports options
@@ -73,6 +74,7 @@ export const useColumnForm = (categories: { id: string; name: string }[], editCo
     if (exists) return;
     
     const newOpt: ColumnOption = {
+      id: `option_${Date.now()}`, // Unikal ID əlavə edirik
       label: newOption.trim(),
       value: newOption.trim().toLowerCase().replace(/\s+/g, '_')
     };

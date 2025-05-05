@@ -1,9 +1,11 @@
 
+import { ColumnType } from './column';
+
 export interface Column {
   id: string;
   category_id: string;
   name: string;
-  type: string;
+  type: ColumnType; // string yerinə ColumnType istifadə edirik
   is_required: boolean;
   placeholder?: string;
   help_text?: string;
@@ -25,8 +27,11 @@ export interface Column {
 }
 
 export interface ColumnOption {
+  id?: string; // id əlavə edirik
   label: string;
   value: string;
+  color?: string;
+  disabled?: boolean;
 }
 
 export interface ColumnValidation {

@@ -7,7 +7,7 @@ import { SchoolAdminDashboardData } from '@/types/dashboard';
 import { Grid } from '@/components/ui/grid';
 import { CheckCircle, AlertTriangle, Clock, XCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { adaptDashboardNotificationToApp } from '@/types/notification';
+import { adaptDashboardNotificationToApp, NotificationType } from '@/types/notification';
 
 interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
@@ -61,9 +61,17 @@ export function SchoolAdminDashboard({
     );
   }
 
-  // Bildirişləri adapter ilə çevirək
-  const adaptedNotifications = Array.isArray(data.notifications) 
-    ? data.notifications.map((notification) => adaptDashboardNotificationToApp(notification))
+  // Bildirişləri adapter ilə çevirək - tip problemini həll edirik
+  const adaptedNotifications: NotificationType[] = Array.isArray(data.notifications) 
+    ? data.notifications.map((notification) => {
+        // Əgər bəzi tələb olunan xüsusiyyətlər yoxdursa əlavə edirik
+        return {
+          ...adaptDashboardNotificationToApp({
+            ...notification,
+            createdAt: notification.createdAt || new Date().toISOString()
+          })
+        };
+      })
     : [];
   
   return (

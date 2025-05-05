@@ -75,17 +75,35 @@ export interface SchoolStats {
   totalForms?: number;
   completionRate?: number;
   total?: number;
+  active?: number; // Əlavə edildi
+  incomplete?: number; // Əlavə edildi
+}
+
+export interface PendingApprovalItem { // Əlavə edildi
+  id: string;
+  formId: string;
+  categoryId: string;
+  schoolId: string;
+  categoryName?: string;
+  schoolName?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt?: string;
+  submittedBy: string;
 }
 
 export interface UINotification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: 'info' | 'success' | 'warning' | 'error' | 'system' | 'category' | 'deadline' | 'approval';
   isRead: boolean;
   read?: boolean;
   date?: string;
-  createdAt?: string;
+  createdAt: string; // createdAt xüsusiyyətini məcburi edirik
+  time?: string;
+  priority?: 'high' | 'normal' | 'low';
+  relatedId?: string;
+  relatedType?: string;
 }
 
 export type Notification = UINotification;

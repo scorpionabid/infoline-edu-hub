@@ -1,72 +1,76 @@
 
-export type ReportStatus = 'draft' | 'published' | 'archived';
-
-export enum ReportType {
-  STATISTICS = 'statistics',
-  COMPLETION = 'completion',
-  COMPARISON = 'comparison',
-  COLUMN = 'column'
-}
+// Əvvəlcə report.ts faylını yaradıb tipi təyin edək
 
 export interface Report {
   id: string;
   title: string;
-  description?: string;
-  type: ReportType | string;
-  status?: ReportStatus;
-  createdAt?: string;
-  updatedAt?: string;
-  createdBy?: string;
-  category?: string;
-  sharedWith?: string[];
-  created_at: string;
-  updated_at?: string;
+  type: string;
+  status: 'draft' | 'published' | 'archived';
+  createdAt: string;
+  updatedAt: string;
   content?: any;
+  createdBy?: string;
+  shared?: boolean;
   filters?: any;
-  created_by?: string;
-  is_template?: boolean;
-  shared_with?: string[];
-  author?: string;
-  last_updated?: string;
 }
 
-export interface ReportChartProps {
-  report: Report;
+export type ReportType = 
+  | 'table' 
+  | 'chart'
+  | 'summary'
+  | 'comparison'
+  | 'trend'
+  | 'custom';
+
+export interface ReportFilter {
+  id: string;
+  field: string;
+  operator: string;
+  value: any;
 }
 
-export interface SchoolColumnData {
-  schoolId: string;
-  schoolName: string;
-  region?: string;
-  sector?: string;
-  status?: string;
-  rejectionReason?: string;
-  columnData: {
-    columnId: string;
-    value: any;
-    status?: string;
+export interface ReportChartData {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    backgroundColor?: string[];
+    borderColor?: string;
+    borderWidth?: number;
   }[];
 }
 
-export interface ExportOptions {
-  fileName?: string;
-  includeStatus?: boolean;
-  includeRegion?: boolean;
-  includeSector?: boolean;
+export interface ReportTableData {
+  headers: string[];
+  rows: any[][];
 }
 
-export interface StatusFilterOptions {
-  status: 'all' | 'pending' | 'approved' | 'rejected';
+export interface ReportMetadata {
+  title: string;
+  description?: string;
+  author?: string;
+  createdAt: string;
+  updatedAt: string;
+  tags?: string[];
+  category?: string;
 }
 
-export interface ReportPreviewDialogProps {
-  isOpen: boolean;
-  open?: boolean;
-  onClose: () => void;
-  reportId: string;
-  reportTitle: string;
-  reportDescription: string;
+export interface ReportSummary {
+  title: string;
+  metrics: {
+    label: string;
+    value: number | string;
+    change?: number;
+    trend?: 'up' | 'down' | 'neutral';
+  }[];
 }
 
-// Faylın sonunda ikinci "export { ReportType };" xəttini silmişəm,
-// çünki ReportType zaten "export enum ReportType" şəklində ixrac olunur.
+export interface FormReport {
+  id: string;
+  formId: string;
+  type: ReportType;
+  title: string;
+  data: ReportChartData | ReportTableData;
+  createdAt: string;
+  updatedAt: string;
+}

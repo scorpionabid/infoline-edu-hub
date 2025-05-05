@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { PendingApprovalItem } from '@/types/dashboard';
+import { PendingApprovalItem } from '@/types/dashboard'; // Artıq dashboard.ts-də təyin edilib
 
 interface StatusCardsProps {
   approvalCount: number;

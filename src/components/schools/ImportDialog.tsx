@@ -1,256 +1,276 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
-import { Table } from '@/components/ui/table';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Download, AlertTriangle, FileWarning, FileUp } from 'lucide-react'; // ImportCircle əvəzinə FileUp istifadə edirik
-import { importSchoolsFromExcel, createSchoolExcelTemplate } from '@/utils/excelUtils';
-import { School } from '@/types/school';
+import * as XLSX from 'xlsx';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { School } from '@/types/supabase';
+import { useToast } from '@/components/ui/use-toast';
+import { Download, Upload, X } from 'lucide-react';
+import { Progress } from "@/components/ui/progress"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 
 interface ImportDialogProps {
-  open: boolean;
+  isOpen: boolean;
   onClose: () => void;
-  onImport: (schools: Partial<School>[]) => Promise<void>;
+  onCreate: (school: Omit<School, 'id'>) => Promise<void>;
 }
 
-export const ImportDialog: React.FC<ImportDialogProps> = ({ open, onClose, onImport }) => {
-  const { t } = useLanguage();
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [errors, setErrors] = useState<string[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+interface ExcelRow {
+  [key: string]: any;
+}
 
-  const resetState = () => {
-    setFile(null);
-    setPreview([]);
-    setLoading(false);
-    setImporting(false);
-    setErrors([]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onCreate }) => {
+  const { t } = useLanguageSafe();
+  const { toast: useToastHook } = useToast();
+
+  const [file, setFile] = useState<File | null>(null);
+  const [templateFile, setTemplateFile] = useState<File | null>(null);
+  const [data, setData] = useState<ExcelRow[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importResults, setImportResults] = useState<{ success: number; failed: number }>({ success: 0, failed: 0 });
+  const [errorMessages, setErrorMessages] = useState<string[]>([]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0] || null;
+    setFile(selectedFile);
+    setData([]);
+    setErrorMessages([]);
+    setImportResults({ success: 0, failed: 0 });
+  };
+
+  const handleTemplateFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0] || null;
+    setTemplateFile(selectedFile);
+  };
+
+  const processFile = async (file: File) => {
+    setIsProcessing(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const binaryStr = e.target.result;
+        const workbook = XLSX.read(binaryStr, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const excelData: ExcelRow[] = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+        setData(excelData);
+      };
+      reader.onerror = () => {
+        toast.error(t('fileReadError') || 'Fayl oxunarkən xəta baş verdi.');
+      };
+      reader.onabort = () => {
+        toast.warning(t('fileReadAborted') || 'Fayl oxunması dayandırıldı.');
+      };
+      reader.readAsBinaryString(file);
+    } catch (error) {
+      console.error("Fayl işləmə xətası:", error);
+      toast.error(t('fileProcessingError') || 'Fayl işləmə zamanı xəta baş verdi.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
+  const processImport = async (file: File) => {
+    processFile(file);
+  };
 
-    // Fayl tipini yoxlayır
-    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
-    if (!validTypes.includes(selectedFile.type)) {
-      toast.error(t('invalidFileType'), {
-        description: t('onlyExcelFilesAllowed')
-      });
-      resetState();
+  const startImport = async (templateFile: File | null) => {
+    if (!data || data.length === 0) {
+      toast.error(t('noDataToImport') || 'İdxal etmək üçün məlumat yoxdur.');
       return;
     }
 
-    setFile(selectedFile);
-    setLoading(true);
-    setErrors([]);
+    setIsImporting(true);
+    setImportProgress(0);
+    setImportResults({ success: 0, failed: 0 });
+    setErrorMessages([]);
 
-    try {
-      // Excel-dən məlumatları idxal edir
-      const importedData = await importSchoolsFromExcel(selectedFile);
-      
-      // Məlumatları doğrulayır
-      const validationErrors: string[] = [];
-      importedData.forEach((school, index) => {
-        if (!school.name) {
-          validationErrors.push(`${t('row')} ${index + 1}: ${t('schoolNameMissing')}`);
-        }
-      });
+    const totalRows = data.length;
+    let successfulImports = 0;
+    let failedImports = 0;
+    const currentErrorMessages: string[] = [];
 
-      if (validationErrors.length > 0) {
-        setErrors(validationErrors);
+    for (let i = 0; i < totalRows; i++) {
+      try {
+        const row = data[i];
+        const schoolData: Omit<School, 'id'> = {
+          name: row[t('schoolNameColumn')] || '',
+          region_id: row[t('regionColumn')] || '',
+          sector_id: row[t('sectorColumn')] || '',
+          address: row[t('addressColumn')] || '',
+          principal_name: row[t('principalNameColumn')] || '',
+          contact_phone: row[t('contactPhoneColumn')] || '',
+          email: row[t('emailColumn')] || '',
+          status: row[t('statusColumn')] || 'active',
+          notes: row[t('notesColumn')] || '',
+        };
+
+        await onCreate(schoolData);
+        successfulImports++;
+      } catch (error: any) {
+        console.error(`Sətir ${i + 1} idxal edilərkən xəta:`, error);
+        failedImports++;
+        currentErrorMessages.push(`${t('row')} ${i + 1}: ${error.message || t('importFailed')}`);
       }
 
-      setPreview(importedData);
-    } catch (error: any) {
-      toast.error(t('errorProcessingFile'), {
-        description: error.message
-      });
-      resetState();
-    } finally {
-      setLoading(false);
+      const progress = ((i + 1) / totalRows) * 100;
+      setImportProgress(progress);
+    }
+
+    setIsImporting(false);
+    setImportResults({ success: successfulImports, failed: failedImports });
+    setErrorMessages(currentErrorMessages);
+
+    if (failedImports === 0) {
+      toast.success(t('allSchoolsImported') || 'Bütün məktəblər uğurla idxal edildi!');
+    } else {
+      toast.success(`${successfulImports} ${t('schoolsImported')} ${failedImports} ${t('schoolsFailed')}`);
     }
   };
 
-  const handleDownloadTemplate = () => {
-    createSchoolExcelTemplate();
-  };
-
-  const handleImport = async () => {
-    if (!file || preview.length === 0) {
-      toast.error(t('noDataToImport')); // toast error formatını düzəltdik
+  const handleImportWithTemplate = async (withTemplate: boolean) => {
+    if (withTemplate && !templateFile) {
+      toast.error(t('noTemplateFileSelected') || 'Zəhmət olmasa, şablon faylı seçin.');
       return;
     }
 
-    if (errors.length > 0) {
-      toast.error(t('cannotImportWithErrors'));
+    if (!file) {
+      toast.error(t('noFileSelected') || 'Zəhmət olmasa, fayl seçin.');
       return;
     }
 
-    setImporting(true);
-
-    try {
-      await onImport(preview);
-      toast.success(t('importSuccess'), {
-        description: t('schoolsImportedSuccessfully', { count: preview.length })
-      });
-      onClose();
-      resetState();
-    } catch (error: any) {
-      toast.error(t('importError'), {
-        description: error.message
-      });
-    } finally {
-      setImporting(false);
-    }
+    startImport(templateFile);
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) {
-        resetState();
-        onClose();
-      }
-    }}>
-      <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
-          <DialogTitle>
-            <div className="flex items-center">
-              <FileUp className="mr-2 h-5 w-5" /> {/* ImportCircle əvəzinə FileUp istifadə edirik */}
-              {t('importSchools')}
-            </div>
-          </DialogTitle>
-          <DialogDescription>{t('importSchoolsDescription')}</DialogDescription>
+          <DialogTitle>{t('importSchools')}</DialogTitle>
+          <DialogDescription>
+            {t('importSchoolsDescription')}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 my-4">
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center">
-              <Button variant="outline" onClick={handleDownloadTemplate} type="button">
-                <Download className="mr-2 h-4 w-4" />
-                {t('downloadTemplate')}
-              </Button>
-
-              <div className="flex items-center">
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  ref={fileInputRef}
-                  id="file-upload"
-                />
-                <Button
-                  variant="secondary"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={loading || importing}
-                >
-                  {file ? t('changeFile') : t('selectFile')}
-                </Button>
-              </div>
-            </div>
-
-            {file && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {t('selectedFile')}: {file.name}
-              </p>
-            )}
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="importFile" className="text-right">
+              {t('importFileLabel')}
+            </Label>
+            <Input
+              type="file"
+              id="importFile"
+              className="col-span-3"
+              onChange={handleFileChange}
+              disabled={isImporting}
+            />
           </div>
 
-          {loading && (
-            <div className="flex justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="templateFile" className="text-right">
+              {t('templateFileLabel')}
+            </Label>
+            <Input
+              type="file"
+              id="templateFile"
+              className="col-span-3"
+              onChange={handleTemplateFileChange}
+              disabled={isImporting}
+            />
+          </div>
+
+          {isProcessing && (
+            <div className="flex items-center space-x-2">
+              <Progress value={100} className="flex-1" />
+              <span>{t('processingFile')}</span>
             </div>
           )}
 
-          {errors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>{t('validationErrors')}</AlertTitle>
-              <AlertDescription>
-                <ul className="list-disc list-inside">
-                  {errors.map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {preview.length > 0 && !loading && (
-            <>
-              <h3 className="text-lg font-medium">{t('preview')}:</h3>
-              <div className="border rounded-md overflow-auto max-h-[300px]">
+          {data.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">{t('previewData')}</h4>
+              <ScrollArea className="max-h-[300px]">
                 <Table>
-                  <thead className="sticky top-0 bg-background">
-                    <tr>
-                      <th className="p-2">{t('schoolName')}</th>
-                      <th className="p-2">{t('address')}</th>
-                      <th className="p-2">{t('principal')}</th>
-                      <th className="p-2">{t('email')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {preview.slice(0, 10).map((school, index) => (
-                      <tr key={index} className="border-t">
-                        <td className="p-2">{school.name}</td>
-                        <td className="p-2">{school.address}</td>
-                        <td className="p-2">{school.principalName}</td>
-                        <td className="p-2">{school.email}</td>
-                      </tr>
+                  <TableCaption>{t('previewOfImportedData')}</TableCaption>
+                  <TableHeader>
+                    <TableRow>
+                      {Object.keys(data[0]).map((key) => (
+                        <TableHead key={key}>{key}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.map((row, index) => (
+                      <TableRow key={index}>
+                        {Object.values(row).map((value, i) => (
+                          <TableCell key={i}>{value}</TableCell>
+                        ))}
+                      </TableRow>
                     ))}
-                  </tbody>
+                  </TableBody>
                 </Table>
-                {preview.length > 10 && (
-                  <div className="text-center p-2 text-muted-foreground text-sm border-t">
-                    {t('andMoreRecords', { count: preview.length - 10 })}
-                  </div>
-                )}
-              </div>
-            </>
+              </ScrollArea>
+            </div>
           )}
 
-          {file && !preview.length && !loading && (
-            <Alert>
-              <FileWarning className="h-4 w-4" />
-              <AlertTitle>{t('noData')}</AlertTitle>
-              <AlertDescription>{t('noDataFoundInFile')}</AlertDescription>
-            </Alert>
+          {isImporting && (
+            <div className="flex items-center space-x-2">
+              <Progress value={importProgress} className="flex-1" />
+              <span>{t('importing')} {importProgress.toFixed(0)}%</span>
+            </div>
+          )}
+
+          {errorMessages.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">{t('importErrors')}</h4>
+              <ul className="list-disc pl-5">
+                {errorMessages.map((message, index) => (
+                  <li key={index} className="text-red-500 text-sm">{message}</li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={isImporting}>
             {t('cancel')}
           </Button>
           <Button
-            onClick={handleImport}
-            disabled={importing || loading || !file || !preview.length || errors.length > 0}
+            type="button"
+            onClick={() => handleImportWithTemplate(true)}
+            disabled={isImporting || isProcessing || !file}
           >
-            {importing ? (
-              <>
-                <span className="animate-spin h-4 w-4 mr-2 border-2 border-background border-t-transparent rounded-full" />
-                {t('importing')}
-              </>
-            ) : (
-              t('import')
-            )}
+            {t('importWithTemplate')}
+          </Button>
+          <Button
+            type="button"
+            onClick={() => handleImportWithTemplate(false)}
+            disabled={isImporting || isProcessing || !file}
+          >
+            {t('importWithoutTemplate')}
           </Button>
         </DialogFooter>
       </DialogContent>
