@@ -1,5 +1,4 @@
-
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/hooks/auth/useAuthStore";
 import { usePermissions } from "@/hooks/auth/usePermissions";
@@ -41,6 +40,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { isAuthenticated, isLoading, user } = useAuthStore();
   const { userRole } = usePermissions();
   const location = useLocation();
+  const [redirectAttempted, setRedirectAttempted] = useState(false);
   
   // İlk yüklənmə zamanı və hər location dəyişdikdə 
   // scrollu yuxarı qaytarırıq
@@ -55,16 +55,24 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   
   // İstifadəçi autentifikasiya olmayıbsa, login səhifəsinə yönləndiririk
   if (!isAuthenticated) {
-    // Redirect loop qarşını almaq üçün kontrol
-    if (location.pathname === '/login') {
+    // Redirect loop qarşısını almaq üçün kontrol
+    if (location.pathname === redirectUrl || redirectAttempted) {
       return <>{children}</>;
     }
+    
+    // Redirect-i qeyd edir və başlatırıq
+    setRedirectAttempted(true);
     return <Navigate to={redirectUrl} state={{ from: location }} replace />;
   }
   
   // İstifadəçinin rolu yoxlanılan rollar arasında deyilsə, icazə yoxdur səhifəsini göstəririk
   if (allowedRoles && userRole && !allowedRoles.includes(userRole)) {
     return <AccessDenied />;
+  }
+  
+  // Redirect işarəsini təmizləyirik
+  if (redirectAttempted) {
+    setRedirectAttempted(false);
   }
   
   return <>{children}</>;
@@ -78,8 +86,9 @@ interface PublicRouteProps {
 const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
   const { isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
+  const [redirecting, setRedirecting] = useState(false);
   
-  // İlk yüklənmə zamanı və hər location dəyişdikdə 
+  // İlk yüklənmə zamanı və hər location dəyişdikd�� 
   // scrollu yuxarı qaytarırıq
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -91,7 +100,10 @@ const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false 
   }
   
   // İstifadəçi artıq autentifikasiya olunubsa və restricted route-dadırsa, dashboard-a yönləndiririk
-  if (isAuthenticated && restricted) {
+  if (isAuthenticated && restricted && !redirecting) {
+    // Yalnız bir dəfə redirect etmək üçün
+    setRedirecting(true);
+    
     // Əvvəlki marşrut varsa, ona qayıdırıq, əks halda dashboard-a yönləndiririk
     const from = location.state?.from?.pathname || "/dashboard";
     return <Navigate to={from} replace />;
@@ -139,6 +151,7 @@ const AppRoutes = () => (
         <SidebarLayout />
       </ProtectedRoute>
     }>
+      {/* Dashboard və digər səhifələr */}
       <Route path="/dashboard" element={<Dashboard />} />
       
       <Route path="/sectors" element={

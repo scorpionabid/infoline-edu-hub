@@ -1,5 +1,6 @@
 
-export type NotificationType = 'system' | 'category' | 'deadline' | 'approval' | 'form' | 'warning' | 'error' | 'success' | 'info' | 'rejection' | 'comment';
+export type NotificationType = 'system' | 'category' | 'deadline' | 'approval' | 'form' | 
+                              'warning' | 'error' | 'success' | 'info' | 'rejection' | 'comment';
 export type NotificationPriority = 'low' | 'normal' | 'high';
 
 export interface Notification {
@@ -40,13 +41,13 @@ export const adaptDbNotificationToApp = (dbNotification: any): Notification => {
 // Dashboard bildiişləri üçün tip
 export interface DashboardNotification {
   id: string;
-  title?: string;
+  title: string; // Artıq optional deyil
   message: string;
-  type: 'deadline' | 'approval' | 'rejection' | 'comment' | 'system' | 'warning' | 'error' | 'success' | 'info';
-  isRead?: boolean;
+  type: NotificationType; // Birləşdirilmiş tip
+  isRead: boolean; // Artıq optional deyil
   read?: boolean;
   date?: string;
-  createdAt?: string;
+  createdAt: string; // Artıq optional deyil
   priority?: NotificationPriority;
 }
 
@@ -56,7 +57,7 @@ export const adaptDashboardNotificationToApp = (notification: DashboardNotificat
     id: notification.id,
     title: notification.title || 'Bildiriş',
     message: notification.message,
-    type: notification.type as NotificationType,
+    type: notification.type,
     isRead: notification.isRead || notification.read || false,
     read: notification.read || notification.isRead || false,
     createdAt: notification.createdAt || new Date().toISOString(),
@@ -73,7 +74,7 @@ export const adaptAppToDashboardNotification = (notification: Notification): Das
     id: notification.id,
     title: notification.title,
     message: notification.message,
-    type: notification.type as 'deadline' | 'approval' | 'rejection' | 'comment' | 'system' | 'warning' | 'error' | 'success' | 'info',
+    type: notification.type,
     isRead: notification.isRead,
     read: notification.read,
     date: notification.date || notification.createdAt.split('T')[0],

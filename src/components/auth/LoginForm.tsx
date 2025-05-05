@@ -57,7 +57,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      if (formSubmitting) return;
+      // Form prosesi artıq gedirsə və ya istifadəçi artıq giriş edibsə, prosesi dayandırırıq
+      if (formSubmitting || isAuthenticated) return;
       
       clearError(); // Əvvəlki xətaları təmizləyək
       setFormSubmitting(true);
@@ -89,6 +90,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
+  // Button disabled vəziyyəti
   const isButtonDisabled = isLoading || formSubmitting || isAuthenticated;
 
   return (

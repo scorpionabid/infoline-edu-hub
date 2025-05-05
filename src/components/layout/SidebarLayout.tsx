@@ -1,5 +1,5 @@
 
-import React, { ReactNode, useState, useEffect } from 'react';
+import React, { ReactNode, useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { ChevronLeft, Menu } from 'lucide-react';
@@ -21,6 +21,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const isInitialMount = useRef(true);
+  const [redirectInProgress, setRedirectInProgress] = useState(false);
   
   // İlkin yüklənmədə ekran ölçüsünü yoxlayırıq
   useEffect(() => {
@@ -46,14 +48,33 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
   }, []);
 
   // İstifadəçi autentifikasiya olmayıbsa və yüklənmə bitibsə, istifadəçini login səhifəsinə yönləndiririk
+  // Ancaq loop qarşısını almaq üçün əlavə nəzarət mexanizmləri əlavə edirik
   useEffect(() => {
+    // İlk render və ya redirect prosesi zamanı heç nə etmirik
+    if (isInitialMount.current || redirectInProgress) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Yalnız vəziyyət müəyyən olduqda və autentifikasiya aparılmadıqda yönləndiririk
     if (!isLoading && !isAuthenticated) {
       // Redirekt loop qarşısını almaq üçün yoxlayırıq
-      if (location.pathname !== '/login') {
-        navigate('/login', { state: { from: location } });
+      if (location.pathname !== '/login' && !redirectInProgress) {
+        // Redirect işarəsini qeyd edirik
+        setRedirectInProgress(true);
+        
+        // Bir qədər gecikmə ilə yönləndirməni həyata keçiririk (loop qarşısını almaq üçün)
+        setTimeout(() => {
+          navigate('/login', { state: { from: location } });
+          
+          // Bir müddət sonra redirect işarəsini təmizləyirik
+          setTimeout(() => {
+            setRedirectInProgress(false);
+          }, 1000);
+        }, 0);
       }
     }
-  }, [isAuthenticated, isLoading, navigate, location]);
+  }, [isAuthenticated, isLoading, navigate, location, redirectInProgress]);
 
   // Sidebar üçün klik əməliyyatı
   const handleSidebarToggle = () => {

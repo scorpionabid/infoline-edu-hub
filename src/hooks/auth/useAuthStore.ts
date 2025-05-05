@@ -6,9 +6,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { devtools } from 'zustand/middleware';
 
-/**
- * Auth state idarəetməsi üçün zustand store
- */
+// Cache Constants
+const USER_CACHE_KEY = 'auth_user_cache';
+const SESSION_CACHE_KEY = 'auth_session_cache';
+const CACHE_EXPIRY_MS = 30 * 60 * 1000; // 30 dəqiqə
+
+// Anti-loop məntiqini əlavə edək
+const EVENT_THROTTLE_MS = 500;
+let lastAuthEvent = 0;
+let lastEventType = '';
+let eventCounter = 0;
+let authSubscription = null;
+
 interface AuthState {
   user: FullUserData | null;
   session: Session | null;
@@ -34,11 +43,6 @@ interface AuthState {
   // Debug funksiyaları
   getState: () => AuthState;
 }
-
-// Cache ayarları
-const USER_CACHE_KEY = 'auth_user_cache';
-const SESSION_CACHE_KEY = 'auth_session_cache';
-const CACHE_EXPIRY_MS = 30 * 60 * 1000; // 30 dəqiqə
 
 // Keşdən istifadəçini əldə etmək
 const getCachedUser = (): FullUserData | null => {
@@ -125,17 +129,7 @@ const setCachedSession = (session: Session | null): void => {
 // İstifadəçi məlumatlarını fetch etmək
 const fetchUserData = async (userId: string, currentSession: Session): Promise<FullUserData | null> => {
   try {
-    // Tokeni yeniləyirik
-    try {
-      await supabase.auth.setSession({
-        access_token: currentSession.access_token,
-        refresh_token: currentSession.refresh_token || ''
-      });
-    } catch (e) {
-      console.warn('Session token update failed:', e);
-    }
-
-    // Parallel olaraq user_roles və profile əldə edirik
+    // Paralel olaraq user_roles və profile əldə edirik
     const [roleResult, profileResult] = await Promise.all([
       supabase
         .from('user_roles')
@@ -236,12 +230,137 @@ const fetchUserData = async (userId: string, currentSession: Session): Promise<F
   }
 };
 
-// Auth dinləyici və subscription saxlayır
-let authSubscription: { unsubscribe: () => void } | null = null;
+// Auth hadisəsinin işlənməsini yoxlayan və throttle edən funksiya
+const shouldHandleAuthEvent = (event: string, session: Session | null) => {
+  const now = Date.now();
+  
+  // Eyni event növü çox qısa müddətdə təkrarlanırsa, rədd edirik
+  if (lastEventType === event && now - lastAuthEvent < EVENT_THROTTLE_MS) {
+    eventCounter++;
+    
+    // Eyni hadisənin çox təkrarlanmasını aşkarlasaq, listener yenidən qurulmalıdır
+    if (eventCounter > 10) {
+      // Bu çox ciddi bir vəziyyətdir, bəlkə yenidən quraşdırmaq lazımdır
+      console.warn('Auth event loop detected, reinitializing listener');
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+        authSubscription = null;
+        eventCounter = 0;
+        // Timeout ilə listener yenidən quraşdıraq
+        setTimeout(() => setupAuthListener(), 1000);
+      }
+      return false;
+    }
+    
+    // Eyni eventi çox tez-tez emal etməkdən imtina edirik
+    return false;
+  }
+  
+  // Yeni event və ya kifayət qədər vaxt keçibsə, onu qeyd edirik
+  lastAuthEvent = now;
+  lastEventType = event;
+  eventCounter = event === lastEventType ? eventCounter : 0;
+  return true;
+};
 
-/**
- * Auth state idarəetmə store-u
- */
+// Auth listener quruluşu
+const setupAuthListener = (set, get) => {
+  // Əvvəlki dinləyicini təmizləyək
+  if (authSubscription) {
+    authSubscription.unsubscribe();
+    authSubscription = null;
+  }
+    
+  // Yeni dinləyici yaradırıq
+  const { data } = supabase.auth.onAuthStateChange((event, currentSession) => {
+    // Event hadisəsini throttle edirik
+    if (!shouldHandleAuthEvent(event, currentSession)) {
+      return;
+    }
+      
+    console.log('Auth state changed:', event, currentSession ? 'Session var' : 'Session yoxdur');
+      
+    // Session statusunu yeniləyirik
+    set((state) => {
+      // Eyni session ID olub-olmadığını yoxlayırıq
+      if (
+        state.session?.access_token === currentSession?.access_token && 
+        state.session?.refresh_token === currentSession?.refresh_token
+      ) {
+        // Session eynidir, dəyişiklik etmirik
+        return state;
+      }
+        
+      // Session yeniləyirik
+      setCachedSession(currentSession);
+      return { 
+        ...state, 
+        session: currentSession,
+        isAuthenticated: !!(currentSession && state.user)
+      };
+    });
+      
+    // Event handling
+    if (event === 'SIGNED_IN') {
+      if (currentSession) {
+        // İstifadəçi məlumatlarını əldə etmək üçün setTimeout istifadə edirik
+        // Bu auth callback içində başqa Supabase sorğusu etməmək üçündür
+        setTimeout(async () => {
+          try {
+            set({ isLoading: true });
+            const userData = await fetchUserData(currentSession.user.id, currentSession);
+              
+            if (userData) {
+              setCachedUser(userData);
+              set({ 
+                user: userData,
+                isAuthenticated: true,
+                isLoading: false,
+                isInitialized: true
+              });
+                
+              // Last login update etmək - amma sorğuların axışını kəsməmək üçün 
+              // ayrı bir timeout ilə edirik
+              setTimeout(async () => {
+                try {
+                  await supabase
+                    .from('profiles')
+                    .update({ 
+                      last_login: new Date().toISOString(),
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', userData.id);
+                } catch (e) {
+                  console.warn('Failed to update last_login:', e);
+                }
+              }, 500);
+            } else {
+              set({ isLoading: false });
+            }
+          } catch (err) {
+            console.error('Error fetching user data after sign in:', err);
+            set({ isLoading: false });
+          }
+        }, 100);
+      }
+    } else if (event === 'TOKEN_REFRESHED') {
+      // Token yeniləndi, state-i yeniləyirik
+      // Lakin yalnız session dəyişir, user məlumatları saxlanılır
+    } else if (event === 'SIGNED_OUT') {
+      set({ 
+        user: null,
+        session: null,
+        isAuthenticated: false,
+        isLoading: false
+      });
+      setCachedUser(null);
+      setCachedSession(null);
+    }
+  });
+    
+  authSubscription = data.subscription;
+};
+
 export const useAuthStore = create<AuthState>()(
   devtools(
     (set, get) => {
@@ -259,95 +378,23 @@ export const useAuthStore = create<AuthState>()(
       initialState.isAuthenticated = !!(initialState.user && initialState.session);
   
       // Auth listener quruluşu
-      const setupAuthListener = () => {
-        // Əvvəlki dinləyicini təmizləyək
-        if (authSubscription) {
-          authSubscription.unsubscribe();
-          authSubscription = null;
-        }
-        
-        // Yeni dinləyici yaradırıq
-        const { data } = supabase.auth.onAuthStateChange((event, currentSession) => {
-          console.log('Auth state changed:', event, currentSession ? 'Session var' : 'Session yoxdur');
-          
-          // Session statusunu yeniləyirik
-          set((state) => {
-            // Eyni session ID olub-olmadığını yoxlayırıq
-            if (
-              state.session?.access_token === currentSession?.access_token && 
-              state.session?.refresh_token === currentSession?.refresh_token
-            ) {
-              // Session eynidir, dəyişiklik etmirik
-              return state;
-            }
-            
-            // Session yeniləyirik
-            setCachedSession(currentSession);
-            return { 
-              ...state, 
-              session: currentSession,
-              isAuthenticated: !!(currentSession && state.user)
-            };
-          });
-          
-          // Event handling
-          if (event === 'SIGNED_IN') {
-            if (currentSession) {
-              // İstifadəçi məlumatlarını əldə etmək üçün setTimeout istifadə edirik
-              setTimeout(async () => {
-                try {
-                  set({ isLoading: true });
-                  const userData = await fetchUserData(currentSession.user.id, currentSession);
-                  
-                  if (userData) {
-                    setCachedUser(userData);
-                    set({ 
-                      user: userData,
-                      isAuthenticated: true,
-                      isLoading: false,
-                      isInitialized: true
-                    });
-                    
-                    // Last login update etmək
-                    try {
-                      await supabase
-                        .from('profiles')
-                        .update({ 
-                          last_login: new Date().toISOString(),
-                          updated_at: new Date().toISOString()
-                        })
-                        .eq('id', userData.id);
-                    } catch (e) {
-                      console.warn('Failed to update last_login:', e);
-                    }
-                  } else {
-                    set({ isLoading: false });
-                  }
-                } catch (err) {
-                  console.error('Error fetching user data after sign in:', err);
-                  set({ isLoading: false });
-                }
-              }, 0);
-            }
-          } else if (event === 'TOKEN_REFRESHED') {
-            // Token yeniləndi, state-i yeniləyirik
-          } else if (event === 'SIGNED_OUT') {
-            set({ 
-              user: null,
-              session: null,
-              isAuthenticated: false,
-              isLoading: false
-            });
-            setCachedUser(null);
-            setCachedSession(null);
-          }
-        });
-        
-        authSubscription = data.subscription;
-      };
+      setupAuthListener(set, get);
       
-      // Auth listener quruluşu
-      setupAuthListener();
+      // Əvvəlcədən sessiya yoxlaması
+      setTimeout(async () => {
+        try {
+          const { data } = await supabase.auth.getSession();
+          console.log('Initial session check:', data.session ? 'Session exists' : 'No session');
+          
+          if (!data.session) {
+            set({ isLoading: false });
+          }
+          // Əgər session varsa, auth listener özü məlumatları yeniləyəcək
+        } catch (err) {
+          console.error('Initial session check error:', err);
+          set({ isLoading: false });
+        }
+      }, 0);
   
       return {
         ...initialState,
@@ -410,40 +457,8 @@ export const useAuthStore = create<AuthState>()(
             set({ session: data.session });
             setCachedSession(data.session);
             
-            // İstifadəçi məlumatlarını əldə edirik
-            const userData = await fetchUserData(data.user.id, data.session);
-            
-            if (userData) {
-              // İstifadəçini təyin edirik
-              set({ 
-                user: userData,
-                isAuthenticated: true,
-                isLoading: false,
-                isInitialized: true
-              });
-              setCachedUser(userData);
-              
-              // Last login update etmək
-              try {
-                await supabase
-                  .from('profiles')
-                  .update({ 
-                    last_login: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                  })
-                  .eq('id', userData.id);
-              } catch (e) {
-                console.warn('Failed to update last_login:', e);
-              }
-              
-              return true;
-            } else {
-              set({ 
-                error: 'İstifadəçi məlumatları əldə edilmədi',
-                isLoading: false
-              });
-              return false;
-            }
+            // Auth listener məlumatları avtomatik yeniləyəcək
+            return true;
           } catch (err: any) {
             console.error('Login exception:', err);
             set({ 
@@ -477,7 +492,7 @@ export const useAuthStore = create<AuthState>()(
             });
             
             // Yenidən auth listener quruluşu
-            setupAuthListener();
+            setupAuthListener(set, get);
             
             toast.success('Sistemdən uğurla çıxış edildi');
           } catch (err: any) {
@@ -497,7 +512,11 @@ export const useAuthStore = create<AuthState>()(
             const { data, error } = await supabase.auth.getSession();
             
             if (error || !data.session) {
-              throw error || new Error('Session məlumatları əldə edilmədi');
+              set({ 
+                isLoading: false,
+                isInitialized: true
+              });
+              return null;
             }
             
             // Session-u təyin edirik
@@ -519,7 +538,8 @@ export const useAuthStore = create<AuthState>()(
             } else {
               set({ 
                 error: 'İstifadəçi məlumatları əldə edilmədi',
-                isLoading: false
+                isLoading: false,
+                isInitialized: true
               });
               return null;
             }
@@ -527,7 +547,8 @@ export const useAuthStore = create<AuthState>()(
             console.error('Auth refresh error:', err);
             set({ 
               error: err.message || 'Autentifikasiya yeniləmə xətası',
-              isLoading: false
+              isLoading: false,
+              isInitialized: true
             });
             return null;
           }
@@ -547,7 +568,9 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // İlk yüklənmə zamanı sessiyanı yoxlayıb yükləyirik
+// Lakin bir promise qarşısını almaq üçün bunu dərhal yox, 
+// başqa işlər yekunlaşdıqdan sonra edirik
 setTimeout(async () => {
   const { refreshAuth } = useAuthStore.getState();
   await refreshAuth();
-}, 0);
+}, 100);
