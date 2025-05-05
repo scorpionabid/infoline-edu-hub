@@ -45,12 +45,13 @@ export const createNotification = async (
 };
 
 // Bildirişi oxunmuş kimi işarələmək
-export const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
+export const markNotificationAsRead = async (notificationId: string, userId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
-      .eq('id', notificationId);
+      .eq('id', notificationId)
+      .eq('user_id', userId);
 
     if (error) throw error;
     return true;
@@ -74,6 +75,24 @@ export const markAllNotificationsAsRead = async (userId: string): Promise<boolea
   } catch (error) {
     console.error('Bütün bildirişlər oxunmuş kimi işarələnərkən xəta:', error);
     return false;
+  }
+};
+
+// Bildirişləri əldə etmək
+export const getNotifications = async (userId: string): Promise<Notification[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    
+    return data ? data.map(notification => adaptDbNotificationToApp(notification)) : [];
+  } catch (error) {
+    console.error('Bildirişləri əldə edərkən xəta:', error);
+    return [];
   }
 };
 

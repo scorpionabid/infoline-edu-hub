@@ -118,7 +118,7 @@ export const useNotifications = () => {
       setUnreadCount(0);
       
     } catch (err: any) {
-      console.error('Bütün bildirişləri oxunmuş kimi işarələrkən xəta:', err);
+      console.error('Büt��n bildirişləri oxunmuş kimi işarələrkən xəta:', err);
       toast({
         title: t('error'),
         description: t('errorMarkingAllNotificationsAsRead'),
