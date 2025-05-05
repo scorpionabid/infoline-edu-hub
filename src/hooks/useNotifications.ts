@@ -1,12 +1,13 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
-import { Notification, adaptDbNotificationToApp } from '@/types/notification';
+import { NotificationType, adaptDbNotificationToApp } from '@/types/notification';
 
 export const useNotifications = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -118,7 +119,7 @@ export const useNotifications = () => {
       setUnreadCount(0);
       
     } catch (err: any) {
-      console.error('Büt��n bildirişləri oxunmuş kimi işarələrkən xəta:', err);
+      console.error('Bütün bildirişləri oxunmuş kimi işarələrkən xəta:', err);
       toast({
         title: t('error'),
         description: t('errorMarkingAllNotificationsAsRead'),
@@ -128,7 +129,7 @@ export const useNotifications = () => {
   }, [user, t, toast]);
   
   // Yeni bildiriş əlavə et
-  const addNotification = useCallback(async (notification: Omit<Notification, "id" | "createdAt" | "isRead">) => {
+  const addNotification = useCallback(async (notification: Omit<NotificationType, "id" | "createdAt" | "isRead">) => {
     if (!user) return;
     
     try {
@@ -139,8 +140,8 @@ export const useNotifications = () => {
         type: notification.type,
         priority: notification.priority,
         is_read: false,
-        related_entity_id: notification.relatedId,
-        related_entity_type: notification.relatedType,
+        related_entity_id: notification.relatedEntityId,
+        related_entity_type: notification.relatedEntityType,
         created_at: new Date().toISOString()
       };
       

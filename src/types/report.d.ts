@@ -14,15 +14,13 @@ export interface Report {
   createdBy?: string;
   category?: string;
   sharedWith?: string[];
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string; // geriyə uyğunluq üçün
+  updated_at?: string; // geriyə uyğunluq üçün
   content?: any;
   filters?: any;
-  created_by?: string;
+  created_by?: string; // geriyə uyğunluq üçün
   is_template?: boolean;
-  shared_with?: string[];
-  author?: string;
-  last_updated?: string;
+  shared_with?: string[]; // geriyə uyğunluq üçün
 }
 
 export interface ReportChartProps {
@@ -34,6 +32,6 @@ export interface ReportPreviewDialogProps {
   open?: boolean;
   onClose: () => void;
   reportId: string;
-  reportTitle: string;
-  reportDescription: string;
+  reportTitle?: string;
+  reportDescription?: string;
 }

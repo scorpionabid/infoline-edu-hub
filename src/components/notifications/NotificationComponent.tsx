@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNotifications } from '@/context/NotificationContext';
+import { useNotifications } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { az } from 'date-fns/locale';
 import { useLanguage } from '@/context/LanguageContext';
@@ -18,7 +18,7 @@ import { NotificationItem } from './NotificationItem';
 
 export const NotificationComponent: React.FC = () => {
   const { t } = useLanguage();
-  const { notifications, unreadCount, loading, markAllAsRead, clearAll } = useNotifications();
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, clearAll } = useNotifications();
   const [open, setOpen] = useState(false);
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -52,7 +52,11 @@ export const NotificationComponent: React.FC = () => {
       <ScrollArea className="h-[300px]">
         <div className="space-y-2 p-2">
           {notifications.map((notification) => (
-            <NotificationItem key={notification.id} notification={notification} />
+            <NotificationItem 
+              key={notification.id} 
+              notification={notification}
+              onMarkAsRead={markAsRead}
+            />
           ))}
         </div>
       </ScrollArea>

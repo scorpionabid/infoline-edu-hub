@@ -3,10 +3,10 @@ import React from 'react';
 import { format } from 'date-fns';
 import { Bell, Check, X, AlertTriangle, Info, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Notification, NotificationType } from '@/types/notification';
+import { NotificationType } from '@/types/notification';
 
 export interface NotificationItemProps {
-  notification: Notification;
+  notification: NotificationType;
   onMarkAsRead?: (id: string) => void;
 }
 
@@ -39,9 +39,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
   const formattedDate = notification.createdAt 
     ? format(new Date(notification.createdAt), 'MMM d, HH:mm')
     : notification.date ? format(new Date(notification.date), 'MMM d, HH:mm') 
-    : notification.time 
-      ? notification.time
-      : '';
+    : '';
 
   return (
     <div className={cn(

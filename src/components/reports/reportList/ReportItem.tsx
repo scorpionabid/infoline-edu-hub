@@ -1,111 +1,155 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Report } from '@/types/report';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart2, FileText, PieChart, Table2, Download, Share2, Eye } from 'lucide-react';
-import { formatDistance } from 'date-fns';
+import { ReportTypeValues } from '@/types/report';
+import { formatDistanceToNow } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
-import { Report, ReportType } from '@/types/report';
+import { PieChart, BarChart, LineChart, Table, Eye, Edit, Trash, Copy } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 
 interface ReportItemProps {
   report: Report;
-  onPreview: (report: Report) => void;
-  onDownload: (report: Report) => Promise<void>;
-  onShare: (report: Report) => void;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+  onDuplicate: (id: string) => void;
 }
 
-const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDownload, onShare }) => {
+export const ReportItem: React.FC<ReportItemProps> = ({
+  report,
+  onView,
+  onEdit,
+  onDelete,
+  onDuplicate,
+}) => {
   const { t } = useLanguage();
   
-  // İcon seçimi
-  const getIcon = () => {
-    const reportType = report.type.toString();
-    
-    switch (reportType) {
-      case ReportType.STATISTICS.toString():
-        return <BarChart2 className="h-12 w-12 text-blue-500" />;
-      case ReportType.COMPLETION.toString():
-        return <PieChart className="h-12 w-12 text-green-500" />;
-      case ReportType.COMPARISON.toString():
-        return <Table2 className="h-12 w-12 text-purple-500" />;
-      case ReportType.COLUMN.toString():
-        return <FileText className="h-12 w-12 text-amber-500" />;
-      default:
-        return <FileText className="h-12 w-12 text-gray-500" />;
-    }
-  };
-  
-  // Status rəngini təyin etmə
-  const getStatusBadge = () => {
-    const reportType = report.type.toString();
-    
-    switch (reportType) {
-      case ReportType.STATISTICS.toString():
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-          {t('statistics')}
-        </Badge>;
-      case ReportType.COMPLETION.toString():
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-          {t('completion')}
-        </Badge>;
-      case ReportType.COMPARISON.toString():
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-          {t('comparison')}
-        </Badge>;
-      case ReportType.COLUMN.toString():
-        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-          {t('column')}
-        </Badge>;
-      default:
-        return <Badge variant="outline">{t('report')}</Badge>;
-    }
-  };
-  
-  // Tarixi formatla
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    try {
-      return formatDistance(new Date(dateString), new Date(), { addSuffix: true });
-    } catch (e) {
-      return dateString;
-    }
-  };
-
-  return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-2">
-        {getIcon()}
-        <div className="space-y-1 flex-1">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">{report.title}</CardTitle>
-            {getStatusBadge()}
+  const getReportIcon = () => {
+    switch (report.type) {
+      case ReportTypeValues.BAR:
+        return (
+          <div className="p-2 bg-blue-100 rounded-md">
+            <BarChart className="h-5 w-5 text-blue-600" />
           </div>
-          <CardDescription className="line-clamp-2">
-            {report.description || t('noDescription')}
-          </CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">
-        <div className="flex justify-between">
-          <span>{t('created')}: {formatDate(report.createdAt || report.created_at)}</span>
-          <span>{report.author || t('system')}</span>
+        );
+      case ReportTypeValues.PIE:
+        return (
+          <div className="p-2 bg-green-100 rounded-md">
+            <PieChart className="h-5 w-5 text-green-600" />
+          </div>
+        );
+      case ReportTypeValues.LINE:
+        return (
+          <div className="p-2 bg-purple-100 rounded-md">
+            <LineChart className="h-5 w-5 text-purple-600" />
+          </div>
+        );
+      case ReportTypeValues.TABLE:
+        return (
+          <div className="p-2 bg-amber-100 rounded-md">
+            <Table className="h-5 w-5 text-amber-600" />
+          </div>
+        );
+      default:
+        return (
+          <div className="p-2 bg-gray-100 rounded-md">
+            <BarChart className="h-5 w-5 text-gray-600" />
+          </div>
+        );
+    }
+  };
+  
+  const getStatusBadge = () => {
+    switch (report.status) {
+      case 'published':
+        return <Badge variant="default">{t('published')}</Badge>;
+      case 'draft':
+        return <Badge variant="outline">{t('draft')}</Badge>;
+      case 'archived':
+        return <Badge variant="secondary">{t('archived')}</Badge>;
+      default:
+        return <Badge variant="outline">{t('unknown')}</Badge>;
+    }
+  };
+  
+  const formatDate = (date: string | undefined) => {
+    if (!date) return t('unknown');
+    try {
+      return formatDistanceToNow(new Date(date), { addSuffix: true });
+    } catch {
+      return t('unknown');
+    }
+  };
+  
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex items-start gap-4">
+          {getReportIcon()}
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-semibold text-lg line-clamp-1">{report.title}</h3>
+                <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                  {report.description || t('noDescription')}
+                </p>
+              </div>
+              {getStatusBadge()}
+            </div>
+            
+            <div className="flex items-center justify-between mt-6">
+              <div className="text-xs text-muted-foreground">
+                {t('created')}: {formatDate(report.createdAt || report.created_at)}
+                {report.createdBy || report.created_by ? ` ${t('by')} ${report.createdBy || report.created_by}` : ''}
+              </div>
+              
+              <div className="flex gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" onClick={() => onView(report.id)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('view')}</TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" onClick={() => onEdit(report.id)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('edit')}</TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" onClick={() => onDuplicate(report.id)}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('duplicate')}</TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" onClick={() => onDelete(report.id)}>
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('delete')}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
+          </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between pt-2 pb-4">
-        <Button variant="outline" size="sm" onClick={() => onPreview(report)}>
-          <Eye className="h-4 w-4 mr-1" />
-          {t('preview')}
-        </Button>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => onShare(report)}>
-            <Share2 className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => onDownload(report)}>
-            <Download className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardFooter>
     </Card>
   );
 };
