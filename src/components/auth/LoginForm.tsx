@@ -30,7 +30,7 @@ interface FormValues {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
@@ -39,7 +39,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
     register, 
     handleSubmit, 
     formState: { errors },
-    setError: setFormError
+    setError: setFormError,
+    reset
   } = useForm<FormValues>();
 
   // Hər dəfə giriş formu göstərildikdə xəta mesajlarını təmizləyək
@@ -47,7 +48,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
     if (error) {
       clearError();
     }
-  }, [error, clearError]);
+    
+    // Əgər istifadəçi artıq autentifikasiya olunubsa, formu deaktiv edin
+    if (isAuthenticated) {
+      setLoginInProgress(true);
+    }
+  }, [error, clearError, isAuthenticated]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -55,17 +61,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       setLoginInProgress(true);
       console.log('Giriş cəhdi edilir...', data.email);
       
-      // Login çağırışından əvvəl bir qısa gecikmə əlavə edirik
-      // Bu, əvvəlki login cəhdlərinin təmizlənməsini təmin edir
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
       const success = await login(data.email, data.password);
       
       if (success) {
         console.log('Giriş uğurlu oldu, autentifikasiya tamamlandı');
         toast.success(t('loginSuccess'));
         // Birbaşa yönləndirmə etmirik - AuthContext vasitəsilə vəziyyət dəyişikliyi gözlənilir
+        reset(); // Form sahələrini təmizləyirik
       } else {
+        setLoginInProgress(false);
         console.log('Giriş uğursuz oldu');
         setFormError('root', { 
           type: 'manual',
@@ -74,12 +78,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       }
     } catch (err: any) {
       console.error('Login zamanı xəta baş verdi:', err);
+      setLoginInProgress(false);
       setFormError('root', { 
         type: 'manual',
         message: err.message || t('unexpectedError')
       });
-    } finally {
-      setLoginInProgress(false);
     }
   };
 
@@ -112,6 +115,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
               type="email"
               placeholder="name@example.com"
               autoComplete="email"
+              disabled={loginInProgress || isLoading || isAuthenticated}
               {...register('email', { 
                 required: t('emailRequired'),
                 pattern: {
@@ -133,6 +137,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
+                disabled={loginInProgress || isLoading || isAuthenticated}
                 {...register('password', { 
                   required: t('passwordRequired'),
                   minLength: {
@@ -147,6 +152,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
                 className="absolute inset-y-0 right-0 px-3 flex items-center"
                 onClick={togglePasswordVisibility}
                 tabIndex={-1}
+                disabled={loginInProgress || isLoading || isAuthenticated}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -165,7 +171,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
           <Button 
             type="submit" 
             className="w-full"
-            disabled={loginInProgress || isLoading}
+            disabled={loginInProgress || isLoading || isAuthenticated}
           >
             {(loginInProgress || isLoading) ? (
               <>

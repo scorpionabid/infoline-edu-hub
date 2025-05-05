@@ -5,6 +5,7 @@ import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
 import { NotificationsCard } from '../common/NotificationsCard';
 import { SectorAdminDashboardData } from '@/types/dashboard';
+import { Notification, adaptDashboardNotificationToApp } from '@/types/notification';
 
 interface SectorAdminDashboardProps {
   data: SectorAdminDashboardData;
@@ -17,6 +18,11 @@ export const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data
     active: data.stats?.schools || 0, 
     incomplete: 0 
   };
+
+  // Dashboard notifikasiyalarını uyğunlaşdıraq
+  const adaptedNotifications: Notification[] = Array.isArray(data.notifications) 
+    ? data.notifications.map(adaptDashboardNotificationToApp)
+    : [];
 
   return (
     <div className="space-y-6">
@@ -49,7 +55,7 @@ export const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data
                 
         <NotificationsCard
           title="Bildirişlər"
-          notifications={data.notifications}
+          notifications={adaptedNotifications}
         />
       </Grid>
     </div>

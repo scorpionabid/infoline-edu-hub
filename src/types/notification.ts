@@ -14,8 +14,8 @@ export interface Notification {
   priority: NotificationPriority;
   relatedId?: string;
   relatedType?: string;
-  date?: string;
-  time?: string;
+  date?: string; // Tarix (formatlanmış)
+  time?: string; // Zaman (formatlanmış)
 }
 
 // Supabase-dən gələn notification tipini tətbiq notification tipinə çevirən funksiya
@@ -34,5 +34,50 @@ export const adaptDbNotificationToApp = (dbNotification: any): Notification => {
     relatedType: dbNotification.related_entity_type,
     date: dbNotification.date || new Date(dbNotification.created_at).toISOString().split('T')[0],
     time: dbNotification.time || new Date(dbNotification.created_at).toTimeString().slice(0, 5)
+  };
+};
+
+// Dashboard bildiişləri üçün tip
+export interface DashboardNotification {
+  id: string;
+  title?: string;
+  message: string;
+  type: 'deadline' | 'approval' | 'rejection' | 'comment' | 'system' | 'warning' | 'error' | 'success' | 'info';
+  isRead?: boolean;
+  read?: boolean;
+  date?: string;
+  createdAt?: string;
+  priority?: NotificationPriority;
+}
+
+// Dashboard bildirişlərini app bildirişlərinə çevirmək üçün adapter
+export const adaptDashboardNotificationToApp = (notification: DashboardNotification): Notification => {
+  return {
+    id: notification.id,
+    title: notification.title || 'Bildiriş',
+    message: notification.message,
+    type: notification.type as NotificationType,
+    isRead: notification.isRead || notification.read || false,
+    read: notification.read || notification.isRead || false,
+    createdAt: notification.createdAt || new Date().toISOString(),
+    userId: '', // Dashboard bildirişlərində userId olmaya bilər
+    priority: notification.priority || 'normal',
+    date: notification.date || new Date().toISOString().split('T')[0],
+    time: new Date().toTimeString().slice(0, 5)
+  };
+};
+
+// App bildirişlərini dashboard bildirişlərinə çevirmək üçün adapter
+export const adaptAppToDashboardNotification = (notification: Notification): DashboardNotification => {
+  return {
+    id: notification.id,
+    title: notification.title,
+    message: notification.message,
+    type: notification.type as 'deadline' | 'approval' | 'rejection' | 'comment' | 'system' | 'warning' | 'error' | 'success' | 'info',
+    isRead: notification.isRead,
+    read: notification.read,
+    date: notification.date || notification.createdAt.split('T')[0],
+    createdAt: notification.createdAt,
+    priority: notification.priority
   };
 };

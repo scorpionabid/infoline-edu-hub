@@ -12,7 +12,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
-  const [loginCompleted, setLoginCompleted] = useState(false);
+  const [redirectAttempted, setRedirectAttempted] = useState(false);
   
   // Debug məlumatları
   useEffect(() => {
@@ -21,35 +21,35 @@ const Login = () => {
       isLoading, 
       userExists: !!user,
       userRole: user?.role || 'undefined',
-      loginCompleted
+      redirectAttempted
     });
-  }, [isAuthenticated, isLoading, user, loginCompleted]);
+  }, [isAuthenticated, isLoading, user, redirectAttempted]);
   
   // İstifadəçi autentifikasiya olduqda yönləndirmə
   useEffect(() => {
     // Əgər hələ yüklənmə prosesindədirsə, çıxırıq
-    if (isLoading) return;
+    if (isLoading) {
+      console.log('Loading state active, waiting...');
+      return;
+    }
     
     // İstifadəçi artıq autentifikasiya olunubsa və user məlumatları varsa, dashboard-a yönləndiririk
-    if (isAuthenticated && user && user.role) {
+    if (isAuthenticated && user && user.role && !redirectAttempted) {
       console.log(`İstifadəçi autentifikasiya olunub, rolu: ${user.role}, yönləndirilir: ${from}`);
-      setLoginCompleted(true); // Yönləndirməni bir dəfə izləyirik
+      setRedirectAttempted(true); // Yönləndirməni bir dəfə izləyirik
       
-      // Əgər yönləndirmə artıq icra olunubsa, təkrar yönləndirməni dayandırırıq
-      if (!loginCompleted) {
-        // Bir qısa gecikmə əlavə edirik ki, istifadəçi məlumatları tam yüklənsin
-        const redirectTimer = setTimeout(() => {
-          navigate(from, { replace: true });
-        }, 200);
-        
-        return () => clearTimeout(redirectTimer);
-      }
+      // Bir qısa gecikmə əlavə edirik ki, istifadəçi məlumatları tam yüklənsin
+      const redirectTimer = setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 300);
+      
+      return () => clearTimeout(redirectTimer);
     }
-  }, [isAuthenticated, isLoading, navigate, from, user, loginCompleted]);
+  }, [isAuthenticated, isLoading, navigate, from, user, redirectAttempted]);
 
   // Loading vəziyyətində yüklənmə göstəricisi
   if (isLoading) {
-    return <LoadingScreen />;
+    return <LoadingScreen message="Yüklənir, zəhmət olmasa gözləyin..." />;
   }
 
   return (
