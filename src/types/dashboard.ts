@@ -23,5 +23,6 @@ export {
   SchoolStat,
   FormItem,
   ChartData,
-  CategoryStat
+  CategoryStat,
+  Notification
 } from './dashboard.d';

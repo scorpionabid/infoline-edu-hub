@@ -1,4 +1,3 @@
-
 export type FormStatus = 'completed' | 'pending' | 'approved' | 'rejected' | 'dueSoon' | 'overdue' | 'draft' | 'incomplete' | 'all';
 
 export interface FormStatusCount {
@@ -46,6 +45,14 @@ export interface ColumnValidation {
 export interface ColumnOption {
   label: string;
   value: string;
+}
+
+// PageHeaderProps interfeysi əlavə edək
+export interface PageHeaderProps {
+  heading?: string;
+  subheading?: string;
+  title?: string;
+  subtitle?: string;
 }
 
 // ReportType enumu əlavə edək
@@ -108,14 +115,6 @@ export interface ReportPreviewDialogProps {
   reportId: string;
   reportTitle: string;
   reportDescription: string;
-}
-
-// PageHeaderProps interfeysi əlavə edək
-export interface PageHeaderProps {
-  heading?: string;
-  subheading?: string;
-  title?: string;
-  subtitle?: string;
 }
 
 // RegionStats interfeysi əlavə edək

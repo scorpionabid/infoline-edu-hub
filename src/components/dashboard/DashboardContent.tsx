@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth';
 import { useLanguage } from '@/context/LanguageContext';
@@ -12,8 +11,7 @@ import {
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-  Notification,
-  RecentForm
+  UINotification as Notification
 } from '@/types/dashboard';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';

@@ -1,81 +1,148 @@
 
-import { Column } from '@/types/column';
 import * as XLSX from 'xlsx';
-import { formatValueForDisplay } from './columnValidation';
+import { School } from '@/types/school';
+import { toast } from 'sonner';
 
-export const generateExcelTemplate = (columns: Column[]): Blob => {
-  const headers = columns.map(col => ({
-    key: col.id,
-    header: col.name,
-    width: 20
-  }));
-
-  const worksheet = XLSX.utils.aoa_to_sheet([headers.map(h => h.header)]);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Məlumatlar');
-
-  // Set column widths
-  const wscols = headers.map(() => ({ wch: 20 }));
-  worksheet['!cols'] = wscols;
-
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-};
-
-export const parseExcelData = (file: File, columns: Column[]): Promise<any[]> => {
+// Excel-dən məktəb məlumatlarını idxal etmək üçün funksiya
+export const importSchoolsFromExcel = async (file: File): Promise<Partial<School>[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
-    reader.onload = async (e) => {
+    
+    reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-        // Remove header row
-        const rows = jsonData.slice(1);
-        const columnMap = new Map(columns.map(col => [col.name, col]));
-
-        // Map Excel data to our format
-        const formattedData = rows.map((row: any[]) => {
-          const rowData: Record<string, any> = {};
-          columns.forEach((col, index) => {
-            const value = row[index];
-            rowData[col.id] = value ?? null;
+        
+        // İlk işçi vərəqi götürür
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
+        // XLSX-dən JSON-a çevirmə
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        
+        // Məlumatların format doğrulanması
+        const schools = jsonData.map((row: any) => {
+          // Column adlarını normalize et - adlar kiçik hərflərlə, boşluqları alt xətt ilə əvəz et
+          const normalizedRow: any = {};
+          Object.keys(row).forEach(key => {
+            const normalizedKey = key.toLowerCase().replace(/\s+/g, '_');
+            normalizedRow[normalizedKey] = row[key];
           });
-          return rowData;
+          
+          // School tipi üçün uyğun sahələri qaytar
+          return {
+            name: normalizedRow.name || normalizedRow.school_name || '',
+            regionId: normalizedRow.region_id || '',
+            sectorId: normalizedRow.sector_id || '',
+            address: normalizedRow.address || '',
+            principalName: normalizedRow.principal_name || '',
+            phone: normalizedRow.phone || '',
+            email: normalizedRow.email || '',
+            studentCount: normalizedRow.student_count || 0,
+            teacherCount: normalizedRow.teacher_count || 0,
+            type: normalizedRow.type || 'full_secondary',
+            language: normalizedRow.language || 'az',
+            status: normalizedRow.status || 'active'
+          };
         });
-
-        resolve(formattedData);
+        
+        resolve(schools);
       } catch (error) {
-        reject(new Error('Excel faylını oxuyarkən xəta baş verdi'));
+        console.error('Excel idxalı xətası:', error);
+        reject(new Error('Excel faylını emal edərkən xəta baş verdi'));
       }
     };
-
+    
     reader.onerror = () => {
-      reject(new Error('Fayl oxunarkən xəta baş verdi'));
+      reject(new Error('Excel faylını oxumaq mümkün olmadı'));
     };
-
+    
     reader.readAsArrayBuffer(file);
   });
 };
 
-export const exportToExcel = (data: any[], columns: Column[], filename: string): void => {
-  // Prepare data for export
-  const headers = columns.map(col => col.name);
-  const rows = data.map(item => 
-    columns.map(col => formatValueForDisplay(item[col.id], col.type))
-  );
+// Məktəb məlumatlarını Excel fayl kimi ixrac etmək üçün funksiya
+export const exportSchoolsToExcel = (schools: School[]): void => {
+  try {
+    // Obyektləri Excel üçün hazırlayır
+    const worksheetData = schools.map(school => ({
+      'Məktəbin adı': school.name,
+      'Ünvan': school.address || '',
+      'Direktor': school.principalName || '',
+      'Telefon': school.phone || '',
+      'Email': school.email || '',
+      'Şagird sayı': school.studentCount || '',
+      'Müəllim sayı': school.teacherCount || '',
+      'Növ': school.type || '',
+      'Tədris dili': school.language || '',
+      'Status': school.status || ''
+    }));
+    
+    // Worksheet yaradılır
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    
+    // Workbook yaradılır və worksheet əlavə edilir
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Məktəblər');
+    
+    // XLSX faylı hazırlanır və endirmə linki yaradılır
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    
+    // Fayl endirmə linki yaradılır və tıklanır
+    const fileName = `schools_export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    toast.success('Məktəb məlumatları Excel formatında ixrac edildi');
+  } catch (error) {
+    console.error('Excel ixracı xətası:', error);
+    toast.error('Excel ixracı zamanı xəta baş verdi');
+  }
+};
 
-  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Məlumatlar');
-
-  // Set column widths
-  const wscols = headers.map(() => ({ wch: 20 }));
-  worksheet['!cols'] = wscols;
-
-  // Generate and download file
-  XLSX.writeFile(workbook, `${filename}.xlsx`);
+// Şablon Excel faylı yaratmaq üçün funksiya
+export const createSchoolExcelTemplate = (): void => {
+  try {
+    // Şablon üçün başlıq sətri
+    const headers = [
+      'Məktəbin adı', 'Ünvan', 'Direktor', 'Telefon', 'Email', 
+      'Şagird sayı', 'Müəllim sayı', 'Növ', 'Tədris dili', 'Status'
+    ];
+    
+    // Nümunə data (bir sətr)
+    const sampleData = [
+      'Məktəb №1', 'Bakı şəhəri, Nəsimi rayonu', 'Əhmədov Əhməd', '+994123456789', 'mekteb1@example.com',
+      1000, 80, 'full_secondary', 'az', 'active'
+    ];
+    
+    // Worksheet yaradılır
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, sampleData]);
+    
+    // Workbook yaradılır və worksheet əlavə edilir
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Məktəblər');
+    
+    // XLSX faylı hazırlanır və endirmə linki yaradılır
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    
+    // Fayl endirmə linki yaradılır və tıklanır
+    const fileName = `schools_template.xlsx`;
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    toast.success('Məktəb şablon faylı yaradıldı');
+  } catch (error) {
+    console.error('Şablon yaradılması xətası:', error);
+    toast.error('Şablon yaradılması zamanı xəta baş verdi');
+  }
 };

@@ -5,8 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BarChart3, PieChart, LineChart, Table2, Eye, Download, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Report } from '@/types/report';
-import { ReportType } from '@/types/form';
+import { Report, ReportType } from '@/types/report';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface ReportItemProps {
@@ -20,32 +19,36 @@ export const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDow
   const { t } = useLanguage();
   
   const getReportIcon = () => {
-    if (report.type === ReportType.STATISTICS || report.type === 'statistics') {
+    const reportType = typeof report.type === 'string' ? report.type : report.type.toString();
+    
+    if (reportType === ReportType.STATISTICS || reportType === 'statistics') {
       return <BarChart3 className="h-5 w-5 text-primary" />;
     }
-    else if (report.type === ReportType.COMPLETION || report.type === 'completion') {
+    else if (reportType === ReportType.COMPLETION || reportType === 'completion') {
       return <PieChart className="h-5 w-5 text-primary" />;
     }
-    else if (report.type === ReportType.COMPARISON || report.type === 'comparison') {
+    else if (reportType === ReportType.COMPARISON || reportType === 'comparison') {
       return <LineChart className="h-5 w-5 text-primary" />;
     }
-    else if (report.type === ReportType.COLUMN || report.type === 'column') {
+    else if (reportType === ReportType.COLUMN || reportType === 'column') {
       return <Table2 className="h-5 w-5 text-primary" />;
     }
     return <BarChart3 className="h-5 w-5 text-primary" />;
   };
   
   const getReportTypeBadge = () => {
-    if (report.type === ReportType.STATISTICS || report.type === 'statistics') {
+    const reportType = typeof report.type === 'string' ? report.type : report.type.toString();
+    
+    if (reportType === ReportType.STATISTICS || reportType === 'statistics') {
       return <Badge variant="outline">Statistika</Badge>;
     }
-    else if (report.type === ReportType.COMPLETION || report.type === 'completion') {
+    else if (reportType === ReportType.COMPLETION || reportType === 'completion') {
       return <Badge variant="outline">Tamamlanma</Badge>;
     }
-    else if (report.type === ReportType.COMPARISON || report.type === 'comparison') {
+    else if (reportType === ReportType.COMPARISON || reportType === 'comparison') {
       return <Badge variant="outline">Müqayisə</Badge>;
     }
-    else if (report.type === ReportType.COLUMN || report.type === 'column') {
+    else if (reportType === ReportType.COLUMN || reportType === 'column') {
       return <Badge variant="outline">Sütun</Badge>;
     }
     return <Badge variant="outline">Hesabat</Badge>;

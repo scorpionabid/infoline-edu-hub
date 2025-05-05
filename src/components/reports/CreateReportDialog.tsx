@@ -1,183 +1,155 @@
 
 import React, { useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter,
-  DialogDescription
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { useForm } from 'react-hook-form';
-import { ReportType } from '@/types/report';
-import { useReports } from '@/hooks/useReports';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { ReportType } from '@/types/report';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface CreateReportDialogProps {
   open: boolean;
   onClose: () => void;
+  onCreate: (data: {
+    title: string;
+    description: string;
+    type: string;
+  }) => Promise<void>;
 }
 
-interface ReportFormData {
-  title: string;
-  type: ReportType;
-  description: string;
-}
-
-const CreateReportDialog: React.FC<CreateReportDialogProps> = ({ open, onClose }) => {
+export const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
+  open,
+  onClose,
+  onCreate,
+}) => {
   const { t } = useLanguage();
-  const { addReport, templates, loading } = useReports();
-  const [isCreating, setIsCreating] = useState(false);
-  
-  const form = useForm<ReportFormData>({
-    defaultValues: {
-      title: '',
-      type: 'custom',
-      description: ''
-    }
-  });
-  
-  const handleSubmit = async (data: ReportFormData) => {
-    setIsCreating(true);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [type, setType] = useState<string>(ReportType.STATISTICS.toString());
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ title?: string; description?: string; type?: string }>({});
+
+  const validate = () => {
+    const newErrors: { title?: string; description?: string; type?: string } = {};
     
+    if (!title.trim()) {
+      newErrors.title = t('titleRequired');
+    }
+    
+    if (!description.trim()) {
+      newErrors.description = t('descriptionRequired');
+    }
+    
+    if (!type) {
+      newErrors.type = t('typeRequired');
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    
+    setLoading(true);
     try {
-      const newReport = await addReport({
-        title: data.title,
-        description: data.description,
-        type: data.type,
-        status: 'draft',
-        content: {},
-        filters: {}
+      await onCreate({ 
+        title: title.trim(), 
+        description: description.trim(), 
+        type 
       });
-      
-      if (newReport) {
-        toast.success('Hesabat uğurla yaradıldı');
-        onClose();
-        form.reset();
-      }
-    } catch (error) {
-      console.error('Hesabat yaratma xətası:', error);
-      toast.error('Hesabat yaradılarkən xəta baş verdi');
+      resetForm();
+      onClose();
+      toast.success(t('reportCreated'));
+    } catch (err) {
+      console.error('Error creating report:', err);
+      toast.error(t('reportCreationFailed'));
     } finally {
-      setIsCreating(false);
+      setLoading(false);
     }
   };
-  
-  const reportTypes = [
-    { value: 'custom', label: t('customReport') },
-    { value: 'statistics', label: t('statistics') },
-    { value: 'completion', label: t('completion') },
-    { value: 'comparison', label: t('comparison') },
-    { value: 'column', label: t('column') },
-    { value: 'category', label: t('category') },
-    { value: 'school', label: t('school') },
-    { value: 'region', label: t('region') },
-    { value: 'sector', label: t('sector') }
-  ];
-  
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setType(ReportType.STATISTICS.toString());
+    setErrors({});
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) {
+        resetForm();
+        onClose();
+      }
+    }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t('createReport')}</DialogTitle>
+          <DialogTitle>{t('createNewReport')}</DialogTitle>
           <DialogDescription>
-            {t('reportDescription')}
+            {t('createNewReportDescription')}
           </DialogDescription>
         </DialogHeader>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              rules={{ required: 'Başlıq tələb olunur' }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hesabat başlığı</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Hesabat başlığını daxil edin" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <div className="grid gap-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">{t('reportTitle')}</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className={errors.title ? "border-red-500" : ""}
+              placeholder={t('reportTitlePlaceholder')}
             />
-            
-            <FormField
-              control={form.control}
-              name="type"
-              rules={{ required: 'Hesabat növü tələb olunur' }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hesabat növü</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Hesabat növünü seçin" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {reportTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+            {errors.title && <p className="text-sm text-red-500">{errors.title}</p>}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">{t('reportDescription')}</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className={errors.description ? "border-red-500" : ""}
+              placeholder={t('reportDescriptionPlaceholder')}
+              rows={3}
             />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Təsvir</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Hesabat təsvirini daxil edin"
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={onClose}>
-                İmtina
-              </Button>
-              <Button type="submit" disabled={isCreating}>
-                {isCreating ? 'Yaradılır...' : 'Yarat'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="type">{t('reportType')}</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger className={errors.type ? "border-red-500" : ""}>
+                <SelectValue placeholder={t('selectReportType')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ReportType.STATISTICS.toString()}>{t('statistics')}</SelectItem>
+                <SelectItem value={ReportType.COMPLETION.toString()}>{t('completion')}</SelectItem>
+                <SelectItem value={ReportType.COMPARISON.toString()}>{t('comparison')}</SelectItem>
+                <SelectItem value={ReportType.COLUMN.toString()}>{t('column')}</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.type && <p className="text-sm text-red-500">{errors.type}</p>}
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            {t('cancel')}
+          </Button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? (
+              <>
+                <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent"></span>
+                {t('creating')}
+              </>
+            ) : t('create')}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

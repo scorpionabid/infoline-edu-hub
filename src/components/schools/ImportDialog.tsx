@@ -1,372 +1,257 @@
 
 import React, { useState, useRef } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
-import { useLanguage } from '@/context/LanguageContext';
-import { FileUp, DownloadCloud, Upload, X, HelpCircle, Info, AlertCircle, Loader2, Check } from 'lucide-react';
 import { toast } from 'sonner';
-import { generateExcelTemplate, importSchoolsFromExcel } from '@/utils/excelUtils';
-import { School } from '@/types/supabase';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+import { useLanguage } from '@/context/LanguageContext';
+import { Table } from '@/components/ui/table';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ImportCircle, Download, AlertTriangle, FileWarning } from 'lucide-react';
+import { importSchoolsFromExcel, createSchoolExcelTemplate } from '@/utils/excelUtils';
+import { School } from '@/types/school';
 
 interface ImportDialogProps {
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
   onImport: (schools: Partial<School>[]) => Promise<void>;
 }
 
-// Log tipi
-interface LogEntry {
-  message: string;
-  type: 'info' | 'warning' | 'error';
-  timestamp: Date;
-}
-
-const ImportDialog: React.FC<ImportDialogProps> = ({ 
-  isOpen, 
-  onClose,
-  onImport
-}) => {
+export const ImportDialog: React.FC<ImportDialogProps> = ({ open, onClose, onImport }) => {
   const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [progress, setProgress] = useState(0);
-  const [progressMessage, setProgressMessage] = useState('');
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [stats, setStats] = useState({
-    totalRows: 0,
-    validRows: 0,
-    errorRows: 0
-  });
+  const [preview, setPreview] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const logsEndRef = useRef<HTMLDivElement>(null);
 
-  // Logları aşağıya sürüşdürmək üçün useEffect
-  React.useEffect(() => {
-    if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [logs]);
-
-  // Log əlavə etmək üçün funksiya
-  const addLog = (message: string, type: 'info' | 'warning' | 'error' = 'info') => {
-    setLogs(prev => [...prev, { message, type, timestamp: new Date() }]);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const selectedFile = e.target.files[0];
-      setIsError(false);
-      setErrorMessage('');
-      setLogs([]);
-      setValidationErrors([]);
-      setIsSuccess(false);
-      setProgress(0);
-      setProgressMessage('');
-      setStats({
-        totalRows: 0,
-        validRows: 0,
-        errorRows: 0
-      });
-      
-      // Excel faylı olduğunu yoxlayırıq
-      if (!selectedFile.name.endsWith('.xlsx') && !selectedFile.name.endsWith('.xls')) {
-        setIsError(true);
-        setErrorMessage('Yalnız Excel faylları (.xlsx, .xls) qəbul edilir');
-        addLog('Yalnız Excel faylları (.xlsx, .xls) qəbul edilir', 'error');
-        return;
-      }
-      
-      addLog(`Fayl seçildi: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(2)} KB)`, 'info');
-      setFile(selectedFile);
-    }
-  };
-
-  const handleImport = async () => {
-    if (!file) {
-      setIsError(true);
-      setErrorMessage('Zəhmət olmasa, Excel faylı seçin');
-      addLog('Zəhmət olmasa, Excel faylı seçin', 'error');
-      return;
-    }
-    
-    setIsLoading(true);
-    setIsError(false);
-    setValidationErrors([]);
-    setProgress(0);
-    setProgressMessage('Başlanır...');
-    setIsSuccess(false);
-    
-    try {
-      addLog('İdxal prosesi başladı', 'info');
-      
-      await importSchoolsFromExcel(
-        file, 
-        async (schools) => {
-          // Yalnız məcburi sahələri olan məktəbləri idxal et
-          const validSchools = schools.filter(school => 
-            school.name && 
-            school.region_id && 
-            school.sector_id
-          );
-          
-          setStats({
-            totalRows: schools.length,
-            validRows: validSchools.length,
-            errorRows: schools.length - validSchools.length
-          });
-          
-          if (validSchools.length === 0) {
-            setIsError(true);
-            const errorMsg = 'İdxal ediləcək məlumatlar tapılmadı. Məktəblərin ad, region və sektor məlumatlarını yoxlayın.';
-            setErrorMessage(errorMsg);
-            addLog(errorMsg, 'error');
-            return;
-          }
-          
-          if (validSchools.length < schools.length) {
-            const warningMsg = `${schools.length - validSchools.length} məktəb məlumatı tam deyil və idxal edilməyəcək.`;
-            toast.warning('Bəzi məktəblər idxal edilməyəcək', {
-              description: warningMsg
-            });
-            addLog(warningMsg, 'warning');
-          }
-          
-          try {
-            addLog(`${validSchools.length} məktəb məlumatı idxal edilir...`, 'info');
-            await onImport(validSchools);
-            addLog(`İdxal prosesi uğurla tamamlandı. ${validSchools.length} məktəb əlavə edildi.`, 'info');
-            setIsSuccess(true);
-          } catch (error: any) {
-            addLog(`Məlumatları saxlayarkən xəta: ${error.message || error}`, 'error');
-            throw error;
-          }
-          
-          // Əgər uğurludursa, bir müddət sonra dialoqun bağlanması
-          if (validSchools.length > 0) {
-            setTimeout(() => {
-              if (isSuccess) { // Yalnız uğurlu idxaldan sonra bağlanır
-                setFile(null);
-                onClose();
-              }
-            }, 3000);
-          }
-        },
-        (progressValue, message) => {
-          setProgress(progressValue);
-          setProgressMessage(message);
-          if (progressValue === 100) {
-            addLog('İdxal prosesi tamamlandı', 'info');
-          }
-        },
-        (message, type = 'info') => {
-          addLog(message, type);
-        }
-      );
-    } catch (error: any) {
-      console.error('İdxal zamanı xəta:', error);
-      setIsError(true);
-      const errorMsg = error.message || 'Məlumatları idxal edərkən xəta baş verdi.';
-      setErrorMessage(errorMsg);
-      addLog(`İdxal zamanı xəta: ${errorMsg}`, 'error');
-      setProgress(0);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleClearFile = () => {
+  const resetState = () => {
     setFile(null);
-    setIsError(false);
-    setErrorMessage('');
-    setLogs([]);
-    setValidationErrors([]);
-    setProgress(0);
-    setProgressMessage('');
-    setIsSuccess(false);
-    setStats({
-      totalRows: 0,
-      validRows: 0,
-      errorRows: 0
-    });
+    setPreview([]);
+    setLoading(false);
+    setImporting(false);
+    setErrors([]);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    // Fayl tipini yoxlayır
+    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+    if (!validTypes.includes(selectedFile.type)) {
+      toast.error(t('invalidFileType'), {
+        description: t('onlyExcelFilesAllowed')
+      });
+      resetState();
+      return;
+    }
+
+    setFile(selectedFile);
+    setLoading(true);
+    setErrors([]);
+
+    try {
+      // Excel-dən məlumatları idxal edir
+      const importedData = await importSchoolsFromExcel(selectedFile);
+      
+      // Məlumatları doğrulayır
+      const validationErrors: string[] = [];
+      importedData.forEach((school, index) => {
+        if (!school.name) {
+          validationErrors.push(`${t('row')} ${index + 1}: ${t('schoolNameMissing')}`);
+        }
+      });
+
+      if (validationErrors.length > 0) {
+        setErrors(validationErrors);
+      }
+
+      setPreview(importedData);
+    } catch (error: any) {
+      toast.error(t('errorProcessingFile'), {
+        description: error.message
+      });
+      resetState();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    createSchoolExcelTemplate();
+  };
+
+  const handleImport = async () => {
+    if (!file || preview.length === 0) {
+      toast("error", { description: t('noDataToImport') });
+      return;
+    }
+
+    if (errors.length > 0) {
+      toast.error(t('cannotImportWithErrors'));
+      return;
+    }
+
+    setImporting(true);
+
+    try {
+      await onImport(preview);
+      toast.success(t('importSuccess'), {
+        description: t('schoolsImportedSuccessfully', { count: preview.length })
+      });
+      onClose();
+      resetState();
+    } catch (error: any) {
+      toast.error(t('importError'), {
+        description: error.message
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl">
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) {
+        resetState();
+        onClose();
+      }
+    }}>
+      <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Excel ilə məktəb idxalı</DialogTitle>
-          <DialogDescription>
-            Məktəbləri toplu şəkildə idxal etmək üçün Excel faylını istifadə edin.
-          </DialogDescription>
+          <DialogTitle>
+            <div className="flex items-center">
+              <ImportCircle className="mr-2 h-5 w-5" />
+              {t('importSchools')}
+            </div>
+          </DialogTitle>
+          <DialogDescription>{t('importSchoolsDescription')}</DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          <div className="grid gap-4">
-            {!isLoading && !isSuccess && (
-              <div className="grid gap-2">
-                <div className="flex items-center justify-between">
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
-                    onClick={() => generateExcelTemplate()}
-                  >
-                    <DownloadCloud className="mr-2 h-4 w-4" />
-                    Excel şablonunu yüklə
-                  </Button>
-                </div>
-                
-                <div className="relative">
-                  <Input
-                    id="file"
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    className={file ? "file:hidden" : ""}
-                    accept=".xlsx,.xls"
-                  />
-                  {file && (
-                    <div className="absolute inset-0 flex items-center justify-between bg-background border rounded-md px-3 py-2">
-                      <div className="flex items-center">
-                        <FileUp className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="text-sm truncate max-w-[200px]">{file.name}</span>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={handleClearFile}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
-            {isLoading && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>{progressMessage || 'İdxal edilir...'}</span>
-                  <span>{progress}%</span>
-                </div>
-                <Progress value={progress} className="h-2" />
-              </div>
-            )}
-            
-            {isSuccess && !isLoading && (
-              <div className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 text-sm rounded-md p-3 flex items-start">
-                <Check className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium">İdxal prosesi uğurla tamamlandı</p>
-                  <p className="mt-1">
-                    Ümumi: {stats.totalRows} sətir, 
-                    İdxal edildi: {stats.validRows} məktəb, 
-                    Xəta: {stats.errorRows} sətir
-                  </p>
-                </div>
-              </div>
-            )}
+        <div className="space-y-4 my-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <Button variant="outline" onClick={handleDownloadTemplate} type="button">
+                <Download className="mr-2 h-4 w-4" />
+                {t('downloadTemplate')}
+              </Button>
 
-            {isError && (
-              <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3 flex items-start">
-                <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <span>{errorMessage}</span>
+              <div className="flex items-center">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  ref={fileInputRef}
+                  id="file-upload"
+                />
+                <Button
+                  variant="secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={loading || importing}
+                >
+                  {file ? t('changeFile') : t('selectFile')}
+                </Button>
               </div>
-            )}
+            </div>
 
-            {validationErrors.length > 0 && (
-              <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-sm rounded-md p-3">
-                <div className="flex items-center mb-2">
-                  <AlertCircle className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Doğrulama xətaları:</span>
-                </div>
-                <ul className="list-disc list-inside space-y-1 ml-2">
-                  {validationErrors.map((error, index) => (
+            {file && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {t('selectedFile')}: {file.name}
+              </p>
+            )}
+          </div>
+
+          {loading && (
+            <div className="flex justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+            </div>
+          )}
+
+          {errors.length > 0 && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>{t('validationErrors')}</AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc list-inside">
+                  {errors.map((error, index) => (
                     <li key={index}>{error}</li>
                   ))}
                 </ul>
-              </div>
-            )}
-
-            <div className="bg-muted/50 rounded-md p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center">
-                  <Info className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="text-sm font-medium">İdxal prosesi jurnalı</span>
-                </div>
-                <div className="flex gap-1">
-                  <Badge variant="outline" className="text-xs">
-                    {logs.filter(log => log.type === 'info').length} məlumat
-                  </Badge>
-                  <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                    {logs.filter(log => log.type === 'warning').length} xəbərdarlıq
-                  </Badge>
-                  <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
-                    {logs.filter(log => log.type === 'error').length} xəta
-                  </Badge>
-                </div>
-              </div>
-              <ScrollArea className="h-[200px] w-full rounded-md border p-2">
-                <div className="space-y-1">
-                  {logs.map((log, index) => (
-                    <div 
-                      key={index} 
-                      className={`text-xs ${
-                        log.type === 'error'
-                          ? 'text-destructive' 
-                          : log.type === 'warning'
-                            ? 'text-amber-600 dark:text-amber-400' 
-                            : 'text-muted-foreground'
-                      }`}
-                    >
-                      {log.timestamp.toLocaleTimeString()} - {log.message}
-                    </div>
-                  ))}
-                  <div ref={logsEndRef} />
-                </div>
-              </ScrollArea>
-            </div>
-          </div>
-        </div>
-        
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            {isSuccess ? 'Bağla' : 'Ləğv et'}
-          </Button>
-          
-          {!isSuccess && (
-            <Button 
-              onClick={handleImport}
-              disabled={!file || isLoading}
-              className="gap-1"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  İdxal edilir...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4" />
-                  İdxal et
-                </>
-              )}
-            </Button>
+              </AlertDescription>
+            </Alert>
           )}
+
+          {preview.length > 0 && !loading && (
+            <>
+              <h3 className="text-lg font-medium">{t('preview')}:</h3>
+              <div className="border rounded-md overflow-auto max-h-[300px]">
+                <Table>
+                  <thead className="sticky top-0 bg-background">
+                    <tr>
+                      <th className="p-2">{t('schoolName')}</th>
+                      <th className="p-2">{t('address')}</th>
+                      <th className="p-2">{t('principal')}</th>
+                      <th className="p-2">{t('email')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.slice(0, 10).map((school, index) => (
+                      <tr key={index} className="border-t">
+                        <td className="p-2">{school.name}</td>
+                        <td className="p-2">{school.address}</td>
+                        <td className="p-2">{school.principalName}</td>
+                        <td className="p-2">{school.email}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+                {preview.length > 10 && (
+                  <div className="text-center p-2 text-muted-foreground text-sm border-t">
+                    {t('andMoreRecords', { count: preview.length - 10 })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {file && !preview.length && !loading && (
+            <Alert>
+              <FileWarning className="h-4 w-4" />
+              <AlertTitle>{t('noData')}</AlertTitle>
+              <AlertDescription>{t('noDataFoundInFile')}</AlertDescription>
+            </Alert>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {t('cancel')}
+          </Button>
+          <Button
+            onClick={handleImport}
+            disabled={importing || loading || !file || !preview.length || errors.length > 0}
+          >
+            {importing ? (
+              <>
+                <span className="animate-spin h-4 w-4 mr-2 border-2 border-background border-t-transparent rounded-full" />
+                {t('importing')}
+              </>
+            ) : (
+              t('import')
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
