@@ -54,6 +54,12 @@ export interface FullUserData {
   created_at: string;
   updated_at: string;
   role?: UserRole;
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    push: boolean;
+    inApp: boolean;
+  };
 }
 
 export interface UserFormData {

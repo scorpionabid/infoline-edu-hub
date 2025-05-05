@@ -149,8 +149,12 @@ const ColumnList: React.FC<ColumnListProps> = ({
             </TableHeader>
             <TableBody>
               {columns.map((column) => {
-                const typeInfo = COLUMN_TYPE_DEFINITIONS[column.type as keyof typeof COLUMN_TYPE_DEFINITIONS];
-                const IconComponent = Icons[typeInfo?.icon as keyof typeof Icons] || Icons.circle;
+                const typeInfo = COLUMN_TYPE_DEFINITIONS[column.type] || { 
+                  label: column.type, 
+                  description: t('unknownColumnType'),
+                  icon: 'circle'
+                };
+                const IconComponent = iconComponents[typeInfo.icon] || Edit;
                 
                 return (
                   <TableRow key={column.id}>
@@ -224,6 +228,29 @@ const ColumnList: React.FC<ColumnListProps> = ({
       </CardContent>
     </Card>
   );
+};
+
+// Əlavə et
+const iconComponents = {
+  text: Text,
+  textAlignLeft: AlignLeft,
+  hash: Hash,
+  calendar: Calendar,
+  listBox: List,
+  check: Check,
+  circle: Circle,
+  file: File,
+  image: Image,
+  mail: Mail,
+  link: Link,
+  phone: Phone,
+  sliders: Sliders,
+  palette: Palette,
+  lock: Lock,
+  clock: Clock,
+  calendarClock: CalendarClock,
+  formattingTwo: FileText,
+  edit: Edit
 };
 
 export default ColumnList;

@@ -1,19 +1,10 @@
 
 import { useState, useEffect } from 'react';
-import { Column, ColumnOption } from '@/types/columns';
-import { ColumnType } from '@/types/column';
-import { useToast } from '@/hooks/use-toast';
+import { Column, ColumnOption, ColumnType } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-
-interface UseColumnFormProps {
-  initialData?: Partial<Column>;
-  categoryId: string;
-  onSubmit: (data: Partial<Column>) => Promise<{ success: boolean; message?: string }>;
-  onClose: () => void;
-}
 
 // Form validation schema
 const columnFormSchema = z.object({
@@ -33,8 +24,13 @@ export type ColumnFormValues = z.infer<typeof columnFormSchema>;
 
 export const useColumnForm = (categories: { id: string; name: string }[], editColumn: Column | null, onSaveColumn: (columnData: any) => Promise<boolean>) => {
   const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type || 'text');
-  const [options, setOptions] = useState<ColumnOption[]>(editColumn?.options || []);
-  const [newOption, setNewOption] = useState<string>('');
+  const [options, setOptions] = useState<ColumnOption[]>(editColumn?.options as ColumnOption[] || []);
+  const [newOption, setNewOption] = useState<{ label: string; value: string; color: string; }>({ 
+    label: '', 
+    value: '', 
+    color: '' 
+  });
+  
   const isEditMode = !!editColumn;
   
   const form = useForm<ColumnFormValues>({
@@ -56,7 +52,7 @@ export const useColumnForm = (categories: { id: string; name: string }[], editCo
 
   // Handle type change
   const handleTypeChange = (type: ColumnType) => {
-    setSelectedType(type as ColumnType);
+    setSelectedType(type);
     form.setValue('type', type);
     
     // Reset options if not a type that supports options
@@ -67,20 +63,21 @@ export const useColumnForm = (categories: { id: string; name: string }[], editCo
 
   // Add option
   const addOption = () => {
-    if (!newOption.trim()) return;
+    if (!newOption.label.trim()) return;
     
     // Check if label already exists
-    const exists = options.some(opt => opt.label.toLowerCase() === newOption.toLowerCase());
+    const exists = options.some(opt => opt.label.toLowerCase() === newOption.label.toLowerCase());
     if (exists) return;
     
     const newOpt: ColumnOption = {
       id: `option_${Date.now()}`, // Unikal ID əlavə edirik
-      label: newOption.trim(),
-      value: newOption.trim().toLowerCase().replace(/\s+/g, '_')
+      label: newOption.label.trim(),
+      value: newOption.value || newOption.label.trim().toLowerCase().replace(/\s+/g, '_'),
+      color: newOption.color
     };
     
     setOptions(prev => [...prev, newOpt]);
-    setNewOption('');
+    setNewOption({ label: '', value: '', color: '' });
   };
   
   // Remove option
@@ -91,9 +88,9 @@ export const useColumnForm = (categories: { id: string; name: string }[], editCo
   // Handle form submission
   const onSubmit = async (values: ColumnFormValues) => {
     // Combine form values with options
-    const columnData = {
+    const columnData: Partial<Column> & { options: ColumnOption[] } = {
       ...values,
-      options: options.length > 0 ? options : undefined,
+      options: options.length > 0 ? options : [],
     };
     
     if (isEditMode && editColumn?.id) {
@@ -118,7 +115,7 @@ export const useColumnForm = (categories: { id: string; name: string }[], editCo
   };
   
   return {
-    form,
+    form, 
     selectedType,
     handleTypeChange,
     options,

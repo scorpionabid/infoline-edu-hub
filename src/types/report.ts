@@ -1,34 +1,42 @@
 
+export type ReportType = 'bar' | 'pie' | 'line' | 'table';
+
+export const ReportTypeValues = {
+  BAR: 'bar',
+  PIE: 'pie',
+  LINE: 'line',
+  TABLE: 'table'
+} as const;
+
 export interface Report {
   id: string;
   title: string;
   description?: string;
   type: ReportType;
-  content: any;
+  status?: 'draft' | 'published' | 'archived';
   createdAt?: string;
   updatedAt?: string;
   createdBy?: string;
   category?: string;
-  filters?: Record<string, any>;
-  status?: string;
+  sharedWith?: string[];
+  created_at?: string; // geriyə uyğunluq üçün
+  updated_at?: string; // geriyə uyğunluq üçün
+  content?: any;
+  filters?: any;
+  created_by?: string; // geriyə uyğunluq üçün
+  is_template?: boolean;
+  shared_with?: string[]; // geriyə uyğunluq üçün
 }
 
-export type ReportType = 'bar' | 'pie' | 'line' | 'table' | 'summary';
-
-// ReportType dəyər obyekti kimi istifadə edilə bilməsi üçün
-export const ReportTypeValues = {
-  BAR: 'bar' as ReportType,
-  PIE: 'pie' as ReportType,
-  LINE: 'line' as ReportType,
-  TABLE: 'table' as ReportType,
-  SUMMARY: 'summary' as ReportType,
-  STATISTICS: 'statistics' as unknown as ReportType, // geriyə uyğunluq üçün
-  COMPLETION: 'completion' as unknown as ReportType, // geriyə uyğunluq üçün
-  COMPARISON: 'comparison' as unknown as ReportType, // geriyə uyğunluq üçün
-  COLUMN: 'column' as unknown as ReportType // geriyə uyğunluq üçün
-};
-
-// ReportChart üçün props interfeysi
 export interface ReportChartProps {
   report: Report;
+}
+
+export interface ReportPreviewDialogProps {
+  isOpen?: boolean;
+  open?: boolean;
+  onClose: () => void;
+  reportId: string;
+  reportTitle?: string;
+  reportDescription?: string;
 }

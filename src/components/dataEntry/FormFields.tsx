@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EntryValue } from '@/types/dataEntry';
-import { Column } from '@/types/column';
+import { Column, ColumnType } from '@/types/column';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 

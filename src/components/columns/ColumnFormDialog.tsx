@@ -1,7 +1,6 @@
 
 import React, { useEffect } from "react";
-import { Column } from "@/types/columns";
-import { ColumnType } from "@/types/column";
+import { Column } from "@/types/column";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -114,20 +113,20 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
                     categories={categories}
                     columns={columns}
                     editColumn={editColumn}
-                    selectedType={selectedType as ColumnType}
-                    onTypeChange={(type) => handleTypeChange(type as ColumnType)}
+                    selectedType={selectedType}
+                    onTypeChange={handleTypeChange}
                     isEditMode={isEditMode}
                   />
                 </TabsContent>
                 
                 <TabsContent value="validation" className="space-y-4">
-                  {["text", "number", "date", "email", "url", "tel"].includes(selectedType) && (
+                  {["text", "number", "date", "email", "url", "tel", "phone"].includes(selectedType) && (
                     <ValidationFields 
                       control={form.control} 
-                      type={selectedType as ColumnType} 
+                      type={selectedType} 
                     />
                   )}
-                  {!["text", "number", "date", "email", "url", "tel"].includes(selectedType) && (
+                  {!["text", "number", "date", "email", "url", "tel", "phone"].includes(selectedType) && (
                     <p className="text-muted-foreground text-sm p-4 text-center">
                       {t("noValidationForType")}
                     </p>

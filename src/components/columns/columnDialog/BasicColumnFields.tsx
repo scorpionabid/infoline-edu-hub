@@ -4,7 +4,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ColumnType, Column, COLUMN_TYPE_DEFINITIONS } from '@/types/column';
+import { ColumnType, Column } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 import { Control } from 'react-hook-form';
 import ColumnTypeSelector from './ColumnTypeSelector';

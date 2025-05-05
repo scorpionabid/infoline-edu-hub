@@ -1,21 +1,24 @@
 
 import React from 'react';
-import { Report } from '@/types/report';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ReportTypeValues } from '@/types/report';
-import { formatDistanceToNow } from 'date-fns';
-import { useLanguage } from '@/context/LanguageContext';
-import { PieChart, BarChart, LineChart, Table, Eye, Edit, Trash, Copy } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Eye, BarChart, PieChart, LineChart, Table, MoreHorizontal, Download, Share2, Pencil, Archive, Trash2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { useLanguage } from '@/context/LanguageContext';
+import { Report } from '@/types/report';
+import { ReportTypeValues } from '@/types/report';
 
 interface ReportItemProps {
   report: Report;
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  onDuplicate: (id: string) => void;
+  onDownload: (id: string) => void;
+  onShare: (id: string) => void;
+  onArchive: (id: string) => void;
 }
 
 export const ReportItem: React.FC<ReportItemProps> = ({
@@ -23,133 +26,132 @@ export const ReportItem: React.FC<ReportItemProps> = ({
   onView,
   onEdit,
   onDelete,
-  onDuplicate,
+  onDownload,
+  onShare,
+  onArchive
 }) => {
   const { t } = useLanguage();
-  
+
   const getReportIcon = () => {
     switch (report.type) {
       case ReportTypeValues.BAR:
-        return (
-          <div className="p-2 bg-blue-100 rounded-md">
-            <BarChart className="h-5 w-5 text-blue-600" />
-          </div>
-        );
+        return <BarChart className="h-6 w-6 text-primary" />;
       case ReportTypeValues.PIE:
-        return (
-          <div className="p-2 bg-green-100 rounded-md">
-            <PieChart className="h-5 w-5 text-green-600" />
-          </div>
-        );
+        return <PieChart className="h-6 w-6 text-primary" />;
       case ReportTypeValues.LINE:
-        return (
-          <div className="p-2 bg-purple-100 rounded-md">
-            <LineChart className="h-5 w-5 text-purple-600" />
-          </div>
-        );
+        return <LineChart className="h-6 w-6 text-primary" />;
       case ReportTypeValues.TABLE:
-        return (
-          <div className="p-2 bg-amber-100 rounded-md">
-            <Table className="h-5 w-5 text-amber-600" />
-          </div>
-        );
+        return <Table className="h-6 w-6 text-primary" />;
       default:
-        return (
-          <div className="p-2 bg-gray-100 rounded-md">
-            <BarChart className="h-5 w-5 text-gray-600" />
-          </div>
-        );
+        return <BarChart className="h-6 w-6 text-primary" />;
     }
   };
-  
+
+  const getReportTypeLabel = () => {
+    switch (report.type) {
+      case ReportTypeValues.BAR:
+        return t('barChart');
+      case ReportTypeValues.PIE:
+        return t('pieChart');
+      case ReportTypeValues.LINE:
+        return t('lineChart');
+      case ReportTypeValues.TABLE:
+        return t('tableReport');
+      default:
+        return t('report');
+    }
+  };
+
   const getStatusBadge = () => {
     switch (report.status) {
       case 'published':
-        return <Badge variant="default">{t('published')}</Badge>;
+        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">{t('published')}</Badge>;
       case 'draft':
-        return <Badge variant="outline">{t('draft')}</Badge>;
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">{t('draft')}</Badge>;
       case 'archived':
-        return <Badge variant="secondary">{t('archived')}</Badge>;
+        return <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">{t('archived')}</Badge>;
       default:
-        return <Badge variant="outline">{t('unknown')}</Badge>;
+        return null;
     }
   };
-  
-  const formatDate = (date: string | undefined) => {
-    if (!date) return t('unknown');
-    try {
-      return formatDistanceToNow(new Date(date), { addSuffix: true });
-    } catch {
-      return t('unknown');
-    }
-  };
-  
+
+  const isArchived = report.status === 'archived';
+
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-6">
-        <div className="flex items-start gap-4">
-          {getReportIcon()}
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between">
+    <Card className={cn(
+      "overflow-hidden transition-shadow hover:shadow-md",
+      isArchived && "opacity-70"
+    )}>
+      <CardContent className="p-0">
+        <div className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {getReportIcon()}
               <div>
-                <h3 className="font-semibold text-lg line-clamp-1">{report.title}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                  {report.description || t('noDescription')}
-                </p>
-              </div>
-              {getStatusBadge()}
-            </div>
-            
-            <div className="flex items-center justify-between mt-6">
-              <div className="text-xs text-muted-foreground">
-                {t('created')}: {formatDate(report.createdAt || report.created_at)}
-                {report.createdBy || report.created_by ? ` ${t('by')} ${report.createdBy || report.created_by}` : ''}
-              </div>
-              
-              <div className="flex gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={() => onView(report.id)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t('view')}</TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={() => onEdit(report.id)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t('edit')}</TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={() => onDuplicate(report.id)}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t('duplicate')}</TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={() => onDelete(report.id)}>
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t('delete')}</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <h3 className="font-semibold">{report.title}</h3>
+                <p className="text-sm text-muted-foreground">{getReportTypeLabel()}</p>
               </div>
             </div>
+            {getStatusBadge()}
           </div>
+          {report.description && (
+            <p className="mt-3 text-sm text-muted-foreground line-clamp-2">
+              {report.description}
+            </p>
+          )}
         </div>
       </CardContent>
+      <CardFooter className="p-4 bg-muted/30 flex items-center justify-between">
+        <div className="text-xs text-muted-foreground">
+          {t('created')}: {format(new Date(report.createdAt || report.created_at || new Date()), 'PPP')}
+          {report.createdBy || report.created_by ? ` ${t('by')} ${report.createdBy || report.created_by}` : ''}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => onView(report.id)}>
+            <Eye className="h-4 w-4 mr-1" />
+            {t('view')}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onDownload(report.id)}>
+                <Download className="h-4 w-4 mr-2" />
+                {t('download')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onShare(report.id)}>
+                <Share2 className="h-4 w-4 mr-2" />
+                {t('share')}
+              </DropdownMenuItem>
+              {!isArchived && (
+                <>
+                  <DropdownMenuItem onClick={() => onEdit(report.id)}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    {t('edit')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onArchive(report.id)}>
+                    <Archive className="h-4 w-4 mr-2" />
+                    {t('archive')}
+                  </DropdownMenuItem>
+                </>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive"
+                onClick={() => onDelete(report.id)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {t('delete')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardFooter>
     </Card>
   );
 };
