@@ -71,4 +71,5 @@ export interface UserFormData {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  password?: string; // Password sahəsini əlavə edirik
 }

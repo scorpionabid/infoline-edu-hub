@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Card,
@@ -16,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Copy, Edit, MoreVertical, Trash2 } from 'lucide-react';
+import { Copy, Edit, MoreVertical, Trash2, FileText } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -25,7 +24,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Column, COLUMN_TYPE_DEFINITIONS } from '@/types/column';
+import { Column, COLUMN_TYPE_DEFINITIONS } from '@/types/column.d';
 import { useLanguage } from '@/context/LanguageContext';
 import { Icons } from '@/components/ui/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -230,26 +229,26 @@ const ColumnList: React.FC<ColumnListProps> = ({
   );
 };
 
-// Əlavə et
+// Əvvəlki iconComponents obyektini silək və Icons-dan istifadə edək
 const iconComponents = {
-  text: Text,
-  textAlignLeft: AlignLeft,
-  hash: Hash,
-  calendar: Calendar,
-  listBox: List,
-  check: Check,
-  circle: Circle,
-  file: File,
-  image: Image,
-  mail: Mail,
-  link: Link,
-  phone: Phone,
-  sliders: Sliders,
-  palette: Palette,
-  lock: Lock,
-  clock: Clock,
-  calendarClock: CalendarClock,
-  formattingTwo: FileText,
+  text: Icons.text,
+  textAlignLeft: Icons.alignLeft,
+  hash: Icons.hash,
+  calendar: Icons.calendar,
+  listBox: Icons.listChoice,
+  check: Icons.check,
+  circle: Icons.circle,
+  file: Icons.fileUp,
+  image: Icons.image,
+  mail: Icons.mail,
+  link: Icons.link,
+  phone: Icons.phone,
+  sliders: Icons.sliders,
+  palette: Icons.palette,
+  lock: Icons.lock,
+  clock: Icons.clock,
+  calendarClock: Icons.calendarClock,
+  formattingTwo: Icons.fileEdit,
   edit: Edit
 };
 

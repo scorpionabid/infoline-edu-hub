@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Column, ColumnOption, ColumnType } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
@@ -91,6 +90,7 @@ export const useColumnForm = (categories: { id: string; name: string }[], editCo
     const columnData: Partial<Column> & { options: ColumnOption[] } = {
       ...values,
       options: options.length > 0 ? options : [],
+      type: values.type as ColumnType // Type dəyişənini ColumnType kimi cast edirik
     };
     
     if (isEditMode && editColumn?.id) {

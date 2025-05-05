@@ -1,6 +1,4 @@
 
-import { ColumnType } from './column';
-
 export type ColumnTypeDefinition = {
   label: string;
   description: string;
@@ -185,6 +183,8 @@ export interface ColumnValidation {
   type?: string;
   value?: string | number;
   message?: string;
+  min?: number;
+  max?: number;
 }
 
 export type ValidationRules = {
@@ -224,3 +224,4 @@ export interface CategoryWithColumns {
   entries?: any[];
   completionPercentage?: number;
 }
+

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -12,7 +11,7 @@ import { format } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
 import { Report } from '@/types/report';
 import { useToast } from '@/hooks/use-toast';
-import { useReports } from '@/hooks/reports';
+import { useReportPreview } from '@/hooks/reports';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import ReportChart from './ReportChart';
@@ -29,19 +28,19 @@ interface ReportPreviewDialogProps {
 }
 
 export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
-  isOpen = false,
-  open = false,
   onClose,
   reportId,
   reportTitle,
-  reportDescription
+  reportDescription,
+  open = false,
+  isOpen = false, // backward compatibility
 }) => {
   // Dialog'un görünürlüyünü kombinə et
   const isDialogOpen = isOpen || open;
   
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
-  const { getReportById } = useReports();
+  const { getReportById } = useReportPreview();
   
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -84,6 +83,18 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
     });
   };
   
+  // Burada report yaratma tarixini alarkən hem createdAt, həm də created_at dəstəkləyirik
+  const getFormattedDate = (report: Report) => {
+    const date = report.createdAt || report.created_at;
+    if (!date) return '';
+    
+    return new Date(date).toLocaleDateString(language || 'az-AZ', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+  
   return (
     <Dialog open={isDialogOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-4xl">
@@ -97,7 +108,7 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
           </DialogTitle>
           {!loading && (report?.createdAt || report?.created_at) && (
             <p className="text-sm text-muted-foreground">
-              {t("createdOn")} {format(new Date(report.createdAt || report.created_at), 'PPP')}
+              {t("createdOn")} {getFormattedDate(report)}
             </p>
           )}
         </DialogHeader>
