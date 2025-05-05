@@ -10,7 +10,7 @@ interface FormStatusSectionProps {
   totalCount: number;
 }
 
-const FormStatusSection: React.FC<FormStatusSectionProps> = ({
+export const FormStatusSection: React.FC<FormStatusSectionProps> = ({
   dueSoonCount,
   overdueCount,
   totalCount
@@ -76,3 +76,4 @@ const FormStatusSection: React.FC<FormStatusSectionProps> = ({
 };
 
 export default FormStatusSection;
+

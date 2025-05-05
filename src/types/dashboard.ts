@@ -117,9 +117,18 @@ export interface SectorAdminDashboardData extends DashboardData {
 }
 
 export interface SchoolAdminDashboardData extends DashboardData {
-  upcomingDeadlines?: RecentForm[];
-  recentForms?: RecentForm[];
-  formStats?: any;
+  upcomingDeadlines?: FormItem[];
+  recentForms?: FormItem[];
+  formStats?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    total: number;
+    incomplete?: number;
+    drafts?: number;
+    dueSoon?: number;
+    overdue?: number;
+  };
   completionRate?: number;
 }
 
@@ -145,6 +154,7 @@ export interface SchoolStat {
   total?: number;
   active?: number;
   incomplete?: number;
+  completion?: { total: number; completed: number; percentage: number };
 }
 
 export interface FormItem {
@@ -178,3 +188,4 @@ export interface UINotification extends NotificationType {
   isRead?: boolean;
   date?: string;
 }
+

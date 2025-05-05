@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
-import { StatusCards } from '../common/StatusCards';
+import StatusCards from '../common/StatusCards';
 import { CompletionRateCard } from '../common/CompletionRateCard';
 import { NotificationsCard } from '../common/NotificationsCard';
 import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
 import { FormTabs } from './FormTabs';
-import { FormStatusSection } from './FormStatusSection';
+import FormStatusSection from './FormStatusSection';
 import { Loader2 } from 'lucide-react';
 import { adaptDashboardNotificationToApp } from '@/types/notification';
 
@@ -55,8 +55,10 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoa
       <h2 className="text-2xl font-bold">Məktəb Dashboard</h2>
 
       <StatusCards 
-        stats={formStats}
-        totalForms={formStats.total || 0}
+        approvalCount={formStats.approved || 0}
+        rejectionCount={formStats.rejected || 0}
+        pendingCount={formStats.pending || 0}
+        totalCount={formStats.total || 0}
       />
 
       <Grid columns={2} className="gap-6">
@@ -72,14 +74,13 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoa
       </Grid>
 
       <FormStatusSection 
-        pendingCount={formStats.pending || 0} 
-        approvedCount={formStats.approved || 0} 
-        rejectedCount={formStats.rejected || 0} 
+        dueSoonCount={formStats.dueSoon || 0} 
+        overdueCount={formStats.overdue || 0} 
         totalCount={formStats.total || 0}
       />
 
       <FormTabs 
-        upcomingDeadlines={data.upcomingDeadlines as FormItem[]} 
+        upcomingForms={data.upcomingDeadlines as FormItem[]} 
         recentForms={data.recentForms as FormItem[]}
       />
     </div>
@@ -87,3 +88,4 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoa
 };
 
 export default SchoolAdminDashboard;
+

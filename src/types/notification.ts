@@ -9,12 +9,12 @@ export interface NotificationType {
   priority?: 'normal' | 'high' | 'critical';
   time?: string;
   isRead?: boolean; // geriyə uyğunluq üçün
-  date?: string; // bəzi komponentlər üçün
 }
 
 // UI bildiriş interfeysi
-export interface UINotification extends Omit<NotificationType, 'isRead'> {
+export interface UINotification extends NotificationType {
   isRead?: boolean; // UI komponenti üçün isRead əlavə edildi
+  date?: string;
 }
 
 // Dashboard bildiriş interfeysi
@@ -38,15 +38,21 @@ export const adaptDbNotificationToApp = (dbNotification: any): NotificationType 
 };
 
 // Dashboard bildirişlərini çevirmək üçün adapter funksiya
-export const adaptDashboardNotificationToApp = (notification: any): DashboardNotification => {
+export const adaptDashboardNotificationToApp = (notification: any): UINotification => {
   // Əgər bildiriş artıq formalaşdırılmışsa, onu qaytarırıq
   if (notification.id && (notification.createdAt || notification.created_at)) {
     return {
       ...notification,
+      id: notification.id,
+      title: notification.title || '',
+      message: notification.message || '',
+      type: notification.type || 'info',
       createdAt: notification.createdAt || notification.created_at || new Date().toISOString(),
-      isRead: notification.isRead || notification.read || false,
       read: notification.isRead || notification.read || false,
-      date: notification.date || (notification.createdAt ? new Date(notification.createdAt).toLocaleDateString() : undefined)
+      isRead: notification.isRead || notification.read || false,
+      priority: notification.priority || 'normal',
+      date: notification.date || (notification.createdAt ? new Date(notification.createdAt).toLocaleDateString() : undefined),
+      time: notification.time || (notification.createdAt ? new Date(notification.createdAt).toLocaleTimeString() : undefined)
     };
   }
 
@@ -60,6 +66,7 @@ export const adaptDashboardNotificationToApp = (notification: any): DashboardNot
     read: notification.is_read || notification.read || false,
     priority: notification.priority || 'normal',
     isRead: notification.is_read || notification.read || false,
-    date: notification.date || (notification.created_at ? new Date(notification.created_at).toLocaleDateString() : undefined)
+    date: notification.date || (notification.created_at ? new Date(notification.created_at).toLocaleDateString() : undefined),
+    time: notification.time || (notification.created_at ? new Date(notification.created_at).toLocaleTimeString() : undefined)
   };
 };

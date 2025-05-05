@@ -1,150 +1,113 @@
-import React from 'react';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
-import { useLanguage } from '@/context/LanguageContext';
-import { FormItem } from '@/types/form';
 
-interface FormTabsProps {
-  forms: FormItem[];
+import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FormItem } from '@/types/dashboard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLanguage } from '@/context/LanguageContext';
+import { CalendarIcon, ClockIcon } from 'lucide-react';
+import { format } from 'date-fns';
+
+export interface FormTabsProps {
+  upcomingForms: FormItem[];
+  recentForms: FormItem[];
 }
 
-export const FormTabs: React.FC<FormTabsProps> = ({ forms }) => {
+export const FormTabs: React.FC<FormTabsProps> = ({ upcomingForms = [], recentForms = [] }) => {
   const { t } = useLanguage();
-
-  const completedForms = forms.filter(form => form.status === 'completed');
-  const pendingForms = forms.filter(form => form.status === 'pending');
-  const rejectedForms = forms.filter(form => form.status === 'rejected');
-  const draftForms = forms.filter(form => form.status === 'draft');
-  const incompleteForms = forms.filter(form => form.status === 'incomplete');
-  const allForms = forms;
-
+  
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Təyin edilməyib';
+    try {
+      return format(new Date(dateString), 'dd.MM.yyyy');
+    } catch (error) {
+      return 'Yanlış tarix';
+    }
+  };
+  
   return (
-    <Tabs defaultValue="all" className="w-full">
-      <TabsList>
-        <TabsTrigger value="all">{t('all')}({allForms.length})</TabsTrigger>
-        <TabsTrigger value="completed">{t('completed')}({completedForms.length})</TabsTrigger>
-        <TabsTrigger value="pending">{t('pending')}({pendingForms.length})</TabsTrigger>
-        <TabsTrigger value="rejected">{t('rejected')}({rejectedForms.length})</TabsTrigger>
-        <TabsTrigger value="draft">{t('draft')}({draftForms.length})</TabsTrigger>
-        <TabsTrigger value="incomplete">{t('incomplete')}({incompleteForms.length})</TabsTrigger>
+    <Tabs defaultValue="upcoming" className="w-full">
+      <TabsList className="mb-4">
+        <TabsTrigger value="upcoming">
+          {t('upcomingDeadlines')}
+        </TabsTrigger>
+        <TabsTrigger value="recent">
+          {t('recentForms')}
+        </TabsTrigger>
       </TabsList>
-      <TabsContent value="all">
-        {allForms.map((form) => (
-          <div key={form.id} className="border rounded-md p-4 mb-4">
-            <h3 className="text-lg font-semibold">{form.name}</h3>
-            <p>Status: {form.status}</p>
-            <div>
-              {form.submittedAt ? (
-                <p className="text-xs text-muted-foreground">
-                  {t('submittedAt')}: {new Date(form.submittedAt).toLocaleDateString()}
-                </p>
-              ) : form.submittedAt ? (
-                <p className="text-xs text-muted-foreground">
-                  {t('date')}: {new Date(form.submittedAt).toLocaleDateString()}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        ))}
+      
+      <TabsContent value="upcoming">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('upcomingDeadlines')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {upcomingForms.length > 0 ? (
+              upcomingForms.map((form) => (
+                <div key={form.id} className="border rounded-lg p-4 hover:bg-accent transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium">{form.title}</h4>
+                      <p className="text-sm text-muted-foreground">{form.categoryId}</p>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <CalendarIcon className="mr-1 h-4 w-4" />
+                      <span>{formatDate(form.dueDate)}</span>
+                    </div>
+                  </div>
+                  {form.progress !== undefined && (
+                    <div className="mt-2 h-2 w-full bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary" 
+                        style={{ width: `${form.progress}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-center py-6 text-muted-foreground">{t('noUpcomingDeadlines')}</p>
+            )}
+          </CardContent>
+        </Card>
       </TabsContent>
-      <TabsContent value="completed">
-        {completedForms.map((form) => (
-          <div key={form.id} className="border rounded-md p-4 mb-4">
-            <h3 className="text-lg font-semibold">{form.name}</h3>
-            <p>Status: {form.status}</p>
-            <div>
-              {form.submittedAt ? (
-                <p className="text-xs text-muted-foreground">
-                  {t('submittedAt')}: {new Date(form.submittedAt).toLocaleDateString()}
-                </p>
-              ) : form.submittedAt ? (
-                <p className="text-xs text-muted-foreground">
-                  {t('date')}: {new Date(form.submittedAt).toLocaleDateString()}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        ))}
-      </TabsContent>
-      <TabsContent value="pending">
-        {pendingForms.map((form) => (
-          <div key={form.id} className="border rounded-md p-4 mb-4">
-            <h3 className="text-lg font-semibold">{form.name}</h3>
-            <p>Status: {form.status}</p>
-            <div>
-              {form.submittedAt ? (
-                <p className="text-xs text-muted-foreground">
-                  {t('submittedAt')}: {new Date(form.submittedAt).toLocaleDateString()}
-                </p>
-              ) : form.submittedAt ? (
-                <p className="text-xs text-muted-foreground">
-                  {t('date')}: {new Date(form.submittedAt).toLocaleDateString()}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        ))}
-      </TabsContent>
-      <TabsContent value="rejected">
-        {rejectedForms.map((form) => (
-          <div key={form.id} className="border rounded-md p-4 mb-4">
-            <h3 className="text-lg font-semibold">{form.name}</h3>
-            <p>Status: {form.status}</p>
-            <div>
-              {form.submittedAt ? (
-                <p className="text-xs text-muted-foreground">
-                  {t('submittedAt')}: {new Date(form.submittedAt).toLocaleDateString()}
-                </p>
-              ) : form.submittedAt ? (
-                <p className="text-xs text-muted-foreground">
-                  {t('date')}: {new Date(form.submittedAt).toLocaleDateString()}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        ))}
-      </TabsContent>
-      <TabsContent value="draft">
-        {draftForms.map((form) => (
-          <div key={form.id} className="border rounded-md p-4 mb-4">
-            <h3 className="text-lg font-semibold">{form.name}</h3>
-            <p>Status: {form.status}</p>
-            <div>
-              {form.submittedAt ? (
-                <p className="text-xs text-muted-foreground">
-                  {t('submittedAt')}: {new Date(form.submittedAt).toLocaleDateString()}
-                </p>
-              ) : form.submittedAt ? (
-                <p className="text-xs text-muted-foreground">
-                  {t('date')}: {new Date(form.submittedAt).toLocaleDateString()}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        ))}
-      </TabsContent>
-      <TabsContent value="incomplete">
-        {incompleteForms.map((form) => (
-          <div key={form.id} className="border rounded-md p-4 mb-4">
-            <h3 className="text-lg font-semibold">{form.name}</h3>
-            <p>Status: {form.status}</p>
-            <div>
-              {form.submittedAt ? (
-                <p className="text-xs text-muted-foreground">
-                  {t('submittedAt')}: {new Date(form.submittedAt).toLocaleDateString()}
-                </p>
-              ) : form.submittedAt ? (
-                <p className="text-xs text-muted-foreground">
-                  {t('date')}: {new Date(form.submittedAt).toLocaleDateString()}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        ))}
+      
+      <TabsContent value="recent">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('recentForms')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {recentForms.length > 0 ? (
+              recentForms.map((form) => (
+                <div key={form.id} className="border rounded-lg p-4 hover:bg-accent transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium">{form.title}</h4>
+                      <p className="text-sm text-muted-foreground">{form.categoryId}</p>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <ClockIcon className="mr-1 h-4 w-4" />
+                      <span>{formatDate(form.updatedAt || form.createdAt)}</span>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex justify-between items-center text-sm">
+                    <span className={`px-2 py-0.5 rounded-full ${
+                      form.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      form.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {form.status === 'approved' ? t('approved') :
+                       form.status === 'rejected' ? t('rejected') :
+                       t('pending')}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-center py-6 text-muted-foreground">{t('noRecentForms')}</p>
+            )}
+          </CardContent>
+        </Card>
       </TabsContent>
     </Tabs>
   );

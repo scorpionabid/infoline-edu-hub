@@ -51,3 +51,4 @@ const NotificationControl: React.FC<NotificationControlProps> = ({
 };
 
 export default NotificationControl;
+
