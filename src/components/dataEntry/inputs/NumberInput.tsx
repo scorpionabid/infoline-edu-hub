@@ -1,100 +1,54 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Input } from '@/components/ui/input';
+import { FormDescription, FormLabel, FormMessage } from '@/components/ui/form';
 import { Column } from '@/types/column';
 
-interface NumberInputProps {
+interface NumberInputProps<T extends Record<string, any>> {
   column: Column;
-  value: string | number;
-  onChange: (value: string) => void;
+  value: string | number | null;
+  onChange: (value: number | null) => void;
   error?: string;
+  disabled?: boolean;
 }
 
-export const NumberInput: React.FC<NumberInputProps> = ({
+export const NumberInput = <T extends Record<string, any>>({
   column,
   value,
   onChange,
-  error
-}) => {
-  const [localValue, setLocalValue] = useState<string>(value ? String(value) : '');
-  
-  // Dəyər dəyişikliyi prop vasitəsilə ötürüldükdə yerli dəyəri yeniləyirik
-  useEffect(() => {
-    if (value !== undefined) {
-      setLocalValue(String(value));
-    }
-  }, [value]);
-
-  // Validasiya məlumatlarını əldə edirik
-  const validation = typeof column.validation === 'string' 
-    ? JSON.parse(column.validation) 
-    : column.validation || {};
-
-  // Min və max dəyərləri əldə edirik
-  const minValue = validation?.minValue !== undefined ? Number(validation.minValue) : undefined;
-  const maxValue = validation?.maxValue !== undefined ? Number(validation.maxValue) : undefined;
-  
+  error,
+  disabled = false
+}: NumberInputProps<T>) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalValue(e.target.value);
-    
-    // Boş dəyər halında
-    if (e.target.value === '') {
-      onChange('');
-      return;
-    }
-    
-    // Yalnız ədədlərə icazə veririk
-    const numericValue = e.target.value.replace(/[^0-9.-]/g, '');
-    
-    if (numericValue) {
-      onChange(numericValue);
-    } else {
-      onChange('');
-    }
+    const val = e.target.value.trim() === '' ? null : Number(e.target.value);
+    onChange(val);
   };
 
-  // Fokusdan çıxdıqda dəyəri yoxlayırıq
-  const handleBlur = () => {
-    if (localValue === '') return;
-    
-    const num = Number(localValue);
-    if (isNaN(num)) {
-      onChange('');
-      setLocalValue('');
-      return;
-    }
-    
-    // Min/max məhdudiyyətləri yoxlayırıq
-    if (minValue !== undefined && num < minValue) {
-      onChange(String(minValue));
-      setLocalValue(String(minValue));
-    } else if (maxValue !== undefined && num > maxValue) {
-      onChange(String(maxValue));
-      setLocalValue(String(maxValue));
-    }
-  };
+  const min = column.validation?.min;
+  const max = column.validation?.max;
 
   return (
-    <div>
+    <div className="space-y-2">
+      {column.name && <FormLabel>{column.name}</FormLabel>}
+      
       <Input
-        type="text"
-        value={localValue}
+        type="number"
+        value={value === null ? '' : value}
         onChange={handleChange}
-        onBlur={handleBlur}
-        min={minValue}
-        max={maxValue}
         placeholder={column.placeholder}
-        className={error ? 'border-red-500' : ''}
+        min={min}
+        max={max}
+        disabled={disabled}
+        className={error ? "border-red-500" : ""}
       />
-      {(minValue !== undefined || maxValue !== undefined) && (
-        <p className="text-xs text-muted-foreground mt-1">
-          {minValue !== undefined && maxValue !== undefined
-            ? `${minValue} - ${maxValue} arası`
-            : minValue !== undefined
-            ? `Minimum: ${minValue}`
-            : `Maksimum: ${maxValue}`}
-        </p>
+      
+      {column.help_text && (
+        <FormDescription>{column.help_text}</FormDescription>
       )}
+      
+      {error && <FormMessage>{error}</FormMessage>}
     </div>
   );
 };
+
+export default NumberInput;

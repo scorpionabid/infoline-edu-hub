@@ -1,181 +1,152 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
 
-interface EnhancedApprovalDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  schoolName?: string;
-  categoryName?: string;
-  data?: any[];
-  isProcessing?: boolean;
-  currentStatus?: string;
-  onApprove: () => Promise<void>;
-  onReject: (reason: string) => Promise<void>;
+interface ApprovalItem {
+  id: string;
+  categoryName: string;
+  schoolName: string;
+  submittedBy: string;
+  submittedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  data?: any;
 }
 
-export const EnhancedApprovalDialog: React.FC<EnhancedApprovalDialogProps> = ({
-  open,
-  onOpenChange,
-  schoolName,
-  categoryName,
-  data,
-  isProcessing = false,
-  currentStatus,
+interface EnhancedApprovalDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onApprove: (id: string, comment?: string) => Promise<void>;
+  onReject: (id: string, reason: string) => Promise<void>;
+  item?: ApprovalItem;
+}
+
+const EnhancedApprovalDialog: React.FC<EnhancedApprovalDialogProps> = ({
+  isOpen,
+  onClose,
   onApprove,
   onReject,
+  item
 }) => {
+  const { t } = useLanguage();
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'data' | 'review'>('data');
-  
+  const [comment, setComment] = useState('');
+  const [activeTab, setActiveTab] = useState('details');
+
+  if (!item) return null;
+
   const handleApprove = async () => {
     try {
       setIsSubmitting(true);
-      await onApprove();
+      await onApprove(item.id, comment);
+      toast.success(t('approvalSuccess'));
+      setComment('');
+      onClose();
     } catch (error) {
-      console.error('Təsdiq xətası:', error);
+      console.error('Approval error:', error);
+      toast.error(t('approvalError'));
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   const handleReject = async () => {
-    if (!reason.trim()) return;
-    
+    if (!reason.trim()) {
+      toast.error(t('rejectionReasonRequired'));
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      await onReject(reason);
+      await onReject(item.id, reason);
+      toast.success(t('rejectionSuccess'));
+      setReason('');
+      onClose();
     } catch (error) {
-      console.error('Rədd xətası:', error);
+      console.error('Rejection error:', error);
+      toast.error(t('rejectionError'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <span>Təqdim olunan Məlumatlar</span>
-            {currentStatus && (
-              <Badge variant={currentStatus === 'approved' ? 'success' : currentStatus === 'rejected' ? 'destructive' : 'secondary'}>
-                {currentStatus === 'approved' ? 'Təsdiqlənib' : currentStatus === 'rejected' ? 'Rədd edilib' : 'Gözləmədə'}
-              </Badge>
-            )}
-          </DialogTitle>
-          <div className="text-sm text-muted-foreground">
-            <div><strong>Məktəb:</strong> {schoolName}</div>
-            <div><strong>Kateqoriya:</strong> {categoryName}</div>
-          </div>
+          <DialogTitle>{t('approvalRequest')}</DialogTitle>
+          <DialogDescription>
+            {t('approvalRequestFrom')} <strong>{item.schoolName}</strong> {t('for')} <strong>{item.categoryName}</strong>
+          </DialogDescription>
         </DialogHeader>
         
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'data' | 'review')} className="mt-2">
-          <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="data">Məlumatlar</TabsTrigger>
-            <TabsTrigger value="review">Baxış və Təsdiq</TabsTrigger>
-          </TabsList>
+        <div className="space-y-4 mt-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="space-y-1">
+              <p className="text-muted-foreground">{t('submittedBy')}</p>
+              <p className="font-medium">{item.submittedBy}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-muted-foreground">{t('submittedAt')}</p>
+              <p className="font-medium">{new Date(item.submittedAt).toLocaleString()}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">{t('approvalComment')}</h4>
+            <Textarea
+              placeholder={t('approvalCommentPlaceholder')}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="min-h-[80px]"
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            {t('cancel')}
+          </Button>
           
-          <TabsContent value="data" className="mt-4">
-            {!data || data.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
-                <AlertCircle className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
-                <p>Məlumat tapılmadı</p>
-              </div>
-            ) : (
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Sahə</TableHead>
-                      <TableHead>Dəyər</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{item.label || item.columnName}</TableCell>
-                        <TableCell>{item.value || '-'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="review" className="mt-4 space-y-4">
-            {currentStatus !== 'approved' && currentStatus !== 'rejected' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="reason">İmtina səbəbi (Rədd etdikdə məcburidir)</Label>
-                  <Textarea
-                    id="reason"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="İmtina səbəbini daxil edin..."
-                    rows={4}
-                  />
-                </div>
-                
-                <div className="flex space-x-2 mt-4">
-                  <Button
-                    variant="success"
-                    disabled={isSubmitting || isProcessing}
-                    onClick={handleApprove}
-                    className="flex-1 bg-green-600 text-white hover:bg-green-700"
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                    )}
-                    Təsdiqlə
-                  </Button>
-                  
-                  <Button
-                    variant="destructive"
-                    disabled={isSubmitting || isProcessing || !reason.trim()}
-                    onClick={handleReject}
-                    className="flex-1"
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <X className="mr-2 h-4 w-4" />
-                    )}
-                    Rədd Et
-                  </Button>
-                </div>
-              </>
-            )}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!reason.trim()) {
+                  return setReason(t('defaultRejectionReason'));
+                }
+                handleReject();
+              }}
+              className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? t('rejecting') : t('reject')}
+            </Button>
             
-            {currentStatus === 'approved' && (
-              <div className="py-8 text-center">
-                <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
-                <p className="text-lg font-medium">Bu məlumatlar artıq təsdiqlənib</p>
-              </div>
-            )}
-            
-            {currentStatus === 'rejected' && (
-              <div className="py-8 text-center">
-                <AlertCircle className="mx-auto h-16 w-16 text-red-500 mb-4" />
-                <p className="text-lg font-medium">Bu məlumatlar rədd edilib</p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Bağla</Button>
+            <Button
+              variant="default"
+              onClick={handleApprove}
+              className="bg-green-600 hover:bg-green-700 text-white"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? t('approving') : t('approve')}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

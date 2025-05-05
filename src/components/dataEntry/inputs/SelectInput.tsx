@@ -1,60 +1,60 @@
 
-import React, { useState, useEffect } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import React from 'react';
+import { FormDescription, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Column, ColumnOption } from '@/types/column';
 
-interface SelectInputProps {
+interface SelectInputProps<T extends Record<string, any>> {
   column: Column;
-  value: string;
+  value: string | null;
   onChange: (value: string) => void;
   error?: string;
+  disabled?: boolean;
 }
 
-export const SelectInput: React.FC<SelectInputProps> = ({
+export const SelectInput = <T extends Record<string, any>>({
   column,
   value,
   onChange,
-  error
-}) => {
-  const [options, setOptions] = useState<ColumnOption[]>([]);
+  error,
+  disabled = false
+}: SelectInputProps<T>) => {
+  const options = column.options && Array.isArray(column.options)
+    ? column.options as ColumnOption[]
+    : [];
 
-  useEffect(() => {
-    // Seçimləri parse edirik
-    if (column.options) {
-      if (typeof column.options === 'string') {
-        try {
-          const parsedOptions = JSON.parse(column.options);
-          setOptions(Array.isArray(parsedOptions) ? parsedOptions : []);
-        } catch (error) {
-          console.error('Options parse xətası:', error);
-          setOptions([]);
-        }
-      } else if (Array.isArray(column.options)) {
-        setOptions(column.options);
-      }
-    } else {
-      setOptions([]);
-    }
-  }, [column.options]);
+  const handleChange = (newValue: string) => {
+    onChange(newValue);
+  };
 
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className={error ? 'border-red-500' : ''}>
-        <SelectValue placeholder={column.placeholder || 'Seçim edin'} />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="space-y-2">
+      {column.name && <FormLabel>{column.name}</FormLabel>}
+      
+      <Select
+        value={value || ''}
+        onValueChange={handleChange}
+        disabled={disabled}
+      >
+        <SelectTrigger className={error ? "border-red-500" : ""}>
+          <SelectValue placeholder={column.placeholder || 'Seçin'} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      
+      {column.help_text && (
+        <FormDescription>{column.help_text}</FormDescription>
+      )}
+      
+      {error && <FormMessage>{error}</FormMessage>}
+    </div>
   );
 };
+
+export default SelectInput;

@@ -1,5 +1,7 @@
 
-export type CategoryStatus = 'active' | 'inactive' | 'draft';
+import { Column } from "./column";
+
+export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'approved';
 export type CategoryAssignment = 'all' | 'sectors';
 
 export interface Category {
@@ -7,21 +9,16 @@ export interface Category {
   name: string;
   description?: string;
   assignment?: CategoryAssignment;
+  deadline?: string;
   status?: CategoryStatus;
-  deadline?: string | Date;
-  created_at?: string | Date;
-  updated_at?: string;
   priority?: number;
+  created_at?: string;
+  updated_at?: string;
   archived?: boolean;
   column_count?: number;
+  completionRate?: number;
 }
 
-export interface CategoryFilter {
-  status: 'all' | CategoryStatus;
-  assignment: 'all' | CategoryAssignment;
-  deadline: 'all' | 'past' | 'upcoming' | 'none';
+export interface CategoryWithColumns extends Category {
+  columns?: Column[];
 }
-
-// CategoryWithColumns tipini column.ts faylından import edəcəyik
-import { CategoryWithColumns } from './column';
-export { CategoryWithColumns };

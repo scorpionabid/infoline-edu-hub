@@ -1,25 +1,95 @@
 
-import * as React from "react";
-import { cn } from "@/lib/utils";
+import React, { useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Upload, X } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
-export interface FileInputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+interface FileInputProps {
+  value: File | null;
+  onChange: (file: File | null) => void;
+  accept?: string;
+  required?: boolean;
+  multiple?: boolean;
+  disabled?: boolean;
+  className?: string;
+}
 
-const FileInput = React.forwardRef<HTMLInputElement, FileInputProps>(
-  ({ className, ...props }, ref) => {
-    return (
-      <input
+export const FileInput: React.FC<FileInputProps> = ({
+  value,
+  onChange,
+  accept,
+  required,
+  multiple = false,
+  disabled = false,
+  className = ""
+}) => {
+  const { t } = useLanguage();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleClick = () => {
+    if (!disabled && inputRef.current) {
+      inputRef.current.click();
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      onChange(files[0]);
+    }
+  };
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange(null);
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="relative">
+      <Input
+        ref={inputRef}
         type="file"
-        className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-          className
-        )}
-        ref={ref}
-        {...props}
+        accept={accept}
+        required={required}
+        multiple={multiple}
+        disabled={disabled}
+        className="hidden"
+        onChange={handleChange}
       />
-    );
-  }
-);
-FileInput.displayName = "FileInput";
+      <Button
+        type="button"
+        variant="outline"
+        className={`w-full text-left justify-start ${className}`}
+        onClick={handleClick}
+        disabled={disabled}
+      >
+        {!value ? (
+          <>
+            <Upload className="mr-2 h-4 w-4" />
+            {t('uploadFile')}
+          </>
+        ) : (
+          <div className="flex items-center justify-between w-full">
+            <span className="truncate">{value.name}</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={handleClear}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">{t('clear')}</span>
+            </Button>
+          </div>
+        )}
+      </Button>
+    </div>
+  );
+};
 
-export { FileInput };
+export default FileInput;
