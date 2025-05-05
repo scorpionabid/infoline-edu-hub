@@ -18,6 +18,9 @@ export interface DatePickerProps {
   disabled?: boolean;
   placeholder?: string;
   className?: string;
+  // Əlavə prop olaraq date əlavə edirik (geriyə uyğunluq üçün)
+  date?: Date;
+  onSelect?: (date: Date | undefined) => void;
 }
 
 export function DatePicker({
@@ -26,13 +29,21 @@ export function DatePicker({
   disabled = false,
   placeholder,
   className,
+  // Əlavə propları da qəbul edirik və əgər varsa, value və onChange-ə yönləndiririk
+  date,
+  onSelect,
 }: DatePickerProps) {
   const { t } = useLanguage();
   
+  // date və onSelect proplarını da nəzərə alırıq
+  const effectiveValue = value || date;
+  const effectiveOnChange = (date: Date | undefined) => {
+    if (onChange) onChange(date);
+    if (onSelect) onSelect(date);
+  };
+
   const handleSelect = (date: Date | undefined) => {
-    if (onChange) {
-      onChange(date);
-    }
+    effectiveOnChange(date);
   };
 
   return (
@@ -42,19 +53,19 @@ export function DatePicker({
           variant={"outline"}
           className={cn(
             "w-full justify-start text-left font-normal",
-            !value && "text-muted-foreground",
+            !effectiveValue && "text-muted-foreground",
             className
           )}
           disabled={disabled}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? format(value, "PPP") : <span>{placeholder || t("selectDate")}</span>}
+          {effectiveValue ? format(effectiveValue, "PPP") : <span>{placeholder || t("selectDate")}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
-          selected={value}
+          selected={effectiveValue}
           onSelect={handleSelect}
           initialFocus
           className={cn("p-3 pointer-events-auto")}

@@ -1,183 +1,182 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase, supabaseWithRetry } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/auth';
+
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Region, RegionFormData } from '@/types/regions';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { Region } from './useRegionsStore';
-
-// Keşləmə üçün
-const CACHE_DURATION = 5 * 60 * 1000; // 5 dəqiqə
-let regionsCache: Region[] | null = null;
-let lastFetchTime = 0;
 
 export const useRegions = () => {
   const [regions, setRegions] = useState<Region[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated, user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { t } = useLanguage();
-  const fetchInProgress = useRef(false);
-  const retryCount = useRef(0);
-  const maxRetries = 3;
-  
-  const fetchRegions = useCallback(async (forceRefresh = false) => {
-    // Əgər sorğu artıq icra olunursa, yeni sorğu yaratma
-    if (fetchInProgress.current) {
-      console.log('Regionlar üçün sorğu artıq icra olunur, yeni sorğu yaratmıram...');
-      return;
-    }
-    
-    if (!isAuthenticated) {
-      console.log('İstifadəçi giriş etməyib, regionları yükləyə bilmərəm...');
-      setLoading(false);
-      return;
-    }
 
+  const fetchRegions = useCallback(async (forceRefresh = false) => {
     try {
-      fetchInProgress.current = true;
       setLoading(true);
-      setError(null);
-      
-      const now = Date.now();
-      
-      // Keşləmə yoxlaması - əgər məcburi yeniləmə tələb olunmursa
-      if (!forceRefresh && regionsCache && now - lastFetchTime < CACHE_DURATION) {
-        console.log('Keşlənmiş region məlumatlarını istifadə edirəm...');
-        setRegions(regionsCache);
-        setLoading(false);
-        fetchInProgress.current = false;
-        return regionsCache;
-      }
-      
-      console.log('Regionlar məlumatlarını yükləyirəm...');
-      console.log('Autentifikasiya vəziyyəti:', { isAuthenticated, userId: user?.id });
-      
-      // Offline-first wrapper istifadə et
-      const { data, error: fetchError } = await supabaseWithRetry
+      setError('');
+
+      const { data, error } = await supabase
         .from('regions')
         .select('*')
         .order('name', { ascending: true });
-        
-      if (fetchError) {
-        console.error('Regionları yükləyərkən xəta baş verdi:', fetchError);
-        throw fetchError;
-      }
-      
-      console.log('Regionlar uğurla yükləndi:', data?.length || 0, 'region tapıldı', data);
-      
-      if (!data || data.length === 0) {
-        console.warn('Diqqət: Regionlar cədvəlindən boş massiv qaytarıldı! Supabase RLS siyasətlərini yoxlayın.');
-      }
-      
-      // Keşi yenilə
-      regionsCache = data || [];
-      lastFetchTime = now;
-      
-      // Uğurlu sorğudan sonra retry sayğacını sıfırla
-      retryCount.current = 0;
-      
+
+      if (error) throw error;
+
       setRegions(data || []);
-      setLoading(false);
-      fetchInProgress.current = false;
-      return data || [];
     } catch (err: any) {
-      console.error('Regionları yükləyərkən xəta baş verdi:', err);
-      
-      // Şəbəkə xətasını xüsusi idarə et
-      if (err.message === 'Failed to fetch' || 
-          err.message?.includes('NET::ERR_INTERNET_DISCONNECTED') ||
-          err.message?.includes('NetworkError')) {
-        
-        toast.error(t('networkError') || 'Network Error', { 
-          description: t('checkYourInternetConnection') || 'Please check your internet connection'
-        });
-        
-        // Avtomatik yenidən cəhd et
-        if (retryCount.current < maxRetries) {
-          retryCount.current++;
-          console.log(`Şəbəkə xətası, ${retryCount.current}/${maxRetries} dəfə yenidən cəhd edirəm...`);
-          
-          // Növbəti cəhd üçün timeout
-          setTimeout(() => {
-            fetchInProgress.current = false;
-            fetchRegions();
-          }, 2000 * retryCount.current); // Hər cəhddə gözləmə müddətini artır
-        }
-      } else {
-        // Keş varsa, xəta mesajını göstərməmək
-        if (regionsCache) {
-          console.log('Xəta səbəbindən köhnə keşi istifadə edirəm');
-          setRegions(regionsCache);
-          return regionsCache;
-        } else {
-          setError(err?.message || t('errorLoadingRegions') || 'Error loading regions');
-          toast.error(t('errorLoadingRegions') || 'Error loading regions', { 
-            description: err?.message || t('unexpectedError') || 'An unexpected error occurred'
-          });
-          setRegions([]);
-          return [];
-        }
-      }
+      console.error('Regionları yükləyərkən xəta:', err);
+      setError(err.message || 'Regionları yükləmək mümkün olmadı');
+      toast.error(t('errorLoadingRegions'));
     } finally {
       setLoading(false);
-      fetchInProgress.current = false;
     }
-  }, [isAuthenticated, user?.id, t]);
+  }, [t]);
 
+  // Regionlar yüklə
   useEffect(() => {
-    // Component mount olduqda bir dəfə çağır
     fetchRegions();
-    
-    // Supabase real-time subscription yaradaq
-    const regionsSubscription = supabase
-      .channel('regions-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'regions' }, (payload) => {
-        console.log('Regionlar cədvəlində dəyişiklik baş verdi, yenidən yükləyirəm...', payload);
-        fetchRegions();
-      })
-      .subscribe((status) => {
-        console.log('Regions subscription status:', status);
-        
-        // Xəta halında yenidən qoşulmağa cəhd et
-        if (status === 'CHANNEL_ERROR') {
-          console.log('Realtime subscription xətası, yenidən qoşulmağa cəhd edirəm...');
-          
-          // 5 saniyə sonra yenidən qoşulmağa cəhd et
-          setTimeout(() => {
-            try {
-              regionsSubscription.unsubscribe();
-              
-              // Yeni subscription yaradaq
-              supabase
-                .channel('regions-changes-retry')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'regions' }, (payload) => {
-                  fetchRegions();
-                })
-                .subscribe();
-            } catch (e) {
-              console.error('Realtime subscription yenidən qoşulma xətası:', e);
-            }
-          }, 5000);
+  }, [fetchRegions]);
+
+  // Yenidən yükləmə funksiyası
+  const refresh = async () => {
+    await fetchRegions(true);
+  };
+
+  // Region əlavə etmə
+  const addRegion = async (regionData: RegionFormData) => {
+    try {
+      setLoading(true);
+      setError('');
+
+      // Ad unikallığını yoxla
+      const { data: existingRegions } = await supabase
+        .from('regions')
+        .select('name')
+        .eq('name', regionData.name);
+
+      if (existingRegions && existingRegions.length > 0) {
+        return { success: false, error: t('regionNameExists') };
+      }
+
+      // Region əlavə et
+      const { data, error } = await supabase
+        .from('regions')
+        .insert([
+          {
+            name: regionData.name,
+            description: regionData.description,
+            status: regionData.status
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+
+      // Uğurlu əlavə
+      return { success: true, data: data && data[0] };
+    } catch (err: any) {
+      console.error('Region əlavə edərkən xəta:', err);
+      setError(err.message || 'Region əlavə etmək mümkün olmadı');
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Region yeniləmə
+  const updateRegion = async (id: string, regionData: Partial<Region>) => {
+    try {
+      setLoading(true);
+      setError('');
+
+      // Ad dəyişibsə, unikallığı yoxla
+      if (regionData.name) {
+        const { data: existingRegions } = await supabase
+          .from('regions')
+          .select('name')
+          .eq('name', regionData.name)
+          .neq('id', id);
+
+        if (existingRegions && existingRegions.length > 0) {
+          return { success: false, error: t('regionNameExists') };
         }
-      });
-    
-    // Component unmount olduqda təmizlə
-    return () => {
-      fetchInProgress.current = false;
-      supabase.removeChannel(regionsSubscription);
-    };
-  }, [fetchRegions]);
+      }
 
-  // Məlumatları manuel olaraq yeniləmək üçün refresh metodu
-  const refresh = useCallback(() => {
-    console.log('Regionlar məlumatlarını manuel olaraq yeniləyirəm...');
-    regionsCache = null; // Keşi sıfırlayırıq
-    lastFetchTime = 0;
-    retryCount.current = 0; // Retry sayğacını sıfırla
-    return fetchRegions(true); // Məcburi yeniləmə
-  }, [fetchRegions]);
+      // Regionu yenilə
+      const { data, error } = await supabase
+        .from('regions')
+        .update({
+          name: regionData.name,
+          description: regionData.description,
+          status: regionData.status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select();
 
-  return { regions, loading, error, fetchRegions, refresh };
+      if (error) throw error;
+
+      // Uğurlu yeniləmə
+      return { success: true, data: data && data[0] };
+    } catch (err: any) {
+      console.error('Regionu yeniləyərkən xəta:', err);
+      setError(err.message || 'Regionu yeniləmək mümkün olmadı');
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Region silmə
+  const deleteRegion = async (id: string) => {
+    try {
+      setLoading(true);
+      setError('');
+
+      // İlk olaraq bu regionla bağlı sektorları yoxlayırıq
+      const { data: sectors, error: sectorsError } = await supabase
+        .from('sectors')
+        .select('id')
+        .eq('region_id', id);
+
+      if (sectorsError) throw sectorsError;
+
+      // Əgər regionda sektorlar varsa, silmək olmaz
+      if (sectors && sectors.length > 0) {
+        return { 
+          success: false, 
+          error: t('cannotDeleteRegionWithSectors', { count: sectors.length }) 
+        };
+      }
+
+      // Regionu sil
+      const { error } = await supabase
+        .from('regions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Uğurlu silmə
+      return { success: true };
+    } catch (err: any) {
+      console.error('Regionu silməkdə xəta:', err);
+      setError(err.message || 'Regionu silmək mümkün olmadı');
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    regions,
+    loading,
+    error,
+    fetchRegions,
+    refresh,
+    addRegion,
+    updateRegion,
+    deleteRegion
+  };
 };
-
-export default useRegions;

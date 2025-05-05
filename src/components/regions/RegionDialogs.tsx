@@ -1,351 +1,288 @@
 
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import React, { useState } from 'react';
 import { useRegions } from '@/hooks/useRegions';
-import { toast } from 'sonner';
-import { Region } from '@/types/regions';
-import { RegionAdminDialog } from './RegionAdminDialog';
 import { useLanguage } from '@/context/LanguageContext';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import RegionAdminDialog from './RegionAdminDialog';
+import { Region, RegionFormData, RegionDialogsProps } from '@/types/regions';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface RegionDialogsProps {
-  onSuccess?: () => void;
-}
+export const RegionDialogs: React.FC<RegionDialogsProps> = ({ open, onOpenChange }) => {
+  const [regionData, setRegionData] = useState<RegionFormData>({
+    name: '',
+    description: '',
+    status: 'active',
+  });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [regionToDelete, setRegionToDelete] = useState<Region | null>(null);
+  const [regionToEdit, setRegionToEdit] = useState<Region | null>(null);
+  const [adminDialogRegionId, setAdminDialogRegionId] = useState<string | null>(null);
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
 
-export const RegionDialogs: React.FC<RegionDialogsProps> = ({ onSuccess }) => {
+  const { regions, loading, error, fetchRegions, refresh, addRegion, updateRegion, deleteRegion } = useRegions();
   const { t } = useLanguage();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', status: 'active' });
-  const [submitted, setSubmitted] = useState(false);
+  const { toast } = useToast();
 
-  const { 
-    regions, 
-    loading, 
-    error, 
-    createRegion, 
-    updateRegion, 
-    deleteRegion 
-  } = useRegions();
-
-  const handleAddDialogOpen = () => {
-    setFormData({ name: '', description: '', status: 'active' });
-    setSubmitted(false);
-    setIsAddDialogOpen(true);
-  };
-
-  const handleEditDialogOpen = (region: Region) => {
-    setSelectedRegion(region);
-    setFormData({
-      name: region.name,
-      description: region.description || '',
-      status: region.status || 'active'
-    });
-    setSubmitted(false);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleDeleteDialogOpen = (region: Region) => {
-    setSelectedRegion(region);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleAdminDialogOpen = (region: Region) => {
-    setSelectedRegion(region);
-    setIsAdminDialogOpen(true);
-  };
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const validateForm = () => {
-    if (!formData.name) {
-      toast.error(t('nameRequired'));
-      return false;
+    setRegionData((prev) => ({ ...prev, [name]: value }));
+    // Sahə doldurulduqda xətanı təmizləyirik
+    if (value.trim() && errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
     }
-    return true;
   };
 
-  const handleAddSubmit = async () => {
-    setSubmitted(true);
+  const validateForm = (): boolean => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!regionData.name.trim()) {
+      newErrors.name = t('regionNameRequired');
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAddRegion = async () => {
     if (!validateForm()) return;
 
     try {
-      const regionData = {
-        name: formData.name,
-        description: formData.description,
-        status: formData.status
-      };
+      const result = await addRegion(regionData);
 
-      const result = await createRegion(regionData);
-      
-      if (result) {
-        toast.success(t('regionAddSuccess'));
-        setIsAddDialogOpen(false);
-        onSuccess?.();
+      if (result.success) {
+        toast({
+          title: t('success'),
+          description: t('regionAddedSuccessfully'),
+        });
+        // Dialog-u bağlayırıq və verilənləri sıfırlayırıq
+        onOpenChange(false);
+        setRegionData({
+          name: '',
+          description: '',
+          status: 'active',
+        });
+        // Regionların siyahısını yeniləyirik
+        refresh();
+      } else {
+        toast({
+          title: t('error'),
+          description: result.error || t('regionAddError'),
+          variant: "destructive",
+        });
       }
-    } catch (err: any) {
-      console.error('Region əlavə edilərkən xəta baş verdi:', err);
-      toast.error(t('regionAddError'), {
-        description: err.message || t('unexpectedError')
+    } catch (error: any) {
+      toast({
+        title: t('error'),
+        description: error.message || t('unexpectedError'),
+        variant: "destructive",
       });
     }
   };
 
-  const handleEditSubmit = async () => {
-    setSubmitted(true);
-    if (!validateForm() || !selectedRegion) return;
+  const handleUpdateRegion = async () => {
+    if (!regionToEdit || !validateForm()) return;
 
     try {
-      const regionData = {
-        name: formData.name,
-        description: formData.description,
-        status: formData.status
-      };
+      const result = await updateRegion(regionToEdit.id, regionData);
 
-      const result = await updateRegion(selectedRegion.id, regionData);
-      
-      if (result) {
-        toast.success(t('regionUpdateSuccess'));
-        setIsEditDialogOpen(false);
-        onSuccess?.();
+      if (result && result.success) {
+        toast({
+          title: t('success'),
+          description: t('regionUpdatedSuccessfully'),
+        });
+        setRegionToEdit(null);
+        refresh();
+      } else {
+        toast({
+          title: t('error'),
+          description: result && result.error ? result.error : t('regionUpdateError'),
+          variant: "destructive",
+        });
       }
-    } catch (err: any) {
-      console.error('Region yeniləmə xətası:', err);
-      toast.error(t('regionUpdateError'), {
-        description: err.message || t('unexpectedError')
+    } catch (error: any) {
+      toast({
+        title: t('error'),
+        description: error.message || t('unexpectedError'),
+        variant: "destructive",
       });
     }
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!selectedRegion) return;
+  const handleDeleteRegion = async () => {
+    if (!regionToDelete) return;
 
     try {
-      const result = await deleteRegion(selectedRegion.id);
-      
-      if (result) {
-        toast.success(t('regionDeleteSuccess'));
-        setIsDeleteDialogOpen(false);
-        onSuccess?.();
+      const result = await deleteRegion(regionToDelete.id);
+
+      if (result && result.success) {
+        toast({
+          title: t('success'),
+          description: t('regionDeletedSuccessfully'),
+        });
+        setRegionToDelete(null);
+        refresh();
+      } else {
+        toast({
+          title: t('error'),
+          description: result && result.error ? result.error : t('regionDeleteError'),
+          variant: "destructive",
+        });
       }
-    } catch (err: any) {
-      console.error('Region silinərkən xəta baş verdi:', err);
-      toast.error(t('regionDeleteError'), {
-        description: err.message || t('unexpectedError')
+    } catch (error: any) {
+      toast({
+        title: t('error'),
+        description: error.message || t('unexpectedError'),
+        variant: "destructive",
       });
     }
   };
+
+  const handleOpenEditDialog = (region: Region) => {
+    setRegionToEdit(region);
+    setRegionData({
+      name: region.name,
+      description: region.description || '',
+      status: region.status || 'active',
+    });
+  };
+
+  const handleOpenDeleteDialog = (region: Region) => {
+    setRegionToDelete(region);
+  };
+
+  const handleAssignAdmin = (regionId: string) => {
+    setAdminDialogRegionId(regionId);
+    setAdminDialogOpen(true);
+  };
+
+  // Form komponentləri
+  const formFields = (
+    <div className="space-y-4 py-2">
+      <div className="space-y-2">
+        <Label htmlFor="name">{t('regionName')} *</Label>
+        <Input
+          id="name"
+          name="name"
+          value={regionData.name}
+          onChange={handleInputChange}
+          placeholder={t('enterRegionName')}
+          className={errors.name ? 'border-destructive' : ''}
+        />
+        {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="description">{t('description')}</Label>
+        <Textarea
+          id="description"
+          name="description"
+          value={regionData.description}
+          onChange={handleInputChange}
+          placeholder={t('enterDescription')}
+          rows={3}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="status">{t('status')}</Label>
+        <Select
+          value={regionData.status}
+          onValueChange={(value) => setRegionData((prev) => ({ ...prev, status: value as 'active' | 'inactive' }))}
+        >
+          <SelectTrigger id="status">
+            <SelectValue placeholder={t('selectStatus')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">{t('active')}</SelectItem>
+            <SelectItem value="inactive">{t('inactive')}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
 
   return (
     <>
-      {/* Region əlavə etmə dialoqu */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+      {/* Add Region Dialog */}
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('addRegion')}</DialogTitle>
-            <DialogDescription>
-              {t('addRegionDescription')}
-            </DialogDescription>
+            <DialogDescription>{t('addRegionDescription')}</DialogDescription>
           </DialogHeader>
-          
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">{t('name')}</Label>
-              <Input 
-                id="name"
-                name="name" 
-                value={formData.name} 
-                onChange={handleFormChange}
-                className={submitted && !formData.name ? "border-red-500" : ""}
-                placeholder={t('regionNamePlaceholder')}
-              />
-              {submitted && !formData.name && (
-                <p className="text-sm text-red-500">{t('nameRequired')}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">{t('description')}</Label>
-              <Textarea 
-                id="description"
-                name="description" 
-                value={formData.description} 
-                onChange={handleFormChange}
-                placeholder={t('regionDescriptionPlaceholder')}
-                rows={3}
-              />
-            </div>
-          </div>
-          
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+
+          {formFields}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               {t('cancel')}
             </Button>
-            <Button onClick={handleAddSubmit}>
-              {t('add')}
-            </Button>
+            <Button onClick={handleAddRegion}>{t('addRegion')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Region yeniləmə dialoqu */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{t('editRegion')}</DialogTitle>
-            <DialogDescription>
-              {t('editRegionDescription')}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">{t('name')}</Label>
-              <Input 
-                id="name"
-                name="name" 
-                value={formData.name} 
-                onChange={handleFormChange}
-                className={submitted && !formData.name ? "border-red-500" : ""}
-              />
-              {submitted && !formData.name && (
-                <p className="text-sm text-red-500">{t('nameRequired')}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">{t('description')}</Label>
-              <Textarea 
-                id="description"
-                name="description" 
-                value={formData.description} 
-                onChange={handleFormChange}
-                rows={3}
-              />
-            </div>
-          </div>
-          
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              {t('cancel')}
-            </Button>
-            <Button onClick={handleEditSubmit}>
-              {t('save')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Edit Region Dialog */}
+      {regionToEdit && (
+        <Dialog open={!!regionToEdit} onOpenChange={() => setRegionToEdit(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('editRegion')}</DialogTitle>
+              <DialogDescription>{t('editRegionDescription')}</DialogDescription>
+            </DialogHeader>
 
-      {/* Region silmə dialoqu */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>{t('deleteRegion')}</DialogTitle>
-            <DialogDescription>
-              {t('deleteRegionDescription')}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-3">
-            <p className="text-destructive">
-              {t('deleteRegionWarning', { name: selectedRegion?.name || '' })}
-            </p>
-          </div>
-          
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              {t('cancel')}
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm}>
-              {t('delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Region admin təyin etmə dialoqu */}
-      <RegionAdminDialog 
-        open={isAdminDialogOpen} 
-        onClose={() => setIsAdminDialogOpen(false)} 
-        regionId={selectedRegion?.id || ''}
-      />
-      
-      <div className="flex flex-wrap gap-2 justify-end mb-4">
-        <Button onClick={handleAddDialogOpen}>
-          {t('addRegion')}
-        </Button>
-      </div>
+            {formFields}
 
-      <div className="mt-4">
-        {loading ? (
-          <div className="flex justify-center p-4">
-            <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
-          </div>
-        ) : error ? (
-          <div className="bg-destructive/10 p-4 rounded-lg text-center">
-            <p className="text-destructive">{error}</p>
-          </div>
-        ) : regions && regions.length === 0 ? (
-          <div className="bg-muted p-4 rounded-lg text-center">
-            <p className="text-muted-foreground">{t('noRegionsFound')}</p>
-          </div>
-        ) : (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {regions && regions.map(region => (
-              <div key={region.id} className="bg-card text-card-foreground border rounded-lg shadow-sm">
-                <div className="p-6">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium">{region.name}</h3>
-                    {region.status === 'active' ? (
-                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                        {t('active')}
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 text-xs bg-amber-100 text-amber-800 rounded-full">
-                        {t('inactive')}
-                      </span>
-                    )}
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                    {region.description || t('noDescription')}
-                  </p>
-                  
-                  <div className="mt-4 flex flex-col gap-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{t('admin')}:</span>
-                      <span className="font-medium">
-                        {region.admin_email || t('notAssigned')}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 flex gap-2 justify-end">
-                    <Button variant="outline" size="sm" onClick={() => handleAdminDialogOpen(region)}>
-                      {t('assignAdmin')}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleEditDialogOpen(region)}>
-                      {t('edit')}
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDeleteDialogOpen(region)}>
-                      {t('delete')}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRegionToEdit(null)}>
+                {t('cancel')}
+              </Button>
+              <Button onClick={handleUpdateRegion}>{t('update')}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Delete Region Dialog */}
+      {regionToDelete && (
+        <Dialog open={!!regionToDelete} onOpenChange={() => setRegionToDelete(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('deleteRegion')}</DialogTitle>
+              <DialogDescription>
+                {t('deleteRegionConfirmation', { regionName: regionToDelete.name })}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRegionToDelete(null)}>
+                {t('cancel')}
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteRegion}>
+                {t('delete')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Admin Dialog */}
+      {adminDialogRegionId && (
+        <RegionAdminDialog
+          open={adminDialogOpen}
+          onOpenChange={setAdminDialogOpen}
+          regionId={adminDialogRegionId}
+        />
+      )}
     </>
   );
 };

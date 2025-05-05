@@ -20,16 +20,16 @@ const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDownload, 
   
   // İcon seçimi
   const getIcon = () => {
-    const reportType = typeof report.type === 'string' ? report.type : report.type.toString();
+    const reportType = typeof report.type === 'string' ? report.type : String(report.type);
     
     switch (reportType) {
-      case ReportType.STATISTICS:
+      case String(ReportType.STATISTICS):
         return <BarChart2 className="h-12 w-12 text-blue-500" />;
-      case ReportType.COMPLETION:
+      case String(ReportType.COMPLETION):
         return <PieChart className="h-12 w-12 text-green-500" />;
-      case ReportType.COMPARISON:
+      case String(ReportType.COMPARISON):
         return <Table2 className="h-12 w-12 text-purple-500" />;
-      case ReportType.COLUMN:
+      case String(ReportType.COLUMN):
         return <FileText className="h-12 w-12 text-amber-500" />;
       default:
         return <FileText className="h-12 w-12 text-gray-500" />;
@@ -38,22 +38,22 @@ const ReportItem: React.FC<ReportItemProps> = ({ report, onPreview, onDownload, 
   
   // Status rəngini təyin etmə
   const getStatusBadge = () => {
-    const reportType = typeof report.type === 'string' ? report.type : report.type.toString();
+    const reportType = typeof report.type === 'string' ? report.type : String(report.type);
     
     switch (reportType) {
-      case ReportType.STATISTICS:
+      case String(ReportType.STATISTICS):
         return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
           {t('statistics')}
         </Badge>;
-      case ReportType.COMPLETION:
+      case String(ReportType.COMPLETION):
         return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
           {t('completion')}
         </Badge>;
-      case ReportType.COMPARISON:
+      case String(ReportType.COMPARISON):
         return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
           {t('comparison')}
         </Badge>;
-      case ReportType.COLUMN:
+      case String(ReportType.COLUMN):
         return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
           {t('column')}
         </Badge>;

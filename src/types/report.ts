@@ -68,5 +68,5 @@ export interface ReportPreviewDialogProps {
   reportDescription: string;
 }
 
-// ReportType enum'unu ixrac edirik ki, başqa komponentlər də istifadə edə bilsinlər
-export { ReportType };
+// Faylın sonunda ikinci "export { ReportType };" xəttini silmişəm,
+// çünki ReportType zaten "export enum ReportType" şəklində ixrac olunur.

@@ -1,165 +1,165 @@
 
-// Bu fayl standart interfeyslər üçündür
-import { FormItem } from "./form";
+// Bu fayl əvvəldən mövcud olmaya bilər, tam olaraq yaradaq
 
-// Dashboardda istifadə edilən notification tipi
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'success' | 'error';
-  date: string;
-  isRead?: boolean;
-  read?: boolean;
-}
-
-// UI-da istifadə olunan notification
-export interface UINotification extends Notification {
-  createdAt: string;
-}
-
-// Dashboard bildirişi
-export interface DashboardNotification extends UINotification {
-  createdAt: string;
-}
-
-// Dashboard özət məlumatı
 export interface DashboardSummary {
-  totalSchools?: number;
+  totalForms?: number;
   completedForms?: number;
   pendingForms?: number;
-  approvalRate?: number;
+  overdueForms?: number;
+  completionRate?: number;
 }
 
-// Fəaliyyət sətiri
+export interface FormsByStatus {
+  pending: number;
+  approved: number;
+  rejected: number;
+  total: number;
+}
+
+export interface FormStats {
+  pending?: number;
+  approved?: number;
+  rejected?: number;
+  total?: number;
+  incomplete?: number;
+  drafts?: number;
+  dueSoon?: number;
+  overdue?: number;
+}
+
 export interface ActivityItem {
   id: string;
+  type?: string;
   title: string;
-  description: string;
-  date: string;
+  description?: string;
+  timestamp: string;
   user?: string;
 }
 
-// Region statistikası
+export interface RecentForm {
+  id: string;
+  title?: string;
+  status?: string;
+  progress?: number;
+  dueDate?: string;
+}
+
 export interface RegionStats {
   id: string;
   name: string;
-  totalSchools: number;
-  completionRate: number;
+  totalSchools?: number;
+  completionRate?: number;
+  schoolCount?: number;
+  sectorCount?: number;
 }
 
-// Sektor statistikası
 export interface SectorStats {
   id: string;
   name: string;
+  regionId?: string;
   regionName?: string;
-  totalSchools: number;
-  completionRate: number;
+  totalSchools?: number;
+  completionRate?: number;
+  total?: number;
+  active?: number;
 }
 
-// Məktəb statistikası
 export interface SchoolStats {
   id: string;
   name: string;
+  sectorId?: string;
   sectorName?: string;
+  regionId?: string;
   regionName?: string;
-  completionRate: number;
+  completedForms?: number;
+  totalForms?: number;
+  completionRate?: number;
+  total?: number;
 }
 
-// Son form
-export interface RecentForm {
+export interface UINotification {
   id: string;
-  name: string;
-  status: string;
-  date: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  isRead: boolean;
+  read?: boolean;
+  date?: string;
+  createdAt?: string;
 }
 
-// Təsdiq gözləyən element
-export interface PendingApprovalItem {
-  id: string;
-  categoryName: string;
-  schoolName: string;
-  submittedAt: string;
-  status: string;
-}
+export type Notification = UINotification;
 
-// Məktəb statistikası
-export interface SchoolStat {
-  id: string;
-  name: string;
-  value: number;
-  change?: number;
-}
+export interface DashboardData {}
 
-// Qrafik məlumatları
-export interface ChartData {
-  labels: string[];
-  datasets: any[];
-}
-
-// Kateqoriya statistikası
-export interface CategoryStat {
-  id: string;
-  name: string;
-  completionRate: number;
-  pendingCount: number;
-  approvedCount: number;
-}
-
-// Dashboard məlumatı
-export interface DashboardData {
-  summary: DashboardSummary;
+export interface SuperAdminDashboardData extends DashboardData {
+  regions?: RegionStats[];
+  stats: {
+    regions: number;
+    sectors: number;
+    schools: number;
+    users: number;
+  };
+  totalSchools?: number;
+  totalUsers?: number;
+  summary?: DashboardSummary;
   recentActivity?: ActivityItem[];
   notifications?: Notification[];
-  pendingApprovals?: PendingApprovalItem[];
-  recentForms?: RecentForm[];
-  stats?: any;
-  chartData?: ChartData;
+  formsByStatus?: FormsByStatus;
   approvalRate?: number;
+  completionRate?: number;
 }
 
-// SuperAdmin Dashboard məlumatı
-export interface SuperAdminDashboardData extends DashboardData {
-  regionStats?: RegionStats[];
-  categoryStats?: CategoryStat[];
-}
-
-// RegionAdmin Dashboard məlumatı
 export interface RegionAdminDashboardData extends DashboardData {
-  sectorStats?: SectorStats[];
-  categoryStats?: CategoryStat[];
+  sectors?: SectorStats[];
+  stats: {
+    sectors: number;
+    schools: number;
+    users: number;
+    completion_rate?: number;
+    total_entries?: number;
+    pending_count?: number;
+    pending_schools?: number;
+  };
+  totalSchools?: number;
+  summary?: DashboardSummary;
+  recentActivity?: ActivityItem[];
+  notifications?: Notification[];
+  sectorStats?: {
+    total: number;
+    active: number;
+  };
+  schoolStats?: {
+    total: number;
+    active: number;
+    incomplete: number;
+  };
+  approvalRate?: number;
+  completionRate?: number;
 }
 
-// SectorAdmin Dashboard məlumatı
 export interface SectorAdminDashboardData extends DashboardData {
+  schools?: SchoolStats[];
+  stats: {
+    schools: number;
+    users: number;
+  };
+  summary?: DashboardSummary;
+  recentActivity?: ActivityItem[];
+  notifications?: Notification[];
+  schoolsStats?: SchoolStats[];
   schoolStats?: SchoolStats[];
-  categoryStats?: CategoryStat[];
+  approvalRate?: number;
+  completionRate?: number;
 }
 
-// SchoolAdmin Dashboard məlumatı
 export interface SchoolAdminDashboardData extends DashboardData {
-  formStats?: FormItem[];
-  categoryCompletionStats?: CategoryStat[];
+  upcomingDeadlines?: RecentForm[];
+  recentForms?: RecentForm[];
+  summary?: DashboardSummary;
+  recentActivity?: ActivityItem[];
+  notifications?: Notification[];
+  formStats?: FormStats;
+  approvalRate?: number;
+  completionRate?: number;
 }
-
-// Bütün dashboard tiplərini bu fayldan ixrac edirik
-export type {
-  DashboardSummary,
-  ActivityItem,
-  RegionStats,
-  SectorStats,
-  SchoolStats,
-  RecentForm,
-  DashboardData,
-  SuperAdminDashboardData,
-  RegionAdminDashboardData,
-  SectorAdminDashboardData,
-  SchoolAdminDashboardData,
-  DashboardNotification,
-  UINotification,
-  PendingApprovalItem,
-  SchoolStat,
-  ChartData,
-  CategoryStat,
-  Notification
-};
