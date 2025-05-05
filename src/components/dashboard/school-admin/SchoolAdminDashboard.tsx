@@ -2,7 +2,7 @@
 import React from 'react';
 import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
-import { NotificationsCard } from '../common/NotificationsCard';
+import NotificationsCard from '../common/NotificationsCard';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
 import { Grid } from '@/components/ui/grid';
 import { CheckCircle, AlertTriangle, Clock, XCircle } from 'lucide-react';

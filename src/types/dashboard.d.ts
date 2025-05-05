@@ -67,25 +67,24 @@ export interface DashboardData {
   notifications: Notification[];
   approvalRate?: number;
   completionRate?: number;
-}
-
-export interface SuperAdminDashboardData extends DashboardData {
-  regions: RegionStats[];
-  totalSchools: number;
-  totalUsers: number;
-  stats?: any;
   formsByStatus?: {
     pending: number;
     approved: number;
     rejected: number;
     total: number;
   };
+  stats?: any;
+}
+
+export interface SuperAdminDashboardData extends DashboardData {
+  regions: RegionStats[];
+  totalSchools: number;
+  totalUsers: number;
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
   sectors: SectorStats[];
   totalSchools: number;
-  stats?: any;
   sectorStats?: {
     total: number;
     active: number;
@@ -99,16 +98,13 @@ export interface RegionAdminDashboardData extends DashboardData {
 
 export interface SectorAdminDashboardData extends DashboardData {
   schools: SchoolStats[];
-  stats?: any;
   schoolsStats?: SchoolStat[];
-  completionRate?: number;
 }
 
 export interface SchoolAdminDashboardData extends DashboardData {
   upcomingDeadlines: RecentForm[];
   recentForms: RecentForm[];
   formStats?: any;
-  completionRate?: number;
 }
 
 // Maintain backwards compatibility
@@ -136,4 +132,6 @@ export interface SchoolStat {
   sectorName?: string;
   completionRate: number;
   total?: number;
+  active?: number;
+  incomplete?: number;
 }

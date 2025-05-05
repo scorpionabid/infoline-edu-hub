@@ -3,7 +3,7 @@ import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
-import { NotificationsCard } from './common/NotificationsCard';
+import NotificationsCard from './common/NotificationsCard';
 import { SuperAdminDashboardData } from '@/types/dashboard';
 
 interface SuperAdminDashboardProps {

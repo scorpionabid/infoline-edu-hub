@@ -10,7 +10,7 @@ export interface Notification {
   type: NotificationType;
   title: string;
   message: string;
-  isRead: boolean;
+  isRead?: boolean;
   read?: boolean; // Geriyə uyğunluq üçün
   createdAt: string;
   userId?: string;
@@ -46,19 +46,19 @@ export const adaptDbNotificationToApp = (dbNotification: any): Notification => {
 export interface DashboardNotification extends Notification {}
 
 // Dashboard bildirişlərini app bildirişlərinə çevirmək üçün adapter
-export const adaptDashboardNotificationToApp = (notification: DashboardNotification): Notification => {
+export const adaptDashboardNotificationToApp = (notification: any): Notification => {
   return {
-    id: notification.id,
+    id: notification.id || `temp-${Date.now()}`,
     title: notification.title || 'Bildiriş',
-    message: notification.message,
-    type: notification.type,
+    message: notification.message || '',
+    type: notification.type as NotificationType,
     isRead: notification.isRead || notification.read || false,
     read: notification.read || notification.isRead || false,
-    createdAt: notification.createdAt || new Date().toISOString(),
+    createdAt: notification.createdAt || notification.timestamp || new Date().toISOString(),
     userId: notification.userId || '',
     priority: notification.priority || 'normal',
-    date: notification.date || new Date().toISOString().split('T')[0],
-    timestamp: notification.timestamp || notification.createdAt,
+    date: notification.date || notification.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+    timestamp: notification.timestamp || notification.createdAt || new Date().toISOString(),
     time: notification.time || new Date().toTimeString().slice(0, 5)
   };
 };

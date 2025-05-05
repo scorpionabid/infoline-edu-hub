@@ -10,11 +10,13 @@ import { Notification } from '@/types/notification';
 interface NotificationsCardProps {
   notifications: Notification[];
   viewAllLink?: string;
+  title?: string;
 }
 
 const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
   notifications,
-  viewAllLink = '/notifications'
+  viewAllLink = '/notifications',
+  title
 }) => {
   const { t } = useLanguage();
 
@@ -49,7 +51,7 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="flex items-center">
           <Bell className="mr-2 h-5 w-5" />
-          {t('notifications')}
+          {title || t('notifications')}
         </CardTitle>
         <Button variant="ghost" size="sm" asChild>
           <a href={viewAllLink} className="flex items-center">
@@ -93,4 +95,6 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
   );
 };
 
+export { NotificationsCard };
 export default NotificationsCard;
+
