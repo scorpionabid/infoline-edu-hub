@@ -1,11 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Report, ReportType } from '@/types/report'; 
-
-interface ReportChartProps {
-  report: Report;
-}
+import { Report, ReportType, ReportChartProps } from '@/types/report'; 
 
 const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
   if (!report || !report.content) {

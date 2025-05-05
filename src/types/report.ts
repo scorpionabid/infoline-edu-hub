@@ -23,3 +23,8 @@ export const ReportTypeValues = {
   TABLE: 'table' as ReportType,
   SUMMARY: 'summary' as ReportType
 };
+
+// ReportChart üçün props interfeysi
+export interface ReportChartProps {
+  report: Report;
+}
