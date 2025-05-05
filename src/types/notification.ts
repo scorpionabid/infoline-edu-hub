@@ -1,6 +1,8 @@
 
-export type NotificationType = 'system' | 'category' | 'deadline' | 'approval' | 'form' | 
-                              'warning' | 'error' | 'success' | 'info' | 'rejection' | 'comment';
+export type NotificationType = 
+  'system' | 'category' | 'deadline' | 'approval' | 'rejection' | 'comment' | 
+  'warning' | 'error' | 'success' | 'info' | 'form';
+
 export type NotificationPriority = 'low' | 'normal' | 'high';
 
 export interface Notification {
@@ -11,11 +13,12 @@ export interface Notification {
   isRead: boolean;
   read?: boolean; // Geriyə uyğunluq üçün
   createdAt: string;
-  userId: string;
-  priority: NotificationPriority;
+  userId?: string;
+  priority?: NotificationPriority;
   relatedId?: string;
   relatedType?: string;
   date?: string; // Tarix (formatlanmış)
+  timestamp?: string; // Geriuyğunluq üçün
   time?: string; // Zaman (formatlanmış)
 }
 
@@ -34,22 +37,13 @@ export const adaptDbNotificationToApp = (dbNotification: any): Notification => {
     relatedId: dbNotification.related_entity_id,
     relatedType: dbNotification.related_entity_type,
     date: dbNotification.date || new Date(dbNotification.created_at).toISOString().split('T')[0],
+    timestamp: dbNotification.created_at,
     time: dbNotification.time || new Date(dbNotification.created_at).toTimeString().slice(0, 5)
   };
 };
 
 // Dashboard bildiişləri üçün tip
-export interface DashboardNotification {
-  id: string;
-  title: string; // Artıq optional deyil
-  message: string;
-  type: NotificationType; // Birləşdirilmiş tip
-  isRead: boolean; // Artıq optional deyil
-  read?: boolean;
-  date?: string;
-  createdAt: string; // Artıq optional deyil
-  priority?: NotificationPriority;
-}
+export interface DashboardNotification extends Notification {}
 
 // Dashboard bildirişlərini app bildirişlərinə çevirmək üçün adapter
 export const adaptDashboardNotificationToApp = (notification: DashboardNotification): Notification => {
@@ -61,10 +55,11 @@ export const adaptDashboardNotificationToApp = (notification: DashboardNotificat
     isRead: notification.isRead || notification.read || false,
     read: notification.read || notification.isRead || false,
     createdAt: notification.createdAt || new Date().toISOString(),
-    userId: '', // Dashboard bildirişlərində userId olmaya bilər
+    userId: notification.userId || '',
     priority: notification.priority || 'normal',
     date: notification.date || new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5)
+    timestamp: notification.timestamp || notification.createdAt,
+    time: notification.time || new Date().toTimeString().slice(0, 5)
   };
 };
 
@@ -78,7 +73,9 @@ export const adaptAppToDashboardNotification = (notification: Notification): Das
     isRead: notification.isRead,
     read: notification.read,
     date: notification.date || notification.createdAt.split('T')[0],
+    timestamp: notification.timestamp || notification.createdAt,
     createdAt: notification.createdAt,
-    priority: notification.priority
+    priority: notification.priority,
+    userId: notification.userId
   };
 };

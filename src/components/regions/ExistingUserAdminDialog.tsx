@@ -1,124 +1,209 @@
+
 import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { Region } from '@/types/supabase';
+import { EnhancedRegion } from '@/hooks/useRegionsStore';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+import { Loader2 } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
-import { useAssignUserAsAdmin } from '@/hooks/admin/useAssignUserAsAdmin';
-import { useAvailableUsers } from '@/hooks/useAvailableUsers';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 
-// İmport komponentləri
-import { AdminDialogHeader } from './AdminDialog/AdminDialogHeader';
-import { AdminUserSelector } from './AdminDialog/AdminUserSelector';
-import { AdminDialogFooter } from './AdminDialog/AdminDialogFooter';
-
-interface ExistingUserAdminDialogProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  region: Region | null;
-  onSuccess?: () => void;
+interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
 }
 
-export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = ({ 
-  open, 
-  setOpen, 
+export interface ExistingUserAdminDialogProps {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  region: EnhancedRegion | null;
+  onSuccess: () => void;
+}
+
+export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = ({
+  open,
+  setOpen,
   region,
   onSuccess
 }) => {
   const { t } = useLanguage();
-  const { assignRegionAdmin, loading: assignLoading } = useAssignUserAsAdmin();
-  const { users, loading: usersLoading, error: usersError, fetchAvailableUsers } = useAvailableUsers();
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
-  
-  // Dialog açıldığında istifadəçiləri yenidən əldə et və state'i sıfırla
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [assigningUser, setAssigningUser] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
   useEffect(() => {
     if (open) {
-      console.log('Dialog açıldı, istifadəçilər yüklənir...');
-      fetchAvailableUsers();
-      setSelectedUserId('');
-      setError(null);
+      fetchUsers();
     }
-  }, [open, fetchAvailableUsers]);
-  
-  // İstifadəçi seçimi dəyişdikdə
-  const handleUserChange = (value: string) => {
-    console.log('Seçilmiş istifadəçi dəyişdi:', value);
-    setSelectedUserId(value);
-    setError(null);
-  };
-  
-  // Admin təyin etmə prosesi
-  const handleAssignAdmin = async () => {
-    if (!selectedUserId) {
-      console.error('İstifadəçi seçilməyib');
-      setError(t('selectUserRequired') || 'Zəhmət olmasa istifadəçi seçin');
-      return;
-    }
-    
-    if (!region) {
-      console.error('Region tapılmadı');
-      setError(t('regionNotFound') || 'Region tapılmadı');
-      return;
-    }
+  }, [open]);
 
-    console.log('Admin təyin etmə başladı. Region ID:', region.id, 'User ID:', selectedUserId);
-    
+  const fetchUsers = async () => {
     try {
-      const result = await assignRegionAdmin(region.id, selectedUserId);
-      
-      if (result.success) {
-        console.log('Admin təyin etmə uğurla başa çatdı', result);
-        setOpen(false);
-        if (onSuccess) {
-          onSuccess();
-        }
-      } else {
-        console.error('Admin təyin etmə xətası:', result.error);
-        setError(result.error);
-      }
-    } catch (err: any) {
-      console.error('Admin təyin etmə zamanı istisna:', err);
-      setError(err.message || t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta baş verdi');
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .order('full_name', { ascending: true });
+
+      if (error) throw error;
+
+      // İstifadəçi rollarını əldə edək
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) throw rolesError;
+
+      // Rolları və profil məlumatlarını birləşdirək
+      const usersWithRoles = data.map(user => {
+        const userRole = userRoles?.find(role => role.user_id === user.id);
+        return {
+          ...user,
+          role: userRole?.role || 'user'
+        };
+      });
+
+      setUsers(usersWithRoles);
+    } catch (error: any) {
+      console.error('İstifadəçilər yüklənərkən xəta:', error);
+      toast.error(t('errorLoadingUsers'));
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!region) {
-    return null;
-  }
+  const assignAdmin = async (userId: string) => {
+    if (!region) {
+      toast.error(t('regionNotFound'));
+      return;
+    }
+
+    try {
+      setAssigningUser(userId);
+      
+      // Assign region admin funksiyasını çağırırıq
+      const { data, error } = await supabase.rpc('assign_region_admin', {
+        user_id_param: userId,
+        region_id_param: region.id
+      });
+      
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string };
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Unknown error occurred');
+      }
+      
+      toast.success(t('adminAssigned'));
+      setOpen(false);
+      onSuccess();
+      
+    } catch (error: any) {
+      console.error('Admin təyin edilərkən xəta:', error);
+      toast.error(error.message || t('errorAssigningAdmin'));
+    } finally {
+      setAssigningUser(null);
+    }
+  };
+
+  // İstifadəçiləri axtarış və mövcud rola görə filter edək
+  const filteredUsers = users.filter(user => 
+    (user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+     user.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    // SuperAdmin roluna sahib istifadəçiləri göstərməməliyik
+    user.role !== 'superadmin'
+  );
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && setOpen(false)}>
-      <DialogContent className="sm:max-w-[425px]">
-        <AdminDialogHeader region={region} />
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[700px]">
+        <DialogHeader>
+          <DialogTitle>
+            {t('assignExistingUserAsAdmin')}
+          </DialogTitle>
+        </DialogHeader>
         
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        <div className="space-y-4 py-4">
-          <AdminUserSelector 
-            users={users}
-            loading={usersLoading}
-            error={usersError}
-            selectedUserId={selectedUserId}
-            onUserChange={handleUserChange}
+        <div className="py-4">
+          <Input
+            placeholder={t('searchUsers')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="mb-4"
           />
           
-          <AdminDialogFooter 
-            loading={assignLoading}
-            onCancel={() => setOpen(false)}
-            onAssign={handleAssignAdmin}
-            disabled={!selectedUserId}
-          />
+          {loading ? (
+            <div className="flex justify-center p-4">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : (
+            <div className="max-h-[400px] overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('name')}</TableHead>
+                    <TableHead>{t('email')}</TableHead>
+                    <TableHead>{t('currentRole')}</TableHead>
+                    <TableHead className="text-right">{t('action')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.length > 0 ? (
+                    filteredUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.full_name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{t(user.role || 'user')}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            onClick={() => assignAdmin(user.id)}
+                            disabled={assigningUser === user.id}
+                          >
+                            {assigningUser === user.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : null}
+                            {t('assign')}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                        {t('noUsersFound')}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
+          >
+            {t('cancel')}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 };
+
+export default ExistingUserAdminDialog;

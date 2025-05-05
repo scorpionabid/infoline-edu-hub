@@ -1,5 +1,6 @@
 
 import { FormItem } from "./form";
+import { Notification, NotificationType } from "./notification";
 
 export interface DashboardSummary {
   totalForms: number;
@@ -19,18 +20,8 @@ export interface ActivityItem {
   entityId?: string;
 }
 
-// Birləşdirilmiş Notification interfeysi - bütün bildiriş sahələrini əhatə edir
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'success' | 'error' | 'deadline' | 'approval' | 'rejection' | 'comment' | 'system';
-  isRead: boolean;
-  read?: boolean; // Geriyə uyğunluq üçün
-  createdAt: string;
-  date?: string; // UI rahatılığı üçün
-  time?: string;
-}
+// Dashboard-specific notification - extended from base Notification
+export type { Notification };
 
 export interface RegionStats {
   id: string;
@@ -67,7 +58,7 @@ export interface RecentForm extends FormItem {
   schoolName?: string;
   sectorName?: string;
   regionName?: string;
-  title?: string; // FormItem interfeysinə title əlavə et
+  title?: string;
 }
 
 export interface DashboardData {
@@ -110,6 +101,7 @@ export interface SectorAdminDashboardData extends DashboardData {
   schools: SchoolStats[];
   stats?: any;
   schoolsStats?: SchoolStat[];
+  completionRate?: number;
 }
 
 export interface SchoolAdminDashboardData extends DashboardData {
@@ -119,10 +111,10 @@ export interface SchoolAdminDashboardData extends DashboardData {
   completionRate?: number;
 }
 
-// Dashboard bildiriş interfeysi artıq əsas Notification tipinə əsaslanır
-export interface DashboardNotification extends Notification {}
+// Maintain backwards compatibility
+export type DashboardNotification = Notification;
 
-// UI bildiriş interfeysi də əsas Notification tipinə əsaslanır
+// UI notification interface
 export type UINotification = Notification;
 
 export interface PendingApprovalItem {

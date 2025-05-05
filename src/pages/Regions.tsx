@@ -2,7 +2,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRegionsStore } from '@/hooks/useRegionsStore';
-import SidebarLayout from '@/components/layout/SidebarLayout';
 import { RegionDialog } from '@/components/regions/RegionDialog';
 import { RegionAdminDialog } from '@/components/regions/RegionAdminDialog';
 import { ExistingUserAdminDialog } from '@/components/regions/ExistingUserAdminDialog'; 
@@ -12,7 +11,7 @@ import { EnhancedRegion } from '@/hooks/useRegionsStore';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet';
 import { Pagination } from '@/components/ui/pagination';
-import { useRegions } from '@/hooks/useRegions'; // Direkt useRegions hook-unu istifadə edək
+import { useRegions } from '@/hooks/useRegions';
 
 const Regions = () => {
   const { t } = useLanguage();
@@ -66,7 +65,12 @@ const Regions = () => {
 
   useEffect(() => {
     // Component yükləndikdə regionları yükləyək
-    directFetchRegions();
+    try {
+      directFetchRegions();
+    } catch (error) {
+      console.error('Regions yüklənərkən xəta baş verdi:', error);
+      toast.error('Regionlar yüklənərkən xəta baş verdi');
+    }
   }, [directFetchRegions]);
   
   // Document event ilə yeniləmə trigger
@@ -165,70 +169,68 @@ const Regions = () => {
   }
 
   return (
-    <SidebarLayout>
+    <div className="container mx-auto py-6 space-y-6">
       <Helmet>
         <title>{t('regions')} | InfoLine</title>
       </Helmet>
       
-      <div className="container mx-auto py-6 space-y-6">
-        <RegionHeader
-          onAddRegion={() => handleOpenRegionDialog(null)}
-          searchTerm={searchTerm}
-          onSearchChange={handleSearch}
-          selectedStatus={selectedStatus}
-          onStatusChange={handleStatusFilter}
-          onResetFilters={resetFilters}
-        />
-        
-        <RegionTable
-          regions={regions}
-          loading={loading}
-          onEdit={handleOpenRegionDialog}
-          onDelete={handleDeleteRegion}
-          onAssignAdmin={(region) => handleOpenAdminDialog(region, 'existing')}
-        />
-        
-        {totalPages > 1 && (
-          <div className="flex justify-center mt-4">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-              previousLabel={t('previous')}
-              nextLabel={t('next')}
-              pageLabel={(page) => `${page} ${t('of')} ${totalPages}`}
-            />
-          </div>
-        )}
-        
-        <RegionDialog
-          open={openRegionDialog}
-          setOpen={setOpenRegionDialog}
-          selectedRegion={selectedRegion}
-          onSubmit={handleFormSubmit}
-        />
-        
-        {/* Köhnə admin təyin etmə dialoqu - yeni admin yaratmaq üçün */}
-        {openAdminDialog && (
-          <RegionAdminDialog
-            open={openAdminDialog}
-            setOpen={setOpenAdminDialog}
-            region={createdRegion || selectedRegion}
-            onSuccess={handleAdminAssigned}
+      <RegionHeader
+        onAddRegion={() => handleOpenRegionDialog(null)}
+        searchTerm={searchTerm}
+        onSearchChange={handleSearch}
+        selectedStatus={selectedStatus}
+        onStatusChange={handleStatusFilter}
+        onResetFilters={resetFilters}
+      />
+      
+      <RegionTable
+        regions={regions}
+        loading={loading}
+        onEdit={handleOpenRegionDialog}
+        onDelete={handleDeleteRegion}
+        onAssignAdmin={(region) => handleOpenAdminDialog(region, 'existing')}
+      />
+      
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-4">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            previousLabel={t('previous')}
+            nextLabel={t('next')}
+            pageLabel={(page) => `${page} ${t('of')} ${totalPages}`}
           />
-        )}
-        
-        {/* Mövcud istifadəçilərdən seçim üçün admin təyin etmə dialoqu */}
-        {openExistingUserDialog && (
-          <ExistingUserAdminDialog
-            open={openExistingUserDialog}
-            setOpen={setOpenExistingUserDialog}
-            region={createdRegion || selectedRegion}
-            onSuccess={handleAdminAssigned}
-          />
-        )}
-      </div>
-    </SidebarLayout>
+        </div>
+      )}
+      
+      <RegionDialog
+        open={openRegionDialog}
+        setOpen={setOpenRegionDialog}
+        selectedRegion={selectedRegion}
+        onSubmit={handleFormSubmit}
+      />
+      
+      {/* Köhnə admin təyin etmə dialoqu - yeni admin yaratmaq üçün */}
+      {openAdminDialog && (
+        <RegionAdminDialog
+          open={openAdminDialog}
+          setOpen={setOpenAdminDialog}
+          region={createdRegion || selectedRegion}
+          onSuccess={handleAdminAssigned}
+        />
+      )}
+      
+      {/* Mövcud istifadəçilərdən seçim üçün admin təyin etmə dialoqu */}
+      {openExistingUserDialog && (
+        <ExistingUserAdminDialog
+          open={openExistingUserDialog}
+          setOpen={setOpenExistingUserDialog}
+          region={createdRegion || selectedRegion}
+          onSuccess={handleAdminAssigned}
+        />
+      )}
+    </div>
   );
 };
 

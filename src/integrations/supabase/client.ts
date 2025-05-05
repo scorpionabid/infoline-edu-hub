@@ -166,6 +166,119 @@ export const callEdgeFunction = async <T>(
   }
 };
 
+/**
+ * Vahid keşləmə mexanizmi
+ * Bütün tətbiq üçün standartlaşdırılmış keşləmə funksiyaları
+ */
+
+// Keş açarları
+export const CACHE_KEYS = {
+  USER_PROFILE: 'info_line_user_profile',
+  USER_SESSION: 'info_line_user_session',
+  REGIONS: 'info_line_regions',
+  SECTORS: 'info_line_sectors',
+  SCHOOLS: 'info_line_schools',
+};
+
+// Keş vaxtı (millisaniyə ilə)
+export const CACHE_EXPIRY = {
+  SHORT: 5 * 60 * 1000, // 5 dəqiqə
+  MEDIUM: 30 * 60 * 1000, // 30 dəqiqə
+  LONG: 24 * 60 * 60 * 1000, // 1 gün
+};
+
+// Keş tipləri
+export type CacheStorage = 'local' | 'session';
+
+interface CacheItem<T> {
+  data: T;
+  expiry: number;
+}
+
+/**
+ * Keşdən məlumat əldə etmək
+ * @param key Keş açarı
+ * @param storage Keş saxlama tipi (local/session)
+ * @returns Keşlənmiş məlumat və ya null
+ */
+export function getCache<T>(key: string, storage: CacheStorage = 'local'): T | null {
+  try {
+    const storageObj = storage === 'local' ? localStorage : sessionStorage;
+    const cachedStr = storageObj.getItem(key);
+    
+    if (!cachedStr) return null;
+    
+    const cached = JSON.parse(cachedStr) as CacheItem<T>;
+    const now = Date.now();
+    
+    if (cached.expiry && cached.expiry > now) {
+      return cached.data;
+    }
+    
+    // Vaxtı keçmiş keşi təmizləyirik
+    storageObj.removeItem(key);
+    return null;
+  } catch (e) {
+    console.warn(`Cache reading error for key ${key}:`, e);
+    return null;
+  }
+}
+
+/**
+ * Məlumatı keşdə saxlamaq
+ * @param key Keş açarı
+ * @param data Saxlanılacaq məlumat
+ * @param expiryMs Keş vaxtı (millisaniyə ilə)
+ * @param storage Keş saxlama tipi (local/session)
+ */
+export function setCache<T>(
+  key: string, 
+  data: T | null, 
+  expiryMs: number = CACHE_EXPIRY.MEDIUM,
+  storage: CacheStorage = 'local'
+): void {
+  try {
+    const storageObj = storage === 'local' ? localStorage : sessionStorage;
+    
+    if (data === null) {
+      storageObj.removeItem(key);
+      return;
+    }
+    
+    const expiry = Date.now() + expiryMs;
+    storageObj.setItem(
+      key,
+      JSON.stringify({ data, expiry })
+    );
+  } catch (e) {
+    console.warn(`Cache writing error for key ${key}:`, e);
+  }
+}
+
+/**
+ * Keşi təmizləmək
+ * @param key Keş açarı (təyin edilməzsə bütün keşlər təmizlənir)
+ * @param storage Keş saxlama tipi (local/session)
+ */
+export function clearCache(key?: string, storage: CacheStorage = 'local'): void {
+  try {
+    const storageObj = storage === 'local' ? localStorage : sessionStorage;
+    
+    if (key) {
+      storageObj.removeItem(key);
+    } else {
+      // Bütün info_line_ prefiksli keşləri təmizləyirik
+      Object.keys(storageObj).forEach(k => {
+        if (k.startsWith('info_line_')) {
+          storageObj.removeItem(k);
+        }
+      });
+    }
+  } catch (e) {
+    console.warn(`Cache clearing error:`, e);
+  }
+}
+
 // Offline-first yanaşma üçün supabase wrapper
 export const supabaseWithRetry = {
   from: (table: string) => {
@@ -211,42 +324,81 @@ export const supabaseWithRetry = {
           return { data: null, error };
         }
       },
-      order: async (...args: any[]) => {
+      
+      // Order funksiyası düzəldilib - parametrlər düzgün işlənir və zəncirlənmə dəstəklənir
+      order: function(column: string, options?: { ascending?: boolean }) {
+        console.log(`Ordering ${table} by ${column} with options:`, options);
         try {
-          // Əvvəlcə keşə bax
-          const cachedData = localStorage.getItem(`cache_${table}_order`);
-          const cacheTime = localStorage.getItem(`cache_${table}_order_time`);
+          // Supabase sorğusunu yaradaq
+          const query = originalFrom.order(column, options);
           
-          if (cachedData && cacheTime) {
-            const cacheAge = Date.now() - parseInt(cacheTime);
-            if (cacheAge < 5 * 60 * 1000) { // 5 dəqiqə
-              console.log(`Using cached ${table} data`);
-              return { data: JSON.parse(cachedData), error: null };
+          // Modifiyə edilmiş select metodunu əlavə edək
+          const wrappedSelect = async (...args: any[]) => {
+            try {
+              // Keş açarı yaradaq (sıralama parametrləri ilə)
+              const orderKey = `${column}_${options?.ascending !== false ? 'asc' : 'desc'}`;
+              const cacheKey = `cache_${table}_order_${orderKey}`;
+              
+              // Keşə baxaq
+              const cachedData = localStorage.getItem(cacheKey);
+              const cacheTime = localStorage.getItem(`${cacheKey}_time`);
+              
+              if (cachedData && cacheTime) {
+                const cacheAge = Date.now() - parseInt(cacheTime);
+                if (cacheAge < 5 * 60 * 1000) { // 5 dəqiqə
+                  console.log(`Using cached ${table} ordered data`);
+                  return { data: JSON.parse(cachedData), error: null };
+                }
+              }
+              
+              // Sorğu göndər
+              const result = await query.select(...args);
+              
+              // Uğurlu nəticəni keşlə
+              if (!result.error && result.data) {
+                localStorage.setItem(cacheKey, JSON.stringify(result.data));
+                localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
+              }
+              
+              return result;
+            } catch (error) {
+              console.error(`Error in ${table}.order.select:`, error);
+              
+              // Keşə bax
+              const orderKey = `${column}_${options?.ascending !== false ? 'asc' : 'desc'}`;
+              const cacheKey = `cache_${table}_order_${orderKey}`;
+              const cachedData = localStorage.getItem(cacheKey);
+              
+              if (cachedData) {
+                console.log(`Using cached ${table} ordered data due to error`);
+                return { data: JSON.parse(cachedData), error: null };
+              }
+              
+              return { data: null, error };
             }
-          }
+          };
           
-          // Keş yoxdursa və ya köhnədirsə, sorğu göndər
-          const query = originalFrom.select();
-          const result = await query.order(args[0], { ascending: args[1] });
-          
-          // Uğurlu nəticəni keşlə
-          if (!result.error && result.data) {
-            localStorage.setItem(`cache_${table}_order`, JSON.stringify(result.data));
-            localStorage.setItem(`cache_${table}_order_time`, Date.now().toString());
-          }
-          
-          return result;
+          // Supabase query obyektini qaytaraq, amma select metodunu override edək
+          return {
+            ...query,
+            select: wrappedSelect
+          };
         } catch (error) {
           console.error(`Error in ${table}.order:`, error);
           
-          // Xəta halında keşlənmiş məlumatları istifadə et
-          const cachedData = localStorage.getItem(`cache_${table}_order`);
-          if (cachedData) {
-            console.log(`Using cached ${table} data due to error`);
-            return { data: JSON.parse(cachedData), error: null };
-          }
-          
-          return { data: null, error };
+          // Xəta halında boş select metodu ilə obyekt qaytaraq
+          return {
+            select: async (...args: any[]) => {
+              const cachedData = localStorage.getItem(`cache_${table}_order`);
+              
+              if (cachedData) {
+                console.log(`Using cached ${table} ordered data due to error`);
+                return { data: JSON.parse(cachedData), error: null };
+              }
+              
+              return { data: null, error };
+            }
+          };
         }
       }
     };

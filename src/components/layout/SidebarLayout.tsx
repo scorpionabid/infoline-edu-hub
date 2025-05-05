@@ -110,24 +110,25 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
       <Header />
       
       <div className="flex-1 flex relative">
-        {/* Mobil overlay arxa fonu */}
+        {/* Mobil overlay arxa fonu - fixed position ilə */}
         {isMobile && isSidebarOpen && (
           <div 
             className="fixed inset-0 bg-black/50 z-30"
             onClick={() => setIsSidebarOpen(false)}
+            aria-hidden="true"
           />
         )}
         
-        {/* Sidebar */}
-        <aside
+        {/* Sidebar - düzəldilmiş z-indeks və position */}
+        <div
           className={cn(
-            "bg-background border-r z-40 transition-all duration-300 ease-in-out",
+            "fixed md:relative h-screen bg-background border-r z-40 transition-all duration-300 ease-in-out",
             isSidebarOpen ? "w-64" : "w-[70px]",
-            isMobile ? (isSidebarOpen ? "fixed h-full" : "hidden") : "h-full"
+            isMobile && !isSidebarOpen && "transform -translate-x-full"
           )}
         >
           <div className="flex items-center justify-between p-4">
-            <div className={cn("transition-opacity", isSidebarOpen ? "opacity-100" : "opacity-0 hidden")}>
+            <div className={cn("transition-opacity", isSidebarOpen ? "opacity-100" : "opacity-0 hidden md:block")}>
               <h2 className="text-xl font-bold">InfoLine</h2>
             </div>
             <Button variant="ghost" size="icon" onClick={handleSidebarToggle} className="flex-shrink-0">
@@ -140,9 +141,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
             isSidebarOpen={isSidebarOpen}
             onItemClick={handleItemClick}
           />
-        </aside>
+        </div>
 
-        {/* Mobile sidebar toggle */}
+        {/* Mobile sidebar toggle - fixed position ilə */}
         {isMobile && !isSidebarOpen && (
           <Button 
             variant="ghost" 
@@ -154,11 +155,11 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
           </Button>
         )}
 
-        {/* Main content */}
+        {/* Main content - düzəldilmiş margin dəyəri ilə */}
         <div 
           className={cn(
             "flex-1 p-6 overflow-y-auto transition-all duration-300",
-            isMobile ? "w-full" : (isSidebarOpen ? "ml-64" : "ml-[70px]")
+            isMobile ? "w-full" : (isSidebarOpen ? "md:ml-64" : "md:ml-[70px]")
           )}
         >
           <Outlet />

@@ -1,233 +1,176 @@
 
 import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useLanguage } from '@/context/LanguageContext';
-import { Region } from '@/types/supabase';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useCreateRegion } from '@/hooks/useCreateRegion';
-import { AlertCircle, Loader2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { EnhancedRegion } from '@/hooks/useRegionsStore';
 
-const statusOptions = [
-  { value: 'active', label: 'active' },
-  { value: 'inactive', label: 'inactive' },
-  { value: 'blocked', label: 'blocked' },
-];
-
-// Region yaratmaq üçün schema
-const regionSchema = z.object({
-  name: z.string().min(2, {
-    message: "Region adı ən azı 2 simvol olmalıdır.",
-  }),
+// Form şeması
+const regionFormSchema = z.object({
+  name: z.string().min(3, 'Ad minimum 3 hərf olmalıdır').max(50, 'Ad maksimum 50 hərf ola bilər'),
   description: z.string().optional(),
-  status: z.string().optional(),
+  status: z.string().min(1, 'Status seçilməlidir'),
+  addAdmin: z.boolean().optional()
 });
 
-type RegionSchemaType = z.infer<typeof regionSchema>;
+type RegionFormValues = z.infer<typeof regionFormSchema>;
 
-interface RegionDialogProps {
+export interface RegionDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  selectedRegion: Region | null;
-  onSubmit: (values: any) => Promise<void>;
-  onSuccess?: (region: any) => void;
+  selectedRegion: EnhancedRegion | null;
+  onSubmit: (values: RegionFormValues) => Promise<void>;
 }
 
-export const RegionDialog: React.FC<RegionDialogProps> = ({ 
-  open, 
-  setOpen, 
+export const RegionDialog: React.FC<RegionDialogProps> = ({
+  open,
+  setOpen,
   selectedRegion,
-  onSubmit,
-  onSuccess
+  onSubmit
 }) => {
   const { t } = useLanguage();
-  const { createRegion, loading: createRegionLoading } = useCreateRegion();
-  const [error, setError] = React.useState<string | null>(null);
 
-  const isEditMode = Boolean(selectedRegion);
-  
-  const form = useForm<RegionSchemaType>({
-    resolver: zodResolver(regionSchema),
+  // React Hook Form ilə form state-ni idarə edirik
+  const form = useForm<RegionFormValues>({
+    resolver: zodResolver(regionFormSchema),
     defaultValues: {
-      name: selectedRegion?.name || "",
-      description: selectedRegion?.description || "",
-      status: selectedRegion?.status || "active",
-    },
+      name: selectedRegion?.name || '',
+      description: selectedRegion?.description || '',
+      status: selectedRegion?.status || 'active',
+      addAdmin: false
+    }
   });
 
+  // Selected region dəyişdikdə form dəyərlərini yeniləyirik
   React.useEffect(() => {
-    // Dialog açıldığında xəta mesajlarını sıfırla
-    if (open) {
-      setError(null);
-      
-      if (selectedRegion) {
-        form.reset({
-          name: selectedRegion.name,
-          description: selectedRegion.description,
-          status: selectedRegion.status || 'active',
-        });
-      } else {
-        form.reset({
-          name: "",
-          description: "",
-          status: "active",
-        });
-      }
+    if (selectedRegion) {
+      form.reset({
+        name: selectedRegion.name,
+        description: selectedRegion.description || '',
+        status: selectedRegion.status,
+        addAdmin: false
+      });
+    } else {
+      form.reset({
+        name: '',
+        description: '',
+        status: 'active',
+        addAdmin: false
+      });
     }
-  }, [selectedRegion, form, open]);
+  }, [selectedRegion, form]);
 
-  const handleFormSubmit = async (values: RegionSchemaType) => {
-    try {
-      setError(null);
-      
-      if (isEditMode) {
-        // Mövcud regionu redaktə et
-        await onSubmit({
-          name: values.name,
-          description: values.description,
-          status: values.status,
-        });
-      } else {
-        // Yeni region yarat
-        const result = await createRegion({
-          name: values.name,
-          description: values.description,
-          status: values.status,
-        });
-        
-        if (result.success) {
-          if (onSuccess) {
-            onSuccess(result.data.region);
-          }
-          setOpen(false);
-        } else if (result.error) {
-          setError(result.error);
-        }
-      }
-    } catch (error: any) {
-      console.error('Form submit xətası:', error);
-      setError(error.message || 'Region işləmi zamanı xəta baş verdi');
-    }
+  const handleSubmit = async (values: RegionFormValues) => {
+    await onSubmit(values);
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{selectedRegion ? t('editRegion') || 'Regionu düzəlt' : t('addRegion') || 'Region əlavə et'}</DialogTitle>
-          <DialogDescription>
-            {t("createEditRegions") || 'Region məlumatlarını daxil edin'}
-          </DialogDescription>
+          <DialogTitle>
+            {selectedRegion ? t('editRegion') : t('createRegion')}
+          </DialogTitle>
         </DialogHeader>
-        
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("regionName") || 'Region adı'}</FormLabel>
+                  <FormLabel>{t('regionName')}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t("regionName") || 'Region adı'} {...field} />
+                    <Input {...field} placeholder={t('enterRegionName')} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("description") || 'Təsvir'}</FormLabel>
+                  <FormLabel>{t('description')}</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder={t("description") || 'Təsvir'}
-                      className="resize-none"
-                      {...field}
-                    />
+                    <Textarea {...field} placeholder={t('enterRegionDescription')} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("status") || 'Status'}</FormLabel>
+                  <FormLabel>{t('status')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t("selectStatus") || 'Status seçin'} />
+                        <SelectValue placeholder={t('selectStatus')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {statusOptions.map((status) => (
-                        <SelectItem key={status.value} value={status.value}>
-                          {t(status.label) || status.label}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="active">{t('statusActive')}</SelectItem>
+                      <SelectItem value="inactive">{t('statusInactive')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
+            {!selectedRegion && (
+              <FormField
+                control={form.control}
+                name="addAdmin"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox 
+                        checked={field.value} 
+                        onCheckedChange={field.onChange} 
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        {t('addRegionAdmin')}
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            )}
+
             <div className="flex justify-end">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => setOpen(false)}
                 className="mr-2"
-                disabled={createRegionLoading}
               >
-                {t("cancel") || 'Ləğv et'}
+                {t('cancel')}
               </Button>
-              <Button type="submit" disabled={createRegionLoading}>
-                {createRegionLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("loading") || 'Yüklənir...'}
-                  </>
-                ) : (
-                  selectedRegion ? t("updateRegion") || 'Regionu yenilə' : t("createRegion") || 'Region yarat'
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+              >
+                {selectedRegion ? t('save') : t('create')}
+                {form.formState.isSubmitting && (
+                  <span className="ml-2 animate-spin">⏳</span>
                 )}
               </Button>
             </div>
@@ -237,3 +180,5 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
     </Dialog>
   );
 };
+
+export default RegionDialog;
