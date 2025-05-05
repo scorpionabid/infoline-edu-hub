@@ -18,7 +18,7 @@ export function ReportHeader() {
       const result = await addReport({
         title: data.title,
         description: data.description,
-        type: data.type
+        type: data.type as any // Type conversion to match ReportType
       });
 
       if (result) {

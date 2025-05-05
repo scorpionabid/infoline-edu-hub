@@ -88,6 +88,7 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
   }
 
   const reportTitle = report.title;
+  const createDate = report.createdAt || report.created_at;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -116,7 +117,7 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
                 <div>
                   <p className="text-sm text-muted-foreground">Yaradılma tarixi</p>
                   <p className="font-medium">
-                    {new Date(report.created_at).toLocaleDateString()}
+                    {createDate ? new Date(createDate).toLocaleDateString() : 'Məlumat yoxdur'}
                   </p>
                 </div>
                 <div>

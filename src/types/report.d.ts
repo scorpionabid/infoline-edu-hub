@@ -1,6 +1,4 @@
 
-// Bu faylı src/types/report.ts ilə ardıcıllığı təmin etmək üçün yeniləyirik
-
 import { ReportType } from "./report";
 
 export type ReportStatus = 'draft' | 'published' | 'archived';

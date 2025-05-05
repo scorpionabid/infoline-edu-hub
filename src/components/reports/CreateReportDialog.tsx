@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ReportType } from '@/types/report';
+import { ReportTypeValues } from '@/types/report';
 import { useLanguage } from '@/context/LanguageContext';
 
 export interface CreateReportDialogProps {
@@ -28,7 +28,7 @@ export const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
   const { t } = useLanguage();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [type, setType] = useState<string>(ReportType.STATISTICS.toString());
+  const [type, setType] = useState<string>(ReportTypeValues.BAR);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ title?: string; description?: string; type?: string }>({});
 
@@ -75,7 +75,7 @@ export const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setType(ReportType.STATISTICS.toString());
+    setType(ReportTypeValues.BAR);
     setErrors({});
   };
 
@@ -127,10 +127,10 @@ export const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
                 <SelectValue placeholder={t('selectReportType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ReportType.STATISTICS.toString()}>{t('statistics')}</SelectItem>
-                <SelectItem value={ReportType.COMPLETION.toString()}>{t('completion')}</SelectItem>
-                <SelectItem value={ReportType.COMPARISON.toString()}>{t('comparison')}</SelectItem>
-                <SelectItem value={ReportType.COLUMN.toString()}>{t('column')}</SelectItem>
+                <SelectItem value={ReportTypeValues.BAR}>{t('statistics')}</SelectItem>
+                <SelectItem value={ReportTypeValues.PIE}>{t('completion')}</SelectItem>
+                <SelectItem value={ReportTypeValues.LINE}>{t('comparison')}</SelectItem>
+                <SelectItem value={ReportTypeValues.TABLE}>{t('column')}</SelectItem>
               </SelectContent>
             </Select>
             {errors.type && <p className="text-sm text-red-500">{errors.type}</p>}

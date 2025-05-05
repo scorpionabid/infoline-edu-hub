@@ -21,7 +21,11 @@ export const ReportTypeValues = {
   PIE: 'pie' as ReportType,
   LINE: 'line' as ReportType,
   TABLE: 'table' as ReportType,
-  SUMMARY: 'summary' as ReportType
+  SUMMARY: 'summary' as ReportType,
+  STATISTICS: 'statistics' as unknown as ReportType, // geriyə uyğunluq üçün
+  COMPLETION: 'completion' as unknown as ReportType, // geriyə uyğunluq üçün
+  COMPARISON: 'comparison' as unknown as ReportType, // geriyə uyğunluq üçün
+  COLUMN: 'column' as unknown as ReportType // geriyə uyğunluq üçün
 };
 
 // ReportChart üçün props interfeysi
