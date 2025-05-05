@@ -1,6 +1,6 @@
 
 import React, { ReactNode, useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { ChevronLeft, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
   const { t } = useLanguage();
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   
   // İlkin yüklənmədə ekran ölçüsünü yoxlayırıq
   useEffect(() => {
@@ -44,13 +45,15 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // İstifadəçi autentifikasiya olmayıbsa, istifadəçini login səhifəsinə yönləndiririk
+  // İstifadəçi autentifikasiya olmayıbsa və yüklənmə bitibsə, istifadəçini login səhifəsinə yönləndiririk
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      // Bir dəfə yoxlayırıq və dərhal çıxırıq
-      navigate('/login', { state: { from: window.location.pathname } });
+      // Redirekt loop qarşısını almaq üçün yoxlayırıq
+      if (location.pathname !== '/login') {
+        navigate('/login', { state: { from: location } });
+      }
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate, location]);
 
   // Sidebar üçün klik əməliyyatı
   const handleSidebarToggle = () => {

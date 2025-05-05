@@ -19,33 +19,16 @@ const Login = () => {
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
   
-  // Debug məlumatları
-  useEffect(() => {
-    console.log('Login səhifəsi vəziyyəti:', { 
-      isAuthenticated, 
-      isLoading, 
-      userExists: !!user,
-      userRole: user?.role || 'undefined',
-      sessionExists: !!session,
-      fromPath: from
-    });
-  }, [isAuthenticated, isLoading, user, session, from]);
-  
   // İstifadəçi autentifikasiya olduqda yönləndirmə
   useEffect(() => {
+    // Əgər yüklənmə davam edirsə, gözləyirik
     if (isLoading) {
-      console.log('Loading state active, waiting...');
       return;
     }
     
     // İstifadəçi artıq autentifikasiya olunubsa, dashboard-a yönləndirilir
     if (isAuthenticated && user?.id) {
-      console.log(`İstifadəçi autentifikasiya olunub, rolu: ${user.role}, yönləndirilir: ${from}`);
-      
-      // Qısa gecikmə əlavə edirik amma daha optimal
-      setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 100);
+      navigate(from, { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate, from, user]);
 

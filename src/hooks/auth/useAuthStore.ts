@@ -4,6 +4,7 @@ import { FullUserData } from '@/types/supabase';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { devtools } from 'zustand/middleware';
 
 /**
  * Auth state idarəetməsi üçün zustand store
@@ -16,7 +17,7 @@ interface AuthState {
   isInitialized: boolean;
   error: string | null;
   
-  // State değiştirme fonksiyonları
+  // State dəyişmə funksiyaları
   setSession: (session: Session | null) => void;
   setUser: (user: FullUserData | null) => void;
   setIsLoading: (isLoading: boolean) => void;
@@ -24,11 +25,14 @@ interface AuthState {
   setError: (error: string | null) => void;
   resetAuth: () => void;
   
-  // Auth operasyonları
+  // Auth əməliyyatları
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshAuth: () => Promise<FullUserData | null>;
   clearError: () => void;
+  
+  // Debug funksiyaları
+  getState: () => AuthState;
 }
 
 // Cache ayarları
@@ -232,198 +236,318 @@ const fetchUserData = async (userId: string, currentSession: Session): Promise<F
   }
 };
 
+// Auth dinləyici və subscription saxlayır
+let authSubscription: { unsubscribe: () => void } | null = null;
+
 /**
  * Auth state idarəetmə store-u
  */
-export const useAuthStore = create<AuthState>((set, get) => {
-  // İlkin state
-  const initialState = {
-    user: getCachedUser(),
-    session: getCachedSession(),
-    isAuthenticated: false,
-    isLoading: true,
-    isInitialized: false,
-    error: null
-  };
-
-  // İstifadəçi və sessiya əsasında autentifikasiya vəziyyətini hesablayırıq
-  initialState.isAuthenticated = !!(initialState.user && initialState.session);
-
-  return {
-    ...initialState,
-    
-    // State setters
-    setSession: (session) => {
-      setCachedSession(session);
-      set({ 
-        session,
-        isAuthenticated: !!(session && get().user)
-      });
-    },
-    
-    setUser: (user) => {
-      setCachedUser(user);
-      set({ 
-        user,
-        isAuthenticated: !!(user && get().session)
-      });
-    },
-    
-    setIsLoading: (isLoading) => set({ isLoading }),
-    setIsInitialized: (isInitialized) => set({ isInitialized }),
-    setError: (error) => set({ error }),
-    
-    resetAuth: () => {
-      setCachedUser(null);
-      setCachedSession(null);
-      set({ 
-        user: null, 
-        session: null, 
+export const useAuthStore = create<AuthState>()(
+  devtools(
+    (set, get) => {
+      // İlkin state
+      const initialState = {
+        user: getCachedUser(),
+        session: getCachedSession(),
         isAuthenticated: false,
+        isLoading: true,
+        isInitialized: false,
         error: null
-      });
-    },
-    
-    // Auth əməliyyatları
-    login: async (email, password) => {
-      try {
-        set({ isLoading: true, error: null });
-        
-        // Login əməliyyatı
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
-        if (error) {
-          console.error('Login error:', error.message);
-          set({ error: error.message, isLoading: false });
-          return false;
+      };
+  
+      // İstifadəçi və sessiya əsasında autentifikasiya vəziyyətini hesablayırıq
+      initialState.isAuthenticated = !!(initialState.user && initialState.session);
+  
+      // Auth listener quruluşu
+      const setupAuthListener = () => {
+        // Əvvəlki dinləyicini təmizləyək
+        if (authSubscription) {
+          authSubscription.unsubscribe();
+          authSubscription = null;
         }
         
-        if (!data.session || !data.user) {
-          set({ error: 'Giriş uğursuz oldu: Session və ya istifadəçi məlumatları əldə edilmədi', isLoading: false });
-          return false;
-        }
-        
-        // Sessiyani təyin edirik
-        set({ session: data.session });
-        setCachedSession(data.session);
-        
-        // İstifadəçi məlumatlarını əldə edirik
-        const userData = await fetchUserData(data.user.id, data.session);
-        
-        if (userData) {
-          // İstifadəçini təyin edirik
-          set({ 
-            user: userData,
-            isAuthenticated: true,
-            isLoading: false,
-            isInitialized: true
-          });
-          setCachedUser(userData);
+        // Yeni dinləyici yaradırıq
+        const { data } = supabase.auth.onAuthStateChange((event, currentSession) => {
+          console.log('Auth state changed:', event, currentSession ? 'Session var' : 'Session yoxdur');
           
-          // Last login update etmək
-          try {
-            await supabase
-              .from('profiles')
-              .update({ 
-                last_login: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', userData.id);
-          } catch (e) {
-            console.warn('Failed to update last_login:', e);
+          // Session statusunu yeniləyirik
+          set((state) => {
+            // Eyni session ID olub-olmadığını yoxlayırıq
+            if (
+              state.session?.access_token === currentSession?.access_token && 
+              state.session?.refresh_token === currentSession?.refresh_token
+            ) {
+              // Session eynidir, dəyişiklik etmirik
+              return state;
+            }
+            
+            // Session yeniləyirik
+            setCachedSession(currentSession);
+            return { 
+              ...state, 
+              session: currentSession,
+              isAuthenticated: !!(currentSession && state.user)
+            };
+          });
+          
+          // Event handling
+          if (event === 'SIGNED_IN') {
+            if (currentSession) {
+              // İstifadəçi məlumatlarını əldə etmək üçün setTimeout istifadə edirik
+              setTimeout(async () => {
+                try {
+                  set({ isLoading: true });
+                  const userData = await fetchUserData(currentSession.user.id, currentSession);
+                  
+                  if (userData) {
+                    setCachedUser(userData);
+                    set({ 
+                      user: userData,
+                      isAuthenticated: true,
+                      isLoading: false,
+                      isInitialized: true
+                    });
+                    
+                    // Last login update etmək
+                    try {
+                      await supabase
+                        .from('profiles')
+                        .update({ 
+                          last_login: new Date().toISOString(),
+                          updated_at: new Date().toISOString()
+                        })
+                        .eq('id', userData.id);
+                    } catch (e) {
+                      console.warn('Failed to update last_login:', e);
+                    }
+                  } else {
+                    set({ isLoading: false });
+                  }
+                } catch (err) {
+                  console.error('Error fetching user data after sign in:', err);
+                  set({ isLoading: false });
+                }
+              }, 0);
+            }
+          } else if (event === 'TOKEN_REFRESHED') {
+            // Token yeniləndi, state-i yeniləyirik
+          } else if (event === 'SIGNED_OUT') {
+            set({ 
+              user: null,
+              session: null,
+              isAuthenticated: false,
+              isLoading: false
+            });
+            setCachedUser(null);
+            setCachedSession(null);
           }
-          
-          return true;
-        } else {
+        });
+        
+        authSubscription = data.subscription;
+      };
+      
+      // Auth listener quruluşu
+      setupAuthListener();
+  
+      return {
+        ...initialState,
+        
+        // State setters
+        setSession: (session) => {
+          setCachedSession(session);
           set({ 
-            error: 'İstifadəçi məlumatları əldə edilmədi',
-            isLoading: false
+            session,
+            isAuthenticated: !!(session && get().user)
           });
-          return false;
-        }
-      } catch (err: any) {
-        console.error('Login exception:', err);
-        set({ 
-          error: err.message || 'Giriş zamanı xəta baş verdi',
-          isLoading: false
-        });
-        return false;
-      }
-    },
-    
-    logout: async () => {
-      try {
-        set({ isLoading: true });
+        },
         
-        await supabase.auth.signOut();
-        
-        setCachedUser(null);
-        setCachedSession(null);
-        
-        set({
-          user: null,
-          session: null,
-          isAuthenticated: false,
-          isLoading: false
-        });
-        
-        toast.success('Sistemdən uğurla çıxış edildi');
-      } catch (err: any) {
-        console.error('Logout error:', err);
-        set({
-          error: err.message || 'Çıxış zamanı xəta baş verdi',
-          isLoading: false
-        });
-      }
-    },
-    
-    refreshAuth: async () => {
-      try {
-        set({ isLoading: true });
-        
-        // Session məlumatlarını yeniləyirik
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error || !data.session) {
-          throw error || new Error('Session məlumatları əldə edilmədi');
-        }
-        
-        // Session-u təyin edirik
-        set({ session: data.session });
-        setCachedSession(data.session);
-        
-        // İstifadəçi məlumatlarını əldə edirik
-        const userData = await fetchUserData(data.session.user.id, data.session);
-        
-        if (userData) {
+        setUser: (user) => {
+          setCachedUser(user);
           set({ 
-            user: userData,
-            isAuthenticated: true,
-            isLoading: false,
-            isInitialized: true
+            user,
+            isAuthenticated: !!(user && get().session)
           });
-          setCachedUser(userData);
-          return userData;
-        } else {
+        },
+        
+        setIsLoading: (isLoading) => set({ isLoading }),
+        setIsInitialized: (isInitialized) => set({ isInitialized }),
+        setError: (error) => set({ error }),
+        
+        resetAuth: () => {
+          setCachedUser(null);
+          setCachedSession(null);
           set({ 
-            error: 'İstifadəçi məlumatları əldə edilmədi',
-            isLoading: false
+            user: null, 
+            session: null, 
+            isAuthenticated: false,
+            error: null
           });
-          return null;
-        }
-      } catch (err: any) {
-        console.error('Auth refresh error:', err);
-        set({ 
-          error: err.message || 'Autentifikasiya yeniləmə xətası',
-          isLoading: false
-        });
-        return null;
-      }
+        },
+        
+        // Auth əməliyyatları
+        login: async (email, password) => {
+          try {
+            set({ isLoading: true, error: null });
+            
+            // Login əməliyyatı
+            const { data, error } = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
+            
+            if (error) {
+              console.error('Login error:', error.message);
+              set({ error: error.message, isLoading: false });
+              return false;
+            }
+            
+            if (!data.session || !data.user) {
+              set({ error: 'Giriş uğursuz oldu: Session və ya istifadəçi məlumatları əldə edilmədi', isLoading: false });
+              return false;
+            }
+            
+            // Sessiyani təyin edirik
+            set({ session: data.session });
+            setCachedSession(data.session);
+            
+            // İstifadəçi məlumatlarını əldə edirik
+            const userData = await fetchUserData(data.user.id, data.session);
+            
+            if (userData) {
+              // İstifadəçini təyin edirik
+              set({ 
+                user: userData,
+                isAuthenticated: true,
+                isLoading: false,
+                isInitialized: true
+              });
+              setCachedUser(userData);
+              
+              // Last login update etmək
+              try {
+                await supabase
+                  .from('profiles')
+                  .update({ 
+                    last_login: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', userData.id);
+              } catch (e) {
+                console.warn('Failed to update last_login:', e);
+              }
+              
+              return true;
+            } else {
+              set({ 
+                error: 'İstifadəçi məlumatları əldə edilmədi',
+                isLoading: false
+              });
+              return false;
+            }
+          } catch (err: any) {
+            console.error('Login exception:', err);
+            set({ 
+              error: err.message || 'Giriş zamanı xəta baş verdi',
+              isLoading: false
+            });
+            return false;
+          }
+        },
+        
+        logout: async () => {
+          try {
+            set({ isLoading: true });
+            
+            // Əvvəlcə auth listener-ları təmizləyək
+            if (authSubscription) {
+              authSubscription.unsubscribe();
+              authSubscription = null;
+            }
+            
+            await supabase.auth.signOut();
+            
+            setCachedUser(null);
+            setCachedSession(null);
+            
+            set({
+              user: null,
+              session: null,
+              isAuthenticated: false,
+              isLoading: false
+            });
+            
+            // Yenidən auth listener quruluşu
+            setupAuthListener();
+            
+            toast.success('Sistemdən uğurla çıxış edildi');
+          } catch (err: any) {
+            console.error('Logout error:', err);
+            set({
+              error: err.message || 'Çıxış zamanı xəta baş verdi',
+              isLoading: false
+            });
+          }
+        },
+        
+        refreshAuth: async () => {
+          try {
+            set({ isLoading: true });
+            
+            // Session məlumatlarını yeniləyirik
+            const { data, error } = await supabase.auth.getSession();
+            
+            if (error || !data.session) {
+              throw error || new Error('Session məlumatları əldə edilmədi');
+            }
+            
+            // Session-u təyin edirik
+            set({ session: data.session });
+            setCachedSession(data.session);
+            
+            // İstifadəçi məlumatlarını əldə edirik
+            const userData = await fetchUserData(data.session.user.id, data.session);
+            
+            if (userData) {
+              set({ 
+                user: userData,
+                isAuthenticated: true,
+                isLoading: false,
+                isInitialized: true
+              });
+              setCachedUser(userData);
+              return userData;
+            } else {
+              set({ 
+                error: 'İstifadəçi məlumatları əldə edilmədi',
+                isLoading: false
+              });
+              return null;
+            }
+          } catch (err: any) {
+            console.error('Auth refresh error:', err);
+            set({ 
+              error: err.message || 'Autentifikasiya yeniləmə xətası',
+              isLoading: false
+            });
+            return null;
+          }
+        },
+        
+        clearError: () => set({ error: null }),
+        
+        // Debug funksiyası
+        getState: () => get()
+      };
     },
-    
-    clearError: () => set({ error: null })
-  };
-});
+    {
+      name: 'auth-store',
+      enabled: true
+    }
+  )
+);
+
+// İlk yüklənmə zamanı sessiyanı yoxlayıb yükləyirik
+setTimeout(async () => {
+  const { refreshAuth } = useAuthStore.getState();
+  await refreshAuth();
+}, 0);

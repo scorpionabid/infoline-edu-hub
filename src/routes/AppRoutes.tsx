@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/hooks/auth/useAuthStore";
@@ -54,6 +55,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   
   // İstifadəçi autentifikasiya olmayıbsa, login səhifəsinə yönləndiririk
   if (!isAuthenticated) {
+    // Redirect loop qarşını almaq üçün kontrol
+    if (location.pathname === '/login') {
+      return <>{children}</>;
+    }
     return <Navigate to={redirectUrl} state={{ from: location }} replace />;
   }
   

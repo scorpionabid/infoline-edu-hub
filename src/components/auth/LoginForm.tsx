@@ -33,7 +33,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
   const { login, isLoading, isAuthenticated } = useAuthStore();
   const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
-  const [loginInProgress, setLoginInProgress] = useState(false);
+  const [formSubmitting, setFormSubmitting] = useState(false);
   
   const { 
     register, 
@@ -54,26 +54,22 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       clearError();
     }
   }, [error, clearError]);
-  
-  // İstifadəçi autentifikasiya olunduqda formu deaktiv edirik
-  useEffect(() => {
-    setLoginInProgress(isAuthenticated);
-  }, [isAuthenticated]);
 
   const onSubmit = async (data: FormValues) => {
     try {
+      if (formSubmitting) return;
+      
       clearError(); // Əvvəlki xətaları təmizləyək
-      setLoginInProgress(true);
+      setFormSubmitting(true);
+      
       console.log('Giriş cəhdi edilir...', data.email);
       
       const success = await login(data.email, data.password);
       
       if (success) {
         console.log('Giriş uğurlu oldu, autentifikasiya tamamlandı');
-        toast.success(t('loginSuccess'));
         reset(); // Form sahələrini təmizləyirik
       } else {
-        setLoginInProgress(false);
         console.log('Giriş uğursuz oldu');
         setFormError('root', { 
           type: 'manual',
@@ -82,15 +78,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       }
     } catch (err: any) {
       console.error('Login zamanı xəta baş verdi:', err);
-      setLoginInProgress(false);
       setFormError('root', { 
         type: 'manual',
         message: err.message || t('unexpectedError')
       });
+    } finally {
+      setFormSubmitting(false);
     }
   };
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
+
+  const isButtonDisabled = isLoading || formSubmitting || isAuthenticated;
 
   return (
     <Card className="w-full max-w-md mx-auto shadow-lg">
@@ -119,7 +118,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
               type="email"
               placeholder="name@example.com"
               autoComplete="email"
-              disabled={loginInProgress || isLoading}
+              disabled={isButtonDisabled}
               {...register('email', { 
                 required: t('emailRequired'),
                 pattern: {
@@ -141,7 +140,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
-                disabled={loginInProgress || isLoading}
+                disabled={isButtonDisabled}
                 {...register('password', { 
                   required: t('passwordRequired'),
                   minLength: {
@@ -156,7 +155,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
                 className="absolute inset-y-0 right-0 px-3 flex items-center"
                 onClick={togglePasswordVisibility}
                 tabIndex={-1}
-                disabled={loginInProgress || isLoading}
+                disabled={isButtonDisabled}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -175,9 +174,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
           <Button 
             type="submit" 
             className="w-full"
-            disabled={loginInProgress || isLoading}
+            disabled={isButtonDisabled}
           >
-            {(loginInProgress || isLoading) ? (
+            {isLoading || formSubmitting ? (
               <>
                 <span className="mr-2">{t('loggingIn')}</span>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
