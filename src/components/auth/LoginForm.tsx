@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
@@ -32,6 +33,8 @@ interface FormValues {
 const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
   const { login, isLoading, isAuthenticated } = useAuthStore();
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
   
@@ -55,6 +58,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
     }
   }, [error, clearError]);
 
+  // İstifadəçi autentifikasiya olduqda dashboard-a yönləndiririk
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Əgər istifadəçi başqa səhifədən yönləndirilibsə, həmin səhifəyə qayıdırıq
+      const from = location.state?.from?.pathname || '/dashboard';
+      console.log('İstifadəçi autentifikasiya olundu, yönləndirilir:', from);
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, location]);
+
   const onSubmit = async (data: FormValues) => {
     try {
       // Form prosesi artıq gedirsə və ya istifadəçi artıq giriş edibsə, prosesi dayandırırıq
@@ -69,9 +82,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       
       if (success) {
         console.log('Giriş uğurlu oldu, autentifikasiya tamamlandı');
+        toast.success(t('loginSuccess'));
         reset(); // Form sahələrini təmizləyirik
+        
+        // Yönləndirmə useEffect-də avtomatik olaraq ediləcək
       } else {
         console.log('Giriş uğursuz oldu');
+        toast.error(t('invalidCredentials'));
         setFormError('root', { 
           type: 'manual',
           message: t('invalidCredentials')
@@ -79,6 +96,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       }
     } catch (err: any) {
       console.error('Login zamanı xəta baş verdi:', err);
+      toast.error(err.message || t('unexpectedError'));
       setFormError('root', { 
         type: 'manual',
         message: err.message || t('unexpectedError')

@@ -4,10 +4,11 @@ import {
   Route,
   Routes,
   Navigate,
+  useLocation,
 } from 'react-router-dom';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { Toaster } from 'sonner';
-import { useAuth } from '@/context/auth';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
 import Login from '@/pages/Login';
 import DashboardPage from '@/pages/Dashboard';
@@ -29,7 +30,9 @@ import DataEntryPage from '@/pages/DataEntryPage';
 import Forms from '@/pages/Forms';
 
 const App: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuthStore();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const location = useLocation();
 
   const handleOnlineStatus = useCallback(() => {
     setIsOnline(navigator.onLine);
@@ -50,11 +53,21 @@ const App: React.FC = () => {
       <ThemeProvider defaultTheme="dark">
         <Toaster richColors position="top-right" />
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route 
+            path="/login" 
+            element={
+              isAuthenticated ? 
+                <Navigate to="/dashboard" replace /> : 
+                <Login />
+            } 
+          />
           <Route path="/404" element={<NotFound />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route 
+            path="/" 
+            element={<Navigate to="/dashboard" replace />} 
+          />
           
-          {/* Protected routes */}
+          {/* Protected routes - SidebarLayout artıq autentifikasiya yoxlaması edir */}
           <Route element={<SidebarLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />

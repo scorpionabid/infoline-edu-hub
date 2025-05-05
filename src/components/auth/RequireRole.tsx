@@ -1,31 +1,38 @@
 
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/context/auth';
-import { usePermissions } from '@/hooks/auth/usePermissions';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { useRolePermissions } from '@/hooks/auth/useRolePermissions';
+import { UserRole } from '@/types/supabase';
+import LoadingScreen from './LoadingScreen';
 
 interface RequireRoleProps {
   children: React.ReactNode;
-  roles: string[];
-  redirectTo?: string;
+  roles: UserRole | UserRole[];
+  fallback?: React.ReactNode;
 }
 
 const RequireRole: React.FC<RequireRoleProps> = ({ 
   children, 
-  roles, 
-  redirectTo = '/dashboard' 
+  roles,
+  fallback = <Navigate to="/login" replace />
 }) => {
-  const { user } = useAuth();
-  const { userRole } = usePermissions();
+  const { isAuthenticated, isLoading } = useAuthStore();
+  const { hasRole } = useRolePermissions();
   
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  // Yüklənmə zamanı yükləmə ekranı göstəririk
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+  
+  // İstifadəçi autentifikasiya olunmayıbsa və ya tələb olunan rola sahib deyilsə,
+  // fallback komponenti göstəririk (standart olaraq login səhifəsinə yönləndirir)
+  if (!isAuthenticated || !hasRole(roles)) {
+    return <>{fallback}</>;
   }
 
-  if (!userRole || !roles.includes(userRole)) {
-    return <Navigate to={redirectTo} replace />;
-  }
-
+  // İstifadəçi autentifikasiya olunub və tələb olunan rola sahibdirsə,
+  // uşaq komponentləri göstəririk
   return <>{children}</>;
 };
 

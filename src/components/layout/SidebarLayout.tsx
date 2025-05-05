@@ -60,6 +60,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
     if (!isLoading && !isAuthenticated) {
       // Redirekt loop qarşısını almaq üçün yoxlayırıq
       if (location.pathname !== '/login' && !redirectInProgress) {
+        console.log('Autentifikasiya olmayıb, login səhifəsinə yönləndirilir');
+        
         // Redirect işarəsini qeyd edirik
         setRedirectInProgress(true);
         
@@ -71,10 +73,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
           setTimeout(() => {
             setRedirectInProgress(false);
           }, 1000);
-        }, 0);
+        }, 100);
       }
+    } else if (isAuthenticated && user) {
+      console.log('Autentifikasiya uğurlu: ', user.role);
     }
-  }, [isAuthenticated, isLoading, navigate, location, redirectInProgress]);
+  }, [isAuthenticated, isLoading, navigate, location, redirectInProgress, user]);
 
   // Sidebar üçün klik əməliyyatı
   const handleSidebarToggle = () => {
@@ -95,8 +99,11 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
   
   // İstifadəçi autentifikasiya olmayıbsa, sadəcə çıxış komponentini qaytarırıq
   if (!isAuthenticated || !user) {
+    console.log('SidebarLayout: İstifadəçi autentifikasiya olmayıb, Outlet qaytarılır');
     return <Outlet />;
   }
+  
+  console.log('SidebarLayout: İstifadəçi autentifikasiya olunub, layout göstərilir');
 
   return (
     <div className="min-h-screen flex flex-col w-full bg-background">
