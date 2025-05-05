@@ -1,191 +1,91 @@
 
-import { NotificationType, DashboardNotification } from "./notification";
+import { Category } from './category';
+import { Region } from './region';
+import { School } from './school';
+import { Sector } from './sector';
+import { User } from './user';
 
-export interface DashboardSummary {
-  totalForms: number;
-  completedForms: number;
-  pendingForms: number;
-  overdueForms: number;
-  completionRate: number;
+export interface DashboardStats {
+  total: number;
+  active: number;
+  inactive: number;
+  pending?: number;
+  completed?: number;
+  draft?: number;
 }
 
-export interface ActivityItem {
-  id: string;
-  type: 'form_submitted' | 'form_approved' | 'form_rejected' | 'comment_added';
-  title: string;
-  description: string;
-  timestamp: string;
-  user?: string;
-  entityId?: string;
-}
-
-// Dashboard-specific notification interface
-export type { NotificationType, DashboardNotification };
-
-export interface RegionStats {
-  id: string;
-  name: string;
-  totalSchools: number;
-  schoolCount?: number;
-  sectorCount?: number;
-  completionRate: number;
-  sectors?: number;
-  total?: number;
-  active?: number;
-}
-
-export interface SectorStats {
-  id: string;
-  name: string;
-  regionId: string;
-  regionName: string;
-  totalSchools: number;
-  completionRate: number;
-  total?: number;
-  active?: number;
-}
-
-export interface SchoolStats {
-  id: string;
-  name: string;
-  sectorId: string;
-  sectorName: string;
-  regionId?: string;
-  regionName?: string;
-  completedForms?: number;
-  totalForms?: number;
-  completionRate: number;
-  total?: number;
-  active?: number;
-  incomplete?: number;
-}
-
-export interface RecentForm extends FormItem {
-  schoolName?: string;
-  sectorName?: string;
-  regionName?: string;
-  title?: string;
-}
-
-export interface DashboardData {
-  summary?: DashboardSummary;
-  recentActivity?: ActivityItem[];
-  notifications?: any[];
-  approvalRate?: number;
-  completionRate?: number;
-  formsByStatus?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    total: number;
+export interface SuperAdminDashboardData {
+  statistics: {
+    users?: DashboardStats;
+    regions?: DashboardStats;
+    sectors?: DashboardStats;
+    schools?: DashboardStats;
+    categories?: DashboardStats;
   };
-  stats?: any;
+  latestActivities?: Array<{
+    id: string;
+    action: string;
+    user: User;
+    entity: any;
+    timestamp: string;
+  }>;
 }
 
-export interface SuperAdminDashboardData extends DashboardData {
-  regions?: RegionStats[];
-  totalSchools?: number;
-  totalUsers?: number;
-  completionRate?: number;
-  formsByStatus?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    total: number;
+export interface RegionAdminDashboardData {
+  statistics: {
+    sectors?: DashboardStats;
+    schools?: DashboardStats;
+    submissions?: DashboardStats;
   };
+  regions: Region[];
+  latestActivities?: Array<{
+    id: string;
+    action: string;
+    user: User;
+    entity: any;
+    timestamp: string;
+  }>;
 }
 
-export interface RegionAdminDashboardData extends DashboardData {
-  sectors?: SectorStats[];
-  totalSchools?: number;
-  sectorStats?: {
-    total: number;
-    active: number;
+export interface SectorAdminDashboardData {
+  statistics: {
+    totalSchools: number;
+    activeSchools: number;
+    pendingSubmissions: number;
+    completedSubmissions: number;
   };
-  schoolStats?: {
-    total: number;
-    active: number;
-    incomplete: number;
+  sectors: Sector[];
+  schools: SchoolStat[];
+}
+
+export interface SchoolAdminDashboardData {
+  statistics: {
+    categories?: DashboardStats;
+    submissions?: DashboardStats;
+    approvals?: DashboardStats;
   };
-  completionRate?: number;
-}
-
-export interface SectorAdminDashboardData extends DashboardData {
-  schools?: SchoolStats[];
-  schoolsStats?: SchoolStat[];
-  completionRate?: number;
-}
-
-export interface SchoolAdminDashboardData extends DashboardData {
-  upcomingDeadlines?: FormItem[];
-  recentForms?: FormItem[];
-  formStats?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    total: number;
-    incomplete?: number;
-    drafts?: number;
-    dueSoon?: number;
-    overdue?: number;
-  };
-  completionRate?: number;
-}
-
-// PendingApproval item interfeysi
-export interface PendingApprovalItem {
-  id: string;
-  formId?: string;
-  categoryId?: string;
-  schoolId?: string;
-  categoryName?: string;
-  schoolName?: string;
-  status?: 'pending' | 'approved' | 'rejected';
-  submittedAt?: string;
-  submittedBy?: string;
+  activities: Array<{
+    id: string;
+    action: string;
+    status: string;
+    timestamp: string;
+    category?: Category;
+  }>;
+  notifications: Array<{
+    id: string;
+    title: string;
+    message: string;
+    timestamp: string;
+    isRead: boolean;
+    priority: 'normal' | 'high' | 'critical';
+  }>;
 }
 
 export interface SchoolStat {
   id: string;
   name: string;
-  sectorId: string;
-  sectorName?: string;
-  completionRate: number;
-  total?: number;
-  active?: number;
-  incomplete?: number;
-  completion?: { total: number; completed: number; percentage: number };
+  region: string;
+  formStatus: 'completed' | 'in_progress' | 'pending' | 'overdue';
+  lastUpdate: string;
+  completion: number;
 }
-
-export interface FormItem {
-  id: string;
-  title?: string;
-  categoryId?: string;
-  status?: string;
-  dueDate?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  progress?: number;
-  [key: string]: any;
-}
-
-export interface ChartData {
-  activityData?: { name: string; value: number }[];
-  regionSchoolsData?: { name: string; value: number }[];
-  categoryCompletionData?: { name: string; completed: number }[];
-  [key: string]: any;
-}
-
-export interface CategoryStat {
-  id: string;
-  name: string;
-  completionRate: number;
-  completion?: { total: number; completed: number; percentage: number };
-}
-
-// UI notification interface - NotificationType-dən istifadə edirik
-export interface UINotification extends NotificationType {
-  isRead?: boolean;
-  date?: string;
-}
-

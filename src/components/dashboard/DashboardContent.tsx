@@ -5,28 +5,62 @@ import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { SuperAdminDashboard } from './SuperAdminDashboard';
 import { RegionAdminDashboard } from './RegionAdminDashboard';
-import { SectorAdminDashboard } from './SectorAdminDashboard';
+import { SectorAdminDashboard } from './sector-admin/SectorAdminDashboard';
 import { SchoolAdminDashboard } from './SchoolAdminDashboard';
+import {
+  SuperAdminDashboardData,
+  RegionAdminDashboardData,
+  SectorAdminDashboardData,
+  SchoolAdminDashboardData
+} from '@/types/dashboard';
 
 const DashboardContent = () => {
   const { t } = useLanguage();
   const { userRole } = usePermissions();
   const { user } = useAuth();
   
-  // Boş data obyektləri oluşturaq ki, data propsunu göndərə bilək
-  const superAdminData = { statistics: {}, latestActivities: [] };
-  const regionAdminData = { statistics: {}, regions: [], latestActivities: [] };
-  const sectorAdminData = { 
+  // Mock data obyektləri
+  const superAdminData: SuperAdminDashboardData = {
+    statistics: {
+      users: { total: 0, active: 0, inactive: 0 },
+      regions: { total: 0, active: 0, inactive: 0 },
+      sectors: { total: 0, active: 0, inactive: 0 },
+      schools: { total: 0, active: 0, inactive: 0 },
+      categories: { total: 0, active: 0, inactive: 0, pending: 0, completed: 0 }
+    },
+    latestActivities: []
+  };
+  
+  const regionAdminData: RegionAdminDashboardData = {
+    statistics: {
+      sectors: { total: 0, active: 0, inactive: 0 },
+      schools: { total: 0, active: 0, inactive: 0 },
+      submissions: { total: 0, active: 0, inactive: 0, pending: 0, completed: 0 }
+    },
+    regions: [],
+    latestActivities: []
+  };
+  
+  const sectorAdminData: SectorAdminDashboardData = { 
     statistics: {
       totalSchools: 0,
       activeSchools: 0,
       pendingSubmissions: 0,
       completedSubmissions: 0
-    }, 
+    },
     schools: [],
     sectors: []
   };
-  const schoolAdminData = { statistics: {}, activities: [], notifications: [] };
+  
+  const schoolAdminData: SchoolAdminDashboardData = {
+    statistics: {
+      categories: { total: 0, active: 0, inactive: 0 },
+      submissions: { total: 0, active: 0, inactive: 0, pending: 0, completed: 0 },
+      approvals: { total: 0, active: 0, inactive: 0 }
+    },
+    activities: [],
+    notifications: []
+  };
   
   return (
     <div className="px-4 py-8 md:px-6 md:py-10">

@@ -88,10 +88,6 @@ const EntryField: React.FC<EntryFieldProps> = ({
       );
     
     case 'select':
-      const options = typeof column.options === 'string' 
-        ? JSON.parse(column.options) 
-        : column.options || [];
-
       return (
         <div className="space-y-2">
           <Label htmlFor={column.id}>{column.name}{column.is_required && <span className="text-red-500">*</span>}</Label>
@@ -156,8 +152,6 @@ const EntryField: React.FC<EntryFieldProps> = ({
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
-                // Burada fayl yüklənmə məntiqi əlavə oluna bilər
-                // Hələlik sadəcə faylın adını qeyd edək
                 onChange(file.name);
               }
             }}

@@ -163,7 +163,7 @@ export interface Column {
   parent_column_id?: string;
   dependencies?: string[];
   visibility_conditions?: any;
-  section?: string;
+  section?: string; // Bölmə sahəsini əlavə edirik
 }
 
 export interface ColumnOption {
@@ -224,6 +224,7 @@ export interface CategoryWithColumns {
   columns: Column[];
   entries?: any[];
   completionPercentage?: number;
+  completionRate?: number; // Əlavə edildi
   related?: boolean;
   column_count?: number;
 }

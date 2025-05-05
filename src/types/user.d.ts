@@ -4,6 +4,7 @@ export interface UserFormData {
   email: string;
   password?: string;
   full_name: string;
+  name?: string; // name və fullName uyumluluğu üçün
   role?: string;
   region_id?: string;
   sector_id?: string;
@@ -23,6 +24,9 @@ export interface FullUserData extends UserFormData {
   notificationSettings?: {
     email: boolean;
     browser: boolean;
+    push?: boolean;
+    sms?: boolean;
+    system?: boolean;
   };
   adminEntity?: {
     id: string;
@@ -34,4 +38,7 @@ export interface FullUserData extends UserFormData {
   regionId?: string; // region_id ilə eyni
   sectorId?: string; // sector_id ilə eyni
   schoolId?: string; // school_id ilə eyni
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
 }

@@ -21,3 +21,7 @@ export interface CategoryFilter {
   assignment: 'all' | CategoryAssignment;
   deadline: 'all' | 'past' | 'upcoming' | 'none';
 }
+
+// CategoryWithColumns tipini column.ts faylından import edəcəyik
+import { CategoryWithColumns } from './column';
+export { CategoryWithColumns };
