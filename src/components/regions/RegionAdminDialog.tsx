@@ -17,7 +17,7 @@ export interface RegionAdminDialogProps {
   onSuccess?: () => void;
 }
 
-export default function RegionAdminDialog({ open, onClose, regionId, onSuccess }: RegionAdminDialogProps) {
+const RegionAdminDialog: React.FC<RegionAdminDialogProps> = ({ open, onClose, regionId, onSuccess }) => {
   const { t } = useLanguage();
   const [mode, setMode] = useState<'existing' | 'new'>('existing');
   const [email, setEmail] = useState('');
@@ -198,4 +198,7 @@ export default function RegionAdminDialog({ open, onClose, regionId, onSuccess }
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+export default RegionAdminDialog;
+export { RegionAdminDialog };

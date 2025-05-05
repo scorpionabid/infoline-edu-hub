@@ -30,6 +30,8 @@ export interface RegionStats {
   sectorCount?: number;
   completionRate: number;
   sectors?: number;
+  total?: number;
+  active?: number;
 }
 
 export interface SectorStats {
@@ -39,6 +41,8 @@ export interface SectorStats {
   regionName: string;
   totalSchools: number;
   completionRate: number;
+  total?: number;
+  active?: number;
 }
 
 export interface SchoolStats {
@@ -51,6 +55,9 @@ export interface SchoolStats {
   completedForms: number;
   totalForms: number;
   completionRate: number;
+  total?: number;
+  active?: number;
+  incomplete?: number;
 }
 
 export interface RecentForm extends FormItem {

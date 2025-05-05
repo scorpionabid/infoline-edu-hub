@@ -1,9 +1,11 @@
 
 import { useState, useEffect } from 'react';
-import { Column } from '@/types/columns';
-import { ColumnOption } from '@/types/form';
+import { Column, ColumnOption } from '@/types/columns';
 import { useToast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 
 interface UseColumnFormProps {
   initialData?: Partial<Column>;
@@ -12,258 +14,119 @@ interface UseColumnFormProps {
   onClose: () => void;
 }
 
-export const useColumnForm = ({ initialData, categoryId, onSubmit, onClose }: UseColumnFormProps) => {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<Column>>({
-    name: '',
-    type: 'text',
-    help_text: '',
-    is_required: false,
-    placeholder: '',
-    status: 'active',
-    order_index: 0,
-    options: [],
-    validation: {},
-    ...initialData,
-  });
-  const [optionsText, setOptionsText] = useState('');
-  const [optionsArray, setOptionsArray] = useState<ColumnOption[]>([]);
-  const [validationEnabled, setValidationEnabled] = useState(false);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+// Form validation schema
+const columnFormSchema = z.object({
+  name: z.string().min(1, { message: 'Column name is required' }),
+  category_id: z.string(),
+  type: z.string(),
+  is_required: z.boolean().default(false),
+  placeholder: z.string().optional(),
+  help_text: z.string().optional(),
+  status: z.enum(['active', 'inactive']).default('active'),
+  order_index: z.number().default(0),
+  default_value: z.string().optional(),
+  // validation and options are handled separately
+});
+
+export type ColumnFormValues = z.infer<typeof columnFormSchema>;
+
+export const useColumnForm = (categories: { id: string; name: string }[], editColumn: Column | null, onSaveColumn: (columnData: any) => Promise<boolean>) => {
+  const [selectedType, setSelectedType] = useState<string>(editColumn?.type || 'text');
+  const [options, setOptions] = useState<ColumnOption[]>(editColumn?.options || []);
+  const [newOption, setNewOption] = useState<string>('');
+  const isEditMode = !!editColumn;
   
-  const { toast } = useToast();
+  const form = useForm<ColumnFormValues>({
+    resolver: zodResolver(columnFormSchema),
+    defaultValues: {
+      name: editColumn?.name || '',
+      category_id: editColumn?.category_id || categories[0]?.id || '',
+      type: editColumn?.type || 'text',
+      is_required: editColumn?.is_required ?? false,
+      placeholder: editColumn?.placeholder || '',
+      help_text: editColumn?.help_text || '',
+      status: editColumn?.status || 'active',
+      order_index: editColumn?.order_index || 0,
+      default_value: editColumn?.default_value || '',
+    }
+  });
+  
   const { t } = useLanguage();
 
-  // Başlanğıc options varsa onları text sahəsinə yerləşdiririk
-  useEffect(() => {
-    if (initialData?.options && Array.isArray(initialData.options)) {
-      // JSON.parse errors ilə işləmək
-      try {
-        const options = initialData.options as ColumnOption[];
-        setOptionsArray(options);
-        const optionsString = options.map(opt => `${opt.label}:${opt.value}`).join('\n');
-        setOptionsText(optionsString);
-      } catch (e) {
-        console.error('Options parse error:', e);
-        setOptionsText('');
-      }
-    }
-  }, [initialData?.options]);
-
-  // Validation lə bağlı məlumatları aktivləşdiririk əgər varsa
-  useEffect(() => {
-    if (initialData?.validation && Object.keys(initialData.validation).length > 0) {
-      setValidationEnabled(true);
-    }
-  }, [initialData?.validation]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  // Handle type change
+  const handleTypeChange = (type: string) => {
+    setSelectedType(type);
+    form.setValue('type', type);
     
-    // Xətaları təmizlə
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
+    // Reset options if not a type that supports options
+    if (!['select', 'radio', 'checkbox'].includes(type)) {
+      setOptions([]);
     }
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+  // Add option
+  const addOption = () => {
+    if (!newOption.trim()) return;
     
-    // Xətaları təmizlə
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
+    // Check if label already exists
+    const exists = options.some(opt => opt.label.toLowerCase() === newOption.toLowerCase());
+    if (exists) return;
     
-    // Type dəyişdikdə validation-ları sıfırlayırıq
-    if (name === 'type') {
-      setFormData(prev => ({
-        ...prev,
-        validation: {},
-        options: value === 'select' || value === 'checkbox' || value === 'radio' ? prev.options : [],
-      }));
-    }
+    const newOpt: ColumnOption = {
+      label: newOption.trim(),
+      value: newOption.trim().toLowerCase().replace(/\s+/g, '_')
+    };
+    
+    setOptions(prev => [...prev, newOpt]);
+    setNewOption('');
   };
-
-  const handleCheckboxChange = (name: string, checked: boolean) => {
-    setFormData(prev => ({ ...prev, [name]: checked }));
+  
+  // Remove option
+  const removeOption = (index: number) => {
+    setOptions(prev => prev.filter((_, i) => i !== index));
   };
-
-  const handleValidationChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      validation: {
-        ...prev.validation,
-        [field]: value
-      }
-    }));
-  };
-
-  const handleOptionsChange = (text: string) => {
-    setOptionsText(text);
+  
+  // Handle form submission
+  const onSubmit = async (values: ColumnFormValues) => {
+    // Combine form values with options
+    const columnData = {
+      ...values,
+      options: options.length > 0 ? options : undefined,
+    };
     
-    // Options-ları parse et
-    const lines = text.split('\n').filter(line => line.trim() !== '');
-    const parsedOptions: ColumnOption[] = lines.map(line => {
-      const [label, value] = line.split(':').map(part => part.trim());
-      return {
-        label: label || '',
-        value: value || label || '',
-      };
-    });
-    
-    setOptionsArray(parsedOptions);
-    setFormData(prev => ({
-      ...prev,
-      options: parsedOptions,
-    }));
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-    
-    // Ad tələb olunur
-    if (!formData.name?.trim()) {
-      newErrors.name = t('columnNameRequired');
+    if (isEditMode && editColumn?.id) {
+      columnData.id = editColumn.id;
     }
-    
-    // Select, radio və checkbox üçün seçimlər tələb olunur
-    if ((formData.type === 'select' || formData.type === 'radio' || formData.type === 'checkbox') &&
-        (!optionsArray.length || optionsArray.some(opt => !opt.label || !opt.value))) {
-      newErrors.options = t('validOptionsRequired');
-    }
-    
-    // Validasiya xətaları
-    if (validationEnabled) {
-      const validation = formData.validation || {};
-      
-      if (formData.type === 'number' || formData.type === 'range') {
-        // Rəqəmlərin düzgün olduğunu yoxla
-        if (validation.min !== undefined && validation.max !== undefined && Number(validation.min) > Number(validation.max)) {
-          newErrors.min = t('minCannotBeGreaterThanMax');
-        }
-      }
-      
-      if (formData.type === 'text' || formData.type === 'textarea' || formData.type === 'email') {
-        // Mətn uzunluğu yoxla
-        if (validation.minLength !== undefined && validation.maxLength !== undefined &&
-            Number(validation.minLength) > Number(validation.maxLength)) {
-          newErrors.minLength = t('minLengthCannotBeGreaterThanMaxLength');
-        }
-      }
-      
-      if (validation.pattern && typeof validation.pattern === 'string') {
-        try {
-          new RegExp(validation.pattern);
-        } catch (e) {
-          newErrors.pattern = t('invalidRegexPattern');
-        }
-      }
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      toast({
-        title: t('validationError'),
-        description: t('pleaseCheckFormErrors'),
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setLoading(true);
     
     try {
-      // final məlumatları hazırla
-      const finalData: Partial<Column> = {
-        ...formData,
-        category_id: categoryId,
-      };
-      
-      // Əgər validation aktiv deyilsə boş obyekt göndər
-      if (!validationEnabled) {
-        finalData.validation = {};
-      }
-      
-      const result = await onSubmit(finalData);
-      
-      if (result.success) {
-        toast({
-          title: t('success'),
-          description: result.message || t('columnSavedSuccessfully')
-        });
-        onClose();
-      } else {
-        toast({
-          title: t('error'),
-          description: result.message || t('errorSavingColumn'),
-          variant: "destructive"
-        });
-      }
+      const result = await onSaveColumn(columnData);
+      return result;
     } catch (error) {
-      console.error('Sütunu yadda saxlarkən xəta:', error);
-      toast({
-        title: t('error'),
-        description: t('errorSavingColumn'),
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+      console.error('Error saving column:', error);
+      return false;
     }
   };
-
+  
+  // Convert string date to Date object for date inputs
   const convertToDate = (dateString: string | Date): Date => {
     if (dateString instanceof Date) {
       return dateString;
     }
-    // Əgər dateString bir string isə, onu Date obektinə çeviririk
     return new Date(dateString);
   };
-
-  const handleDeadlineChange = (date: Date | undefined) => {
-    if (date) {
-      setFormData(prev => ({
-        ...prev,
-        deadline: date // Date obyekti olaraq saxlayırıq
-      }));
-    } else {
-      // date undefined olduqda
-      setFormData(prev => {
-        const newData = {...prev};
-        delete newData.deadline;
-        return newData;
-      });
-    }
-  };
-
+  
   return {
-    formData,
-    loading,
-    errors,
-    optionsText,
-    optionsArray,
-    validationEnabled,
-    setValidationEnabled,
-    handleInputChange,
-    handleSelectChange,
-    handleCheckboxChange,
-    handleValidationChange,
-    handleOptionsChange,
-    handleSubmit,
-    handleDeadlineChange,
-    convertToDate,
+    form,
+    selectedType,
+    handleTypeChange,
+    options,
+    addOption,
+    removeOption,
+    newOption,
+    setNewOption,
+    onSubmit,
+    isEditMode,
+    convertToDate
   };
 };
 

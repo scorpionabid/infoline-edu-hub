@@ -1,5 +1,6 @@
+
 import React, { useEffect } from "react";
-import { Column } from "@/types/column";
+import { Column } from "@/types/columns";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

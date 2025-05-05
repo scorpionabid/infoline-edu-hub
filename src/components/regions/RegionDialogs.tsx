@@ -31,7 +31,7 @@ export const RegionDialogs: React.FC<RegionDialogsProps> = ({ open, onOpenChange
   const [adminDialogRegionId, setAdminDialogRegionId] = useState<string | null>(null);
   const [adminDialogOpen, setAdminDialogOpen] = useState(false);
 
-  const { regions, loading, error, fetchRegions, refresh, addRegion, updateRegion, deleteRegion } = useRegions();
+  const { regions, loading, error, fetchRegions, refresh, createRegion, updateRegion, deleteRegion } = useRegions();
   const { t } = useLanguage();
   const { toast } = useToast();
 
@@ -59,9 +59,9 @@ export const RegionDialogs: React.FC<RegionDialogsProps> = ({ open, onOpenChange
     if (!validateForm()) return;
 
     try {
-      const result = await addRegion(regionData);
+      const result = await createRegion(regionData);
 
-      if (result.success) {
+      if (result) {
         toast({
           title: t('success'),
           description: t('regionAddedSuccessfully'),
@@ -78,7 +78,7 @@ export const RegionDialogs: React.FC<RegionDialogsProps> = ({ open, onOpenChange
       } else {
         toast({
           title: t('error'),
-          description: result.error || t('regionAddError'),
+          description: t('regionAddError'),
           variant: "destructive",
         });
       }
@@ -97,7 +97,7 @@ export const RegionDialogs: React.FC<RegionDialogsProps> = ({ open, onOpenChange
     try {
       const result = await updateRegion(regionToEdit.id, regionData);
 
-      if (result && result.success) {
+      if (result) {
         toast({
           title: t('success'),
           description: t('regionUpdatedSuccessfully'),
@@ -107,7 +107,7 @@ export const RegionDialogs: React.FC<RegionDialogsProps> = ({ open, onOpenChange
       } else {
         toast({
           title: t('error'),
-          description: result && result.error ? result.error : t('regionUpdateError'),
+          description: t('regionUpdateError'),
           variant: "destructive",
         });
       }
@@ -126,7 +126,7 @@ export const RegionDialogs: React.FC<RegionDialogsProps> = ({ open, onOpenChange
     try {
       const result = await deleteRegion(regionToDelete.id);
 
-      if (result && result.success) {
+      if (result) {
         toast({
           title: t('success'),
           description: t('regionDeletedSuccessfully'),
@@ -136,7 +136,7 @@ export const RegionDialogs: React.FC<RegionDialogsProps> = ({ open, onOpenChange
       } else {
         toast({
           title: t('error'),
-          description: result && result.error ? result.error : t('regionDeleteError'),
+          description: t('regionDeleteError'),
           variant: "destructive",
         });
       }
@@ -279,8 +279,12 @@ export const RegionDialogs: React.FC<RegionDialogsProps> = ({ open, onOpenChange
       {adminDialogRegionId && (
         <RegionAdminDialog
           open={adminDialogOpen}
-          onOpenChange={setAdminDialogOpen}
+          onClose={() => setAdminDialogOpen(false)}
           regionId={adminDialogRegionId}
+          onSuccess={() => {
+            setAdminDialogOpen(false);
+            refresh();
+          }}
         />
       )}
     </>
