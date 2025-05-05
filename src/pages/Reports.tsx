@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const Reports: React.FC = () => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("schools-columns");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   
   return (
     <SidebarLayout>
@@ -27,7 +28,7 @@ const Reports: React.FC = () => {
           </TabsList>
           
           <TabsContent value="schools-columns" className="mt-6">
-            <SchoolColumnTable />
+            <SchoolColumnTable categoryId={selectedCategoryId} />
           </TabsContent>
           
           <TabsContent value="templates" className="mt-6">

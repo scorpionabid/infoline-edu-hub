@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bar, Pie, Line } from 'react-chartjs-2';
-import { Report, ReportType } from '@/types/report'; // form əvəzinə report istifadə edirik
+import { Report, ReportType } from '@/types/report'; // report tipi əvəzləyirik
 
 interface ReportChartProps {
   report: Report;
@@ -58,4 +59,3 @@ const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
 };
 
 export default ReportChart;
-
