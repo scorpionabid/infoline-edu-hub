@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import UserList from '@/components/users/UserList';
 import UserHeader from '@/components/users/UserHeader';
@@ -44,10 +45,10 @@ const Users = () => {
   // Sector ve Region admin üçün filter parametrləri
   const filterParams = (() => {
     if (isSectorAdmin && sectorId) {
-      return { sectorId, role: ['schooladmin'] };
+      return { sectorId, role: 'schooladmin' };
     }
     if (isRegionAdmin && regionId) {
-      return { regionId, role: ['sectoradmin', 'schooladmin'] };
+      return { regionId };
     }
     return {};
   })();

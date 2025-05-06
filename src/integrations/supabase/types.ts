@@ -818,6 +818,32 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_filtered_users: {
+        Args: {
+          p_role?: string[]
+          p_region_id?: string
+          p_sector_id?: string
+          p_school_id?: string
+          p_status?: string[]
+          p_search?: string
+          p_page?: number
+          p_limit?: number
+        }
+        Returns: {
+          user_json: Json
+        }[]
+      }
+      get_filtered_users_count: {
+        Args: {
+          p_role?: string[]
+          p_region_id?: string
+          p_sector_id?: string
+          p_school_id?: string
+          p_status?: string[]
+          p_search?: string
+        }
+        Returns: number
+      }
       get_full_user_data: {
         Args: { user_id_param: string }
         Returns: Json

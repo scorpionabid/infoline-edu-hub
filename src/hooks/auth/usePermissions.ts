@@ -1,69 +1,95 @@
 
-import { useMemo } from 'react';
-import { useAuth } from '@/context/auth';
+import { useCallback, useMemo } from 'react';
+import { useAuthStore } from './useAuthStore';
+import { UserRole } from '@/types/supabase';
 
-interface PermissionsResult {
-  userRole: string;
-  regionId: string | null;
-  sectorId: string | null;
-  schoolId: string | null;
-  isSuperAdmin: boolean;
-  isRegionAdmin: boolean;
-  isSectorAdmin: boolean;
-  isSchoolAdmin: boolean;
-  canManageRegions: boolean;
-  canManageSectors: boolean;
-  canManageSchools: boolean;
-  canManageCategories: boolean;
-  canManageColumns: boolean;
-  canManageUsers: boolean;
-  canViewApprovals: boolean;
-  canApproveData: boolean;
-  canManageReports: boolean;
-}
-
-export const usePermissions = (): PermissionsResult => {
-  const { user } = useAuth();
+export function usePermissions() {
+  const { user } = useAuthStore();
   
-  return useMemo(() => {
-    const role = user?.role || 'user';
-    const regionId = user?.region_id || null;
-    const sectorId = user?.sector_id || null;
-    const schoolId = user?.school_id || null;
+  // Normalize role
+  const normalizeRole = (role: string | UserRole): UserRole => {
+    if (!role) return 'user' as UserRole;
+    const roleStr = String(role).toLowerCase();
     
-    const isSuperAdmin = role === 'superadmin';
-    const isRegionAdmin = role === 'regionadmin';
-    const isSectorAdmin = role === 'sectoradmin';
-    const isSchoolAdmin = role === 'schooladmin';
+    if (roleStr.includes('super') || roleStr === 'admin') return 'superadmin';
+    if (roleStr.includes('region')) return 'regionadmin';
+    if (roleStr.includes('sector')) return 'sectoradmin';
+    if (roleStr.includes('school')) return 'schooladmin';
     
-    const canManageRegions = isSuperAdmin;
-    const canManageSectors = isSuperAdmin || isRegionAdmin;
-    const canManageSchools = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-    const canManageCategories = isSuperAdmin || isRegionAdmin;
-    const canManageColumns = isSuperAdmin || isRegionAdmin;
-    const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-    const canViewApprovals = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-    const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-    const canManageReports = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
+    return 'user' as UserRole;
+  };
+  
+  // Check if the user has a specific role
+  const hasRole = useCallback((role: UserRole | UserRole[]): boolean => {
+    if (!user || !user.role) return false;
     
-    return {
-      userRole: role,
-      regionId,
-      sectorId,
-      schoolId,
-      isSuperAdmin,
-      isRegionAdmin,
-      isSectorAdmin,
-      isSchoolAdmin,
-      canManageRegions,
-      canManageSectors,
-      canManageSchools,
-      canManageCategories,
-      canManageColumns,
-      canManageUsers,
-      canViewApprovals,
-      canApproveData,
-      canManageReports
-    };
+    const userRole = normalizeRole(user.role);
+    
+    if (Array.isArray(role)) {
+      return role.some(r => normalizeRole(r) === userRole);
+    }
+    
+    return userRole === normalizeRole(role);
   }, [user]);
-};
+  
+  // Role-based permissions
+  const isSuperAdmin = useMemo(() => hasRole('superadmin'), [hasRole]);
+  const isRegionAdmin = useMemo(() => hasRole('regionadmin'), [hasRole]);
+  const isSectorAdmin = useMemo(() => hasRole('sectoradmin'), [hasRole]);
+  const isSchoolAdmin = useMemo(() => hasRole('schooladmin'), [hasRole]);
+  
+  // Get IDs for the current user
+  const regionId = useMemo(() => user?.region_id || user?.regionId || null, [user]);
+  const sectorId = useMemo(() => user?.sector_id || user?.sectorId || null, [user]);
+  const schoolId = useMemo(() => user?.school_id || user?.schoolId || null, [user]);
+  
+  // Function-based permissions
+  const canManageUsers = useMemo(() => 
+    hasRole(['superadmin', 'regionadmin', 'sectoradmin']),
+    [hasRole]
+  );
+  
+  const canManageCategories = useMemo(() => 
+    hasRole(['superadmin', 'regionadmin']),
+    [hasRole]
+  );
+  
+  const canManageRegions = useMemo(() => 
+    hasRole('superadmin'),
+    [hasRole]
+  );
+  
+  const canManageSectors = useMemo(() => 
+    hasRole(['superadmin', 'regionadmin']),
+    [hasRole]
+  );
+  
+  const canManageSchools = useMemo(() => 
+    hasRole(['superadmin', 'regionadmin', 'sectoradmin']),
+    [hasRole]
+  );
+  
+  const canApproveData = useMemo(() => 
+    hasRole(['superadmin', 'regionadmin', 'sectoradmin']),
+    [hasRole]
+  );
+  
+  return {
+    hasRole,
+    isSuperAdmin,
+    isRegionAdmin,
+    isSectorAdmin,
+    isSchoolAdmin,
+    regionId,
+    sectorId,
+    schoolId,
+    canManageUsers,
+    canManageCategories,
+    canManageRegions,
+    canManageSectors,
+    canManageSchools,
+    canApproveData,
+    currentRole: user?.role ? normalizeRole(user.role) : null,
+    currentUser: user
+  };
+}

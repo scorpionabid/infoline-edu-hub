@@ -19,8 +19,8 @@ import {
 import { toast } from 'sonner';
 import { MoreHorizontal } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { UserRole } from '@/types/supabase';
-import { User, FullUserData } from '@/types/user';
+import { User } from '@/types/supabase';
+import { FullUserData } from '@/types/user';
 import { Badge } from '@/components/ui/badge';
 import { useUserList } from '@/hooks/useUserList';
 import { Pagination } from '@/components/ui/pagination';
@@ -34,6 +34,7 @@ interface UserListProps {
   filterParams?: {
     sectorId?: string;
     regionId?: string;
+    role?: string;
   };
 }
 
@@ -56,21 +57,34 @@ const UserList: React.FC<UserListProps> = ({
     refetch
   } = useUserList();
 
-  const { isSectorAdmin, sectorId } = usePermissions();
+  const { isSectorAdmin, sectorId, isRegionAdmin, regionId } = usePermissions();
 
   const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
+  // FilterParams ilə filtri yeniləmək
   useEffect(() => {
     if (filterParams) {
-      updateFilter({
-        ...filter,
-        ...filterParams
-      });
+      const newFilter = { ...filter };
+      
+      if (filterParams.sectorId) {
+        newFilter.sectorId = filterParams.sectorId;
+      }
+      
+      if (filterParams.regionId) {
+        newFilter.regionId = filterParams.regionId;
+      }
+      
+      if (filterParams.role) {
+        newFilter.role = filterParams.role;
+      }
+      
+      updateFilter(newFilter);
     }
-  }, [filterParams]);
+  }, [filterParams, updateFilter]);
 
+  // İstifadəçi roluna əsasən default filtir
   useEffect(() => {
     if (isSectorAdmin && sectorId) {
       updateFilter({
@@ -78,12 +92,20 @@ const UserList: React.FC<UserListProps> = ({
         sectorId: sectorId,
         role: 'schooladmin'
       });
+    } else if (isRegionAdmin && regionId) {
+      updateFilter({
+        ...filter,
+        regionId: regionId
+      });
     }
-  }, [isSectorAdmin, sectorId]);
+  }, [isSectorAdmin, sectorId, isRegionAdmin, regionId, updateFilter]);
 
+  // refreshTrigger hər dəyişdikdə sorğunu yenilə
   useEffect(() => {
-    refetch();
-  }, [refreshTrigger]);
+    if (refreshTrigger > 0) {
+      refetch();
+    }
+  }, [refreshTrigger, refetch]);
 
   const handleDeleteUser = async (userId: string) => {
     if (!userId) return;
@@ -196,7 +218,7 @@ const UserList: React.FC<UserListProps> = ({
           <div className="text-center py-5 text-red-500">
             {error.message || "Xəta baş verdi"}
           </div>
-        ) : users.length === 0 ? (
+        ) : users && users.length === 0 ? (
           <div className="text-center py-5 text-muted-foreground">
             {t('noUsersFound')}
           </div>
@@ -214,13 +236,13 @@ const UserList: React.FC<UserListProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {users && users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.full_name || user.name || user.email?.split('@')[0]}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={getRoleBadgeColor(user.role)}>
-                        {formatRole(user.role)}
+                      <Badge variant="outline" className={getRoleBadgeColor(String(user.role))}>
+                        {formatRole(String(user.role))}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -262,10 +284,14 @@ const UserList: React.FC<UserListProps> = ({
         )}
       </div>
       
-      {!loading && users.length > 0 && (
+      {!loading && users && users.length > 0 && (
         <div className="px-4 py-3 flex justify-between items-center">
           <div className="text-sm text-muted-foreground">
-            {t('showingResults', { from: (currentPage - 1) * 10 + 1, to: Math.min(currentPage * 10, totalCount), total: totalCount })}
+            {t('showingResults', { 
+              from: (currentPage - 1) * 10 + 1, 
+              to: Math.min(currentPage * 10, totalCount), 
+              total: totalCount 
+            })}
           </div>
           <Pagination
             currentPage={currentPage}
@@ -279,7 +305,7 @@ const UserList: React.FC<UserListProps> = ({
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         user={selectedUser || { id: '', email: '', name: '' }}
-        onDelete={() => handleDeleteUser(selectedUser?.id || '')}
+        onDelete={() => selectedUser?.id && handleDeleteUser(selectedUser.id)}
       />
 
       {selectedUser && (
