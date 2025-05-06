@@ -1,10 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -21,9 +17,17 @@ const ProfileSettings: React.FC = () => {
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '');
-  const [position, setPosition] = useState(user?.position || '');
+  const [position, setPosition] = useState('');
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.twoFactorEnabled || false);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Kullanıcının pozisyon bilgisini yükleyelim
+  useEffect(() => {
+    if (user) {
+      // position özelliğini kullan (mümkünse)
+      setPosition(user.position || '');
+    }
+  }, [user]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +88,7 @@ const ProfileSettings: React.FC = () => {
         <CardContent className="space-y-6">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <Avatar className="w-20 h-20">
-              <AvatarImage src={user?.avatar} alt={user?.full_name} />
+              <AvatarImage src={user?.avatar} alt={user?.full_name || ''} />
               <AvatarFallback className="text-lg">
                 {getInitials(user?.full_name || '')}
               </AvatarFallback>

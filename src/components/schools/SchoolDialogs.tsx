@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   DeleteDialog, 
@@ -90,6 +89,29 @@ const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
         selectedAdmin={selectedAdmin} 
       />
     </>
+  );
+};
+
+export const AdminDialogWrapper = ({ 
+  selectedAdmin, 
+  isOpen, 
+  onClose, 
+  onUpdate, 
+  onResetPassword 
+}: { 
+  selectedAdmin: School; 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onUpdate: () => void;
+  onResetPassword: (newPassword: string) => void; 
+}) => {
+  return (
+    <AdminDialog 
+      school={selectedAdmin}
+      open={isOpen} 
+      onClose={onClose}
+      onRefresh={onUpdate}
+    />
   );
 };
 

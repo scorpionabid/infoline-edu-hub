@@ -1,5 +1,5 @@
 
-import { DashboardNotification, Notification } from './notification';
+import { DashboardNotification } from './notification';
 
 export interface FormItem {
   id: string;
@@ -98,27 +98,49 @@ export interface SuperAdminDashboardData {
 
 export interface RegionAdminDashboardData {
   stats: {
-    sectors: number;
-    schools: number;
-    users: number;
-    totalSchools: number;
-    totalSectors: number;
-    totalForms: number;
-    totalCategories: number;
+    sectors?: number;
+    schools?: number;
+    users?: number;
+    totalSchools?: number;
+    totalSectors?: number;
+    totalForms?: number;
+    totalCategories?: number;
   };
-  sectorStats: any[];
-  schoolStats: any[];
-  completionRate: number;
-  notifications: DashboardNotification[];
+  sectorStats?: any[];
+  schoolStats?: any[];
+  completionRate?: number;
+  notifications?: DashboardNotification[];
+  region?: {
+    name: string;
+    status: string;
+  };
+}
+
+export interface CategoryStat {
+  id: string;
+  name: string;
+  status: string;
+  progress: number;
+  completedSchools: number;
+  totalSchools: number;
+}
+
+export interface FormStatus {
+  id: string;
+  name: string;
+  status: 'pending' | 'completed' | 'overdue';
+  dueDate: string;
 }
 
 export interface DashboardNotification {
   id: string;
   title: string;
   message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
   date: string;
-  read: boolean;
-  type: string;
+  isRead: boolean;
+  read?: boolean;
+  createdAt?: string;
 }
 
 export interface SectorAdminDashboardData {
@@ -140,7 +162,17 @@ export interface SchoolDashboardData {
   lastSubmission?: string;
 }
 
-// PendingApproval tipi
+export interface PendingApproval {
+  id: string;
+  schoolName: string;
+  categoryName: string;
+  submittedBy: string;
+  submittedAt: string;
+  school?: School;
+  category?: Category;
+}
+
+// PendingApprovalItem tipi əlavə edildi
 export interface PendingApprovalItem {
   id: string;
   schoolId: string;
@@ -149,6 +181,14 @@ export interface PendingApprovalItem {
   categoryName: string;
   submittedAt: string;
   status: string;
+}
+
+export interface RecentActivity {
+  id: string;
+  action: string;
+  target: string;
+  date: string;
+  user: string;
 }
 
 export interface DashboardStatistics {
@@ -180,4 +220,21 @@ export interface FormStats {
   incomplete?: number;
   dueSoon?: number;
   overdue?: number;
+  completionRate?: number;
+}
+
+export interface DashboardData {
+  stats: {
+    regions?: number;
+    sectors?: number;
+    schools: number;
+    activeSchools: number;
+    forms?: FormStats;
+    categories?: number;
+    pendingApprovals?: number;
+    completionRate?: number;
+  };
+  pendingApprovals?: PendingApproval[];
+  recentActivities: RecentActivity[];
+  notifications: DashboardNotification[];
 }

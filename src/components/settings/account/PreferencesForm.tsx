@@ -14,13 +14,23 @@ import { useAuth } from '@/context/auth/useAuth';
 import { Language } from '@/types/supabase';
 import { Save } from 'lucide-react';
 
+// Bildirimləri interfeysi genişləndirib system property əlavə edirik
+interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  deadline: boolean;
+  system: boolean; // system property əlavə edildi
+}
+
 // Hesab parametrləri forması üçün schema
 const settingsFormSchema = z.object({
   language: z.string(),
   twoFactorEnabled: z.boolean().default(false),
   notificationSettings: z.object({
     email: z.boolean().default(true),
-    system: z.boolean().default(true),
+    push: z.boolean().default(true),
+    deadline: z.boolean().default(true),
+    system: z.boolean().default(true), // system property əlavə edildi
   }),
 });
 
@@ -37,7 +47,9 @@ const PreferencesForm: React.FC = () => {
       language: localStorage.getItem('infoline-language') || 'az',
       notificationSettings: {
         email: user?.notificationSettings?.email ?? true,
-        system: user?.notificationSettings?.system ?? true,
+        push: user?.notificationSettings?.push ?? true,
+        deadline: user?.notificationSettings?.deadline ?? true,
+        system: user?.notificationSettings?.system ?? true, // system property əlavə edildi
       },
       twoFactorEnabled: user?.twoFactorEnabled ?? false,
     }
@@ -55,7 +67,9 @@ const PreferencesForm: React.FC = () => {
         twoFactorEnabled: data.twoFactorEnabled,
         notificationSettings: {
           email: data.notificationSettings.email,
-          system: data.notificationSettings.system
+          push: data.notificationSettings.push,
+          deadline: data.notificationSettings.deadline,
+          system: data.notificationSettings.system // system property əlavə edildi
         }
       });
       
@@ -149,12 +163,31 @@ const PreferencesForm: React.FC = () => {
 
               <FormField
                 control={settingsForm.control}
-                name="notificationSettings.system"
+                name="notificationSettings.push"
                 render={({ field }) => (
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <FormLabel>{t('systemNotifications')}</FormLabel>
-                      <p className="text-sm text-muted-foreground">{t('systemNotificationsDesc')}</p>
+                      <FormLabel>{t('pushNotifications')}</FormLabel>
+                      <p className="text-sm text-muted-foreground">{t('pushNotificationsDesc')}</p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </div>
+                )}
+              />
+
+              <FormField
+                control={settingsForm.control}
+                name="notificationSettings.deadline"
+                render={({ field }) => (
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <FormLabel>{t('deadlineNotifications')}</FormLabel>
+                      <p className="text-sm text-muted-foreground">{t('deadlineNotificationsDesc')}</p>
                     </div>
                     <FormControl>
                       <Switch

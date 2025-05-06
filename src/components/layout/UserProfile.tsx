@@ -18,13 +18,16 @@ const UserProfile = () => {
     navigate('/login');
   };
 
+  // Default avatar görseli
+  const defaultAvatar = "https://github.com/shadcn.png";
+
   return (
     <div className="mt-auto">
       <DropdownMenu>
         <DropdownMenuTrigger>
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-secondary cursor-pointer">
             <Avatar>
-              <AvatarImage src={user?.avatar || "https://github.com/shadcn.png"} alt={user?.full_name || "User Avatar"} />
+              <AvatarImage src={user?.avatar || defaultAvatar} alt={user?.full_name || "User Avatar"} />
               <AvatarFallback>{user?.full_name?.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col items-start">

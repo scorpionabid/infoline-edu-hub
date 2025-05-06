@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserFormData } from '@/types/user';
 import { Role } from '@/context/auth/types';
+import { supabase } from '@/lib/supabase';
+import { useRegions } from '@/context/RegionsContext';
 
 interface SectorSectionProps {
   form: any;
@@ -25,7 +27,38 @@ const SectorSection: React.FC<SectorSectionProps> = ({
   hideSection = false,
 }) => {
   const { t } = useLanguage();
-
+  const { regions } = useRegions();
+  const [sectors, setSectors] = useState<Sector[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  const regionId = form.watch('region_id');
+  
+  // regionId değiştiğinde sektörleri yükle
+  useEffect(() => {
+    async function fetchSectors() {
+      if (regionId) {
+        setLoading(true);
+        try {
+          const { data } = await supabase
+            .from('sectors')
+            .select('*')
+            .eq('region_id', regionId)
+            .eq('status', 'active');
+          
+          setSectors(data || []);
+        } catch (error) {
+          console.error('Error fetching sectors:', error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setSectors([]);
+      }
+    }
+    
+    fetchSectors();
+  }, [regionId]);
+  
   const shouldShow = !hideSection && 
     (((isSuperAdmin && data.regionId) || (currentUserRole === 'regionadmin')) &&
     (data.role === 'sectoradmin' || data.role === 'schooladmin'));

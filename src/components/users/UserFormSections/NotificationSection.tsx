@@ -1,98 +1,90 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
+import { FormItem, FormLabel, FormDescription, FormControl, FormField } from "@/components/ui/form";
+import { Switch } from "@/components/ui/switch";
 import { useLanguage } from '@/context/LanguageContext';
-import { FormField, FormItem, FormLabel, FormControl, FormDescription } from '@/components/ui/form';
-import { Switch } from '@/components/ui/switch';
+import { UseFormReturn } from 'react-hook-form';
 import { UserFormData } from '@/types/user';
 
-interface NotificationSectionProps {
-  form: any;
-  data: UserFormData;
-  onFormChange: (fieldName: string, value: any) => void;
-}
-
-const NotificationSection: React.FC<NotificationSectionProps> = ({
-  form,
-  data,
-  onFormChange,
-}) => {
+const NotificationSection = ({ form }: { form: UseFormReturn<UserFormData> }) => {
   const { t } = useLanguage();
+  
+  // UserFormData tipini genişlətmək lazımdır, lakin o hal-hazırda
+  // mövcud deyil ya da yenidən düzənləmək gerekir
+  
+  // Bu hissəni form içərisində əlavə edək
+  useEffect(() => {
+    const currentValues = form.getValues();
+    
+    // Əgər notificationSettings mövcud deyilsə, varsayılan dəyərlər təyin edək
+    if (!currentValues.notificationSettings) {
+      form.setValue('notificationSettings', {
+        email: true,
+        inApp: true,
+        sms: false,
+        deadlineReminders: true,
+        system: true
+      });
+    }
+  }, [form]);
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">{t('additionalSettings')}</h3>
-
-      <FormField
-        control={form.control}
-        name="twoFactorEnabled"
-        render={({ field }) => (
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <FormLabel>{t('twoFactorAuth')}</FormLabel>
-              <FormDescription>{t('twoFactorAuthDesc')}</FormDescription>
-            </div>
-            <FormControl>
-              <Switch
-                checked={field.value || false}
-                onCheckedChange={(checked) => {
-                  field.onChange(checked);
-                  onFormChange('twoFactorEnabled', checked);
-                }}
-              />
-            </FormControl>
-          </div>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="notificationSettings.email"
-        render={({ field }) => (
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <FormLabel>{t('emailNotifications')}</FormLabel>
-              <FormDescription>{t('emailNotificationsDesc')}</FormDescription>
-            </div>
-            <FormControl>
-              <Switch
-                checked={field.value || false}
-                onCheckedChange={(checked) => {
-                  field.onChange(checked);
-                  onFormChange('notificationSettings', {
-                    ...data.notificationSettings,
-                    email: checked,
-                  });
-                }}
-              />
-            </FormControl>
-          </div>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="notificationSettings.system"
-        render={({ field }) => (
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <FormLabel>{t('systemNotifications')}</FormLabel>
-              <FormDescription>{t('systemNotificationsDesc')}</FormDescription>
-            </div>
-            <FormControl>
-              <Switch
-                checked={field.value || false}
-                onCheckedChange={(checked) => {
-                  field.onChange(checked);
-                  onFormChange('notificationSettings', {
-                    ...data.notificationSettings,
-                    system: checked,
-                  });
-                }}
-              />
-            </FormControl>
-          </div>
-        )}
-      />
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium">{t('notificationSettings')}</h3>
+          <p className="text-sm text-muted-foreground">
+            {t('notificationSettingsDescription')}
+          </p>
+        </div>
+      </div>
+      
+      <div className="space-y-4">
+        <FormField
+          control={form.control}
+          name="notificationSettings.email"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">
+                  {t('emailNotifications')}
+                </FormLabel>
+                <FormDescription>
+                  {t('emailNotificationsDescription')}
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value === true}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="notificationSettings.inApp"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">
+                  {t('inAppNotifications')}
+                </FormLabel>
+                <FormDescription>
+                  {t('inAppNotificationsDescription')}
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value === true}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+      </div>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,8 +19,11 @@ const formatDate = (dateInput: string | Date | null | undefined): string => {
   if (!dateInput) return 'Təyin edilməyib';
   
   try {
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-    return date.toLocaleDateString();
+    if (typeof dateInput === 'string') {
+      return new Date(dateInput).toLocaleDateString();
+    } else {
+      return dateInput.toLocaleDateString();
+    }
   } catch (e) {
     return 'Keçərsiz tarix';
   }

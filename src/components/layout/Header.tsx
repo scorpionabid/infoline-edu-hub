@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth'; 
@@ -102,7 +103,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isSidebarOpen }) => {
   };
   
   // İstifadəçi adı üçün fallback dəyəri
-  const userDisplayName = user?.full_name || user?.name || (user?.email?.split('@')[0]) || '';
+  const userDisplayName = user?.full_name || (user?.email?.split('@')[0]) || '';
   
   // Avatar için fallback (baş hərfləri)
   const getInitials = (name: string) => {
@@ -197,9 +198,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isSidebarOpen }) => {
                 className="relative h-8 w-8 rounded-full"
               >
                 <Avatar>
-                  {user.avatar ? (
-                    <AvatarImage src={user.avatar} alt={userDisplayName} />
-                  ) : null}
+                  <AvatarImage src={user?.avatar} alt={userDisplayName} />
                   <AvatarFallback>{fallbackInitials || "U"}</AvatarFallback>
                 </Avatar>
               </Button>

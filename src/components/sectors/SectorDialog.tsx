@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { Sector } from '@/types/sector';
-import { useRegions } from '@/hooks/regions/useRegions';
-import { useSectors } from '@/hooks/sectors/useSectors';
+import { useRegions } from '@/hooks/useRegions';
+import useSectors from '@/hooks/sectors/useSectors';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/context/auth';
 import { FullUserData } from '@/types/user';

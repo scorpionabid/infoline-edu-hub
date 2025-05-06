@@ -41,7 +41,7 @@ const SectorHeader: React.FC<SectorHeaderProps> = ({
   const { regions, loading: regionsLoading } = useRegions();
 
   // İstifadəçi regionadmin isə, region seçimi bağlıdır
-  const isRegionFixed = user?.role === 'regionadmin' && !!user?.regionId;
+  const isRegionFixed = user?.role === 'regionadmin' && !!user?.region_id;
 
   return (
     <div className="flex flex-col space-y-4">
