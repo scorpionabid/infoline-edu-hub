@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/date-picker';
-import { validateField, formatValue } from './utils/formUtils';
+import { ValidationResult } from '@/types/dataEntry';
 
 // Tip tərifini genişləndirərək string | number | boolean | Date tipləri ilə işləyəcək hala gətirək
 interface FormFieldsProps {
@@ -26,6 +27,38 @@ const FormFields: React.FC<FormFieldsProps> = ({
   setErrors,
   disabled = false
 }) => {
+  const validateField = (field: any, value: any): string | null => {
+    if (!field || !field.validation) return null;
+    
+    const { validation } = field;
+    
+    if (field.isRequired && (!value || value === "")) {
+      return "Bu sahə məcburidir";
+    }
+    
+    if (validation.min !== undefined && Number(value) < validation.min) {
+      return `Minimum dəyər ${validation.min} olmalıdır`;
+    }
+    
+    if (validation.max !== undefined && Number(value) > validation.max) {
+      return `Maksimum dəyər ${validation.max} olmalıdır`;
+    }
+    
+    if (validation.minLength !== undefined && value.length < validation.minLength) {
+      return `Minimum ${validation.minLength} simvol olmalıdır`;
+    }
+    
+    if (validation.maxLength !== undefined && value.length > validation.maxLength) {
+      return `Maksimum ${validation.maxLength} simvol olmalıdır`;
+    }
+    
+    if (validation.pattern && !new RegExp(validation.pattern).test(value)) {
+      return validation.patternMessage || "Dəyər düzgün formatda deyil";
+    }
+    
+    return null;
+  };
+
   const handleChange = (id: string, value: string) => {
     // Dəyəri əvvəlcə string olaraq saxla
     setValues(prev => ({
@@ -34,7 +67,9 @@ const FormFields: React.FC<FormFieldsProps> = ({
     }));
 
     // Xətaları yoxla
-    const error = validateField(fields.find(f => f.id === id), value);
+    const field = fields.find(f => f.id === id);
+    const error = validateField(field, value);
+    
     if (error) {
       setErrors(prev => ({ ...prev, [id]: error }));
     } else {

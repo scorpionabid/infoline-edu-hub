@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserPlus, Upload, Download, Filter, X } from 'lucide-react';
@@ -64,9 +65,9 @@ const UserHeader: React.FC<UserHeaderProps> = ({
     
     if (filter.role) newActiveFilters.push(`${t('role')}: ${t(filter.role)}`);
     if (filter.status) newActiveFilters.push(`${t('status')}: ${t(filter.status)}`);
-    if (filter.region) newActiveFilters.push(`${t('region')}: ${filter.region}`);
-    if (filter.sector) newActiveFilters.push(`${t('sector')}: ${filter.sector}`);
-    if (filter.school) newActiveFilters.push(`${t('school')}: ${filter.school}`);
+    if (filter.regionId) newActiveFilters.push(`${t('region')}: ${filter.regionId}`);
+    if (filter.sectorId) newActiveFilters.push(`${t('sector')}: ${filter.sectorId}`);
+    if (filter.schoolId) newActiveFilters.push(`${t('school')}: ${filter.schoolId}`);
     if (filter.search) newActiveFilters.push(`${t('search')}: ${filter.search}`);
     
     setActiveFilters(newActiveFilters);
@@ -140,7 +141,17 @@ const UserHeader: React.FC<UserHeaderProps> = ({
 
   // Filter funksiyaları
   const handleFilterChange = (key: keyof UserFilter, value: string) => {
-    updateFilter({ ...filter, [key]: filter[key] === value ? undefined : value });
+    if (key === "role") {
+      updateFilter({ ...filter, role: value });
+    } else if (key === "regionId") {
+      updateFilter({ ...filter, regionId: value });
+    } else if (key === "sectorId") {
+      updateFilter({ ...filter, sectorId: value });
+    } else if (key === "schoolId") {
+      updateFilter({ ...filter, schoolId: value });
+    } else if (key === "status") {
+      updateFilter({ ...filter, status: value });
+    }
   };
 
   // Bütün filterləri sıfırla
@@ -157,11 +168,11 @@ const UserHeader: React.FC<UserHeaderProps> = ({
     } else if (filterText.startsWith(`${t('status')}`)) {
       updateFilter({ ...filter, status: undefined });
     } else if (filterText.startsWith(`${t('region')}`)) {
-      updateFilter({ ...filter, region: undefined });
+      updateFilter({ ...filter, regionId: undefined });
     } else if (filterText.startsWith(`${t('sector')}`)) {
-      updateFilter({ ...filter, sector: undefined });
+      updateFilter({ ...filter, sectorId: undefined });
     } else if (filterText.startsWith(`${t('school')}`)) {
-      updateFilter({ ...filter, school: undefined });
+      updateFilter({ ...filter, schoolId: undefined });
     } else if (filterText.startsWith(`${t('search')}`)) {
       updateFilter({ ...filter, search: undefined });
       setSearchQuery('');

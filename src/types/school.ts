@@ -2,39 +2,50 @@
 export interface School {
   id: string;
   name: string;
-  region_id: string;
-  sector_id: string;
-  status: string;
   address?: string;
-  email?: string;
-  phone?: string;
-  principal_name?: string;
-  teacher_count?: number;
+  sector_id: string;
+  region_id: string;
+  status: 'active' | 'inactive';
   student_count?: number;
+  teacher_count?: number;
+  phone?: string;
+  email?: string;
+  director_name?: string;
+  admin_email?: string;
+  contact_phone?: string;
   type?: string;
   language?: string;
-  logo?: string;
-  completion_rate?: number;
   created_at?: string;
   updated_at?: string;
-  admin_id?: string;
-  admin_email?: string;
-  totalForms?: number;
-  formsCompleted?: number;
+  sector_name?: string;
+  region_name?: string;
+  completion_rate?: number;
 }
 
-export interface SectorSchool {
-  id: string;
+export interface SchoolFormData {
   name: string;
-  status: string;
-  completion_rate?: number;
+  address?: string;
+  sector_id: string;
+  region_id?: string;
+  status: 'active' | 'inactive';
+  student_count?: number;
+  teacher_count?: number;
+  phone?: string;
+  email?: string;
+  director_name?: string;
+  admin_email?: string;
+  contact_phone?: string;
+  type?: string;
+  language?: string;
 }
 
 export interface SchoolStat {
   id: string;
   name: string;
-  status: string;
-  completion_rate?: number;
   formsCompleted: number;
-  totalForms: number;
+  totalForms: number; 
+  completionRate: number;
+  completion_rate?: number;
+  status?: string;
+  address?: string;
 }

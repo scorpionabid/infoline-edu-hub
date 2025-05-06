@@ -1,166 +1,208 @@
-
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRegions } from '@/hooks/useRegions';
+import { toast } from 'sonner';
 import { Region } from '@/types/region';
 
-interface AddRegionDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ isOpen, onClose }) => {
-  const [regionName, setRegionName] = useState('');
-  const [regionDescription, setRegionDescription] = useState('');
-  const { createRegion, fetchRegions } = useRegions();
-
+export const CreateRegionDialog = ({ onClose, isOpen }: { onClose: () => void, isOpen: boolean }) => {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState('active');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { addRegion } = useRegions();
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!regionName.trim()) return;
+    if (!name.trim()) {
+      toast.error('Region adı daxil edin');
+      return;
+    }
     
     try {
-      await createRegion({
-        name: regionName,
-        description: regionDescription
+      setIsSubmitting(true);
+      await addRegion({
+        name,
+        description,
+        status: status as 'active' | 'inactive'
       });
       
-      // Yeni regionu əlavə etdikdən sonra siyahını yenilə
-      await fetchRegions();
+      toast.success('Region uğurla yaradıldı');
       
-      // Formu təmizlə və dialoqu bağla
-      setRegionName('');
-      setRegionDescription('');
+      // Reset form fields
+      setName('');
+      setDescription('');
+      setStatus('active');
+      
       onClose();
     } catch (error) {
-      console.error('Region əlavə edilərkən xəta baş verdi:', error);
+      console.error('Error creating region:', error);
+      toast.error('Region yaradılarkən xəta baş verdi');
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
+  
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Region əlavə et</DialogTitle>
-            <DialogDescription>
-              Yeni region əlavə etmək üçün aşağıdakı məlumatları doldurun
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="regionName">Region adı</Label>
-              <Input
-                id="regionName"
-                value={regionName}
-                onChange={(e) => setRegionName(e.target.value)}
-                placeholder="Region adını daxil edin"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="regionDescription">Təsvir</Label>
-              <Textarea
-                id="regionDescription"
-                value={regionDescription}
-                onChange={(e) => setRegionDescription(e.target.value)}
-                placeholder="Region haqqında qısa məlumat"
-              />
-            </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Yeni Region Yarat</DialogTitle>
+          <DialogDescription>
+            Aşağıdakı formu dolduraraq yeni bir region yaradın.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">
+              Ad
+            </Label>
+            <Input
+              type="text"
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="col-span-3"
+            />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>İmtina</Button>
-            <Button type="submit">Əlavə et</Button>
-          </DialogFooter>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="description" className="text-right">
+              Açıqlama
+            </Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="status" className="text-right">
+              Durum
+            </Label>
+            <Select value={status} onValueChange={(value) => setStatus(value)}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Durum seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Aktif</SelectItem>
+                <SelectItem value="inactive">Pasif</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </form>
+        <DialogFooter>
+          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? "Yaratılıyor..." : "Yarat"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
 
-interface EditRegionDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  region: Region | null;
-}
-
-export const EditRegionDialog: React.FC<EditRegionDialogProps> = ({ isOpen, onClose, region }) => {
-  const [regionName, setRegionName] = useState('');
-  const [regionDescription, setRegionDescription] = useState('');
-  const { updateRegion, fetchRegions } = useRegions();
-
-  useEffect(() => {
+export const EditRegionDialog = ({ region, onClose, isOpen }: { region: Region, onClose: () => void, isOpen: boolean }) => {
+  const [name, setName] = useState(region?.name || '');
+  const [description, setDescription] = useState(region?.description || '');
+  const [status, setStatus] = useState(region?.status || 'active');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { addRegion } = useRegions();
+  
+  React.useEffect(() => {
     if (region) {
-      setRegionName(region.name || '');
-      setRegionDescription(region.description || '');
+      setName(region.name || '');
+      setDescription(region.description || '');
+      setStatus(region.status || 'active');
     }
   }, [region]);
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!region || !regionName.trim()) return;
+    if (!name.trim()) {
+      toast.error('Region adı daxil edin');
+      return;
+    }
     
     try {
-      await updateRegion(region.id, {
-        name: regionName,
-        description: regionDescription
+      setIsSubmitting(true);
+      await addRegion({
+        id: region.id,
+        name,
+        description,
+        status: status as 'active' | 'inactive'
       });
       
-      // Redaktə edildikdən sonra siyahını yenilə
-      await fetchRegions();
-      
+      toast.success('Region uğurla yeniləndi');
       onClose();
     } catch (error) {
-      console.error('Region yenilənərkən xəta baş verdi:', error);
+      console.error('Error updating region:', error);
+      toast.error('Region yenilənərkən xəta baş verdi');
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
+  
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Regionu redaktə et</DialogTitle>
-            <DialogDescription>
-              Region məlumatlarını yeniləyin
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="editRegionName">Region adı</Label>
-              <Input
-                id="editRegionName"
-                value={regionName}
-                onChange={(e) => setRegionName(e.target.value)}
-                placeholder="Region adı"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="editRegionDescription">Təsvir</Label>
-              <Textarea
-                id="editRegionDescription"
-                value={regionDescription}
-                onChange={(e) => setRegionDescription(e.target.value)}
-                placeholder="Region haqqında təsvir"
-              />
-            </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Regionu Güncelle</DialogTitle>
+          <DialogDescription>
+            Aşağıdaki formu doldurarak mevcut regionu güncelleyin.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">
+              Ad
+            </Label>
+            <Input
+              type="text"
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="col-span-3"
+            />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>İmtina</Button>
-            <Button type="submit">Yadda saxla</Button>
-          </DialogFooter>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="description" className="text-right">
+              Açıklama
+            </Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="status" className="text-right">
+              Durum
+            </Label>
+            <Select value={status} onValueChange={(value) => setStatus(value)}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Durum seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Aktif</SelectItem>
+                <SelectItem value="inactive">Pasif</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </form>
+        <DialogFooter>
+          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? "Güncelleniyor..." : "Güncelle"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -1,20 +1,21 @@
 
 export interface FormItem {
   id: string;
+  name: string;
   title: string;
+  status: 'pending' | 'approved' | 'rejected' | 'draft';
   categoryName: string;
-  dueDate?: string | Date | null;
-  createdAt: string | Date;
+  dueDate: string;
+  createdAt: string;
   completionRate: number;
-  status?: string;
 }
 
 export interface RecentForm extends FormItem {
-  // RecentForm extends base FormItem
+  categoryId?: string;
 }
 
 export interface FormDeadline extends FormItem {
-  // FormDeadline extends base FormItem
+  daysLeft?: number;
 }
 
 export interface FormCategory {
@@ -22,6 +23,6 @@ export interface FormCategory {
   name: string;
   description?: string;
   status: string;
-  deadline?: string | Date | null;
+  deadline?: string | null;
   completionRate?: number;
 }

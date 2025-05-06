@@ -1,5 +1,5 @@
 
-import { Category } from "@/types/category.d";
+import { Category } from "@/types/category";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ export const CategoryColumns = ({
   onDelete,
   onUpdateStatus,
   isLoading
-}: CategoryColumnsProps): ColumnDef<Category>[] => [
+}: CategoryColumnsProps): ColumnDef<Category, unknown>[] => [
   {
     accessorKey: "name",
     header: "Ad",

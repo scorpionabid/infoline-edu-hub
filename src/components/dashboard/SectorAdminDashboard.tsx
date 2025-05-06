@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import EnhancedApprovalDialog from '../approval/EnhancedApprovalDialog';
-import { SchoolsTable } from './sector-admin/SchoolsTable'; // İmportu düzələk
+import { SchoolsTable } from './sector-admin/SchoolsTable';
 
 interface SectorAdminDashboardData {
   // Add properties of SectorAdminDashboardData type here
@@ -232,10 +232,10 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px]">
-                <SchoolsTable schools={sectorSchools.map(school => ({
+                <SchoolsTable schools={schools.map(school => ({
                   ...school,
-                  formsCompleted: 0, // Standart dəyər
-                  totalForms: 0      // Standart dəyər
+                  formsCompleted: 0,
+                  totalForms: 0
                 }))} />
               </ScrollArea>
             </CardContent>

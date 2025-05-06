@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
@@ -14,6 +13,13 @@ import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useLanguage } from '@/context/LanguageContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useState } from 'react';
+
+interface MenuItem {
+  icon: React.ReactNode;
+  href: string;
+  label: string;
+  badge?: number;
+}
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -80,7 +86,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   } = usePermissions();
 
   // Menü elementlərini hazırlayaq
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     {
       icon: <Home className="h-5 w-5" />,
       label: t('dashboard'),
@@ -130,6 +136,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       icon: <Bell className="h-5 w-5" />,
       label: t('notifications'),
       href: '/notifications',
+      badge: 0,  // Default badge
     },
     {
       icon: <Settings className="h-5 w-5" />,

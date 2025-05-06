@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +14,17 @@ import { cn } from '@/lib/utils';
 interface CategoryCardProps {
   category: Category;
 }
+
+const formatDate = (dateInput: string | Date | null | undefined): string => {
+  if (!dateInput) return 'Təyin edilməyib';
+  
+  try {
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    return date.toLocaleDateString();
+  } catch (e) {
+    return 'Keçərsiz tarix';
+  }
+};
 
 const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
   const navigate = useNavigate();
@@ -77,6 +87,9 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
     navigate(`/categories/${category.id}/edit`);
   };
 
+  // formatDate funksiyasını istifadə edin
+  const deadline = formatDate(category.deadline);
+
   // Default completionRate əlavə edək
   const completionRate = category.completionRate || 0;
 
@@ -102,7 +115,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
           <div className="flex items-center text-sm mb-3 text-muted-foreground">
             <CalendarIcon className="h-4 w-4 mr-1" />
             <span>
-              {t('deadline')}: {format(parseISO(category.deadline), 'PPP')}
+              {t('deadline')}: {deadline}
               {isPastDeadline() && (
                 <Badge variant="destructive" className="ml-2 text-xs">
                   {t('overdue')}

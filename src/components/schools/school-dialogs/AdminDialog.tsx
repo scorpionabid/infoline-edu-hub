@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -57,6 +56,13 @@ const AdminDialog: React.FC<AdminDialogProps> = ({
   const { t } = useLanguage();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>('update');
+  const [email, setEmail] = useState(selectedAdmin?.admin_email || '');
+
+  useEffect(() => {
+    if (selectedAdmin) {
+      setEmail(selectedAdmin.admin_email || '');
+    }
+  }, [selectedAdmin]);
 
   const form = useForm<AdminFormData>({
     resolver: zodResolver(adminFormSchema),

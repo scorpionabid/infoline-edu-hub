@@ -33,6 +33,14 @@ export interface DataEntryTableData {
   rejectionReason?: string;
   columnName?: string;
   columnType?: string;
+  required?: boolean;
+  validation?: {
+    min?: number;
+    max?: number;
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+  };
 }
 
 export interface DataEntryFormData {
@@ -72,4 +80,13 @@ export interface BaseDataEntry {
   approved_at?: string;
   rejected_by?: string;
   rejection_reason?: string;
+}
+
+export interface ColumnValue {
+  columnId: string;
+  value: any;
+  columnType: string;
+  isRequired: boolean;
+  isValid: boolean;
+  errorMessage?: string;
 }
