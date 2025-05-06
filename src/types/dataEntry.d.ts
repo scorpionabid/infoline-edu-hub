@@ -28,14 +28,12 @@ export interface DataEntry {
 }
 
 export interface EntryValue {
-  column_id?: string;
-  columnId?: string; // alternativ ad
+  columnId: string;
+  categoryId?: string;
   value: string;
   name?: string;
   isValid?: boolean;
   error?: string;
-  status?: DataEntryStatus;
-  entryId?: string;
 }
 
 export interface DataEntryForm {

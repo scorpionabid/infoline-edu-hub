@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FormControl } from '@/components/ui/form';
 import { ColumnType, columnTypes } from '@/types/column';
@@ -34,25 +35,25 @@ interface ColumnTypeSelectorProps {
 
 // İkon adlarını React komponentlərinə çevirmək üçün map
 const iconMap = {
-  Text: Text,
-  AlignLeft: AlignLeft,
-  Hash: Hash,
-  Calendar: Calendar,
-  List: List,
-  Check: Check,
-  Circle: Circle,
-  File: File,
-  Image: Image,
-  Mail: Mail,
-  Link: Link,
-  Phone: Phone,
-  Sliders: Sliders,
-  Palette: Palette,
-  Lock: Lock,
-  Clock: Clock,
-  Type: Type,
-  CalendarClock: CalendarClock,
-  FileText: FileText
+  'Text': Text,
+  'AlignLeft': AlignLeft,
+  'Hash': Hash,
+  'Calendar': Calendar,
+  'List': List,
+  'Check': Check,
+  'Circle': Circle,
+  'File': File,
+  'Image': Image,
+  'Mail': Mail,
+  'Link': Link,
+  'Phone': Phone,
+  'Sliders': Sliders,
+  'Palette': Palette,
+  'Lock': Lock,
+  'Clock': Clock,
+  'Type': Type,
+  'CalendarClock': CalendarClock,
+  'FileText': FileText
 };
 
 const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange, disabled = false }) => {

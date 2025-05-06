@@ -1,63 +1,88 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns } from '@/types/category';
-import { useAuth } from '@/context/auth';
+import { CategoryWithColumns } from '@/types/column';
+import { usePermissions } from '@/hooks/auth/usePermissions';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
 
-export const useCategoryData = () => {
+export const useCategoryData = (schoolId?: string) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const { user } = useAuth();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const { t } = useLanguage();
+  const { isSchoolAdmin, isSectorAdmin, isRegionAdmin, isSuperAdmin } = usePermissions();
 
-  const refreshCategories = useCallback(async () => {
-    if (!user) return;
-    
+  const fetchCategories = useCallback(async () => {
     setLoading(true);
-    setError('');
-    
+    setError(null);
+
     try {
-      // Fetch categories
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('*');
-      
-      if (categoriesError) throw categoriesError;
-      
-      // For each category, fetch its columns
-      const categoriesWithColumns = await Promise.all(
-        categoriesData.map(async (category) => {
-          const { data: columnsData, error: columnsError } = await supabase
-            .from('columns')
-            .select('*')
-            .eq('category_id', category.id);
-          
-          if (columnsError) {
-            console.error(`Error fetching columns for category ${category.id}:`, columnsError);
-            return { ...category, columns: [] };
-          }
-          
-          return { ...category, columns: columnsData || [] } as CategoryWithColumns;
-        })
-      );
-      
+      // Kategoriyaların seçilməsi
+      let query = supabase.from('categories')
+        .select('*')
+        .eq('status', 'active')
+        .eq('archived', false);
+
+      // İstifadəçi roluna görə filtrləmə
+      if (isSchoolAdmin) {
+        // Məktəb adminləri üçün yalnız "all" təyinatlı kateqoriyaları göstər
+        query = query.eq('assignment', 'all');
+      } else if (isSectorAdmin) {
+        // Sektor və Region adminləri üçün həm "all" həm də "sectors" təyinatlı kateqoriyaları göstər
+        query = query.in('assignment', ['all', 'sectors']);
+      }
+
+      const { data: categoryData, error: categoryError } = await query;
+
+      if (categoryError) throw categoryError;
+
+      if (!categoryData) {
+        setCategories([]);
+        setLoading(false);
+        return;
+      }
+
+      // Sütunları əldə et
+      const { data: columnData, error: columnError } = await supabase
+        .from('columns')
+        .select('*')
+        .in('category_id', categoryData.map(cat => cat.id))
+        .eq('status', 'active')
+        .order('order_index', { ascending: true });
+
+      if (columnError) throw columnError;
+
+      // Kateqoriyalara sütunları əlavə et
+      const categoriesWithColumns = categoryData.map(category => {
+        const categoryColumns = columnData
+          .filter(column => column.category_id === category.id)
+          .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+
+        return {
+          ...category,
+          columns: categoryColumns
+        };
+      });
+
       setCategories(categoriesWithColumns);
     } catch (err: any) {
-      console.error('Error fetching categories:', err);
-      setError(err.message || 'Kateqoriyalar yüklənərkən xəta baş verdi');
+      console.error('Kateqoriyaları yükləyərkən xəta:', err);
+      setError(err.message);
+      toast.error(t('errorFetchingData'));
     } finally {
       setLoading(false);
     }
-  }, [user]);
-  
+  }, [isSchoolAdmin, isSectorAdmin, isRegionAdmin, isSuperAdmin, t]);
+
   useEffect(() => {
-    refreshCategories();
-  }, [refreshCategories]);
-  
+    fetchCategories();
+  }, [fetchCategories]);
+
   return {
     categories,
     loading,
     error,
-    refreshCategories
+    refreshCategories: fetchCategories
   };
 };

@@ -1,3 +1,4 @@
+
 export interface Column {
   id: string;
   category_id: string;
@@ -21,7 +22,7 @@ export type ColumnType = 'text' | 'number' | 'date' | 'time' | 'phone' | 'color'
 export interface ColumnTypeDefinition {
   label: string;
   description: string;
-  icon: React.ReactNode;
+  icon: string;
   hasOptions?: boolean;
   hasValidation?: boolean;
 }

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
-import CategoryForm from './CategoryForm';
 import { EntryValue, DataEntrySaveStatus } from '@/types/dataEntry';
 import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
 import { useSchool } from '@/hooks/dataEntry/useSchool';
@@ -14,112 +13,285 @@ import { CategoryConfirmationDialog } from './CategoryConfirmationDialog';
 import { validateEntries } from './utils/formUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2, Info } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { CategoryWithColumns, Column } from '@/types/column';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
-const DataEntryFormComponent: React.FC<{ categoryId?: string }> = ({ categoryId }) => {
+interface DataEntryFormProps {
+  categoryId?: string;
+}
+
+// Sütun komponenti
+const ColumnField = ({ column, value, onChange, disabled = false }) => {
+  const renderField = () => {
+    switch (column.type) {
+      case 'text':
+        return (
+          <input
+            type="text"
+            id={column.id}
+            value={value || ''}
+            onChange={(e) => onChange(column.id, e.target.value)}
+            placeholder={column.placeholder || ''}
+            disabled={disabled}
+            className="w-full p-2 border rounded-md"
+            required={column.is_required}
+          />
+        );
+        
+      case 'textarea':
+        return (
+          <textarea
+            id={column.id}
+            value={value || ''}
+            onChange={(e) => onChange(column.id, e.target.value)}
+            placeholder={column.placeholder || ''}
+            disabled={disabled}
+            className="w-full p-2 border rounded-md min-h-[100px]"
+            required={column.is_required}
+          />
+        );
+        
+      case 'number':
+        return (
+          <input
+            type="number"
+            id={column.id}
+            value={value || ''}
+            onChange={(e) => onChange(column.id, e.target.value)}
+            placeholder={column.placeholder || ''}
+            disabled={disabled}
+            className="w-full p-2 border rounded-md"
+            required={column.is_required}
+          />
+        );
+        
+      case 'select':
+        return (
+          <select
+            id={column.id}
+            value={value || ''}
+            onChange={(e) => onChange(column.id, e.target.value)}
+            disabled={disabled}
+            className="w-full p-2 border rounded-md"
+            required={column.is_required}
+          >
+            <option value="">{column.placeholder || 'Seçin'}</option>
+            {column.options && column.options.map((option, index) => (
+              <option key={option.value || index} value={option.value || option}>
+                {option.label || option}
+              </option>
+            ))}
+          </select>
+        );
+        
+      case 'date':
+        return (
+          <input
+            type="date"
+            id={column.id}
+            value={value || ''}
+            onChange={(e) => onChange(column.id, e.target.value)}
+            disabled={disabled}
+            className="w-full p-2 border rounded-md"
+            required={column.is_required}
+          />
+        );
+        
+      case 'checkbox':
+        return (
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id={column.id}
+              checked={value === 'true'}
+              onChange={(e) => onChange(column.id, e.target.checked ? 'true' : 'false')}
+              disabled={disabled}
+              className="mr-2"
+            />
+            <label htmlFor={column.id}>{column.placeholder || column.name}</label>
+          </div>
+        );
+        
+      default:
+        return (
+          <input
+            type="text"
+            id={column.id}
+            value={value || ''}
+            onChange={(e) => onChange(column.id, e.target.value)}
+            placeholder={column.placeholder || ''}
+            disabled={disabled}
+            className="w-full p-2 border rounded-md"
+            required={column.is_required}
+          />
+        );
+    }
+  };
+  
+  return (
+    <div className="space-y-2">
+      <label htmlFor={column.id} className="text-sm font-medium">
+        {column.name}
+        {column.is_required && <span className="text-red-500 ml-1">*</span>}
+      </label>
+      {renderField()}
+      {column.help_text && (
+        <p className="text-xs text-gray-500">{column.help_text}</p>
+      )}
+    </div>
+  );
+};
+
+const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const params = useParams();
+  
+  // URL-dən kateqoriya ID-sini əldə edirik (əgər varsa)
+  const categoryIdFromUrl = params.categoryId || categoryId;
 
-  const [formValues, setFormValues] = useState<EntryValue[]>([]);
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
-  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
-  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(categoryId || '');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [entryData, setEntryData] = useState<any[]>([]);
 
   const {
     categories,
     loading: isLoading,
-    error: categoriesError,
-    refreshCategories
+    error: categoriesError
   } = useCategoryData();
   
   const { school, isLoading: isLoadingSchool, error: schoolError } = useSchool();
 
-  const category = React.useMemo(() => {
+  // Seçilmiş kateqoriya
+  const selectedCategory = React.useMemo(() => {
     if (!selectedCategoryId || !categories) return null;
     return categories.find(cat => cat.id === selectedCategoryId) || null;
   }, [selectedCategoryId, categories]);
 
+  // Kateqoriyalar yükləndikdə və URL-də ID varsa onu təyin edirik
   useEffect(() => {
-    // Əgər kateqoriya ID verilməyibsə və kateqoriyalar yüklənibsə, ilk kateqoriyanı seç
-    if (!selectedCategoryId && categories.length > 0) {
-      setSelectedCategoryId(categories[0].id);
-    }
-  }, [categories, selectedCategoryId]);
-
-  useEffect(() => {
-    if (category && school) {
-      fetchInitialValues(school.id, category.id);
-    }
-  }, [category, school]);
-
-  const fetchInitialValues = useCallback(
-    async (schoolId: string, categoryId: string) => {
-      if (!schoolId || !categoryId) return;
-
-      try {
-        // Burada serverdən məlumatları əldə etmək üçün funksiya çağırılmalıdır
-        // Hələlik nümunə olaraq boş dəyərlər istifadə edək
-        const initialValues = category?.columns?.map(column => ({
-          columnId: column.id,
-          categoryId: category.id,
-          value: '',
-          name: column.name,
-          isValid: true
-        })) || [];
-        
-        setFormValues(initialValues);
-      } catch (error: any) {
-        toast.error(t('error'), {
-          description: t('errorFetchingDataEntries')
-        });
+    if (categories.length > 0) {
+      if (categoryIdFromUrl) {
+        const found = categories.find(cat => cat.id === categoryIdFromUrl);
+        if (found) {
+          setSelectedCategoryId(found.id);
+        } else {
+          // Əgər URL-də olan ID tapılmadısa, ilk kateqoriyanı seç
+          setSelectedCategoryId(categories[0].id);
+        }
+      } else if (!selectedCategoryId) {
+        // Əgər hələ kateqoriya seçilməyibsə, ilk kateqoriyanı seç
+        setSelectedCategoryId(categories[0].id);
       }
-    },
-    [t, category]
-  );
+    }
+  }, [categories, categoryIdFromUrl, selectedCategoryId]);
+
+  // Mövcud məlumatları yükləyirik
+  useEffect(() => {
+    const fetchEntryData = async () => {
+      if (!selectedCategoryId || !school?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('data_entries')
+          .select('*')
+          .eq('school_id', school.id)
+          .eq('category_id', selectedCategoryId);
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          // Məlumatları formValues formatına çeviririk
+          const newFormValues = {};
+          data.forEach(entry => {
+            newFormValues[entry.column_id] = entry.value;
+          });
+          setFormValues(newFormValues);
+          setEntryData(data);
+        } else {
+          // Əgər məlumat yoxdursa, formu sıfırlayırıq
+          setFormValues({});
+          setEntryData([]);
+        }
+        
+        setIsDirty(false);
+      } catch (error) {
+        console.error('Məlumatları yükləyərkən xəta:', error);
+        toast.error(t('errorFetchingData'));
+      }
+    };
+    
+    fetchEntryData();
+  }, [selectedCategoryId, school, t]);
 
   const handleValueChange = (columnId: string, value: string) => {
     setIsDirty(true);
-    setFormValues(prevValues => {
-      const updatedValues = prevValues.map(val =>
-        val.columnId === columnId ? { ...val, value } : val
-      );
-      return updatedValues;
-    });
+    setFormValues(prevValues => ({
+      ...prevValues,
+      [columnId]: value
+    }));
   };
 
-  const handleSubmit = async () => {
-    if (!category || !school || !user) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedCategory || !school || !user) {
+      toast.error(t('missingRequiredInfo'));
+      return;
+    }
 
-    // Validate all entries before submitting
-    const validatedEntries = validateEntries(formValues, category.columns);
-    setFormValues(validatedEntries);
-
-    // Check if there are any validation errors
-    const hasErrors = validatedEntries.some(entry => !entry.isValid);
-    if (hasErrors) {
-      toast.error(t('error'), {
-        description: t('fixValidationErrors')
+    // Məcburi sahələri yoxlayırıq
+    const requiredColumns = selectedCategory.columns.filter(col => col.is_required);
+    const missingFields = requiredColumns.filter(col => !formValues[col.id]);
+    
+    if (missingFields.length > 0) {
+      toast.error(t('fillRequiredFields'), {
+        description: missingFields.map(col => col.name).join(', ')
       });
       return;
     }
 
     setSaveStatus(DataEntrySaveStatus.SAVING);
     try {
-      // Burada serverdə saxlama əməliyyatı simulyasiya edirik
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Əvvəlcə köhnə məlumatları silirik (əgər varsa)
+      if (entryData.length > 0) {
+        await supabase
+          .from('data_entries')
+          .delete()
+          .eq('school_id', school.id)
+          .eq('category_id', selectedCategory.id);
+      }
       
-      toast.success(t('success'), {
-        description: t('dataSavedSuccessfully')
-      });
-      setSaveStatus(DataEntrySaveStatus.SAVED);
+      // Yeni məlumatları əlavə edirik
+      const entries = selectedCategory.columns.map(column => ({
+        school_id: school.id,
+        category_id: selectedCategory.id,
+        column_id: column.id,
+        value: formValues[column.id] || '',
+        status: 'draft',
+        created_by: user.id
+      }));
+      
+      const { error } = await supabase
+        .from('data_entries')
+        .insert(entries);
+        
+      if (error) throw error;
+      
+      toast.success(t('dataSavedSuccessfully'));
       setIsDirty(false);
+      setSaveStatus(DataEntrySaveStatus.SAVED);
     } catch (err: any) {
-      toast.error(t('error'), {
-        description: err.message || t('unknownError')
+      toast.error(t('errorSavingData'), {
+        description: err.message
       });
       setSaveStatus(DataEntrySaveStatus.ERROR);
     } finally {
@@ -128,23 +300,27 @@ const DataEntryFormComponent: React.FC<{ categoryId?: string }> = ({ categoryId 
   };
 
   const handleSubmitForApproval = async () => {
-    await handleSubmit();
+    await handleSubmit(new Event('submit') as any);
     setIsSubmitDialogOpen(false);
     
-    // Təsdiq üçün göndərmə simulyasiyası
+    if (!selectedCategory || !school) return;
+    
     setSaveStatus(DataEntrySaveStatus.SUBMITTING);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase
+        .from('data_entries')
+        .update({ status: 'pending' })
+        .eq('school_id', school.id)
+        .eq('category_id', selectedCategory.id);
+        
+      if (error) throw error;
       
-      toast.success(t('success'), {
-        description: t('dataSubmittedForApproval')
-      });
+      toast.success(t('dataSubmittedForApproval'));
       setSaveStatus(DataEntrySaveStatus.SUBMITTED);
-      setIsDirty(false);
       navigate('/dashboard');
     } catch (err: any) {
-      toast.error(t('error'), {
-        description: err.message || t('unknownError')
+      toast.error(t('errorSubmittingData'), {
+        description: err.message
       });
     } finally {
       setSaveStatus(DataEntrySaveStatus.IDLE);
@@ -152,144 +328,156 @@ const DataEntryFormComponent: React.FC<{ categoryId?: string }> = ({ categoryId 
   };
 
   const handleCategoryChange = (newCategoryId: string) => {
-    // Əgər form dəyişilmiş haldadırsa, onda xəbərdarlıq ver
     if (isDirty) {
       const confirmed = window.confirm(t('confirmChangingCategory'));
-      if (!confirmed) {
-        return;
-      }
+      if (!confirmed) return;
     }
     
     setSelectedCategoryId(newCategoryId);
+    
+    // URL-i yeniləyirik
+    navigate(`/data-entry/${newCategoryId}`, { replace: true });
   };
 
   if (isLoading || isLoadingSchool) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
   if (categoriesError || schoolError) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-red-500">
+      <Alert variant="destructive" className="mb-4">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
           {t('errorLoadingData')}
-        </p>
-      </div>
+        </AlertDescription>
+      </Alert>
     );
   }
 
-  if (!category && categories.length > 0) {
+  if (categories.length === 0) {
     return (
-      <div className="container mx-auto py-8">
-        <Card className="w-full max-w-4xl mx-auto shadow-md">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl font-bold">
-              {t('dataEntryForm')}
-            </CardTitle>
-            <CardDescription>
-              {t('selectCategoryToFill')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {categories.map(cat => (
-                <Card 
-                  key={cat.id} 
-                  className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => handleCategoryChange(cat.id)}
-                >
-                  <CardHeader className="p-4">
-                    <CardTitle className="text-lg">{cat.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-sm text-muted-foreground">{cat.description}</p>
-                  </CardContent>
-                  <CardFooter className="p-4 pt-0">
-                    <Button variant="ghost" className="w-full">
-                      {t('selectCategory')}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Alert className="mb-4">
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          {t('noCategories')}
+        </AlertDescription>
+      </Alert>
     );
   }
 
   return (
-    <div className="container mx-auto py-8">
-      {categories.length > 0 && (
-        <div className="mb-6">
-          <Select value={selectedCategoryId} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-full md:w-[400px]">
-              <SelectValue placeholder={t('selectCategory')} />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map(cat => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {category && (
-        <Card className="w-full max-w-4xl mx-auto shadow-md">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl font-bold">
-              {t('dataEntryForm')}
-            </CardTitle>
-            <CardDescription>
-              {category.name} {school && `- ${school.name}`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4">
-            {/* Burada CategoryForm əvəzinə məlumat giriş formasını göstəririk */}
-            <div className="space-y-4">
-              {category.columns?.map(column => (
-                <div key={column.id} className="form-group">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{column.name}</label>
-                  <input 
-                    type="text"
-                    className="w-full p-2 border rounded"
-                    placeholder={column.placeholder || ''}
-                    onChange={(e) => handleValueChange(column.id, e.target.value)}
-                  />
+    <div className="container mx-auto py-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Kateqoriyalar paneli */}
+        <div className="md:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">{t('categories')}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[calc(100vh-15rem)]">
+                <div className="space-y-1 p-2">
+                  {categories.map(category => (
+                    <Button
+                      key={category.id}
+                      variant={selectedCategoryId === category.id ? "default" : "ghost"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        selectedCategoryId === category.id ? "font-medium" : ""
+                      )}
+                      onClick={() => handleCategoryChange(category.id)}
+                    >
+                      {category.name}
+                    </Button>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between items-center p-4 border-t">
-            <Button
-              variant="secondary"
-              onClick={() => navigate('/forms')}
-            >
-              {t('cancel')}
-            </Button>
-            <div className="flex space-x-2">
-              <Button
-                onClick={handleSubmit}
-                disabled={!isDirty || saveStatus === DataEntrySaveStatus.SAVING}
-              >
-                {saveStatus === DataEntrySaveStatus.SAVING ? t('saving') + '...' : t('save')}
-              </Button>
-              <Button
-                onClick={() => setIsSubmitDialogOpen(true)}
-                disabled={!isDirty || saveStatus === DataEntrySaveStatus.SAVING}
-              >
-                {t('submit')}
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
-      )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Form paneli */}
+        <div className="md:col-span-3">
+          {selectedCategory ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{selectedCategory.name}</CardTitle>
+                <CardDescription>
+                  {selectedCategory.description || t('fillOutForm')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {selectedCategory.columns.map(column => (
+                    <ColumnField
+                      key={column.id}
+                      column={column}
+                      value={formValues[column.id] || ''}
+                      onChange={handleValueChange}
+                      disabled={saveStatus === DataEntrySaveStatus.SAVING || saveStatus === DataEntrySaveStatus.SUBMITTING}
+                    />
+                  ))}
+                </form>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(t('confirmReset'))) {
+                      setFormValues({});
+                      setIsDirty(true);
+                    }
+                  }}
+                  disabled={saveStatus === DataEntrySaveStatus.SAVING || saveStatus === DataEntrySaveStatus.SUBMITTING}
+                >
+                  {t('reset')}
+                </Button>
+                <div className="space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleSubmit}
+                    disabled={!isDirty || saveStatus === DataEntrySaveStatus.SAVING || saveStatus === DataEntrySaveStatus.SUBMITTING}
+                  >
+                    {saveStatus === DataEntrySaveStatus.SAVING ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t('saving')}
+                      </>
+                    ) : (
+                      t('saveDraft')
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setIsSubmitDialogOpen(true)}
+                    disabled={saveStatus === DataEntrySaveStatus.SAVING || saveStatus === DataEntrySaveStatus.SUBMITTING}
+                  >
+                    {saveStatus === DataEntrySaveStatus.SUBMITTING ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t('submitting')}
+                      </>
+                    ) : (
+                      t('submit')
+                    )}
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="flex items-center justify-center h-64">
+                <p>{t('selectCategoryToFill')}</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
 
       <CategoryConfirmationDialog
         open={isSubmitDialogOpen}
@@ -298,26 +486,6 @@ const DataEntryFormComponent: React.FC<{ categoryId?: string }> = ({ categoryId 
         title={t('submitConfirmationTitle')}
         description={t('submitConfirmationDescription')}
         confirmText={t('submit')}
-        cancelText={t('cancel')}
-      />
-
-      <CategoryConfirmationDialog
-        open={isApproveDialogOpen}
-        onClose={() => setIsApproveDialogOpen(false)}
-        onConfirm={() => {}} // İmplementasiya ediləcək
-        title={t('approveConfirmationTitle')}
-        description={t('approveConfirmationDescription')}
-        confirmText={t('approve')}
-        cancelText={t('cancel')}
-      />
-
-      <CategoryConfirmationDialog
-        open={isRejectDialogOpen}
-        onClose={() => setIsRejectDialogOpen(false)}
-        onConfirm={() => {}} // İmplementasiya ediləcək
-        title={t('rejectConfirmationTitle')}
-        description={t('rejectConfirmationDescription')}
-        confirmText={t('reject')}
         cancelText={t('cancel')}
       />
     </div>

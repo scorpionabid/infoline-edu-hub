@@ -1,98 +1,117 @@
 
+import { EntryValue } from '@/types/dataEntry';
 import { Column } from '@/types/column';
 
-interface ValueEntry {
-  columnId: string;
-  value: any;
-  categoryId?: string;
-  name?: string;
-}
-
-interface ValidatedEntry extends ValueEntry {
-  isValid: boolean;
-  errorMessage?: string;
-}
-
-export const validateEntries = (entries: ValueEntry[], columns: Column[]): ValidatedEntry[] => {
+/**
+ * Form məlumatlarını təsdiqləyir
+ * @param entries Məlumat girişləri
+ * @param columns Sütun məlumatları
+ * @returns Təsdiqlənmiş məlumat girişləri
+ */
+export const validateEntries = (entries: EntryValue[], columns: Column[]): EntryValue[] => {
   return entries.map(entry => {
     const column = columns.find(col => col.id === entry.columnId);
-    if (!column) {
-      return {
-        ...entry,
-        isValid: false,
-        errorMessage: 'Sütun tapılmadı'
-      };
-    }
-
+    if (!column) return { ...entry, isValid: true };
+    
+    let isValid = true;
+    let errorMessage = '';
+    
     // Məcburi sahə yoxlaması
-    if (column.is_required && isEmpty(entry.value)) {
-      return {
-        ...entry,
-        isValid: false,
-        errorMessage: 'Bu sahə məcburidir'
-      };
+    if (column.is_required && (!entry.value || entry.value.trim() === '')) {
+      isValid = false;
+      errorMessage = 'Bu sahə məcburidir';
     }
-
-    // Tip yoxlaması
-    if (!isEmpty(entry.value)) {
-      if (column.type === 'number') {
-        const numValue = Number(entry.value);
-        if (isNaN(numValue)) {
-          return {
-            ...entry,
-            isValid: false,
-            errorMessage: 'Ədəd daxil edin'
-          };
-        }
-
-        // Min/max yoxlaması
-        const validation = typeof column.validation === 'string' 
-          ? JSON.parse(column.validation) 
-          : column.validation;
-        
-        if (validation) {
-          if (validation.minValue !== undefined && numValue < validation.minValue) {
-            return {
-              ...entry,
-              isValid: false,
-              errorMessage: `Minimum dəyər: ${validation.minValue}`
-            };
+    
+    // Tip və validasiya qaydalarını yoxla
+    if (isValid && column.validation && entry.value) {
+      switch (column.type) {
+        case 'number':
+          if (column.validation.min && parseFloat(entry.value) < column.validation.min) {
+            isValid = false;
+            errorMessage = `Dəyər minimum ${column.validation.min} olmalıdır`;
           }
+          if (column.validation.max && parseFloat(entry.value) > column.validation.max) {
+            isValid = false;
+            errorMessage = `Dəyər maksimum ${column.validation.max} olmalıdır`;
+          }
+          break;
           
-          if (validation.maxValue !== undefined && numValue > validation.maxValue) {
-            return {
-              ...entry,
-              isValid: false,
-              errorMessage: `Maksimum dəyər: ${validation.maxValue}`
-            };
+        case 'text':
+        case 'textarea':
+          if (column.validation.minLength && entry.value.length < column.validation.minLength) {
+            isValid = false;
+            errorMessage = `Mətn minimum ${column.validation.minLength} simvol olmalıdır`;
           }
-        }
+          if (column.validation.maxLength && entry.value.length > column.validation.maxLength) {
+            isValid = false;
+            errorMessage = `Mətn maksimum ${column.validation.maxLength} simvol olmalıdır`;
+          }
+          if (column.validation.pattern) {
+            try {
+              const regex = new RegExp(column.validation.pattern);
+              if (!regex.test(entry.value)) {
+                isValid = false;
+                errorMessage = 'Mətn düzgün formatda deyil';
+              }
+            } catch (e) {
+              // Regex xətası olduqda ignorə edirik
+            }
+          }
+          break;
+          
+        case 'email':
+          if (column.validation.email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(entry.value)) {
+              isValid = false;
+              errorMessage = 'Düzgün e-poçt ünvanı daxil edin';
+            }
+          }
+          break;
+          
+        case 'url':
+          if (column.validation.url) {
+            try {
+              new URL(entry.value);
+            } catch (e) {
+              isValid = false;
+              errorMessage = 'Düzgün URL daxil edin';
+            }
+          }
+          break;
+          
+        case 'phone':
+          if (column.validation.tel && column.validation.pattern) {
+            try {
+              const regex = new RegExp(column.validation.pattern);
+              if (!regex.test(entry.value)) {
+                isValid = false;
+                errorMessage = 'Düzgün telefon nömrəsi daxil edin';
+              }
+            } catch (e) {
+              // Regex xətası olduqda ignorə edirik
+            }
+          }
+          break;
+          
+        case 'date':
+        case 'datetime':
+          if (column.validation.minDate && new Date(entry.value) < new Date(column.validation.minDate)) {
+            isValid = false;
+            errorMessage = `Tarix ${new Date(column.validation.minDate).toLocaleDateString()} və ya sonra olmalıdır`;
+          }
+          if (column.validation.maxDate && new Date(entry.value) > new Date(column.validation.maxDate)) {
+            isValid = false;
+            errorMessage = `Tarix ${new Date(column.validation.maxDate).toLocaleDateString()} və ya əvvəl olmalıdır`;
+          }
+          break;
       }
-      
-      if (column.type === 'email') {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(String(entry.value))) {
-          return {
-            ...entry,
-            isValid: false,
-            errorMessage: 'Düzgün email formatında daxil edin'
-          };
-        }
-      }
-      
-      // Digər tiplərin yoxlanması da əlavə edilə bilər
     }
-
+    
     return {
       ...entry,
-      isValid: true
+      isValid,
+      error: isValid ? undefined : errorMessage
     };
   });
-};
-
-export const isEmpty = (value: any): boolean => {
-  if (value === undefined || value === null) return true;
-  if (typeof value === 'string') return value.trim() === '';
-  if (Array.isArray(value)) return value.length === 0;
-  return false;
 };

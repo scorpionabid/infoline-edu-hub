@@ -20,23 +20,21 @@ interface CategoryConfirmationDialogProps {
   cancelText: string;
 }
 
-export function CategoryConfirmationDialog({
+export const CategoryConfirmationDialog: React.FC<CategoryConfirmationDialogProps> = ({
   open,
   onClose,
   onConfirm,
   title,
   description,
   confirmText,
-  cancelText,
-}: CategoryConfirmationDialogProps) {
+  cancelText
+}) => {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            {description}
-          </DialogDescription>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
@@ -49,4 +47,4 @@ export function CategoryConfirmationDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};
