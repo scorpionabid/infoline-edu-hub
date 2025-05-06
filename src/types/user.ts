@@ -61,6 +61,12 @@ export interface FullUserData {
   createdAt?: string; // Uyğunluq üçün
   updatedAt?: string; // Uyğunluq üçün
   role?: UserRole | string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  regionId?: string; // Uyğunluq üçün
+  sectorId?: string; // Uyğunluq üçün
+  schoolId?: string; // Uyğunluq üçün
   twoFactorEnabled?: boolean;
   notificationSettings?: {
     email: boolean;
@@ -70,13 +76,6 @@ export interface FullUserData {
     sms?: boolean;
     system?: boolean;
   };
-  name?: string; // Uyğunluq üçün əlavə edildi
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  regionId?: string; // Uyğunluq üçün
-  sectorId?: string; // Uyğunluq üçün
-  schoolId?: string; // Uyğunluq üçün
   adminEntity?: {
     id: string;
     name: string;
@@ -85,6 +84,7 @@ export interface FullUserData {
     sectorName?: string;
     schoolName?: string;
   };
+  name?: string; // Uyğunluq üçün əlavə edildi
 }
 
 export interface UserFormData {

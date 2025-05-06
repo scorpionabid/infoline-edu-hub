@@ -5,7 +5,7 @@ import { Sector } from '@/types/sector';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
-export const useSectors = () => {
+export const useSectors = (regionId?: string) => {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,10 +16,13 @@ export const useSectors = () => {
       setLoading(true);
       setError('');
 
-      const { data, error } = await supabase
-        .from('sectors')
-        .select('*')
-        .order('name', { ascending: true });
+      let query = supabase.from('sectors').select('*');
+      
+      if (regionId) {
+        query = query.eq('region_id', regionId);
+      }
+      
+      const { data, error } = await query.order('name', { ascending: true });
 
       if (error) throw error;
 
@@ -31,11 +34,11 @@ export const useSectors = () => {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, regionId]);
 
   useEffect(() => {
     fetchSectors();
-  }, [fetchSectors]);
+  }, [fetchSectors, regionId]);
 
   const refresh = async () => {
     await fetchSectors();

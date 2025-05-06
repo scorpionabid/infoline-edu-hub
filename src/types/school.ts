@@ -18,6 +18,7 @@ export interface School {
   completion_rate?: number;
   admin_id?: string;
   admin_email?: string;
+  adminEmail?: string; // Əlavə et - uyğunluq üçün
   created_at?: string;
   updated_at?: string;
 }

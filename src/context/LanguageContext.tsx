@@ -2,13 +2,17 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import i18n from '@/i18n';
 import { useTranslation } from 'react-i18next';
+import { Language, LanguageInfo } from '@/types/language';
 
 export interface LanguageContextType {
   changeLanguage: (lng: string) => void;
   t: (key: string, options?: any) => string;
-  language: string; // Kontekstə əlavə edildi
+  language: string;
   currentLanguage: string;
   supportedLanguages: { code: string; name: string }[];
+  setLanguage: (lang: string) => void;
+  languages: Record<string, LanguageInfo>;
+  availableLanguages: string[];
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -21,9 +25,23 @@ export const useLanguage = (): LanguageContextType => {
   return context;
 };
 
+// useLanguageSafe əlavə edildi - xətaları qabaqlamaq üçün
+export const useLanguageSafe = (): LanguageContextType => {
+  return useLanguage();
+};
+
 interface LanguageProviderProps {
   children: ReactNode;
 }
+
+const languagesInfo: Record<string, LanguageInfo> = {
+  az: { nativeName: 'Azərbaycan dili', flag: '🇦🇿' },
+  en: { nativeName: 'English', flag: '🇬🇧' },
+  ru: { nativeName: 'Русский', flag: '🇷🇺' },
+  tr: { nativeName: 'Türkçe', flag: '🇹🇷' }
+};
+
+const availableLanguageCodes = ['az', 'en', 'ru', 'tr'];
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const { t, i18n } = useTranslation();
@@ -55,14 +73,22 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     setCurrentLanguage(lng);
   };
 
+  // setLanguage alias əlavə edirik ki, komponentlər uyğunlaşdırılsın
+  const setLanguage = (lng: string) => {
+    changeLanguage(lng);
+  };
+
   return (
     <LanguageContext.Provider 
       value={{ 
         changeLanguage, 
         t, 
         currentLanguage,
-        language: currentLanguage, // language olaraq da təqdim edirik
-        supportedLanguages 
+        language: currentLanguage,
+        supportedLanguages,
+        setLanguage,
+        languages: languagesInfo,
+        availableLanguages: availableLanguageCodes
       }}
     >
       {children}

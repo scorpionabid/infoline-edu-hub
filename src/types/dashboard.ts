@@ -40,6 +40,26 @@ export interface FormDeadline {
   daysLeft: number;
 }
 
+// PendingApprovalItem interfaceni əlavə edirik - əksik tip
+export interface PendingApprovalItem {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  categoryId: string;
+  categoryName: string;
+  submittedAt: string;
+  status: string;
+}
+
+// FormItem interfaceni əlavə edirik - əksik tip
+export interface FormItem {
+  id: string;
+  name: string;
+  status: 'pending' | 'approved' | 'rejected' | 'draft';
+  submittedAt?: string;
+  deadline?: string;
+}
+
 // SuperAdmin Dashboard
 export interface SuperAdminDashboardData {
   stats: DashboardStats;
@@ -67,6 +87,9 @@ export interface SchoolStat {
   totalForms: number;
   completionRate: number;
 }
+
+// SchoolStats tip alias kimi SchoolStat istifadə edək
+export type SchoolStats = SchoolStat;
 
 export interface RegionAdminDashboardData {
   stats: DashboardStats;
