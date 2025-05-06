@@ -1,20 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useTranslation, initReactI18next } from 'react-i18next';
-import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 import { Language, LanguageInfo } from '@/types/language';
-
-// i18n inisializasiyası - əgər əvvəl inisializasiya olunmayıbsa
-if (!i18n.isInitialized) {
-  i18n.use(initReactI18next).init({
-    resources: {}, // translations fayldan yüklənəcək
-    lng: 'az',
-    fallbackLng: 'az',
-    interpolation: {
-      escapeValue: false,
-    },
-  });
-}
 
 export interface LanguageContextType {
   changeLanguage: (lng: string) => void;

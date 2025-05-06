@@ -9,7 +9,6 @@ import {
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { Toaster } from 'sonner';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
-import { useLanguage } from '@/context/LanguageContext';
 import Login from '@/pages/Login';
 import DashboardPage from '@/pages/Dashboard';
 import ProfilePage from '@/pages/Profile';
