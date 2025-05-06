@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { Category, CategoryStatus } from '@/types/category';
+import { Category } from '@/types/category';
 import { Grid } from '@/components/ui/grid';
 import CategoryCard from './CategoryCard';
 import { Filter, Plus, Search } from 'lucide-react';
@@ -12,11 +12,11 @@ import { Input } from '@/components/ui/input';
 import { Container } from '@/components/ui/container';
 
 interface FormsPageProps {
-  categories: Category[];
-  onAddCategory: () => void;
+  categories?: Category[];
+  onAddCategory?: () => void;
 }
 
-const FormsPage: React.FC<FormsPageProps> = ({ categories, onAddCategory }) => {
+export const FormsPage: React.FC<FormsPageProps> = ({ categories = [], onAddCategory }) => {
   const { t } = useLanguage();
   const { canManageCategories } = usePermissions();
   const [activeTab, setActiveTab] = useState<string>('active');

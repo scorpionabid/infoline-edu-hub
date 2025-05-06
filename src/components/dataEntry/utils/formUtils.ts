@@ -32,36 +32,6 @@ export const formatEntries = (entries: DataEntry[], columns: any[]): ColumnValue
   });
 };
 
-// Məlumat tipinə görə dəyəri uyğun formata çevirmək
-const parseValue = (value: string, type: string): string | number | boolean | null => {
-  if (value === null || value === undefined) return null;
-  
-  switch (type) {
-    case 'number':
-      return Number(value);
-    case 'boolean':
-      return value === 'true' || value === '1';
-    default:
-      return value;
-  }
-};
-
-// Sütun tipinə görə default dəyər qaytarmaq
-const getDefaultValue = (column: any): string | number | boolean | null => {
-  if (column.default_value !== null && column.default_value !== undefined) {
-    return parseValue(column.default_value, column.type);
-  }
-  
-  switch (column.type) {
-    case 'number':
-      return 0;
-    case 'boolean':
-      return false;
-    default:
-      return '';
-  }
-};
-
 // Bir sahəni validasiya etmək üçün
 export const validateField = (value: any, columnType: string, required: boolean, validation?: any): { isValid: boolean; errorMessage?: string } => {
   if (required && (value === null || value === undefined || value === '')) {
@@ -115,5 +85,35 @@ export const formatValue = (value: any, columnType: string): string => {
       return value === true ? 'Bəli' : 'Xeyr';
     default:
       return String(value);
+  }
+};
+
+// Məlumat tipinə görə dəyəri uyğun formata çevirmək
+const parseValue = (value: string, type: string): string | number | boolean | null => {
+  if (value === null || value === undefined) return null;
+  
+  switch (type) {
+    case 'number':
+      return Number(value);
+    case 'boolean':
+      return value === 'true' || value === '1';
+    default:
+      return value;
+  }
+};
+
+// Sütun tipinə görə default dəyər qaytarmaq
+const getDefaultValue = (column: any): string | number | boolean | null => {
+  if (column.default_value !== null && column.default_value !== undefined) {
+    return parseValue(column.default_value, column.type);
+  }
+  
+  switch (column.type) {
+    case 'number':
+      return 0;
+    case 'boolean':
+      return false;
+    default:
+      return '';
   }
 };

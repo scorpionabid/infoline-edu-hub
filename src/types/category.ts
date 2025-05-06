@@ -1,18 +1,17 @@
 
-export type CategoryAssignment = 'all' | 'sectors' | 'schools';
+export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'approved' | 'draft';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  assignment: CategoryAssignment;
-  status?: 'active' | 'inactive' | 'archived';
+  assignment?: string;
+  status: CategoryStatus;
   priority?: number;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
+  archived?: boolean;
   column_count?: number;
-}
-
-export interface CategoryWithColumns extends Category {
-  columns?: any[];
+  deadline?: string;
+  completionRate?: number;
 }
