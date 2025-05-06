@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/auth';
+import { useAuthSafe } from '@/context/auth'; // useAuthSafe istifadə edirik
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 
 const Header: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuthSafe(); // useAuthSafe istifadə edirik
   const { theme, setTheme } = useTheme();
   const { currentLanguage, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
@@ -30,46 +29,42 @@ const Header: React.FC = () => {
     async function fetchEntityName() {
       if (!user) return;
       
-      try {
-        // İstifadəçi rolu əsasında müvafiq sorğunu edirik
-        if (user.role === 'schooladmin' && user.school_id) {
-          const { data, error } = await supabase
-            .from('schools')
-            .select('name')
-            .eq('id', user.school_id)
-            .single();
-            
-          if (data && !error) {
-            setEntityName(data.name);
-          }
-        } 
-        else if (user.role === 'sectoradmin' && user.sector_id) {
-          const { data, error } = await supabase
-            .from('sectors')
-            .select('name')
-            .eq('id', user.sector_id)
-            .single();
-            
-          if (data && !error) {
-            setEntityName(data.name);
-          }
+      // İstifadəçi rolu əsasında müvafiq sorğunu edirik
+      if (user.role === 'schooladmin' && user.school_id) {
+        const { data, error } = await supabase
+          .from('schools')
+          .select('name')
+          .eq('id', user.school_id)
+          .single();
+          
+        if (data && !error) {
+          setEntityName(data.name);
         }
-        else if (user.role === 'regionadmin' && user.region_id) {
-          const { data, error } = await supabase
-            .from('regions')
-            .select('name')
-            .eq('id', user.region_id)
-            .single();
-            
-          if (data && !error) {
-            setEntityName(data.name);
-          }
+      } 
+      else if (user.role === 'sectoradmin' && user.sector_id) {
+        const { data, error } = await supabase
+          .from('sectors')
+          .select('name')
+          .eq('id', user.sector_id)
+          .single();
+          
+        if (data && !error) {
+          setEntityName(data.name);
         }
-        else if (user.role === 'superadmin') {
-          setEntityName('InfoLine - SuperAdmin');
+      }
+      else if (user.role === 'regionadmin' && user.region_id) {
+        const { data, error } = await supabase
+          .from('regions')
+          .select('name')
+          .eq('id', user.region_id)
+          .single();
+          
+        if (data && !error) {
+          setEntityName(data.name);
         }
-      } catch (error) {
-        console.error('Entity məlumatları əldə edilərkən xəta:', error);
+      }
+      else if (user.role === 'superadmin') {
+        setEntityName('InfoLine - SuperAdmin');
       }
     }
     

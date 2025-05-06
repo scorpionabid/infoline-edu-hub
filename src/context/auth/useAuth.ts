@@ -16,3 +16,32 @@ export const useAuth = (): AuthContextType => {
   
   return context;
 };
+
+/**
+ * Təhlükəsiz useAuth versiyası - AuthProvider olmayan kontekstdə də işləyir
+ * @returns {AuthContextType} Auth kontekst məlumatları və ya default dəyərlər
+ */
+export const useAuthSafe = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  
+  if (context === undefined) {
+    // Default auth konteksti qaytarırıq
+    return {
+      user: null,
+      session: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+      login: async () => false,
+      logout: async () => {},
+      updateUser: async () => false,
+      clearError: () => {},
+      refreshProfile: async () => null,
+      signIn: async () => false,
+      signOut: async () => {},
+      createUser: async () => ({ success: false, data: null, error: 'AuthProvider not found' })
+    };
+  }
+  
+  return context;
+};
