@@ -3,8 +3,10 @@ import { UserRole } from './supabase';
 
 export interface User {
   id: string;
-  email: string;
-  role: string | UserRole;
+  email?: string;
+  name?: string;
+  full_name?: string;
+  role?: UserRole | string;
 }
 
 export interface FullUserData {
@@ -31,6 +33,14 @@ export interface FullUserData {
     sms?: boolean;
     deadlineReminders?: boolean;
   };
+  // Əlavə alias adlar JavaScript konvensiyasına uyğun
+  name?: string; 
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  lastLogin?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UserFormData {
@@ -38,7 +48,7 @@ export interface UserFormData {
   email: string;
   full_name: string;
   phone?: string;
-  role: UserRole;
+  role: UserRole | string;
   region_id?: string;
   sector_id?: string;
   school_id?: string;
@@ -53,4 +63,9 @@ export interface UserFormData {
     sms: boolean;
     deadlineReminders: boolean;
   };
+  // Əlavə alias adlar
+  name?: string; 
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
 }

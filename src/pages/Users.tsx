@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import UserList from '@/components/users/UserList';
 import UserHeader from '@/components/users/UserHeader';
 import { useAuth } from '@/context/auth';
