@@ -1,14 +1,14 @@
 
 import React from 'react';
-import { Grid } from '@/components/ui/grid';
-import StatusCards from '../common/StatusCards';
-import { CompletionRateCard } from '../common/CompletionRateCard';
-import { NotificationsCard } from '../common/NotificationsCard';
-import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormTabs } from './FormTabs';
-import FormStatusSection from './FormStatusSection';
-import { Loader2 } from 'lucide-react';
-import { adaptDashboardNotificationToApp } from '@/types/notification';
+import { StatusCards } from './StatusCards';
+import { CompletionChart } from './CompletionChart';
+import { NotificationList } from './NotificationList';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLanguage } from '@/context/LanguageContext';
+import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
@@ -16,94 +16,128 @@ interface SchoolAdminDashboardProps {
 }
 
 const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoading }) => {
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Yüklənir...</span>
-      </div>
-    );
-  }
-
-  // Verilənlərin mövcudluğunu yoxlayırıq
-  if (!data) {
-    return (
-      <div className="text-center p-6 bg-muted rounded-lg">
-        <p className="text-lg text-muted-foreground">Məlumatlar mövcud deyil</p>
-      </div>
-    );
-  }
-
-  const formStats = data.formStats || {
-    pending: 0,
-    approved: 0,
-    rejected: 0,
-    total: 0,
-    incomplete: 0,
-    draft: 0,
-    dueSoon: 0,
-    overdue: 0
-  };
+  const { t } = useLanguage();
   
-  // Bildirişləri adapterlə çevirək
-  const adaptedNotifications = Array.isArray(data.notifications) 
-    ? data.notifications.map((notification) => adaptDashboardNotificationToApp(notification))
-    : [];
-
-  // Formaları FormItem tipinə uyğunlaşdırırıq
-  const upcomingDeadlines: FormItem[] = (data.upcomingDeadlines || []).map(item => ({
-    id: item.id,
-    title: item.title,
-    status: item.status,
-    categoryName: item.categoryName,
-    dueDate: item.dueDate,
-    createdAt: item.createdAt,
-    completionRate: item.completionRate
+  // Loading durumunu işləyək
+  if (isLoading) {
+    return <LoadingState />;
+  }
+  
+  // Mock data üçün tip dönüşümləri
+  const recentForms: FormItem[] = (data.recentForms || []).map(form => ({
+    id: form.id || 'unknown',
+    name: form.title || 'Unnamed Form',
+    title: form.title || 'Unnamed Form',
+    status: form.status || 'pending',
+    categoryName: form.categoryName || '',
+    dueDate: form.dueDate || '',
+    createdAt: form.createdAt || '',
+    completionRate: form.completionRate || 0
   }));
-
-  const recentForms: FormItem[] = (data.recentForms || []).map(item => ({
-    id: item.id,
-    title: item.title,
-    status: item.status,
-    categoryName: item.categoryName,
-    dueDate: item.dueDate,
-    createdAt: item.createdAt,
-    completionRate: item.completionRate
+  
+  const upcomingDeadlines: FormItem[] = (data.upcomingDeadlines || []).map(deadline => ({
+    id: deadline.id || 'unknown',
+    name: deadline.title || 'Unnamed Form',
+    title: deadline.title || 'Unnamed Form',
+    status: deadline.status || 'pending',
+    categoryName: deadline.categoryName || '',
+    dueDate: deadline.dueDate || '',
+    createdAt: deadline.createdAt || '',
+    completionRate: deadline.completionRate || 0
   }));
-
+  
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Məktəb Dashboard</h2>
-
-      <StatusCards 
-        approvalCount={formStats.approved || 0}
-        rejectionCount={formStats.rejected || 0}
-        pendingCount={formStats.pending || 0}
-        totalCount={formStats.total || 0}
-      />
-
-      <Grid columns={2} className="gap-6">
-        <CompletionRateCard 
-          completionRate={data.completionRate || 0}
-          title="Ümumi Tamamlanma"
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      <div className="col-span-full lg:col-span-2">
+        <FormTabs 
+          recentForms={recentForms}
+          upcomingDeadlines={upcomingDeadlines}
         />
+      </div>
+      
+      <div className="col-span-full lg:col-span-1 space-y-4">
+        {/* Right column */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('formStatus')}</CardTitle>
+            <CardDescription>{t('formStatusDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent className="pb-2">
+            <StatusCards 
+              pending={data.formStats?.pending || 0}
+              approved={data.formStats?.approved || 0}
+              rejected={data.formStats?.rejected || 0}
+              draft={data.formStats?.draft || 0}
+              dueSoon={data.formStats?.dueSoon || 0}
+              overdue={data.formStats?.overdue || 0}
+            />
+          </CardContent>
+        </Card>
         
-        <NotificationsCard 
-          title="Bildirişlər"
-          notifications={adaptedNotifications}
-        />
-      </Grid>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('completionRate')}</CardTitle>
+            <CardDescription>{t('completionRateDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent className="pb-2 pt-0">
+            <CompletionChart 
+              percentage={data.completionRate || 0}
+              total={data.formStats?.total || 0}
+              completed={data.formStats?.approved || 0}
+            />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('notifications')}</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-2">
+            <NotificationList notifications={data.notifications || []} />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
 
-      <FormStatusSection 
-        dueSoonCount={formStats.dueSoon || 0} 
-        overdueCount={formStats.overdue || 0} 
-        totalCount={formStats.total || 0}
-      />
-
-      <FormTabs 
-        upcomingForms={upcomingDeadlines} 
-        recentForms={recentForms}
-      />
+const LoadingState = () => {
+  return (
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {/* Skeleton loading state */}
+      <div className="col-span-full lg:col-span-2">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-60" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="col-span-full lg:col-span-1 space-y-4">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-28 w-full" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-36" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-40 w-full" />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

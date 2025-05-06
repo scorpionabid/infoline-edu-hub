@@ -1,41 +1,44 @@
 
 import React from 'react';
-import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { School } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Eye } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { SchoolStats } from '@/types/dashboard';
+import { SchoolStat } from '@/types/dashboard';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow,
+} from '@/components/ui/table';
 
 interface SchoolsTableProps {
-  schools: SchoolStats[];
-  onViewDetails: (schoolId: string) => void;
+  schools: SchoolStat[];
+  onViewDetailsClick?: (schoolId: string) => void;
 }
 
-const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools, onViewDetails }) => {
+export const SchoolsTable: React.FC<SchoolsTableProps> = ({ 
+  schools = [],
+  onViewDetailsClick,
+}) => {
   const { t } = useLanguage();
-  
-  if (!schools || schools.length === 0) {
-    return (
-      <div className="text-center py-6 text-muted-foreground">
-        <p>{t('noSchoolsFound')}</p>
-      </div>
-    );
-  }
-  
-  // Helper funksiya: Tamamlanma statusunu hesablayır
-  const getCompletionStatus = (completionRate: number | undefined) => {
-    if (!completionRate && completionRate !== 0) return { text: t('noData'), bgClass: 'bg-gray-50 text-gray-700 border-gray-200' };
-    
-    if (completionRate === 100) {
-      return { text: t('completed'), bgClass: 'bg-green-50 text-green-700 border-green-200' };
-    } else if (completionRate > 0) {
-      return { text: t('inProgress'), bgClass: 'bg-amber-50 text-amber-700 border-amber-200' };
+  const navigate = useNavigate();
+
+  const handleViewClick = (schoolId: string) => {
+    if (onViewDetailsClick) {
+      onViewDetailsClick(schoolId);
     } else {
-      return { text: t('notStarted'), bgClass: 'bg-gray-50 text-gray-700 border-gray-200' };
+      navigate(`/schools/${schoolId}`);
     }
+  };
+
+  const getCompletionColorClass = (percentage: number) => {
+    if (percentage >= 80) return "text-green-600";
+    if (percentage >= 50) return "text-amber-600";
+    return "text-red-600";
   };
 
   return (
@@ -43,60 +46,48 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools, onViewDetails }) =
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[300px]">{t('school')}</TableHead>
-            <TableHead className="hidden md:table-cell">{t('completionStatus')}</TableHead>
-            <TableHead>{t('completionRate')}</TableHead>
-            <TableHead>{t('actions')}</TableHead>
+            <TableHead>{t('schoolName')}</TableHead>
+            <TableHead className="text-right">{t('completionRate')}</TableHead>
+            <TableHead className="text-center">{t('formSubmissions')}</TableHead>
+            <TableHead className="text-right">{t('actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {schools.map((school) => {
-            const completionStatus = getCompletionStatus(school.completionRate);
-            const formDisplay = 
-              (school.formsCompleted !== undefined && school.formsTotal !== undefined) 
-              ? `${school.formsCompleted} / ${school.formsTotal}`
-              : '-';
-            
-            return (
+          {schools.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                {t('noSchoolsFound')}
+              </TableCell>
+            </TableRow>
+          ) : (
+            schools.map((school) => (
               <TableRow key={school.id}>
-                <TableCell className="font-medium">{school.name || 'Unknown School'}</TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <Badge 
-                    variant="outline" 
-                    className={cn(completionStatus.bgClass)}
-                  >
-                    {completionStatus.text}
+                <TableCell className="font-medium">{school.name}</TableCell>
+                <TableCell className="text-right">
+                  <span className={getCompletionColorClass(school.completionRate || 0)}>
+                    {school.completionRate || 0}%
+                  </span>
+                </TableCell>
+                <TableCell className="text-center">
+                  <Badge variant="secondary" className="font-normal">
+                    {school.formsCompleted || 0}/{school.formsTotal || 0}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    <Progress 
-                      value={school.completionRate || 0} 
-                      className="h-2 w-24" 
-                    />
-                    <span className="text-sm tabular-nums">
-                      {school.completionRate !== undefined ? `${school.completionRate}%` : '-'}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>
+                <TableCell className="text-right">
                   <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => onViewDetails(school.id || '')}
-                    className="h-7 px-2"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleViewClick(school.id)}
                   >
-                    <School className="h-3 w-3 mr-1" />
-                    <span className="text-xs">{t('details')}</span>
+                    <Eye className="h-4 w-4 mr-1" />
+                    {t('view')}
                   </Button>
                 </TableCell>
               </TableRow>
-            );
-          })}
+            ))
+          )}
         </TableBody>
       </Table>
     </div>
   );
 };
-
-export default SchoolsTable;

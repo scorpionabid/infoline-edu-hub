@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -40,7 +41,6 @@ const UserProfile = () => {
         </DropdownMenuContent>
       </DropdownMenu>
       
-      {/* currentRole əvəzinə userRole istifadə edirik */}
       <p className="text-xs text-muted-foreground">
         {t('role')}: {currentRole ? t(currentRole.toLowerCase()) : t('user')}
       </p>

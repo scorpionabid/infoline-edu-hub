@@ -1,6 +1,7 @@
 
 export interface FormItem {
   id: string;
+  name?: string;
   title: string;
   status: string;
   categoryName?: string;

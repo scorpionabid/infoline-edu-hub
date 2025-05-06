@@ -23,10 +23,19 @@ export interface CategoryWithColumns extends Category {
 
 export interface FormItem {
   id: string;
+  name?: string;
   title: string;
   status: string;
   categoryName?: string;
   dueDate?: string;
   createdAt?: string;
   completionRate?: number;
+}
+
+export interface FormDeadline extends FormItem {
+  // FormDeadline artıq FormItem'in xüsusiyyətlərinə sahib olacaq
+}
+
+export interface RecentForm extends FormItem {
+  // Eyni şəkildə, RecentForm da FormItem'dən genişlənir
 }

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +18,7 @@ interface ApprovalProps {
   isLoading?: boolean;
 }
 
-const Approval: React.FC<ApprovalProps> = ({
+export const Approval: React.FC<ApprovalProps> = ({
   status,
   onApprove,
   onReject,
