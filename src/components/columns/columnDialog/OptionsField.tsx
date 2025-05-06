@@ -1,31 +1,26 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Control } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Move, Edit } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Control, Controller } from 'react-hook-form';
+import { FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { PlusCircle, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { ColumnOption } from '@/types/column';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useLanguage } from '@/context/LanguageContext';
 
 interface OptionsFieldProps {
   control: Control<any>;
   options: ColumnOption[];
-  newOption: { label: string; value: string; color: string; };
-  setNewOption: React.Dispatch<React.SetStateAction<{ label: string; value: string; color: string; }>>;
+  newOption: ColumnOption;
+  setNewOption: React.Dispatch<React.SetStateAction<ColumnOption>>;
   addOption: () => void;
   removeOption: (index: number) => void;
   updateOption: (oldOption: ColumnOption, newOption: ColumnOption) => boolean;
 }
 
-const OptionsField: React.FC<OptionsFieldProps> = ({
+export default function OptionsField({
   control,
   options,
   newOption,
@@ -33,140 +28,147 @@ const OptionsField: React.FC<OptionsFieldProps> = ({
   addOption,
   removeOption,
   updateOption
-}) => {
+}: OptionsFieldProps) {
   const { t } = useLanguage();
-
-  const handleNewOptionChange = (name: string, value: string) => {
-    setNewOption(prev => ({ 
-      ...prev, 
-      [name]: value,
-      value: name === 'label' ? value.toLowerCase().replace(/\s+/g, '_') : prev.value 
-    }));
+  const [editingOptionIndex, setEditingOptionIndex] = useState<number | null>(null);
+  const [editOption, setEditOption] = useState<ColumnOption>({ value: '', label: '' });
+  
+  // Bir option-u düzənləmə rejimini aktivləşdirir
+  const startEditing = (option: ColumnOption, index: number) => {
+    setEditingOptionIndex(index);
+    setEditOption({ ...option });
   };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && newOption.label.trim()) {
-      e.preventDefault();
-      addOption();
+  
+  // Düzənləməni tamamlayır
+  const finishEditing = () => {
+    if (editingOptionIndex !== null) {
+      // Əgər həm value, həm də label dəyərlidirsə, option-u yeniləyirik
+      if (editOption.value && editOption.label) {
+        updateOption(options[editingOptionIndex], editOption);
+      }
+      setEditingOptionIndex(null);
+      setEditOption({ value: '', label: '' });
     }
   };
-
+  
+  // Enter düyməsi basıldıqda düzənləməni tamamla
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (editingOptionIndex !== null) {
+        finishEditing();
+      } else {
+        addOption();
+      }
+    }
+  };
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("options")}</CardTitle>
-        <CardDescription>{t("optionsDescription")}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="grid grid-cols-12 gap-2">
-            <div className="col-span-5">
-              <Label htmlFor="newOptionLabel">{t("label")}</Label>
-              <Input
-                id="newOptionLabel"
-                value={newOption.label}
-                onChange={(e) => handleNewOptionChange('label', e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={t("optionLabelPlaceholder")}
-              />
-            </div>
-            <div className="col-span-5">
-              <Label htmlFor="newOptionValue">{t("value")}</Label>
-              <Input
-                id="newOptionValue"
-                value={newOption.value}
-                onChange={(e) => handleNewOptionChange('value', e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={t("optionValuePlaceholder")}
-              />
-            </div>
-            <div className="col-span-1">
-              <Label htmlFor="newOptionColor">{t("color")}</Label>
-              <Input
-                id="newOptionColor"
-                type="color"
-                value={newOption.color}
-                onChange={(e) => handleNewOptionChange('color', e.target.value)}
-                className="h-10 p-1"
-              />
-            </div>
-            <div className="col-span-1 flex items-end">
-              <Button
-                type="button"
-                size="icon"
-                onClick={addOption}
-                disabled={!newOption.label.trim()}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {options.length > 0 && (
-            <div className="border rounded-md p-2">
-              <div className="grid grid-cols-12 gap-2 py-2 px-2 font-medium text-sm">
-                <div className="col-span-5">{t("label")}</div>
-                <div className="col-span-5">{t("value")}</div>
-                <div className="col-span-1">{t("color")}</div>
-                <div className="col-span-1"></div>
-              </div>
-              <div className="space-y-1">
-                {options.map((option, index) => (
-                  <div key={option.id || index} className="grid grid-cols-12 gap-2 items-center py-2 px-2 rounded-md hover:bg-accent">
-                    <div className="col-span-5">
-                      <Input 
-                        value={option.label} 
-                        onChange={(e) => {
-                          const newOpt = { ...option, label: e.target.value };
-                          updateOption(option, newOpt);
-                        }}
-                      />
-                    </div>
-                    <div className="col-span-5">
-                      <Input 
-                        value={option.value} 
-                        onChange={(e) => {
-                          const newOpt = { ...option, value: e.target.value };
-                          updateOption(option, newOpt);
-                        }}
-                      />
-                    </div>
-                    <div className="col-span-1">
-                      <Input 
-                        type="color" 
-                        value={option.color || '#000000'} 
-                        className="h-10 p-1"
-                        onChange={(e) => {
-                          const newOpt = { ...option, color: e.target.value };
-                          updateOption(option, newOpt);
-                        }}
-                      />
-                    </div>
-                    <div className="col-span-1 flex justify-end">
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4">
+        <fieldset className="border rounded-md p-4 space-y-4">
+          <legend className="px-2 text-sm font-medium">{t("options")}</legend>
+          
+          {/* Mövcud seçimlərin siyahısı */}
+          {options.length > 0 ? (
+            <div className="space-y-2">
+              {options.map((option, index) => (
+                <div key={option.id || index} className="flex items-center gap-2">
+                  {editingOptionIndex === index ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-2 flex-1">
+                        <Input
+                          value={editOption.value}
+                          onChange={(e) => setEditOption(prev => ({ ...prev, value: e.target.value }))}
+                          placeholder={t("value")}
+                          autoFocus
+                          onKeyDown={handleKeyDown}
+                          onBlur={finishEditing}
+                        />
+                        <Input
+                          value={editOption.label}
+                          onChange={(e) => setEditOption(prev => ({ ...prev, label: e.target.value }))}
+                          placeholder={t("label")}
+                          onKeyDown={handleKeyDown}
+                          onBlur={finishEditing}
+                        />
+                      </div>
+                      <Button type="button" size="sm" variant="ghost" onClick={finishEditing}>
+                        {t("save")}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Badge 
+                        variant="outline" 
+                        className="flex-1 justify-between overflow-hidden cursor-pointer hover:bg-secondary"
+                        onClick={() => startEditing(option, index)}
+                        style={{ backgroundColor: option.color }}
+                      >
+                        <span className="truncate">{option.label || option.value}</span>
+                        {option.value !== option.label && (
+                          <span className="text-xs text-muted-foreground ml-2 truncate">
+                            ({option.value})
+                          </span>
+                        )}
+                      </Badge>
+                      <Button 
+                        type="button" 
+                        size="sm" 
+                        variant="ghost" 
                         onClick={() => removeOption(index)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    </>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
-
-          {options.length === 0 && (
-            <div className="text-center p-4 border border-dashed rounded-md text-muted-foreground">
+          ) : (
+            <div className="text-center p-4 text-sm text-muted-foreground bg-muted rounded-md">
               {t("noOptionsAdded")}
             </div>
           )}
-        </div>
-      </CardContent>
-    </Card>
+          
+          {/* Yeni seçim əlavə etmək üçün forma */}
+          <div className="grid grid-cols-2 gap-2 items-end">
+            <div>
+              <Label htmlFor="option-value">{t("value")}</Label>
+              <Input
+                id="option-value"
+                value={newOption.value}
+                onChange={(e) => setNewOption(prev => ({ ...prev, value: e.target.value }))}
+                placeholder={t("enterValue")}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+            <div>
+              <Label htmlFor="option-label">{t("label")}</Label>
+              <Input
+                id="option-label"
+                value={newOption.label}
+                onChange={(e) => setNewOption(prev => ({ ...prev, label: e.target.value }))}
+                placeholder={t("enterLabel")}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+          </div>
+          
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addOption}
+            disabled={!newOption.value || !newOption.label}
+            className="w-full"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            {t("addOption")}
+          </Button>
+        </fieldset>
+      </div>
+    </div>
   );
-};
-
-export default OptionsField;
+}

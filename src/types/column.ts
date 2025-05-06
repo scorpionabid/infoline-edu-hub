@@ -5,16 +5,18 @@ export interface Column {
   name: string;
   type: ColumnType;
   is_required: boolean;
-  placeholder?: string; // Placeholder əlavə edildi
-  help_text?: string; // Help text əlavə edildi
-  order_index?: number; // Order index əlavə edildi
+  placeholder?: string;
+  help_text?: string;
+  order_index?: number;
   status: 'active' | 'inactive' | 'draft';
   validation?: ValidationRules;
-  default_value?: string; // Default value əlavə edildi
+  default_value?: string;
   options?: ColumnOption[];
   created_at: string;
   updated_at: string;
-  section?: string; // Section əlavə edildi
+  section?: string;
+  parent_column_id?: string;
+  version?: number;
 }
 
 export type ColumnType = 'text' | 'number' | 'date' | 'time' | 'phone' | 'color' | 'checkbox' | 'radio' | 'select' | 'textarea' | 'image' | 'file' | 'password' | 'range' | 'datetime' | 'richtext' | 'email' | 'url';
@@ -147,6 +149,8 @@ export interface CategoryWithColumns {
 export interface ColumnOption {
   value: string;
   label: string;
+  id?: string;
+  color?: string;
 }
 
 export interface ValidationRules {

@@ -6,7 +6,7 @@ import { usePermissions } from '@/hooks/auth/usePermissions';
 import { SuperAdminDashboard } from './SuperAdminDashboard';
 import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
 import { SectorAdminDashboard } from './sector-admin/SectorAdminDashboard';
-import { SchoolAdminDashboard } from './SchoolAdminDashboard';
+import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
 import {
   SuperAdminDashboardData,
   RegionAdminDashboardData,
@@ -38,6 +38,9 @@ const DashboardContent = () => {
   
   const regionAdminData: RegionAdminDashboardData = {
     stats: {
+      sectors: 0,
+      schools: 0,
+      users: 0,
       totalSchools: 0,
       totalSectors: 0,
       totalForms: 0,
@@ -66,12 +69,12 @@ const DashboardContent = () => {
       rejected: 0,
       draft: 0,
       total: 0,
-      incomplete: 0, // əlave edildi
-      dueSoon: 0, // əlavə edildi
-      overdue: 0 // əlavə edildi
+      incomplete: 0,
+      dueSoon: 0,
+      overdue: 0
     },
     recentForms: [],
-    upcomingDeadlines: [], // əlavə edildi
+    upcomingDeadlines: [],
     completionRate: 0,
     notifications: []
   };

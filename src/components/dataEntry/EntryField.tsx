@@ -18,7 +18,7 @@ export interface EntryFieldProps {
   value: any;
   onChange: (value: any) => void;
   error?: string;
-  readOnly?: boolean; // readOnly prop əlavə edildi
+  readOnly?: boolean;
 }
 
 const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error, readOnly = false }) => {
@@ -54,7 +54,7 @@ const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error,
     const commonProps = {
       id: column.id,
       disabled: readOnly,
-      'aria-invalid': error ? 'true' : 'false',
+      'aria-invalid': error ? true : false,
       className: cn(error && "border-red-500 focus:ring-red-300")
     };
     
@@ -144,6 +144,7 @@ const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error,
                   error && "border-red-500 focus:ring-red-300",
                 )}
                 disabled={readOnly}
+                type="button"
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {value ? format(new Date(value), 'PP') : <span className="text-muted-foreground">{column.placeholder || 'Tarix seçin'}</span>}

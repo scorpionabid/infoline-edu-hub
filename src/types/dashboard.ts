@@ -8,10 +8,14 @@ import { DashboardNotification } from './notification';
 
 // Dashboard statistikaları
 export interface DashboardStats {
-  regions: number;
-  sectors: number;
-  schools: number;
-  users: number;
+  regions?: number;
+  sectors?: number;
+  schools?: number;
+  users?: number;
+  totalRegions?: number;
+  totalSectors?: number;
+  totalSchools?: number;
+  totalUsers?: number;
 }
 
 export interface RegionStats {
@@ -24,6 +28,7 @@ export interface SectorStats {
   total: number;
   active: number;
   inactive: number;
+  length?: number;
 }
 
 export interface SchoolStats {
@@ -31,6 +36,12 @@ export interface SchoolStats {
   active: number;
   incomplete: number;
   complete: number;
+  id?: string;
+  name?: string;
+  address?: string;
+  completionRate?: number;
+  formsCompleted?: number;
+  formsTotal?: number;
 }
 
 export interface FormStats {
@@ -38,6 +49,11 @@ export interface FormStats {
   pending: number;
   approved: number;
   rejected: number;
+  draft?: number;
+  submitted?: number;
+  incomplete?: number;
+  dueSoon?: number;
+  overdue?: number;
 }
 
 export interface PendingApprovalItem {
@@ -53,12 +69,19 @@ export interface PendingApprovalItem {
 
 export interface FormItem {
   id: string;
-  name: string;
-  deadline?: string;
+  name?: string;
+  title?: string;
   status: 'pending' | 'approved' | 'rejected' | 'draft';
-  completedFields: number;
-  totalFields: number;
-  lastUpdated: string;
+  deadline?: string;
+  submittedAt?: string;
+  date?: string;
+  completedFields?: number;
+  totalFields?: number;
+  completionRate?: number;
+  categoryName?: string;
+  dueDate?: string;
+  createdAt?: string;
+  lastUpdated?: string;
 }
 
 // SuperAdmin Dashboard data
@@ -82,6 +105,10 @@ export interface SuperAdminDashboardData {
   completionRate: number;
   notifications?: any[];
   pendingApprovals?: PendingApprovalItem[];
+  forms?: FormStats;
+  regions?: RegionStats;
+  sectors?: SectorStats;
+  schools?: SchoolStats;
 }
 
 // Region Admin Dashboard data
@@ -90,29 +117,28 @@ export interface RegionAdminDashboardData {
     sectors: number;
     schools: number;
     users: number;
+    totalSectors?: number;
+    totalSchools?: number;
+    totalForms?: number;
+    totalCategories?: number;
   };
-  sectorStats?: SectorStats;
-  schoolStats?: SchoolStats;
+  sectorStats?: SectorStats[];
+  schoolStats?: SchoolStats[];
   recentActivities?: any[];
   completionRate?: number;
   notifications?: any[];
   pendingApprovals?: PendingApprovalItem[];
+  formStats?: FormStats;
 }
 
 // School Admin Dashboard data
 export interface SchoolAdminDashboardData {
   stats?: {
-    categories: number;
-    forms: number;
-    columns: number;
+    categories?: number;
+    forms?: number;
+    columns?: number;
   };
-  formStats?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    draft: number;
-    total: number;
-  };
+  formStats?: FormStats;
   recentForms?: FormItem[];
   completionRate?: number;
   notifications?: any[];
@@ -122,4 +148,5 @@ export interface SchoolAdminDashboardData {
     status: string;
     completionRate: number;
   }[];
+  upcomingDeadlines?: FormItem[];
 }

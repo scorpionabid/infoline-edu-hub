@@ -1,9 +1,9 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Column, ColumnFormValues } from '@/types/column';
+import { Column, ColumnFormValues, ColumnOption } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 
 // Column form validation schema
@@ -42,9 +42,14 @@ const createColumnFormSchema = (t: (key: string) => string) => {
   });
 };
 
-export const useColumnForm = (column?: Column) => {
+export const useColumnForm = (
+  categories: { id: string; name: string }[],
+  column?: Column | null,
+  onSaveColumn?: (columnData: Omit<Column, "id"> & { id?: string }) => Promise<boolean>
+) => {
   const { t } = useLanguage();
   const schema = createColumnFormSchema(t);
+  const isEditMode = !!column;
   
   // Default values for form initialization
   const defaultValues: ColumnFormValues = {
@@ -80,6 +85,11 @@ export const useColumnForm = (column?: Column) => {
   
   // Get current selected column type
   const watchType = form.watch('type');
+  const selectedType = watchType;
+  
+  // Options state
+  const [options, setOptions] = useState<ColumnOption[]>(column?.options || []);
+  const [newOption, setNewOption] = useState<ColumnOption>({ value: '', label: '' });
   
   // Handle form type changes
   const [showOptions, setShowOptions] = useState(
@@ -94,16 +104,84 @@ export const useColumnForm = (column?: Column) => {
     // Clear options if switching away from type that uses them
     if (type !== 'select' && type !== 'radio') {
       form.setValue('options', []);
+      setOptions([]);
     } else if (!form.getValues('options')?.length) {
       // Add default empty option if switching to a type that uses options
-      form.setValue('options', [{ value: '', label: '' }]);
+      const defaultOption = { value: '', label: '' };
+      form.setValue('options', [defaultOption]);
+      setOptions([defaultOption]);
     }
   };
+  
+  // Option management
+  const addOption = useCallback(() => {
+    if (!newOption.label || !newOption.value) return;
+    
+    const updatedOptions = [...options, { ...newOption }];
+    setOptions(updatedOptions);
+    form.setValue('options', updatedOptions);
+    setNewOption({ value: '', label: '' });
+  }, [newOption, options, form]);
+  
+  const removeOption = useCallback((index: number) => {
+    const updatedOptions = [...options];
+    updatedOptions.splice(index, 1);
+    setOptions(updatedOptions);
+    form.setValue('options', updatedOptions);
+  }, [options, form]);
+  
+  // Form submission
+  const onSubmit = useCallback(async (values: ColumnFormValues) => {
+    if (!onSaveColumn) return false;
+    
+    try {
+      // Prepare column data from form values
+      const columnData = {
+        id: column?.id,
+        name: values.name,
+        type: values.type,
+        is_required: values.is_required,
+        placeholder: values.placeholder,
+        help_text: values.help_text,
+        status: values.status,
+        order_index: values.order_index,
+        default_value: values.default_value,
+        options: options.length > 0 ? options : undefined,
+        validation: {
+          min: values.validation.min ? parseInt(values.validation.min) : undefined,
+          max: values.validation.max ? parseInt(values.validation.max) : undefined,
+          minLength: values.validation.minLength ? parseInt(values.validation.minLength) : undefined,
+          maxLength: values.validation.maxLength ? parseInt(values.validation.maxLength) : undefined,
+          pattern: values.validation.pattern || undefined,
+          email: values.validation.email,
+          url: values.validation.url,
+          tel: values.validation.tel,
+          minDate: values.validation.minDate || undefined,
+          maxDate: values.validation.maxDate || undefined,
+        },
+        category_id: column?.category_id || categories[0]?.id
+      };
+      
+      const success = await onSaveColumn(columnData);
+      return success;
+    } catch (error) {
+      console.error('Column form submission error:', error);
+      return false;
+    }
+  }, [column, options, onSaveColumn, categories]);
   
   return {
     form,
     watchType,
+    selectedType,
     showOptions,
-    handleTypeChange
+    options,
+    newOption,
+    setNewOption,
+    addOption,
+    removeOption,
+    handleTypeChange,
+    onSubmit,
+    isEditMode
   };
 };
