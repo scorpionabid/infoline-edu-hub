@@ -138,7 +138,7 @@ export interface CategoryWithColumns {
   id: string;
   name: string;
   description?: string;
-  assignment: string;
+  assignment: CategoryAssignment; // String əvəzinə CategoryAssignment tipi
   status: string;
   deadline?: string;
   created_at: string;
@@ -191,5 +191,20 @@ export interface ColumnFormValues {
   };
 }
 
-// Tip adaptasiyası - Category və CategoryWithColumns arasındakı uyğunluq
-export type CategoryAssignment = string;
+// Tip adaptasiyası - CategoryAssignment tipi
+export type CategoryAssignment = 'all' | 'sectors' | 'schools' | 'region' | string;
+
+// Category tipi (CategoryWithColumns ilə uyğunluq üçün)
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  assignment: CategoryAssignment;
+  status: string;
+  deadline?: string;
+  created_at: string;
+  updated_at: string;
+  column_count?: number;
+  priority?: number;
+  archived?: boolean;
+}

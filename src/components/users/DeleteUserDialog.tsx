@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   AlertDialog,
@@ -91,13 +92,18 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
     return null;
   }
 
+  // İstifadəçi adını əldə et, müxtəlif xüsusiyyətlərdən
+  const getUserName = () => {
+    return user.name || user.fullName || user.full_name || t('unknownUser');
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('deleteUser')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteUserConfirmation')} <strong>{user?.name || user?.full_name || t('unknownUser')}</strong>?
+            {t('deleteUserConfirmation')} <strong>{getUserName()}</strong>?
             <div className="mt-2 text-destructive font-semibold">{t('deleteUserWarning')}</div>
           </AlertDialogDescription>
         </AlertDialogHeader>

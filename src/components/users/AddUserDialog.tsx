@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import {
@@ -26,21 +25,7 @@ import { useSchools } from '@/hooks/useSchools';
 import { toast } from 'sonner';
 import { UserFormData } from '@/types/user';
 
-// shouldCreateSession xəta düzəltməsi
-
-// Bu əvəzinə:
-// const { error } = await supabase.auth.signUp({
-//   email,
-//   password,
-//   shouldCreateSession: false,
-// });
-
-// Bunu istifadə edək:
-// const { error } = await supabase.auth.signUp({
-//   email,
-//   password,
-//   // shouldCreateSession xüsusiyyəti silindi
-// });
+// Biz öncə tam UserFormData tipi təyin etdik, artıq uyğun atributları istifadə edə bilərik
 
 interface AddUserDialogProps {
   isOpen: boolean;
@@ -63,15 +48,15 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const { sectors, fetchSectorsByRegion } = useSectors();
   const { schools, fetchSchoolsBySector } = useSchools();
   
-  // Form state
+  // Form state - status və language əlavə edildi
   const [userData, setUserData] = useState<UserFormData>({
     email: '',
     password: '',
     full_name: '',
     name: '', // Eyni zamal full_name ilə eyni dəyərdə saxlayırıq
     role: 'schooladmin',
-    status: 'active',
-    language: 'az'
+    language: 'az',
+    status: 'active'
   });
   
   // Seçilmiş regiondan asılı olaraq sektorları yeniləmək
@@ -96,8 +81,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       full_name: '',
       name: '',
       role: 'schooladmin',
-      status: 'active',
-      language: 'az'
+      language: 'az',
+      status: 'active'
     });
   };
   

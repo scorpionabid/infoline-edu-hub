@@ -31,6 +31,13 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
 
   if (!user) return null;
 
+  // UserRole tipinin string olmasını təmin edirik
+  const getUserRole = () => {
+    if (!user.role) return '';
+    if (typeof user.role === 'string') return user.role;
+    return user.role.role; // UserRole obyektidirsə onun role xüsusiyyətini qaytarırıq
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px]">
@@ -63,7 +70,7 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
                 <Badge variant={user.status === 'active' ? 'success' : 'destructive'}>
                   {user.status === 'active' ? t('active') : t('inactive')}
                 </Badge>
-                <Badge>{user.role}</Badge>
+                <Badge>{getUserRole()}</Badge>
               </div>
             </div>
           </div>
@@ -89,19 +96,19 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-1">{t('assignment')}</h4>
                 <div className="space-y-2">
-                  {user.region_id && (
+                  {(user.region_id || user.regionId) && (
                     <div className="flex items-center">
                       <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
                       <span>{user.adminEntity?.regionName || t('regionAssigned')}</span>
                     </div>
                   )}
-                  {user.sector_id && (
+                  {(user.sector_id || user.sectorId) && (
                     <div className="flex items-center">
                       <Building className="h-4 w-4 mr-2 text-muted-foreground" />
                       <span>{user.adminEntity?.sectorName || t('sectorAssigned')}</span>
                     </div>
                   )}
-                  {user.school_id && (
+                  {(user.school_id || user.schoolId) && (
                     <div className="flex items-center">
                       <Building className="h-4 w-4 mr-2 text-muted-foreground" />
                       <span>{user.adminEntity?.name || t('schoolAssigned')}</span>
@@ -117,12 +124,12 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{t('createdAt')}: {new Date(user.createdAt || user.created_at).toLocaleDateString()}</span>
+                    <span>{t('createdAt')}: {new Date(user.created_at || user.createdAt || '').toLocaleDateString()}</span>
                   </div>
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{t('lastLogin')}: {user.lastLogin || user.last_login
-                      ? new Date(user.lastLogin || user.last_login).toLocaleDateString()
+                    <span>{t('lastLogin')}: {user.last_login || user.lastLogin
+                      ? new Date(user.last_login || user.lastLogin).toLocaleDateString()
                       : t('never')}
                     </span>
                   </div>

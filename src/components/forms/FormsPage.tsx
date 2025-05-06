@@ -10,6 +10,7 @@ import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
 import { useLanguage } from '@/context/LanguageContext';
 import EmptyState from '@/components/common/EmptyState';
 import { AlertCircle } from 'lucide-react';
+import { Category } from '@/types/column';
 
 export const FormsPage: React.FC = () => {
   const { t } = useLanguage();
@@ -68,7 +69,7 @@ export const FormsPage: React.FC = () => {
             {categories.map((category) => (
               <CategoryCard
                 key={category.id}
-                category={category}
+                category={category as Category} // Tipi Category olaraq uyğunlaşdırırıq
                 onClick={() => handleFormClick(category.id)}
               />
             ))}

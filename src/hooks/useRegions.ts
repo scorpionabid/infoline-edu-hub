@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Region, RegionFormData } from '@/types/regions';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
@@ -169,6 +169,38 @@ export const useRegions = () => {
     }
   };
 
+  // Region Admin təyin etmə
+  const assignRegionAdmin = async (regionId: string, userId: string) => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // İstifadəçiyə region admin rolu təyin et
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ role: 'regionadmin', region_id: regionId })
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+      
+      // Regionu yenilə
+      const { error: updateError } = await supabase
+        .from('regions')
+        .update({ admin_id: userId })
+        .eq('id', regionId);
+        
+      if (updateError) throw updateError;
+      
+      return { success: true };
+    } catch (err: any) {
+      console.error('Region admin təyin edərkən xəta:', err);
+      setError(err.message || 'Region admin təyin etmək mümkün olmadı');
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     regions,
     loading,
@@ -177,6 +209,8 @@ export const useRegions = () => {
     refresh,
     addRegion,
     updateRegion,
-    deleteRegion
+    deleteRegion,
+    assignRegionAdmin,
+    createRegion: addRegion // Uyğunluq üçün alias əlavə edirik
   };
 };

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -32,12 +33,12 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   React.useEffect(() => {
     if (user) {
       setFormData({
-        fullName: user.fullName || '',
+        fullName: user.full_name || '',
         email: user.email || '',
-        role: user.role || '',
-        regionId: user.regionId || '',
-        sectorId: user.sectorId || '',
-        schoolId: user.schoolId || '',
+        role: typeof user.role === 'string' ? user.role : user.role?.role || '',
+        regionId: user.region_id || user.regionId || '',
+        sectorId: user.sector_id || user.sectorId || '',
+        schoolId: user.school_id || user.schoolId || '',
         status: user.status || 'active',
         phone: user.phone || '',
         position: user.position || '',
