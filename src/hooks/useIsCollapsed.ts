@@ -1,27 +1,18 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export const useIsCollapsed = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   
-  // Mövcud ekran ölçüsünə əsasən ilkin vəziyyəti təyin edir
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsCollapsed(window.innerWidth < 768);
-    };
-    
-    // İlkin yoxlama
-    checkScreenSize();
-    
-    // Ekran ölçüsü dəyişəndə yenidən yoxla
-    window.addEventListener('resize', checkScreenSize);
-    
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
+  const toggleCollapse = () => {
+    setIsCollapsed(prev => !prev);
+  };
   
-  const toggleCollapse = () => setIsCollapsed(!isCollapsed);
-  
-  return { isCollapsed, toggleCollapse };
+  return {
+    isCollapsed,
+    toggleCollapse,
+    setIsCollapsed
+  };
 };
 
 export default useIsCollapsed;

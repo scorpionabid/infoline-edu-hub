@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import Header from './Header';
@@ -10,8 +10,7 @@ const SidebarLayout = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const navigation = useNavigation();
-  const isNavigating = navigation.state === 'loading';
+  const [isLoading, setIsLoading] = useState(false); // Navigation loading əvəzinə sadə state
 
   const toggleSidebar = () => {
     setIsSidebarOpen(prev => !prev);
@@ -51,7 +50,7 @@ const SidebarLayout = () => {
         <main 
           className={cn(
             "flex-1 overflow-y-auto p-4 md:p-6",
-            isNavigating && "opacity-70"
+            isLoading && "opacity-70"
           )}
         >
           <Outlet />

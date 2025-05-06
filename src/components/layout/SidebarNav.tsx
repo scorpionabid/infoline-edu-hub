@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   BarChart, Settings, Users, School, BookOpen, 
@@ -13,7 +13,7 @@ import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useLanguage } from '@/context/LanguageContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useIsCollapsed } from '@/hooks/useIsCollapsed';
+import { useState } from 'react';
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -64,7 +64,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   isSidebarOpen 
 }) => {
   const { t } = useLanguage();
-  const { isCollapsed, toggleCollapse } = useIsCollapsed();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const toggleCollapse = () => setIsCollapsed(!isCollapsed);
   const { 
     isSuperAdmin, 
     isRegionAdmin, 
@@ -75,15 +76,15 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     canManageSectors,
     canManageSchools,
     canManageCategories,
-    canApproveData,
-    canRunReports 
+    canApproveData
   } = usePermissions();
 
+  // Menü elementlərini hazırlayaq
   const menuItems = [
     {
       icon: <Home className="h-5 w-5" />,
       label: t('dashboard'),
-      href: '/',
+      href: '/dashboard',
     },
     ...(canManageRegions ? [{
       icon: <Map className="h-5 w-5" />,
@@ -115,11 +116,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       label: t('approvals'),
       href: '/approvals',
     }] : []),
-    ...(canRunReports ? [{
+    {
       icon: <FileText className="h-5 w-5" />,
       label: t('reports'),
       href: '/reports',
-    }] : []),
+    },
     {
       icon: <BarChart className="h-5 w-5" />,
       label: t('analytics'),

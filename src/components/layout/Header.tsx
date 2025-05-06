@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthSafe } from '@/context/auth'; // useAuthSafe istifadə edirik
+import { useAuth } from '@/context/auth'; 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,15 +11,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, User, LogOut, Settings, Bell } from 'lucide-react';
-import { useThemeSafe } from '@/context/ThemeContext'; // useThemeSafe istifadə edirik
+import { Moon, Sun, User, LogOut, Settings, Bell, Menu } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext'; 
 import { useLanguage } from '@/context/LanguageContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 
-const Header: React.FC = () => {
-  const { user, logout } = useAuthSafe(); // useAuthSafe istifadə edirik
-  const { theme, setTheme } = useThemeSafe(); // useThemeSafe istifadə edirik
+interface HeaderProps {
+  onMenuClick?: () => void;
+  isSidebarOpen?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ onMenuClick, isSidebarOpen }) => {
+  const { user, logout } = useAuth(); 
+  const { theme, setTheme } = useTheme(); 
   const { currentLanguage, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -119,7 +124,14 @@ const Header: React.FC = () => {
   return (
     <header className="border-b bg-background sticky top-0 z-40">
       <div className="container flex items-center justify-between h-16 px-4">
-        <div className="text-xl font-bold">{entityName}</div>
+        <div className="flex items-center gap-3">
+          {onMenuClick && (
+            <Button variant="ghost" onClick={onMenuClick} size="icon" className="md:hidden">
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
+          <div className="text-xl font-bold">{entityName}</div>
+        </div>
         
         <div className="flex items-center gap-4">
           {/* Bildirişlər */}
