@@ -2,12 +2,12 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormTabs } from './FormTabs';
-import { StatusCards } from './StatusCards';
+import { StatusCards } from '../StatusCards';
 import { CompletionChart } from './CompletionChart';
 import { NotificationList } from './NotificationList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/context/LanguageContext';
-import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
+import { SchoolAdminDashboardData, FormItem, DashboardNotification } from '@/types/dashboard';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface SchoolAdminDashboardProps {
@@ -44,6 +44,15 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoa
     dueDate: deadline.dueDate || '',
     createdAt: deadline.createdAt || '',
     completionRate: deadline.completionRate || 0
+  }));
+  
+  const notifications: DashboardNotification[] = (data.notifications || []).map(notif => ({
+    id: notif.id || 'unknown',
+    title: notif.title || '',
+    message: notif.message || '',
+    type: notif.type || 'info',
+    date: notif.date || new Date().toISOString(),
+    isRead: notif.isRead || false
   }));
   
   return (
@@ -93,7 +102,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoa
             <CardTitle>{t('notifications')}</CardTitle>
           </CardHeader>
           <CardContent className="pb-2">
-            <NotificationList notifications={data.notifications || []} />
+            <NotificationList notifications={notifications} />
           </CardContent>
         </Card>
       </div>

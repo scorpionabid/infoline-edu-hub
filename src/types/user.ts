@@ -1,4 +1,6 @@
 
+import { UserRole } from './supabase';
+
 // İlk yaradan Region tipi
 export interface RegionFormData {
   name: string;
@@ -18,7 +20,7 @@ export interface User {
   position?: string;
   phoneNumber?: string;
   avatar?: string;
-  status?: 'active' | 'inactive' | 'blocked';
+  status?: 'active' | 'inactive' | 'blocked' | 'pending';
   region?: {
     id: string;
     name: string;
@@ -49,10 +51,11 @@ export interface FullUserData {
   email: string;
   full_name: string;
   fullName?: string; // Uyğunluq üçün
+  name?: string; // Uyğunluq üçün
   phone?: string;
   position?: string;
   avatar?: string;
-  status: 'active' | 'inactive' | 'blocked';
+  status: 'active' | 'inactive' | 'blocked' | 'pending';
   language: string;
   last_login?: string;
   lastLogin?: string; // Uyğunluq üçün
@@ -75,6 +78,7 @@ export interface FullUserData {
     browser?: boolean;
     sms?: boolean;
     system?: boolean;
+    deadline?: boolean;
   };
   adminEntity?: {
     id: string;
@@ -84,10 +88,10 @@ export interface FullUserData {
     sectorName?: string;
     schoolName?: string;
   };
-  name?: string; // Uyğunluq üçün əlavə edildi
 }
 
 export interface UserFormData {
+  id?: string;
   email: string;
   full_name: string;
   phone?: string;
@@ -96,8 +100,20 @@ export interface UserFormData {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  status: 'active' | 'inactive' | 'blocked' | 'pending';
   password?: string;
-  name?: string; // Uyğunluq üçün əlavə edildi
-  language?: string;
-  status?: 'active' | 'inactive' | 'blocked';
+  language: string;
+  avatar?: string;
+  notificationSettings?: {
+    email: boolean;
+    inApp: boolean;
+    sms: boolean;
+    deadlineReminders: boolean;
+    system?: boolean;
+  };
+  // Əlavə alias adlar
+  name?: string; 
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
 }

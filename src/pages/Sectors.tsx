@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSectorsStore } from '@/hooks/useSectorsStore';
-import { SectorDialog } from '@/components/sectors/SectorDialog';
+import { CreateSectorDialog, EditSectorDialog, DeleteSectorDialog } from '@/components/sectors/SectorDialog';
 import { SectorAdminDialog } from '@/components/sectors/SectorAdminDialog';
 import SectorHeader from '@/components/sectors/SectorHeader';
 import SectorTable from '@/components/sectors/SectorTable';
@@ -9,7 +9,7 @@ import { EnhancedSector } from '@/hooks/useSectorsStore';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet';
 import { Pagination } from '@/components/ui/pagination';
-import { useSectors } from '@/hooks/useSectors'; // Direkt useSectors hook-unu istifadə edək
+import { useSectors } from '@/hooks/sectors/useSectors'; // Direkt useSectors hook-unu istifadə edək
 
 const Sectors = () => {
   const { t } = useLanguage();
@@ -44,6 +44,8 @@ const Sectors = () => {
   }, [directSectors, storeSectors, fetchSectorsStore]);
 
   const [openSectorDialog, setOpenSectorDialog] = useState(false);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openAdminDialog, setOpenAdminDialog] = useState(false);
   const [selectedSector, setSelectedSector] = useState<EnhancedSector | null>(null);
   const [createdSector, setCreatedSector] = useState<any>(null);
@@ -83,7 +85,16 @@ const Sectors = () => {
 
   const handleOpenSectorDialog = useCallback((sector: EnhancedSector | null) => {
     setSelectedSector(sector);
-    setOpenSectorDialog(true);
+    if (sector) {
+      setOpenEditDialog(true);
+    } else {
+      setOpenSectorDialog(true);
+    }
+  }, []);
+
+  const handleOpenDeleteDialog = useCallback((sector: EnhancedSector) => {
+    setSelectedSector(sector);
+    setOpenDeleteDialog(true);
   }, []);
 
   const handleOpenAdminDialog = useCallback((sector: EnhancedSector) => {
@@ -172,7 +183,7 @@ const Sectors = () => {
           sectors={sectors}
           loading={loading}
           onEdit={handleOpenSectorDialog}
-          onDelete={handleDeleteSector}
+          onDelete={handleOpenDeleteDialog}
           onAssignAdmin={handleOpenAdminDialog}
         />
         
@@ -189,19 +200,36 @@ const Sectors = () => {
           </div>
         )}
         
-        <SectorDialog
+        <CreateSectorDialog
           open={openSectorDialog}
-          setOpen={setOpenSectorDialog}
-          selectedSector={selectedSector}
-          onSubmit={handleFormSubmit}
+          onClose={() => setOpenSectorDialog(false)}
         />
+        
+        {selectedSector && (
+          <EditSectorDialog
+            open={openEditDialog}
+            onClose={() => setOpenEditDialog(false)}
+            sector={selectedSector}
+          />
+        )}
+        
+        {selectedSector && (
+          <DeleteSectorDialog
+            open={openDeleteDialog}
+            onClose={() => setOpenDeleteDialog(false)}
+            sector={selectedSector}
+          />
+        )}
         
         <SectorAdminDialog
           open={openAdminDialog}
           setOpen={setOpenAdminDialog}
           sector={selectedSector}
           createdSector={createdSector}
-          onAdminAssigned={handleAdminAssigned}
+          onAdminAssigned={() => {
+            setRefreshTrigger(prev => prev + 1);
+            setCreatedSector(null);
+          }}
         />
       </div>
     </>

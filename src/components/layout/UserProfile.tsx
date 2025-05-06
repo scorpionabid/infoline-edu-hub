@@ -20,6 +20,8 @@ const UserProfile = () => {
 
   // Default avatar görseli
   const defaultAvatar = "https://github.com/shadcn.png";
+  // Fallback için adın baş hərflərini al
+  const initials = user?.full_name ? user.full_name.slice(0, 2).toUpperCase() : 'U';
 
   return (
     <div className="mt-auto">
@@ -28,7 +30,7 @@ const UserProfile = () => {
           <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-secondary cursor-pointer">
             <Avatar>
               <AvatarImage src={user?.avatar || defaultAvatar} alt={user?.full_name || "User Avatar"} />
-              <AvatarFallback>{user?.full_name?.slice(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col items-start">
               <p className="text-sm font-medium">{user?.full_name}</p>
@@ -44,7 +46,7 @@ const UserProfile = () => {
         </DropdownMenuContent>
       </DropdownMenu>
       
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-muted-foreground mt-1">
         {t('role')}: {currentRole ? t(currentRole.toLowerCase()) : t('user')}
       </p>
     </div>

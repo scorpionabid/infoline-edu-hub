@@ -1,214 +1,125 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/context/auth/useAuth';
-import { Shield, Phone, Upload, Check } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from "@/components/ui/label";
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/auth';
+import { toast } from 'sonner';
+import { FullUserData } from '@/types/user';
+import { useForm } from 'react-hook-form';
+import { Label } from '@/components/ui/label';
 
-const ProfileSettings: React.FC = () => {
+const ProfileSettings = () => {
   const { t } = useLanguage();
   const { user, updateUser } = useAuth();
-  const [fullName, setFullName] = useState(user?.full_name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [phone, setPhone] = useState(user?.phone || '');
-  const [position, setPosition] = useState('');
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.twoFactorEnabled || false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
-  // Kullanıcının pozisyon bilgisini yükleyelim
-  useEffect(() => {
-    if (user) {
-      // position özelliğini kullan (mümkünse)
-      setPosition(user.position || '');
-    }
-  }, [user]);
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateUser({ 
-      full_name: fullName, 
-      email,
-      phone,
-      position
-    });
-    toast.success(t('profileUpdated'));
-  };
-  
-  const handleAvatarUpload = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
+  const form = useForm({
+    defaultValues: {
+      full_name: user?.full_name || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      position: user?.position || '',
+    },
+  });
+
+  const onSubmit = async (data: any) => {
+    setIsLoading(true);
+    try {
+      const updateData = {
+        full_name: data.full_name,
+        phone: data.phone,
+        position: data.position,
+      };
       
-      setIsUploading(true);
-      setTimeout(() => {
-        setIsUploading(false);
-        toast.success(t('avatarUpdated'));
-      }, 1500);
-    };
-    input.click();
-  };
-  
-  const handleTwoFactorToggle = () => {
-    setTwoFactorEnabled(!twoFactorEnabled);
-    toast.success(twoFactorEnabled ? t('twoFactorDisabled') : t('twoFactorEnabled'));
-    
-    if (!twoFactorEnabled) {
-      toast.info(t('twoFactorSetupInstructions'), {
-        duration: 5000,
+      await updateUser(updateData);
+      toast.success(t('profileUpdated'));
+    } catch (error: any) {
+      console.error('Profile update error:', error);
+      toast.error(t('profileUpdateError'), {
+        description: error.message,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
-  };
-  
+
+  // Default fallback for avatar
+  const fallbackInitials = user?.full_name
+    ? user.full_name.substring(0, 2).toUpperCase()
+    : 'U';
+
   return (
-    <form onSubmit={handleSubmit}>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('profileInformation')}</CardTitle>
-          <CardDescription>
-            {t('profileInformationDescription')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <Avatar className="w-20 h-20">
-              <AvatarImage src={user?.avatar} alt={user?.full_name || ''} />
-              <AvatarFallback className="text-lg">
-                {getInitials(user?.full_name || '')}
-              </AvatarFallback>
-            </Avatar>
-            <Button 
-              variant="outline" 
-              type="button" 
-              onClick={handleAvatarUpload}
-              disabled={isUploading}
-            >
-              {isUploading ? t('uploading') : t('changeAvatar')}
-              {isUploading ? null : <Upload className="w-4 h-4 ml-2" />}
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold">{t('profileSettings')}</h2>
+      <p className="text-muted-foreground">{t('profileSettingsDescription')}</p>
+      
+      <Card className="p-6">
+        <div className="flex items-start gap-4">
+          <Avatar className="h-20 w-20">
+            <AvatarImage 
+              src={user?.avatar} 
+              alt={user?.full_name || t('user')} 
+            />
+            <AvatarFallback className="text-lg">{fallbackInitials}</AvatarFallback>
+          </Avatar>
+          
+          <div className="flex-1 space-y-1">
+            <h3 className="text-lg font-medium">{user?.full_name}</h3>
+            <p className="text-sm text-muted-foreground">{user?.email}</p>
+            <p className="text-sm text-muted-foreground">
+              {t('role')}: {t(user?.role?.toString().toLowerCase() || 'user')}
+            </p>
+          </div>
+        </div>
+      </Card>
+      
+      <Card className="p-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="full_name">{t('fullName')}</Label>
+            <Input
+              id="full_name"
+              {...form.register('full_name')}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">{t('email')}</Label>
+            <Input
+              id="email"
+              {...form.register('email')}
+              disabled
+            />
+            <p className="text-xs text-muted-foreground">{t('cannotChangeEmail')}</p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="phone">{t('phone')}</Label>
+            <Input
+              id="phone"
+              {...form.register('phone')}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="position">{t('position')}</Label>
+            <Input
+              id="position"
+              {...form.register('position')}
+            />
+          </div>
+          
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? t('saving') : t('save')}
             </Button>
           </div>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fullName" className="text-right">
-                {t('name')}
-              </Label>
-              <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                {t('email')}
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
-                {t('phone')}
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="position" className="text-right">
-                {t('position')}
-              </Label>
-              <Select 
-                value={position} 
-                onValueChange={setPosition}
-              >
-                <SelectTrigger id="position" className="col-span-3">
-                  <SelectValue placeholder={t('selectPosition')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="director">Direktor</SelectItem>
-                  <SelectItem value="viceDirector">Direktor müavini</SelectItem>
-                  <SelectItem value="teacher">Müəllim</SelectItem>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                  <SelectItem value="other">Digər</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="pt-4 border-t">
-            <h3 className="font-medium text-lg mb-4 flex items-center">
-              <Shield className="w-5 h-5 mr-2 text-blue-500" />
-              {t('security')}
-            </h3>
-            
-            <div className="flex items-center justify-between py-3">
-              <div className="space-y-0.5">
-                <h4 className="font-medium">{t('twoFactorAuth')}</h4>
-                <p className="text-sm text-muted-foreground">{t('twoFactorDescription')}</p>
-              </div>
-              <Button 
-                onClick={handleTwoFactorToggle}
-                type="button"
-                variant={twoFactorEnabled ? "default" : "outline"}
-              >
-                {twoFactorEnabled ? (
-                  <>
-                    <Check className="w-4 h-4 mr-2" /> 
-                    {t('enabled')}
-                  </>
-                ) : t('enable')}
-              </Button>
-            </div>
-            
-            <div className="flex items-center justify-between py-3">
-              <div className="space-y-0.5">
-                <h4 className="font-medium">{t('passwordChange')}</h4>
-                <p className="text-sm text-muted-foreground">{t('passwordChangeDescription')}</p>
-              </div>
-              <Button type="button" variant="outline" asChild>
-                <a href="/settings/account">{t('change')}</a>
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-end space-x-2">
-          <Button type="button" variant="outline">
-            {t('cancel')}
-          </Button>
-          <Button type="submit">{t('saveChanges')}</Button>
-        </CardFooter>
+        </form>
       </Card>
-    </form>
+    </div>
   );
 };
 

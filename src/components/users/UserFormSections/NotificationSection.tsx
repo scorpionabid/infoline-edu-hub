@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { FormItem, FormLabel, FormDescription, FormControl, FormField } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
@@ -5,7 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { UseFormReturn } from 'react-hook-form';
 import { UserFormData } from '@/types/user';
 
-const NotificationSection = ({ form }: { form: UseFormReturn<UserFormData> }) => {
+const NotificationSection = ({ form }: { form: UseFormReturn<any> }) => {
   const { t } = useLanguage();
   
   // UserFormData tipini genişlətmək lazımdır, lakin o hal-hazırda
@@ -54,7 +55,7 @@ const NotificationSection = ({ form }: { form: UseFormReturn<UserFormData> }) =>
               </div>
               <FormControl>
                 <Switch
-                  checked={field.value === true}
+                  checked={field.value}
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
@@ -77,7 +78,7 @@ const NotificationSection = ({ form }: { form: UseFormReturn<UserFormData> }) =>
               </div>
               <FormControl>
                 <Switch
-                  checked={field.value === true}
+                  checked={field.value}
                   onCheckedChange={field.onChange}
                 />
               </FormControl>

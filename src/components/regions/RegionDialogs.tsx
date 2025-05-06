@@ -1,31 +1,26 @@
 
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue 
-} from "@/components/ui/select";
-import { toast } from 'sonner';
+import { Radio, RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRegions } from '@/hooks/useRegions';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { toast } from 'sonner';
 import { Region } from '@/types/region';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface CreateRegionDialogProps {
-  open: boolean;
+interface RegionDialogProps {
+  isOpen: boolean;
   onClose: () => void;
+  selectedRegion?: Region | null;
 }
 
-export function CreateRegionDialog({ open, onClose }: CreateRegionDialogProps) {
+export const AddRegionDialog: React.FC<RegionDialogProps> = ({ isOpen, onClose, selectedRegion }) => {
   const { t } = useLanguage();
-  const { createRegion } = useRegions();
+  const { addRegion } = useRegions();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -33,30 +28,37 @@ export function CreateRegionDialog({ open, onClose }: CreateRegionDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
-    if (open) {
+    if (isOpen && selectedRegion) {
+      setName(selectedRegion.name || '');
+      setDescription(selectedRegion.description || '');
+      setStatus((selectedRegion.status as 'active' | 'inactive') || 'active');
+    } else if (isOpen) {
       setName('');
       setDescription('');
       setStatus('active');
     }
-  }, [open]);
+  }, [isOpen, selectedRegion]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
-      await createRegion({
+      await addRegion({
         name,
         description,
         status
       });
       
-      toast.success(t('regionCreatedSuccess', { name }));
+      toast.success(t('regionAdded'), {
+        description: t('regionAddedSuccessfully')
+      });
+      
       onClose();
     } catch (error: any) {
-      console.error('Error creating region:', error);
-      toast.error(t('regionCreationFailed'), {
-        description: error.message
+      console.error('Region əlavə edilərkən xəta:', error);
+      toast.error(t('error'), {
+        description: error.message || t('unknownError')
       });
     } finally {
       setIsSubmitting(false);
@@ -64,46 +66,38 @@ export function CreateRegionDialog({ open, onClose }: CreateRegionDialogProps) {
   };
   
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{t('addNewRegion')}</DialogTitle>
+          <DialogDescription>{t('enterRegionDetails')}</DialogDescription>
+        </DialogHeader>
+        
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>{t('createRegion')}</DialogTitle>
-            <DialogDescription>
-              {t('createRegionDescription')}
-            </DialogDescription>
-          </DialogHeader>
           <div className="grid gap-4 py-4">
-            {/* Region adı */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                {t('name')}
-              </Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+            <div className="grid grid-cols-4 items-center gap-2">
+              <Label htmlFor="name" className="text-right">{t('name')}</Label>
+              <Input 
+                id="name" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
                 className="col-span-3"
-                required
+                required 
               />
             </div>
-            {/* Region açıklaması */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                {t('description')}
-              </Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+            
+            <div className="grid grid-cols-4 items-center gap-2">
+              <Label htmlFor="description" className="text-right">{t('description')}</Label>
+              <Textarea 
+                id="description" 
+                value={description} 
+                onChange={(e) => setDescription(e.target.value)} 
                 className="col-span-3"
               />
             </div>
-            {/* Region durumu */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">
-                {t('status')}
-              </Label>
+            
+            <div className="grid grid-cols-4 items-center gap-2">
+              <Label className="text-right">{t('status')}</Label>
               <RadioGroup 
                 value={status} 
                 onValueChange={(value) => setStatus(value as 'active' | 'inactive')} 
@@ -120,66 +114,59 @@ export function CreateRegionDialog({ open, onClose }: CreateRegionDialogProps) {
               </RadioGroup>
             </div>
           </div>
+          
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              {t('cancel')}
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting || !name}
-            >
-              {isSubmitting ? t('creating') : t('create')}
+            <Button type="button" variant="outline" onClick={onClose}>{t('cancel')}</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? t('adding') : t('add')}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
-}
+};
 
-interface EditRegionDialogProps {
-  open: boolean;
-  onClose: () => void;
-  region: Region;
-}
-
-export function EditRegionDialog({ open, onClose, region }: EditRegionDialogProps) {
+export const EditRegionDialog: React.FC<RegionDialogProps> = ({ isOpen, onClose, selectedRegion }) => {
   const { t } = useLanguage();
   const { updateRegion } = useRegions();
   
-  const [name, setName] = useState(region.name);
-  const [description, setDescription] = useState(region.description || '');
-  const [status, setStatus] = useState<"active" | "inactive">(region.status as "active" | "inactive");
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
-    if (open) {
-      setName(region.name);
-      setDescription(region.description || '');
-      setStatus(region.status as "active" | "inactive");
+    if (isOpen && selectedRegion) {
+      setName(selectedRegion.name || '');
+      setDescription(selectedRegion.description || '');
+      setStatus((selectedRegion.status as 'active' | 'inactive') || 'active');
     }
-  }, [open, region]);
+  }, [isOpen, selectedRegion]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!selectedRegion) return;
+    
     setIsSubmitting(true);
     
     try {
-      await updateRegion(region.id, {
+      await updateRegion(selectedRegion.id, {
         name,
         description,
         status
       });
       
       toast.success(t('regionUpdated'), {
-        description: t('regionUpdatedSuccess', { name })
+        description: t('regionUpdatedSuccessfully')
       });
       
       onClose();
     } catch (error: any) {
-      console.error('Error updating region:', error);
-      toast.error(t('regionUpdateFailed'), {
-        description: error.message
+      console.error('Region yeniləyərkən xəta:', error);
+      toast.error(t('error'), {
+        description: error.message || t('unknownError')
       });
     } finally {
       setIsSubmitting(false);
@@ -187,104 +174,89 @@ export function EditRegionDialog({ open, onClose, region }: EditRegionDialogProp
   };
   
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{t('editRegion')}</DialogTitle>
+          <DialogDescription>{t('updateRegionDetails')}</DialogDescription>
+        </DialogHeader>
+        
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>{t('editRegion')}</DialogTitle>
-            <DialogDescription>
-              {t('editRegionDescription')}
-            </DialogDescription>
-          </DialogHeader>
           <div className="grid gap-4 py-4">
-            {/* Region adı */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                {t('name')}
-              </Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+            <div className="grid grid-cols-4 items-center gap-2">
+              <Label htmlFor="name" className="text-right">{t('name')}</Label>
+              <Input 
+                id="name" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
                 className="col-span-3"
-                required
+                required 
               />
             </div>
-            {/* Region açıklaması */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                {t('description')}
-              </Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+            
+            <div className="grid grid-cols-4 items-center gap-2">
+              <Label htmlFor="description" className="text-right">{t('description')}</Label>
+              <Textarea 
+                id="description" 
+                value={description} 
+                onChange={(e) => setDescription(e.target.value)} 
                 className="col-span-3"
               />
             </div>
-            {/* Region durumu */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">
-                {t('status')}
-              </Label>
-              <Select
-                value={status}
-                onValueChange={(value) => setStatus(value as "active" | "inactive")}
+            
+            <div className="grid grid-cols-4 items-center gap-2">
+              <Label className="text-right">{t('status')}</Label>
+              <RadioGroup 
+                value={status} 
+                onValueChange={(value) => setStatus(value as 'active' | 'inactive')} 
+                className="col-span-3 flex items-center space-x-4"
               >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder={t('selectStatus')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">{t('active')}</SelectItem>
-                  <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                </SelectContent>
-              </Select>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="active" id="edit-active" />
+                  <Label htmlFor="edit-active">{t('active')}</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="inactive" id="edit-inactive" />
+                  <Label htmlFor="edit-inactive">{t('inactive')}</Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
+          
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              {t('cancel')}
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting || !name}
-            >
-              {isSubmitting ? t('saving') : t('save')}
+            <Button type="button" variant="outline" onClick={onClose}>{t('cancel')}</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? t('updating') : t('update')}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
-}
+};
 
-interface DeleteRegionDialogProps {
-  open: boolean;
-  onClose: () => void;
-  region: Region;
-}
-
-export function DeleteRegionDialog({ open, onClose, region }: DeleteRegionDialogProps) {
+export const DeleteRegionDialog: React.FC<RegionDialogProps> = ({ isOpen, onClose, selectedRegion }) => {
   const { t } = useLanguage();
   const { deleteRegion } = useRegions();
   const [isDeleting, setIsDeleting] = useState(false);
   
   const handleDelete = async () => {
+    if (!selectedRegion) return;
+    
     setIsDeleting(true);
     
     try {
-      await deleteRegion(region.id);
+      await deleteRegion(selectedRegion.id);
       
       toast.success(t('regionDeleted'), {
-        description: t('regionDeletedSuccess', { name: region.name })
+        description: t('regionDeletedSuccessfully')
       });
       
       onClose();
     } catch (error: any) {
-      console.error('Error deleting region:', error);
-      
-      toast.error(t('regionDeleteFailed'), {
-        description: error.message
+      console.error('Region silmə xətası:', error);
+      toast.error(t('error'), {
+        description: error.message || t('unknownError')
       });
     } finally {
       setIsDeleting(false);
@@ -292,30 +264,122 @@ export function DeleteRegionDialog({ open, onClose, region }: DeleteRegionDialog
   };
   
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{t('deleteRegion')}</DialogTitle>
-          <DialogDescription>
-            {t('deleteRegionDescription')}
-          </DialogDescription>
+          <DialogDescription>{t('areYouSureDeleteRegion')}</DialogDescription>
         </DialogHeader>
+        
         <div className="py-4">
-          <p>{t('deleteRegionConfirmation', { name: region.name })}</p>
+          <p>{t('deleteConfirmMessage', { name: selectedRegion?.name })}</p>
+          <p className="mt-2 text-muted-foreground text-sm">{t('thisActionCannot')}</p>
         </div>
+        
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isDeleting}>
-            {t('cancel')}
-          </Button>
-          <Button 
-            variant="destructive" 
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
+          <Button type="button" variant="outline" onClick={onClose}>{t('cancel')}</Button>
+          <Button type="button" variant="destructive" onClick={handleDelete} disabled={isDeleting}>
             {isDeleting ? t('deleting') : t('delete')}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+export const AssignAdminDialog: React.FC<RegionDialogProps & { onAdminAssigned?: () => void }> = ({ 
+  isOpen, 
+  onClose, 
+  selectedRegion, 
+  onAdminAssigned 
+}) => {
+  const { t } = useLanguage();
+  const [adminEmail, setAdminEmail] = useState('');
+  const [selectedUser, setSelectedUser] = useState('');
+  const [status, setStatus] = useState<'existing' | 'new'>('existing');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [users, setUsers] = useState<Array<{ id: string; email: string; name: string }>>([]);
+  
+  useEffect(() => {
+    if (isOpen && selectedRegion?.admin_email) {
+      setAdminEmail(selectedRegion.admin_email);
+    }
+  }, [isOpen, selectedRegion]);
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{t('assignRegionAdmin')}</DialogTitle>
+          <DialogDescription>{t('assignAdminDescription')}</DialogDescription>
+        </DialogHeader>
+        
+        <div className="grid gap-4 py-4">
+          <div className="flex space-x-2">
+            <Button 
+              variant={status === 'existing' ? 'default' : 'outline'}
+              onClick={() => setStatus('existing')}
+              className="flex-1"
+            >
+              {t('existingUser')}
+            </Button>
+            <Button 
+              variant={status === 'new' ? 'default' : 'outline'}
+              onClick={() => setStatus('new')}
+              className="flex-1"
+            >
+              {t('newUser')}
+            </Button>
+          </div>
+          
+          {status === 'existing' ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-4 items-center gap-2">
+                <Label htmlFor="user" className="text-right">{t('user')}</Label>
+                <Select
+                  value={selectedUser}
+                  onValueChange={setSelectedUser}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder={t('selectUser')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user1">{t('user1')}</SelectItem>
+                    <SelectItem value="user2">{t('user2')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-4 items-center gap-2">
+                <Label htmlFor="email" className="text-right">{t('email')}</Label>
+                <Input 
+                  id="email" 
+                  type="email"
+                  value={adminEmail} 
+                  onChange={(e) => setAdminEmail(e.target.value)} 
+                  className="col-span-3"
+                  required 
+                />
+              </div>
+              
+              {/* Burada əlavə formlar olacaq */}
+              
+            </div>
+          )}
+        </div>
+        
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>{t('cancel')}</Button>
+          <Button 
+            type="button" 
+            disabled={isSubmitting || (!selectedUser && !adminEmail)}
+          >
+            {isSubmitting ? t('assigning') : t('assign')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};

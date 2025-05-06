@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -6,6 +7,7 @@ import { UserFormData } from '@/types/user';
 import { Role } from '@/context/auth/types';
 import { supabase } from '@/lib/supabase';
 import { useRegions } from '@/context/RegionsContext';
+import { Sector } from '@/types/sector';
 
 interface SectorSectionProps {
   form: any;
@@ -60,7 +62,7 @@ const SectorSection: React.FC<SectorSectionProps> = ({
   }, [regionId]);
   
   const shouldShow = !hideSection && 
-    (((isSuperAdmin && data.regionId) || (currentUserRole === 'regionadmin')) &&
+    (((isSuperAdmin && data.region_id) || (currentUserRole === 'regionadmin')) &&
     (data.role === 'sectoradmin' || data.role === 'schooladmin'));
 
   const isFiltering = !!data.region_id;
@@ -72,7 +74,7 @@ const SectorSection: React.FC<SectorSectionProps> = ({
   return (
     <FormField
       control={form.control}
-      name="sectorId"
+      name="sector_id"
       render={({ field }) => (
         <FormItem>
           <FormLabel>{t('sector')}</FormLabel>

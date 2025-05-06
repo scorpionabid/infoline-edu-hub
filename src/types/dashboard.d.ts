@@ -132,47 +132,6 @@ export interface FormStatus {
   dueDate: string;
 }
 
-export interface DashboardNotification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  date: string;
-  isRead: boolean;
-  read?: boolean;
-  createdAt?: string;
-}
-
-export interface SectorAdminDashboardData {
-  statistics: {
-    totalSchools: number;
-    activeSchools: number;
-    pendingSubmissions: number;
-    completedSubmissions: number;
-  };
-  schools: SchoolDashboardData[];
-}
-
-export interface SchoolDashboardData {
-  id: string;
-  name: string;
-  formsCompleted: number;
-  totalForms: number;
-  completionRate: number;
-  lastSubmission?: string;
-}
-
-export interface PendingApproval {
-  id: string;
-  schoolName: string;
-  categoryName: string;
-  submittedBy: string;
-  submittedAt: string;
-  school?: School;
-  category?: Category;
-}
-
-// PendingApprovalItem tipi əlavə edildi
 export interface PendingApprovalItem {
   id: string;
   schoolId: string;
@@ -181,6 +140,16 @@ export interface PendingApprovalItem {
   categoryName: string;
   submittedAt: string;
   status: string;
+}
+
+export interface PendingApproval {
+  id: string;
+  schoolName: string;
+  categoryName: string;
+  submittedBy: string;
+  submittedAt: string;
+  school?: any;
+  category?: any;
 }
 
 export interface RecentActivity {

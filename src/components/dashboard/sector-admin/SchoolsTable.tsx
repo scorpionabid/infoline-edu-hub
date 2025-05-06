@@ -70,7 +70,7 @@ export const SchoolsTable: React.FC<SchoolsTableProps> = ({
                 </TableCell>
                 <TableCell className="text-center">
                   <Badge variant="secondary" className="font-normal">
-                    {school.formsCompleted || 0}/{school.totalForms || 0}
+                    {school.formsCompleted || 0}/{school.formsTotal || 0}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">

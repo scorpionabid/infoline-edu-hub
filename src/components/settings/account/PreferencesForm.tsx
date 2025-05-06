@@ -1,219 +1,171 @@
-import React, { useState, useEffect } from 'react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
+
+import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth/useAuth';
-import { Language } from '@/types/supabase';
-import { Save } from 'lucide-react';
+import { useAuth } from '@/context/auth';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Bildirimləri interfeysi genişləndirib system property əlavə edirik
-interface NotificationSettings {
-  email: boolean;
-  push: boolean;
-  deadline: boolean;
-  system: boolean; // system property əlavə edildi
-}
-
-// Hesab parametrləri forması üçün schema
-const settingsFormSchema = z.object({
-  language: z.string(),
-  twoFactorEnabled: z.boolean().default(false),
-  notificationSettings: z.object({
-    email: z.boolean().default(true),
-    push: z.boolean().default(true),
-    deadline: z.boolean().default(true),
-    system: z.boolean().default(true), // system property əlavə edildi
-  }),
-});
-
-type SettingsFormData = z.infer<typeof settingsFormSchema>;
-
-const PreferencesForm: React.FC = () => {
-  const { t } = useLanguage();
+const PreferencesForm = () => {
+  const { t, currentLanguage, setLanguage } = useLanguage();
   const { user, updateUser } = useAuth();
-  
-  // Hesab parametrləri forması
-  const settingsForm = useForm<SettingsFormData>({
-    resolver: zodResolver(settingsFormSchema),
-    defaultValues: {
-      language: localStorage.getItem('infoline-language') || 'az',
-      notificationSettings: {
-        email: user?.notificationSettings?.email ?? true,
-        push: user?.notificationSettings?.push ?? true,
-        deadline: user?.notificationSettings?.deadline ?? true,
-        system: user?.notificationSettings?.system ?? true, // system property əlavə edildi
-      },
-      twoFactorEnabled: user?.twoFactorEnabled ?? false,
-    }
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Notification preferences from user data or default values
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    email: user?.notificationSettings?.email !== false,
+    push: user?.notificationSettings?.push !== false,
+    deadline: user?.notificationSettings?.deadline !== false,
+    system: user?.notificationSettings?.system !== false
   });
-  
-  // Hesab parametrlərini saxla
-  const saveSettings = (data: SettingsFormData) => {
-    // Dil dəyişdiklərini saxla
-    localStorage.setItem('infoline-language', data.language);
-    
-    // İstifadəçi məlumatlarını yenilə - User tipində yalnız mövcud olan xüsusiyyətləri istifadə et
-    if (user) {
-      updateUser({
-        ...user,
-        twoFactorEnabled: data.twoFactorEnabled,
+
+  const handleLanguageChange = async (value: string) => {
+    try {
+      setIsLoading(true);
+      await updateUser({ language: value });
+      setLanguage(value);
+      toast.success(t('languageUpdated'));
+    } catch (error: any) {
+      console.error('Language update error:', error);
+      toast.error(t('languageUpdateError'), {
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNotificationChange = async (key: string, value: boolean) => {
+    try {
+      setIsLoading(true);
+      const newPrefs = { ...notificationPrefs, [key]: value };
+      setNotificationPrefs(newPrefs);
+      
+      await updateUser({
         notificationSettings: {
-          email: data.notificationSettings.email,
-          push: data.notificationSettings.push,
-          deadline: data.notificationSettings.deadline,
-          system: data.notificationSettings.system // system property əlavə edildi
+          email: newPrefs.email,
+          push: newPrefs.push,
+          deadline: newPrefs.deadline,
+          system: newPrefs.system
         }
       });
       
-      // Dil dəyişikliyini bildirmək üçün məlumat göstəririk
-      toast.success(t('languageChanged'));
+      toast.success(t('preferencesUpdated'));
+    } catch (error: any) {
+      console.error('Preferences update error:', error);
+      toast.error(t('preferencesUpdateError'), {
+        description: error.message,
+      });
+      // Revert UI state on error
+      setNotificationPrefs(notificationPrefs);
+    } finally {
+      setIsLoading(false);
     }
-    
-    toast.success(t('settingsSaved'));
   };
-  
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('accountPreferences')}</CardTitle>
-        <CardDescription>
-          {t('accountPreferencesDescription')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...settingsForm}>
-          <form className="space-y-6" onSubmit={settingsForm.handleSubmit(saveSettings)}>
-            {/* Dil Seçimi */}
-            <FormField
-              control={settingsForm.control}
-              name="language"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('language')}</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('selectLanguage')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="az">{t('azerbaijani')}</SelectItem>
-                      <SelectItem value="en">{t('english')}</SelectItem>
-                      <SelectItem value="ru">{t('russian')}</SelectItem>
-                      <SelectItem value="tr">{t('turkish')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {/* Əlavə parametrlər */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">{t('additionalSettings')}</h3>
-
-              <FormField
-                control={settingsForm.control}
-                name="twoFactorEnabled"
-                render={({ field }) => (
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <FormLabel>{t('twoFactorAuth')}</FormLabel>
-                      <p className="text-sm text-muted-foreground">{t('twoFactorAuthDesc')}</p>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </div>
-                )}
-              />
-
-              <FormField
-                control={settingsForm.control}
-                name="notificationSettings.email"
-                render={({ field }) => (
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <FormLabel>{t('emailNotifications')}</FormLabel>
-                      <p className="text-sm text-muted-foreground">{t('emailNotificationsDesc')}</p>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </div>
-                )}
-              />
-
-              <FormField
-                control={settingsForm.control}
-                name="notificationSettings.push"
-                render={({ field }) => (
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <FormLabel>{t('pushNotifications')}</FormLabel>
-                      <p className="text-sm text-muted-foreground">{t('pushNotificationsDesc')}</p>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </div>
-                )}
-              />
-
-              <FormField
-                control={settingsForm.control}
-                name="notificationSettings.deadline"
-                render={({ field }) => (
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <FormLabel>{t('deadlineNotifications')}</FormLabel>
-                      <p className="text-sm text-muted-foreground">{t('deadlineNotificationsDesc')}</p>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </div>
-                )}
-              />
+    <div className="space-y-6">
+      <Card className="p-6">
+        <h3 className="text-lg font-medium mb-4">{t('languagePreferences')}</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="language">{t('interfaceLanguage')}</Label>
+            <Select
+              value={currentLanguage}
+              onValueChange={handleLanguageChange}
+              disabled={isLoading}
+              id="language"
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t('selectLanguage')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="az">{t('azerbaijani')}</SelectItem>
+                <SelectItem value="en">{t('english')}</SelectItem>
+                <SelectItem value="ru">{t('russian')}</SelectItem>
+                <SelectItem value="tr">{t('turkish')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </Card>
+      
+      <Card className="p-6">
+        <h3 className="text-lg font-medium mb-4">{t('notificationPreferences')}</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="email-notifications" className="text-base">
+                {t('emailNotifications')}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {t('emailNotificationsDescription')}
+              </p>
             </div>
-            
-            <CardFooter className="px-0 pt-4">
-              <Button 
-                type="submit"
-                disabled={settingsForm.formState.isSubmitting}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                {settingsForm.formState.isSubmitting ? t('saving') : t('saveSettings')}
-              </Button>
-            </CardFooter>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            <Switch
+              id="email-notifications"
+              checked={notificationPrefs.email}
+              onCheckedChange={(value) => handleNotificationChange('email', value)}
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="app-notifications" className="text-base">
+                {t('inAppNotifications')}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {t('inAppNotificationsDescription')}
+              </p>
+            </div>
+            <Switch
+              id="app-notifications"
+              checked={notificationPrefs.push}
+              onCheckedChange={(value) => handleNotificationChange('push', value)}
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="deadline-notifications" className="text-base">
+                {t('deadlineReminders')}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {t('deadlineRemindersDescription')}
+              </p>
+            </div>
+            <Switch
+              id="deadline-notifications"
+              checked={notificationPrefs.deadline}
+              onCheckedChange={(value) => handleNotificationChange('deadline', value)}
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="system-notifications" className="text-base">
+                {t('systemNotifications')}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {t('systemNotificationsDescription')}
+              </p>
+            </div>
+            <Switch
+              id="system-notifications"
+              checked={notificationPrefs.system}
+              onCheckedChange={(value) => handleNotificationChange('system', value)}
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+      </Card>
+    </div>
   );
 };
 
