@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth'; 
@@ -198,7 +197,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, isSidebarOpen }) => {
                 className="relative h-8 w-8 rounded-full"
               >
                 <Avatar>
-                  {user?.avatar ? (
+                  {user.avatar ? (
                     <AvatarImage src={user.avatar} alt={userDisplayName} />
                   ) : null}
                   <AvatarFallback>{fallbackInitials || "U"}</AvatarFallback>

@@ -1,3 +1,4 @@
+
 export interface DataEntry {
   id: string;
   school_id: string;
@@ -40,6 +41,18 @@ export interface DataEntryTableData {
   };
 }
 
-export type DataEntryStatus = 'pending' | 'approved' | 'rejected' | 'draft';
+export enum DataEntryStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  DRAFT = 'draft'
+}
 
-export type DataEntrySaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'submitting' | 'submitted';
+export enum DataEntrySaveStatus {
+  IDLE = 'idle',
+  SAVING = 'saving',
+  SAVED = 'saved',
+  ERROR = 'error',
+  SUBMITTING = 'submitting',
+  SUBMITTED = 'submitted'
+}

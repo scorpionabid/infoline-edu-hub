@@ -1,164 +1,113 @@
+
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/components/ui/use-toast';
+import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/context/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
 import { School } from '@/types/school';
-
-// Schema for validation
-const adminFormSchema = z.object({
-  email: z.string().email({
-    message: 'Düzgün e-poçt ünvanı daxil edin.',
-  }),
-  password: z.string().min(8, {
-    message: 'Şifrə ən azı 8 simvoldan ibarət olmalıdır.',
-  }),
-});
-
-type AdminFormData = z.infer<typeof adminFormSchema>;
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminDialogProps {
-  isOpen: boolean;
+  school: School | null;
+  open: boolean;
   onClose: () => void;
-  onUpdate: () => void;
-  onResetPassword: (newPassword: string) => void;
-  selectedAdmin: School | null;
+  onRefresh: () => void;
 }
 
-const AdminDialog: React.FC<AdminDialogProps> = ({
-  isOpen,
-  onClose,
-  onUpdate,
-  onResetPassword,
-  selectedAdmin
-}) => {
+export default function AdminDialog({ school, open, onClose, onRefresh }: AdminDialogProps) {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<string>('update');
-  const [email, setEmail] = useState(selectedAdmin?.admin_email || '');
-
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingAdmin, setExistingAdmin] = useState(false);
+  
   useEffect(() => {
-    if (selectedAdmin) {
-      setEmail(selectedAdmin.admin_email || '');
+    if (open && school) {
+      setEmail(school.admin_email || '');
+      setExistingAdmin(!!school.admin_id);
     }
-  }, [selectedAdmin]);
-
-  const form = useForm<AdminFormData>({
-    resolver: zodResolver(adminFormSchema),
-    defaultValues: {
-      email: selectedAdmin?.adminEmail || '',
-      password: '',
-    },
-  });
-
-  const handleSubmit = (data: AdminFormData) => {
-    if (activeTab === 'update') {
-      onUpdate();
-    } else {
-      onResetPassword(data.password);
+  }, [open, school]);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!school) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Açıq bir şəkildə admin_email istifadə edirik
+      await supabase
+        .from('schools')
+        .update({ admin_email: email })
+        .eq('id', school.id);
+      
+      if (!existingAdmin) {
+        // Mövcud admin yoxdursa, yeni məktəb admini yaradırıq
+        // Bu misalda sadəcə e-poçtu saxlayırıq, real tətbiqdə bunun üzərində daha çox iş görüləcək
+      }
+      
+      toast({
+        title: t('success'),
+        description: t('schoolAdminAssigned')
+      });
+      
+      onRefresh();
+      onClose();
+    } catch (error) {
+      console.error('Error assigning admin:', error);
+      toast({
+        title: t('error'),
+        description: t('errorAssigningAdmin'),
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  // selectedAdmin null olduğunda xəta verməmək üçün yoxlama əlavə edirik
-  if (!selectedAdmin) {
-    return null;
-  }
-
+  
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('manageAdmin')}</DialogTitle>
+          <DialogTitle>
+            {existingAdmin ? t('changeSchoolAdmin') : t('assignSchoolAdmin')}
+          </DialogTitle>
           <DialogDescription>
-            {t('manageAdminDescription')}
+            {t('schoolAdminDescription')}
           </DialogDescription>
         </DialogHeader>
-
-        <Tabs defaultValue="update" onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="update">{t('updateAdmin')}</TabsTrigger>
-            <TabsTrigger value="reset">{t('resetPassword')}</TabsTrigger>
-          </TabsList>
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 mt-4">
-              <TabsContent value="update">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('email')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder="admin@example.com" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        {t('adminEmailDesc')}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
-
-              <TabsContent value="reset">
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('password')}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="••••••••"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {t('passwordResetDesc')}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
-
-              <DialogFooter>
-                <Button variant="outline" type="button" onClick={onClose}>
-                  {t('cancel')}
-                </Button>
-                <Button type="submit">
-                  {activeTab === 'update' ? t('update') : t('resetPassword')}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </Tabs>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="schoolName">{t('school')}</Label>
+            <Input id="schoolName" value={school?.name || ''} disabled />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="adminEmail">{t('adminEmail')}</Label>
+            <Input 
+              id="adminEmail"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@example.com"
+              required
+            />
+          </div>
+          
+          <DialogFooter className="pt-4">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+              {t('cancel')}
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? t('saving') : existingAdmin ? t('change') : t('assign')}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default AdminDialog;
+}

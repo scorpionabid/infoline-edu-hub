@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
-import { EntryValue, DataEntrySaveStatus, DataEntryStatus } from '@/types/dataEntry';
+import { DataEntryStatus, DataEntrySaveStatus } from '@/types/dataEntry';
 import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
 import { useSchool } from '@/hooks/dataEntry/useSchool';
 import { CategoryConfirmationDialog } from './CategoryConfirmationDialog';
@@ -184,7 +185,7 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
   const categoryIdFromUrl = params.categoryId || categoryId;
 
   const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>('idle');
+  const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
@@ -287,7 +288,7 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
       return;
     }
 
-    setSaveStatus('saving');
+    setSaveStatus(DataEntrySaveStatus.SAVING);
     try {
       // Əvvəlcə köhnə məlumatları silirik (əgər varsa)
       if (entryData.length > 0) {
@@ -316,14 +317,14 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
       
       toast.success(t('dataSavedSuccessfully'));
       setIsDirty(false);
-      setSaveStatus('saved');
+      setSaveStatus(DataEntrySaveStatus.SAVED);
     } catch (err: any) {
       toast.error(t('errorSavingData'), {
         description: err.message
       });
-      setSaveStatus('error');
+      setSaveStatus(DataEntrySaveStatus.ERROR);
     } finally {
-      setSaveStatus('idle');
+      setSaveStatus(DataEntrySaveStatus.IDLE);
     }
   };
 
@@ -333,7 +334,7 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
     
     if (!selectedCategory || !school) return;
     
-    setSaveStatus('submitting');
+    setSaveStatus(DataEntrySaveStatus.SUBMITTING);
     try {
       const { error } = await supabase
         .from('data_entries')
@@ -344,14 +345,14 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
       if (error) throw error;
       
       toast.success(t('dataSubmittedForApproval'));
-      setSaveStatus('submitted');
+      setSaveStatus(DataEntrySaveStatus.SUBMITTED);
       navigate('/dashboard');
     } catch (err: any) {
       toast.error(t('errorSubmittingData'), {
         description: err.message
       });
     } finally {
-      setSaveStatus('idle');
+      setSaveStatus(DataEntrySaveStatus.IDLE);
     }
   };
 

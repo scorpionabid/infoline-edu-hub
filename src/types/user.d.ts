@@ -26,15 +26,16 @@ export interface FullUserData {
   avatar?: string;
   position?: string;
   entityName?: string;
+  name?: string;
   twoFactorEnabled?: boolean;
   notificationSettings?: {
     email?: boolean;
     inApp?: boolean;
     sms?: boolean;
     deadlineReminders?: boolean;
+    system?: boolean;
   };
   // Əlavə alias adlar JavaScript konvensiyasına uyğun
-  name?: string; 
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
@@ -52,7 +53,7 @@ export interface UserFormData {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'blocked' | 'pending';
   password?: string;
   language: string;
   avatar?: string;
@@ -62,6 +63,7 @@ export interface UserFormData {
     inApp: boolean;
     sms: boolean;
     deadlineReminders: boolean;
+    system?: boolean;
   };
   // Əlavə alias adlar
   name?: string; 

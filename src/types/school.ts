@@ -3,49 +3,44 @@ export interface School {
   id: string;
   name: string;
   address?: string;
-  sector_id: string;
   region_id: string;
-  status: 'active' | 'inactive';
-  student_count?: number;
-  teacher_count?: number;
+  sector_id: string;
+  status?: string;
+  principal_name?: string;
   phone?: string;
   email?: string;
-  director_name?: string;
-  admin_email?: string;
   admin_id?: string;
-  contact_phone?: string;
-  type?: string;
-  language?: string;
+  admin_email?: string;
   created_at?: string;
   updated_at?: string;
-  sector_name?: string;
-  region_name?: string;
+  student_count?: number;
+  teacher_count?: number;
+  type?: string;
+  language?: string;
   completion_rate?: number;
 }
 
 export interface SchoolFormData {
   name: string;
-  address?: string;
+  region_id: string;
   sector_id: string;
-  region_id?: string;
-  status: 'active' | 'inactive';
-  student_count?: number;
-  teacher_count?: number;
+  address?: string;
   phone?: string;
   email?: string;
-  director_name?: string;
+  principal_name?: string;
   admin_email?: string;
-  contact_phone?: string;
+  student_count?: number;
+  teacher_count?: number;
   type?: string;
   language?: string;
+  status?: 'active' | 'inactive';
 }
 
 export interface SchoolStat {
   id: string;
   name: string;
   formsCompleted: number;
-  totalForms: number; 
+  totalForms: number;
   completionRate: number;
-  status?: string;
-  address?: string;
+  status: string;
 }

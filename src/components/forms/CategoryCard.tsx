@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -73,7 +74,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
 
   const isPastDeadline = () => {
     if (!category.deadline) return false;
-    const deadlineDate = parseISO(category.deadline);
+    const deadlineDate = typeof category.deadline === 'string' ? parseISO(category.deadline) : category.deadline;
     return isAfter(new Date(), deadlineDate);
   };
 
