@@ -43,7 +43,8 @@ export function FormFields({
     
     if (typeof options === 'string') {
       try {
-        return JSON.parse(options);
+        const parsed = JSON.parse(options);
+        return Array.isArray(parsed) ? parsed : [];
       } catch (e) {
         console.error('Options parse error:', e);
         return [];
@@ -55,8 +56,15 @@ export function FormFields({
         if (typeof opt === 'string') {
           return { label: opt, value: opt };
         }
-        return opt;
+        return opt as ColumnOption;
       });
+    }
+    
+    if (typeof options === 'object' && options !== null) {
+      return Object.entries(options).map(([value, label]) => ({
+        value,
+        label: label as string
+      }));
     }
     
     return [];

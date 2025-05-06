@@ -70,6 +70,31 @@ const ColumnField = ({ column, value, onChange, disabled = false }) => {
         );
         
       case 'select':
+        // Options dəyərini təhlükəsiz şəkildə işləmək
+        const columnOptions = column.options || [];
+        let parsedOptions = [];
+        
+        if (Array.isArray(columnOptions)) {
+          parsedOptions = columnOptions;
+        } else if (typeof columnOptions === 'string') {
+          // String formatında olduqda, JSON.parse etməyə çalışırıq
+          try {
+            parsedOptions = JSON.parse(columnOptions);
+            if (!Array.isArray(parsedOptions)) {
+              parsedOptions = [];
+            }
+          } catch (e) {
+            console.error('JSON parse error:', e);
+            parsedOptions = [];
+          }
+        } else if (typeof columnOptions === 'object' && columnOptions !== null) {
+          // Obyekt olduqda array formatına çeviririk
+          parsedOptions = Object.entries(columnOptions).map(([value, label]) => ({
+            value,
+            label: label as string
+          }));
+        }
+        
         return (
           <select
             id={column.id}
@@ -80,11 +105,15 @@ const ColumnField = ({ column, value, onChange, disabled = false }) => {
             required={column.is_required}
           >
             <option value="">{column.placeholder || 'Seçin'}</option>
-            {column.options && column.options.map((option, index) => (
-              <option key={option.value || index} value={option.value || option}>
-                {option.label || option}
-              </option>
-            ))}
+            {parsedOptions.map((option, index) => {
+              const optionValue = typeof option === 'object' ? option.value || '' : option;
+              const optionLabel = typeof option === 'object' ? option.label || optionValue : option;
+              return (
+                <option key={optionValue || index} value={optionValue}>
+                  {optionLabel}
+                </option>
+              );
+            })}
           </select>
         );
         

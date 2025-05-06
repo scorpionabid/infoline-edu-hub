@@ -22,6 +22,34 @@ export interface EntryFieldProps {
 }
 
 const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error, readOnly = false }) => {
+  // Options dəyərini təhlükəsiz şəkildə işləmək üçün funksiya
+  const parseOptions = (options: any) => {
+    if (!options) return [];
+    
+    if (Array.isArray(options)) {
+      return options;
+    }
+    
+    if (typeof options === 'string') {
+      try {
+        const parsed = JSON.parse(options);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.error('Options parse error:', e);
+        return [];
+      }
+    }
+    
+    if (typeof options === 'object' && options !== null) {
+      return Object.entries(options).map(([value, label]) => ({
+        value,
+        label: label as string
+      }));
+    }
+    
+    return [];
+  };
+  
   const renderField = () => {
     const commonProps = {
       id: column.id,
@@ -79,6 +107,8 @@ const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error,
         );
         
       case 'select':
+        const options = parseOptions(column.options);
+        
         return (
           <Select
             value={value || ''}
@@ -89,11 +119,15 @@ const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error,
               <SelectValue placeholder={column.placeholder || `Seçin...`} />
             </SelectTrigger>
             <SelectContent>
-              {column.options?.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
+              {options.map((option, index) => {
+                const optionValue = typeof option === 'object' ? option.value || '' : option;
+                const optionLabel = typeof option === 'object' ? option.label || optionValue : option;
+                return (
+                  <SelectItem key={index} value={optionValue}>
+                    {optionLabel}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         );
