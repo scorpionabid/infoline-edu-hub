@@ -1,7 +1,5 @@
-// FormsPage.tsx içərisində sadəcə CategoryStatus tipini düzgün işlətmək lazımdır
 
 import React, { useState, useEffect } from 'react';
-import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/context/LanguageContext';
@@ -11,6 +9,7 @@ import { Grid } from '@/components/ui/grid';
 import CategoryCard from './CategoryCard';
 import { Filter, Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Container } from '@/components/ui/container';
 
 interface FormsPageProps {
   categories: Category[];
@@ -20,7 +19,7 @@ interface FormsPageProps {
 const FormsPage: React.FC<FormsPageProps> = ({ categories, onAddCategory }) => {
   const { t } = useLanguage();
   const { canManageCategories } = usePermissions();
-  const [activeTab, setActiveTab] = useState<CategoryStatus>('active');
+  const [activeTab, setActiveTab] = useState<string>('active');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -29,23 +28,13 @@ const FormsPage: React.FC<FormsPageProps> = ({ categories, onAddCategory }) => {
   }, [categories]);
 
   // Tip uyğunsuzluqlarının düzəldilməsi üçün isActive funksiyasını yenidən yazaq:
-
-  const isActive = (category: Category, activeTab: CategoryStatus) => {
-    if (activeTab === 'active' && category.status === 'active') return true;
-    if (activeTab === 'approved' && category.status === 'approved') return true;
-    if (activeTab === 'draft' && category.status === 'draft') return true;
-    if (activeTab === 'archived' && (category.status === 'archived' || category.status === 'inactive')) return true;
+  const isActive = (category: Category, tab: string) => {
+    if (tab === 'active' && category.status === 'active') return true;
+    if (tab === 'approved' && category.status === 'approved') return true;
+    if (tab === 'draft' && category.status === 'draft') return true;
+    if (tab === 'archived' && (category.status === 'archived' || category.status === 'inactive')) return true;
     return false;
   };
-
-  // Grid üçün responsive dəyərlər üçün columnsCount-u düzəlt:
-
-  const columnsCount = {
-    default: 1,
-    sm: 1,
-    md: 2,
-    lg: 3
-  }; 
 
   const filteredCategories = categories?.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -85,7 +74,7 @@ const FormsPage: React.FC<FormsPageProps> = ({ categories, onAddCategory }) => {
         </div>
       )}
 
-      <Tabs defaultValue="active" className="space-y-4" value={activeTab} onValueChange={(value) => setActiveTab(value as CategoryStatus)}>
+      <Tabs defaultValue="active" className="space-y-4" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
         <TabsList>
           <TabsTrigger value="active">{t('active')}</TabsTrigger>
           <TabsTrigger value="approved">{t('approved')}</TabsTrigger>
@@ -93,29 +82,31 @@ const FormsPage: React.FC<FormsPageProps> = ({ categories, onAddCategory }) => {
           <TabsTrigger value="archived">{t('archived')}</TabsTrigger>
         </TabsList>
         <TabsContent value="active">
-          <Grid columns={columnsCount}>
+          <Grid>
             {filteredCategories?.filter(category => category.status === 'active').map(category => (
               <CategoryCard key={category.id} category={category} />
             ))}
           </Grid>
         </TabsContent>
         <TabsContent value="approved">
-          <Grid columns={columnsCount}>
+          <Grid>
             {filteredCategories?.filter(category => category.status === 'approved').map(category => (
               <CategoryCard key={category.id} category={category} />
             ))}
           </Grid>
         </TabsContent>
         <TabsContent value="draft">
-          <Grid columns={columnsCount}>
+          <Grid>
             {filteredCategories?.filter(category => category.status === 'draft').map(category => (
               <CategoryCard key={category.id} category={category} />
             ))}
           </Grid>
         </TabsContent>
         <TabsContent value="archived">
-          <Grid columns={columnsCount}>
-            {filteredCategories?.filter(category => category.status === 'archived' || category.status === 'inactive').map(category => (
+          <Grid>
+            {filteredCategories?.filter(category => 
+              category.status === 'archived' || category.status === 'inactive'
+            ).map(category => (
               <CategoryCard key={category.id} category={category} />
             ))}
           </Grid>

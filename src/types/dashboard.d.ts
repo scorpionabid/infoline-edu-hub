@@ -1,3 +1,4 @@
+
 import { DashboardNotification, Notification } from './notification';
 
 export interface FormItem {
@@ -32,7 +33,7 @@ export interface SchoolStat {
   name: string;
   completionRate: number;
   formsCompleted: number;
-  formsTotal: number;
+  totalForms: number;
   address?: string;
 }
 

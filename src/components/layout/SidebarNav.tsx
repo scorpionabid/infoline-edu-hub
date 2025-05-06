@@ -1,167 +1,178 @@
 
-import React from 'react';
-import { cn } from '@/lib/utils';
-import { Link, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  LayoutDashboard,
-  FileText,
-  Building2,
-  Users2,
-  FileBarChart,
-  Settings,
-  Layers,
-  MapPin,
-  Check,
-  ThumbsUp,
-  UploadCloud
+import React, { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { 
+  BarChart, Settings, Users, School, BookOpen, 
+  FileText, CheckSquare, Map, Building, LogOut,
+  ChevronRight, ChevronLeft, Bell, Home
 } from 'lucide-react';
-import { useIsCollapsed } from '@/hooks/useIsCollapsed';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useLanguage } from '@/context/LanguageContext';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useIsCollapsed } from '@/hooks/useIsCollapsed';
 
-// NavItem interfeysi
 interface NavItemProps {
   icon: React.ReactNode;
-  label: string;
   href: string;
-  active?: boolean;
+  label: string;
+  badge?: number;
   isCollapsed?: boolean;
-  badge?: string | number;
-  onClick?: () => void;
 }
 
-// NavItem komponenti
-const NavItem: React.FC<NavItemProps> = ({
-  icon,
-  label,
-  href,
-  active = false,
-  isCollapsed = false,
-  badge,
-  onClick
-}) => {
+const NavItem: React.FC<NavItemProps> = ({ icon, href, label, badge, isCollapsed = false }) => {
+  const location = useLocation();
+  const isActive = location.pathname === href || location.pathname.startsWith(`${href}/`);
+
   return (
-    <Tooltip delayDuration={0}>
-      <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "w-full justify-start",
-            active && "bg-muted",
-            isCollapsed && "justify-center px-2"
+    <NavLink
+      to={href}
+      className={({ isActive }) =>
+        cn(
+          'flex items-center py-2 px-3 my-1 rounded-md text-sm transition-colors',
+          isActive
+            ? 'bg-primary text-primary-foreground'
+            : 'hover:bg-accent hover:text-accent-foreground'
+        )
+      }
+    >
+      {icon}
+      {!isCollapsed && (
+        <>
+          <span className="ml-3">{label}</span>
+          {badge !== undefined && badge > 0 && (
+            <Badge className="ml-auto" variant="outline">
+              {badge}
+            </Badge>
           )}
-          asChild
-          onClick={onClick}
-        >
-          <Link to={href}>
-            {icon}
-            {!isCollapsed && <span className="ml-2">{label}</span>}
-            {!isCollapsed && badge && <span className="ml-auto px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{badge}</span>}
-          </Link>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="right" className={cn(!isCollapsed && "hidden")}>
-        <div className="flex items-center gap-4">
-          {label}
-          {badge && <span className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{badge}</span>}
-        </div>
-      </TooltipContent>
-    </Tooltip>
+        </>
+      )}
+    </NavLink>
   );
 };
 
-// SidebarNav props interfeysi 
 interface SidebarNavProps {
-  pendingApprovals?: number;
+  onItemClick?: () => void;
+  isSidebarOpen?: boolean;
 }
 
-const SidebarNav: React.FC<SidebarNavProps> = ({ pendingApprovals = 0 }) => {
-  const { pathname } = useLocation();
-  const { isCollapsed } = useIsCollapsed();
-  const { 
-    canManageUsers, 
-    canManageRegions, 
-    canManageSectors, 
-    canManageSchools, 
-    canManageCategories, 
-    canApproveData,
-    currentRole
-  } = usePermissions();
+export const SidebarNav: React.FC<SidebarNavProps> = ({ 
+  onItemClick,
+  isSidebarOpen 
+}) => {
   const { t } = useLanguage();
+  const { isCollapsed, toggleCollapse } = useIsCollapsed();
+  const { 
+    isSuperAdmin, 
+    isRegionAdmin, 
+    isSectorAdmin, 
+    isSchoolAdmin,
+    canManageUsers,
+    canManageRegions,
+    canManageSectors,
+    canManageSchools,
+    canManageCategories,
+    canApproveData,
+    canRunReports 
+  } = usePermissions();
 
-  // Rollara əsasən menyu elementlərini hazırlaşdıraq
-  const menuItems = React.useMemo(() => {
-    const items = [
-      { icon: <LayoutDashboard className="h-5 w-5" />, label: t('dashboard'), href: '/' },
-      { icon: <FileText className="h-5 w-5" />, label: t('forms'), href: '/forms' }
-    ];
-
-    // Təsdiq gözləyən formalar üçün link - yalnız Sektor və Region adminləri üçün
-    if (canApproveData && pendingApprovals > 0) {
-      items.push({
-        icon: <ThumbsUp className="h-5 w-5" />,
-        label: t('approvals'),
-        href: '/approvals',
-        badge: pendingApprovals
-      });
-    }
-
-    // İdarəetmə bölümü
-    if (canManageSchools || canManageUsers || canManageRegions || canManageSectors) {
-      if (canManageSchools) {
-        items.push({ icon: <Building2 className="h-5 w-5" />, label: t('schools'), href: '/schools' });
-      }
-      
-      if (canManageUsers) {
-        items.push({ icon: <Users2 className="h-5 w-5" />, label: t('users'), href: '/users' });
-      }
-      
-      if (canManageSectors) {
-        items.push({ icon: <Layers className="h-5 w-5" />, label: t('sectors'), href: '/sectors' });
-      }
-      
-      if (canManageRegions) {
-        items.push({ icon: <MapPin className="h-5 w-5" />, label: t('regions'), href: '/regions' });
-      }
-    }
-    
-    // Kateqoriya idarəetməsi
-    if (canManageCategories) {
-      items.push({ icon: <Layers className="h-5 w-5" />, label: t('categories'), href: '/categories' });
-    }
-    
-    // Hesabatlar və ayarlar
-    items.push({ icon: <FileBarChart className="h-5 w-5" />, label: t('reports'), href: '/reports' });
-    items.push({ icon: <Settings className="h-5 w-5" />, label: t('settings'), href: '/settings' });
-
-    // İmportlar və Eksportlar - sonra əlavə ediləcək
-    // if (canManageData) {
-    //   items.push({ icon: <UploadCloud className="h-5 w-5" />, label: t('imports'), href: '/imports' });
-    // }
-
-    return items;
-  }, [t, canManageUsers, canManageRegions, canManageSectors, canManageSchools, canApproveData, canManageCategories, pendingApprovals]);
+  const menuItems = [
+    {
+      icon: <Home className="h-5 w-5" />,
+      label: t('dashboard'),
+      href: '/',
+    },
+    ...(canManageRegions ? [{
+      icon: <Map className="h-5 w-5" />,
+      label: t('regions'),
+      href: '/regions',
+    }] : []),
+    ...(canManageSectors ? [{
+      icon: <Building className="h-5 w-5" />,
+      label: t('sectors'),
+      href: '/sectors',
+    }] : []),
+    ...(canManageSchools ? [{
+      icon: <School className="h-5 w-5" />,
+      label: t('schools'),
+      href: '/schools',
+    }] : []),
+    ...(canManageCategories || isSchoolAdmin ? [{
+      icon: <BookOpen className="h-5 w-5" />,
+      label: t('forms'),
+      href: '/forms',
+    }] : []),
+    ...(canManageUsers ? [{
+      icon: <Users className="h-5 w-5" />,
+      label: t('users'),
+      href: '/users',
+    }] : []),
+    ...(canApproveData ? [{
+      icon: <CheckSquare className="h-5 w-5" />,
+      label: t('approvals'),
+      href: '/approvals',
+    }] : []),
+    ...(canRunReports ? [{
+      icon: <FileText className="h-5 w-5" />,
+      label: t('reports'),
+      href: '/reports',
+    }] : []),
+    {
+      icon: <BarChart className="h-5 w-5" />,
+      label: t('analytics'),
+      href: '/analytics',
+    },
+    {
+      icon: <Bell className="h-5 w-5" />,
+      label: t('notifications'),
+      href: '/notifications',
+    },
+    {
+      icon: <Settings className="h-5 w-5" />,
+      label: t('settings'),
+      href: '/settings',
+    },
+  ];
 
   return (
-    <ScrollArea className={cn("flex-1 px-3", isCollapsed && "px-2")}>
-      <div className="space-y-1 py-2">
-        {menuItems.map((item, index) => (
-          <NavItem
-            key={index}
-            icon={item.icon}
-            label={item.label}
-            href={item.href}
-            active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
-            isCollapsed={isCollapsed}
-            badge={item.badge}
-          />
-        ))}
+    <div className={cn('py-2 h-full flex flex-col')}>
+      <div className="px-3 mb-2 flex items-center justify-end">
+        <Button variant="ghost" size="icon" onClick={toggleCollapse} className="h-8 w-8">
+          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </Button>
       </div>
-    </ScrollArea>
+
+      <ScrollArea className="flex-1">
+        <div className={cn("flex flex-col px-2", isCollapsed && 'items-center')}>
+          {menuItems.map((item, index) => (
+            <NavItem
+              key={index}
+              icon={item.icon}
+              href={item.href}
+              label={item.label}
+              isCollapsed={isCollapsed}
+            />
+          ))}
+        </div>
+      </ScrollArea>
+
+      <div className={cn("mt-auto px-2")}>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-full flex items-center justify-start px-3 py-2"
+          onClick={() => {
+            // Logout işlemini burada yapabilirsiniz
+          }}
+        >
+          <LogOut className="h-5 w-5" />
+          {!isCollapsed && <span className="ml-3">{t('logout')}</span>}
+        </Button>
+      </div>
+    </div>
   );
 };
 

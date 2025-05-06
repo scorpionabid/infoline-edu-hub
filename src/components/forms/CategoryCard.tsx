@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { CalendarIcon, CheckCircle, Clock, XCircle, Pencil, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Category, CategoryStatus } from '@/types/category';
+import { Category } from '@/types/category';
 import { format, isAfter, parseISO } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';

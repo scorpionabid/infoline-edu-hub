@@ -2,34 +2,29 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
+interface GridProps {
   children: React.ReactNode;
-  columns: number;
   className?: string;
+  cols?: number;
+  gap?: number;
 }
 
-/**
- * Grid komponentini yaradırıq. Bu komponent columns parametri əsasında CSS grid layoutu yaradır və uşaq elementləri bu grid içərisində yerləşdirir.
- */
-export function Grid({ 
+export const Grid: React.FC<GridProps> = ({ 
   children, 
-  columns, 
   className, 
-  ...props 
-}: GridProps) {
-  // Calculate the grid template columns based on the number of columns
-  const gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
-
+  cols = 3,
+  gap = 4
+}) => {
   return (
     <div 
       className={cn(
-        'grid w-full', 
+        "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4",
         className
       )}
-      style={{ gridTemplateColumns }}
-      {...props}
     >
       {children}
     </div>
   );
-}
+};
+
+export default Grid;
