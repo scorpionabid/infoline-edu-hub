@@ -1,5 +1,5 @@
 
-export type CategoryAssignment = 'all' | 'sectors';
+export type CategoryAssignment = 'all' | 'sectors' | 'schools';
 export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved';
 
 export interface Category {

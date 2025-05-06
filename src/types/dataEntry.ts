@@ -1,7 +1,14 @@
 
-export type DataEntrySaveStatus = 'saved' | 'saving' | 'error';
+export type DataEntrySaveStatus = 'saved' | 'saving' | 'error' | 'idle' | 'submitting' | 'submitted';
 
-export type DataEntryStatus = 'pending' | 'approved' | 'rejected';
+export type DataEntryStatus = 'pending' | 'approved' | 'rejected' | 'draft';
+
+export interface EntryValue {
+  id?: string;
+  columnId: string;
+  value: any;
+  status?: DataEntryStatus;
+}
 
 export interface DataEntryTableData {
   id: string;
@@ -26,4 +33,11 @@ export interface DataEntryFormData {
 export interface ValidationResult {
   isValid: boolean;
   errorMessage?: string;
+}
+
+export interface DataEntryForm {
+  id?: string;
+  categoryId: string;
+  schoolId: string;
+  entries: EntryValue[];
 }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -6,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
-import { EntryValue, DataEntrySaveStatus } from '@/types/dataEntry';
+import { EntryValue, DataEntrySaveStatus, DataEntryStatus } from '@/types/dataEntry';
 import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
 import { useSchool } from '@/hooks/dataEntry/useSchool';
 import { CategoryConfirmationDialog } from './CategoryConfirmationDialog';
-import { validateEntries } from './utils/formUtils';
+import { validateField } from './utils/formUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertTriangle, Loader2, Info } from 'lucide-react';
@@ -185,7 +184,7 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
   const categoryIdFromUrl = params.categoryId || categoryId;
 
   const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
+  const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>('idle');
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
@@ -288,7 +287,7 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
       return;
     }
 
-    setSaveStatus(DataEntrySaveStatus.SAVING);
+    setSaveStatus('saving');
     try {
       // Əvvəlcə köhnə məlumatları silirik (əgər varsa)
       if (entryData.length > 0) {
@@ -317,14 +316,14 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
       
       toast.success(t('dataSavedSuccessfully'));
       setIsDirty(false);
-      setSaveStatus(DataEntrySaveStatus.SAVED);
+      setSaveStatus('saved');
     } catch (err: any) {
       toast.error(t('errorSavingData'), {
         description: err.message
       });
-      setSaveStatus(DataEntrySaveStatus.ERROR);
+      setSaveStatus('error');
     } finally {
-      setSaveStatus(DataEntrySaveStatus.IDLE);
+      setSaveStatus('idle');
     }
   };
 
@@ -334,7 +333,7 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
     
     if (!selectedCategory || !school) return;
     
-    setSaveStatus(DataEntrySaveStatus.SUBMITTING);
+    setSaveStatus('submitting');
     try {
       const { error } = await supabase
         .from('data_entries')
@@ -345,14 +344,14 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
       if (error) throw error;
       
       toast.success(t('dataSubmittedForApproval'));
-      setSaveStatus(DataEntrySaveStatus.SUBMITTED);
+      setSaveStatus('submitted');
       navigate('/dashboard');
     } catch (err: any) {
       toast.error(t('errorSubmittingData'), {
         description: err.message
       });
     } finally {
-      setSaveStatus(DataEntrySaveStatus.IDLE);
+      setSaveStatus('idle');
     }
   };
 
@@ -447,7 +446,7 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
                       column={column}
                       value={formValues[column.id] || ''}
                       onChange={handleValueChange}
-                      disabled={saveStatus === DataEntrySaveStatus.SAVING || saveStatus === DataEntrySaveStatus.SUBMITTING}
+                      disabled={saveStatus === 'saving' || saveStatus === 'submitting'}
                     />
                   ))}
                 </form>
@@ -462,7 +461,7 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
                       setIsDirty(true);
                     }
                   }}
-                  disabled={saveStatus === DataEntrySaveStatus.SAVING || saveStatus === DataEntrySaveStatus.SUBMITTING}
+                  disabled={saveStatus === 'saving' || saveStatus === 'submitting'}
                 >
                   {t('reset')}
                 </Button>
@@ -470,9 +469,9 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
                   <Button
                     variant="outline"
                     onClick={handleSubmit}
-                    disabled={!isDirty || saveStatus === DataEntrySaveStatus.SAVING || saveStatus === DataEntrySaveStatus.SUBMITTING}
+                    disabled={!isDirty || saveStatus === 'saving' || saveStatus === 'submitting'}
                   >
-                    {saveStatus === DataEntrySaveStatus.SAVING ? (
+                    {saveStatus === 'saving' ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         {t('saving')}
@@ -484,9 +483,9 @@ const DataEntryFormComponent: React.FC<DataEntryFormProps> = ({ categoryId }) =>
                   <Button
                     type="button"
                     onClick={() => setIsSubmitDialogOpen(true)}
-                    disabled={saveStatus === DataEntrySaveStatus.SAVING || saveStatus === DataEntrySaveStatus.SUBMITTING}
+                    disabled={saveStatus === 'saving' || saveStatus === 'submitting'}
                   >
-                    {saveStatus === DataEntrySaveStatus.SUBMITTING ? (
+                    {saveStatus === 'submitting' ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         {t('submitting')}
