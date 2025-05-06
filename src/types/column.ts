@@ -190,3 +190,6 @@ export interface ColumnFormValues {
     maxDate: string;
   };
 }
+
+// Tip adaptasiyası - Category və CategoryWithColumns arasındakı uyğunluq
+export type CategoryAssignment = string;

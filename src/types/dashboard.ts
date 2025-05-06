@@ -1,7 +1,7 @@
 
 import { School } from './school';
 import { Region } from './region';
-import { Sector } from './types/sector';
+import { Sector } from './sector';
 import { Category } from './category';
 import { Column } from './column';
 import { DashboardNotification } from './notification';
@@ -149,4 +149,14 @@ export interface SchoolAdminDashboardData {
     completionRate: number;
   }[];
   upcomingDeadlines?: FormItem[];
+}
+
+// SchoolAdminDashboard komponenti üçün props
+export interface SchoolAdminDashboardProps {
+  data: SchoolAdminDashboardData;
+  isLoading?: boolean;
+  error?: any;
+  onRefresh?: () => void;
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (id: string) => void;
 }

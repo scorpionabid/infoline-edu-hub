@@ -81,7 +81,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           {notification.message}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          {getRelativeTime(notification.createdAt)}
+          {getRelativeTime(notification.createdAt || notification.timestamp)}
         </p>
       </div>
       {!isRead && (

@@ -54,7 +54,7 @@ const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error,
     const commonProps = {
       id: column.id,
       disabled: readOnly,
-      'aria-invalid': error ? true : false,
+      'aria-invalid': error ? 'true' : 'false',
       className: cn(error && "border-red-500 focus:ring-red-300")
     };
     

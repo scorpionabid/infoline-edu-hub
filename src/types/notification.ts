@@ -1,8 +1,7 @@
 
-
 export type NotificationPriority = 'normal' | 'high' | 'critical';
 
-export type NotificationType = 
+export type NotificationTypeName = 
   | 'new_category'
   | 'deadline'
   | 'approval'
@@ -26,13 +25,14 @@ export interface Notification {
   relatedEntityId?: string;
   relatedEntityType?: string;
   createdAt?: string;
-  type: NotificationType | string;
+  type: NotificationTypeName;
+  read?: boolean; // Bəzi komponentlər isRead və read istifadə edir, uyğunluq üçün
 }
 
 // Dashboard üçün istifadə olunan bildiriş tipi
 export interface DashboardNotification {
   id: string;
-  type: string;
+  type: NotificationTypeName | string;
   title: string;
   message: string;
   date?: string;
@@ -47,7 +47,7 @@ export interface DashboardNotification {
 export interface DbNotification {
   id: string;
   user_id: string;
-  type: NotificationType | string;
+  type: NotificationTypeName | string;
   title: string;
   message?: string;
   related_entity_id?: string;
@@ -85,7 +85,10 @@ export function adaptDashboardNotificationToApp(dashboardNotification: any): Das
     priority: dashboardNotification.priority || 'normal',
     relatedEntityId: dashboardNotification.relatedEntityId || dashboardNotification.related_entity_id,
     relatedEntityType: dashboardNotification.relatedEntityType || dashboardNotification.related_entity_type,
-    createdAt: dashboardNotification.createdAt || dashboardNotification.created_at || new Date().toISOString()
+    createdAt: dashboardNotification.createdAt || dashboardNotification.created_at || new Date().toISOString(),
+    read: dashboardNotification.read || dashboardNotification.isRead || false
   };
 }
 
+// Component tipləri üçün
+export type NotificationType = Notification;

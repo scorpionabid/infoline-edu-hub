@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +15,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { useRegions } from '@/hooks/regions/useRegions';
 import { RegionFormData } from '@/types/user';
 import { toast } from 'sonner';
-import RegionAdminDialog from './RegionAdminDialog';
 
 interface AddRegionDialogProps {
   isOpen: boolean;
@@ -40,15 +40,16 @@ interface DeleteRegionDialogProps {
 const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ isOpen, onClose, isSubmitting }) => {
   const { t } = useLanguage();
   const [name, setName] = React.useState('');
+  const [localIsSubmitting, setLocalIsSubmitting] = useState(isSubmitting);
   const regionsStore = useRegions();
   const refreshRegions = regionsStore.refresh;
 
   const handleSaveRegion = async (data: any) => {
     if (!data) return;
 
-    setIsSubmitting(true);
+    setLocalIsSubmitting(true);
     try {
-      const result = await regionsStore.addRegion(data); // createRegion əvəzinə addRegion
+      const result = await regionsStore.addRegion(data);
 
       if (result.success) {
         toast.success(t('regionCreatedSuccess'));
@@ -65,7 +66,7 @@ const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ isOpen, onClose, isSu
         description: error.message
       });
     } finally {
-      setIsSubmitting(false);
+      setLocalIsSubmitting(false);
     }
   };
 
@@ -82,11 +83,11 @@ const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ isOpen, onClose, isSu
           </div>
         </div>
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={localIsSubmitting}>
             {t('cancel')}
           </Button>
-          <Button type="submit" onClick={() => handleSaveRegion({ name })} disabled={isSubmitting}>
-            {isSubmitting ? t('creating') + '...' : t('save')}
+          <Button type="submit" onClick={() => handleSaveRegion({ name })} disabled={localIsSubmitting}>
+            {localIsSubmitting ? t('creating') + '...' : t('save')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -97,13 +98,14 @@ const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ isOpen, onClose, isSu
 const EditRegionDialog: React.FC<EditRegionDialogProps> = ({ isOpen, onClose, region, isSubmitting }) => {
   const { t } = useLanguage();
   const [name, setName] = React.useState(region?.name || '');
+  const [localIsSubmitting, setLocalIsSubmitting] = useState(isSubmitting);
   const regionsStore = useRegions();
   const refreshRegions = regionsStore.refresh;
 
   const handleSaveRegion = async (data: any) => {
     if (!data) return;
 
-    setIsSubmitting(true);
+    setLocalIsSubmitting(true);
     try {
       const result = await regionsStore.updateRegion(region.id, data);
 
@@ -122,7 +124,7 @@ const EditRegionDialog: React.FC<EditRegionDialogProps> = ({ isOpen, onClose, re
         description: error.message
       });
     } finally {
-      setIsSubmitting(false);
+      setLocalIsSubmitting(false);
     }
   };
 
@@ -139,11 +141,11 @@ const EditRegionDialog: React.FC<EditRegionDialogProps> = ({ isOpen, onClose, re
           </div>
         </div>
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={localIsSubmitting}>
             {t('cancel')}
           </Button>
-          <Button type="submit" onClick={() => handleSaveRegion({ name })} disabled={isSubmitting}>
-            {isSubmitting ? t('updating') + '...' : t('save')}
+          <Button type="submit" onClick={() => handleSaveRegion({ name })} disabled={localIsSubmitting}>
+            {localIsSubmitting ? t('updating') + '...' : t('save')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -176,13 +178,13 @@ const DeleteRegionDialog: React.FC<DeleteRegionDialogProps> = ({ isOpen, onClose
   );
 };
 
-interface RegionAdminDialogProps {
+interface AdminRegionDialogProps {
   open: boolean;
   onClose: () => void;
   regionId: string | undefined;
 }
 
-const RegionAdminDialog: React.FC<RegionAdminDialogProps> = ({ open, onClose, regionId }) => {
+const AdminRegionDialog: React.FC<AdminRegionDialogProps> = ({ open, onClose, regionId }) => {
   const { t } = useLanguage();
   const [adminEmail, setAdminEmail] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -257,9 +259,20 @@ interface RegionDialogsProps {
   addRegion: (regionData: RegionFormData) => Promise<any>;
   updateRegion: (id: string, regionData: Partial<RegionFormData>) => Promise<any>;
   deleteRegion: (id: string) => Promise<any>;
+  assignRegionAdmin?: (regionId: string, adminEmail: string) => Promise<any>;
 }
 
-const RegionDialogs: React.FC<RegionDialogsProps> = ({ regions, loading, error, fetchRegions, refresh, addRegion, updateRegion, deleteRegion }) => {
+const RegionDialogs: React.FC<RegionDialogsProps> = ({ 
+  regions, 
+  loading, 
+  error, 
+  fetchRegions, 
+  refresh, 
+  addRegion, 
+  updateRegion, 
+  deleteRegion,
+  assignRegionAdmin 
+}) => {
   const { t } = useLanguage();
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
@@ -325,7 +338,7 @@ const RegionDialogs: React.FC<RegionDialogsProps> = ({ regions, loading, error, 
 
       {/* Region Admin Dialog */}
       {selectedRegionForAdmin && (
-        <RegionAdminDialog
+        <AdminRegionDialog
           open={isAdminDialogOpen}
           onClose={() => setIsAdminDialogOpen(false)}
           regionId={selectedRegionForAdmin}

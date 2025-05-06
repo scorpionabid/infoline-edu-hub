@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Column, ColumnFormValues, ColumnOption } from '@/types/column';
+import { Column, ColumnFormValues, ColumnOption, ColumnType } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 
 // Column form validation schema
@@ -13,18 +13,20 @@ const createColumnFormSchema = (t: (key: string) => string) => {
     type: z.enum([
       'text', 'number', 'date', 'time', 'phone', 'color', 'checkbox',
       'radio', 'select', 'textarea', 'image', 'file', 'password', 'range',
-      'datetime', 'richtext'
+      'datetime', 'richtext', 'email', 'url'
     ]),
     is_required: z.boolean().default(false),
     placeholder: z.string().optional(),
     help_text: z.string().optional(),
-    status: z.enum(['active', 'inactive']),
+    status: z.enum(['active', 'inactive', 'draft']),
     order_index: z.number().optional(),
     default_value: z.string().optional(),
     options: z.array(
       z.object({
         value: z.string(),
         label: z.string(),
+        id: z.string().optional(),
+        color: z.string().optional(),
       })
     ).optional(),
     validation: z.object({
@@ -136,7 +138,7 @@ export const useColumnForm = (
     
     try {
       // Prepare column data from form values
-      const columnData = {
+      const columnData: Omit<Column, "id"> & { id?: string } = {
         id: column?.id,
         name: values.name,
         type: values.type,
@@ -159,7 +161,9 @@ export const useColumnForm = (
           minDate: values.validation.minDate || undefined,
           maxDate: values.validation.maxDate || undefined,
         },
-        category_id: column?.category_id || categories[0]?.id
+        category_id: column?.category_id || categories[0]?.id,
+        created_at: column?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
       const success = await onSaveColumn(columnData);

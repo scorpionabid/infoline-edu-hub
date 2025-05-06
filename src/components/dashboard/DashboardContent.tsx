@@ -27,10 +27,12 @@ const DashboardContent = () => {
       totalSectors: 0,
     },
     formsByStatus: {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
       draft: 0,
       submitted: 0,
-      approved: 0,
-      rejected: 0
     },
     completionRate: 0,
     notifications: []
@@ -100,7 +102,10 @@ const DashboardContent = () => {
       )}
       
       {userRole === 'schooladmin' && (
-        <SchoolAdminDashboard data={schoolAdminData} />
+        <SchoolAdminDashboard 
+          data={schoolAdminData}
+          isLoading={false}
+        />
       )}
     </div>
   );

@@ -60,6 +60,7 @@ export interface FullUserData {
     push: boolean;
     inApp: boolean;
   };
+  name?: string; // Uyğunluq üçün əlavə edildi
 }
 
 export interface UserFormData {
@@ -71,5 +72,6 @@ export interface UserFormData {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  password?: string; // Password sahəsini əlavə edirik
+  password?: string;
+  name?: string; // Uyğunluq üçün əlavə edildi
 }
