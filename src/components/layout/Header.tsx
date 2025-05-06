@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import {
@@ -15,6 +15,7 @@ import { Moon, Sun, User, LogOut, Settings, Bell } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { supabase } from '@/integrations/supabase/client';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -22,6 +23,58 @@ const Header: React.FC = () => {
   const { currentLanguage, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [entityName, setEntityName] = useState<string>('InfoLine');
+  
+  // İstifadəçinin idarə etdiyi entitetin adını əldə edək
+  useEffect(() => {
+    async function fetchEntityName() {
+      if (!user) return;
+      
+      try {
+        // İstifadəçi rolu əsasında müvafiq sorğunu edirik
+        if (user.role === 'schooladmin' && user.school_id) {
+          const { data, error } = await supabase
+            .from('schools')
+            .select('name')
+            .eq('id', user.school_id)
+            .single();
+            
+          if (data && !error) {
+            setEntityName(data.name);
+          }
+        } 
+        else if (user.role === 'sectoradmin' && user.sector_id) {
+          const { data, error } = await supabase
+            .from('sectors')
+            .select('name')
+            .eq('id', user.sector_id)
+            .single();
+            
+          if (data && !error) {
+            setEntityName(data.name);
+          }
+        }
+        else if (user.role === 'regionadmin' && user.region_id) {
+          const { data, error } = await supabase
+            .from('regions')
+            .select('name')
+            .eq('id', user.region_id)
+            .single();
+            
+          if (data && !error) {
+            setEntityName(data.name);
+          }
+        }
+        else if (user.role === 'superadmin') {
+          setEntityName('InfoLine - SuperAdmin');
+        }
+      } catch (error) {
+        console.error('Entity məlumatları əldə edilərkən xəta:', error);
+      }
+    }
+    
+    fetchEntityName();
+  }, [user]);
   
   // Theme switch funksiyası əlavə edək
   const toggleTheme = () => {
@@ -70,7 +123,7 @@ const Header: React.FC = () => {
   return (
     <header className="border-b bg-background sticky top-0 z-40">
       <div className="container flex items-center justify-between h-16 px-4">
-        <div className="text-xl font-bold">InfoLine</div>
+        <div className="text-xl font-bold">{entityName}</div>
         
         <div className="flex items-center gap-4">
           {/* Bildirişlər */}
