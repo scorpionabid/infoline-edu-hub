@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { Category } from '@/types/category';
+import { Category } from '@/types/category.d';
 
 export interface CategoryChartProps {
   categoriesData: Category[];

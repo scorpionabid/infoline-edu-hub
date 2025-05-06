@@ -1,16 +1,14 @@
 
-import { Column } from "./column";
-
-export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'approved';
-export type CategoryAssignment = 'all' | 'sectors';
+export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'approved' | 'archived';
+export type CategoryAssignment = 'all' | 'sectors' | 'schools';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  assignment?: CategoryAssignment;
+  assignment: CategoryAssignment;
   deadline?: string;
-  status?: CategoryStatus;
+  status: CategoryStatus;
   priority?: number;
   created_at?: string;
   updated_at?: string;
@@ -20,6 +18,16 @@ export interface Category {
 }
 
 export interface CategoryWithColumns extends Category {
-  columns?: Column[];
+  columns?: any[];
+  completionRate?: number;
+}
+
+export interface FormItem {
+  id: string;
+  title: string;
+  status: string;
+  categoryName?: string;
+  dueDate?: string;
+  createdAt?: string;
   completionRate?: number;
 }

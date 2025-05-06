@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/context/LanguageContext';
-import { CategoryStatus, CategoryAssignment } from '@/types/category';
+import { CategoryStatus, CategoryAssignment } from '@/types/category.d';
 
 export type FormStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'all';
-export type AssignmentType = 'all' | 'sectors';
+export type AssignmentType = 'all' | 'sectors' | 'schools';
 
 export interface CategoryFilter {
   status?: CategoryStatus | 'all';
@@ -30,7 +30,7 @@ export const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
     onFilterChange({ ...filter, status });
   };
 
-  const handleAssignmentChange = (assignment: CategoryAssignment | 'all') => {
+  const handleAssignmentChange = (assignment: AssignmentType) => {
     onFilterChange({ ...filter, assignment });
   };
 
@@ -104,6 +104,14 @@ export const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
                 onCheckedChange={() => handleAssignmentChange('sectors')}
               />
               <Label htmlFor="assignment-sectors">{t('sectorOnly')}</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="assignment-schools" 
+                checked={filter.assignment === 'schools'} 
+                onCheckedChange={() => handleAssignmentChange('schools')}
+              />
+              <Label htmlFor="assignment-schools">{t('schoolsOnly')}</Label>
             </div>
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 export interface Column {
   id: string;
   category_id: string;
@@ -138,7 +137,7 @@ export interface CategoryWithColumns {
   id: string;
   name: string;
   description?: string;
-  assignment: CategoryAssignment; // String əvəzinə CategoryAssignment tipi
+  assignment: string;
   status: string;
   deadline?: string;
   created_at: string;
@@ -191,20 +190,7 @@ export interface ColumnFormValues {
   };
 }
 
-// Tip adaptasiyası - CategoryAssignment tipi
-export type CategoryAssignment = 'all' | 'sectors' | 'schools' | 'region' | string;
+// CategoryAssignment tipini '@/types/category.d.ts' faylına köçürdük
 
 // Category tipi (CategoryWithColumns ilə uyğunluq üçün)
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  assignment: CategoryAssignment;
-  status: string;
-  deadline?: string;
-  created_at: string;
-  updated_at: string;
-  column_count?: number;
-  priority?: number;
-  archived?: boolean;
-}
+export type Category = import('./category.d').Category;

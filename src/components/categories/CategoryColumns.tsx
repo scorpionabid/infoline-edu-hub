@@ -1,5 +1,5 @@
 
-import { Category } from "@/types/category";
+import { Category } from "@/types/category.d";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -136,6 +136,8 @@ function getStatusVariant(status: string): "default" | "secondary" | "outline" |
       return "secondary";
     case "draft":
       return "outline";
+    case "archived":
+      return "destructive";
     default:
       return "outline";
   }
@@ -149,6 +151,8 @@ function getStatusText(status: string): string {
       return "Qeyri-aktiv";
     case "draft":
       return "Qaralama";
+    case "archived":
+      return "Arxivlənmiş";
     default:
       return status;
   }

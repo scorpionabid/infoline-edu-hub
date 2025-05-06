@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCategoryActions } from '@/hooks/categories/useCategoryActions';
-import { Category, CategoryAssignment, CategoryStatus } from '@/types/category';
+import { Category, CategoryAssignment, CategoryStatus } from '@/types/category.d';
 import {
   Select,
   SelectContent,
@@ -158,6 +158,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
                 <SelectContent>
                   <SelectItem value="all">Bütün istifadəçilər</SelectItem>
                   <SelectItem value="sectors">Yalnız sektorlar</SelectItem>
+                  <SelectItem value="schools">Yalnız məktəblər</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -172,6 +173,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
                   <SelectItem value="active">Aktiv</SelectItem>
                   <SelectItem value="inactive">Deaktiv</SelectItem>
                   <SelectItem value="draft">Qaralama</SelectItem>
+                  <SelectItem value="archived">Arxivlənmiş</SelectItem>
                 </SelectContent>
               </Select>
             </div>
