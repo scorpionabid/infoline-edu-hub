@@ -1,8 +1,20 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import i18n from '@/i18n';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, initReactI18next } from 'react-i18next';
+import i18n from 'i18next';
 import { Language, LanguageInfo } from '@/types/language';
+
+// i18n inisializasiyası - əgər əvvəl inisializasiya olunmayıbsa
+if (!i18n.isInitialized) {
+  i18n.use(initReactI18next).init({
+    resources: {}, // translations fayldan yüklənəcək
+    lng: 'az',
+    fallbackLng: 'az',
+    interpolation: {
+      escapeValue: false,
+    },
+  });
+}
 
 export interface LanguageContextType {
   changeLanguage: (lng: string) => void;
@@ -27,7 +39,31 @@ export const useLanguage = (): LanguageContextType => {
 
 // useLanguageSafe əlavə edildi - xətaları qabaqlamaq üçün
 export const useLanguageSafe = (): LanguageContextType => {
-  return useLanguage();
+  const context = useContext(LanguageContext);
+  if (context === undefined) {
+    // Default tərcümə funksiyası təqdim edirik
+    return {
+      changeLanguage: (lng: string) => console.warn('LanguageProvider initialized olmayıb'),
+      t: (key: string) => key, // sadəcə açarı qaytarırıq
+      language: 'az',
+      currentLanguage: 'az',
+      supportedLanguages: [
+        { code: 'az', name: 'Azərbaycan dili' },
+        { code: 'en', name: 'English' },
+        { code: 'ru', name: 'Русский' },
+        { code: 'tr', name: 'Türkçe' }
+      ],
+      setLanguage: (lng: string) => console.warn('LanguageProvider initialized olmayıb'),
+      languages: {
+        az: { nativeName: 'Azərbaycan dili', flag: '🇦🇿' },
+        en: { nativeName: 'English', flag: '🇬🇧' },
+        ru: { nativeName: 'Русский', flag: '🇷🇺' },
+        tr: { nativeName: 'Türkçe', flag: '🇹🇷' }
+      },
+      availableLanguages: ['az', 'en', 'ru', 'tr']
+    };
+  }
+  return context;
 };
 
 interface LanguageProviderProps {
@@ -44,7 +80,8 @@ const languagesInfo: Record<string, LanguageInfo> = {
 const availableLanguageCodes = ['az', 'en', 'ru', 'tr'];
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-  const { t, i18n } = useTranslation();
+  // Tərcümə hook-unu burada çağırırıq
+  const { t } = useTranslation();
   const [currentLanguage, setCurrentLanguage] = useState(i18n.language || 'az');
 
   const supportedLanguages = [
@@ -71,6 +108,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
     setCurrentLanguage(lng);
+    // Dilin seçimini local storage-də saxlayırıq ki, səhifə yenilənəndə qalsın
+    localStorage.setItem('language', lng);
   };
 
   // setLanguage alias əlavə edirik ki, komponentlər uyğunlaşdırılsın

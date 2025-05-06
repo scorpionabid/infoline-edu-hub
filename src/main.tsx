@@ -1,30 +1,16 @@
 
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import './index.css';
-import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from './context/auth/AuthProvider';
-import { supabase } from './lib/supabase';
-import { LanguageProvider } from './context/LanguageContext';
-import { ThemeProvider } from './context/ThemeContext';
-import { NotificationProvider } from './context/NotificationContext';
-import { AppQueryProvider } from './context/QueryClientProvider';
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App'
+import './index.css'
+import './i18n'; // i18n initialazisiya faylını import edirik
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+// Əsas render
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AppQueryProvider>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <AuthProvider supabaseClient={supabase}>
-          <LanguageProvider>
-            <ThemeProvider>
-              <NotificationProvider>
-                <App />
-              </NotificationProvider>
-            </ThemeProvider>
-          </LanguageProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </AppQueryProvider>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>,
-);
+)

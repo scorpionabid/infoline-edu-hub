@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/navigation-menu"
 import { useAuth } from '@/context/auth';
 import { useLanguage } from '@/context/LanguageContext';
-import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -31,8 +30,7 @@ type Language = 'az' | 'en' | 'ru' | 'tr';
 
 const NavigationMenuDemo = () => {
   const { user, logout } = useAuth();
-  const { i18n } = useTranslation();
-  const { t } = useLanguage();
+  const { t, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -55,7 +53,7 @@ const NavigationMenuDemo = () => {
   };
 
   const changeLanguage = (lng: Language) => {
-    i18n.changeLanguage(lng);
+    setLanguage(lng);
   };
   
   // User initials for avatar
