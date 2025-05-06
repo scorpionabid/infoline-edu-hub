@@ -1,9 +1,8 @@
-
 export interface Column {
   id: string;
   category_id: string;
   name: string;
-  type: 'text' | 'number' | 'date' | 'time' | 'phone' | 'color' | 'checkbox' | 'radio' | 'select' | 'textarea' | 'image' | 'file' | 'password' | 'range' | 'datetime' | 'richtext';
+  type: ColumnType;
   is_required: boolean;
   placeholder?: string; // Placeholder əlavə edildi
   help_text?: string; // Help text əlavə edildi
@@ -16,6 +15,121 @@ export interface Column {
   updated_at: string;
   section?: string; // Section əlavə edildi
 }
+
+export type ColumnType = 'text' | 'number' | 'date' | 'time' | 'phone' | 'color' | 'checkbox' | 'radio' | 'select' | 'textarea' | 'image' | 'file' | 'password' | 'range' | 'datetime' | 'richtext' | 'email' | 'url';
+
+export interface ColumnTypeDefinition {
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  hasOptions?: boolean;
+  hasValidation?: boolean;
+}
+
+export const columnTypes: Record<ColumnType, ColumnTypeDefinition> = {
+  text: {
+    label: 'Mətn',
+    description: 'Qısa mətn daxil etmək üçün',
+    icon: 'Text',
+    hasValidation: true
+  },
+  textarea: {
+    label: 'Mətn sahəsi',
+    description: 'Çox sətirli mətn daxil etmək üçün',
+    icon: 'AlignLeft',
+    hasValidation: true
+  },
+  number: {
+    label: 'Rəqəm',
+    description: 'Rəqəm daxil etmək üçün',
+    icon: 'Hash',
+    hasValidation: true
+  },
+  date: {
+    label: 'Tarix',
+    description: 'Tarix seçmək üçün',
+    icon: 'Calendar',
+    hasValidation: true
+  },
+  select: {
+    label: 'Seçim',
+    description: 'Açılan siyahıdan seçim etmək üçün',
+    icon: 'List',
+    hasOptions: true
+  },
+  checkbox: {
+    label: 'Seçim qutusu',
+    description: 'Bəli/Xeyr tipli seçim üçün',
+    icon: 'Check'
+  },
+  radio: {
+    label: 'Radio düymələri',
+    description: 'Bir neçə variantdan birini seçmək üçün',
+    icon: 'Circle',
+    hasOptions: true
+  },
+  file: {
+    label: 'Fayl',
+    description: 'Fayl yükləmək üçün',
+    icon: 'File'
+  },
+  image: {
+    label: 'Şəkil',
+    description: 'Şəkil yükləmək üçün',
+    icon: 'Image'
+  },
+  email: {
+    label: 'E-poçt',
+    description: 'E-poçt ünvanı daxil etmək üçün',
+    icon: 'Mail',
+    hasValidation: true
+  },
+  url: {
+    label: 'URL',
+    description: 'Veb ünvan daxil etmək üçün',
+    icon: 'Link',
+    hasValidation: true
+  },
+  phone: {
+    label: 'Telefon',
+    description: 'Telefon nömrəsi daxil etmək üçün',
+    icon: 'Phone',
+    hasValidation: true
+  },
+  range: {
+    label: 'Aralıq',
+    description: 'Aralıq seçmək üçün',
+    icon: 'Sliders',
+    hasValidation: true
+  },
+  color: {
+    label: 'Rəng',
+    description: 'Rəng seçmək üçün',
+    icon: 'Palette'
+  },
+  password: {
+    label: 'Şifrə',
+    description: 'Şifrə daxil etmək üçün',
+    icon: 'Lock',
+    hasValidation: true
+  },
+  time: {
+    label: 'Vaxt',
+    description: 'Vaxt seçmək üçün',
+    icon: 'Clock'
+  },
+  datetime: {
+    label: 'Tarix və vaxt',
+    description: 'Tarix və vaxt seçmək üçün',
+    icon: 'Calendar',
+    hasValidation: true
+  },
+  richtext: {
+    label: 'Zəngin mətn',
+    description: 'Formatlanmış mətn daxil etmək üçün',
+    icon: 'Type'
+  }
+};
 
 export interface CategoryWithColumns {
   id: string;
@@ -50,7 +164,7 @@ export interface ValidationRules {
 
 export interface ColumnFormValues {
   name: string;
-  type: Column['type'];
+  type: ColumnType;
   is_required: boolean;
   placeholder: string;
   help_text: string;

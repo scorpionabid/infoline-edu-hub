@@ -21,47 +21,55 @@ import {
   Palette,
   Lock,
   Clock,
+  Type,
   CalendarClock,
   FileText
 } from 'lucide-react';
 
 interface ColumnTypeSelectorProps {
-  value: string;
-  onChange: (value: string) => void;
+  value: ColumnType;
+  onChange: (value: ColumnType) => void;
   disabled?: boolean;
 }
 
-const iconComponents: Record<string, React.FC<{ className?: string }>> = {
-  text: Text,
-  textAlignLeft: AlignLeft,
-  hash: Hash,
-  calendar: Calendar,
-  listBox: List,
-  check: Check,
-  circle: Circle,
-  file: File,
-  image: Image,
-  mail: Mail,
-  link: Link,
-  phone: Phone,
-  sliders: Sliders,
-  palette: Palette,
-  lock: Lock,
-  clock: Clock,
-  calendarClock: CalendarClock,
-  formattingTwo: FileText
+// İkon adlarını React komponentlərinə çevirmək üçün map
+const iconMap = {
+  Text: Text,
+  AlignLeft: AlignLeft,
+  Hash: Hash,
+  Calendar: Calendar,
+  List: List,
+  Check: Check,
+  Circle: Circle,
+  File: File,
+  Image: Image,
+  Mail: Mail,
+  Link: Link,
+  Phone: Phone,
+  Sliders: Sliders,
+  Palette: Palette,
+  Lock: Lock,
+  Clock: Clock,
+  Type: Type,
+  CalendarClock: CalendarClock,
+  FileText: FileText
 };
 
 const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange, disabled = false }) => {
   const { t } = useLanguage();
 
-  // Bütün mövcud tipləri əldə edirik
-  const availableColumnTypes = Object.entries(columnTypes).map(([type, definition]) => ({
-    value: type as ColumnType,
-    label: definition.label,
-    description: definition.description,
-    icon: definition.icon
-  }));
+  // Bütün mövcud tipləri əldə edirik və ikonları React komponentlərinə çeviririk
+  const availableColumnTypes = Object.entries(columnTypes).map(([type, definition]) => {
+    // İkon adını React komponentinə çeviririk
+    const IconComponent = iconMap[definition.icon as keyof typeof iconMap] || Text;
+    
+    return {
+      value: type as ColumnType,
+      label: definition.label,
+      description: definition.description,
+      icon: <IconComponent className="h-4 w-4" />
+    };
+  });
 
   // Əsas tiplər və əlavə tiplər
   const primaryTypes: ColumnType[] = ['text', 'textarea', 'number', 'date', 'select', 'checkbox', 'radio'];
@@ -75,7 +83,6 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange
           <div className="grid grid-cols-3 gap-2">
             {primaryTypes.map((type) => {
               const typeInfo = availableColumnTypes.find((columnType) => columnType.value === type);
-              const IconComponent = typeInfo && iconComponents[typeInfo.icon];
               return (
                 <button
                   key={type}
@@ -89,7 +96,7 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange
                     value === type && "bg-accent text-accent-foreground border-primary"
                   )}
                 >
-                  {IconComponent && <IconComponent className="h-5 w-5 mb-1" />}
+                  {typeInfo?.icon}
                   <span className="text-xs">{typeInfo?.label}</span>
                 </button>
               );
@@ -102,7 +109,6 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {advancedTypes.map((type) => {
               const typeInfo = availableColumnTypes.find((columnType) => columnType.value === type);
-              const IconComponent = typeInfo && iconComponents[typeInfo.icon];
               return (
                 <button
                   key={type}
@@ -116,7 +122,7 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange
                     value === type && "bg-accent text-accent-foreground border-primary"
                   )}
                 >
-                  {IconComponent && <IconComponent className="h-4 w-4 mb-1" />}
+                  {typeInfo?.icon}
                   <span className="text-xs">{typeInfo?.label}</span>
                 </button>
               );

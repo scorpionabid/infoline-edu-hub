@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Calendar, CheckCircle, FileText, PenLine, Building } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import StatusBadge from '../dataEntry/components/StatusBadge';
+import {StatusBadge} from '../dataEntry/components/StatusBadge';
 import { Category } from '@/types/category';
 
 interface CategoryCardProps {

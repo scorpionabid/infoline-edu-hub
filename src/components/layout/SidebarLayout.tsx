@@ -1,4 +1,3 @@
-
 import React, { ReactNode, useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
@@ -123,7 +122,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
         <div
           className={cn(
             "h-[calc(100vh-3.5rem)] bg-background border-r z-50 transition-all duration-300 ease-in-out",
-            isSidebarOpen ? "w-48" : "w-12",
+            isSidebarOpen ? "w-48" : "w-10",
             isMobile ? (
               isSidebarOpen ? "fixed left-0" : "fixed -left-full"
             ) : (
@@ -131,12 +130,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
             )
           )}
         >
-          <div className="flex items-center justify-between p-2">
+          <div className="flex items-center justify-between p-1">
             <div className={cn("transition-opacity", isSidebarOpen ? "opacity-100" : "opacity-0 md:hidden")}>
               <h2 className="text-sm font-bold">InfoLine</h2>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleSidebarToggle} className="flex-shrink-0 h-6 w-6">
-              <ChevronLeft className={cn("h-4 w-4 transition-transform", !isSidebarOpen && "rotate-180")} />
+            <Button variant="ghost" size="icon" onClick={handleSidebarToggle} className="flex-shrink-0 h-5 w-5">
+              <ChevronLeft className={cn("h-3 w-3 transition-transform", !isSidebarOpen && "rotate-180")} />
             </Button>
           </div>
           
@@ -163,7 +162,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
         <div 
           className={cn(
             "flex-1 overflow-y-auto transition-all duration-300",
-            isMobile ? "px-2 py-2" : (isSidebarOpen ? "md:ml-48 px-3 py-3" : "md:ml-12 px-3 py-3")
+            isMobile ? "px-2 py-2" : (isSidebarOpen ? "md:ml-38 px-3 py-3" : "md:ml-12 px-3 py-3")
           )}
         >
           <Outlet />

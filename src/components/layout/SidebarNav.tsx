@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -47,18 +46,18 @@ const NavItem = ({ href, label, icon, isActive, isCollapsed, onClick }: NavItemP
     <Button
       variant={isActive ? "secondary" : "ghost"}
       className={cn(
-        "w-full justify-start mb-0.5 text-xs",
+        "w-full justify-start mb-0 text-xs",
         isActive ? "bg-muted" : "hover:bg-muted/50",
-        isCollapsed ? "justify-center px-1 py-1.5" : "py-1.5"
+        isCollapsed ? "justify-center px-1 py-1" : "py-1"
       )}
       onClick={handleClick}
     >
       <div className="flex items-center">
-        <div className={cn(isCollapsed ? "mx-auto" : "mr-1.5")}>{icon}</div>
+        <div className={cn(isCollapsed ? "mx-auto" : "mr-1")}>{icon}</div>
         {!isCollapsed && <span>{label}</span>}
       </div>
       {isActive && !isCollapsed && (
-        <ChevronRight className="ml-auto h-3 w-3" />
+        <ChevronRight className="ml-auto h-2 w-2" />
       )}
     </Button>
   );
@@ -78,7 +77,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       {
         href: '/dashboard',
         label: t('dashboard'),
-        icon: <Home className="h-3 w-3" />,
+        icon: <Home className="h-2.5 w-2.5" />,
         allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
       }
     ];
@@ -89,7 +88,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/regions',
           label: t('regions'),
-          icon: <Building className="h-3 w-3" />,
+          icon: <Building className="h-2.5 w-2.5" />,
           allowedRoles: ['superadmin']
         }
       );
@@ -101,7 +100,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/sectors',
           label: t('sectors'),
-          icon: <Building2 className="h-3 w-3" />,
+          icon: <Building2 className="h-2.5 w-2.5" />,
           allowedRoles: ['superadmin', 'regionadmin']
         }
       );
@@ -113,7 +112,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/schools',
           label: t('schools'),
-          icon: <School className="h-3 w-3" />,
+          icon: <School className="h-2.5 w-2.5" />,
           allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin']
         }
       );
@@ -125,13 +124,13 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/categories',
           label: t('categories'),
-          icon: <Layers className="h-3 w-3" />,
+          icon: <Layers className="h-2.5 w-2.5" />,
           allowedRoles: ['superadmin', 'regionadmin']
         },
         {
           href: '/columns',
           label: t('columns'),
-          icon: <LayoutDashboard className="h-3 w-3" />,
+          icon: <LayoutDashboard className="h-2.5 w-2.5" />,
           allowedRoles: ['superadmin', 'regionadmin']
         }
       );
@@ -143,7 +142,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/data-entry',
           label: t('dataEntry'),
-          icon: <FileText className="h-3 w-3" />,
+          icon: <FileText className="h-2.5 w-2.5" />,
           allowedRoles: ['schooladmin']
         }
       );
@@ -155,7 +154,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/approvals',
           label: t('approvals'),
-          icon: <CheckCircle className="h-3 w-3" />,
+          icon: <CheckCircle className="h-2.5 w-2.5" />,
           allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin']
         }
       );
@@ -167,7 +166,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/users',
           label: t('users'),
-          icon: <Users className="h-3 w-3" />,
+          icon: <Users className="h-2.5 w-2.5" />,
           allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin']
         }
       );
@@ -178,7 +177,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       {
         href: '/reports',
         label: t('reports'),
-        icon: <FileText className="h-3 w-3" />,
+        icon: <FileText className="h-2.5 w-2.5" />,
         allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
       }
     );
@@ -188,7 +187,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       {
         href: '/settings',
         label: t('settings'),
-        icon: <Settings className="h-3 w-3" />,
+        icon: <Settings className="h-2.5 w-2.5" />,
         allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
       }
     );
@@ -197,9 +196,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   }, [userRole, t]);
 
   return (
-    <div className={cn("px-1 py-0", isCollapsed ? "items-center" : "")}>
-      <div className="space-y-0">
-        {generateNavItems.map((item) => (
+    <div className={cn("px-0.5 py-0", isCollapsed ? "items-center" : "")}>
+      <div className="space-y-0">{
+        generateNavItems.map((item) => (
           <NavItem
             key={item.href}
             href={item.href}
