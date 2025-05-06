@@ -23,7 +23,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
-import { format } from 'date-fns';
 
 interface EditCategoryDialogProps {
   isOpen: boolean;
@@ -78,7 +77,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
     const now = new Date().toISOString();
     
     if (category?.id) {
-      // Update
+      // Update - status tipini düzəltmək üçün "as CategoryStatus" əlavə etdik
       const result = await updateCategory({
         id: category.id,
         name,
@@ -97,7 +96,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
         onClose();
       }
     } else {
-      // Create
+      // Create - status tipini düzəltmək üçün "as CategoryStatus" əlavə etdik
       const result = await createCategory({
         name,
         description,
@@ -173,6 +172,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
                   <SelectItem value="active">Aktiv</SelectItem>
                   <SelectItem value="inactive">Deaktiv</SelectItem>
                   <SelectItem value="draft">Qaralama</SelectItem>
+                  <SelectItem value="approved">Təsdiqlənmiş</SelectItem>
                   <SelectItem value="archived">Arxivlənmiş</SelectItem>
                 </SelectContent>
               </Select>

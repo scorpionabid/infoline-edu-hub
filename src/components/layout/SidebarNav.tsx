@@ -1,217 +1,167 @@
-import React, { useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+
+import React from 'react';
 import { cn } from '@/lib/utils';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { useLanguage } from '@/context/LanguageContext';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { 
-  ChevronRight,
-  Home,
-  Building,
-  Building2,
-  School,
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
   LayoutDashboard,
   FileText,
-  Users,
+  Building2,
+  Users2,
+  FileBarChart,
   Settings,
   Layers,
-  CheckCircle
+  MapPin,
+  Check,
+  ThumbsUp,
+  UploadCloud
 } from 'lucide-react';
+import { useIsCollapsed } from '@/hooks/useIsCollapsed';
+import { usePermissions } from '@/hooks/auth/usePermissions';
+import { useLanguage } from '@/context/LanguageContext';
 
+// NavItem interfeysi
 interface NavItemProps {
-  href: string;
-  label: string;
   icon: React.ReactNode;
-  isActive: boolean;
-  isCollapsed: boolean;
+  label: string;
+  href: string;
+  active?: boolean;
+  isCollapsed?: boolean;
+  badge?: string | number;
   onClick?: () => void;
 }
 
-interface SidebarNavProps {
-  isCollapsed: boolean;
-  isSidebarOpen: boolean;
-  onItemClick?: () => void;
-}
-
-const NavItem = ({ href, label, icon, isActive, isCollapsed, onClick }: NavItemProps) => {
-  const navigate = useNavigate();
-  
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    navigate(href);
-    if (onClick) onClick();
-  };
-  
+// NavItem komponenti
+const NavItem: React.FC<NavItemProps> = ({
+  icon,
+  label,
+  href,
+  active = false,
+  isCollapsed = false,
+  badge,
+  onClick
+}) => {
   return (
-    <Button
-      variant={isActive ? "secondary" : "ghost"}
-      className={cn(
-        "w-full justify-start mb-0 text-xs",
-        isActive ? "bg-muted" : "hover:bg-muted/50",
-        isCollapsed ? "justify-center px-1 py-1" : "py-1"
-      )}
-      onClick={handleClick}
-    >
-      <div className="flex items-center">
-        <div className={cn(isCollapsed ? "mx-auto" : "mr-1")}>{icon}</div>
-        {!isCollapsed && <span>{label}</span>}
-      </div>
-      {isActive && !isCollapsed && (
-        <ChevronRight className="ml-auto h-2 w-2" />
-      )}
-    </Button>
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "w-full justify-start",
+            active && "bg-muted",
+            isCollapsed && "justify-center px-2"
+          )}
+          asChild
+          onClick={onClick}
+        >
+          <Link to={href}>
+            {icon}
+            {!isCollapsed && <span className="ml-2">{label}</span>}
+            {!isCollapsed && badge && <span className="ml-auto px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{badge}</span>}
+          </Link>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="right" className={cn(!isCollapsed && "hidden")}>
+        <div className="flex items-center gap-4">
+          {label}
+          {badge && <span className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{badge}</span>}
+        </div>
+      </TooltipContent>
+    </Tooltip>
   );
 };
 
-export const SidebarNav: React.FC<SidebarNavProps> = ({ 
-  isCollapsed, 
-  isSidebarOpen,
-  onItemClick
-}) => {
-  const location = useLocation();
+// SidebarNav props interfeysi 
+interface SidebarNavProps {
+  pendingApprovals?: number;
+}
+
+const SidebarNav: React.FC<SidebarNavProps> = ({ pendingApprovals = 0 }) => {
+  const { pathname } = useLocation();
+  const { isCollapsed } = useIsCollapsed();
+  const { 
+    canManageUsers, 
+    canManageRegions, 
+    canManageSectors, 
+    canManageSchools, 
+    canManageCategories, 
+    canApproveData,
+    currentRole
+  } = usePermissions();
   const { t } = useLanguage();
-  const { isMobileMenuOpen, setMobileMenuOpen } = useMobileMenu();
-  const { currentRole, isSuperAdmin, isRegionAdmin, isSectorAdmin, isSchoolAdmin } = usePermissions();
-  
-  const generateNavItems = useMemo(() => {
+
+  // Rollara əsasən menyu elementlərini hazırlaşdıraq
+  const menuItems = React.useMemo(() => {
     const items = [
-      {
-        href: '/dashboard',
-        label: t('dashboard'),
-        icon: <Home className="h-2.5 w-2.5" />,
-        allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
-      }
+      { icon: <LayoutDashboard className="h-5 w-5" />, label: t('dashboard'), href: '/' },
+      { icon: <FileText className="h-5 w-5" />, label: t('forms'), href: '/forms' }
     ];
 
-    // SuperAdmin və RegionAdmin üçün əlavə menyular
-    if (currentRole === 'superadmin') {
-      items.push(
-        {
-          href: '/regions',
-          label: t('regions'),
-          icon: <Building className="h-2.5 w-2.5" />,
-          allowedRoles: ['superadmin']
-        }
-      );
+    // Təsdiq gözləyən formalar üçün link - yalnız Sektor və Region adminləri üçün
+    if (canApproveData && pendingApprovals > 0) {
+      items.push({
+        icon: <ThumbsUp className="h-5 w-5" />,
+        label: t('approvals'),
+        href: '/approvals',
+        badge: pendingApprovals
+      });
     }
 
-    // SuperAdmin və RegionAdmin üçün əlavə menyular
-    if (['superadmin', 'regionadmin'].includes(currentRole)) {
-      items.push(
-        {
-          href: '/sectors',
-          label: t('sectors'),
-          icon: <Building2 className="h-2.5 w-2.5" />,
-          allowedRoles: ['superadmin', 'regionadmin']
-        }
-      );
-    }
-
-    // SuperAdmin, RegionAdmin və SectorAdmin üçün əlavə menyular
-    if (['superadmin', 'regionadmin', 'sectoradmin'].includes(currentRole)) {
-      items.push(
-        {
-          href: '/schools',
-          label: t('schools'),
-          icon: <School className="h-2.5 w-2.5" />,
-          allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin']
-        }
-      );
-    }
-
-    // SuperAdmin və RegionAdmin üçün əlavə menyular
-    if (['superadmin', 'regionadmin'].includes(currentRole)) {
-      items.push(
-        {
-          href: '/categories',
-          label: t('categories'),
-          icon: <Layers className="h-2.5 w-2.5" />,
-          allowedRoles: ['superadmin', 'regionadmin']
-        },
-        {
-          href: '/columns',
-          label: t('columns'),
-          icon: <LayoutDashboard className="h-2.5 w-2.5" />,
-          allowedRoles: ['superadmin', 'regionadmin']
-        }
-      );
-    }
-
-    // Yalnız SchoolAdmin üçün məlumat daxil etmə
-    if (currentRole === 'schooladmin') {
-      items.push(
-        {
-          href: '/data-entry',
-          label: t('dataEntry'),
-          icon: <FileText className="h-2.5 w-2.5" />,
-          allowedRoles: ['schooladmin']
-        }
-      );
-    }
-
-    // SuperAdmin, RegionAdmin və SectorAdmin üçün təsdiqlər
-    if (['superadmin', 'regionadmin', 'sectoradmin'].includes(currentRole)) {
-      items.push(
-        {
-          href: '/approvals',
-          label: t('approvals'),
-          icon: <CheckCircle className="h-2.5 w-2.5" />,
-          allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin']
-        }
-      );
-    }
-
-    // SuperAdmin, RegionAdmin və SectorAdmin üçün istifadəçilər
-    if (['superadmin', 'regionadmin', 'sectoradmin'].includes(currentRole)) {
-      items.push(
-        {
-          href: '/users',
-          label: t('users'),
-          icon: <Users className="h-2.5 w-2.5" />,
-          allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin']
-        }
-      );
-    }
-
-    // Bütün rollar üçün hesabatlar
-    items.push(
-      {
-        href: '/reports',
-        label: t('reports'),
-        icon: <FileText className="h-2.5 w-2.5" />,
-        allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
+    // İdarəetmə bölümü
+    if (canManageSchools || canManageUsers || canManageRegions || canManageSectors) {
+      if (canManageSchools) {
+        items.push({ icon: <Building2 className="h-5 w-5" />, label: t('schools'), href: '/schools' });
       }
-    );
-
-    // Bütün rollar üçün parametrlər
-    items.push(
-      {
-        href: '/settings',
-        label: t('settings'),
-        icon: <Settings className="h-2.5 w-2.5" />,
-        allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
+      
+      if (canManageUsers) {
+        items.push({ icon: <Users2 className="h-5 w-5" />, label: t('users'), href: '/users' });
       }
-    );
+      
+      if (canManageSectors) {
+        items.push({ icon: <Layers className="h-5 w-5" />, label: t('sectors'), href: '/sectors' });
+      }
+      
+      if (canManageRegions) {
+        items.push({ icon: <MapPin className="h-5 w-5" />, label: t('regions'), href: '/regions' });
+      }
+    }
+    
+    // Kateqoriya idarəetməsi
+    if (canManageCategories) {
+      items.push({ icon: <Layers className="h-5 w-5" />, label: t('categories'), href: '/categories' });
+    }
+    
+    // Hesabatlar və ayarlar
+    items.push({ icon: <FileBarChart className="h-5 w-5" />, label: t('reports'), href: '/reports' });
+    items.push({ icon: <Settings className="h-5 w-5" />, label: t('settings'), href: '/settings' });
 
-    return items.filter(item => item.allowedRoles.includes(currentRole));
-  }, [currentRole, t]);
+    // İmportlar və Eksportlar - sonra əlavə ediləcək
+    // if (canManageData) {
+    //   items.push({ icon: <UploadCloud className="h-5 w-5" />, label: t('imports'), href: '/imports' });
+    // }
+
+    return items;
+  }, [t, canManageUsers, canManageRegions, canManageSectors, canManageSchools, canApproveData, canManageCategories, pendingApprovals]);
 
   return (
-    <nav className={cn("px-0.5 py-0", isCollapsed ? "items-center" : "")}>
-      <div className="space-y-0">{
-        generateNavItems.map((item) => (
+    <ScrollArea className={cn("flex-1 px-3", isCollapsed && "px-2")}>
+      <div className="space-y-1 py-2">
+        {menuItems.map((item, index) => (
           <NavItem
-            key={item.href}
-            href={item.href}
-            label={item.label}
+            key={index}
             icon={item.icon}
-            isActive={location.pathname === item.href || location.pathname.startsWith(`${item.href}/`)}
+            label={item.label}
+            href={item.href}
+            active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
             isCollapsed={isCollapsed}
-            onClick={onItemClick}
+            badge={item.badge}
           />
         ))}
       </div>
-    </nav>
+    </ScrollArea>
   );
 };
 

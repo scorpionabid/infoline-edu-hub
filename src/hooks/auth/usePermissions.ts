@@ -74,7 +74,13 @@ export function usePermissions() {
     [hasRole]
   );
 
-  // Cari rolu əldə etmək üçün hesablayaq
+  // Sektor kateqoriyalarını görə bilmək
+  const canViewSectorCategories = useMemo(() => 
+    hasRole(['superadmin', 'regionadmin', 'sectoradmin']),
+    [hasRole]
+  );
+
+  // Cari rolu əldə etmək
   const userRole = useMemo(() => {
     if (!user || !user.role) return null;
     return normalizeRole(user.role);
@@ -95,8 +101,9 @@ export function usePermissions() {
     canManageSectors,
     canManageSchools,
     canApproveData,
+    canViewSectorCategories,
     currentRole: userRole,
-    userRole, // Əlavə edildi DashboardContent.tsx üçün
+    userRole, // İkisi də eyni dəyəri qaytarır
     currentUser: user
   };
 }

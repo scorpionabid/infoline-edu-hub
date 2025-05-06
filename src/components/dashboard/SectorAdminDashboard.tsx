@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import EnhancedApprovalDialog from '../approval/EnhancedApprovalDialog';
+import { SchoolsTable } from './sector-admin/SchoolsTable'; // İmportu düzələk
 
 interface SectorAdminDashboardData {
   // Add properties of SectorAdminDashboardData type here
@@ -231,52 +232,7 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('school')}</TableHead>
-                      <TableHead>{t('address')}</TableHead>
-                      <TableHead>{t('completionRate')}</TableHead>
-                      <TableHead>{t('status')}</TableHead>
-                      <TableHead>{t('actions')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {schools.map((school) => (
-                      <TableRow key={school.id}>
-                        <TableCell className="font-medium">{school.name}</TableCell>
-                        <TableCell>{school.address || '-'}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Progress value={school.completionRate} className="h-2 w-24" />
-                            <span>{school.completionRate}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {school.completionRate === 100 ? (
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              {t('completed')}
-                            </Badge>
-                          ) : school.completionRate > 0 ? (
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                              {t('inProgress')}
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
-                              {t('notStarted')}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm" onClick={() => navigate(`/schools/${school.id}`)}>
-                            <School className="h-3 w-3 mr-1" />
-                            {t('viewDetails')}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <SchoolsTable schools={schools} />
               </ScrollArea>
             </CardContent>
           </Card>

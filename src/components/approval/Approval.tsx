@@ -1,51 +1,65 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ThumbsUp, ThumbsDown } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
-import { cn } from '@/lib/utils';
+import { Loader2, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import { useApproval } from '@/hooks/useApproval';
+import { DataEntryStatus } from '@/types/dataEntry';
 import { useLanguage } from '@/context/LanguageContext';
+import DataEntryTable from '@/components/dataEntry/DataEntryTable';
+import ApprovalDialog from '@/components/approval/ApprovalDialog';
 
-type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
-
-interface ApprovalProps {
-  status: DataEntryStatus;
-  onApprove: () => Promise<void>;
-  onReject: (reason: string) => Promise<void>;
-  isLoading?: boolean;
-}
-
-export const Approval: React.FC<ApprovalProps> = ({
-  status,
-  onApprove,
-  onReject,
-  isLoading = false
-}) => {
-  const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
-  const [rejectionReason, setRejectionReason] = React.useState('');
-  const { toast } = useToast();
+const Approval = () => {
+  const { categoryId, schoolId } = useParams();
+  const navigate = useNavigate();
   const { t } = useLanguage();
+  const { toast } = useToast();
 
-  const handleApprove = async () => {
+  const {
+    loading,
+    error,
+    data,
+    schoolName,
+    categoryName,
+    handleApprove,
+    handleReject
+  } = useApproval(schoolId, categoryId);
+
+  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  
+  // Status dəyişkənləri
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Təsdiqləmə prosesi
+  const processApprove = async () => {
+    setIsProcessing(true);
     try {
-      await onApprove();
+      await handleApprove();
       toast({
         title: t('approvalSuccess'),
-        description: t('approvalSuccessMessage'),
+        description: t('dataApprovedSuccessfully'),
       });
-    } catch (error) {
+    } catch (err) {
       toast({
         variant: 'destructive',
         title: t('approvalError'),
-        description: t('approvalErrorMessage'),
+        description: String(err) || t('unknownError'),
       });
+    } finally {
+      setIsProcessing(false);
+      setIsApproveDialogOpen(false);
     }
   };
-
-  const handleReject = async () => {
+  
+  // Rədd etmə prosesi
+  const processReject = async () => {
     if (!rejectionReason.trim()) {
       toast({
         variant: 'destructive',
@@ -54,133 +68,172 @@ export const Approval: React.FC<ApprovalProps> = ({
       });
       return;
     }
-
+    
+    setIsProcessing(true);
     try {
-      await onReject(rejectionReason);
-      setRejectDialogOpen(false);
-      setRejectionReason('');
+      await handleReject(rejectionReason);
       toast({
         title: t('rejectionSuccess'),
-        description: t('rejectionSuccessMessage'),
+        description: t('dataRejectedSuccessfully'),
       });
-    } catch (error) {
+    } catch (err) {
       toast({
         variant: 'destructive',
         title: t('rejectionError'),
-        description: t('rejectionErrorMessage'),
+        description: String(err) || t('unknownError'),
       });
+    } finally {
+      setIsProcessing(false);
+      setIsRejectDialogOpen(false);
+      setRejectionReason('');
     }
   };
 
-  // Status dəyərlərinə görə badge göstər
-  const renderStatusBadge = () => {
-    switch (status) {
-      case 'approved':
-        return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-            {t('approved')}
-          </Badge>
-        );
-      case 'rejected':
-        return (
-          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
-            {t('rejected')}
-          </Badge>
-        );
-      case 'pending':
-        return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-            {t('pending')}
-          </Badge>
-        );
-      case 'draft':
-        return (
-          <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">
-            {t('draft')}
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
-
-  if (status === 'approved' || status === 'rejected') {
+  if (loading) {
     return (
-      <div className="flex items-center space-x-2">
-        <span className="text-sm text-muted-foreground">{t('status')}:</span>
-        {renderStatusBadge()}
+      <div className="flex items-center justify-center min-h-[300px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  return (
-    <>
-      <div className="flex items-center space-x-2">
-        <span className="text-sm text-muted-foreground mr-2">{t('status')}: {renderStatusBadge()}</span>
-        <Button
-          variant="outline"
-          size="sm"
-          className={cn(
-            "border-green-500 text-green-600 hover:bg-green-50",
-            isLoading && "opacity-50 pointer-events-none"
-          )}
-          onClick={handleApprove}
-          disabled={isLoading || status !== 'pending'}
-        >
-          <ThumbsUp className="h-4 w-4 mr-1" />
-          {t('approve')}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className={cn(
-            "border-red-500 text-red-600 hover:bg-red-50",
-            isLoading && "opacity-50 pointer-events-none"
-          )}
-          onClick={() => setRejectDialogOpen(true)}
-          disabled={isLoading || status !== 'pending'}
-        >
-          <ThumbsDown className="h-4 w-4 mr-1" />
-          {t('reject')}
-        </Button>
-      </div>
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-destructive">{t('error')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>{error}</p>
+          <Button
+            className="mt-4"
+            onClick={() => navigate(-1)}
+            variant="outline"
+            leftIcon={<ArrowLeft className="h-4 w-4 mr-2" />}
+          >
+            {t('goBack')}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
-      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('rejectConfirmation')}</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="rejectionReason" className="mb-2 block">
-              {t('rejectionReason')}
-            </Label>
-            <Textarea
-              id="rejectionReason"
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder={t('rejectionReasonPlaceholder')}
-              rows={4}
-            />
+  if (!data || !data.entries || data.entries.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('noDataFound')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>{t('noDataToApprove')}</p>
+          <Button
+            className="mt-4"
+            onClick={() => navigate(-1)}
+            variant="outline"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            {t('goBack')}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const currentStatus: DataEntryStatus = data.status as DataEntryStatus || 'pending';
+  const isApproved = currentStatus === 'approved';
+  const isRejected = currentStatus === 'rejected';
+  const isPending = currentStatus === 'pending';
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Button 
+          onClick={() => navigate(-1)} 
+          variant="ghost" 
+          size="sm"
+          className="h-8 w-8 p-0"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="sr-only">Back</span>
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">{t('dataApproval')}</h1>
+          <p className="text-sm text-muted-foreground">
+            {schoolName} - {categoryName}
+          </p>
+        </div>
+      </div>
+      
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-center">
+            <CardTitle>{t('reviewData')}</CardTitle>
+            <Badge variant={isApproved ? 'success' : isRejected ? 'destructive' : 'outline'}>
+              {isApproved 
+                ? <><CheckCircle className="h-3 w-3 mr-1" /> {t('approved')}</> 
+                : isRejected 
+                  ? <><XCircle className="h-3 w-3 mr-1" /> {t('rejected')}</>
+                  : t('pending')
+              }
+            </Badge>
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRejectDialogOpen(false)}
-              disabled={isLoading}
-            >
-              {t('cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleReject}
-              disabled={isLoading || !rejectionReason.trim()}
-            >
-              {isLoading ? t('rejecting') : t('confirmReject')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          <CardDescription>
+            {t('reviewCategoryData', { category: categoryName, school: schoolName })}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pb-2">
+          <ScrollArea className="h-[calc(100vh-300px)]">
+            <DataEntryTable entries={data.entries} />
+          </ScrollArea>
+        </CardContent>
+      </Card>
+      
+      {isPending && (
+        <div className="flex gap-2 justify-end">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsRejectDialogOpen(true)}
+            disabled={isProcessing}
+          >
+            <XCircle className="h-4 w-4 mr-2" />
+            {t('reject')}
+          </Button>
+          <Button 
+            onClick={() => setIsApproveDialogOpen(true)}
+            disabled={isProcessing}
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            {t('approve')}
+          </Button>
+        </div>
+      )}
+      
+      <ApprovalDialog 
+        type="approve"
+        open={isApproveDialogOpen}
+        onOpenChange={setIsApproveDialogOpen}
+        onConfirm={processApprove}
+        isLoading={isProcessing}
+        title={t('approveData')}
+        description={t('approveDataConfirmation')}
+        entity={categoryName}
+        school={schoolName}
+      />
+      
+      <ApprovalDialog
+        type="reject"
+        open={isRejectDialogOpen}
+        onOpenChange={setIsRejectDialogOpen}
+        onConfirm={processReject}
+        isLoading={isProcessing}
+        title={t('rejectData')}
+        description={t('rejectDataConfirmation')}
+        entity={categoryName}
+        school={schoolName}
+        rejectionReason={rejectionReason}
+        setRejectionReason={setRejectionReason}
+      />
+    </div>
   );
 };
 

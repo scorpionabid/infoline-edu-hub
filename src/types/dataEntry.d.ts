@@ -1,46 +1,29 @@
 
-export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
-
-export enum DataEntrySaveStatus {
-  IDLE = 'idle',
-  SAVING = 'saving',
-  SAVED = 'saved',
-  ERROR = 'error',
-  SUBMITTING = 'submitting',
-  SUBMITTED = 'submitted'
-}
+export type DataEntryStatus = 'pending' | 'approved' | 'rejected' | 'draft';
+export type DataEntrySaveStatus = 'saving' | 'saved' | 'error' | null;
 
 export interface DataEntry {
   id: string;
-  column_id: string;
-  category_id: string;
   school_id: string;
+  category_id: string;
+  column_id: string;
   value: string;
   status: DataEntryStatus;
-  created_at: Date;
-  updated_at: Date;
+  created_at: string;
+  updated_at: string;
   created_by?: string;
   approved_by?: string;
-  approved_at?: Date;
+  approved_at?: string;
   rejected_by?: string;
-  rejected_at?: Date;
   rejection_reason?: string;
+  column?: any;
 }
 
-export interface EntryValue {
+export interface DataEntryTableData {
+  columnName: string;
   columnId: string;
-  categoryId?: string;
   value: string;
-  name?: string;
-  isValid?: boolean;
+  status: DataEntryStatus;
+  columnType: string;
   error?: string;
-}
-
-export interface DataEntryForm {
-  id?: string;
-  categoryId: string;
-  schoolId: string;
-  entries: EntryValue[];
-  status?: DataEntryStatus;
-  submittedAt?: string;
 }

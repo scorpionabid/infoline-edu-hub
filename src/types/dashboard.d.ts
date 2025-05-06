@@ -1,4 +1,6 @@
 
+import { DashboardNotification } from './notification';
+
 export interface FormItem {
   id: string;
   name?: string;
@@ -12,6 +14,11 @@ export interface FormItem {
 
 export interface FormDeadline extends FormItem {
   // FormDeadline artıq FormItem'in xüsusiyyətlərinə sahib olacaq
+}
+
+export interface RecentForm extends FormItem {
+  // RecentForm da FormItem'dən genişlənir
+  categoryId?: string;
 }
 
 export interface SchoolStats {
@@ -28,6 +35,7 @@ export interface SchoolStat {
   completionRate?: number;
   formsCompleted?: number;
   formsTotal?: number;
+  address?: string;
 }
 
 export interface SchoolAdminDashboardData {
@@ -111,4 +119,34 @@ export interface DashboardNotification {
   date: string;
   read: boolean;
   type: string;
+}
+
+export interface SectorAdminDashboardData {
+  statistics: {
+    totalSchools: number;
+    activeSchools: number;
+    pendingSubmissions: number;
+    completedSubmissions: number;
+  };
+  schools: SchoolDashboardData[];
+}
+
+export interface SchoolDashboardData {
+  id: string;
+  name: string;
+  formsCompleted: number;
+  totalForms: number;
+  completionRate: number;
+  lastSubmission?: string;
+}
+
+// PendingApproval tipi
+export interface PendingApprovalItem {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  categoryId: string;
+  categoryName: string;
+  submittedAt: string;
+  status: string;
 }

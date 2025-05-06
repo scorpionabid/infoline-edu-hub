@@ -26,8 +26,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoa
   // Mock data üçün tip dönüşümləri
   const recentForms: FormItem[] = (data.recentForms || []).map(form => ({
     id: form.id || 'unknown',
-    name: form.title || 'Unnamed Form',
-    title: form.title || 'Unnamed Form',
+    title: form.title || form.name || 'Unnamed Form',
+    name: form.name || form.title || 'Unnamed Form',
     status: form.status || 'pending',
     categoryName: form.categoryName || '',
     dueDate: form.dueDate || '',
@@ -37,8 +37,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoa
   
   const upcomingDeadlines: FormItem[] = (data.upcomingDeadlines || []).map(deadline => ({
     id: deadline.id || 'unknown',
-    name: deadline.title || 'Unnamed Form',
-    title: deadline.title || 'Unnamed Form',
+    title: deadline.title || deadline.name || 'Unnamed Form',
+    name: deadline.name || deadline.title || 'Unnamed Form',
     status: deadline.status || 'pending',
     categoryName: deadline.categoryName || '',
     dueDate: deadline.dueDate || '',

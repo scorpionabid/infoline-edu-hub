@@ -1,83 +1,85 @@
+
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Region } from '@/types/supabase';
+import { useRegions } from '@/hooks/useRegions';
+import { Region } from '@/types/region';
 
-// Bu komponent/əhatə bütöv şəkildə olmalıdır, çünki key xətalar burada var:
-export const AddRegionDialog: React.FC<{
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  useRegionsHook: any;
-}> = ({ open, onOpenChange, useRegionsHook }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<'active' | 'inactive'>('active');
-  const { createRegion, fetchRegions } = useRegionsHook;
-  
+interface AddRegionDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ isOpen, onClose }) => {
+  const [regionName, setRegionName] = useState('');
+  const [regionDescription, setRegionDescription] = useState('');
+  const { createRegion, fetchRegions } = useRegions();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!regionName.trim()) return;
+    
     try {
-      await createRegion({ name, description, status });
-      onOpenChange(false);
-      setName('');
-      setDescription('');
-      setStatus('active');
-      // refresh əvəzinə fetchRegions istifadə edirik
-      fetchRegions();
+      await createRegion({
+        name: regionName,
+        description: regionDescription
+      });
+      
+      // Yeni regionu əlavə etdikdən sonra siyahını yenilə
+      await fetchRegions();
+      
+      // Formu təmizlə və dialoqu bağla
+      setRegionName('');
+      setRegionDescription('');
+      onClose();
     } catch (error) {
-      console.error('Error adding region:', error);
+      console.error('Region əlavə edilərkən xəta baş verdi:', error);
     }
   };
-  
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Yeni Region</DialogTitle>
-          <DialogDescription>
-            Yeni region əlavə etmək üçün məlumatları doldurun.
-          </DialogDescription>
-        </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
         <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Region əlavə et</DialogTitle>
+            <DialogDescription>
+              Yeni region əlavə etmək üçün aşağıdakı məlumatları doldurun
+            </DialogDescription>
+          </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Ad</Label>
+              <Label htmlFor="regionName">Region adı</Label>
               <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Region adı"
-                required
+                id="regionName"
+                value={regionName}
+                onChange={(e) => setRegionName(e.target.value)}
+                placeholder="Region adını daxil edin"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Təsvir</Label>
+              <Label htmlFor="regionDescription">Təsvir</Label>
               <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                id="regionDescription"
+                value={regionDescription}
+                onChange={(e) => setRegionDescription(e.target.value)}
                 placeholder="Region haqqında qısa məlumat"
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={(value: 'active' | 'inactive') => setStatus(value)}>
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Status seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Aktiv</SelectItem>
-                  <SelectItem value="inactive">Deaktiv</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
           <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>İmtina</Button>
             <Button type="submit">Əlavə et</Button>
           </DialogFooter>
         </form>
@@ -86,130 +88,79 @@ export const AddRegionDialog: React.FC<{
   );
 };
 
-export const EditRegionDialog: React.FC<{
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface EditRegionDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
   region: Region | null;
-  useRegionsHook: any;
-}> = ({ open, onOpenChange, region, useRegionsHook }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<'active' | 'inactive'>('active');
-  const { updateRegion, fetchRegions } = useRegionsHook;
-  
+}
+
+export const EditRegionDialog: React.FC<EditRegionDialogProps> = ({ isOpen, onClose, region }) => {
+  const [regionName, setRegionName] = useState('');
+  const [regionDescription, setRegionDescription] = useState('');
+  const { updateRegion, fetchRegions } = useRegions();
+
   useEffect(() => {
     if (region) {
-      setName(region.name || '');
-      setDescription(region.description || '');
-      setStatus(region.status as 'active' | 'inactive' || 'active');
+      setRegionName(region.name || '');
+      setRegionDescription(region.description || '');
     }
   }, [region]);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!region?.id) return;
+    if (!region || !regionName.trim()) return;
     
     try {
-      await updateRegion(region.id, { name, description, status });
-      onOpenChange(false);
-      // refresh əvəzinə fetchRegions istifadə edirik
-      fetchRegions();
+      await updateRegion(region.id, {
+        name: regionName,
+        description: regionDescription
+      });
+      
+      // Redaktə edildikdən sonra siyahını yenilə
+      await fetchRegions();
+      
+      onClose();
     } catch (error) {
-      console.error('Error updating region:', error);
+      console.error('Region yenilənərkən xəta baş verdi:', error);
     }
   };
-  
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Regionu Düzəlt</DialogTitle>
-          <DialogDescription>
-            Region məlumatlarını yeniləyin.
-          </DialogDescription>
-        </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
         <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Regionu redaktə et</DialogTitle>
+            <DialogDescription>
+              Region məlumatlarını yeniləyin
+            </DialogDescription>
+          </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Ad</Label>
+              <Label htmlFor="editRegionName">Region adı</Label>
               <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                id="editRegionName"
+                value={regionName}
+                onChange={(e) => setRegionName(e.target.value)}
                 placeholder="Region adı"
-                required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Təsvir</Label>
+              <Label htmlFor="editRegionDescription">Təsvir</Label>
               <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Region haqqında qısa məlumat"
+                id="editRegionDescription"
+                value={regionDescription}
+                onChange={(e) => setRegionDescription(e.target.value)}
+                placeholder="Region haqqında təsvir"
               />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={(value: 'active' | 'inactive') => setStatus(value)}>
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Status seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Aktiv</SelectItem>
-                  <SelectItem value="inactive">Deaktiv</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
           <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>İmtina</Button>
             <Button type="submit">Yadda saxla</Button>
           </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-export const DeleteRegionDialog: React.FC<{
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  region: Region | null;
-  useRegionsHook: any;
-}> = ({ open, onOpenChange, region, useRegionsHook }) => {
-  const { deleteRegion, fetchRegions } = useRegionsHook;
-  
-  const handleDelete = async () => {
-    if (!region?.id) return;
-    
-    try {
-      await deleteRegion(region.id);
-      onOpenChange(false);
-      fetchRegions();
-    } catch (error) {
-      console.error('Error deleting region:', error);
-    }
-  };
-  
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Regionu Sil</DialogTitle>
-          <DialogDescription>
-            Bu əməliyyat geri qaytarıla bilməz. Region silinəcək.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="py-4">
-          <p>
-            <strong>{region?.name}</strong> regionunu silmək istədiyinizə əminsiniz?
-          </p>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>İmtina</Button>
-          <Button variant="destructive" onClick={handleDelete}>Sil</Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
