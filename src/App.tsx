@@ -25,7 +25,6 @@ import SidebarLayout from '@/components/layout/SidebarLayout';
 import RequireRole from '@/components/auth/RequireRole';
 import NotFound from '@/pages/NotFound';
 import DataEntryPage from '@/pages/DataEntryPage';
-import Forms from '@/pages/Forms';
 
 const App: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -74,10 +73,6 @@ const App: React.FC = () => {
           <Route path="/data-entry" element={<DataEntryPage />} />
           <Route path="/data-entry/:categoryId" element={<DataEntryPage />} />
           
-          {/* Form routes */}
-          <Route path="/forms" element={<Forms />} />
-          <Route path="/forms/:categoryId" element={<DataEntryPage />} />
-          
           {/* SuperAdmin routes */}
           <Route path="/regions" element={
             <RequireRole roles={['superadmin']}>
@@ -104,7 +99,17 @@ const App: React.FC = () => {
               <CategoriesPage />
             </RequireRole>
           } />
+          <Route path="/categories/:id" element={
+            <RequireRole roles={['superadmin', 'regionadmin']}>
+              <CategoriesPage />
+            </RequireRole>
+          } />
           <Route path="/columns" element={
+            <RequireRole roles={['superadmin', 'regionadmin']}>
+              <ColumnsPage />
+            </RequireRole>
+          } />
+          <Route path="/columns/:id" element={
             <RequireRole roles={['superadmin', 'regionadmin']}>
               <ColumnsPage />
             </RequireRole>

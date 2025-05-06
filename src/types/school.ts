@@ -12,6 +12,7 @@ export interface School {
   email?: string;
   director_name?: string;
   admin_email?: string;
+  admin_id?: string;
   contact_phone?: string;
   type?: string;
   language?: string;
@@ -45,7 +46,6 @@ export interface SchoolStat {
   formsCompleted: number;
   totalForms: number; 
   completionRate: number;
-  completion_rate?: number;
   status?: string;
   address?: string;
 }

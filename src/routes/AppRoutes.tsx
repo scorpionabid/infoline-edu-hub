@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/hooks/auth/useAuthStore";
@@ -23,7 +24,6 @@ import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
 import Profile from "@/pages/Profile";
-import Forms from "@/pages/Forms";
 import Approvals from "@/pages/Approvals";
 
 interface ProtectedRouteProps {
@@ -173,7 +173,7 @@ const AppRoutes = () => (
       } />
       
       <Route path="/categories" element={
-        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']}>
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
           <Categories />
         </ProtectedRoute>
       } />
@@ -217,12 +217,6 @@ const AppRoutes = () => (
       <Route path="/profile" element={
         <ProtectedRoute>
           <Profile />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/forms" element={
-        <ProtectedRoute allowedRoles={['sectoradmin', 'schooladmin']}>
-          <Forms />
         </ProtectedRoute>
       } />
       

@@ -16,10 +16,11 @@ const navigation = {
   faq: "FAQ",
   terms: "Şərtlər",
   privacy: "Gizlilik",
-  forms: "Formalar",
+  categories: "Kateqoriyalar",
+  columns: "Sütunlar",
+  dataEntry: "Məlumat daxiletmə",
   regions: "Regionlar",
   sectors: "Sektorlar",
-  columns: "Sütunlar",
   formStatus: "Form statusu",
   formStatusDesc: "Formalarınızın ümumi vəziyyəti",
   addNewData: "Məlumat əlavə et",
@@ -42,7 +43,6 @@ const navigation = {
   // Dashboard
   dashboard: "İdarəetmə paneli",
   statistics: "Statistika",
-  categories: "Kateqoriyalar",
   approvals: "Təsdiqlər",
   profile: "Profil",
   logout: "Çıxış",
@@ -51,14 +51,24 @@ const navigation = {
   // Users
   users: "İstifadəçilər",
   
-  // Data Entry
-  dataEntry: "Məlumat daxiletmə",
-  
   // Reports
   reports: "Hesabatlar",
   
   // School related
-  schools: "Məktəblər"
+  schools: "Məktəblər",
+
+  // Analytics
+  analytics: "Analitika",
+
+  // Notifications
+  notifications: "Bildirişlər",
+  
+  // Add missing translations
+  addCategory: "Kateqoriya əlavə et",
+  addColumn: "Sütun əlavə et",
+  import: "İdxal et",
+  backToCategories: "Kateqoriyalara qayıt",
+  columnsDescription: "Kateqoriya üçün sütunları idarə edin"
 };
 
 export default navigation;

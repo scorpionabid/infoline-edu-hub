@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   BarChart, Settings, Users, School, BookOpen, 
   FileText, CheckSquare, Map, Building, LogOut,
-  ChevronRight, ChevronLeft, Bell, Home
+  ChevronRight, ChevronLeft, Bell, Home, Database, Columns
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -49,7 +50,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, href, label, badge, isCollapsed
       {!isCollapsed && (
         <>
           <span className="ml-3">{label}</span>
-          {badge !== undefined && badge > 0 && (
+          {typeof badge === 'number' && badge > 0 && (
             <Badge className="ml-auto" variant="outline">
               {badge}
             </Badge>
@@ -107,10 +108,20 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       label: t('schools'),
       href: '/schools',
     }] : []),
-    ...(canManageCategories || isSchoolAdmin ? [{
+    ...(canManageCategories ? [{
+      icon: <Database className="h-5 w-5" />,
+      label: t('categories'),
+      href: '/categories',
+    }] : []),
+    ...(canManageCategories ? [{
+      icon: <Columns className="h-5 w-5" />,
+      label: t('columns'),
+      href: '/columns',
+    }] : []),
+    ...(isSchoolAdmin ? [{
       icon: <BookOpen className="h-5 w-5" />,
-      label: t('forms'),
-      href: '/forms',
+      label: t('dataEntry'),
+      href: '/data-entry',
     }] : []),
     ...(canManageUsers ? [{
       icon: <Users className="h-5 w-5" />,
