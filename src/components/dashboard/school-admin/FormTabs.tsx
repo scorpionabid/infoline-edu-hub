@@ -37,7 +37,7 @@ export function FormTabs({ upcomingForms, recentForms, onFormClick }: FormTabsPr
     <Card key={form.id} className="mb-4 overflow-hidden">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-base">{form.categoryName || "Form"}</CardTitle>
+          <CardTitle className="text-base">{form.categoryName || form.title || "Form"}</CardTitle>
           {getStatusBadge(form.status)}
         </div>
       </CardHeader>
@@ -65,7 +65,7 @@ export function FormTabs({ upcomingForms, recentForms, onFormClick }: FormTabsPr
                 <AlertTriangle className="h-4 w-4 text-amber-500 mr-1" />
               )}
               <span className="text-xs font-medium">
-                {form.completionRate}% tamamlanıb
+                {form.completionRate !== undefined ? `${form.completionRate}% tamamlanıb` : ''}
               </span>
             </div>
             <Button 

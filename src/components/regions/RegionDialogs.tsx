@@ -1,372 +1,216 @@
-
-import React, { useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from '@/components/ui/use-toast';
-import { useRegions } from '@/hooks/regions/useRegions';
-import { RegionFormData } from '@/types/user';
-import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Region } from '@/types/supabase';
 
-interface AddRegionDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  isSubmitting: boolean;
-}
-
-interface EditRegionDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  region: any;
-  isSubmitting: boolean;
-}
-
-interface DeleteRegionDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  region: any;
-  onConfirm: () => void;
-  isSubmitting: boolean;
-}
-
-const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ isOpen, onClose, isSubmitting }) => {
-  const { t } = useLanguage();
-  const [name, setName] = React.useState('');
-  const [localIsSubmitting, setLocalIsSubmitting] = useState(isSubmitting);
-  const regionsStore = useRegions();
-  const refreshRegions = regionsStore.refresh;
-
-  const handleSaveRegion = async (data: any) => {
-    if (!data) return;
-
-    setLocalIsSubmitting(true);
-    try {
-      const result = await regionsStore.addRegion(data);
-
-      if (result.success) {
-        toast.success(t('regionCreatedSuccess'));
-        refreshRegions();
-        onClose();
-      } else {
-        toast.error(t('regionCreationError'), {
-          description: result.error
-        });
-      }
-    } catch (error: any) {
-      console.error('Region yaradılarkən xəta:', error);
-      toast.error(t('regionCreationError'), {
-        description: error.message
-      });
-    } finally {
-      setLocalIsSubmitting(false);
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{t('addRegion')}</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">{t('regionName')}</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={localIsSubmitting}>
-            {t('cancel')}
-          </Button>
-          <Button type="submit" onClick={() => handleSaveRegion({ name })} disabled={localIsSubmitting}>
-            {localIsSubmitting ? t('creating') + '...' : t('save')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const EditRegionDialog: React.FC<EditRegionDialogProps> = ({ isOpen, onClose, region, isSubmitting }) => {
-  const { t } = useLanguage();
-  const [name, setName] = React.useState(region?.name || '');
-  const [localIsSubmitting, setLocalIsSubmitting] = useState(isSubmitting);
-  const regionsStore = useRegions();
-  const refreshRegions = regionsStore.refresh;
-
-  const handleSaveRegion = async (data: any) => {
-    if (!data) return;
-
-    setLocalIsSubmitting(true);
-    try {
-      const result = await regionsStore.updateRegion(region.id, data);
-
-      if (result.success) {
-        toast.success(t('regionUpdatedSuccess'));
-        refreshRegions();
-        onClose();
-      } else {
-        toast.error(t('regionUpdateError'), {
-          description: result.error
-        });
-      }
-    } catch (error: any) {
-      console.error('Region yenilənərkən xəta:', error);
-      toast.error(t('regionUpdateError'), {
-        description: error.message
-      });
-    } finally {
-      setLocalIsSubmitting(false);
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{t('editRegion')}</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">{t('regionName')}</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={localIsSubmitting}>
-            {t('cancel')}
-          </Button>
-          <Button type="submit" onClick={() => handleSaveRegion({ name })} disabled={localIsSubmitting}>
-            {localIsSubmitting ? t('updating') + '...' : t('save')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const DeleteRegionDialog: React.FC<DeleteRegionDialogProps> = ({ isOpen, onClose, region, onConfirm, isSubmitting }) => {
-  const { t } = useLanguage();
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{t('deleteRegion')}</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <p>{t('deleteRegionConfirmation')} <strong>{region?.name}</strong>?</p>
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
-            {t('cancel')}
-          </Button>
-          <Button type="submit" variant="destructive" onClick={onConfirm} disabled={isSubmitting}>
-            {isSubmitting ? t('deleting') + '...' : t('delete')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-interface AdminRegionDialogProps {
+// Bu komponent/əhatə bütöv şəkildə olmalıdır, çünki key xətalar burada var:
+export const AddRegionDialog: React.FC<{
   open: boolean;
-  onClose: () => void;
-  regionId: string | undefined;
-}
-
-const AdminRegionDialog: React.FC<AdminRegionDialogProps> = ({ open, onClose, regionId }) => {
-  const { t } = useLanguage();
-  const [adminEmail, setAdminEmail] = React.useState('');
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const { toast } = useToast();
-  const regionsStore = useRegions();
-  const refreshRegions = regionsStore.refresh;
-
-  const handleAssignAdmin = async () => {
-    if (!adminEmail || !regionId) return;
-
-    setIsSubmitting(true);
+  onOpenChange: (open: boolean) => void;
+  useRegionsHook: any;
+}> = ({ open, onOpenChange, useRegionsHook }) => {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<'active' | 'inactive'>('active');
+  const { createRegion, fetchRegions } = useRegionsHook;
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     try {
-      const result = await regionsStore.assignRegionAdmin(regionId, adminEmail);
-
-      if (result.success) {
-        toast({
-          title: t('adminAssigned'),
-          description: t('adminAssignedDescription'),
-        });
-        refreshRegions();
-        onClose();
-      } else {
-        toast({
-          variant: 'destructive',
-          title: t('adminAssignmentFailed'),
-          description: result.error || t('unknownError'),
-        });
-      }
-    } catch (error: any) {
-      console.error('Admin təyin etmə xətası:', error);
-      toast({
-        variant: 'destructive',
-        title: t('adminAssignmentFailed'),
-        description: error.message || t('unknownError'),
-      });
-    } finally {
-      setIsSubmitting(false);
+      await createRegion({ name, description, status });
+      onOpenChange(false);
+      setName('');
+      setDescription('');
+      setStatus('active');
+      // refresh əvəzinə fetchRegions istifadə edirik
+      fetchRegions();
+    } catch (error) {
+      console.error('Error adding region:', error);
     }
   };
-
+  
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('assignAdmin')}</DialogTitle>
+          <DialogTitle>Yeni Region</DialogTitle>
+          <DialogDescription>
+            Yeni region əlavə etmək üçün məlumatları doldurun.
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="email" className="text-right">{t('adminEmail')}</Label>
-            <Input id="email" type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="col-span-3" />
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Ad</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Region adı"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="description">Təsvir</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Region haqqında qısa məlumat"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={(value: 'active' | 'inactive') => setStatus(value)}>
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Status seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Aktiv</SelectItem>
+                  <SelectItem value="inactive">Deaktiv</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
-            {t('cancel')}
-          </Button>
-          <Button type="submit" onClick={handleAssignAdmin} disabled={isSubmitting}>
-            {isSubmitting ? t('assigning') + '...' : t('assign')}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="submit">Əlavə et</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
 };
 
-interface RegionDialogsProps {
-  regions: any[];
-  loading: boolean;
-  error: string;
-  fetchRegions: (forceRefresh?: boolean) => Promise<void>;
-  refresh: () => Promise<void>;
-  addRegion: (regionData: RegionFormData) => Promise<any>;
-  updateRegion: (id: string, regionData: Partial<RegionFormData>) => Promise<any>;
-  deleteRegion: (id: string) => Promise<any>;
-  assignRegionAdmin?: (regionId: string, adminEmail: string) => Promise<any>;
-}
-
-const RegionDialogs: React.FC<RegionDialogsProps> = ({ 
-  regions, 
-  loading, 
-  error, 
-  fetchRegions, 
-  refresh, 
-  addRegion, 
-  updateRegion, 
-  deleteRegion,
-  assignRegionAdmin 
-}) => {
-  const { t } = useLanguage();
-  const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-  const [isAdminDialogOpen, setIsAdminDialogOpen] = React.useState(false);
-  const [selectedRegion, setSelectedRegion] = React.useState<any | null>(null);
-  const [selectedRegionForAdmin, setSelectedRegionForAdmin] = React.useState<string | undefined>(undefined);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  const handleOpenAdminDialog = (regionId: string) => {
-    setSelectedRegionForAdmin(regionId);
-    setIsAdminDialogOpen(true);
+export const EditRegionDialog: React.FC<{
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  region: Region | null;
+  useRegionsHook: any;
+}> = ({ open, onOpenChange, region, useRegionsHook }) => {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<'active' | 'inactive'>('active');
+  const { updateRegion, fetchRegions } = useRegionsHook;
+  
+  useEffect(() => {
+    if (region) {
+      setName(region.name || '');
+      setDescription(region.description || '');
+      setStatus(region.status as 'active' | 'inactive' || 'active');
+    }
+  }, [region]);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!region?.id) return;
+    
+    try {
+      await updateRegion(region.id, { name, description, status });
+      onOpenChange(false);
+      // refresh əvəzinə fetchRegions istifadə edirik
+      fetchRegions();
+    } catch (error) {
+      console.error('Error updating region:', error);
+    }
   };
-
+  
   return (
-    <>
-      <Button onClick={() => setIsAddDialogOpen(true)} disabled={loading}>
-        {t('addRegion')}
-      </Button>
-
-      {/* Add Region Dialog */}
-      <AddRegionDialog
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        isSubmitting={isSubmitting}
-      />
-
-      {/* Edit Region Dialog */}
-      {selectedRegion && (
-        <EditRegionDialog
-          isOpen={isEditDialogOpen}
-          onClose={() => setIsEditDialogOpen(false)}
-          region={selectedRegion}
-          isSubmitting={isSubmitting}
-        />
-      )}
-
-      {/* Delete Region Dialog */}
-      {selectedRegion && (
-        <DeleteRegionDialog
-          isOpen={isDeleteDialogOpen}
-          onClose={() => setIsDeleteDialogOpen(false)}
-          region={selectedRegion}
-          onConfirm={async () => {
-            if (!selectedRegion?.id) return;
-            setIsSubmitting(true);
-            try {
-              await deleteRegion(selectedRegion.id);
-              toast.success(t('regionDeletedSuccess'));
-              await refresh();
-            } catch (err: any) {
-              toast.error(t('regionDeletionError'), {
-                description: err.message
-              });
-            } finally {
-              setIsSubmitting(false);
-              setIsDeleteDialogOpen(false);
-            }
-          }}
-          isSubmitting={isSubmitting}
-        />
-      )}
-
-      {/* Region Admin Dialog */}
-      {selectedRegionForAdmin && (
-        <AdminRegionDialog
-          open={isAdminDialogOpen}
-          onClose={() => setIsAdminDialogOpen(false)}
-          regionId={selectedRegionForAdmin}
-        />
-      )}
-
-      {/* Actions */}
-      {regions.map((region) => (
-        <div key={region.id}>
-          <Button onClick={() => {
-            setSelectedRegion(region);
-            setIsEditDialogOpen(true);
-          }} disabled={loading}>
-            {t('edit')}
-          </Button>
-          <Button onClick={() => {
-            setSelectedRegion(region);
-            setIsDeleteDialogOpen(true);
-          }} disabled={loading}>
-            {t('delete')}
-          </Button>
-          <Button onClick={() => handleOpenAdminDialog(region.id)} disabled={loading}>
-            {t('assignAdmin')}
-          </Button>
-        </div>
-      ))}
-    </>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Regionu Düzəlt</DialogTitle>
+          <DialogDescription>
+            Region məlumatlarını yeniləyin.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Ad</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Region adı"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="description">Təsvir</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Region haqqında qısa məlumat"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={(value: 'active' | 'inactive') => setStatus(value)}>
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Status seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Aktiv</SelectItem>
+                  <SelectItem value="inactive">Deaktiv</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit">Yadda saxla</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default RegionDialogs;
+export const DeleteRegionDialog: React.FC<{
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  region: Region | null;
+  useRegionsHook: any;
+}> = ({ open, onOpenChange, region, useRegionsHook }) => {
+  const { deleteRegion, fetchRegions } = useRegionsHook;
+  
+  const handleDelete = async () => {
+    if (!region?.id) return;
+    
+    try {
+      await deleteRegion(region.id);
+      onOpenChange(false);
+      fetchRegions();
+    } catch (error) {
+      console.error('Error deleting region:', error);
+    }
+  };
+  
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Regionu Sil</DialogTitle>
+          <DialogDescription>
+            Bu əməliyyat geri qaytarıla bilməz. Region silinəcək.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <p>
+            <strong>{region?.name}</strong> regionunu silmək istədiyinizə əminsiniz?
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>İmtina</Button>
+          <Button variant="destructive" onClick={handleDelete}>Sil</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};

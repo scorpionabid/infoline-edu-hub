@@ -69,9 +69,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   onItemClick
 }) => {
   const location = useLocation();
-  const { userRole } = usePermissions();
   const { t } = useLanguage();
-
+  const { isMobileMenuOpen, setMobileMenuOpen } = useMobileMenu();
+  const { currentRole, isSuperAdmin, isRegionAdmin, isSectorAdmin, isSchoolAdmin } = usePermissions();
+  
   const generateNavItems = useMemo(() => {
     const items = [
       {
@@ -83,7 +84,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     ];
 
     // SuperAdmin və RegionAdmin üçün əlavə menyular
-    if (userRole === 'superadmin') {
+    if (currentRole === 'superadmin') {
       items.push(
         {
           href: '/regions',
@@ -95,7 +96,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     }
 
     // SuperAdmin və RegionAdmin üçün əlavə menyular
-    if (['superadmin', 'regionadmin'].includes(userRole)) {
+    if (['superadmin', 'regionadmin'].includes(currentRole)) {
       items.push(
         {
           href: '/sectors',
@@ -107,7 +108,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     }
 
     // SuperAdmin, RegionAdmin və SectorAdmin üçün əlavə menyular
-    if (['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole)) {
+    if (['superadmin', 'regionadmin', 'sectoradmin'].includes(currentRole)) {
       items.push(
         {
           href: '/schools',
@@ -119,7 +120,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     }
 
     // SuperAdmin və RegionAdmin üçün əlavə menyular
-    if (['superadmin', 'regionadmin'].includes(userRole)) {
+    if (['superadmin', 'regionadmin'].includes(currentRole)) {
       items.push(
         {
           href: '/categories',
@@ -137,7 +138,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     }
 
     // Yalnız SchoolAdmin üçün məlumat daxil etmə
-    if (userRole === 'schooladmin') {
+    if (currentRole === 'schooladmin') {
       items.push(
         {
           href: '/data-entry',
@@ -149,7 +150,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     }
 
     // SuperAdmin, RegionAdmin və SectorAdmin üçün təsdiqlər
-    if (['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole)) {
+    if (['superadmin', 'regionadmin', 'sectoradmin'].includes(currentRole)) {
       items.push(
         {
           href: '/approvals',
@@ -161,7 +162,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     }
 
     // SuperAdmin, RegionAdmin və SectorAdmin üçün istifadəçilər
-    if (['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole)) {
+    if (['superadmin', 'regionadmin', 'sectoradmin'].includes(currentRole)) {
       items.push(
         {
           href: '/users',
@@ -192,11 +193,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       }
     );
 
-    return items.filter(item => item.allowedRoles.includes(userRole));
-  }, [userRole, t]);
+    return items.filter(item => item.allowedRoles.includes(currentRole));
+  }, [currentRole, t]);
 
   return (
-    <div className={cn("px-0.5 py-0", isCollapsed ? "items-center" : "")}>
+    <nav className={cn("px-0.5 py-0", isCollapsed ? "items-center" : "")}>
       <div className="space-y-0">{
         generateNavItems.map((item) => (
           <NavItem
@@ -210,6 +211,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           />
         ))}
       </div>
-    </div>
+    </nav>
   );
 };
+
+export default SidebarNav;

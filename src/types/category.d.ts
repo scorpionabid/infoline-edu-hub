@@ -19,7 +19,6 @@ export interface Category {
 
 export interface CategoryWithColumns extends Category {
   columns?: any[];
-  completionRate?: number;
 }
 
 export interface FormItem {

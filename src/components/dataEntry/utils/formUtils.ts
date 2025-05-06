@@ -17,7 +17,7 @@ export const validateEntries = (entries: EntryValue[], columns: Column[]): Entry
     let errorMessage = '';
     
     // Məcburi sahə yoxlaması
-    if (column.is_required && (!entry.value || entry.value.trim() === '')) {
+    if (column.is_required && (!entry.value || String(entry.value).trim() === '')) {
       isValid = false;
       errorMessage = 'Bu sahə məcburidir';
     }
@@ -26,11 +26,12 @@ export const validateEntries = (entries: EntryValue[], columns: Column[]): Entry
     if (isValid && column.validation && entry.value) {
       switch (column.type) {
         case 'number':
-          if (column.validation.min && parseFloat(entry.value) < column.validation.min) {
+          const numValue = parseFloat(String(entry.value));
+          if (column.validation.min && numValue < column.validation.min) {
             isValid = false;
             errorMessage = `Dəyər minimum ${column.validation.min} olmalıdır`;
           }
-          if (column.validation.max && parseFloat(entry.value) > column.validation.max) {
+          if (column.validation.max && numValue > column.validation.max) {
             isValid = false;
             errorMessage = `Dəyər maksimum ${column.validation.max} olmalıdır`;
           }
@@ -38,18 +39,19 @@ export const validateEntries = (entries: EntryValue[], columns: Column[]): Entry
           
         case 'text':
         case 'textarea':
-          if (column.validation.minLength && entry.value.length < column.validation.minLength) {
+          const strValue = String(entry.value);
+          if (column.validation.minLength && strValue.length < column.validation.minLength) {
             isValid = false;
             errorMessage = `Mətn minimum ${column.validation.minLength} simvol olmalıdır`;
           }
-          if (column.validation.maxLength && entry.value.length > column.validation.maxLength) {
+          if (column.validation.maxLength && strValue.length > column.validation.maxLength) {
             isValid = false;
             errorMessage = `Mətn maksimum ${column.validation.maxLength} simvol olmalıdır`;
           }
           if (column.validation.pattern) {
             try {
               const regex = new RegExp(column.validation.pattern);
-              if (!regex.test(entry.value)) {
+              if (!regex.test(String(entry.value))) {
                 isValid = false;
                 errorMessage = 'Mətn düzgün formatda deyil';
               }
@@ -62,7 +64,7 @@ export const validateEntries = (entries: EntryValue[], columns: Column[]): Entry
         case 'email':
           if (column.validation.email) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(entry.value)) {
+            if (!emailRegex.test(String(entry.value))) {
               isValid = false;
               errorMessage = 'Düzgün e-poçt ünvanı daxil edin';
             }
@@ -72,7 +74,7 @@ export const validateEntries = (entries: EntryValue[], columns: Column[]): Entry
         case 'url':
           if (column.validation.url) {
             try {
-              new URL(entry.value);
+              new URL(String(entry.value));
             } catch (e) {
               isValid = false;
               errorMessage = 'Düzgün URL daxil edin';
@@ -84,7 +86,7 @@ export const validateEntries = (entries: EntryValue[], columns: Column[]): Entry
           if (column.validation.tel && column.validation.pattern) {
             try {
               const regex = new RegExp(column.validation.pattern);
-              if (!regex.test(entry.value)) {
+              if (!regex.test(String(entry.value))) {
                 isValid = false;
                 errorMessage = 'Düzgün telefon nömrəsi daxil edin';
               }
@@ -96,11 +98,12 @@ export const validateEntries = (entries: EntryValue[], columns: Column[]): Entry
           
         case 'date':
         case 'datetime':
-          if (column.validation.minDate && new Date(entry.value) < new Date(column.validation.minDate)) {
+          const dateValue = entry.value instanceof Date ? entry.value : new Date(String(entry.value));
+          if (column.validation.minDate && dateValue < new Date(column.validation.minDate)) {
             isValid = false;
             errorMessage = `Tarix ${new Date(column.validation.minDate).toLocaleDateString()} və ya sonra olmalıdır`;
           }
-          if (column.validation.maxDate && new Date(entry.value) > new Date(column.validation.maxDate)) {
+          if (column.validation.maxDate && dateValue > new Date(column.validation.maxDate)) {
             isValid = false;
             errorMessage = `Tarix ${new Date(column.validation.maxDate).toLocaleDateString()} və ya əvvəl olmalıdır`;
           }

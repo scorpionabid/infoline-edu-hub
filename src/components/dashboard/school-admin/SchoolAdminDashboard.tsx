@@ -50,6 +50,27 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoa
     ? data.notifications.map((notification) => adaptDashboardNotificationToApp(notification))
     : [];
 
+  // Formaları FormItem tipinə uyğunlaşdırırıq
+  const upcomingDeadlines: FormItem[] = (data.upcomingDeadlines || []).map(item => ({
+    id: item.id,
+    title: item.title,
+    status: item.status,
+    categoryName: item.categoryName,
+    dueDate: item.dueDate,
+    createdAt: item.createdAt,
+    completionRate: item.completionRate
+  }));
+
+  const recentForms: FormItem[] = (data.recentForms || []).map(item => ({
+    id: item.id,
+    title: item.title,
+    status: item.status,
+    categoryName: item.categoryName,
+    dueDate: item.dueDate,
+    createdAt: item.createdAt,
+    completionRate: item.completionRate
+  }));
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Məktəb Dashboard</h2>
@@ -80,8 +101,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoa
       />
 
       <FormTabs 
-        upcomingForms={data.upcomingDeadlines || []} 
-        recentForms={data.recentForms || []}
+        upcomingForms={upcomingDeadlines} 
+        recentForms={recentForms}
       />
     </div>
   );

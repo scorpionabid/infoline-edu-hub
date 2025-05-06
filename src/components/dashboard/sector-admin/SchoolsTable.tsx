@@ -52,7 +52,8 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools, onViewDetails }) =
         <TableBody>
           {schools.map((school) => {
             const completionStatus = getCompletionStatus(school.completionRate);
-            const formDisplay = school.formsCompleted !== undefined && school.formsTotal !== undefined 
+            const formDisplay = 
+              (school.formsCompleted !== undefined && school.formsTotal !== undefined) 
               ? `${school.formsCompleted} / ${school.formsTotal}`
               : '-';
             

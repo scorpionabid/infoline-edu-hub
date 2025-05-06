@@ -15,7 +15,7 @@ import {
 
 const DashboardContent = () => {
   const { t } = useLanguage();
-  const { userRole } = usePermissions();
+  const { currentRole } = usePermissions();
   const { user } = useAuth();
   
   // Mock data obyektləri
@@ -89,19 +89,19 @@ const DashboardContent = () => {
         </h1>
       </div>
 
-      {userRole === 'superadmin' && (
+      {currentRole === 'superadmin' && (
         <SuperAdminDashboard data={superAdminData} />
       )}
       
-      {userRole === 'regionadmin' && (
+      {currentRole === 'regionadmin' && (
         <RegionAdminDashboard data={regionAdminData} />
       )}
       
-      {userRole === 'sectoradmin' && (
+      {currentRole === 'sectoradmin' && (
         <SectorAdminDashboard data={sectorAdminData} />
       )}
       
-      {userRole === 'schooladmin' && (
+      {currentRole === 'schooladmin' && (
         <SchoolAdminDashboard 
           data={schoolAdminData}
           isLoading={false}

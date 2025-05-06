@@ -73,6 +73,12 @@ export function usePermissions() {
     hasRole(['superadmin', 'regionadmin', 'sectoradmin']),
     [hasRole]
   );
+
+  // Cari rolu əldə etmək üçün hesablayaq
+  const userRole = useMemo(() => {
+    if (!user || !user.role) return null;
+    return normalizeRole(user.role);
+  }, [user]);
   
   return {
     hasRole,
@@ -89,7 +95,8 @@ export function usePermissions() {
     canManageSectors,
     canManageSchools,
     canApproveData,
-    currentRole: user?.role ? normalizeRole(user.role) : null,
+    currentRole: userRole,
+    userRole, // Əlavə edildi DashboardContent.tsx üçün
     currentUser: user
   };
 }
