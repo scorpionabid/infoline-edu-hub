@@ -27,3 +27,54 @@ export interface DataEntryTableData {
   columnType: string;
   error?: string;
 }
+
+export enum DataEntrySaveStatus {
+  IDLE = 'idle',
+  SAVING = 'saving',
+  SAVED = 'saved',
+  ERROR = 'error',
+  SUBMITTING = 'submitting',
+  SUBMITTED = 'submitted'
+}
+
+export interface EntryValue {
+  [columnId: string]: string | boolean | number | Date | null;
+}
+
+export interface DataEntryForm {
+  entries: DataEntry[];
+  isModified: boolean;
+  saveStatus: DataEntrySaveStatus;
+  error: string | null;
+  schoolId: string;
+  categoryId: string;
+  status: string;
+  lastSaved?: string;
+  submittedAt?: string;
+}
+
+export interface FormDeadline {
+  id: string;
+  title: string;
+  dueDate: string;
+  createdAt: string;
+  categoryName: string;
+  completionRate: number;
+  status: string;
+}
+
+export interface DataEntryFormProps {
+  schoolId: string;
+  categoryId: string;
+  initialEntries?: DataEntry[];
+  onComplete?: () => void;
+}
+
+export interface ColumnValue {
+  columnId: string;
+  value: string | boolean | number;
+  columnType: string;
+  isRequired: boolean;
+  isValid: boolean;
+  errorMessage?: string;
+}

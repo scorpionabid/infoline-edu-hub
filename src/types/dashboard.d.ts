@@ -1,40 +1,39 @@
 
-import { DashboardNotification } from './notification';
+import { DashboardNotification, Notification } from './notification';
 
 export interface FormItem {
   id: string;
-  name?: string;
+  name: string;
   title: string;
   status: string;
-  categoryName?: string;
-  dueDate?: string;
-  createdAt?: string;
-  completionRate?: number;
+  categoryName: string;
+  dueDate: string;
+  createdAt: string;
+  completionRate: number;
 }
 
 export interface FormDeadline extends FormItem {
-  // FormDeadline artıq FormItem'in xüsusiyyətlərinə sahib olacaq
+  // FormDeadline artıq FormItem'in bütün xüsusiyyətlərinə sahib olacaq
 }
 
 export interface RecentForm extends FormItem {
-  // RecentForm da FormItem'dən genişlənir
   categoryId?: string;
 }
 
 export interface SchoolStats {
   id: string;
   name: string;
-  completionRate?: number;
-  formsCompleted?: number;
-  formsTotal?: number;
+  completionRate: number;
+  formsCompleted: number;
+  formsTotal: number;
 }
 
 export interface SchoolStat {
   id: string;
   name: string;
-  completionRate?: number;
-  formsCompleted?: number;
-  formsTotal?: number;
+  completionRate: number;
+  formsCompleted: number;
+  formsTotal: number;
   address?: string;
 }
 
@@ -149,4 +148,35 @@ export interface PendingApprovalItem {
   categoryName: string;
   submittedAt: string;
   status: string;
+}
+
+export interface DashboardStatistics {
+  totalItems: number;
+  activeItems: number;
+  completedItems: number;
+  pendingItems: number;
+}
+
+export interface DashboardStats {
+  totalUsers?: number;
+  totalSchools?: number;
+  totalRegions?: number;
+  totalSectors?: number;
+  totalForms?: number;
+  totalCategories?: number;
+  sectors?: number;
+  schools?: number;
+  users?: number;
+}
+
+export interface FormStats {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  draft: number;
+  submitted?: number;
+  incomplete?: number;
+  dueSoon?: number;
+  overdue?: number;
 }

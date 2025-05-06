@@ -3,13 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { useApproval } from '@/hooks/useApproval';
-import { DataEntryStatus } from '@/types/dataEntry';
 import { useLanguage } from '@/context/LanguageContext';
 import DataEntryTable from '@/components/dataEntry/DataEntryTable';
 import ApprovalDialog from '@/components/approval/ApprovalDialog';
@@ -109,8 +107,8 @@ const Approval = () => {
             className="mt-4"
             onClick={() => navigate(-1)}
             variant="outline"
-            leftIcon={<ArrowLeft className="h-4 w-4 mr-2" />}
           >
+            <ArrowLeft className="h-4 w-4 mr-2" />
             {t('goBack')}
           </Button>
         </CardContent>
@@ -139,7 +137,7 @@ const Approval = () => {
     );
   }
 
-  const currentStatus: DataEntryStatus = data.status as DataEntryStatus || 'pending';
+  const currentStatus = data.status as 'approved' | 'rejected' | 'pending' || 'pending';
   const isApproved = currentStatus === 'approved';
   const isRejected = currentStatus === 'rejected';
   const isPending = currentStatus === 'pending';
@@ -209,7 +207,6 @@ const Approval = () => {
       )}
       
       <ApprovalDialog 
-        type="approve"
         open={isApproveDialogOpen}
         onOpenChange={setIsApproveDialogOpen}
         onConfirm={processApprove}
@@ -221,7 +218,6 @@ const Approval = () => {
       />
       
       <ApprovalDialog
-        type="reject"
         open={isRejectDialogOpen}
         onOpenChange={setIsRejectDialogOpen}
         onConfirm={processReject}
