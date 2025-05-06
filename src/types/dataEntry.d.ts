@@ -41,3 +41,5 @@ export interface DataEntryTableData {
 }
 
 export type DataEntryStatus = 'pending' | 'approved' | 'rejected' | 'draft';
+
+export type DataEntrySaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'submitting' | 'submitted';

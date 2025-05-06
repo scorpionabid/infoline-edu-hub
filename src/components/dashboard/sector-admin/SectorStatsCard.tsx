@@ -1,69 +1,64 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
-
-type IndicatorType = 'positive' | 'negative' | 'neutral' | 'warning';
+import { TrendingUp, TrendingDown, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
 interface SectorStatsCardProps {
-  title: string;
-  value: number;
-  description: string;
-  indicator: IndicatorType;
-  percentage?: number;
+  totalSchools: number;
+  activeSchools: number;
+  completionRate: number;
+  pendingApprovals: number;
 }
 
 const SectorStatsCard: React.FC<SectorStatsCardProps> = ({ 
-  title, 
-  value, 
-  description, 
-  indicator, 
-  percentage 
+  totalSchools, 
+  activeSchools, 
+  completionRate, 
+  pendingApprovals 
 }) => {
-  const renderIndicator = () => {
-    switch (indicator) {
-      case 'positive':
-        return (
-          <div className="flex items-center text-green-600">
-            <TrendingUp className="mr-1 h-4 w-4" />
-            {percentage && <span>{percentage}%</span>}
-          </div>
-        );
-      case 'negative':
-        return (
-          <div className="flex items-center text-red-600">
-            <TrendingDown className="mr-1 h-4 w-4" />
-            {percentage && <span>{percentage}%</span>}
-          </div>
-        );
-      case 'warning':
-        return (
-          <div className="flex items-center text-amber-600">
-            <TrendingUp className="mr-1 h-4 w-4" />
-            {percentage && <span>{percentage}%</span>}
-          </div>
-        );
-      default:
-        return (
-          <div className="flex items-center text-gray-500">
-            <Minus className="mr-1 h-4 w-4" />
-            {percentage && <span>{percentage}%</span>}
-          </div>
-        );
-    }
-  };
-
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between">
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-          {renderIndicator()}
-        </div>
+      <CardHeader>
+        <CardTitle className="text-sm font-medium">Sektor məlumatları</CardTitle>
+        <CardDescription>Ümumi statistika</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Məktəblər</span>
+          <span className="text-sm font-medium">
+            {activeSchools}/{totalSchools}
+          </span>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Tamamlanma</span>
+          <div className="flex items-center">
+            <span className="text-sm font-medium mr-2">{completionRate}%</span>
+            {completionRate > 80 ? (
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            ) : completionRate > 50 ? (
+              <TrendingUp className="h-4 w-4 text-amber-500" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-red-500" />
+            )}
+          </div>
+        </div>
+        <Progress value={completionRate} className="h-1" />
+        
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Təsdiq gözləyən</span>
+          <div className="flex items-center">
+            <span className="text-sm font-medium mr-2">{pendingApprovals}</span>
+            {pendingApprovals > 0 && (
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+            )}
+          </div>
+        </div>
+
+        <div className="text-xs mt-2 text-muted-foreground">
+          Son yenilənmə: {new Date().toLocaleDateString()}
+        </div>
       </CardContent>
     </Card>
   );

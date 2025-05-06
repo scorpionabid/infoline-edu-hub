@@ -1,36 +1,28 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { formatDistanceToNow } from 'date-fns';
+import { az } from 'date-fns/locale';
 
-export interface ActivityLogItem {
-  id: string;
-  action: string;
-  user: string;
-  date: string;
-  entityType: string;
-  entityId: string;
-}
-
-interface ActivityLogCardProps {
-  items: ActivityLogItem[];
+export interface ActivityLogCardProps {
+  items: {
+    id: string;
+    action: string;
+    target: string;
+    date: string;
+    user: string;
+  }[];
 }
 
 export const ActivityLogCard: React.FC<ActivityLogCardProps> = ({ items }) => {
-  if (!items || items.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Son fəaliyyətlər</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-6">
-            Göstəriləcək fəaliyyət yoxdur
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return formatDistanceToNow(date, { addSuffix: true, locale: az });
+    } catch (error) {
+      return dateString;
+    }
+  };
 
   return (
     <Card>
@@ -38,21 +30,26 @@ export const ActivityLogCard: React.FC<ActivityLogCardProps> = ({ items }) => {
         <CardTitle>Son fəaliyyətlər</CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[300px] pr-4">
-          <div className="space-y-4">
-            {items.map((item) => (
-              <div key={item.id} className="border-b pb-3 last:border-0">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">{item.action}</span>
-                  <span className="text-xs text-muted-foreground">{item.date}</span>
+        <div className="space-y-4">
+          {items.length === 0 ? (
+            <p className="text-center py-4 text-muted-foreground">Fəaliyyət tapılmadı</p>
+          ) : (
+            items.map((item) => (
+              <div key={item.id} className="border-b pb-4 last:border-b-0 last:pb-0">
+                <div className="flex flex-col space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{item.action}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(item.date)}
+                    </span>
+                  </div>
+                  <span className="text-sm">{item.target}</span>
+                  <span className="text-xs text-muted-foreground">{item.user}</span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {item.user} - {item.entityType}
-                </p>
               </div>
-            ))}
-          </div>
-        </ScrollArea>
+            ))
+          )}
+        </div>
       </CardContent>
     </Card>
   );

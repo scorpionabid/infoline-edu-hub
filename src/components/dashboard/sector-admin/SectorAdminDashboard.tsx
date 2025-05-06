@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { 
   Card, 
@@ -17,8 +16,18 @@ import { usePermissions } from '@/hooks/auth/usePermissions';
 import { ActivityLogCard } from '@/components/dashboard/sector-admin/ActivityLogCard';
 import { SchoolsList } from '@/components/dashboard/sector-admin/SchoolsList';
 import { SchoolsTable } from '@/components/dashboard/sector-admin/SchoolsTable';
-import { SectorStatsCard } from '@/components/dashboard/sector-admin/SectorStatsCard';
+import SectorStatsCard from '@/components/dashboard/sector-admin/SectorStatsCard';
 import { SchoolStat } from '@/types/school';
+
+interface ActivityLogCardProps {
+  items: {
+    id: string;
+    action: string;
+    target: string;
+    date: string;
+    user: string;
+  }[];
+}
 
 const SectorAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -138,7 +147,32 @@ const SectorAdminDashboard: React.FC = () => {
     return counts;
   };
   
-  const statusCounts = getSchoolStatusCounts();
+  const statusCounts = getSchoolStatusCounts ? getSchoolStatusCounts() : { active: 0, inactive: 0, total: schoolStats.length };
+
+  // Activity log sample data for ActivityLogCard component
+  const activityLogItems = [
+    {
+      id: '1',
+      action: 'Məktəb məlumatları təsdiqləndi',
+      target: 'Bakı şəhər 220 saylı məktəb',
+      date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      user: 'Anar Məmmədov'
+    },
+    {
+      id: '2',
+      action: 'Yeni kateqoriya əlavə edildi',
+      target: 'Metodiki işlər',
+      date: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+      user: 'Samirə Həsənova'
+    },
+    {
+      id: '3',
+      action: 'Hesabat yaradıldı',
+      target: 'Aylıq hesabat',
+      date: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
+      user: 'Elnur Qarayev'
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -254,7 +288,7 @@ const SectorAdminDashboard: React.FC = () => {
           </Card>
 
           {/* Activity Log */}
-          <ActivityLogCard />
+          <ActivityLogCard items={activityLogItems} />
         </div>
         
         {/* Sidebar - 2 columns on medium and up */}
