@@ -1,9 +1,10 @@
+
 import React, { ReactNode, useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { ChevronLeft, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SidebarNav } from './SidebarNav';
+import SidebarNav from './SidebarNav';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import Header from './Header';

@@ -1,4 +1,3 @@
-
 import { DashboardNotification, Notification } from './notification';
 
 export interface FormItem {
@@ -48,7 +47,7 @@ export interface SchoolAdminDashboardData {
     dueSoon: number;
     overdue: number;
   };
-  recentForms?: FormItem[];
+  recentForms?: RecentForm[];
   upcomingDeadlines?: FormItem[];
   completionRate?: number;
   notifications?: any[];

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { CalendarIcon, CheckCircle, Clock, XCircle, Pencil, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Category } from '@/types/category';
+import { Category, CategoryStatus } from '@/types/category';
 import { format, isAfter, parseISO } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -113,39 +113,31 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
         )}
 
         <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              {t('completion')}: <span className="font-medium">{completionRate}%</span>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {t('columns')}: <span className="font-medium">{category.column_count || 0}</span>
-            </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">{t('completion')}</span>
+            <span className="font-medium">{completionRate}%</span>
           </div>
-          <Progress value={completionRate} className="h-2" 
-            indicatorClassName={cn(
-              completionRate < 30 ? 'bg-red-500' : 
-              completionRate < 70 ? 'bg-amber-500' : 
-              'bg-green-500'
-            )} 
-          />
+          <Progress value={completionRate} className="h-2" />
         </div>
       </CardContent>
-      <CardFooter>
-        <div className="flex gap-2 w-full">
-          <Button variant="outline" className="flex-1" onClick={handleViewClick}>
-            {category.status === 'active' || category.status === 'approved'
-              ? canApproveData 
-                ? <Clock className="mr-2 h-4 w-4" />
-                : <FileText className="mr-2 h-4 w-4" />
-              : <Pencil className="mr-2 h-4 w-4" />
-            }
-            {category.status === 'active' || category.status === 'approved'
-              ? canApproveData 
-                ? t('review')
-                : t('viewData')
-              : t('fillData')
-            }
+      <CardFooter className="pt-1">
+        <div className="flex justify-between w-full">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleViewClick}
+          >
+            {t('view')}
           </Button>
+          {canApproveData && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleEditClick}
+            >
+              {t('edit')}
+            </Button>
+          )}
         </div>
       </CardFooter>
     </Card>

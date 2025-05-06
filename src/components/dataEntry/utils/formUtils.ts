@@ -1,136 +1,63 @@
 
-import { parse, isValid, isBefore, isAfter } from 'date-fns';
+import { DataEntry, ColumnValue } from '@/types/dataEntry';
 
-// Dəyər tipi
-export type FormFieldValue = string;
-
-// Validasiya funksiyası - string qəbul edib işləyir
-export const validateField = (field: any, value: FormFieldValue): string | null => {
-  if (!field) return null;
-
-  // Məcburi sahə yoxlaması
-  if (field.isRequired && (!value || value.trim() === '')) {
-    return 'Bu sahə məcburidir';
-  }
-
-  if (!value) return null;
-
-  const { validation = {} } = field;
-
-  // Tip-spesifik validasiyalar
-  switch (field.type) {
-    case 'text':
-    case 'textarea':
-      // Minimum uzunluq
-      if (validation.minLength && value.length < validation.minLength) {
-        return `Minimum ${validation.minLength} simvol tələb olunur`;
-      }
-
-      // Maksimum uzunluq
-      if (validation.maxLength && value.length > validation.maxLength) {
-        return `Maksimum ${validation.maxLength} simvol icazə verilir`;
-      }
-
-      // Nümunə yoxlaması
-      if (validation.pattern && !new RegExp(validation.pattern).test(value)) {
-        return validation.patternMessage || 'Düzgün format deyil';
-      }
-      break;
-
-    case 'number':
-      const numValue = Number(value);
-      if (isNaN(numValue)) {
-        return 'Düzgün rəqəm deyil';
-      }
-
-      // Minimum dəyər
-      if (validation.min !== undefined && numValue < validation.min) {
-        return `Minimum dəyər ${validation.min} olmalıdır`;
-      }
-
-      // Maksimum dəyər
-      if (validation.max !== undefined && numValue > validation.max) {
-        return `Maksimum dəyər ${validation.max} olmalıdır`;
-      }
-      break;
-
-    case 'email':
-      const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      if (!emailRegex.test(value)) {
-        return 'Düzgün e-poçt ünvanı deyil';
-      }
-      break;
-
-    case 'url':
-      try {
-        new URL(value);
-      } catch (e) {
-        return 'Düzgün URL deyil';
-      }
-      break;
-
-    case 'phone':
-      const phoneRegex = /^\+?[0-9\s-()]{7,15}$/;
-      if (!phoneRegex.test(value)) {
-        return 'Düzgün telefon nömrəsi deyil';
-      }
-      break;
-
-    case 'date':
-      const dateValue = new Date(value);
-      if (!isValid(dateValue)) {
-        return 'Düzgün tarix deyil';
-      }
-
-      // Minimum tarix
-      if (validation.minDate) {
-        const minDate = new Date(validation.minDate);
-        if (isBefore(dateValue, minDate)) {
-          return `Tarix ${minDate.toLocaleDateString()} tarixindən sonra olmalıdır`;
-        }
-      }
-
-      // Maksimum tarix
-      if (validation.maxDate) {
-        const maxDate = new Date(validation.maxDate);
-        if (isAfter(dateValue, maxDate)) {
-          return `Tarix ${maxDate.toLocaleDateString()} tarixindən əvvəl olmalıdır`;
-        }
-      }
-      break;
-  }
-
-  return null;
+// Daxil edilmiş məlumatları yoxlamaq üçün
+export const validateEntries = (entries: ColumnValue[]): boolean => {
+  // Bütün məcburi sahələrin doldurulduğunu yoxla
+  const invalidEntries = entries.filter(entry => 
+    entry.isRequired && 
+    (entry.value === null || entry.value === undefined || entry.value === '')
+  );
+  
+  // Əlavə validasiya yoxlamaları (format yoxlaması və s.)
+  const invalidFormats = entries.filter(entry => !entry.isValid);
+  
+  return invalidEntries.length === 0 && invalidFormats.length === 0;
 };
 
-// Dəyəri formatla
-export const formatValue = (field: any, value: FormFieldValue): string => {
-  if (!field || !value) return '';
+// Məlumatlar əsasında ColumnValue obyektlərini yaratmaq üçün
+export const formatEntries = (entries: DataEntry[], columns: any[]): ColumnValue[] => {
+  if (!entries || !columns) return [];
+  
+  return columns.map(column => {
+    const entry = entries.find(e => e.column_id === column.id);
+    
+    return {
+      columnId: column.id,
+      value: entry ? parseValue(entry.value, column.type) : getDefaultValue(column),
+      columnType: column.type,
+      isRequired: column.is_required || false,
+      isValid: true // ilkin olaraq validdir, validasiya zamanı yenilənəcək
+    };
+  });
+};
 
-  switch (field.type) {
-    case 'date':
-      const date = new Date(value);
-      return isValid(date) ? date.toLocaleDateString() : value;
-    case 'checkbox':
-      return value === 'true' ? 'Bəli' : 'Xeyr';
+// Məlumat tipinə görə dəyəri uyğun formata çevirmək
+const parseValue = (value: string, type: string): string | number | boolean | null => {
+  if (value === null || value === undefined) return null;
+  
+  switch (type) {
+    case 'number':
+      return Number(value);
+    case 'boolean':
+      return value === 'true' || value === '1';
     default:
       return value;
   }
 };
 
-// Bütün sahələri validasiya et
-export const validateAllFields = (
-  fields: any[], 
-  values: Record<string, FormFieldValue>
-): Record<string, string> => {
-  const errors: Record<string, string> = {};
-
-  fields.forEach(field => {
-    const error = validateField(field, values[field.id]);
-    if (error) {
-      errors[field.id] = error;
-    }
-  });
-
-  return errors;
+// Sütun tipinə görə default dəyər qaytarmaq
+const getDefaultValue = (column: any): string | number | boolean | null => {
+  if (column.default_value !== null && column.default_value !== undefined) {
+    return parseValue(column.default_value, column.type);
+  }
+  
+  switch (column.type) {
+    case 'number':
+      return 0;
+    case 'boolean':
+      return false;
+    default:
+      return '';
+  }
 };

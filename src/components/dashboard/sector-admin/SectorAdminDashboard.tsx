@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Download, FileCheck, FileQuestion, School, Users } from 'lucide-react';
 import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
-import SchoolsTable from './SchoolsTable';
+import { SchoolsTable } from './SchoolsTable';
 import { SchoolStats } from '@/types/dashboard';
 
 interface SectorAdminDashboardProps {

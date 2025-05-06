@@ -17,19 +17,19 @@ import {
 
 interface SchoolsTableProps {
   schools: SchoolStat[];
-  onViewDetailsClick?: (schoolId: string) => void;
+  onViewDetails?: (schoolId: string) => void;
 }
 
 export const SchoolsTable: React.FC<SchoolsTableProps> = ({ 
   schools = [],
-  onViewDetailsClick,
+  onViewDetails,
 }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
   const handleViewClick = (schoolId: string) => {
-    if (onViewDetailsClick) {
-      onViewDetailsClick(schoolId);
+    if (onViewDetails) {
+      onViewDetails(schoolId);
     } else {
       navigate(`/schools/${schoolId}`);
     }
@@ -70,7 +70,7 @@ export const SchoolsTable: React.FC<SchoolsTableProps> = ({
                 </TableCell>
                 <TableCell className="text-center">
                   <Badge variant="secondary" className="font-normal">
-                    {school.formsCompleted || 0}/{school.formsTotal || 0}
+                    {school.formsCompleted || 0}/{school.totalForms || 0}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
@@ -91,3 +91,5 @@ export const SchoolsTable: React.FC<SchoolsTableProps> = ({
     </div>
   );
 };
+
+export default SchoolsTable;

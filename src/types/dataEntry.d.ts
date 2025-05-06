@@ -55,12 +55,13 @@ export interface DataEntryForm {
 
 export interface FormDeadline {
   id: string;
-  title: string;
+  title: string; 
+  name: string;
+  status: string;
   dueDate: string;
   createdAt: string;
   categoryName: string;
   completionRate: number;
-  status: string;
 }
 
 export interface DataEntryFormProps {

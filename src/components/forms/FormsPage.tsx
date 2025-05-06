@@ -1,136 +1,127 @@
+// FormsPage.tsx içərisində sadəcə CategoryStatus tipini düzgün işlətmək lazımdır
+
 import React, { useState, useEffect } from 'react';
+import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Grid } from '@/components/ui/grid';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import CategoryCard from './CategoryCard';
-import { PlusCircle, Search, SlidersHorizontal } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useCategories } from '@/hooks/categories/useCategories';
-import { Category } from '@/types/category';
 import { useLanguage } from '@/context/LanguageContext';
+import { usePermissions } from '@/hooks/auth/usePermissions';
+import { Category, CategoryStatus } from '@/types/category';
+import { Grid } from '@/components/ui/grid';
+import CategoryCard from './CategoryCard';
+import { Filter, Plus, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
-const FormsPage: React.FC = () => {
-  const { categories, isLoading } = useCategories();
-  const { t, currentLanguage } = useLanguage();
-  const navigate = useNavigate();
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
-  
-  // Filter categories based on search query and status filter
-  useEffect(() => {
-    let filtered = [...categories];
-    
-    // Apply search filter
-    if (searchQuery) {
-      const lowercaseQuery = searchQuery.toLowerCase();
-      filtered = filtered.filter(category => 
-        category.name.toLowerCase().includes(lowercaseQuery) || 
-        (category.description && category.description.toLowerCase().includes(lowercaseQuery))
-      );
-    }
-    
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(category => category.status === statusFilter);
-    }
-    
-    setFilteredCategories(filtered);
-  }, [categories, searchQuery, statusFilter]);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{currentLanguage === 'az' ? 'Formalar' : 'Forms'}</h1>
-        <Button onClick={() => navigate('/categories/new')}>
-          <PlusCircle className="mr-2 h-4 w-4" /> 
-          {t('createCategory')}
-        </Button>
-      </div>
-      
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full sm:w-auto">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t('searchForms')}
-            className="pl-8 w-full"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('filterByStatus')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allForms')}</SelectItem>
-              <SelectItem value="active">{t('active')}</SelectItem>
-              <SelectItem value="approved">{t('approved')}</SelectItem>
-              <SelectItem value="draft">{t('draft')}</SelectItem>
-              <SelectItem value="inactive">{t('inactive')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="w-full border-b rounded-none mb-6">
-          <TabsTrigger value="all" className="flex-1">{t('allCategories')}</TabsTrigger>
-          <TabsTrigger value="active" className="flex-1">{t('activeForms')}</TabsTrigger>
-          <TabsTrigger value="pending" className="flex-1">{t('pendingForms')}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="all" className="mt-0">
-          <CategoriesGrid 
-            categories={filteredCategories} 
-            isLoading={isLoading} 
-          />
-        </TabsContent>
-        <TabsContent value="active" className="mt-0">
-          <CategoriesGrid 
-            categories={filteredCategories.filter(c => c.status === 'active' || c.status === 'approved')} 
-            isLoading={isLoading} 
-          />
-        </TabsContent>
-        <TabsContent value="pending" className="mt-0">
-          <CategoriesGrid 
-            categories={filteredCategories.filter(c => c.status === 'draft')} 
-            isLoading={isLoading} 
-          />
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
-
-interface CategoriesGridProps {
+interface FormsPageProps {
   categories: Category[];
-  isLoading: boolean;
+  onAddCategory: () => void;
 }
 
-const CategoriesGrid: React.FC<CategoriesGridProps> = ({ categories, isLoading }) => {
-  if (isLoading) {
-    return <div className="text-center py-8">Yüklənir...</div>;
-  }
-  
-  if (categories.length === 0) {
-    return <div className="text-center py-8 text-muted-foreground">Heç bir kateqoriya tapılmadı</div>;
-  }
-  
+const FormsPage: React.FC<FormsPageProps> = ({ categories, onAddCategory }) => {
+  const { t } = useLanguage();
+  const { canManageCategories } = usePermissions();
+  const [activeTab, setActiveTab] = useState<CategoryStatus>('active');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    console.log('FormsPage categories:', categories);
+  }, [categories]);
+
+  // Tip uyğunsuzluqlarının düzəldilməsi üçün isActive funksiyasını yenidən yazaq:
+
+  const isActive = (category: Category, activeTab: CategoryStatus) => {
+    if (activeTab === 'active' && category.status === 'active') return true;
+    if (activeTab === 'approved' && category.status === 'approved') return true;
+    if (activeTab === 'draft' && category.status === 'draft') return true;
+    if (activeTab === 'archived' && (category.status === 'archived' || category.status === 'inactive')) return true;
+    return false;
+  };
+
+  // Grid üçün responsive dəyərlər üçün columnsCount-u düzəlt:
+
+  const columnsCount = {
+    default: 1,
+    sm: 1,
+    md: 2,
+    lg: 3
+  }; 
+
+  const filteredCategories = categories?.filter(category =>
+    category.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    isActive(category, activeTab)
+  );
+
   return (
-    <ScrollArea className="h-[calc(100vh-300px)]">
-      <Grid columns={{ default: 1, sm: 2, md: 2, lg: 3 }} className="gap-4">
-        {categories.map((category) => (
-          <CategoryCard key={category.id} category={category} />
-        ))}
-      </Grid>
-    </ScrollArea>
+    <Container>
+      <div className="md:flex items-center justify-between mb-4">
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold">{t('forms')}</h1>
+          <p className="text-muted-foreground">{t('manageForms')}</p>
+        </div>
+        <div className="flex items-center space-x-2 mt-2 md:mt-0">
+          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+            <Filter className="w-4 h-4 mr-2" />
+            {t('filter')}
+          </Button>
+          {canManageCategories && (
+            <Button size="sm" onClick={onAddCategory}>
+              <Plus className="w-4 h-4 mr-2" />
+              {t('addCategory')}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {showFilters && (
+        <div className="bg-muted p-4 rounded-md mb-4">
+          <Input
+            type="search"
+            placeholder={t('searchCategories')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-md"
+          />
+        </div>
+      )}
+
+      <Tabs defaultValue="active" className="space-y-4" value={activeTab} onValueChange={(value) => setActiveTab(value as CategoryStatus)}>
+        <TabsList>
+          <TabsTrigger value="active">{t('active')}</TabsTrigger>
+          <TabsTrigger value="approved">{t('approved')}</TabsTrigger>
+          <TabsTrigger value="draft">{t('draft')}</TabsTrigger>
+          <TabsTrigger value="archived">{t('archived')}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="active">
+          <Grid columns={columnsCount}>
+            {filteredCategories?.filter(category => category.status === 'active').map(category => (
+              <CategoryCard key={category.id} category={category} />
+            ))}
+          </Grid>
+        </TabsContent>
+        <TabsContent value="approved">
+          <Grid columns={columnsCount}>
+            {filteredCategories?.filter(category => category.status === 'approved').map(category => (
+              <CategoryCard key={category.id} category={category} />
+            ))}
+          </Grid>
+        </TabsContent>
+        <TabsContent value="draft">
+          <Grid columns={columnsCount}>
+            {filteredCategories?.filter(category => category.status === 'draft').map(category => (
+              <CategoryCard key={category.id} category={category} />
+            ))}
+          </Grid>
+        </TabsContent>
+        <TabsContent value="archived">
+          <Grid columns={columnsCount}>
+            {filteredCategories?.filter(category => category.status === 'archived' || category.status === 'inactive').map(category => (
+              <CategoryCard key={category.id} category={category} />
+            ))}
+          </Grid>
+        </TabsContent>
+      </Tabs>
+    </Container>
   );
 };
 

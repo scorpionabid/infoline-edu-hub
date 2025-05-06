@@ -1,234 +1,151 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { usePermissions } from '@/hooks/auth/usePermissions';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/components/ui/use-toast';
-import { Loader2, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
-import { useApproval } from '@/hooks/useApproval';
-import { useLanguage } from '@/context/LanguageContext';
+import { Input } from '@/components/ui/input';
+import { Search, RefreshCw, Info } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { PendingApprovalItem } from '@/types/dashboard';
+import PendingApprovalsTable from './PendingApprovalsTable';
 import DataEntryTable from '@/components/dataEntry/DataEntryTable';
-import ApprovalDialog from '@/components/approval/ApprovalDialog';
+import { DataEntryTableData } from '@/types/dataEntry';
+import { useToast } from '@/components/ui/use-toast';
 
-const Approval = () => {
-  const { categoryId, schoolId } = useParams();
+const Approval: React.FC = () => {
+  const { t } = useLanguageSafe();
   const navigate = useNavigate();
-  const { t } = useLanguage();
   const { toast } = useToast();
+  const { canApproveData, currentRole } = usePermissions();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
 
+  // Təsdiq gözləyən məlumatları əldə edirk
   const {
-    loading,
+    data: pendingItems = [],
+    isLoading,
+    isError,
     error,
-    data,
-    schoolName,
-    categoryName,
-    handleApprove,
-    handleReject
-  } = useApproval(schoolId, categoryId);
-
-  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
-  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState('');
-  
-  // Status dəyişkənləri
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  // Təsdiqləmə prosesi
-  const processApprove = async () => {
-    setIsProcessing(true);
-    try {
-      await handleApprove();
-      toast({
-        title: t('approvalSuccess'),
-        description: t('dataApprovedSuccessfully'),
+    refetch
+  } = useQuery({
+    queryKey: ['approvals', activeTab],
+    queryFn: async () => {
+      // Əvvəlcə məktəblərə aid kateqoriyalar üzrə təsdiq gözləyən məlumatları qruplaşdırırıq
+      const { data, error } = await supabase.rpc('get_pending_approvals_grouped', {
+        p_status: activeTab
       });
-    } catch (err) {
+
+      if (error) throw new Error(error.message);
+      
+      return data || [];
+    },
+    enabled: canApproveData
+  });
+
+  // Yüklənmə zamanı istifadəçinin təsdiq səlahiyyətləri olub-olmadığını yoxlayırıq
+  useEffect(() => {
+    if (!canApproveData) {
       toast({
+        title: t('noPermission'),
+        description: t('noApprovalPermissionDescription'),
         variant: 'destructive',
-        title: t('approvalError'),
-        description: String(err) || t('unknownError'),
       });
-    } finally {
-      setIsProcessing(false);
-      setIsApproveDialogOpen(false);
+      navigate('/');
     }
-  };
-  
-  // Rədd etmə prosesi
-  const processReject = async () => {
-    if (!rejectionReason.trim()) {
-      toast({
-        variant: 'destructive',
-        title: t('validationError'),
-        description: t('rejectionReasonRequired'),
-      });
-      return;
-    }
-    
-    setIsProcessing(true);
-    try {
-      await handleReject(rejectionReason);
-      toast({
-        title: t('rejectionSuccess'),
-        description: t('dataRejectedSuccessfully'),
-      });
-    } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: t('rejectionError'),
-        description: String(err) || t('unknownError'),
-      });
-    } finally {
-      setIsProcessing(false);
-      setIsRejectDialogOpen(false);
-      setRejectionReason('');
-    }
-  };
+  }, [canApproveData, navigate, toast, t]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[300px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-destructive">{t('error')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>{error}</p>
-          <Button
-            className="mt-4"
-            onClick={() => navigate(-1)}
-            variant="outline"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t('goBack')}
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!data || !data.entries || data.entries.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('noDataFound')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>{t('noDataToApprove')}</p>
-          <Button
-            className="mt-4"
-            onClick={() => navigate(-1)}
-            variant="outline"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t('goBack')}
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const currentStatus = data.status as 'approved' | 'rejected' | 'pending' || 'pending';
-  const isApproved = currentStatus === 'approved';
-  const isRejected = currentStatus === 'rejected';
-  const isPending = currentStatus === 'pending';
+  // Axtarış funksiyası
+  const filteredItems = pendingItems.filter(item => 
+    item.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    item.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">{t('approvals')}</h1>
         <Button 
-          onClick={() => navigate(-1)} 
-          variant="ghost" 
+          variant="outline" 
           size="sm"
-          className="h-8 w-8 p-0"
+          onClick={() => refetch()}
+          className="flex items-center gap-1"
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="sr-only">Back</span>
+          <RefreshCw className="h-3 w-3" />
+          {t('refresh')}
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold">{t('dataApproval')}</h1>
-          <p className="text-sm text-muted-foreground">
-            {schoolName} - {categoryName}
-          </p>
-        </div>
       </div>
-      
+
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-3">
           <div className="flex justify-between items-center">
-            <CardTitle>{t('reviewData')}</CardTitle>
-            <Badge variant={isApproved ? 'success' : isRejected ? 'destructive' : 'outline'}>
-              {isApproved 
-                ? <><CheckCircle className="h-3 w-3 mr-1" /> {t('approved')}</> 
-                : isRejected 
-                  ? <><XCircle className="h-3 w-3 mr-1" /> {t('rejected')}</>
-                  : t('pending')
-              }
-            </Badge>
+            <CardTitle>{t('dataApprovals')}</CardTitle>
+            
+            <div className="relative w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t('searchBySchoolOrCategory')}
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
-          <CardDescription>
-            {t('reviewCategoryData', { category: categoryName, school: schoolName })}
-          </CardDescription>
         </CardHeader>
-        <CardContent className="pb-2">
-          <ScrollArea className="h-[calc(100vh-300px)]">
-            <DataEntryTable entries={data.entries} />
-          </ScrollArea>
+        <CardContent>
+          <Tabs defaultValue="pending" value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="pending">{t('pending')}</TabsTrigger>
+              <TabsTrigger value="approved">{t('approved')}</TabsTrigger>
+              <TabsTrigger value="rejected">{t('rejected')}</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="pending">
+              {isLoading ? (
+                <div className="text-center p-6">{t('loading')}</div>
+              ) : isError ? (
+                <div className="text-center p-6 text-red-600">{t('errorLoadingData')}</div>
+              ) : filteredItems.length === 0 ? (
+                <div className="text-center p-6 text-muted-foreground flex flex-col items-center">
+                  <Info className="h-8 w-8 mb-2" />
+                  <p>{searchTerm ? t('noResultsFound') : t('noPendingApprovals')}</p>
+                </div>
+              ) : (
+                <PendingApprovalsTable items={filteredItems} onRefresh={refetch} />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="approved">
+              {isLoading ? (
+                <div className="text-center p-6">{t('loading')}</div>
+              ) : filteredItems.length === 0 ? (
+                <div className="text-center p-6 text-muted-foreground flex flex-col items-center">
+                  <Info className="h-8 w-8 mb-2" />
+                  <p>{searchTerm ? t('noResultsFound') : t('noApprovedData')}</p>
+                </div>
+              ) : (
+                <PendingApprovalsTable items={filteredItems} onRefresh={refetch} />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="rejected">
+              {isLoading ? (
+                <div className="text-center p-6">{t('loading')}</div>
+              ) : filteredItems.length === 0 ? (
+                <div className="text-center p-6 text-muted-foreground flex flex-col items-center">
+                  <Info className="h-8 w-8 mb-2" />
+                  <p>{searchTerm ? t('noResultsFound') : t('noRejectedData')}</p>
+                </div>
+              ) : (
+                <PendingApprovalsTable items={filteredItems} onRefresh={refetch} />
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
-      
-      {isPending && (
-        <div className="flex gap-2 justify-end">
-          <Button 
-            variant="outline" 
-            onClick={() => setIsRejectDialogOpen(true)}
-            disabled={isProcessing}
-          >
-            <XCircle className="h-4 w-4 mr-2" />
-            {t('reject')}
-          </Button>
-          <Button 
-            onClick={() => setIsApproveDialogOpen(true)}
-            disabled={isProcessing}
-          >
-            <CheckCircle className="h-4 w-4 mr-2" />
-            {t('approve')}
-          </Button>
-        </div>
-      )}
-      
-      <ApprovalDialog 
-        open={isApproveDialogOpen}
-        onOpenChange={setIsApproveDialogOpen}
-        onConfirm={processApprove}
-        isLoading={isProcessing}
-        title={t('approveData')}
-        description={t('approveDataConfirmation')}
-        entity={categoryName}
-        school={schoolName}
-      />
-      
-      <ApprovalDialog
-        open={isRejectDialogOpen}
-        onOpenChange={setIsRejectDialogOpen}
-        onConfirm={processReject}
-        isLoading={isProcessing}
-        title={t('rejectData')}
-        description={t('rejectDataConfirmation')}
-        entity={categoryName}
-        school={schoolName}
-        rejectionReason={rejectionReason}
-        setRejectionReason={setRejectionReason}
-      />
     </div>
   );
 };

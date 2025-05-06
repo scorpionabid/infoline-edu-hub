@@ -23,11 +23,11 @@ export interface CategoryWithColumns extends Category {
 
 export interface FormItem {
   id: string;
-  name?: string;
+  name: string;
   title: string;
   status: string;
-  categoryName?: string;
-  dueDate?: string;
-  createdAt?: string;
-  completionRate?: number;
+  categoryName: string;
+  dueDate: string;
+  createdAt: string;
+  completionRate: number;
 }
