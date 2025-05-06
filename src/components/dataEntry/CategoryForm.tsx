@@ -1,242 +1,222 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Column } from '@/types/column';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { CategoryWithColumns } from '@/types/column';
 import EntryField from './EntryField';
-import { Button } from '@/components/ui/button';
-import ColumnEntryForm from './ColumnEntryForm';
-import { validateEntries } from './utils/formUtils';
-import { toast } from 'sonner';
-import { AlertTriangle, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { format } from 'date-fns';
+import { AlertCircle, Calendar, CheckCircle } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface CategoryFormProps {
   category: CategoryWithColumns;
-  initialEntries?: any[];
-  onSave: (entries: any[]) => Promise<void>;
-  loading?: boolean;
-  readOnly?: boolean;
+  values: Record<string, string>;
+  errors: Record<string, string>;
+  onChange: (columnId: string, value: string | boolean) => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+  isApproved: boolean;
+  isRejected: boolean;
+  rejectionReason?: string;
+  completionPercentage: number;
+  showValidationErrors: boolean;
 }
 
 const CategoryForm: React.FC<CategoryFormProps> = ({
   category,
-  initialEntries = [],
-  onSave,
-  loading = false,
-  readOnly = false
+  values,
+  errors,
+  onChange,
+  onSubmit,
+  isSubmitting,
+  isApproved,
+  isRejected,
+  rejectionReason,
+  completionPercentage,
+  showValidationErrors
 }) => {
   const { t } = useLanguage();
-  const [entries, setEntries] = useState<Record<string, any>>({});
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSaving, setIsSaving] = useState(false);
+  const [sections, setSections] = useState<Record<string, any[]>>({});
+  const [hasDeadline, setHasDeadline] = useState(false);
+  const [isDeadlinePassed, setIsDeadlinePassed] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<string | null>(null);
 
-  // Təyin edək ki, category.columns boş deyilsə ondan istifadə edək, əks halda boş massiv
-  const resolvedCategory: CategoryWithColumns = {
-    ...category,
-    columns: category?.columns || [] as Column[]
-  };
-
-  // Qqruplaşdırılmış sütunları hesablamaq
-  const groupedColumns = React.useMemo(() => {
-    if (!resolvedCategory?.columns?.length) return {};
-
-    return resolvedCategory.columns.reduce((groups, column) => {
-      const group = column.section || 'default';
-      groups[group] = [...(groups[group] || []), column];
-      return groups;
-    }, {} as Record<string, Column[]>);
-  }, [resolvedCategory]);
-
-  // İlkin dəyərləri yükləyirik
+  // Sütunları bölmələrə görə qruplaşdırma
   useEffect(() => {
-    if (initialEntries?.length) {
-      const initialValues = initialEntries.reduce((values, entry) => {
-        values[entry.columnId] = entry.value;
-        return values;
-      }, {} as Record<string, any>);
-      setEntries(initialValues);
+    const sectionedColumns: Record<string, any[]> = { 'default': [] };
+
+    if (category?.columns?.length) {
+      category.columns.forEach((column) => {
+        const sectionKey = column.section || 'default';
+        if (!sectionedColumns[sectionKey]) {
+          sectionedColumns[sectionKey] = [];
+        }
+        sectionedColumns[sectionKey].push(column);
+      });
     }
-  }, [initialEntries]);
 
-  // Dəyər dəyişdikdə xətanı yoxlayırıq
-  const handleValueChange = useCallback((columnId: string, value: any) => {
-    setEntries(prev => ({ ...prev, [columnId]: value }));
+    setSections(sectionedColumns);
+  }, [category]);
 
-    const column = resolvedCategory.columns.find(c => c.id === columnId);
-    if (column) {
-      // validateEntry funksiyası əvəzinə validateEntries-dən istifadə edək
-      const validationResult = validateEntries([{
-        columnId,
-        value,
-        categoryId: column.category_id
-      }], [column]);
-      
-      const hasError = validationResult.some(result => !result.isValid);
-      
-      setErrors(prev => ({
-        ...prev,
-        [columnId]: hasError ? 'Dəyər düzgün deyil' : ''
-      }));
-    }
-  }, [resolvedCategory.columns]);
+  // Son tarix hesablamaları
+  useEffect(() => {
+    if (category?.deadline) {
+      setHasDeadline(true);
+      const deadlineDate = new Date(category.deadline);
+      const now = new Date();
+      setIsDeadlinePassed(now > deadlineDate);
 
-  // Bölməni genişləndirmək/yığmaq
-  const toggleSection = useCallback((section: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  }, []);
-
-  // Formu təqdim etmək
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Məcburi sahələri yoxlayırıq
-    const requiredColumns = resolvedCategory.columns.filter(column => column.is_required);
-    const newErrors: Record<string, string> = {};
-    
-    for (const column of requiredColumns) {
-      const value = entries[column.id];
-      if (value === undefined || value === null || value === '') {
-        newErrors[column.id] = t('fieldRequired');
+      if (!isDeadlinePassed) {
+        // Son tarixə qalan vaxtı hesablama
+        const timeRemaining = deadlineDate.getTime() - now.getTime();
+        const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        
+        if (days > 0) {
+          setTimeLeft(`${days} ${t('days')} ${hours} ${t('hours')}`);
+        } else if (hours > 0) {
+          setTimeLeft(`${hours} ${t('hours')}`);
+        } else {
+          const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+          setTimeLeft(`${minutes} ${t('minutes')}`);
+        }
+      } else {
+        setTimeLeft(null);
       }
+    } else {
+      setHasDeadline(false);
+      setTimeLeft(null);
     }
-    
-    // Xətalar varsa, göstəririk və qayıdırıq
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      toast.error(t('formHasErrors'));
-      return;
-    }
-    
-    // Bütün dəyərləri uyğun formata çeviririk
-    setIsSaving(true);
-    try {
-      const submittedEntries = resolvedCategory.columns.map(column => ({
-        columnId: column.id,
-        categoryId: column.category_id,
-        value: entries[column.id] !== undefined ? entries[column.id] : '',
-      }));
-      
-      await onSave(submittedEntries);
-      toast.success(t('dataSaved'));
-    } catch (error) {
-      console.error('Form təqdim etmə xətası:', error);
-      toast.error(t('errorOccurred'));
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  }, [category, t]);
 
-  // Kateqoriya yüklənmədisə
-  if (!category && loading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-1/2" />
-        <Skeleton className="h-20 w-full" />
-        <Skeleton className="h-20 w-full" />
-        <Skeleton className="h-20 w-full" />
-      </div>
-    );
-  }
-
-  // Kateqoriya boşdursa
-  if (!resolvedCategory.columns?.length) {
-    return (
-      <div className="text-center py-10">
-        <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-2" />
-        <p className="text-lg font-medium">
-          {t('noCategoriesFound')}
-        </p>
-      </div>
-    );
-  }
-
-  // Son tarix varsa, formatlamasını edək
-  const deadline = resolvedCategory.deadline
-    ? new Date(resolvedCategory.deadline).toLocaleDateString()
-    : undefined;
+  // Məlumatları doldurmaq üçün enabled olub-olmaması
+  const isFormDisabled = isApproved || isSubmitting;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Kateqoriya başlığı və deadline */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-semibold">{resolvedCategory.name}</h2>
-          {resolvedCategory.description && (
-            <p className="text-muted-foreground text-sm mt-1">
-              {resolvedCategory.description}
-            </p>
+    <Card className="w-full">
+      <CardHeader className="bg-muted/30">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">
+              {category.name}
+            </CardTitle>
+            <div className="flex items-center space-x-2">
+              {completionPercentage < 100 && !isApproved && !isRejected && (
+                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                  {t('inProgress')}
+                </Badge>
+              )}
+              
+              {completionPercentage === 100 && !isApproved && !isRejected && (
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  {t('completed')}
+                </Badge>
+              )}
+              
+              {isApproved && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  {t('approved')}
+                </Badge>
+              )}
+              
+              {isRejected && (
+                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  {t('rejected')}
+                </Badge>
+              )}
+            </div>
+          </div>
+          
+          {category.description && (
+            <CardDescription>{category.description}</CardDescription>
           )}
-        </div>
-        {deadline && (
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Calendar className="h-4 w-4 mr-1" />
-            <span>{t('deadline')}: {deadline}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Qruplaşdırılmış sütunlar */}
-      {Object.entries(groupedColumns).map(([section, columns]) => {
-        const isExpanded = expandedSections[section] !== false; // Default açıq
-
-        return (
-          <div key={section} className="border rounded-md overflow-hidden mb-6">
-            {/* Bölmə başlığı - 'default' deyilsə göstəririk */}
-            {section !== 'default' && (
-              <div 
-                className="flex items-center justify-between bg-muted p-3 cursor-pointer"
-                onClick={() => toggleSection(section)}
-              >
-                <h3 className="font-medium">{section}</h3>
-                {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-              </div>
-            )}
+          
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center gap-1">
+              <Progress value={completionPercentage} className="w-24 h-2" />
+              <span className="text-xs text-muted-foreground">{completionPercentage}%</span>
+            </div>
             
-            {/* Sütunlar */}
-            {(section === 'default' || isExpanded) && (
-              <div className="p-4 space-y-4">
-                {columns.map(column => (
-                  <EntryField
-                    key={column.id}
-                    column={column}
-                    value={entries[column.id] || ''}
-                    onChange={(value) => handleValueChange(column.id, value)}
-                    error={errors[column.id]}
-                    readOnly={readOnly}
-                  />
-                ))}
+            {hasDeadline && (
+              <div className={cn(
+                "flex items-center gap-1 text-xs", 
+                isDeadlinePassed ? "text-red-500" : "text-amber-600"
+              )}>
+                <Calendar className="h-3 w-3" />
+                <span>
+                  {isDeadlinePassed 
+                    ? `${t('deadline')}: ${format(new Date(category.deadline!), 'dd.MM.yyyy')} (${t('expired')})`
+                    : `${t('deadline')}: ${format(new Date(category.deadline!), 'dd.MM.yyyy')} (${timeLeft} ${t('left')})`
+                  }
+                </span>
               </div>
             )}
           </div>
-        );
-      })}
-      
-      {/* Submit düyməsi - readOnly rejimində göstərmirik */}
-      {!readOnly && (
-        <div className="flex justify-end">
-          <Button 
-            type="submit" 
-            disabled={isSaving || loading}
-            className="min-w-[120px]"
-          >
-            {isSaving ? t('saving') : t('save')}
-          </Button>
         </div>
+      </CardHeader>
+      
+      {isRejected && rejectionReason && (
+        <Alert variant="destructive" className="mx-6 mt-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>{t('rejectedTitle')}</AlertTitle>
+          <AlertDescription>{rejectionReason}</AlertDescription>
+        </Alert>
       )}
       
-      {/* Əgər əlaqəli komponentlər varsa */}
-      {resolvedCategory.related && (
-        <div className="mt-8 border-t pt-4">
-          <h3 className="text-lg font-semibold mb-4">{t('relatedData')}</h3>
-          {/* Burada əlaqəli komponentləri göstərə bilərik */}
+      <ScrollArea className={cn("max-h-[60vh]", isRejected && "mt-2")}>
+        <CardContent className="pt-4">
+          <div className="space-y-6">
+            {Object.entries(sections).map(([sectionName, columns]) => (
+              <div key={sectionName} className="space-y-3">
+                {sectionName !== 'default' && (
+                  <>
+                    <h3 className="text-base font-medium">{sectionName}</h3>
+                    <Separator />
+                  </>
+                )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {columns.map((column) => (
+                    <EntryField
+                      key={column.id}
+                      column={column}
+                      value={values[column.id] || ''}
+                      onChange={(value) => onChange(column.id, value)}
+                      error={showValidationErrors ? errors[column.id] : undefined}
+                      readOnly={isFormDisabled}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </ScrollArea>
+      
+      <CardFooter className="bg-muted/30 flex justify-between px-6 py-4 border-t">
+        <div className="text-sm text-muted-foreground">
+          {completionPercentage === 100
+            ? t('allFieldsCompleted')
+            : t('requiredFieldsNotice')
+          }
         </div>
-      )}
-    </form>
+        <Button 
+          onClick={onSubmit} 
+          disabled={isFormDisabled || completionPercentage < 100}
+          className="ml-auto"
+        >
+          {isApproved ? t('approved') : (isSubmitting ? t('saving') : t('saveChanges'))}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
 

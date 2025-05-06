@@ -1,132 +1,109 @@
-import { useState, useEffect } from 'react';
-import { Column, ColumnOption, ColumnType } from '@/types/column';
-import { useLanguage } from '@/context/LanguageContext';
+
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Column, ColumnFormValues } from '@/types/column';
+import { useLanguage } from '@/context/LanguageContext';
 
-// Form validation schema
-const columnFormSchema = z.object({
-  name: z.string().min(1, { message: 'Column name is required' }),
-  category_id: z.string(),
-  type: z.string(),
-  is_required: z.boolean().default(false),
-  placeholder: z.string().optional(),
-  help_text: z.string().optional(),
-  status: z.enum(['active', 'inactive']).default('active'),
-  order_index: z.number().default(0),
-  default_value: z.string().optional(),
-  // validation and options are handled separately
-});
-
-export type ColumnFormValues = z.infer<typeof columnFormSchema>;
-
-export const useColumnForm = (categories: { id: string; name: string }[], editColumn: Column | null, onSaveColumn: (columnData: any) => Promise<boolean>) => {
-  const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type || 'text');
-  const [options, setOptions] = useState<ColumnOption[]>(editColumn?.options as ColumnOption[] || []);
-  const [newOption, setNewOption] = useState<{ label: string; value: string; color: string; }>({ 
-    label: '', 
-    value: '', 
-    color: '' 
+// Column form validation schema
+const createColumnFormSchema = (t: (key: string) => string) => {
+  return z.object({
+    name: z.string().min(1, t('nameRequired')),
+    type: z.enum([
+      'text', 'number', 'date', 'time', 'phone', 'color', 'checkbox',
+      'radio', 'select', 'textarea', 'image', 'file', 'password', 'range',
+      'datetime', 'richtext'
+    ]),
+    is_required: z.boolean().default(false),
+    placeholder: z.string().optional(),
+    help_text: z.string().optional(),
+    status: z.enum(['active', 'inactive']),
+    order_index: z.number().optional(),
+    default_value: z.string().optional(),
+    options: z.array(
+      z.object({
+        value: z.string(),
+        label: z.string(),
+      })
+    ).optional(),
+    validation: z.object({
+      min: z.string().optional(),
+      max: z.string().optional(),
+      minLength: z.string().optional(),
+      maxLength: z.string().optional(),
+      pattern: z.string().optional(),
+      email: z.boolean().optional(),
+      url: z.boolean().optional(),
+      tel: z.boolean().optional(),
+      minDate: z.string().optional(),
+      maxDate: z.string().optional(),
+    }).optional(),
   });
-  
-  const isEditMode = !!editColumn;
-  
-  const form = useForm<ColumnFormValues>({
-    resolver: zodResolver(columnFormSchema),
-    defaultValues: {
-      name: editColumn?.name || '',
-      category_id: editColumn?.category_id || categories[0]?.id || '',
-      type: editColumn?.type || 'text',
-      is_required: editColumn?.is_required ?? false,
-      placeholder: editColumn?.placeholder || '',
-      help_text: editColumn?.help_text || '',
-      status: editColumn?.status || 'active',
-      order_index: editColumn?.order_index || 0,
-      default_value: editColumn?.default_value || '',
-    }
-  });
-  
+};
+
+export const useColumnForm = (column?: Column) => {
   const { t } = useLanguage();
+  const schema = createColumnFormSchema(t);
+  
+  // Default values for form initialization
+  const defaultValues: ColumnFormValues = {
+    name: column?.name || '',
+    type: column?.type || 'text',
+    is_required: column?.is_required === undefined ? true : column?.is_required,
+    placeholder: column?.placeholder || '',
+    help_text: column?.help_text || '',
+    status: column?.status || 'active',
+    order_index: column?.order_index || 0,
+    default_value: column?.default_value || '',
+    options: column?.options || [],
+    validation: {
+      min: column?.validation?.min?.toString() || '',
+      max: column?.validation?.max?.toString() || '',
+      minLength: column?.validation?.minLength?.toString() || '',
+      maxLength: column?.validation?.maxLength?.toString() || '',
+      pattern: column?.validation?.pattern || '',
+      email: column?.validation?.email || false,
+      url: column?.validation?.url || false,
+      tel: column?.validation?.tel || false,
+      minDate: column?.validation?.minDate || '',
+      maxDate: column?.validation?.maxDate || '',
+    }
+  };
 
-  // Handle type change
-  const handleTypeChange = (type: ColumnType) => {
-    setSelectedType(type);
-    form.setValue('type', type);
-    
-    // Reset options if not a type that supports options
-    if (!['select', 'radio', 'checkbox'].includes(type)) {
-      setOptions([]);
-    }
-  };
-
-  // Add option
-  const addOption = () => {
-    if (!newOption.label.trim()) return;
-    
-    // Check if label already exists
-    const exists = options.some(opt => opt.label.toLowerCase() === newOption.label.toLowerCase());
-    if (exists) return;
-    
-    const newOpt: ColumnOption = {
-      id: `option_${Date.now()}`, // Unikal ID əlavə edirik
-      label: newOption.label.trim(),
-      value: newOption.value || newOption.label.trim().toLowerCase().replace(/\s+/g, '_'),
-      color: newOption.color
-    };
-    
-    setOptions(prev => [...prev, newOpt]);
-    setNewOption({ label: '', value: '', color: '' });
-  };
+  // Form settings using react-hook-form
+  const form = useForm<ColumnFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues,
+    mode: 'onChange'
+  });
   
-  // Remove option
-  const removeOption = (index: number) => {
-    setOptions(prev => prev.filter((_, i) => i !== index));
-  };
+  // Get current selected column type
+  const watchType = form.watch('type');
   
-  // Handle form submission
-  const onSubmit = async (values: ColumnFormValues) => {
-    // Combine form values with options
-    const columnData: Partial<Column> & { options: ColumnOption[] } = {
-      ...values,
-      options: options.length > 0 ? options : [],
-      type: values.type as ColumnType // Type dəyişənini ColumnType kimi cast edirik
-    };
-    
-    if (isEditMode && editColumn?.id) {
-      columnData.id = editColumn.id;
-    }
-    
-    try {
-      const result = await onSaveColumn(columnData);
-      return result;
-    } catch (error) {
-      console.error('Error saving column:', error);
-      return false;
-    }
-  };
+  // Handle form type changes
+  const [showOptions, setShowOptions] = useState(
+    watchType === 'select' || watchType === 'radio'
+  );
   
-  // Convert string date to Date object for date inputs
-  const convertToDate = (dateString: string | Date): Date => {
-    if (dateString instanceof Date) {
-      return dateString;
+  // Update option visibility when changing column type
+  const handleTypeChange = (type: string) => {
+    form.setValue('type', type as ColumnFormValues['type']); 
+    setShowOptions(type === 'select' || type === 'radio');
+    
+    // Clear options if switching away from type that uses them
+    if (type !== 'select' && type !== 'radio') {
+      form.setValue('options', []);
+    } else if (!form.getValues('options')?.length) {
+      // Add default empty option if switching to a type that uses options
+      form.setValue('options', [{ value: '', label: '' }]);
     }
-    return new Date(dateString);
   };
   
   return {
-    form, 
-    selectedType,
-    handleTypeChange,
-    options,
-    addOption,
-    removeOption,
-    newOption,
-    setNewOption,
-    onSubmit,
-    isEditMode,
-    convertToDate
+    form,
+    watchType,
+    showOptions,
+    handleTypeChange
   };
 };
-
-export default useColumnForm;

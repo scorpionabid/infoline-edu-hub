@@ -1,186 +1,154 @@
 
 import React from 'react';
-import { FormControl, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import DateInput from '@/components/ui/date-input';
-import { Label } from '@/components/ui/label';
-import { FileInput } from '@/components/ui/file-input';
 import { Column } from '@/types/column';
-import NumberInput from './inputs/NumberInput';
-import SelectInput from './inputs/SelectInput';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { CalendarIcon } from 'lucide-react';
 
-interface EntryFieldProps {
+export interface EntryFieldProps {
+  key: string;
   column: Column;
   value: any;
   onChange: (value: any) => void;
   error?: string;
-  disabled?: boolean;
+  readOnly?: boolean; // readOnly prop əlavə edildi
 }
 
-export const EntryField: React.FC<EntryFieldProps> = ({
-  column,
-  value,
-  onChange,
-  error,
-  disabled = false
-}) => {
-  switch (column.type) {
-    case 'text':
-      return (
-        <div className="space-y-2">
-          {column.name && <FormLabel>{column.name}</FormLabel>}
+const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error, readOnly = false }) => {
+  const renderField = () => {
+    const commonProps = {
+      id: column.id,
+      disabled: readOnly,
+      'aria-invalid': error ? 'true' : 'false',
+      className: cn(error && "border-red-500 focus:ring-red-300")
+    };
+    
+    switch (column.type) {
+      case 'text':
+        return (
           <Input
             type="text"
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={column.placeholder}
-            disabled={disabled}
-            className={error ? "border-red-500" : ""}
+            placeholder={column.placeholder || ''}
+            {...commonProps}
           />
-          {column.help_text && (
-            <FormDescription>{column.help_text}</FormDescription>
-          )}
-          {error && <FormMessage>{error}</FormMessage>}
-        </div>
-      );
-
-    case 'textarea':
-      return (
-        <div className="space-y-2">
-          {column.name && <FormLabel>{column.name}</FormLabel>}
+        );
+        
+      case 'textarea':
+        return (
           <Textarea
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={column.placeholder}
-            disabled={disabled}
-            className={error ? "border-red-500" : ""}
+            placeholder={column.placeholder || ''}
+            {...commonProps}
           />
-          {column.help_text && (
-            <FormDescription>{column.help_text}</FormDescription>
-          )}
-          {error && <FormMessage>{error}</FormMessage>}
-        </div>
-      );
-
-    case 'number':
-      return (
-        <NumberInput
-          column={column}
-          value={value}
-          onChange={onChange}
-          error={error}
-          disabled={disabled}
-        />
-      );
-
-    case 'date':
-      return (
-        <div className="space-y-2">
-          {column.name && <FormLabel>{column.name}</FormLabel>}
-          <DateInput
-            value={value || null}
-            onChange={(date) => onChange(date)}
-            disabled={disabled}
-            className={error ? "border-red-500" : ""}
+        );
+        
+      case 'number':
+        return (
+          <Input
+            type="number"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={column.placeholder || ''}
+            {...commonProps}
           />
-          {column.help_text && (
-            <FormDescription>{column.help_text}</FormDescription>
-          )}
-          {error && <FormMessage>{error}</FormMessage>}
-        </div>
-      );
-
-    case 'select':
-      return (
-        <SelectInput
-          column={column}
-          value={value}
-          onChange={onChange}
-          error={error}
-          disabled={disabled}
-        />
-      );
-
-    case 'checkbox':
-      return (
-        <div className="space-y-2">
+        );
+        
+      case 'checkbox':
+        return (
           <div className="flex items-center space-x-2">
             <Checkbox
               id={column.id}
-              checked={value === true}
-              onCheckedChange={onChange}
-              disabled={disabled}
+              checked={value === 'true' || value === true}
+              onCheckedChange={(checked) => onChange(checked)}
+              disabled={readOnly}
             />
-            {column.name && <Label htmlFor={column.id}>{column.name}</Label>}
+            <Label htmlFor={column.id} className="text-sm">
+              {column.name}
+            </Label>
           </div>
-          {column.help_text && (
-            <FormDescription>{column.help_text}</FormDescription>
-          )}
-          {error && <FormMessage>{error}</FormMessage>}
-        </div>
-      );
-
-    case 'radio':
-      return (
-        <div className="space-y-2">
-          {column.name && <FormLabel>{column.name}</FormLabel>}
-          <RadioGroup
+        );
+        
+      case 'select':
+        return (
+          <Select
             value={value || ''}
             onValueChange={onChange}
-            disabled={disabled}
+            disabled={readOnly}
           >
-            {column.options && Array.isArray(column.options) && column.options.map((option: any) => (
-              <div className="flex items-center space-x-2" key={option.value}>
-                <RadioGroupItem value={option.value} id={`${column.id}-${option.value}`} />
-                <Label htmlFor={`${column.id}-${option.value}`}>{option.label}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-          {column.help_text && (
-            <FormDescription>{column.help_text}</FormDescription>
-          )}
-          {error && <FormMessage>{error}</FormMessage>}
-        </div>
-      );
-
-    case 'file':
-      return (
-        <div className="space-y-2">
-          {column.name && <FormLabel>{column.name}</FormLabel>}
-          <FileInput
-            value={value}
-            onChange={(file) => onChange(file)}
-            disabled={disabled}
-          />
-          {column.help_text && (
-            <FormDescription>{column.help_text}</FormDescription>
-          )}
-          {error && <FormMessage>{error}</FormMessage>}
-        </div>
-      );
-
-    default:
-      return (
-        <div className="space-y-2">
-          {column.name && <FormLabel>{column.name}</FormLabel>}
+            <SelectTrigger className={cn(error && "border-red-500 focus:ring-red-300")}>
+              <SelectValue placeholder={column.placeholder || `Seçin...`} />
+            </SelectTrigger>
+            <SelectContent>
+              {column.options?.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+        
+      case 'date':
+        return (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className={cn(
+                  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
+                  "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                  "disabled:cursor-not-allowed disabled:opacity-50",
+                  error && "border-red-500 focus:ring-red-300",
+                )}
+                disabled={readOnly}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {value ? format(new Date(value), 'PP') : <span className="text-muted-foreground">{column.placeholder || 'Tarix seçin'}</span>}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={value ? new Date(value) : undefined}
+                onSelect={(date) => onChange(date ? date.toISOString() : null)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        );
+        
+      default:
+        return (
           <Input
             type="text"
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={column.placeholder}
-            disabled={disabled}
-            className={error ? "border-red-500" : ""}
+            placeholder={column.placeholder || ''}
+            {...commonProps}
           />
-          {column.help_text && (
-            <FormDescription>{column.help_text}</FormDescription>
-          )}
-          {error && <FormMessage>{error}</FormMessage>}
-        </div>
-      );
-  }
+        );
+    }
+  };
+  
+  return (
+    <div className="space-y-1">
+      <Label htmlFor={column.id}>{column.name}{column.is_required && <span className="text-red-500 ml-1">*</span>}</Label>
+      {renderField()}
+      {error && <p className="text-xs text-red-500">{error}</p>}
+      {column.help_text && !error && (
+        <p className="text-xs text-muted-foreground">{column.help_text}</p>
+      )}
+    </div>
+  );
 };
 
 export default EntryField;

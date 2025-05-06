@@ -1,134 +1,99 @@
 
 import React from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { SchoolStats } from '@/types/dashboard';
+import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { School } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
+import { SchoolStats } from '@/types/dashboard';
 
 interface SchoolsTableProps {
   schools: SchoolStats[];
-  onViewDetails?: (schoolId: string) => void;
-  maxRows?: number;
-  isLoading?: boolean;
+  onViewDetails: (schoolId: string) => void;
 }
 
-export const SchoolsTable: React.FC<SchoolsTableProps> = ({ 
-  schools, 
-  onViewDetails, 
-  maxRows = 5,
-  isLoading
-}) => {
-  const navigate = useNavigate();
+const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools, onViewDetails }) => {
+  const { t } = useLanguage();
   
-  // Yükləmə statusu
-  if (isLoading) {
-    return (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-2 text-muted-foreground">Məlumatlar yüklənir...</p>
-      </div>
-    );
-  }
-  
-  // Məktəb məlumatları yoxdursa
   if (!schools || schools.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        Məktəb məlumatları tapılmadı
+      <div className="text-center py-6 text-muted-foreground">
+        <p>{t('noSchoolsFound')}</p>
       </div>
     );
   }
   
-  // Məlumatları limitlə göstər
-  const displayedSchools = maxRows ? schools.slice(0, maxRows) : schools;
-  
+  // Helper funksiya: Tamamlanma statusunu hesablayır
+  const getCompletionStatus = (completionRate: number | undefined) => {
+    if (!completionRate && completionRate !== 0) return { text: t('noData'), bgClass: 'bg-gray-50 text-gray-700 border-gray-200' };
+    
+    if (completionRate === 100) {
+      return { text: t('completed'), bgClass: 'bg-green-50 text-green-700 border-green-200' };
+    } else if (completionRate > 0) {
+      return { text: t('inProgress'), bgClass: 'bg-amber-50 text-amber-700 border-amber-200' };
+    } else {
+      return { text: t('notStarted'), bgClass: 'bg-gray-50 text-gray-700 border-gray-200' };
+    }
+  };
+
   return (
-    <div className="border rounded-md">
+    <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Məktəb adı</TableHead>
-            <TableHead>Tamamlanma</TableHead>
-            <TableHead>Formlar</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Əməliyyatlar</TableHead>
+            <TableHead className="w-[300px]">{t('school')}</TableHead>
+            <TableHead className="hidden md:table-cell">{t('completionStatus')}</TableHead>
+            <TableHead>{t('completionRate')}</TableHead>
+            <TableHead>{t('actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {displayedSchools.map((school) => (
-            <TableRow key={school.id}>
-              <TableCell className="font-medium">{school.name}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Progress 
-                    value={school.completionRate} 
-                    className={cn(
-                      "h-2 w-16 md:w-24", 
-                      school.completionRate < 30 ? "bg-red-100" : 
-                      school.completionRate < 70 ? "bg-amber-100" : "bg-green-100"
-                    )}
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    {school.completionRate}%
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <span className="text-xs text-muted-foreground">
-                  {school.formsCompleted}/{school.formsTotal}
-                </span>
-              </TableCell>
-              <TableCell>
-                <Badge 
-                  variant={
-                    school.completionRate === 100 ? "success" : 
-                    school.completionRate >= 50 ? "outline" : "destructive"
-                  }
-                  className="text-xs"
-                >
-                  {school.completionRate === 100 ? "Tamamlanıb" : 
-                   school.completionRate >= 50 ? "Davam edir" : "Geridə qalır"}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => onViewDetails 
-                    ? onViewDetails(school.id) 
-                    : navigate(`/schools/${school.id}`)
-                  }
-                >
-                  Ətraflı
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {schools.map((school) => {
+            const completionStatus = getCompletionStatus(school.completionRate);
+            const formDisplay = school.formsCompleted !== undefined && school.formsTotal !== undefined 
+              ? `${school.formsCompleted} / ${school.formsTotal}`
+              : '-';
+            
+            return (
+              <TableRow key={school.id}>
+                <TableCell className="font-medium">{school.name || 'Unknown School'}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  <Badge 
+                    variant="outline" 
+                    className={cn(completionStatus.bgClass)}
+                  >
+                    {completionStatus.text}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    <Progress 
+                      value={school.completionRate || 0} 
+                      className="h-2 w-24" 
+                    />
+                    <span className="text-sm tabular-nums">
+                      {school.completionRate !== undefined ? `${school.completionRate}%` : '-'}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => onViewDetails(school.id || '')}
+                    className="h-7 px-2"
+                  >
+                    <School className="h-3 w-3 mr-1" />
+                    <span className="text-xs">{t('details')}</span>
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
-      
-      {maxRows && schools.length > maxRows && (
-        <div className="py-2 px-4 border-t text-center">
-          <Button 
-            variant="link" 
-            onClick={() => navigate('/schools')}
-          >
-            Bütün məktəbləri göstər ({schools.length})
-          </Button>
-        </div>
-      )}
     </div>
   );
 };

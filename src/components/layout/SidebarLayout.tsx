@@ -122,8 +122,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
         {/* Sidebar */}
         <div
           className={cn(
-            "h-screen bg-background border-r z-50 transition-all duration-300 ease-in-out",
-            isSidebarOpen ? "w-60" : "w-[60px]",
+            "h-[calc(100vh-3.5rem)] bg-background border-r z-50 transition-all duration-300 ease-in-out",
+            isSidebarOpen ? "w-48" : "w-12",
             isMobile ? (
               isSidebarOpen ? "fixed left-0" : "fixed -left-full"
             ) : (
@@ -131,12 +131,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
             )
           )}
         >
-          <div className="flex items-center justify-between p-3">
+          <div className="flex items-center justify-between p-2">
             <div className={cn("transition-opacity", isSidebarOpen ? "opacity-100" : "opacity-0 md:hidden")}>
-              <h2 className="text-xl font-bold">InfoLine</h2>
+              <h2 className="text-sm font-bold">InfoLine</h2>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleSidebarToggle} className="flex-shrink-0">
-              <ChevronLeft className={cn("h-5 w-5 transition-transform", !isSidebarOpen && "rotate-180")} />
+            <Button variant="ghost" size="icon" onClick={handleSidebarToggle} className="flex-shrink-0 h-6 w-6">
+              <ChevronLeft className={cn("h-4 w-4 transition-transform", !isSidebarOpen && "rotate-180")} />
             </Button>
           </div>
           
@@ -152,10 +152,10 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="fixed top-16 left-4 z-50"
+            className="fixed top-16 left-2 z-50 h-8 w-8"
             onClick={handleSidebarToggle}
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-4 w-4" />
           </Button>
         )}
 
@@ -163,7 +163,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
         <div 
           className={cn(
             "flex-1 overflow-y-auto transition-all duration-300",
-            isMobile ? "px-3 py-4" : (isSidebarOpen ? "md:ml-60 px-4 py-4" : "md:ml-[60px] px-4 py-4")
+            isMobile ? "px-2 py-2" : (isSidebarOpen ? "md:ml-48 px-3 py-3" : "md:ml-12 px-3 py-3")
           )}
         >
           <Outlet />

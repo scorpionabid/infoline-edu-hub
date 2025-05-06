@@ -1,284 +1,257 @@
 
 import React from 'react';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ColumnType } from '@/types/column';
-import { useLanguage } from '@/context/LanguageContext';
-import { Control } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
+import { ColumnFormValues } from '@/types/column';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Label } from '@/components/ui/label';
 
 interface ValidationFieldsProps {
-  control: Control<any>;
-  type: ColumnType;
+  type: ColumnFormValues['type'];
 }
 
-const ValidationFields: React.FC<ValidationFieldsProps> = ({ 
-  control,
-  type
-}) => {
-  const { t } = useLanguage();
+const ValidationFields: React.FC<ValidationFieldsProps> = ({ type }) => {
+  const { control } = useFormContext<ColumnFormValues>();
 
-  return (
-    <>
-      <h3 className="text-lg font-medium">{t("validationRules")}</h3>
-      <p className="text-sm text-muted-foreground mb-4">
-        {t("validationDescription")}
-      </p>
+  // Tip türləri üçün uyğun validasiya sahələrini özəlləşdiririk
+  const renderValidationFieldsForType = () => {
+    switch (type) {
+      case 'number':
+        return (
+          <>
+            {/* Minimum dəyər */}
+            <FormField
+              control={control}
+              name="validation.min"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Minimum dəyər</FormLabel>
+                  <Input
+                    type="number"
+                    placeholder="Minimum dəyər daxil edin"
+                    {...field}
+                  />
+                  <FormDescription>
+                    Ədəd üçün minimum icazə verilən dəyər
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
 
-      {/* Required field */}
-      <FormField
-        control={control}
-        name="is_required"
-        render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-            <div className="space-y-0.5">
-              <FormLabel>{t("requiredField")}</FormLabel>
-              <p className="text-sm text-muted-foreground">
-                {t("requiredFieldDescription")}
-              </p>
-            </div>
-            <FormControl>
-              <Checkbox
-                checked={field.value}
-                onCheckedChange={field.onChange}
-              />
-            </FormControl>
-          </FormItem>
-        )}
-      />
+            {/* Maksimum dəyər */}
+            <FormField
+              control={control}
+              name="validation.max"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Maksimum dəyər</FormLabel>
+                  <Input
+                    type="number"
+                    placeholder="Maksimum dəyər daxil edin"
+                    {...field}
+                  />
+                  <FormDescription>
+                    Ədəd üçün maksimum icazə verilən dəyər
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+          </>
+        );
 
-      {/* Text fields specific validation */}
-      {type === 'text' && (
-        <>
-          <div className="grid grid-cols-2 gap-4">
-            {/* Min Length */}
+      case 'text':
+      case 'textarea':
+      case 'password':
+        return (
+          <>
+            {/* Minimum uzunluq */}
             <FormField
               control={control}
               name="validation.minLength"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("minLength")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                    />
-                  </FormControl>
-                  <FormMessage />
+                  <FormLabel>Minimum uzunluq</FormLabel>
+                  <Input
+                    type="number"
+                    placeholder="Minimum simvol sayı"
+                    {...field}
+                  />
+                  <FormDescription>
+                    Minimum simvol sayı tələbi
+                  </FormDescription>
                 </FormItem>
               )}
             />
 
-            {/* Max Length */}
+            {/* Maksimum uzunluq */}
             <FormField
               control={control}
               name="validation.maxLength"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("maxLength")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="255"
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                    />
-                  </FormControl>
-                  <FormMessage />
+                  <FormLabel>Maksimum uzunluq</FormLabel>
+                  <Input
+                    type="number"
+                    placeholder="Maksimum simvol sayı"
+                    {...field}
+                  />
+                  <FormDescription>
+                    Maksimum simvol sayı limiti
+                  </FormDescription>
                 </FormItem>
               )}
             />
-          </div>
 
-          {/* Pattern */}
-          <FormField
-            control={control}
-            name="validation.pattern"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("pattern")}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="e.g., ^[a-zA-Z0-9]+$"
-                    {...field}
+            {/* Dəyişən tip əsaslı əlavə validasiya seçimləri */}
+            {type === 'text' && (
+              <>
+                {/* Regex pattern */}
+                <FormField
+                  control={control}
+                  name="validation.pattern"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Regex pattern</FormLabel>
+                      <Input
+                        placeholder="Məs: ^[A-Za-z0-9]+$"
+                        {...field}
+                      />
+                      <FormDescription>
+                        Xüsusi format tələbi (regex)
+                      </FormDescription>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Validasiya tipləri - checkbox qrupu */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Format validasiyası</Label>
+                  
+                  {/* Email validasiyası */}
+                  <FormField
+                    control={control}
+                    name="validation.email"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Email formatı
+                          </FormLabel>
+                          <FormDescription>
+                            Daxil edilən mətn email formatında olmalıdır
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <p className="text-xs text-muted-foreground">
-                  {t("patternDescription")}
-                </p>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
-      )}
 
-      {/* Number fields specific validation */}
-      {type === 'number' && (
-        <div className="grid grid-cols-2 gap-4">
-          {/* Min Value */}
-          <FormField
-            control={control}
-            name="validation.minValue"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("minValue")}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    {...field}
-                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                  {/* Phone number validasiyası */}
+                  <FormField
+                    control={control}
+                    name="validation.tel"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Telefon formatı
+                          </FormLabel>
+                          <FormDescription>
+                            Daxil edilən mətn telefon nömrəsi formatında olmalıdır
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
-          {/* Max Value */}
-          <FormField
-            control={control}
-            name="validation.maxValue"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("maxValue")}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="100"
-                    {...field}
-                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                  {/* URL validasiyası */}
+                  <FormField
+                    control={control}
+                    name="validation.url"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            URL formatı
+                          </FormLabel>
+                          <FormDescription>
+                            Daxil edilən mətn veb ünvan formatında olmalıdır
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-      )}
-
-      {/* Date fields specific validation */}
-      {type === 'date' && (
-        <div className="grid grid-cols-2 gap-4">
-          {/* Min Date */}
-          <FormField
-            control={control}
-            name="validation.minValue"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("minDate")}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="date"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Max Date */}
-          <FormField
-            control={control}
-            name="validation.maxValue"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("maxDate")}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="date"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-      )}
-
-      {/* Email, URL, and Phone fields specific validations */}
-      {(type === 'email' || type === 'url' || type === 'tel' || type === 'phone') && (
-        <>
-          <FormField
-            control={control}
-            name={`validation.${type}`}
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>
-                    {type === 'email' && t("validateEmail")}
-                    {type === 'url' && t("validateUrl")}
-                    {(type === 'tel' || type === 'phone') && t("validatePhone")}
-                  </FormLabel>
-                  <p className="text-sm text-muted-foreground">
-                    {type === 'email' && t("validateEmailDescription")}
-                    {type === 'url' && t("validateUrlDescription")}
-                    {(type === 'tel' || type === 'phone') && t("validatePhoneDescription")}
-                  </p>
                 </div>
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
+              </>
             )}
-          />
+          </>
+        );
 
-          {/* Pattern override */}
-          <FormField
-            control={control}
-            name="validation.pattern"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("customPattern")}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={
-                      type === 'email' ? "e.g., ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" :
-                      type === 'url' ? "e.g., https?:\\/\\/.+" :
-                      "e.g., ^\\+?[0-9]{10,15}$"
-                    }
-                    {...field}
+      case 'date':
+        return (
+          <>
+            {/* Minimum tarix */}
+            <FormField
+              control={control}
+              name="validation.minDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Minimum tarix</FormLabel>
+                  <DatePicker
+                    value={field.value ? new Date(field.value) : undefined}
+                    onChange={date => field.onChange(date ? date.toISOString() : '')}
+                    placeholder="Minimum tarix seçin"
                   />
-                </FormControl>
-                <p className="text-xs text-muted-foreground">
-                  {t("customPatternDescription")}
-                </p>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
-      )}
+                  <FormDescription>
+                    Seçilə bilən ən erkən tarix
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
 
-      {/* Custom error message */}
-      <FormField
-        control={control}
-        name="validation.customMessage"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("customErrorMessage")}</FormLabel>
-            <FormControl>
-              <Input
-                placeholder={t("customErrorMessagePlaceholder")}
-                {...field}
-              />
-            </FormControl>
-            <p className="text-xs text-muted-foreground">
-              {t("customErrorMessageDescription")}
-            </p>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </>
+            {/* Maksimum tarix */}
+            <FormField
+              control={control}
+              name="validation.maxDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Maksimum tarix</FormLabel>
+                  <DatePicker
+                    value={field.value ? new Date(field.value) : undefined}
+                    onChange={date => field.onChange(date ? date.toISOString() : '')}
+                    placeholder="Maksimum tarix seçin"
+                  />
+                  <FormDescription>
+                    Seçilə bilən ən son tarix
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+          </>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {renderValidationFieldsForType()}
+    </div>
   );
 };
 

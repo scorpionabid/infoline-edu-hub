@@ -88,7 +88,7 @@
   }
   
   .tab-button {
-    @apply py-2 px-4 text-gray-700 font-medium border-b-2 border-transparent hover:border-primary/30 hover:text-primary;
+    @apply py-1 px-3 text-gray-700 font-medium border-b-2 border-transparent hover:border-primary/30 hover:text-primary;
   }
   
   .tab-button.active {
@@ -101,7 +101,7 @@
   }
   
   .sidebar-nav-item {
-    @apply flex items-center space-x-3 px-3 py-2 rounded-md transition-colors;
+    @apply flex items-center space-x-2 px-2 py-1 rounded-md transition-colors;
   }
   
   .sidebar-nav-item-active {
@@ -114,15 +114,15 @@
   
   /* Card stilləri */
   .dashboard-card {
-    @apply bg-card rounded-lg border p-4 shadow-sm;
+    @apply bg-card rounded-lg border p-3 shadow-sm;
   }
 
   .card-header {
-    @apply text-lg font-medium mb-2;
+    @apply text-base font-medium mb-1;
   }
   
   .card-value {
-    @apply text-3xl font-bold;
+    @apply text-2xl font-bold;
   }
   
   /* Table stilləri */
@@ -131,11 +131,11 @@
   }
   
   .data-table th {
-    @apply px-4 py-3 text-left bg-muted text-muted-foreground font-medium text-sm;
+    @apply px-3 py-2 text-left bg-muted text-muted-foreground font-medium text-sm;
   }
   
   .data-table td {
-    @apply px-4 py-3 border-t;
+    @apply px-3 py-2 border-t;
   }
   
   .data-table tr:hover {

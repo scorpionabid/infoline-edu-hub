@@ -39,7 +39,7 @@ const Dashboard: React.FC = () => {
   if (isLoading || initialCheck) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -54,7 +54,7 @@ const Dashboard: React.FC = () => {
   const isSchoolAdmin = user.role === 'schooladmin';
   
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <DashboardHeader />
       
       {isSchoolAdmin && <SchoolAdminSetupCheck />}

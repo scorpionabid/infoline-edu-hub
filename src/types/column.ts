@@ -1,102 +1,73 @@
-// /src/types/column.ts
-export type ColumnType = 
-  | 'text' 
-  | 'textarea' 
-  | 'number' 
-  | 'date' 
-  | 'select' 
-  | 'checkbox' 
-  | 'radio' 
-  | 'file' 
-  | 'image' 
-  | 'email' 
-  | 'url' 
-  | 'phone' 
-  | 'range' 
-  | 'color' 
-  | 'password' 
-  | 'time' 
-  | 'datetime' 
-  | 'richtext';
-
-export interface ColumnOption {
-  id?: string;
-  label: string;
-  value: string;
-  color?: string;
-  disabled?: boolean;
-}
-
-export interface ColumnValidation {
-  required?: boolean;
-  min?: number;
-  max?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  format?: string;
-}
-
-export const columnTypes = {
-  text: {
-    icon: 'TextIcon',
-    label: 'Text',
-    description: 'Single line text input',
-    validations: ['required', 'minLength', 'maxLength', 'pattern'],
-  },
-  textarea: {
-    icon: 'TextareaIcon',
-    label: 'Textarea',
-    description: 'Multi-line text input',
-    validations: ['required', 'minLength', 'maxLength'],
-  },
-  number: {
-    icon: 'NumberIcon',
-    label: 'Number',
-    description: 'Numeric input field',
-    validations: ['required', 'min', 'max'],
-  },
-  date: {
-    icon: 'CalendarIcon',
-    label: 'Date',
-    description: 'Date picker',
-    validations: ['required'],
-  },
-  datetime: {
-    icon: 'CalendarClockIcon',
-    label: 'DateTime',
-    description: 'Date and time picker',
-    validations: ['required'],
-  },
-  richtext: {
-    icon: 'FormattingIcon',
-    label: 'Rich Text',
-    description: 'Rich text editor',
-    validations: ['required'],
-  }
-};
-
-// Əsas interfeyslər
-export interface Category {
-  id: string;
-  name: string;
-}
-
-export interface CategoryWithColumns extends Category {
-  columns: Column[];
-  completionRate?: number;
-  related?: any[];
-}
 
 export interface Column {
   id: string;
-  name: string;
-  title: string;
-  type: ColumnType;
   category_id: string;
+  name: string;
+  type: 'text' | 'number' | 'date' | 'time' | 'phone' | 'color' | 'checkbox' | 'radio' | 'select' | 'textarea' | 'image' | 'file' | 'password' | 'range' | 'datetime' | 'richtext';
   is_required: boolean;
+  placeholder?: string; // Placeholder əlavə edildi
+  help_text?: string; // Help text əlavə edildi
+  order_index?: number; // Order index əlavə edildi
   status: 'active' | 'inactive' | 'draft';
+  validation?: ValidationRules;
+  default_value?: string; // Default value əlavə edildi
   options?: ColumnOption[];
-  validations?: ColumnValidation;
-  // Digər xüsusiyyətlər
+  created_at: string;
+  updated_at: string;
+  section?: string; // Section əlavə edildi
+}
+
+export interface CategoryWithColumns {
+  id: string;
+  name: string;
+  description?: string;
+  assignment: string;
+  status: string;
+  deadline?: string;
+  created_at: string;
+  updated_at: string;
+  columns: Column[];
+}
+
+export interface ColumnOption {
+  value: string;
+  label: string;
+}
+
+export interface ValidationRules {
+  min?: number;
+  max?: number;
+  pattern?: string;
+  email?: boolean;
+  url?: boolean;
+  tel?: boolean;
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  minDate?: string;
+  maxDate?: string;
+}
+
+export interface ColumnFormValues {
+  name: string;
+  type: Column['type'];
+  is_required: boolean;
+  placeholder: string;
+  help_text: string;
+  status: 'active' | 'inactive' | 'draft';
+  order_index: number;
+  default_value: string;
+  options: ColumnOption[];
+  validation: {
+    min: string;
+    max: string;
+    minLength: string;
+    maxLength: string;
+    pattern: string;
+    email: boolean;
+    url: boolean;
+    tel: boolean;
+    minDate: string;
+    maxDate: string;
+  };
 }

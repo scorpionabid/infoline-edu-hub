@@ -47,18 +47,18 @@ const NavItem = ({ href, label, icon, isActive, isCollapsed, onClick }: NavItemP
     <Button
       variant={isActive ? "secondary" : "ghost"}
       className={cn(
-        "w-full justify-start mb-1 text-sm",
+        "w-full justify-start mb-0.5 text-xs",
         isActive ? "bg-muted" : "hover:bg-muted/50",
-        isCollapsed && "justify-center px-1 py-2"
+        isCollapsed ? "justify-center px-1 py-1.5" : "py-1.5"
       )}
       onClick={handleClick}
     >
       <div className="flex items-center">
-        <div className={cn(isCollapsed ? "mx-auto" : "mr-2")}>{icon}</div>
+        <div className={cn(isCollapsed ? "mx-auto" : "mr-1.5")}>{icon}</div>
         {!isCollapsed && <span>{label}</span>}
       </div>
       {isActive && !isCollapsed && (
-        <ChevronRight className="ml-auto h-4 w-4" />
+        <ChevronRight className="ml-auto h-3 w-3" />
       )}
     </Button>
   );
@@ -78,7 +78,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       {
         href: '/dashboard',
         label: t('dashboard'),
-        icon: <Home className="h-4 w-4" />,
+        icon: <Home className="h-3 w-3" />,
         allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
       }
     ];
@@ -89,7 +89,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/regions',
           label: t('regions'),
-          icon: <Building className="h-4 w-4" />,
+          icon: <Building className="h-3 w-3" />,
           allowedRoles: ['superadmin']
         }
       );
@@ -101,7 +101,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/sectors',
           label: t('sectors'),
-          icon: <Building2 className="h-4 w-4" />,
+          icon: <Building2 className="h-3 w-3" />,
           allowedRoles: ['superadmin', 'regionadmin']
         }
       );
@@ -113,7 +113,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/schools',
           label: t('schools'),
-          icon: <School className="h-4 w-4" />,
+          icon: <School className="h-3 w-3" />,
           allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin']
         }
       );
@@ -125,13 +125,13 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/categories',
           label: t('categories'),
-          icon: <Layers className="h-4 w-4" />,
+          icon: <Layers className="h-3 w-3" />,
           allowedRoles: ['superadmin', 'regionadmin']
         },
         {
           href: '/columns',
           label: t('columns'),
-          icon: <LayoutDashboard className="h-4 w-4" />,
+          icon: <LayoutDashboard className="h-3 w-3" />,
           allowedRoles: ['superadmin', 'regionadmin']
         }
       );
@@ -143,7 +143,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/data-entry',
           label: t('dataEntry'),
-          icon: <FileText className="h-4 w-4" />,
+          icon: <FileText className="h-3 w-3" />,
           allowedRoles: ['schooladmin']
         }
       );
@@ -155,7 +155,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/approvals',
           label: t('approvals'),
-          icon: <CheckCircle className="h-4 w-4" />,
+          icon: <CheckCircle className="h-3 w-3" />,
           allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin']
         }
       );
@@ -167,7 +167,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         {
           href: '/users',
           label: t('users'),
-          icon: <Users className="h-4 w-4" />,
+          icon: <Users className="h-3 w-3" />,
           allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin']
         }
       );
@@ -178,7 +178,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       {
         href: '/reports',
         label: t('reports'),
-        icon: <FileText className="h-4 w-4" />,
+        icon: <FileText className="h-3 w-3" />,
         allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
       }
     );
@@ -188,7 +188,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       {
         href: '/settings',
         label: t('settings'),
-        icon: <Settings className="h-4 w-4" />,
+        icon: <Settings className="h-3 w-3" />,
         allowedRoles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
       }
     );
@@ -197,8 +197,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   }, [userRole, t]);
 
   return (
-    <div className={cn("px-2 py-1", isCollapsed ? "items-center" : "")}>
-      <div className="space-y-0.5">
+    <div className={cn("px-1 py-0", isCollapsed ? "items-center" : "")}>
+      <div className="space-y-0">
         {generateNavItems.map((item) => (
           <NavItem
             key={item.href}

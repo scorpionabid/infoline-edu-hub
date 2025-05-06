@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import ReportHeader from '@/components/reports/ReportHeader';
 import ReportList from '@/components/reports/ReportList';
@@ -17,8 +18,8 @@ const Reports: React.FC = () => {
         <title>{t('reports')} | InfoLine</title>
       </Helmet>
 
-      <div className="container mx-auto py-6 space-y-6">
-        <div className="space-y-6">
+      <div className="container mx-auto py-3 space-y-4">
+        <div className="space-y-4">
           <ReportHeader 
             onCategorySelect={setSelectedCategoryId} 
           />
@@ -33,11 +34,11 @@ const Reports: React.FC = () => {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="schools-columns" className="mt-6">
+            <TabsContent value="schools-columns" className="mt-4">
               <SchoolColumnTable categoryId={selectedCategoryId} />
             </TabsContent>
             
-            <TabsContent value="templates" className="mt-6">
+            <TabsContent value="templates" className="mt-4">
               <ReportList />
             </TabsContent>
           </Tabs>
