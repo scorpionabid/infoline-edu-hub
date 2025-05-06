@@ -165,7 +165,7 @@ export const useDataEntry = ({
             .insert({
               school_id: schoolId,
               category_id: categoryId,
-              column_id: entry.column_id,
+              column_id: entry.columnId,
               value: entry.value,
               status: 'draft',
               created_by: user?.id

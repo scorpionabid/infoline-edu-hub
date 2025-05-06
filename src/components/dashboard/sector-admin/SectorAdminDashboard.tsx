@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const SectorAdminDashboard = () => {
-  const { user, userRole } = useAuth();
+  const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   
@@ -30,19 +31,29 @@ const SectorAdminDashboard = () => {
       try {
         setLoading(true);
         
-        if (!user || !userRole) {
-          throw new Error('User or role information is missing');
+        if (!user) {
+          throw new Error('User information is missing');
         }
         
+        // Get user role to determine sector ID
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('sector_id')
+          .eq('user_id', user.id)
+          .eq('role', 'sectoradmin')
+          .single();
+          
+        if (roleError) throw roleError;
+        
         // Get sector ID from user role
-        if (userRole.sector_id) {
-          setSectorId(userRole.sector_id);
+        if (roleData?.sector_id) {
+          setSectorId(roleData.sector_id);
           
           // Get sector name
           const { data: sectorData, error: sectorError } = await supabase
             .from('sectors')
             .select('name')
-            .eq('id', userRole.sector_id)
+            .eq('id', roleData.sector_id)
             .single();
             
           if (sectorError) throw sectorError;
@@ -52,7 +63,7 @@ const SectorAdminDashboard = () => {
           const { data: schoolsData, error: schoolsError } = await supabase
             .from('schools')
             .select('id, name, status, completion_rate')
-            .eq('sector_id', userRole.sector_id);
+            .eq('sector_id', roleData.sector_id);
             
           if (schoolsError) throw schoolsError;
           
@@ -69,17 +80,24 @@ const SectorAdminDashboard = () => {
               
               const totalForms = categoriesData?.length || 0;
               
-              // Get completed forms count
+              // Get completed forms count - remove distinct for compatibility
               const { data: completedData, error: compError } = await supabase
                 .from('data_entries')
                 .select('category_id')
                 .eq('school_id', school.id)
-                .eq('status', 'approved')
-                .distinct();
+                .eq('status', 'approved');
                 
               if (compError) throw compError;
               
-              const formsCompleted = completedData?.length || 0;
+              // Count unique category IDs manually
+              const uniqueCategories = new Set();
+              completedData?.forEach(entry => {
+                if (entry.category_id) {
+                  uniqueCategories.add(entry.category_id);
+                }
+              });
+              
+              const formsCompleted = uniqueCategories.size;
               
               return {
                 ...school,
@@ -105,17 +123,24 @@ const SectorAdminDashboard = () => {
               // Get total schools count
               const totalSchools = schoolStats.length;
               
-              // Get schools that completed this category
+              // Get schools that completed this category - remove distinct for compatibility
               const { data: completedData, error: compError } = await supabase
                 .from('data_entries')
                 .select('school_id')
                 .eq('category_id', category.id)
-                .eq('status', 'approved')
-                .distinct();
+                .eq('status', 'approved');
                 
               if (compError) throw compError;
               
-              const completedSchools = completedData?.length || 0;
+              // Count unique school IDs manually
+              const uniqueSchools = new Set();
+              completedData?.forEach(entry => {
+                if (entry.school_id) {
+                  uniqueSchools.add(entry.school_id);
+                }
+              });
+              
+              const completedSchools = uniqueSchools.size;
               const completionRate = totalSchools > 0 
                 ? Math.round((completedSchools / totalSchools) * 100) 
                 : 0;
@@ -138,7 +163,7 @@ const SectorAdminDashboard = () => {
     };
     
     fetchSectorData();
-  }, [user, userRole]);
+  }, [user]);
   
   if (loading) {
     return (
@@ -170,7 +195,7 @@ const SectorAdminDashboard = () => {
         
         <TabsContent value="schools" className="space-y-4 mt-4">
           <Grid cols={{ default: 1, md: 2, lg: 3 }} gap="gap-4">
-            {schoolStats.map((school) => (
+            {sectorSchools.map((school) => (
               <Card key={school.id} className="overflow-hidden">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">{school.name}</CardTitle>
@@ -198,7 +223,7 @@ const SectorAdminDashboard = () => {
             ))}
           </Grid>
           
-          {schoolStats.length === 0 && (
+          {sectorSchools.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               {t('noSchoolsFound')}
             </div>

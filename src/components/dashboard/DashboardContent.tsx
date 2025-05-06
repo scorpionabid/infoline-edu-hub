@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { SuperAdminDashboard } from './SuperAdminDashboard';
 import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
-import { SectorAdminDashboard } from './sector-admin/SectorAdminDashboard';
+import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
 import {
   SuperAdminDashboardData,
@@ -98,7 +97,7 @@ const DashboardContent = () => {
       )}
       
       {currentRole === 'sectoradmin' && (
-        <SectorAdminDashboard data={sectorAdminData} />
+        <SectorAdminDashboard />
       )}
       
       {currentRole === 'schooladmin' && (

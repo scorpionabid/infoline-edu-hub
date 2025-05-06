@@ -35,6 +35,7 @@ export interface SchoolStat {
   formsCompleted: number;
   totalForms: number;
   address?: string;
+  completion_rate?: number;
 }
 
 export interface SchoolAdminDashboardData {
