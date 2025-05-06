@@ -1,114 +1,108 @@
 
-import React, { useState, useEffect } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import React, { useEffect, useState } from 'react';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserFormData } from '@/types/user';
-import { Role } from '@/context/auth/types';
-import { supabase } from '@/lib/supabase';
+import { useLanguage } from '@/context/LanguageContext';
 import { useRegions } from '@/context/RegionsContext';
+import { UserFormData } from '@/types/user';
+import { supabase } from '@/lib/supabase';
 import { Sector } from '@/types/sector';
 
 interface SectorSectionProps {
-  form: any;
-  data: UserFormData;
-  onFormChange: (fieldName: string, value: any) => void;
-  isSuperAdmin: boolean;
-  currentUserRole?: Role;
-  filteredSectors: { id: string; name: string }[];
-  hideSection?: boolean;
+  formData: UserFormData;
+  onChange: (name: string, value: any) => void;
+  isDisabled?: boolean;
 }
 
-const SectorSection: React.FC<SectorSectionProps> = ({
-  form,
-  data,
-  onFormChange,
-  isSuperAdmin,
-  currentUserRole,
-  filteredSectors,
-  hideSection = false,
+export const SectorSection: React.FC<SectorSectionProps> = ({
+  formData,
+  onChange,
+  isDisabled
 }) => {
   const { t } = useLanguage();
   const { regions } = useRegions();
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loading, setLoading] = useState(false);
   
-  const regionId = form.watch('region_id');
-  
-  // regionId değiştiğinde sektörleri yükle
+  // Region_id dəyəri dəyişdikdə, sektorları yüklə
   useEffect(() => {
-    async function fetchSectors() {
-      if (regionId) {
-        setLoading(true);
-        try {
-          const { data } = await supabase
-            .from('sectors')
-            .select('*')
-            .eq('region_id', regionId)
-            .eq('status', 'active');
-          
-          setSectors(data || []);
-        } catch (error) {
-          console.error('Error fetching sectors:', error);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setSectors([]);
-      }
+    if (formData.region_id) {
+      fetchSectors(formData.region_id);
+    } else {
+      setSectors([]);
     }
-    
-    fetchSectors();
-  }, [regionId]);
+  }, [formData.region_id]);
   
-  const shouldShow = !hideSection && 
-    (((isSuperAdmin && data.region_id) || (currentUserRole === 'regionadmin')) &&
-    (data.role === 'sectoradmin' || data.role === 'schooladmin'));
-
-  const isFiltering = !!data.region_id;
-
-  if (!shouldShow) {
-    return null;
-  }
-
+  // Sektorları yükləmək üçün funksiya
+  const fetchSectors = async (regionId: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('sectors')
+        .select('*')
+        .eq('region_id', regionId)
+        .eq('status', 'active')
+        .order('name', { ascending: true });
+      
+      if (error) throw error;
+      setSectors(data || []);
+    } catch (error) {
+      console.error('Sektorları yükləyərkən xəta:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   return (
-    <FormField
-      control={form.control}
-      name="sector_id"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{t('sector')}</FormLabel>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="region_id">{t('region')}</Label>
           <Select
-            value={data.sector_id || "none"}
-            onValueChange={(value) => {
-              field.onChange(value === "none" ? null : value);
-              onFormChange('sector_id', value === "none" ? null : value);
-            }}
-            disabled={!isFiltering || filteredSectors.length === 0}
+            value={formData.region_id || ""}
+            onValueChange={(value) => onChange('region_id', value)}
+            disabled={isDisabled}
           >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder={t('selectSector')} />
-              </SelectTrigger>
-            </FormControl>
+            <SelectTrigger id="region_id">
+              <SelectValue placeholder={t('selectRegion')} />
+            </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">{t('selectSector')}</SelectItem>
-              {filteredSectors.map((sector) => (
+              {regions.map((region) => (
+                <SelectItem key={region.id} value={region.id}>
+                  {region.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="sector_id">{t('sector')}</Label>
+          <Select
+            value={formData.sector_id || ""}
+            onValueChange={(value) => onChange('sector_id', value)}
+            disabled={isDisabled || loading || sectors.length === 0 || !formData.region_id}
+          >
+            <SelectTrigger id="sector_id">
+              <SelectValue placeholder={t('selectSector')} />
+            </SelectTrigger>
+            <SelectContent>
+              {sectors.map((sector) => (
                 <SelectItem key={sector.id} value={sector.id}>
                   {sector.name}
                 </SelectItem>
               ))}
-              {filteredSectors.length === 0 && (
-                <div className="p-2 text-center text-sm text-muted-foreground">
-                  {t('noSectorsFound') || 'Sektor tapılmadı'}
-                </div>
-              )}
             </SelectContent>
           </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+          {!formData.region_id && (
+            <p className="text-sm text-muted-foreground">{t('selectRegionFirst')}</p>
+          )}
+          {formData.region_id && sectors.length === 0 && !loading && (
+            <p className="text-sm text-muted-foreground">{t('noSectorsInRegion')}</p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

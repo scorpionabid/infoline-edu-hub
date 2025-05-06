@@ -1,72 +1,131 @@
 
-import { Region } from './region';
-import { Sector } from './sector';
-import { School } from './school';
-import { Category } from './category';
+// Dashboard komponentləri üçün ümumi tiplər
+import { DashboardNotification } from './notification';
 
-export interface DashboardNotification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  date: string;
-  isRead: boolean;
+// -------------- Ümumi İnterfeyslər --------------
+export interface DashboardStats {
+  totalUsers?: number;
+  totalSchools?: number;
+  totalRegions?: number;
+  totalSectors?: number;
+  totalForms?: number;
+  totalCategories?: number;
+  sectors?: number;
+  schools?: number;
+  users?: number;
 }
 
 export interface FormStats {
-  total: number;
-  completed: number;
   pending: number;
-  overdue: number;
-  completionRate: number;
+  approved: number;
+  rejected: number;
+  draft: number;
+  total: number;
+  incomplete?: number;
+  dueSoon?: number;
+  overdue?: number;
+  submitted?: number;
 }
 
-export interface FormStatus {
-  id: string;
-  name: string;
-  status: 'pending' | 'completed' | 'overdue';
-  dueDate: string;
-}
-
-export interface CategoryStat {
-  id: string;
-  name: string;
-  status: string;
-  progress: number;
-  completedSchools: number;
-  totalSchools: number;
-}
-
+// Approval tipləri
 export interface PendingApproval {
   id: string;
   schoolName: string;
-  categoryName: string;
-  submittedBy: string;
-  submittedAt: string;
-  school?: School;
-  category?: Category;
+  category: string;
+  submittedDate: string;
+  status: 'pending' | 'approved' | 'rejected';
 }
 
-export interface RecentActivity {
-  id: string;
-  action: string;
-  target: string;
-  date: string;
-  user: string;
-}
+export type PendingApprovalItem = PendingApproval;
 
-export interface DashboardData {
-  stats: {
-    regions?: number;
-    sectors?: number;
-    schools: number;
-    activeSchools: number;
-    forms?: FormStats;
-    categories?: number;
-    pendingApprovals?: number;
-    completionRate?: number;
-  };
-  pendingApprovals?: PendingApproval[];
-  recentActivities: RecentActivity[];
+// -------------- Dashboard Məlumat Tipləri --------------
+export interface SuperAdminDashboardData {
+  stats: DashboardStats;
+  formsByStatus: FormStats;
+  completionRate: number;
   notifications: DashboardNotification[];
+}
+
+export interface RegionAdminDashboardData {
+  stats: DashboardStats;
+  sectorStats: SectorStat[];
+  schoolStats: SchoolStat[];
+  completionRate: number;
+  notifications: DashboardNotification[];
+}
+
+export interface SectorAdminDashboardData {
+  statistics: {
+    totalSchools: number;
+    activeSchools: number;
+    pendingSubmissions: number;
+    completedSubmissions: number;
+  };
+  schools: SchoolStat[];
+}
+
+export interface SchoolAdminDashboardData {
+  formStats: FormStats;
+  recentForms: FormItem[];
+  upcomingDeadlines: DeadlineItem[];
+  completionRate: number;
+  notifications: DashboardNotification[];
+}
+
+// -------------- Köməkçi İnterfeyslər --------------
+export interface CategoryStat {
+  id: string;
+  name: string;
+  deadline: string;
+  completionRate: number;
+  totalSchools: number;
+  completedSchools: number;
+}
+
+export interface SectorStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  schoolsCount: number;
+  pendingApprovals: number;
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  status: string;
+  lastUpdate: string;
+  pendingForms: number;
+  principal?: string;
+}
+
+export interface FormItem {
+  id: string;
+  name: string;
+  status: 'pending' | 'approved' | 'rejected' | 'draft' | 'submitted';
+  deadline?: string;
+  category: string;
+  lastUpdate: string;
+}
+
+export interface DeadlineItem {
+  id: string;
+  category: string;
+  deadline: string;
+  daysRemaining: number;
+  completionRate: number;
+}
+
+// Status Cards Props
+export interface StatusCardsProps {
+  formStats?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    draft: number;
+    incomplete?: number;
+    dueSoon?: number;
+    overdue?: number;
+  }
 }

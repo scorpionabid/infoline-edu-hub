@@ -85,9 +85,9 @@ const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
       <AdminDialog 
         open={isAdminDialogOpen} 
         onClose={closeAdminDialog} 
-        onUpdate={handleAdminUpdate} 
         onResetPassword={handleResetPassword} 
-        school={selectedAdmin} 
+        school={selectedAdmin}
+        onUpdate={handleAdminUpdate}
       />
     </>
   );

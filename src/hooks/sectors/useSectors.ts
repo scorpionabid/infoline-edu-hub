@@ -1,171 +1,120 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Sector } from '@/types/sector';
-import { toast } from 'sonner';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
+import { Sector } from '@/types/sector';
 
-export interface SectorFormData {
-  name: string;
-  description?: string;
-  region_id: string;
-  status?: 'active' | 'inactive' | 'blocked';
-}
-
-export const useSectors = (regionId?: string) => {
+export function useSectors(regionId?: string) {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
   const { t } = useLanguage();
 
-  const fetchSectors = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError('');
+  const fetchSectors = async (regionFilter?: string) => {
+    setLoading(true);
+    setError(null);
 
-      let query = supabase.from('sectors').select('*');
-      
-      if (regionId) {
+    try {
+      let query = supabase
+        .from('sectors')
+        .select('*')
+        .eq('status', 'active')
+        .order('name');
+
+      if (regionFilter) {
+        query = query.eq('region_id', regionFilter);
+      } else if (regionId) {
         query = query.eq('region_id', regionId);
       }
-      
-      const { data, error } = await query.order('name', { ascending: true });
+
+      const { data, error } = await query;
 
       if (error) throw error;
-
+      
       setSectors(data || []);
     } catch (err: any) {
-      console.error('Sektorları yükləyərkən xəta:', err);
-      setError(err.message || 'Sektorları yükləmək mümkün olmadı');
-      toast.error(t('errorLoadingSectors'));
+      setError(err);
+      console.error("Sektorları yükləyərkən xəta:", err);
+      toast({
+        title: t('error'),
+        description: t('errorFetchingSectors'),
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
-  }, [t, regionId]);
-
-  useEffect(() => {
-    fetchSectors();
-  }, [fetchSectors, regionId]);
-
-  const refresh = async () => {
-    await fetchSectors();
   };
-  
-  // Sektor əlavə etmək
-  const addSector = async (sectorData: SectorFormData) => {
+
+  const createSector = async (sectorData: Partial<Sector>) => {
     try {
-      setLoading(true);
-      
       const { data, error } = await supabase
         .from('sectors')
-        .insert([sectorData])
+        .insert(sectorData)
         .select();
-      
+
       if (error) throw error;
-      
+
+      // Sektorlar listesini yenilə
       await fetchSectors();
-      return data;
+      return { success: true, data };
     } catch (err: any) {
-      console.error('Sektor əlavə edərkən xəta:', err);
-      toast.error(t('sectorAddError'));
-      throw err;
-    } finally {
-      setLoading(false);
+      console.error("Sektor əlavə edilərkən xəta:", err);
+      return { success: false, error: err.message };
     }
   };
 
-  // Sektoru yeniləmək
-  const updateSector = async (id: string, sectorData: Partial<SectorFormData>) => {
+  const updateSector = async (id: string, sectorData: Partial<Sector>) => {
     try {
-      setLoading(true);
-      
       const { data, error } = await supabase
         .from('sectors')
         .update(sectorData)
         .eq('id', id)
         .select();
-      
+
       if (error) throw error;
-      
+
+      // Sektorlar listesini yenilə
       await fetchSectors();
-      return data;
+      return { success: true, data };
     } catch (err: any) {
-      console.error('Sektor yeniləyərkən xəta:', err);
-      toast.error(t('sectorUpdateError'));
-      throw err;
-    } finally {
-      setLoading(false);
+      console.error("Sektor yenilənərkən xəta:", err);
+      return { success: false, error: err.message };
     }
   };
 
-  // Sektoru silmək
   const deleteSector = async (id: string) => {
     try {
-      setLoading(true);
-      
-      // Əvvəlcə məktəblər var mı yoxlayaq
-      const { count } = await supabase
-        .from('schools')
-        .select('*', { count: 'exact', head: true })
-        .eq('sector_id', id);
-      
-      if (count && count > 0) {
-        toast.error(t('sectorHasSchools'));
-        throw new Error(t('sectorHasSchools'));
-      }
-      
       const { error } = await supabase
         .from('sectors')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
-      
+
+      // Sektorlar listesini yenilə
       await fetchSectors();
+      return { success: true };
     } catch (err: any) {
-      console.error('Sektor silmək istəyərkən xəta:', err);
-      toast.error(t('sectorDeleteError'));
-      throw err;
-    } finally {
-      setLoading(false);
+      console.error("Sektor silinərkən xəta:", err);
+      return { success: false, error: err.message };
     }
   };
-  
-  // Region ID-sinə görə sektorları yüklə
-  const fetchSectorsByRegion = async (regionId: string) => {
-    try {
-      setLoading(true);
-      setError('');
 
-      const { data, error } = await supabase
-        .from('sectors')
-        .select('*')
-        .eq('region_id', regionId)
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-
-      setSectors(data || []);
-    } catch (err: any) {
-      console.error('Sektorları yükləyərkən xəta:', err);
-      setError(err.message || 'Sektorları yükləmək mümkün olmadı');
-      toast.error(t('errorLoadingSectors'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    fetchSectors();
+  }, [regionId]);
 
   return {
     sectors,
     loading,
     error,
     fetchSectors,
-    fetchSectorsByRegion,
-    addSector,
+    createSector,
     updateSector,
-    deleteSector,
-    refresh
+    deleteSector
   };
-};
+}
 
 export default useSectors;

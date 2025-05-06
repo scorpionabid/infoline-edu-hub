@@ -1,113 +1,124 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { useToast } from '@/hooks/use-toast';
 import { School } from '@/types/school';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
-interface AdminDialogProps {
-  school: School | null;
+export interface AdminDialogProps {
   open: boolean;
   onClose: () => void;
-  onRefresh: () => void;
+  onResetPassword: (newPassword: string) => void;
+  school: School | null;
+  onUpdate?: () => void;
 }
 
-export default function AdminDialog({ school, open, onClose, onRefresh }: AdminDialogProps) {
+export const AdminDialog: React.FC<AdminDialogProps> = ({
+  open,
+  onClose,
+  onResetPassword,
+  school,
+  onUpdate
+}) => {
   const { t } = useLanguage();
-  const { toast } = useToast();
-  const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [existingAdmin, setExistingAdmin] = useState(false);
-  
-  useEffect(() => {
-    if (open && school) {
-      setEmail(school.admin_email || '');
-      setExistingAdmin(!!school.admin_id);
+  const [newPassword, setNewPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const adminEmail = school?.admin_email || school?.adminEmail;
+
+  const handleResetPassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast.error(t('passwordMinLength'));
+      return;
     }
-  }, [open, school]);
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!school) return;
-    
-    setIsSubmitting(true);
-    
+
+    setLoading(true);
     try {
-      // Açıq bir şəkildə admin_email istifadə edirik
-      await supabase
-        .from('schools')
-        .update({ admin_email: email })
-        .eq('id', school.id);
-      
-      if (!existingAdmin) {
-        // Mövcud admin yoxdursa, yeni məktəb admini yaradırıq
-        // Bu misalda sadəcə e-poçtu saxlayırıq, real tətbiqdə bunun üzərində daha çox iş görüləcək
-      }
-      
-      toast({
-        title: t('success'),
-        description: t('schoolAdminAssigned')
-      });
-      
-      onRefresh();
-      onClose();
+      await onResetPassword(newPassword);
+      setNewPassword('');
+      toast.success(t('passwordResetSuccess'));
     } catch (error) {
-      console.error('Error assigning admin:', error);
-      toast({
-        title: t('error'),
-        description: t('errorAssigningAdmin'),
-        variant: 'destructive'
-      });
+      console.error('Şifrə sıfırlama xətası:', error);
+      toast.error(t('passwordResetError'));
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
-  
+
+  const handleUpdateInfo = async () => {
+    if (!school || !onUpdate) return;
+    
+    try {
+      setLoading(true);
+      await onUpdate();
+      toast.success(t('adminInfoUpdated'));
+    } catch (error) {
+      console.error('Admin məlumatlarını yeniləmə xətası:', error);
+      toast.error(t('adminUpdateError'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {existingAdmin ? t('changeSchoolAdmin') : t('assignSchoolAdmin')}
-          </DialogTitle>
+          <DialogTitle>{t('schoolAdminManagement')}</DialogTitle>
           <DialogDescription>
-            {t('schoolAdminDescription')}
+            {adminEmail
+              ? t('manageSchoolAdmin', { email: adminEmail })
+              : t('noAdminAssigned')}
           </DialogDescription>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="schoolName">{t('school')}</Label>
-            <Input id="schoolName" value={school?.name || ''} disabled />
+
+        {adminEmail && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">{t('newPassword')}</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder={t('enterNewPassword')}
+              />
+              <p className="text-xs text-muted-foreground">{t('passwordResetDescription')}</p>
+            </div>
           </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            {t('cancel')}
+          </Button>
           
-          <div className="space-y-2">
-            <Label htmlFor="adminEmail">{t('adminEmail')}</Label>
-            <Input 
-              id="adminEmail"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@example.com"
-              required
-            />
-          </div>
+          {adminEmail && (
+            <Button onClick={handleResetPassword} disabled={!newPassword || loading}>
+              {loading ? t('resetting') : t('resetPassword')}
+            </Button>
+          )}
           
-          <DialogFooter className="pt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
-              {t('cancel')}
+          {adminEmail && onUpdate && (
+            <Button onClick={handleUpdateInfo} disabled={loading}>
+              {loading ? t('updating') : t('updateInfo')}
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? t('saving') : existingAdmin ? t('change') : t('assign')}
-            </Button>
-          </DialogFooter>
-        </form>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+export default AdminDialog;
