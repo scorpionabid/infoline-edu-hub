@@ -2,52 +2,42 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export interface GridProps {
+export interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
-  className?: string;
-  cols?: number | {
-    default: number;
-    sm?: number;
-    md?: number;
-    lg?: number;
-    xl?: number;
-  };
-  gap?: number;
+  cols?: number | { default: number; sm?: number; md?: number; lg?: number };
+  gap?: string;
 }
 
-export const Grid: React.FC<GridProps> = ({ 
-  children, 
-  className, 
-  cols = 3,
-  gap = 4
-}) => {
-  // Responsive cols obyekti üçün yoxlama
-  if (typeof cols === 'object') {
-    const { default: defaultCols, sm = defaultCols, md = sm, lg = md, xl = lg } = cols;
-    
+const Grid = React.forwardRef<HTMLDivElement, GridProps>(
+  ({ className, children, cols = 1, gap = "gap-4", ...props }, ref) => {
+    // Dinamik grid-cols klassları əlavə edək
+    const getColsClass = () => {
+      if (typeof cols === 'number') {
+        return `grid-cols-${cols}`;
+      }
+
+      // Responsive kolonlar üçün dizayn
+      const { default: defaultCols, sm, md, lg } = cols;
+      return cn(
+        `grid-cols-${defaultCols}`,
+        sm && `sm:grid-cols-${sm}`,
+        md && `md:grid-cols-${md}`,
+        lg && `lg:grid-cols-${lg}`
+      );
+    };
+
     return (
-      <div 
-        className={cn(
-          `grid grid-cols-${defaultCols} sm:grid-cols-${sm} md:grid-cols-${md} lg:grid-cols-${lg} xl:grid-cols-${xl} gap-${gap}`,
-          className
-        )}
+      <div
+        className={cn("grid", gap, getColsClass(), className)}
+        ref={ref}
+        {...props}
       >
         {children}
       </div>
     );
   }
-  
-  // Sadə nömrə üçün default təyinat
-  return (
-    <div 
-      className={cn(
-        `grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-${cols} gap-${gap}`,
-        className
-      )}
-    >
-      {children}
-    </div>
-  );
-};
+);
 
-export default Grid;
+Grid.displayName = "Grid";
+
+export { Grid };

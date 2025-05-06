@@ -57,15 +57,15 @@ const NavItem: React.FC<NavItemProps> = ({ icon, href, label, badge, isCollapsed
 interface SidebarNavProps {
   onItemClick?: () => void;
   isSidebarOpen?: boolean;
+  isCollapsed?: boolean;
 }
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({ 
   onItemClick,
-  isSidebarOpen 
+  isSidebarOpen,
+  isCollapsed = false
 }) => {
   const { t } = useLanguage();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const toggleCollapse = () => setIsCollapsed(!isCollapsed);
   const { 
     isSuperAdmin, 
     isRegionAdmin, 
@@ -140,10 +140,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 
   return (
     <div className={cn('py-2 h-full flex flex-col')}>
-      <div className="px-3 mb-2 flex items-center justify-end">
-        <Button variant="ghost" size="icon" onClick={toggleCollapse} className="h-8 w-8">
-          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </Button>
+      <div className="px-3 mb-2 flex items-center justify-between">
+        {!isCollapsed && <div className="text-lg font-semibold">InfoLine</div>}
       </div>
 
       <ScrollArea className="flex-1">
@@ -155,6 +153,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               href={item.href}
               label={item.label}
               isCollapsed={isCollapsed}
+              badge={item.badge}
             />
           ))}
         </div>

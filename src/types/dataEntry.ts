@@ -1,69 +1,29 @@
 
-import { Column } from './column';
+export type DataEntrySaveStatus = 'saved' | 'saving' | 'error';
 
-export enum DataEntrySaveStatus {
-  IDLE = 'idle',
-  SAVING = 'saving',
-  SAVED = 'saved',
-  ERROR = 'error',
-  SUBMITTING = 'submitting',
-  SUBMITTED = 'submitted'
-}
+export type DataEntryStatus = 'pending' | 'approved' | 'rejected';
 
-export interface DataEntry {
-  id?: string;
-  school_id: string;
-  category_id: string;
-  column_id: string;
-  value: string;
-  status?: 'draft' | 'pending' | 'approved' | 'rejected';
-  created_by?: string;
-  approved_by?: string;
-  rejected_by?: string;
-  approval_date?: string;
-  rejection_reason?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface EntryValue {
-  [columnId: string]: string | boolean | number | Date | null;
-}
-
-export interface DataEntryForm {
-  entries: DataEntry[];
-  isModified: boolean;
-  saveStatus: DataEntrySaveStatus;
-  error: string | null;
-  schoolId: string;
-  categoryId: string;
-  status: string;
-  lastSaved?: string;
-  submittedAt?: string;
-}
-
-export interface FormDeadline {
+export interface DataEntryTableData {
   id: string;
-  title: string;
-  dueDate: string;
-  createdAt: string;
-  categoryName: string;
-  completionRate: number;
-  status: string;
-}
-
-export interface DataEntryFormProps {
-  schoolId: string;
   categoryId: string;
-  initialEntries?: DataEntry[];
-  onComplete?: () => void;
+  columnId: string;
+  schoolId: string;
+  value: string;
+  status: DataEntryStatus;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  approvedBy?: string;
+  rejectedBy?: string;
+  approvedAt?: string;
+  rejectionReason?: string;
 }
 
-export interface ColumnValue {
-  columnId: string;
-  value: string | boolean | number;
-  columnType: string;
-  isRequired: boolean;
+export interface DataEntryFormData {
+  [key: string]: string;
+}
+
+export interface ValidationResult {
   isValid: boolean;
   errorMessage?: string;
 }

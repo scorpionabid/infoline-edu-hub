@@ -16,6 +16,10 @@ const SidebarLayout = () => {
     setIsSidebarOpen(prev => !prev);
   };
 
+  const toggleCollapse = () => {
+    setIsCollapsed(prev => !prev);
+  };
+
   // Mobil cihazlarda sidebar otomatik kapansın
   useEffect(() => {
     if (isMobile) {
@@ -40,12 +44,16 @@ const SidebarLayout = () => {
         <SidebarNav 
           onItemClick={() => isMobile && setIsSidebarOpen(false)}
           isSidebarOpen={isSidebarOpen}
+          isCollapsed={isCollapsed}
         />
       </div>
 
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Header onMenuClick={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        <Header 
+          onMenuClick={toggleSidebar} 
+          isSidebarOpen={isSidebarOpen}
+        />
         
         <main 
           className={cn(

@@ -232,7 +232,11 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px]">
-                <SchoolsTable schools={schools} />
+                <SchoolsTable schools={sectorSchools.map(school => ({
+                  ...school,
+                  formsCompleted: 0, // Standart dəyər
+                  totalForms: 0      // Standart dəyər
+                }))} />
               </ScrollArea>
             </CardContent>
           </Card>

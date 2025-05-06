@@ -1,17 +1,36 @@
 
-export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'approved' | 'draft';
+export type CategoryAssignment = 'all' | 'sectors';
+export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  assignment?: string;
   status: CategoryStatus;
-  priority?: number;
-  created_at: string;
-  updated_at: string;
+  assignment: CategoryAssignment;
+  created_at?: string;
+  updated_at?: string;
   archived?: boolean;
+  priority?: number;
+  deadline?: string | Date | null;
   column_count?: number;
-  deadline?: string;
   completionRate?: number;
+}
+
+export interface ColumnData {
+  id: string;
+  name: string;
+  type: string;
+  is_required: boolean;
+  options?: any;
+  validation?: any;
+  help_text?: string;
+  placeholder?: string;
+  category_id: string;
+  order_index?: number;
+  status?: string;
+}
+
+export interface CategoryWithColumns extends Category {
+  columns: ColumnData[];
 }
