@@ -68,3 +68,16 @@ export const useTheme = () => {
   }
   return context;
 };
+
+// useThemeSafe əlavə edildi - xətaları qabaqlamaq üçün
+export const useThemeSafe = () => {
+  const context = useContext(ThemeContext);
+  if (context === undefined) {
+    // Default theme konteksti qaytarırıq
+    return {
+      theme: 'light',
+      setTheme: () => console.warn('ThemeProvider initialized olmayıb')
+    };
+  }
+  return context;
+};

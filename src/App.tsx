@@ -6,7 +6,6 @@ import {
   Navigate,
   useLocation,
 } from 'react-router-dom';
-import { ThemeProvider } from '@/components/ui/theme-provider';
 import { Toaster } from 'sonner';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import Login from '@/pages/Login';
@@ -49,88 +48,86 @@ const App: React.FC = () => {
   
   return (
     <>
-      <ThemeProvider defaultTheme="dark">
-        <Toaster richColors position="top-right" />
-        <Routes>
-          <Route 
-            path="/login" 
-            element={
-              isAuthenticated ? 
-                <Navigate to="/dashboard" replace /> : 
-                <Login />
-            } 
-          />
-          <Route path="/404" element={<NotFound />} />
-          <Route 
-            path="/" 
-            element={<Navigate to="/dashboard" replace />} 
-          />
+      <Toaster richColors position="top-right" />
+      <Routes>
+        <Route 
+          path="/login" 
+          element={
+            isAuthenticated ? 
+              <Navigate to="/dashboard" replace /> : 
+              <Login />
+          } 
+        />
+        <Route path="/404" element={<NotFound />} />
+        <Route 
+          path="/" 
+          element={<Navigate to="/dashboard" replace />} 
+        />
+        
+        {/* Protected routes - SidebarLayout artıq autentifikasiya yoxlaması edir */}
+        <Route element={<SidebarLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           
-          {/* Protected routes - SidebarLayout artıq autentifikasiya yoxlaması edir */}
-          <Route element={<SidebarLayout />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            
-            {/* Data entry routes */}
-            <Route path="/data-entry" element={<DataEntryPage />} />
-            <Route path="/data-entry/:categoryId" element={<DataEntryPage />} />
-            
-            {/* Form routes */}
-            <Route path="/forms" element={<Forms />} />
-            <Route path="/forms/:categoryId" element={<DataEntryPage />} />
-            
-            {/* SuperAdmin routes */}
-            <Route path="/regions" element={
-              <RequireRole roles={['superadmin']}>
-                <RegionsPage />
-              </RequireRole>
-            } />
-            <Route path="/sectors" element={
-              <RequireRole roles={['superadmin', 'regionadmin']}>
-                <SectorsPage />
-              </RequireRole>
-            } />
-            <Route path="/schools" element={
-              <RequireRole roles={['superadmin', 'regionadmin', 'sectoradmin']}>
-                <SchoolsPage />
-              </RequireRole>
-            } />
-            <Route path="/users" element={
-              <RequireRole roles={['superadmin', 'regionadmin', 'sectoradmin']}>
-                <UsersPage />
-              </RequireRole>
-            } />
-            <Route path="/categories" element={
-              <RequireRole roles={['superadmin', 'regionadmin']}>
-                <CategoriesPage />
-              </RequireRole>
-            } />
-            <Route path="/columns" element={
-              <RequireRole roles={['superadmin', 'regionadmin']}>
-                <ColumnsPage />
-              </RequireRole>
-            } />
-            <Route path="/approvals" element={
-              <RequireRole roles={['sectoradmin', 'regionadmin']}>
-                <ApprovalsPage />
-              </RequireRole>
-            } />
-            <Route path="/reports" element={
-              <RequireRole roles={['superadmin', 'regionadmin', 'sectoradmin']}>
-                <ReportsPage />
-              </RequireRole>
-            } />
-            <Route path="/statistics" element={
-              <RequireRole roles={['superadmin', 'regionadmin', 'sectoradmin']}>
-                <StatisticsPage />
-              </RequireRole>
-            } />
-          </Route>
+          {/* Data entry routes */}
+          <Route path="/data-entry" element={<DataEntryPage />} />
+          <Route path="/data-entry/:categoryId" element={<DataEntryPage />} />
           
-          <Route path="*" element={<Navigate to="/404" replace />} />
-        </Routes>
-      </ThemeProvider>
+          {/* Form routes */}
+          <Route path="/forms" element={<Forms />} />
+          <Route path="/forms/:categoryId" element={<DataEntryPage />} />
+          
+          {/* SuperAdmin routes */}
+          <Route path="/regions" element={
+            <RequireRole roles={['superadmin']}>
+              <RegionsPage />
+            </RequireRole>
+          } />
+          <Route path="/sectors" element={
+            <RequireRole roles={['superadmin', 'regionadmin']}>
+              <SectorsPage />
+            </RequireRole>
+          } />
+          <Route path="/schools" element={
+            <RequireRole roles={['superadmin', 'regionadmin', 'sectoradmin']}>
+              <SchoolsPage />
+            </RequireRole>
+          } />
+          <Route path="/users" element={
+            <RequireRole roles={['superadmin', 'regionadmin', 'sectoradmin']}>
+              <UsersPage />
+            </RequireRole>
+          } />
+          <Route path="/categories" element={
+            <RequireRole roles={['superadmin', 'regionadmin']}>
+              <CategoriesPage />
+            </RequireRole>
+          } />
+          <Route path="/columns" element={
+            <RequireRole roles={['superadmin', 'regionadmin']}>
+              <ColumnsPage />
+            </RequireRole>
+          } />
+          <Route path="/approvals" element={
+            <RequireRole roles={['sectoradmin', 'regionadmin']}>
+              <ApprovalsPage />
+            </RequireRole>
+          } />
+          <Route path="/reports" element={
+            <RequireRole roles={['superadmin', 'regionadmin', 'sectoradmin']}>
+              <ReportsPage />
+            </RequireRole>
+          } />
+          <Route path="/statistics" element={
+            <RequireRole roles={['superadmin', 'regionadmin', 'sectoradmin']}>
+              <StatisticsPage />
+            </RequireRole>
+          } />
+        </Route>
+        
+        <Route path="*" element={<Navigate to="/404" replace />} />
+      </Routes>
     </>
   );
 };

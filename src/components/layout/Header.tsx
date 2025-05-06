@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthSafe } from '@/context/auth'; // useAuthSafe istifadə edirik
@@ -11,14 +12,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Moon, Sun, User, LogOut, Settings, Bell } from 'lucide-react';
-import { useTheme } from '@/context/ThemeContext';
+import { useThemeSafe } from '@/context/ThemeContext'; // useThemeSafe istifadə edirik
 import { useLanguage } from '@/context/LanguageContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuthSafe(); // useAuthSafe istifadə edirik
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme } = useThemeSafe(); // useThemeSafe istifadə edirik
   const { currentLanguage, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
