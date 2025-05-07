@@ -5,7 +5,7 @@ export interface AppNotification {
   title: string;
   message: string;
   date: string;
-  read?: boolean;
+  read: boolean; // optional deyil
   isRead?: boolean;
   type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
   link?: string;
@@ -40,8 +40,10 @@ export interface DashboardNotification {
   };
 }
 
-// Əlavə olunan - NotificationType əlavə edək
 export type NotificationType = AppNotification;
+
+// Notification alias - legacy support
+export type Notification = AppNotification;
 
 /**
  * Dashboard bildirişini app bildirişinə çevirmək üçün adapter

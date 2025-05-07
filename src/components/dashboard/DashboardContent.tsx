@@ -1,143 +1,96 @@
 
-import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
+import React, { useEffect, useState } from 'react';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { SuperAdminDashboard } from './SuperAdminDashboard';
-import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
+import { useLanguage } from '@/context/LanguageContext';
+import SuperAdminDashboard from './SuperAdminDashboard';
+import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
 import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
-import {
-  SuperAdminDashboardData,
-  RegionAdminDashboardData,
-  SectorAdminDashboardData,
-  SchoolAdminDashboardData,
-  FormStats,
-  DashboardStats
-} from '@/types/dashboard';
+import { DashboardStats, FormStats } from '@/types/dashboard';
 
-const DashboardContent = () => {
+const DashboardContent: React.FC = () => {
+  const { userRole, regionId, sectorId, schoolId } = usePermissions();
   const { t } = useLanguage();
-  const { currentRole } = usePermissions();
-  const { user } = useAuth();
-  
-  // Mock data obyektləri
-  const superAdminData: SuperAdminDashboardData = {
-    stats: {
-      schools: {
-        total: 0,
-        active: 0,
-        inactive: 0
-      },
-      forms: {
-        total: 0,
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-        draft: 0,
-        submitted: 0
-      },
-      categories: {
-        total: 0,
-        active: 0,
-        upcoming: 0,
-        expired: 0
-      },
-      users: {
-        total: 0,
-        active: 0,
-        pending: 0
-      },
-      totalRegions: 0,
-      totalSectors: 0,
-      totalSchools: 0,
-      totalUsers: 0
-    },
-    formsByStatus: {
-      total: 0,
-      pending: 0,
-      approved: 0,
-      rejected: 0,
-      draft: 0,
-      submitted: 0
-    },
-    completionRate: 0,
-    notifications: []
-  };
-  
-  const regionAdminData: RegionAdminDashboardData = {
-    stats: {
-      totalSectors: 0,
-      totalSchools: 0,
-      totalForms: 0,
-      sectors: 0,
-      schools: 0,
-      users: 0,
-      categories: 0
-    },
-    sectorStats: [],
-    schoolStats: [],
-    completionRate: 0,
-    notifications: []
-  };
-  
-  const sectorAdminData: SectorAdminDashboardData = { 
-    stats: {
-      totalSchools: 0,
-      totalEntries: 0,
-      pendingApprovals: 0,
-      completionRate: 0
-    },
+  const [stats, setStats] = useState<DashboardStats>({
+    totalUsers: 0,
+    totalSchools: 0,
+    totalRegions: 0,
+    totalSectors: 0,
     schools: [],
-    completionRate: 0,
-    notifications: []
-  };
-  
-  const schoolAdminData: SchoolAdminDashboardData = {
-    formStats: {
+    forms: {
       pending: 0,
       approved: 0,
       rejected: 0,
       draft: 0,
-      total: 0,
-      incomplete: 0,
-      dueSoon: 0,
-      overdue: 0
+      total: 0
     },
-    pendingForms: [],
-    upcomingDeadlines: [],
-    completionRate: 0,
-    notifications: []
-  };
+    categories: 0,
+    users: 0,
+    sectors: [],
+    regions: []
+  });
   
-  return (
-    <div className="px-4 py-8 md:px-6 md:py-10">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-1">
-          {t('welcomeMessage')} {user?.full_name || ''}
-        </h1>
-      </div>
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Mock data və ya API'dən məlumatları yükləmək üçün
+  useEffect(() => {
+    // Əsl sistemdə burada API sorğusu olacaq
+    setTimeout(() => {
+      setStats({
+        totalUsers: 120,
+        totalSchools: 450,
+        totalRegions: 14,
+        totalSectors: 78,
+        schools: [],
+        forms: {
+          pending: 85,
+          approved: 347,
+          rejected: 42,
+          draft: 26,
+          total: 500
+        },
+        categories: 25,
+        users: 120,
+        sectors: [
+          { id: '1', name: 'Bakı şəhəri', schools: 150 },
+          { id: '2', name: 'Sumqayıt şəhəri', schools: 75 },
+          { id: '3', name: 'Gəncə şəhəri', schools: 52 }
+        ],
+        regions: []
+      });
+      setIsLoading(false);
+    }, 500);
+  }, []);
 
-      {currentRole === 'superadmin' && (
-        <SuperAdminDashboard data={superAdminData} />
-      )}
-      
-      {currentRole === 'regionadmin' && (
-        <RegionAdminDashboard data={regionAdminData} />
-      )}
-      
-      {currentRole === 'sectoradmin' && (
-        <SectorAdminDashboard data={sectorAdminData} />
-      )}
-      
-      {currentRole === 'schooladmin' && (
-        <SchoolAdminDashboard 
-          data={schoolAdminData}
-          isLoading={false}
-        />
-      )}
-    </div>
-  );
+  // Rol əsaslı dashboard göstərmə
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  switch (userRole) {
+    case 'superadmin':
+      return <SuperAdminDashboard stats={stats} />;
+    
+    case 'regionadmin':
+      return <RegionAdminDashboard regionId={regionId} />;
+    
+    case 'sectoradmin':
+      return <SectorAdminDashboard sectorId={sectorId} />;
+    
+    case 'schooladmin':
+      return <SchoolAdminDashboard schoolId={schoolId} />;
+    
+    default:
+      return (
+        <div className="flex items-center justify-center h-64 text-muted-foreground">
+          {t('noDataAvailableForRole')}
+        </div>
+      );
+  }
 };
 
 export default DashboardContent;

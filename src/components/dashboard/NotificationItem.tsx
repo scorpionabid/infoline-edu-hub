@@ -1,77 +1,120 @@
 
 import React from 'react';
-import { format } from 'date-fns';
-import { Bell, Check, X, AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { formatDate } from "@/utils/formatters";
+import { AppNotification } from '@/types/notification';
+import { Eye, BellRing } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Notification } from '@/types/notification';
 
-export interface NotificationItemProps {
-  notification: Notification;
+interface NotificationItemProps {
+  notification: AppNotification;
   onMarkAsRead?: (id: string) => void;
 }
 
 const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMarkAsRead }) => {
-  // Get icon based on notification type
-  const getIcon = () => {
+  const getTypeIcon = () => {
     switch (notification.type) {
       case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
+        return <span className="text-amber-500">⚠️</span>;
       case 'error':
-        return <X className="h-5 w-5 text-destructive" />;
+        return <span className="text-destructive">❌</span>;
       case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'info':
-        return <Info className="h-5 w-5 text-blue-500" />;
-      case 'system':
-        return <Info className="h-5 w-5 text-blue-500" />;
-      case 'category':
-        return <Bell className="h-5 w-5 text-purple-500" />;
+        return <span className="text-green-500">✓</span>;
       case 'deadline':
-        return <Bell className="h-5 w-5 text-amber-500" />;
+        return <span className="text-amber-500">⏰</span>;
       case 'approval':
-        return <Check className="h-5 w-5 text-green-500" />;
+        return <span className="text-blue-500">👍</span>;
+      case 'category':
+        return <span className="text-indigo-500">📋</span>;
+      case 'system':
+        return <span className="text-gray-500">🔧</span>;
+      case 'info':
       default:
-        return <Bell className="h-5 w-5 text-muted-foreground" />;
+        return <span className="text-blue-500">ℹ️</span>;
     }
   };
-
-  // Format date
-  const formattedDate = notification.createdAt 
-    ? format(new Date(notification.createdAt), 'MMM d, HH:mm')
-    : notification.timestamp ? format(new Date(notification.timestamp), 'MMM d, HH:mm') 
-    : '';
-
+  
+  const getTypeClass = () => {
+    switch (notification.type) {
+      case 'warning':
+        return "border-l-4 border-l-amber-500";
+      case 'error':
+        return "border-l-4 border-l-destructive";
+      case 'success':
+        return "border-l-4 border-l-green-500";
+      case 'deadline':
+        return "border-l-4 border-l-amber-500";
+      case 'approval':
+        return "border-l-4 border-l-blue-500";
+      case 'category':
+        return "border-l-4 border-l-indigo-500";
+      case 'system':
+        return "border-l-4 border-l-gray-500";
+      case 'info':
+      default:
+        return "border-l-4 border-l-blue-500";
+    }
+  };
+  
+  const getPriorityClass = () => {
+    switch (notification.priority) {
+      case 'high':
+        return "bg-orange-50 dark:bg-orange-900/20";
+      case 'critical':
+        return "bg-red-50 dark:bg-red-900/20";
+      case 'normal':
+      default:
+        return "";
+    }
+  };
+  
+  const handleMarkAsRead = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onMarkAsRead) {
+      onMarkAsRead(notification.id);
+    }
+  };
+  
+  const isRead = notification.read || notification.isRead;
+  
   return (
-    <div className={cn(
-      "flex items-start gap-3 rounded-lg p-3 transition-colors",
-      notification.isRead ? "opacity-70" : "bg-muted/50",
-      "hover:bg-muted"
+    <Card className={cn(
+      "mb-3 transition-all hover:shadow-md cursor-pointer",
+      getTypeClass(),
+      getPriorityClass(),
+      !isRead ? "bg-primary-foreground/50" : ""
     )}>
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background">
-        {getIcon()}
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center justify-between">
-          <h4 className="font-medium">
-            {notification.title}
-          </h4>
-          <div className="flex items-center gap-2">
-            <time className="text-xs text-muted-foreground">{formattedDate}</time>
-            {!notification.isRead && onMarkAsRead && (
-              <button 
-                onClick={() => onMarkAsRead(notification.id)}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                <Check className="h-4 w-4" />
-              </button>
-            )}
+      <CardContent className="p-3">
+        <div className="flex items-start gap-2">
+          <div className="flex-shrink-0 mt-1">
+            {getTypeIcon()}
+          </div>
+          <div className="flex-grow">
+            <div className="text-sm font-medium">
+              {notification.title}
+              {!isRead && <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-blue-600"></span>}
+            </div>
+            <p className="text-sm text-muted-foreground line-clamp-2">{notification.message}</p>
+            <div className="flex items-center justify-between text-xs mt-2 text-muted-foreground">
+              <span>{formatDate(notification.date)}</span>
+              {!isRead && onMarkAsRead && (
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={handleMarkAsRead}
+                  className="h-6 px-2 text-xs"
+                >
+                  <Eye className="h-3 w-3 mr-1" />
+                  Oxundu
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-        {notification.message && (
-          <p className="text-sm text-muted-foreground">{notification.message}</p>
-        )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

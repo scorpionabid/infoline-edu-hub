@@ -1,103 +1,100 @@
 
-import React, { useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { formatDate } from '@/utils/formatters';
-import { Check, Eye } from 'lucide-react';
-import ApprovalDialog from './ApprovalDialog';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PendingApproval } from '@/types/dashboard';
+import { Table, TableHead, TableHeader, TableRow, TableCell, TableBody } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
+import { formatDate } from '@/utils/formatters';
 
 interface PendingApprovalsTableProps {
-  items: PendingApproval[];
-  onRefresh: () => void;
+  pendingApprovals: PendingApproval[];
+  onApprove?: (id: string) => void;
+  onReject?: (id: string) => void;
+  showActions?: boolean;
 }
 
-const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({ 
-  items, 
-  onRefresh 
+const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
+  pendingApprovals,
+  onApprove,
+  onReject,
+  showActions = true
 }) => {
-  const { t } = useLanguageSafe();
-  const [selectedItem, setSelectedItem] = useState<PendingApproval | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const handleReview = (item: PendingApproval) => {
-    setSelectedItem(item);
-    setIsDialogOpen(true);
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+  
+  const handleView = (approval: PendingApproval) => {
+    navigate(`/approvals/${approval.id}`);
   };
-
-  const handleApprovalCompleted = () => {
-    setSelectedItem(null);
-    onRefresh();
-  };
-
-  if (!items.length) {
-    return (
-      <div className="text-center p-4">
-        <p className="text-muted-foreground">{t('noPendingApprovals')}</p>
-      </div>
-    );
-  }
-
+  
   return (
-    <>
+    <div className="rounded-md border overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>{t('school')}</TableHead>
             <TableHead>{t('category')}</TableHead>
-            <TableHead>{t('submittedAt')}</TableHead>
-            <TableHead>{t('status')}</TableHead>
-            <TableHead className="text-right">{t('actions')}</TableHead>
+            <TableHead className="hidden md:table-cell">{t('submittedDate')}</TableHead>
+            {showActions && <TableHead className="text-right">{t('actions')}</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell className="font-medium">{item.schoolName}</TableCell>
-              <TableCell>{item.categoryName || item.category}</TableCell>
-              <TableCell>{formatDate(item.submittedDate || item.submittedAt || '')}</TableCell>
-              <TableCell>
-                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200">
-                  {t('pending')}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleReview(item)}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  {t('review')}
-                </Button>
+          {pendingApprovals.length > 0 ? (
+            pendingApprovals.map(approval => (
+              <TableRow key={approval.id}>
+                <TableCell>{approval.schoolName}</TableCell>
+                <TableCell>{approval.categoryName}</TableCell>
+                <TableCell className="hidden md:table-cell">{formatDate(approval.date)}</TableCell>
+                {showActions && (
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleView(approval)}
+                      >
+                        {t('view')}
+                      </Button>
+                      
+                      {onApprove && (
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => onApprove(approval.id)}
+                        >
+                          {t('approve')}
+                        </Button>
+                      )}
+                      
+                      {onReject && (
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => onReject(approval.id)}
+                        >
+                          {t('reject')}
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell 
+                colSpan={showActions ? 4 : 3} 
+                className="text-center py-6 text-muted-foreground"
+              >
+                {t('noPendingApprovals')}
               </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
-
-      {selectedItem && (
-        <ApprovalDialog
-          open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
-          schoolId={selectedItem.schoolId}
-          schoolName={selectedItem.schoolName}
-          categoryId={selectedItem.categoryId}
-          categoryName={selectedItem.categoryName || selectedItem.category || ''}
-          onComplete={handleApprovalCompleted}
-        />
-      )}
-    </>
+    </div>
   );
 };
 
 export default PendingApprovalsTable;
+export type { PendingApproval };

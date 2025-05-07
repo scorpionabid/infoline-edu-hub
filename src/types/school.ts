@@ -8,7 +8,7 @@ export interface School {
   sector_id: string;
   admin_id?: string;
   admin_email?: string;
-  status?: string;
+  status: string | 'active' | 'inactive';
   phone?: string;
   email?: string;
   student_count?: number;
@@ -18,7 +18,7 @@ export interface School {
   language?: string;
   created_at?: string;
   updated_at?: string;
-  principal_name?: string;
+  principal_name?: string; // Əlavə edilən xüsusiyyət
   principalName?: string; // TypeScript camelCase alias
   logo?: string;
   lastUpdate?: string; // Əlavə etdiyimiz xüsusiyyət
@@ -34,7 +34,7 @@ export type Region = {
   id: string;
   name: string;
   description?: string;
-  status?: string;
+  status: string | 'active' | 'inactive';
   admin_id?: string;
   admin_email?: string;
   created_at?: string;
@@ -47,7 +47,7 @@ export type Sector = {
   description?: string;
   region_id: string;
   region_name?: string;
-  status?: string;
+  status: string | 'active' | 'inactive';
   admin_id?: string;
   admin_email?: string;
   created_at?: string;

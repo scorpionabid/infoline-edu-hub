@@ -1,148 +1,238 @@
 
 import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Clock, PenSquare, FileCheck, AlertCircle } from 'lucide-react';
-import { FormItem, DeadlineItem } from '@/types/dashboard';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
+import { Clock, AlertCircle, Check } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { useNavigate } from 'react-router-dom';
+import { CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
 import { formatDate } from '@/utils/formatters';
 
 interface FormTabsProps {
+  categories: CategoryItem[];
+  upcoming: DeadlineItem[];
   pendingForms: FormItem[];
-  upcomingDeadlines: DeadlineItem[];
-  onFormClick: (formId: string) => void;
 }
 
-const FormTabs: React.FC<FormTabsProps> = ({ pendingForms, upcomingDeadlines, onFormClick }) => {
-  const { t } = useLanguageSafe();
-  
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return (
-          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-            <Clock className="mr-1 h-3 w-3" /> {t('pending')}
-          </Badge>
-        );
-      case 'approved':
-        return (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            <FileCheck className="mr-1 h-3 w-3" /> {t('approved')}
-          </Badge>
-        );
-      case 'rejected':
-        return (
-          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-            <AlertCircle className="mr-1 h-3 w-3" /> {t('rejected')}
-          </Badge>
-        );
-      case 'draft':
-        return (
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-            <PenSquare className="mr-1 h-3 w-3" /> {t('draft')}
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline">
-            {status}
-          </Badge>
-        );
-    }
+const FormTabs: React.FC<FormTabsProps> = ({
+  categories,
+  upcoming,
+  pendingForms
+}) => {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  const handleNavigateToForm = (categoryId: string) => {
+    navigate(`/data-entry/${categoryId}`);
   };
-  
+
   return (
-    <Tabs defaultValue="pending">
-      <TabsList className="mb-4">
-        <TabsTrigger value="pending">
-          {t('pendingDrafts')}
-          {pendingForms.length > 0 && (
-            <Badge variant="secondary" className="ml-2">{pendingForms.length}</Badge>
-          )}
-        </TabsTrigger>
-        <TabsTrigger value="upcoming">
-          {t('upcomingDeadlines')}
-          {upcomingDeadlines.length > 0 && (
-            <Badge variant="secondary" className="ml-2">{upcomingDeadlines.length}</Badge>
-          )}
-        </TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="pending" className="space-y-4">
-        {pendingForms.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            {t('noPendingForms')}
-          </div>
-        ) : (
-          pendingForms.map((form) => (
-            <div key={form.id} className="flex flex-col p-4 border rounded-lg space-y-2">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-medium">{form.category}</h3>
-                  <p className="text-sm text-muted-foreground">{t('lastUpdated')}: {form.lastUpdate}</p>
-                </div>
-                {getStatusBadge(form.status)}
-              </div>
-              <div className="text-sm">
-                <Button 
-                  variant="link" 
-                  className="px-0 h-auto font-normal text-primary" 
-                  onClick={() => onFormClick(form.id)}
-                >
-                  {t('continue')}
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
-      </TabsContent>
-      
-      <TabsContent value="upcoming" className="space-y-4">
-        {upcomingDeadlines.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            {t('noUpcomingDeadlines')}
-          </div>
-        ) : (
-          upcomingDeadlines.map((deadline) => (
-            <div key={deadline.id} className="flex flex-col p-4 border rounded-lg space-y-2">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-medium">{deadline.categoryName}</h3>
-                  <div className="flex items-center mt-1 text-sm text-muted-foreground">
-                    <CalendarDays className="mr-1 h-4 w-4" /> 
-                    {deadline.deadline}
+    <>
+      <TabsContent value="upcoming">
+        <div className="grid grid-cols-1 gap-4">
+          {upcoming.length > 0 ? (
+            upcoming.map(item => (
+              <Card key={item.id} className="overflow-hidden">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="flex justify-between">
+                    <div>{item.title}</div>
+                    {getDaysRemainingBadge(item.daysRemaining)}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <div>{t('deadline')}: {formatDate(item.deadline)}</div>
+                    <div>{t('categoryId')}: {item.categoryId}</div>
                   </div>
+                  <Progress
+                    value={item.completionRate}
+                    className="h-2"
+                  />
+                  <div className="flex justify-end">
+                    <div className="text-xs text-muted-foreground">
+                      {Math.round(item.completionRate)}% {t('completed')}
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="p-4 pt-0 flex justify-end">
+                  <Button 
+                    onClick={() => handleNavigateToForm(item.categoryId)}
+                  >
+                    {t('goToForm')}
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center text-muted-foreground">
+                <div className="flex justify-center mb-4">
+                  <Check className="h-12 w-12" />
                 </div>
-                <Badge 
-                  variant={deadline.daysLeft <= 3 ? "destructive" : "outline"}
-                  className={deadline.daysLeft <= 3 ? "" : "bg-orange-50 text-orange-700 border-orange-200"}
-                >
-                  {deadline.daysLeft === 0 
-                    ? t('dueToday') 
-                    : deadline.daysLeft < 0 
-                      ? t('overdue') 
-                      : t('daysRemaining', { count: deadline.daysLeft })}
-                </Badge>
-              </div>
-              <div className="text-sm flex items-center justify-between">
-                <span className="text-muted-foreground">
-                  {t('completion')}: {Math.round(deadline.completionRate || 0)}%
-                </span>
-                <Button 
-                  variant="link" 
-                  className="px-0 h-auto font-normal text-primary" 
-                  onClick={() => onFormClick(deadline.id)}
-                >
-                  {(deadline.completionRate || 0) < 100 ? t('complete') : t('view')}
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
+                <p>{t('noUpcomingDeadlines')}</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </TabsContent>
-    </Tabs>
+
+      <TabsContent value="pending">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('pendingForms')}</CardTitle>
+            <CardDescription>{t('pendingFormsDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('formTitle')}</TableHead>
+                  <TableHead>{t('category')}</TableHead>
+                  <TableHead>{t('status')}</TableHead>
+                  <TableHead className="text-right">{t('actions')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingForms.length > 0 ? (
+                  pendingForms.map(form => (
+                    <TableRow key={form.id}>
+                      <TableCell>{form.title}</TableCell>
+                      <TableCell>{form.category}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="outline" 
+                          className={getStatusClass(form.status)}
+                        >
+                          {t(form.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleNavigateToForm(form.categoryId)}
+                        >
+                          {t('continue')}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center h-32">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <Check className="h-8 w-8 mb-2" />
+                        <p>{t('noFormsWaiting')}</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="categories">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('allCategories')}</CardTitle>
+            <CardDescription>{t('allCategoriesDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {categories.map(category => (
+                <Card key={category.id}>
+                  <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-base">{category.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <Progress
+                      value={category.progress}
+                      className="h-2 my-2"
+                    />
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">
+                        {Math.round(category.progress)}% {t('completed')}
+                      </span>
+                      {category.dueDate && (
+                        <span className="text-muted-foreground">
+                          {t('due')}: {formatDate(category.dueDate)}
+                        </span>
+                      )}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="p-4 pt-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleNavigateToForm(category.id)}
+                    >
+                      {t('open')}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+
+              {categories.length === 0 && (
+                <div className="col-span-2 text-center p-12 text-muted-foreground">
+                  <AlertCircle className="mx-auto h-12 w-12 mb-4" />
+                  <p>{t('noCategoriesFound')}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </>
   );
+};
+
+// Statuslara görə stil sinifləri
+const getStatusClass = (status: string) => {
+  switch (status) {
+    case 'approved':
+      return 'bg-green-100 text-green-800 border-green-300';
+    case 'rejected':
+      return 'bg-red-100 text-red-800 border-red-300';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+    case 'draft':
+      return 'bg-gray-100 text-gray-800 border-gray-300';
+    default:
+      return '';
+  }
+};
+
+// Qalan günlərə görə nişan
+const getDaysRemainingBadge = (daysRemaining: number) => {
+  if (daysRemaining < 0) {
+    return (
+      <Badge variant="destructive" className="flex items-center gap-1">
+        <AlertCircle className="h-4 w-4" />
+        {Math.abs(daysRemaining)} {Math.abs(daysRemaining) === 1 ? 'gün' : 'gün'} gecikir
+      </Badge>
+    );
+  } else if (daysRemaining <= 3) {
+    return (
+      <Badge variant="warning" className="bg-amber-500 text-white flex items-center gap-1">
+        <Clock className="h-4 w-4" />
+        {daysRemaining} {daysRemaining === 1 ? 'gün' : 'gün'} qalır
+      </Badge>
+    );
+  } else {
+    return (
+      <Badge variant="outline" className="flex items-center gap-1">
+        <Clock className="h-4 w-4" />
+        {daysRemaining} {daysRemaining === 1 ? 'gün' : 'gün'} qalır
+      </Badge>
+    );
+  }
 };
 
 export default FormTabs;

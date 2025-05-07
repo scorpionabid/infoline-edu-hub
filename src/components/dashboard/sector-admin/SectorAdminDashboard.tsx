@@ -1,145 +1,191 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import {
-  SectorAdminDashboardData,
-  SchoolStat
-} from '@/types/dashboard';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLanguage } from '@/context/LanguageContext';
+import { useNotifications } from '@/hooks/useNotifications';
+import StatusCards from '@/components/dashboard/StatusCards';
+import SchoolStatsCard from '@/components/dashboard/SchoolStatsCard';
+import PendingApprovals from '@/components/approval/PendingApprovals';
+import NotificationsCard from '@/components/dashboard/NotificationsCard';
+import { SectorAdminDashboardData, SchoolStat } from '@/types/dashboard';
+import { SectorSchool } from '@/types/school';
 import SchoolsTable from './SchoolsTable';
-import { useNavigate } from 'react-router-dom';
-import { useRealDashboardData } from '@/hooks/useRealDashboardData';
-import { formatPercentage } from '@/utils/formatters';
+import { adaptAppNotificationToDashboard } from '@/types/notification';
 
 interface SectorAdminDashboardProps {
-  data: SectorAdminDashboardData;
+  sectorId?: string;
 }
 
-const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => {
-  const { t } = useLanguageSafe();
-  const navigate = useNavigate();
-  const { 
-    dashboardData, 
-    isLoading, 
-    error, 
-    refetch 
-  } = useRealDashboardData();
+const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ sectorId }) => {
+  const { t } = useLanguage();
+  const { notifications, markAsRead } = useNotifications();
+  const [data, setData] = useState<SectorAdminDashboardData>({
+    schoolStats: [],
+    completion: {
+      percentage: 0,
+      total: 0,
+      completed: 0
+    },
+    status: {
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      draft: 0,
+      total: 0
+    },
+    pendingApprovals: [],
+    notifications: []
+  });
   
-  // Mock schools data
-  const mockSchools: SchoolStat[] = [
-    {
-      id: '1',
-      name: 'Məktəb 1',
-      completionRate: 85,
-      status: 'active',
-      lastUpdate: '2023-04-10',
-      pendingForms: 2,
-      formsCompleted: 17,
-      totalForms: 20
-    },
-    {
-      id: '2',
-      name: 'Məktəb 2',
-      completionRate: 72,
-      status: 'active',
-      lastUpdate: '2023-04-09',
-      pendingForms: 5,
-      formsCompleted: 15,
-      totalForms: 20
-    },
-    {
-      id: '3',
-      name: 'Məktəb 3',
-      completionRate: 45,
-      status: 'active',
-      lastUpdate: '2023-04-12',
-      pendingForms: 11,
-      formsCompleted: 9,
-      totalForms: 20
-    }
-  ];
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Əgər real data yüklənibsə istifadə et
-  React.useEffect(() => {
-    if (dashboardData && 'schools' in dashboardData) {
-      const schools = dashboardData.schools;
-      if (schools && Array.isArray(schools)) {
-        const formattedSchools = schools.map(school => ({
-          id: school.id,
-          name: school.name,
-          completionRate: school.completionRate || 0,
-          status: school.status || 'active',
-          lastUpdate: school.lastUpdate || '',
-          pendingForms: school.pendingForms || 0,
-          formsCompleted: school.formsCompleted || 0,
-          totalForms: school.totalForms || 0,
-        }));
+  // Məlumatları yükləyən funksiya
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        // Mock data istifadə edirik (ideally would be replaced with real API call)
+        setData({
+          schoolStats: generateMockSchoolStats(),
+          completion: {
+            percentage: 75,
+            total: 20,
+            completed: 15
+          },
+          status: {
+            pending: 4,
+            approved: 12,
+            rejected: 2,
+            draft: 2,
+            total: 20
+          },
+          pendingApprovals: [
+            {
+              id: '1',
+              schoolId: '101',
+              schoolName: 'Məktəb #1',
+              categoryId: '201',
+              categoryName: 'Şagird məlumatları',
+              date: new Date().toISOString(),
+              status: 'pending'
+            },
+            {
+              id: '2',
+              schoolId: '102',
+              schoolName: 'Məktəb #2',
+              categoryId: '202',
+              categoryName: 'Müəllim məlumatları',
+              date: new Date().toISOString(),
+              status: 'pending'
+            }
+          ],
+          notifications: notifications.map(n => adaptAppNotificationToDashboard(n))
+        });
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Sektor admin dashboard məlumatlarının yüklənməsində xəta:', error);
+        setIsLoading(false);
       }
-    }
-  }, [dashboardData]);
+    };
 
-  // Məktəbi açmaq funksiyası
-  const handleViewSchool = (schoolId: string) => {
-    navigate(`/schools/${schoolId}`);
+    fetchDashboardData();
+  }, [notifications]);
+
+  const generateMockSchoolStats = (): SchoolStat[] => {
+    return [
+      {
+        id: '1',
+        name: 'Məktəb #1',
+        completionRate: 85,
+        status: 'active',
+        lastUpdate: new Date().toISOString(),
+        pendingForms: 2,
+        principal: 'Əli Əliyev',
+        formsCompleted: 17,
+        totalForms: 20,
+        address: 'Bakı, Yasamal',
+        phone: '055-555-55-55',
+        email: 'mekteb1@example.com'
+      },
+      {
+        id: '2',
+        name: 'Məktəb #2',
+        completionRate: 65,
+        status: 'active',
+        lastUpdate: new Date().toISOString(),
+        pendingForms: 5,
+        principal: 'Vəli Vəliyev',
+        formsCompleted: 13,
+        totalForms: 20,
+        address: 'Bakı, Nizami',
+        phone: '055-555-55-56',
+        email: 'mekteb2@example.com'
+      },
+      {
+        id: '3',
+        name: 'Məktəb #3',
+        completionRate: 45,
+        status: 'active',
+        lastUpdate: new Date().toISOString(),
+        pendingForms: 7,
+        principal: 'Qədir Qədirov',
+        formsCompleted: 9,
+        totalForms: 20,
+        address: 'Bakı, Səbail',
+        phone: '055-555-55-57',
+        email: 'mekteb3@example.com'
+      },
+    ];
   };
 
-  // İstifadə ediləcək schools data
-  const schools = data.schools || mockSchools;
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    </div>;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('totalSchools')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.stats?.totalSchools || 0}</div>
-            <p className="text-xs text-muted-foreground">{t('schoolsManaged')}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('dataEntries')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.stats?.totalEntries || 0}</div>
-            <p className="text-xs text-muted-foreground">{t('totalDataEntries')}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('pendingApprovals')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-500">{data.stats?.pendingApprovals || 0}</div>
-            <p className="text-xs text-muted-foreground">{t('entriesAwaitingApproval')}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('completionRate')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-500">
-              {formatPercentage(data.stats?.completionRate || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">{t('overallDataCompletion')}</p>
-          </CardContent>
-        </Card>
+      <StatusCards
+        completion={data.completion}
+        status={data.status}
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('schoolsInSector')}</CardTitle>
+              <CardDescription>{t('schoolsInSectorDescription')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SchoolsTable schools={data.schoolStats} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('pendingApprovals')}</CardTitle>
+              <CardDescription>{t('pendingApprovalsDescription')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PendingApprovals
+                pendingApprovals={data.pendingApprovals}
+                limit={5}
+                showViewAllButton={true}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <NotificationsCard 
+            notifications={data.notifications} 
+            onMarkAsRead={markAsRead} 
+          />
+          
+          <SchoolStatsCard schoolStats={data.schoolStats} />
+        </div>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('managedSchools')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SchoolsTable schools={schools} onViewSchool={handleViewSchool} />
-        </CardContent>
-      </Card>
     </div>
   );
 };

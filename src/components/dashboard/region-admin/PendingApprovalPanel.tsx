@@ -1,30 +1,26 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import PendingApprovalsTable, { PendingApprovalItem } from '@/components/approval/PendingApprovalsTable';
+import { useLanguage } from '@/context/LanguageContext';
+import PendingApprovalsTable from '@/components/approval/PendingApprovalsTable';
+import { PendingApproval } from '@/types/dashboard';
 
 interface PendingApprovalPanelProps {
-  pendingApprovals: PendingApprovalItem[];
-  onRefresh: () => void;
+  pendingApprovals: PendingApproval[];
 }
 
-const PendingApprovalPanel: React.FC<PendingApprovalPanelProps> = ({
-  pendingApprovals,
-  onRefresh
+const PendingApprovalPanel: React.FC<PendingApprovalPanelProps> = ({ 
+  pendingApprovals
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
 
   return (
-    <Card>
+    <Card className="col-span-12 lg:col-span-8">
       <CardHeader>
         <CardTitle>{t('pendingApprovals')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <PendingApprovalsTable 
-          items={pendingApprovals} 
-          onRefresh={onRefresh} 
-        />
+        <PendingApprovalsTable pendingApprovals={pendingApprovals} />
       </CardContent>
     </Card>
   );
