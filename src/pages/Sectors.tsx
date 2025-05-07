@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSectorsStore } from '@/hooks/useSectorsStore';
-import { CreateSectorDialog, EditSectorDialog, DeleteSectorDialog } from '@/components/sectors/SectorDialog';
+import { SectorDialog } from '@/components/sectors/SectorDialog';
 import { SectorAdminDialog } from '@/components/sectors/SectorAdminDialog';
 import SectorHeader from '@/components/sectors/SectorHeader';
 import SectorTable from '@/components/sectors/SectorTable';
@@ -200,13 +200,13 @@ const Sectors = () => {
           </div>
         )}
         
-        <CreateSectorDialog
+        <SectorDialog
           open={openSectorDialog}
           onClose={() => setOpenSectorDialog(false)}
         />
         
         {selectedSector && (
-          <EditSectorDialog
+          <SectorDialog
             open={openEditDialog}
             onClose={() => setOpenEditDialog(false)}
             sector={selectedSector}
@@ -214,7 +214,7 @@ const Sectors = () => {
         )}
         
         {selectedSector && (
-          <DeleteSectorDialog
+          <SectorDialog
             open={openDeleteDialog}
             onClose={() => setOpenDeleteDialog(false)}
             sector={selectedSector}
