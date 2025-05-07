@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { DashboardNotification } from '@/types/notification';
+import { DashboardNotification } from '@/types/dashboard';
 import { Button } from '@/components/ui/button';
 import { Bell, ArrowUpRight } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';

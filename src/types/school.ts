@@ -1,3 +1,4 @@
+
 // School interface
 export interface School {
   id: string;

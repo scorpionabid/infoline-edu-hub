@@ -36,17 +36,20 @@ export interface AuthContextType {
   user: FullUserData | null;
   session: Session | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
+  loading: boolean;
   error: AuthErrorType;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
-  updateUser: (updates: Partial<FullUserData>) => Promise<boolean>;
+  logIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
+  logOut: () => Promise<void>;
+  logout: () => Promise<void>; // logOut üçün alias
+  signOut: () => Promise<void>; // logOut üçün alias
+  updateUser: (updates: Partial<FullUserData>) => Promise<boolean | void>;
   clearError: () => void;
-  refreshProfile: () => Promise<FullUserData | null>;
-  // Legacy support üçün əlavə funksiyalar
-  signIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
-  signOut: () => Promise<void>;
-  createUser: (userData: UserFormData) => Promise<{ data: any; error: any }>;
+  refreshProfile?: () => Promise<FullUserData | null>;
+  updateUserProfile?: (userData: Partial<FullUserData>) => Promise<void | boolean>;
+  resetPassword: (email: string) => Promise<void>;
+  register: (userData: any) => Promise<any>;
+  setError: (error: string | null) => void;
+  createUser?: (userData: UserFormData) => Promise<{ data: any; error: any }>;
 }
 
 export interface AuthState {

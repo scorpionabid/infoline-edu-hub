@@ -1,322 +1,324 @@
 
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/auth';
+import { FullUserData, User } from '@/types/user';
+import { Button } from '@/components/ui/button';
 import { 
   Table, 
   TableBody, 
+  TableCaption, 
   TableCell, 
   TableHead, 
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
-import { MoreHorizontal } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { User } from '@/types/user';
-import { FullUserData } from '@/types/user';
 import { Badge } from '@/components/ui/badge';
-import { useUserList } from '@/hooks/useUserList';
-import { Pagination } from '@/components/ui/pagination';
-import DeleteUserDialog from './DeleteUserDialog';
+import { formatDistance } from 'date-fns';
+import UserFilters from './UserFilters';
+import UserDetailsDialog from './UserDetailsDialog';
 import EditUserDialog from './EditUserDialog';
-import { supabase } from '@/integrations/supabase/client';
+import { UserFilter, FilterOption } from './UserSelectParts/types';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
 interface UserListProps {
-  refreshTrigger?: number;
-  filterParams?: {
-    sectorId?: string;
-    regionId?: string;
-    role?: string;
-  };
+  onCreateUser?: () => void;
 }
 
-const UserList: React.FC<UserListProps> = ({
-  refreshTrigger = 0,
-  filterParams
-}) => {
+const UserList: React.FC<UserListProps> = ({ onCreateUser }) => {
   const { t } = useLanguage();
-  const {
-    users,
-    loading,
-    error,
-    filter,
-    updateFilter,
-    resetFilter,
-    totalCount,
-    totalPages,
-    currentPage,
-    setCurrentPage,
-    refetch
-  } = useUserList();
-
-  const { isSectorAdmin, sectorId, isRegionAdmin, regionId } = usePermissions();
-
+  const { user: currentUser } = useAuth();
+  const { isSuperAdmin, isRegionAdmin } = usePermissions();
+  const [isLoading, setIsLoading] = useState(false);
+  const [users, setUsers] = useState<FullUserData[]>([]);
   const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-
-  // FilterParams ilə filtri yeniləmək
-  useEffect(() => {
-    if (filterParams) {
-      const newFilter = { ...filter };
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [filter, setFilter] = useState<UserFilter>({
+    role: [],
+    status: [],
+    search: '',
+    page: 1,
+    limit: 50
+  });
+  
+  // Rol və status seçimləri üçün sabit dəyərlər
+  const roleOptions: FilterOption[] = [
+    { value: 'superadmin', label: t('superadmin') },
+    { value: 'regionadmin', label: t('regionadmin') },
+    { value: 'sectoradmin', label: t('sectoradmin') },
+    { value: 'schooladmin', label: t('schooladmin') },
+    { value: 'user', label: t('user') }
+  ];
+  
+  const statusOptions: FilterOption[] = [
+    { value: 'active', label: t('active') },
+    { value: 'inactive', label: t('inactive') },
+    { value: 'blocked', label: t('blocked') },
+    { value: 'pending', label: t('pending') }
+  ];
+  
+  // İstifadəçi siyahısını yüklə
+  const loadUsers = async () => {
+    setIsLoading(true);
+    try {
+      let query = supabase.rpc('get_full_user_data');
       
-      if (filterParams.sectorId) {
-        newFilter.sectorId = filterParams.sectorId;
+      // Filtrlər
+      if (filter.role && filter.role.length > 0) {
+        query = query.in('role', filter.role);
       }
       
-      if (filterParams.regionId) {
-        newFilter.regionId = filterParams.regionId;
+      if (filter.status && filter.status.length > 0) {
+        query = query.in('status', filter.status);
       }
       
-      if (filterParams.role) {
-        newFilter.role = filterParams.role;
+      if (filter.region_id) {
+        query = query.eq('region_id', filter.region_id);
       }
       
-      updateFilter(newFilter);
-    }
-  }, [filterParams, updateFilter]);
-
-  // İstifadəçi roluna əsasən default filtir
-  useEffect(() => {
-    if (isSectorAdmin && sectorId) {
-      updateFilter({
-        ...filter,
-        sectorId: sectorId,
-        role: 'schooladmin'
+      if (filter.sector_id) {
+        query = query.eq('sector_id', filter.sector_id);
+      }
+      
+      if (filter.search) {
+        query = query.or(`email.ilike.%${filter.search}%, full_name.ilike.%${filter.search}%`);
+      }
+      
+      // Sıralama və limit
+      query = query.order('created_at', { ascending: false })
+        .range((filter.page - 1) * filter.limit, filter.page * filter.limit - 1);
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      setUsers(data?.map(user => ({
+        ...user,
+        // Əgər name yoxdursa, full_name'i istifadə edək
+        name: user.full_name,
+        // type çevirmələri üçün alias-lar əlavə edək
+        regionId: user.region_id,
+        sectorId: user.sector_id,
+        schoolId: user.school_id,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+        lastLogin: user.last_login,
+        // notificationSettings objectini əlavə edək
+        notificationSettings: {
+          email: true,
+          inApp: true,
+          push: true,
+          system: true,
+          deadline: true
+        }
+      })) || []);
+      
+    } catch (err: any) {
+      console.error('Error loading users:', err);
+      toast.error(t('errorLoadingUsers'), {
+        description: err.message
       });
-    } else if (isRegionAdmin && regionId) {
-      updateFilter({
-        ...filter,
-        regionId: regionId
-      });
+    } finally {
+      setIsLoading(false);
     }
-  }, [isSectorAdmin, sectorId, isRegionAdmin, regionId, updateFilter]);
-
-  // refreshTrigger hər dəyişdikdə sorğunu yenilə
+  };
+  
+  // İlkin yüklənmə və filter dəyişikliyi
   useEffect(() => {
-    if (refreshTrigger > 0) {
-      refetch();
-    }
-  }, [refreshTrigger, refetch]);
-
-  const handleDeleteUser = async (userId: string) => {
-    if (!userId) return;
+    loadUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
+  // İstifadəçi detallarını göstər
+  const handleViewDetails = (user: FullUserData) => {
+    setSelectedUser(user);
+    setIsDetailsOpen(true);
+  };
+  
+  // İstifadəçini redaktə et
+  const handleEditUser = (user: FullUserData) => {
+    setSelectedUser(user);
+    setIsEditOpen(true);
+  };
+  
+  // İstifadəçi statusunu dəyişmək
+  const handleToggleStatus = async (user: Partial<User>) => {
+    if (!user.id || !user.status) return;
     
     try {
-      console.log('Deleting user with ID:', userId);
-      let isPartiallyDeleted = false;
-      
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
-      
-      if (roleError) {
-        console.error('Error deleting from user_roles:', roleError);
-      } else {
-        console.log('Successfully deleted from user_roles');
-        isPartiallyDeleted = true;
-      }
-      
-      const { error: profileError } = await supabase
+      const newStatus = user.status === 'active' ? 'inactive' : 'active';
+      const { error } = await supabase
         .from('profiles')
-        .delete()
-        .eq('id', userId);
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
       
-      if (profileError) {
-        console.error('Error deleting from profiles:', profileError);
-      } else {
-        console.log('Successfully deleted from profiles');
-        isPartiallyDeleted = true;
-      }
+      if (error) throw error;
       
-      try {
-        console.log('Attempting to delete user from auth via Edge Function...');
-        const { data, error: authError } = await supabase.functions.invoke('delete-user', {
-          body: { user_id: userId }
-        });
-        
-        if (authError) {
-          console.error('Error deleting from auth via Edge Function:', authError);
-        } else {
-          console.log('Successfully deleted from auth via Edge Function');
-        }
-      } catch (authErr) {
-        console.error('Exception during auth deletion via Edge Function:', authErr);
-      }
+      // Müvəffəqiyyətli mesaj göstər
+      const successMessage = newStatus === 'active' ? t('userActivated') : t('userDeactivated');
+      toast.success(successMessage);
       
-      refetch();
+      // İstifadəçi siyahısını yenilə
+      loadUsers();
       
-      if (isPartiallyDeleted) {
-        toast.success(t('userDeletedSuccessfully'));
-      } else {
-        toast.error(t('errorDeletingUser'));
-      }
-      
-      setIsDeleteDialogOpen(false);
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      toast.error(t('errorDeletingUser'));
+    } catch (err: any) {
+      console.error('Error updating user status:', err);
+      toast.error(t('errorUpdatingUserStatus'), {
+        description: err.message
+      });
     }
   };
-
-  const handleEditComplete = () => {
-    setIsEditDialogOpen(false);
-    refetch();
+  
+  // Format tarixi
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-';
+    try {
+      return formatDistance(new Date(dateString), new Date(), { addSuffix: true });
+    } catch (e) {
+      return dateString;
+    }
   };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const formatRole = (role: string) => {
-    switch (role) {
-      case 'superadmin':
-        return t('superadmin');
-      case 'regionadmin':
-        return t('regionadmin');
-      case 'sectoradmin':
-        return t('sectoradmin');
-      case 'schooladmin':
-        return t('schooladmin');
+  
+  // Status badge
+  const renderStatusBadge = (status?: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="success">{t('active')}</Badge>;
+      case 'inactive':
+        return <Badge variant="secondary">{t('inactive')}</Badge>;
+      case 'blocked':
+        return <Badge variant="destructive">{t('blocked')}</Badge>;
+      case 'pending':
+        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{t('pending')}</Badge>;
       default:
-        return role;
+        return <Badge variant="outline">{status || t('unknown')}</Badge>;
     }
   };
-
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'superadmin':
-        return 'bg-red-100 text-red-800';
-      case 'regionadmin':
-        return 'bg-blue-100 text-blue-800';
-      case 'sectoradmin':
-        return 'bg-green-100 text-green-800';
-      case 'schooladmin':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
+  
   return (
-    <Card className="shadow-none border-0">
-      <div className="px-4 pt-4">
-        {loading ? (
-          <div className="flex justify-center py-5">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        ) : error ? (
-          <div className="text-center py-5 text-red-500">
-            {error.message || "Xəta baş verdi"}
-          </div>
-        ) : users && users.length === 0 ? (
-          <div className="text-center py-5 text-muted-foreground">
-            {t('noUsersFound')}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('name')}</TableHead>
-                  <TableHead>{t('email')}</TableHead>
-                  <TableHead>{t('role')}</TableHead>
-                  <TableHead>{t('entity')}</TableHead>
-                  <TableHead>{t('status')}</TableHead>
-                  <TableHead className="text-right">{t('actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users && users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.full_name || user.name || user.email?.split('@')[0]}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={getRoleBadgeColor(String(user.role))}>
-                        {formatRole(String(user.role))}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user.entityName || '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
-                        {user.status === 'active' ? t('active') : t('inactive')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => {
-                            setSelectedUser(user);
-                            setIsEditDialogOpen(true);
-                          }}>
-                            {t('edit')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            setSelectedUser(user);
-                            setIsDeleteDialogOpen(true);
-                          }}>
-                            {t('delete')}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+    <div className="space-y-4">
+      <div className="flex justify-between">
+        <h2 className="text-2xl font-bold">{t('userManagement')}</h2>
+        {(isSuperAdmin || isRegionAdmin) && (
+          <Button onClick={onCreateUser}>
+            {t('createUser')}
+          </Button>
         )}
       </div>
       
-      {!loading && users && users.length > 0 && (
-        <div className="px-4 py-3 flex justify-between items-center">
-          <div className="text-sm text-muted-foreground">
-            {t('showingResults', { 
-              from: (currentPage - 1) * 10 + 1, 
-              to: Math.min(currentPage * 10, totalCount), 
-              total: totalCount 
-            })}
-          </div>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        </div>
-      )}
-
-      <DeleteUserDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        user={selectedUser || { id: '', email: '', name: '' }}
-        onDelete={() => selectedUser?.id && handleDeleteUser(selectedUser.id)}
+      <UserFilters 
+        filter={filter}
+        setFilter={setFilter}
+        roleOptions={roleOptions}
+        statusOptions={statusOptions}
+        onSearch={loadUsers}
       />
-
+      
+      <div className="border rounded-md">
+        <Table>
+          <TableCaption>
+            {isLoading ? t('loading') : t('userListCaption')}
+          </TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('name')}</TableHead>
+              <TableHead>{t('email')}</TableHead>
+              <TableHead>{t('role')}</TableHead>
+              <TableHead>{t('status')}</TableHead>
+              <TableHead>{t('lastLogin')}</TableHead>
+              <TableHead className="text-right">{t('actions')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell className="font-medium">
+                  {user.full_name || user.name || t('noName')}
+                </TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{t(String(user.role).toLowerCase())}</TableCell>
+                <TableCell>{renderStatusBadge(user.status)}</TableCell>
+                <TableCell>{formatDate(user.last_login || user.lastLogin)}</TableCell>
+                <TableCell className="text-right space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewDetails(user)}
+                  >
+                    {t('view')}
+                  </Button>
+                  {(isSuperAdmin || (isRegionAdmin && user.region_id === currentUser?.region_id)) && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditUser(user)}
+                      >
+                        {t('edit')}
+                      </Button>
+                      {user.id !== currentUser?.id && (
+                        <Button 
+                          variant={user.status === 'active' ? 'destructive' : 'default'}
+                          size="sm"
+                          onClick={() => handleToggleStatus(user as User)}
+                        >
+                          {user.status === 'active' ? t('deactivate') : t('activate')}
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+            {users.length === 0 && !isLoading && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8">
+                  {t('noUsersFound')}
+                </TableCell>
+              </TableRow>
+            )}
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8">
+                  <div className="flex justify-center items-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      
+      {/* İstifadəçi Detalları Dialoqu */}
       {selectedUser && (
-        <EditUserDialog
-          isOpen={isEditDialogOpen}
-          onClose={() => setIsEditDialogOpen(false)}
-          onComplete={handleEditComplete}
+        <UserDetailsDialog 
+          isOpen={isDetailsOpen}
+          onClose={() => setIsDetailsOpen(false)}
+          user={selectedUser}
+          onEditClick={() => {
+            setIsDetailsOpen(false);
+            setIsEditOpen(true);
+          }}
+        />
+      )}
+      
+      {/* İstifadəçi Düzəliş Dialoqu */}
+      {selectedUser && (
+        <EditUserDialog 
+          isOpen={isEditOpen}
+          onClose={() => setIsEditOpen(false)}
+          onComplete={() => {
+            setIsEditOpen(false);
+            loadUsers();
+          }}
           user={selectedUser}
         />
       )}
-    </Card>
+    </div>
   );
 };
 

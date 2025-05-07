@@ -1,334 +1,305 @@
 
-import React, { useEffect, useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle,
-  CardDescription,
-  CardFooter
-} from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ArrowUpRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSectorAdminDashboard } from '@/hooks/useSectorAdminDashboard';
+import { useLanguage } from '@/context/LanguageContext';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AlertCircle, CheckCircle, Clock, School, FileText, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/auth';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { ActivityLogCard } from '@/components/dashboard/sector-admin/ActivityLogCard';
-import { SchoolsList } from '@/components/dashboard/sector-admin/SchoolsList';
-import SchoolsTable from '@/components/dashboard/sector-admin/SchoolsTable';
-import SectorStatsCard from '@/components/dashboard/sector-admin/SectorStatsCard';
-import { SchoolStat } from '@/types/dashboard';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import EnhancedApprovalDialog from '../../approval/EnhancedApprovalDialog';
+import SchoolsTable from './SchoolsTable';
+import { SchoolStat } from '@/types/school';
 
-interface ActivityLogCardProps {
-  items: {
-    id: string;
-    action: string;
-    target: string;
-    date: string;
-    user: string;
-  }[];
+interface SectorAdminDashboardData {
+  // Add properties of SectorAdminDashboardData type here
 }
 
-const SectorAdminDashboard: React.FC = () => {
+export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> = ({ data }) => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { sectorId, regionId } = usePermissions();
-  const [sectorName, setSectorName] = useState<string>("");
+  const [selectedApproval, setSelectedApproval] = useState<any>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [entryDetails, setEntryDetails] = useState<any>(null);
+  const [isEntryDetailsLoading, setIsEntryDetailsLoading] = useState(false);
   const [schoolStats, setSchoolStats] = useState<SchoolStat[]>([]);
-  const [pendingApprovals, setPendingApprovals] = useState<number>(0);
-  const [totalSchools, setTotalSchools] = useState<number>(0);
-  const [activeSchools, setActiveSchools] = useState<number>(0);
-  const [completionRate, setCompletionRate] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const {
+    schools,
+    pendingApprovals,
+    totalSchools,
+    completedSchools,
+    pendingSchools,
+    notStartedSchools,
+    isLoading,
+    error,
+    refreshData,
+    approveEntries,
+    rejectEntries,
+    viewEntryDetails,
+  } = useSectorAdminDashboard();
+
+  // Schools məlumatlarını SchoolStat formatına çevirək
   useEffect(() => {
-    const fetchSectorData = async () => {
-      try {
-        setIsLoading(true);
-        
-        if (sectorId) {
-          // Sektor məlumatlarını çək
-          const { data: sectorData } = await supabase
-            .from('sectors')
-            .select('name')
-            .eq('id', sectorId)
-            .single();
-          
-          if (sectorData) {
-            setSectorName(sectorData.name);
-          }
+    if (schools.length > 0) {
+      const formattedSchools: SchoolStat[] = schools.map(school => ({
+        id: school.id,
+        name: school.name,
+        completionRate: school.completionRate || 0,
+        status: school.status || 'active',
+        lastUpdate: school.updated_at || new Date().toISOString(),
+        pendingForms: 0, // Bu məlumatı əldə etmək lazımdır
+        formsCompleted: 0, // Bu məlumatı əldə etmək lazımdır
+        formsTotal: 0, // Bu məlumatı əldə etmək lazımdır
+        address: school.address,
+        phone: school.phone,
+        email: school.email
+      }));
+      
+      setSchoolStats(formattedSchools);
+    }
+  }, [schools]);
 
-          // Sektora aid məktəbləri çək
-          const { data: schoolsData, error: schoolsError } = await supabase
-            .from('schools')
-            .select('*')
-            .eq('sector_id', sectorId)
-            .eq('status', 'active');
-          
-          if (schoolsError) throw schoolsError;
-          
-          setTotalSchools(schoolsData ? schoolsData.length : 0);
-          setActiveSchools(schoolsData ? schoolsData.filter(s => s.status === 'active').length : 0);
+  const handleViewDetails = async (approval: any) => {
+    setSelectedApproval(approval);
+    setIsEntryDetailsLoading(true);
 
-          // Təsdiq gözləyən məlumatları çək
-          const { count, error: pendingError } = await supabase
-            .from('data_entries')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'pending');
-          
-          if (pendingError) throw pendingError;
-          
-          setPendingApprovals(count || 0);
-
-          // Məktəblərin tamamlanma faizini hesabla
-          if (schoolsData && schoolsData.length > 0) {
-            const schoolIds = schoolsData.map(school => school.id);
-            
-            // Ayrı-ayrı məktəb statistikasını çək
-            const { data: statsData, error: statsError } = await supabase
-              .from('schools')
-              .select('id, name, status, completion_rate')
-              .in('id', schoolIds);
-            
-            if (statsError) throw statsError;
-            
-            if (statsData) {
-              const currentDate = new Date().toISOString();
-              const schoolStatsList = statsData.map(school => {
-                // Bu məktəb üçün təxmini tamamlanma faizi hesabla
-                // Əsl məlumatları verilənlər bazasından gətirmək üçün
-                // daha mürəkkəb sorğular lazım ola bilər
-                const formsCompleted = Math.floor(Math.random() * 10);
-                const totalForms = 10; // Bu dəyər dinamik olaraq hesablanmalıdır
-                const completionRate = school.completion_rate || Math.floor((formsCompleted / totalForms) * 100);
-                const pendingForms = Math.floor(Math.random() * 5);
-                
-                return {
-                  id: school.id,
-                  name: school.name,
-                  completionRate,
-                  status: school.status,
-                  lastUpdate: currentDate,
-                  pendingForms,
-                  formsCompleted,
-                  totalForms
-                };
-              });
-              
-              setSchoolStats(schoolStatsList);
-              
-              // Ümumi tamamlanma faizini hesabla
-              const totalCompletionRate = schoolStatsList.reduce((acc, school) => acc + school.completionRate, 0);
-              setCompletionRate(
-                schoolStatsList.length > 0 ? Math.floor(totalCompletionRate / schoolStatsList.length) : 0
-              );
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching sector data:", error);
-      } finally {
-        setIsLoading(false);
+    try {
+      const result = await viewEntryDetails(approval.schoolId, approval.categoryId);
+      if (result.success) {
+        setEntryDetails(result.data);
+        setIsDetailsOpen(true);
       }
-    };
-
-    fetchSectorData();
-  }, [sectorId, regionId]);
-
-  // Unique school status values və sayları
-  const getSchoolStatusCounts = () => {
-    const counts = {
-      active: 0,
-      inactive: 0,
-      total: schoolStats.length
-    };
-    
-    schoolStats.forEach(school => {
-      if (school.status === 'active') counts.active++;
-      else counts.inactive++;
-    });
-    
-    return counts;
+    } catch (error) {
+      console.error('Məlumat detalları alınarkən xəta:', error);
+    } finally {
+      setIsEntryDetailsLoading(false);
+    }
   };
-  
-  const statusCounts = getSchoolStatusCounts ? getSchoolStatusCounts() : { active: 0, inactive: 0, total: schoolStats.length };
 
-  // Activity log sample data for ActivityLogCard component
-  const activityLogItems = [
-    {
-      id: '1',
-      action: 'Məktəb məlumatları təsdiqləndi',
-      target: 'Bakı şəhər 220 saylı məktəb',
-      date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      user: 'Anar Məmmədov'
-    },
-    {
-      id: '2',
-      action: 'Yeni kateqoriya əlavə edildi',
-      target: 'Metodiki işlər',
-      date: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-      user: 'Samirə Həsənova'
-    },
-    {
-      id: '3',
-      action: 'Hesabat yaradıldı',
-      target: 'Aylıq hesabat',
-      date: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
-      user: 'Elnur Qarayev'
-    },
-  ];
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('error')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center text-destructive">
+            <AlertCircle className="mr-2" />
+            <p>{error}</p>
+          </div>
+          <Button onClick={refreshData} className="mt-4">
+            {t('tryAgain')}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{sectorName || "Sektor İdarəetmə Paneli"}</h1>
-
-      {/* Stats Row */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Məktəblər</CardTitle>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" />
-              <path d="M3 9V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4" />
-            </svg>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('totalSchools')}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalSchools}</div>
             <p className="text-xs text-muted-foreground">
-              {activeSchools} aktiv, {totalSchools - activeSchools} qeyri-aktiv
+              {t('schoolsInSector')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tamamlanma faizi</CardTitle>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <rect width="20" height="14" x="2" y="5" rx="2" />
-              <path d="M2 10h20" />
-            </svg>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('completedSchools')}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{completionRate}%</div>
-            <p className="text-xs text-muted-foreground">
-              Son 30 gündə +5%
-            </p>
+            <div className="text-2xl font-bold text-green-600">{completedSchools}</div>
+            <Progress value={(completedSchools / totalSchools) * 100} className="h-2" />
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Təsdiq gözləyən</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('pendingSchools')}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingApprovals}</div>
-            <p className="text-xs text-muted-foreground">
-              <button 
-                onClick={() => navigate('/approvals')}
-                className="text-primary hover:underline flex items-center"
-              >
-                Təsdiq et <ChevronRight className="h-3 w-3" />
-              </button>
-            </p>
+            <div className="text-2xl font-bold text-amber-600">{pendingSchools}</div>
+            <Progress value={(pendingSchools / totalSchools) * 100} className="h-2" />
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tamamlama faizi</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('notStartedSchools')}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{completionRate}%</div>
-            <div className="mt-1 h-2 w-full bg-secondary">
-              <div 
-                className="h-full bg-primary" 
-                style={{ width: `${completionRate}%` }}
-              />
-            </div>
+            <div className="text-2xl font-bold text-gray-600">{notStartedSchools}</div>
+            <Progress value={(notStartedSchools / totalSchools) * 100} className="h-2" />
           </CardContent>
         </Card>
       </div>
 
-      {/* Two columns layout */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
-        {/* Main content - 5 columns on medium and up */}
-        <div className="md:col-span-5 space-y-6">
-          {/* Schools list */}
+      <Tabs defaultValue="pending" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="pending" className="flex items-center">
+            <FileText className="mr-2 h-4 w-4" />
+            {t('pendingApprovals')} 
+            {pendingApprovals.length > 0 && <Badge variant="secondary" className="ml-2">{pendingApprovals.length}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="schools" className="flex items-center">
+            <School className="mr-2 h-4 w-4" />
+            {t('schools')}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pending">
           <Card>
             <CardHeader>
-              <CardTitle>Məktəblər</CardTitle>
+              <CardTitle>{t('pendingApprovals')}</CardTitle>
               <CardDescription>
-                Sektora aid bütün məktəblər
+                {t('pendingApprovalsDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <SchoolsTable schools={schoolStats} />
+              {pendingApprovals.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CheckCircle className="mx-auto h-12 w-12 mb-2 text-green-500" />
+                  <p>{t('noApprovals')}</p>
+                </div>
+              ) : (
+                <ScrollArea className="h-[400px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('school')}</TableHead>
+                        <TableHead>{t('category')}</TableHead>
+                        <TableHead>{t('submittedAt')}</TableHead>
+                        <TableHead>{t('status')}</TableHead>
+                        <TableHead>{t('actions')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingApprovals.map((approval) => (
+                        <TableRow key={approval.id}>
+                          <TableCell className="font-medium">{approval.schoolName}</TableCell>
+                          <TableCell>{approval.categoryName}</TableCell>
+                          <TableCell>{new Date(approval.submittedAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {t('pending')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleViewDetails(approval)}
+                              disabled={isEntryDetailsLoading}
+                            >
+                              {isEntryDetailsLoading && selectedApproval?.id === approval.id ? (
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <FileText className="h-3 w-3 mr-1" />
+                              )}
+                              {t('viewDetails')}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              )}
             </CardContent>
-            <CardFooter>
-              <Button variant="outline" size="sm" onClick={() => navigate('/schools')}>
-                Bütün məktəbləri göstər <ArrowUpRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
           </Card>
+        </TabsContent>
 
-          {/* Activity Log */}
-          <ActivityLogCard items={activityLogItems} />
-        </div>
-        
-        {/* Sidebar - 2 columns on medium and up */}
-        <div className="md:col-span-2 space-y-6">
-          {/* Sector Stats */}
-          <SectorStatsCard 
-            totalSchools={statusCounts.total}
-            activeSchools={statusCounts.active}
-            completionRate={completionRate}
-            pendingApprovals={pendingApprovals}
-          />
-          
-          {/* Quick Actions */}
+        <TabsContent value="schools">
           <Card>
             <CardHeader>
-              <CardTitle>Sürətli əməliyyatlar</CardTitle>
+              <CardTitle>{t('schools')}</CardTitle>
+              <CardDescription>
+                {t('schoolsInSectorDescription')}
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/schools')}>
-                Məktəblər
-              </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/approvals')}>
-                Təsdiqlər
-              </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/reports')}>
-                Hesabatlar
-              </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/categories')}>
-                Kateqoriyalar
-              </Button>
+            <CardContent>
+              <ScrollArea className="h-[400px]">
+                <SchoolsTable schools={schoolStats} />
+              </ScrollArea>
             </CardContent>
           </Card>
-        </div>
-      </div>
-    </div>
+        </TabsContent>
+      </Tabs>
+
+      {selectedApproval && entryDetails && (
+        <EnhancedApprovalDialog
+          open={isDetailsOpen}
+          onOpenChange={setIsDetailsOpen}
+          schoolName={selectedApproval.schoolName}
+          categoryName={selectedApproval.categoryName}
+          data={entryDetails.entries || []}
+          isProcessing={isEntryDetailsLoading}
+          currentStatus={selectedApproval.status}
+          onApprove={async () => {
+            const result = await approveEntries(
+              selectedApproval.schoolId,
+              selectedApproval.categoryId,
+              [selectedApproval.id]
+            );
+            if (result.success) {
+              setIsDetailsOpen(false);
+              setSelectedApproval(null);
+              refreshData();
+            }
+          }}
+          onReject={async (reason) => {
+            const result = await rejectEntries(
+              selectedApproval.schoolId,
+              selectedApproval.categoryId,
+              [selectedApproval.id],
+              reason
+            );
+            if (result.success) {
+              setIsDetailsOpen(false);
+              setSelectedApproval(null);
+              refreshData();
+            }
+          }}
+        />
+      )}
+    </>
   );
 };
 

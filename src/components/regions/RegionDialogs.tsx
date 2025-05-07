@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRegionsContext } from '@/context/RegionsContext';
 import { Region } from '@/types/school';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export const RegionDialogs = () => {
   const { t } = useLanguage();
-  const { toast } = useToast();
   const { regions, loading, addRegion, assignRegionAdmin } = useRegionsContext();
   
   // Dialog states
@@ -21,11 +20,11 @@ export const RegionDialogs = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   
-  // Form data
+  // Form data - type-a uyğun olaraq düzəltdik
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    status: 'active' as const,
+    status: 'active' as 'active' | 'inactive',
   });
   
   // Selected region
@@ -77,7 +76,7 @@ export const RegionDialogs = () => {
     setFormData({
       name: region.name,
       description: region.description || '',
-      status: region.status as 'active' | 'inactive',
+      status: (region.status as 'active' | 'inactive') || 'active',
     });
     setIsEditOpen(true);
   };
@@ -171,7 +170,7 @@ export const RegionDialogs = () => {
   };
   
   // Handle delete region
-  const handleDeleteConfirm = async () => {
+  const handleDeleteRegion = async () => {
     if (!selectedRegion) return;
     
     try {
@@ -315,7 +314,7 @@ export const RegionDialogs = () => {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={closeDeleteRegion}>{t('cancel')}</Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm}>{t('delete')}</Button>
+            <Button variant="destructive" onClick={handleDeleteRegion}>{t('delete')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

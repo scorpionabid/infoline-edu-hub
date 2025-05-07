@@ -1,10 +1,10 @@
 
-import { useAuthSafe } from './useAuth';
+import { useAuth } from './useAuth';
 
 /**
  * İstifadəçinin rolunu əldə etmək üçün hook
  */
 export const useRole = () => {
-  const { user } = useAuthSafe();
+  const { user } = useAuth();
   return user?.role || 'user';
 };

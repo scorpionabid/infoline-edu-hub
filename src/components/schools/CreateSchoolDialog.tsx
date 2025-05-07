@@ -1,378 +1,322 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/components/ui/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage } from '@/context/LanguageContext';
-import { useSchoolOperations } from '@/hooks/schools/useSchoolOperations';
-import { useRegionsContext } from '@/context/RegionsContext';
-import { useSectorsStore } from '@/hooks/useSectorsStore';
+import { toast } from 'sonner';
+import { useSchoolsContext } from '@/context/SchoolsContext';
+import { Region, Sector } from '@/types/school';
 
 interface CreateSchoolDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  regions?: Region[];
+  sectors?: Sector[];
 }
 
-const CreateSchoolDialog: React.FC<CreateSchoolDialogProps> = ({
+const CreateSchoolDialog: React.FC<CreateSchoolDialogProps> = ({ 
   open, 
-  onOpenChange,
-  onSuccess
+  onOpenChange, 
+  onSuccess,
+  regions = [],
+  sectors = []
 }) => {
   const { t } = useLanguage();
-  const { toast } = useToast();
-  const { regions } = useRegionsContext();
-  const { sectors } = useSectorsStore();
-  const { addSchool, isLoading } = useSchoolOperations();
+  const { handleCreateSchool } = useSchoolsContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const [currentTab, setCurrentTab] = useState('school');
-  const [schoolData, setSchoolData] = useState({
+  const [formData, setFormData] = useState({
     name: '',
-    principal_name: '',
-    address: '',
     region_id: '',
     sector_id: '',
+    address: '',
     phone: '',
     email: '',
+    principal_name: '',
     student_count: '',
     teacher_count: '',
-    status: 'active',
-    type: 'full_secondary',
-    language: 'az'
+    type: 'general',
+    language: 'az',
   });
   
-  const [adminData, setAdminData] = useState({
-    email: '',
-    full_name: '',
-    password: '',
-  });
+  // Available sectors based on selected region
+  const [availableSectors, setAvailableSectors] = useState<Sector[]>([]);
   
-  const handleSchoolChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setSchoolData(prev => ({ ...prev, [name]: value }));
-  };
+  // Update available sectors when region changes
+  React.useEffect(() => {
+    if (formData.region_id) {
+      setAvailableSectors(
+        sectors.filter(sector => sector.region_id === formData.region_id)
+      );
+      setFormData(prev => ({
+        ...prev,
+        sector_id: ''  // Reset sector when region changes
+      }));
+    } else {
+      setAvailableSectors([]);
+    }
+  }, [formData.region_id, sectors]);
   
-  const handleAdminChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setAdminData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleSelectChange = (name: string, value: string) => {
-    setSchoolData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const resetForm = () => {
-    setSchoolData({
-      name: '',
-      principal_name: '',
-      address: '',
-      region_id: '',
-      sector_id: '',
-      phone: '',
-      email: '',
-      student_count: '',
-      teacher_count: '',
-      status: 'active',
-      type: 'full_secondary',
-      language: 'az'
+  // Handle form input changes
+  const handleChange = (
+    field: string, 
+    value: string | number
+  ) => {
+    setFormData({
+      ...formData,
+      [field]: value
     });
-    setAdminData({
-      email: '',
-      full_name: '',
-      password: '',
-    });
-    setCurrentTab('school');
   };
   
-  const handleClose = () => {
-    resetForm();
-    onOpenChange(false);
-  };
-  
-  const handleSubmit = async () => {
-    if (!schoolData.name || !schoolData.sector_id) {
-      toast({
-        title: t('validationError'),
-        description: t('schoolNameAndSectorRequired'),
-        variant: 'destructive',
-      });
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim()) {
+      toast.error(t('schoolNameRequired'));
       return;
     }
     
+    if (!formData.region_id) {
+      toast.error(t('regionRequired'));
+      return;
+    }
+    
+    if (!formData.sector_id) {
+      toast.error(t('sectorRequired'));
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
-      const newSchool = {
-        ...schoolData,
-        student_count: schoolData.student_count ? parseInt(schoolData.student_count) : null,
-        teacher_count: schoolData.teacher_count ? parseInt(schoolData.teacher_count) : null,
-      };
-      
-      const adminInfo = adminData.email ? {
-        email: adminData.email,
-        full_name: adminData.full_name,
-        password: adminData.password
-      } : undefined;
-      
-      await addSchool(newSchool, adminInfo);
-      
-      toast({
-        title: t('success'),
-        description: t('schoolAddedSuccessfully'),
+      await handleCreateSchool({
+        name: formData.name,
+        region_id: formData.region_id,
+        sector_id: formData.sector_id,
+        address: formData.address,
+        phone: formData.phone,
+        email: formData.email,
+        principal_name: formData.principal_name,
+        student_count: formData.student_count ? parseInt(formData.student_count) : undefined,
+        teacher_count: formData.teacher_count ? parseInt(formData.teacher_count) : undefined,
+        type: formData.type,
+        language: formData.language,
+        status: 'active'
       });
       
-      handleClose();
+      toast.success(t('schoolAddedSuccessfully'));
+      resetForm();
+      onOpenChange(false);
       onSuccess();
     } catch (error: any) {
-      toast({
-        title: t('error'),
-        description: error.message || t('errorAddingSchool'),
-        variant: 'destructive',
-      });
+      console.error('Error creating school:', error);
+      toast.error(error.message || t('errorCreatingSchool'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
-  const filteredSectors = schoolData.region_id
-    ? sectors.filter(sector => sector.region_id === schoolData.region_id)
-    : sectors;
+  // Reset form values
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      region_id: '',
+      sector_id: '',
+      address: '',
+      phone: '',
+      email: '',
+      principal_name: '',
+      student_count: '',
+      teacher_count: '',
+      type: 'general',
+      language: 'az',
+    });
+  };
   
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) resetForm();
+      onOpenChange(isOpen);
+    }}>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>{t('addSchool')}</DialogTitle>
+          <DialogDescription>
+            {t('fillFormAddSchool')}
+          </DialogDescription>
         </DialogHeader>
-        
-        <Tabs value={currentTab} onValueChange={setCurrentTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="school">{t('schoolDetails')}</TabsTrigger>
-            <TabsTrigger value="admin">{t('adminDetails')}</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="school" className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">{t('schoolName')} *</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={schoolData.name}
-                  onChange={handleSchoolChange}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="principal_name">{t('principalName')}</Label>
-                <Input
-                  id="principal_name"
-                  name="principal_name"
-                  value={schoolData.principal_name}
-                  onChange={handleSchoolChange}
-                />
-              </div>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">{t('schoolName')} *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleChange('name', e.target.value)}
+                className="col-span-3"
+              />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="region_id">{t('region')} *</Label>
-                <Select
-                  value={schoolData.region_id}
-                  onValueChange={(value) => handleSelectChange('region_id', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectRegion')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {regions.map((region) => (
-                      <SelectItem key={region.id} value={region.id}>
-                        {region.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="sector_id">{t('sector')} *</Label>
-                <Select
-                  value={schoolData.sector_id}
-                  onValueChange={(value) => handleSelectChange('sector_id', value)}
-                  disabled={!schoolData.region_id}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectSector')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredSectors.map((sector) => (
-                      <SelectItem key={sector.id} value={sector.id}>
-                        {sector.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="region" className="text-right">{t('region')} *</Label>
+              <Select 
+                value={formData.region_id} 
+                onValueChange={(value) => handleChange('region_id', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder={t('selectRegion')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((region) => (
+                    <SelectItem key={region.id} value={region.id}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="address">{t('address')}</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="sector" className="text-right">{t('sector')} *</Label>
+              <Select 
+                value={formData.sector_id} 
+                onValueChange={(value) => handleChange('sector_id', value)}
+                disabled={!formData.region_id}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder={
+                    !formData.region_id 
+                      ? t('selectRegionFirst') 
+                      : availableSectors.length === 0 
+                        ? t('noSectorsInRegion')
+                        : t('selectSector')
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSectors.map((sector) => (
+                    <SelectItem key={sector.id} value={sector.id}>
+                      {sector.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="address" className="text-right">{t('address')}</Label>
               <Input
                 id="address"
-                name="address"
-                value={schoolData.address}
-                onChange={handleSchoolChange}
+                value={formData.address}
+                onChange={(e) => handleChange('address', e.target.value)}
+                className="col-span-3"
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">{t('phone')}</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  value={schoolData.phone}
-                  onChange={handleSchoolChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">{t('email')}</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={schoolData.email}
-                  onChange={handleSchoolChange}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="student_count">{t('studentCount')}</Label>
-                <Input
-                  id="student_count"
-                  name="student_count"
-                  type="number"
-                  value={schoolData.student_count}
-                  onChange={handleSchoolChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="teacher_count">{t('teacherCount')}</Label>
-                <Input
-                  id="teacher_count"
-                  name="teacher_count"
-                  type="number"
-                  value={schoolData.teacher_count}
-                  onChange={handleSchoolChange}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="status">{t('status')}</Label>
-                <Select
-                  value={schoolData.status}
-                  onValueChange={(value) => handleSelectChange('status', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">{t('active')}</SelectItem>
-                    <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="type">{t('schoolType')}</Label>
-                <Select
-                  value={schoolData.type}
-                  onValueChange={(value) => handleSelectChange('type', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="full_secondary">{t('fullSecondary')}</SelectItem>
-                    <SelectItem value="general_secondary">{t('generalSecondary')}</SelectItem>
-                    <SelectItem value="primary">{t('primary')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="language">{t('teachingLanguage')}</Label>
-                <Select
-                  value={schoolData.language}
-                  onValueChange={(value) => handleSelectChange('language', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="az">{t('azerbaijani')}</SelectItem>
-                    <SelectItem value="ru">{t('russian')}</SelectItem>
-                    <SelectItem value="en">{t('english')}</SelectItem>
-                    <SelectItem value="mixed">{t('mixed')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="admin" className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="admin_email">{t('adminEmail')}</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">{t('phone')}</Label>
               <Input
-                id="admin_email"
-                name="email"
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => handleChange('phone', e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">{t('email')}</Label>
+              <Input
+                id="email"
                 type="email"
-                value={adminData.email}
-                onChange={handleAdminChange}
+                value={formData.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                className="col-span-3"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="admin_name">{t('adminName')}</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="principal_name" className="text-right">{t('principalName')}</Label>
               <Input
-                id="admin_name"
-                name="full_name"
-                value={adminData.full_name}
-                onChange={handleAdminChange}
+                id="principal_name"
+                value={formData.principal_name}
+                onChange={(e) => handleChange('principal_name', e.target.value)}
+                className="col-span-3"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="admin_password">{t('password')}</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="student_count" className="text-right">{t('studentCount')}</Label>
               <Input
-                id="admin_password"
-                name="password"
-                type="password"
-                value={adminData.password}
-                onChange={handleAdminChange}
+                id="student_count"
+                type="number"
+                value={formData.student_count}
+                onChange={(e) => handleChange('student_count', e.target.value)}
+                className="col-span-3"
               />
-              <p className="text-xs text-muted-foreground">
-                {t('leavePwdBlankForAutoGen')}
-              </p>
             </div>
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
-            {t('cancel')}
-          </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? t('adding') : t('add')}
-          </Button>
-        </DialogFooter>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="teacher_count" className="text-right">{t('teacherCount')}</Label>
+              <Input
+                id="teacher_count"
+                type="number"
+                value={formData.teacher_count}
+                onChange={(e) => handleChange('teacher_count', e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="type" className="text-right">{t('schoolType')}</Label>
+              <Select 
+                value={formData.type} 
+                onValueChange={(value) => handleChange('type', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder={t('selectSchoolType')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">{t('generalSchool')}</SelectItem>
+                  <SelectItem value="lyceum">{t('lyceum')}</SelectItem>
+                  <SelectItem value="gymnasium">{t('gymnasium')}</SelectItem>
+                  <SelectItem value="highschool">{t('highSchool')}</SelectItem>
+                  <SelectItem value="elementary">{t('elementarySchool')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="language" className="text-right">{t('language')}</Label>
+              <Select 
+                value={formData.language} 
+                onValueChange={(value) => handleChange('language', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder={t('selectLanguage')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="az">{t('azerbaijani')}</SelectItem>
+                  <SelectItem value="ru">{t('russian')}</SelectItem>
+                  <SelectItem value="en">{t('english')}</SelectItem>
+                  <SelectItem value="tr">{t('turkish')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t('cancel')}
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? t('creating') : t('create')}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -8,7 +8,6 @@ export interface UserFilter {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  region?: string;
   status?: string[];
   search?: string;
   page?: number;

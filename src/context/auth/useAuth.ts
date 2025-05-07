@@ -4,6 +4,17 @@ import { AuthContextType, FullUserData } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Avtorizasiya olmayan halda xəta atır
+export const useAuthSafe = () => {
+  const auth = useAuth();
+  
+  if (!auth.user) {
+    throw new Error('useAuthSafe must be used within an authenticated context');
+  }
+  
+  return auth;
+};
+
 export const useAuth = (): AuthContextType => {
   const [user, setUser] = useState<FullUserData | null>(null);
   const [authenticated, setAuthenticated] = useState<boolean>(false);
@@ -256,16 +267,20 @@ export const useAuth = (): AuthContextType => {
 
   return {
     user,
-    authenticated,
+    isAuthenticated: authenticated, // isAuthenticated adına uyğunlaşdıraq
     loading,
     error,
     logIn,
     logOut,
+    logout: logOut,  // alias əlavə edək
+    signOut: logOut, // alias əlavə edək
     register,
     updateUser,
     updateUserProfile: updateUser,
     resetPassword,
-    setError
+    setError,
+    session: null, // Tip uyğunluğu üçün əlavə edək
+    clearError: () => setError(null)
   };
 };
 

@@ -41,7 +41,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Context value yaradırıq
   const contextValue: AuthContextType = {
     user,
-    authenticated: isAuthenticated,
+    session,
+    isAuthenticated,
     loading: isLoading,
     error,
     logIn: async (email, password) => {

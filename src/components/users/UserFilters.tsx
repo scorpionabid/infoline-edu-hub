@@ -1,81 +1,119 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { CheckboxGroup, CheckboxItem } from '@/components/ui/checkbox-group';
-import { Role } from '@/context/auth/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
-import { UserFilter } from './UserSelectParts/types';
+import { FilterOption, UserFilter } from './UserSelectParts/types';
 
 interface UserFiltersProps {
-  onFilterChange: (filters: UserFilter) => void;
-  availableRoles: Role[];
+  filter: UserFilter;
+  setFilter: React.Dispatch<React.SetStateAction<UserFilter>>;
+  roleOptions: FilterOption[];
+  statusOptions: FilterOption[];
+  onSearch: () => void;
+  regions?: FilterOption[];
 }
 
-const UserFilters: React.FC<UserFiltersProps> = ({ onFilterChange, availableRoles }) => {
+export const UserFilters: React.FC<UserFiltersProps> = ({
+  filter,
+  setFilter,
+  roleOptions,
+  statusOptions,
+  onSearch,
+  regions = []
+}) => {
   const { t } = useLanguage();
-  const [filters, setFilters] = useState<UserFilter>({
-    role: [],
-    status: [],
-    region: [],
-    sector: [],
-    school: [],
-  });
 
-  const handleFilterChange = (filterType: keyof UserFilter, values: string[]) => {
-    const newFilters = { ...filters, [filterType]: values };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+  const handleSearchTermChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilter({ ...filter, search: e.target.value });
   };
 
-  const handleClearFilters = () => {
-    const clearedFilters: UserFilter = {
-      role: [],
-      status: [],
-      region: [],
-      sector: [],
-      school: [],
-    };
-    setFilters(clearedFilters);
-    onFilterChange(clearedFilters);
+  const handleRoleChange = (value: string) => {
+    setFilter({ ...filter, role: value ? [value] : [] });
+  };
+
+  const handleStatusChange = (value: string) => {
+    setFilter({ ...filter, status: value ? [value] : [] });
+  };
+
+  const handleRegionChange = (value: string) => {
+    setFilter({ ...filter, region_id: value });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      onSearch();
+    }
   };
 
   return (
-    <Card>
-      <CardContent className="space-y-4">
-        <h4 className="font-medium">{t('filters')}</h4>
-
-        <div>
-          <h5 className="mb-2">{t('role')}</h5>
-          <CheckboxGroup
-            defaultValue={filters.role}
-            onValueChange={(values) => handleFilterChange('role', values)}
-          >
-            {availableRoles.map((role) => (
-              <CheckboxItem key={role} value={role}>
-                {t(role)}
-              </CheckboxItem>
+    <div className="flex flex-col md:flex-row gap-3 mb-4">
+      <Input
+        placeholder={t('searchByNameOrEmail')}
+        value={filter.search || ''}
+        onChange={handleSearchTermChange}
+        onKeyDown={handleKeyDown}
+        className="flex-grow md:w-auto"
+      />
+      
+      <Select
+        value={filter.role?.length ? filter.role[0] : ''}
+        onValueChange={handleRoleChange}
+      >
+        <SelectTrigger className="w-full md:w-[180px]">
+          <SelectValue placeholder={t('role')} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">{t('allRoles')}</SelectItem>
+          {roleOptions.map(role => (
+            <SelectItem key={role.value} value={role.value}>
+              {role.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      
+      <Select
+        value={filter.status?.length ? filter.status[0] : ''}
+        onValueChange={handleStatusChange}
+      >
+        <SelectTrigger className="w-full md:w-[180px]">
+          <SelectValue placeholder={t('status')} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">{t('allStatuses')}</SelectItem>
+          {statusOptions.map(status => (
+            <SelectItem key={status.value} value={status.value}>
+              {status.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      
+      {regions.length > 0 && (
+        <Select
+          value={filter.region_id || ''}
+          onValueChange={handleRegionChange}
+        >
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder={t('region')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">{t('allRegions')}</SelectItem>
+            {regions.map(region => (
+              <SelectItem key={region.value} value={region.value}>
+                {region.label}
+              </SelectItem>
             ))}
-          </CheckboxGroup>
-        </div>
-
-        <div>
-          <h5 className="mb-2">{t('status')}</h5>
-          <CheckboxGroup
-            defaultValue={filters.status}
-            onValueChange={(values) => handleFilterChange('status', values)}
-          >
-            <CheckboxItem value="active">{t('active')}</CheckboxItem>
-            <CheckboxItem value="inactive">{t('inactive')}</CheckboxItem>
-            <CheckboxItem value="blocked">{t('blocked')}</CheckboxItem>
-          </CheckboxGroup>
-        </div>
-
-        <Button variant="outline" size="sm" onClick={handleClearFilters}>
-          {t('clearFilters')}
-        </Button>
-      </CardContent>
-    </Card>
+          </SelectContent>
+        </Select>
+      )}
+      
+      <Button onClick={onSearch}>
+        {t('search')}
+      </Button>
+    </div>
   );
 };
 

@@ -1,8 +1,7 @@
-
 import React from 'react';
-import { School } from '@/types/supabase';
-import { Region } from '@/types/supabase';
-import { Sector } from '@/types/supabase';
+import { School } from '@/types/school'; // School tipini school.ts-dən götürək
+import { Region } from '@/types/school';
+import { Sector } from '@/types/school';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -236,6 +235,8 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
   const sectorsArray = Array.isArray(sectors) ? sectors : [];
   const schoolsArray = Array.isArray(schools) ? schools : [];
   
+  const filteredSchools = filterSchools(schoolsArray, searchTerm, regionFilter, sectorFilter, statusFilter);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -328,12 +329,12 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filterSchools(schoolsArray, searchTerm, regionFilter, sectorFilter, statusFilter).map(school => (
+            {filteredSchools.map(school => (
               <TableRow key={school.id}>
                 <TableCell>{school.name}</TableCell>
                 <TableCell>{regionNames[school.region_id] || ''}</TableCell>
                 <TableCell>{sectorNames[school.sector_id] || ''}</TableCell>
-                <TableCell>{school.principal_name}</TableCell>
+                <TableCell>{school.principalName || school.principal_name || '-'}</TableCell>
                 <TableCell>{school.status}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
