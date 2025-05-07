@@ -1,128 +1,104 @@
-import { useCallback, useMemo } from 'react';
-import { useAuth } from '@/context/auth';
-import { UserRole } from '@/types/supabase';
-import { PermissionCheckResult, PermissionLevel, UsePermissionsResult } from './permissionTypes';
 
-/**
- * İstifadəçi əlçatanlıq icazələrini yoxlayan hook
- */
+import { useAuth } from '@/context/auth';
+import { UserRole } from '@/types/user';
+
+export interface UsePermissionsResult {
+  // Əsas rol
+  userRole: UserRole;
+  currentRole: UserRole;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  
+  // Rola əsaslanan bacarıqlar
+  isSuperAdmin: boolean;
+  isRegionAdmin: boolean;
+  isSectorAdmin: boolean;
+  isSchoolAdmin: boolean;
+  
+  // İdarəetmə icazələri
+  canManageUsers: boolean;
+  canManageRegions: boolean;
+  canManageSectors: boolean;
+  canManageSchools: boolean;
+  canManageCategories: boolean;
+  canApproveData: boolean;
+  canEnterData: boolean;
+  canGenerateReports: boolean;
+  canViewSettings: boolean;
+  
+  // Spesifik sahələr üçün icazələr
+  hasAccessToRegion: (regionId: string) => boolean;
+  hasAccessToSector: (sectorId: string) => boolean;
+  hasAccessToSchool: (schoolId: string) => boolean;
+}
+
 export const usePermissions = (): UsePermissionsResult => {
-  const { user, authenticated } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   
-  // İstifadəçi rolunu müəyyən et
-  const userRole = useMemo<UserRole | undefined>(() => {
-    if (!user) return undefined;
-    return user.role as UserRole;
-  }, [user]);
+  const userRole = user?.role || 'guest';
   
-  // İstifadəçi roluna əsaslanan bayraqlar
-  const isSuperAdmin = useMemo<boolean>(() => userRole === 'superadmin', [userRole]);
-  const isRegionAdmin = useMemo<boolean>(() => userRole === 'regionadmin', [userRole]);
-  const isSectorAdmin = useMemo<boolean>(() => userRole === 'sectoradmin', [userRole]);
-  const isSchoolAdmin = useMemo<boolean>(() => userRole === 'schooladmin', [userRole]);
+  // Rol yoxlamaları
+  const isSuperAdmin = userRole === 'superadmin';
+  const isRegionAdmin = userRole === 'regionadmin';
+  const isSectorAdmin = userRole === 'sectoradmin';
+  const isSchoolAdmin = userRole === 'schooladmin';
   
-  // İstifadəçi ID-si və təyin olunmuş ID-lər
-  const userId = useMemo<string | undefined>(() => user?.id, [user]);
-  const regionId = useMemo<string | null | undefined>(() => user?.region_id, [user]);
-  const sectorId = useMemo<string | null | undefined>(() => user?.sector_id, [user]);
-  const schoolId = useMemo<string | null | undefined>(() => user?.school_id, [user]);
+  // İcazələr
+  const canManageUsers = isSuperAdmin || isRegionAdmin;
+  const canManageRegions = isSuperAdmin;
+  const canManageSectors = isSuperAdmin || isRegionAdmin;
+  const canManageSchools = isSuperAdmin || isRegionAdmin || isSectorAdmin;
+  const canManageCategories = isSuperAdmin || isRegionAdmin;
+  const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
+  const canEnterData = isSchoolAdmin;
+  const canGenerateReports = isSuperAdmin || isRegionAdmin || isSectorAdmin;
+  const canViewSettings = true; // Hər kəs öz hesab ayarlarını redaktə edə bilər
   
-  // Region əlçatanlığını yoxla
-  const checkRegionAccess = useCallback(
-    async (regionIdToCheck: string, level: PermissionLevel = 'read'): Promise<boolean> => {
-      if (!authenticated) return false;
-      if (isSuperAdmin) return true;
-      if (isRegionAdmin && regionId === regionIdToCheck) return true;
-      
-      // Əgər heç bir şərt ödənməzsə, false qaytar
-      return false;
-    },
-    [authenticated, isSuperAdmin, isRegionAdmin, regionId]
-  );
+  // Region icazələri
+  const hasAccessToRegion = (regionId: string): boolean => {
+    if (isSuperAdmin) return true;
+    if (isRegionAdmin) return user?.region_id === regionId;
+    if (isSectorAdmin) {
+      const sector = user?.sector_id;
+      return sector && user?.region_id === regionId;
+    }
+    return false;
+  };
   
-  // Sektor əlçatanlığını yoxla
-  const checkSectorAccess = useCallback(
-    async (sectorIdToCheck: string, level: PermissionLevel = 'read'): Promise<boolean> => {
-      if (!authenticated) return false;
-      if (isSuperAdmin) return true;
-      if (isRegionAdmin && regionId === user?.region_id) return true;
-      if (isSectorAdmin && sectorId === sectorIdToCheck) return true;
-      
-      return false;
-    },
-    [authenticated, isSuperAdmin, isRegionAdmin, isSectorAdmin, regionId, sectorId, user?.region_id]
-  );
+  // Sektor icazələri
+  const hasAccessToSector = (sectorId: string): boolean => {
+    if (isSuperAdmin || isRegionAdmin) return true;
+    if (isSectorAdmin) return user?.sector_id === sectorId;
+    return false;
+  };
   
-  // Məktəb əlçatanlığını yoxla
-  const checkSchoolAccess = useCallback(
-    async (schoolIdToCheck: string, level: PermissionLevel = 'read'): Promise<boolean> => {
-      if (!authenticated) return false;
-      if (isSuperAdmin) return true;
-      if (isRegionAdmin && regionId === user?.region_id) return true;
-      if (isSectorAdmin && sectorId === user?.sector_id) return true;
-      if (isSchoolAdmin && schoolId === schoolIdToCheck) return true;
-      
-      return false;
-    },
-    [authenticated, isSuperAdmin, isRegionAdmin, isSectorAdmin, isSchoolAdmin, regionId, sectorId, schoolId, user?.region_id, user?.sector_id]
-  );
-  
-  // Kateqoriya əlçatanlığını yoxla
-  const checkCategoryAccess = useCallback(
-    async (categoryIdToCheck: string, level: PermissionLevel = 'read'): Promise<boolean> => {
-      if (!authenticated) return false;
-      if (isSuperAdmin) return true;
-      
-      // Digər rollar üçün əlavə yoxlamalar tələb oluna bilər
-      return false;
-    },
-    [authenticated, isSuperAdmin]
-  );
-  
-  // Sütun əlçatanlığını yoxla
-  const checkColumnAccess = useCallback(
-    async (columnIdToCheck: string, level: PermissionLevel = 'read'): Promise<boolean> => {
-      if (!authenticated) return false;
-      if (isSuperAdmin) return true;
-      
-      return false;
-    },
-    [authenticated, isSuperAdmin]
-  );
-  
-  // Sektor kateqoriyalarına baxmaq icazəsi
-  const canViewSectorCategories = useMemo<boolean>(() => {
-    return isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  }, [isSuperAdmin, isRegionAdmin, isSectorAdmin]);
-  
-  // Kateqoriyaları idarə etmək icazəsi
-  const canManageCategories = useMemo<boolean>(() => {
-    return isSuperAdmin;
-  }, [isSuperAdmin]);
+  // Məktəb icazələri
+  const hasAccessToSchool = (schoolId: string): boolean => {
+    if (isSuperAdmin || isRegionAdmin || isSectorAdmin) return true;
+    if (isSchoolAdmin) return user?.school_id === schoolId;
+    return false;
+  };
   
   return {
-    // Roles
+    userRole,
+    currentRole: userRole,
+    isAuthenticated,
+    isLoading: loading,
     isSuperAdmin,
     isRegionAdmin,
     isSectorAdmin,
     isSchoolAdmin,
-    
-    // Basic data
-    userRole,
-    userId,
-    regionId,
-    sectorId,
-    schoolId,
-    
-    // Access checks
-    checkRegionAccess,
-    checkSectorAccess,
-    checkSchoolAccess,
-    checkCategoryAccess,
-    checkColumnAccess,
-    
-    // Helper flags
-    canViewSectorCategories,
-    canManageCategories
+    canManageUsers,
+    canManageRegions,
+    canManageSectors,
+    canManageSchools,
+    canManageCategories,
+    canApproveData,
+    canEnterData,
+    canGenerateReports,
+    canViewSettings,
+    hasAccessToRegion,
+    hasAccessToSector,
+    hasAccessToSchool
   };
 };

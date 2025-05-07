@@ -151,23 +151,29 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
                     </h4>
                     <div className="bg-secondary p-3 rounded-md">
                       {user.role === 'regionadmin' && user.region_id && (
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="w-4 h-4 text-muted-foreground" />
-                          <span>{user.entityName || t('region')}</span>
+                        <div className="flex flex-col space-y-1">
+                          <span className="text-sm text-muted-foreground">{t('region')}</span>
+                          <span className="font-medium">
+                            {user.entityName?.region || user.region_name || '-'}
+                          </span>
                         </div>
                       )}
                       
                       {user.role === 'sectoradmin' && user.sector_id && (
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="w-4 h-4 text-muted-foreground" />
-                          <span>{user.entityName || t('sector')}</span>
+                        <div className="flex flex-col space-y-1">
+                          <span className="text-sm text-muted-foreground">{t('sector')}</span>
+                          <span className="font-medium">
+                            {user.entityName?.sector || user.sector_name || '-'}
+                          </span>
                         </div>
                       )}
                       
                       {user.role === 'schooladmin' && user.school_id && (
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="w-4 h-4 text-muted-foreground" />
-                          <span>{user.entityName || t('school')}</span>
+                        <div className="flex flex-col space-y-1">
+                          <span className="text-sm text-muted-foreground">{t('school')}</span>
+                          <span className="font-medium">
+                            {user.entityName?.school || user.school_name || '-'}
+                          </span>
                         </div>
                       )}
                       

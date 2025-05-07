@@ -1,6 +1,5 @@
 
-import { Column } from '@/types/column';
-import { ValidationRules, ColumnValidation } from '@/types/column';
+import { Column, ColumnValidation, ValidationRules } from '@/types/column';
 
 // Column tipini API-dən frontend tiplərə çevirmək üçün adapter
 export const useColumnAdapters = () => {

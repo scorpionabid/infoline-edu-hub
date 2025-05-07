@@ -1,6 +1,6 @@
 
 import { useMemo } from 'react';
-import { CategoryWithColumns } from '@/types/category';
+import { CategoryWithColumns } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 
 // Kateqoriya statuslarını idarə edən hook

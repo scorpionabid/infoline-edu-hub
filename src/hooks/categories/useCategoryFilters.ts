@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { CategoryFilter } from '@/types/category';
+import { CategoryFilter } from '@/types/column';
 
 // CategoryFilter istifadə edən hook
 export const useCategoryFilters = (initialFilter: CategoryFilter = {}) => {

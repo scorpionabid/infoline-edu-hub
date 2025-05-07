@@ -18,7 +18,8 @@ export const useAuth = (): AuthContextType => {
       notificationSettings: context.user.notificationSettings ? {
         ...context.user.notificationSettings,
         inApp: context.user.notificationSettings.push || false,
-        sms: false,
+        sms: context.user.notificationSettings.sms || false,
+        system: context.user.notificationSettings.system || false,
         deadlineReminders: context.user.notificationSettings.deadline || false
       } : {
         email: false,

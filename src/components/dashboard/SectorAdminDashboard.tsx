@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -41,6 +40,23 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
     rejectEntries,
     viewEntryDetails,
   } = useSectorAdminDashboard();
+
+  const schoolStatsData = useMemo(() => {
+    return schools.map((school) => ({
+      id: school.id,
+      name: school.name,
+      status: school.status,
+      completionRate: school.completion_rate || 0,
+      lastUpdate: school.lastUpdate || school.updated_at || '-',
+      pendingForms: school.pendingForms || 0,
+      formsCompleted: school.formsCompleted || 0,
+      totalForms: school.totalForms || 0,
+      principalName: school.principal_name || school.principalName || '-',
+      address: school.address || '-',
+      phone: school.phone || '-',
+      email: school.email || '-'
+    } as SchoolStat));
+  }, [schools]);
 
   const handleViewDetails = async (approval: any) => {
     setSelectedApproval(approval);
@@ -233,13 +249,7 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px]">
-                <SchoolsTable schools={schools.map(school => ({
-                  ...school,
-                  pendingForms: 0,
-                  lastUpdate: school.updated_at || new Date().toISOString(),
-                  formsCompleted: school.formsCompleted || 0,
-                  totalForms: school.totalForms || 0
-                }))} />
+                <SchoolsTable schools={schoolStatsData} />
               </ScrollArea>
             </CardContent>
           </Card>

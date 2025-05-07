@@ -79,4 +79,3 @@ export interface SectorSchool extends School {
   formsCompleted?: number;
   totalForms?: number;
 }
-
