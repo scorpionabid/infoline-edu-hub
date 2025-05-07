@@ -1,152 +1,110 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FormTabs } from './FormTabs';
-import { StatusCards } from '../StatusCards';
-import { CompletionChart } from './CompletionChart';
-import { NotificationList } from './NotificationList';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLanguage } from '@/context/LanguageContext';
-import { SchoolAdminDashboardData, FormItem, DashboardNotification } from '@/types/dashboard';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { FilePlus, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import CompletionProgress from '@/components/dashboard/CompletionProgress';
+import FormTabs from '@/components/dashboard/school-admin/FormTabs';
+import StatusCards from '@/components/dashboard/StatusCards';
+import NotificationList from '@/components/notifications/NotificationList';
+import { SchoolAdminDashboardData, FormItem, DeadlineItem } from '@/types/dashboard';
 
 interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
   isLoading: boolean;
+  onFormClick: (formId: string) => void;
+  navigateToDataEntry: () => void;
 }
 
-const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data, isLoading }) => {
-  const { t } = useLanguage();
-  
-  // Loading durumunu işləyək
-  if (isLoading) {
-    return <LoadingState />;
-  }
-  
-  // Mock data üçün tip dönüşümləri
-  const recentForms: FormItem[] = (data.recentForms || []).map(form => ({
-    id: form.id || 'unknown',
-    title: form.title || form.name || 'Unnamed Form',
-    name: form.name || form.title || 'Unnamed Form',
-    status: form.status as 'pending' | 'approved' | 'rejected' | 'draft',
-    categoryName: form.categoryName || '',
-    dueDate: form.dueDate || '',
-    createdAt: form.createdAt || '',
-    completionRate: form.completionRate || 0
-  }));
-  
-  const upcomingDeadlines: FormItem[] = (data.upcomingDeadlines || []).map(deadline => ({
-    id: deadline.id || 'unknown',
-    title: deadline.title || deadline.name || 'Unnamed Form',
-    name: deadline.name || deadline.title || 'Unnamed Form',
-    status: deadline.status as 'pending' | 'approved' | 'rejected' | 'draft',
-    categoryName: deadline.categoryName || '',
-    dueDate: deadline.dueDate || '',
-    createdAt: deadline.createdAt || '',
-    completionRate: deadline.completionRate || 0
-  }));
-  
-  const notifications: DashboardNotification[] = (data.notifications || []).map(notif => ({
-    id: notif.id || 'unknown',
-    title: notif.title || '',
-    message: notif.message || '',
-    type: notif.type || 'info',
-    date: notif.date || new Date().toISOString(),
-    isRead: notif.isRead || false
-  }));
-  
-  return (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      <div className="col-span-full lg:col-span-2">
-        <FormTabs 
-          recentForms={recentForms}
-          upcomingDeadlines={upcomingDeadlines}
-        />
-      </div>
-      
-      <div className="col-span-full lg:col-span-1 space-y-4">
-        {/* Right column */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('formStatus')}</CardTitle>
-            <CardDescription>{t('formStatusDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent className="pb-2">
-            <StatusCards 
-              pending={data.formStats?.pending || 0}
-              approved={data.formStats?.approved || 0}
-              rejected={data.formStats?.rejected || 0}
-              draft={data.formStats?.draft || 0}
-              dueSoon={data.formStats?.dueSoon || 0}
-              overdue={data.formStats?.overdue || 0}
-            />
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('completionRate')}</CardTitle>
-            <CardDescription>{t('completionRateDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent className="pb-2 pt-0">
-            <CompletionChart 
-              percentage={data.completionRate || 0}
-              total={data.formStats?.total || 0}
-              completed={data.formStats?.approved || 0}
-            />
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('notifications')}</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-2">
-            <NotificationList notifications={notifications} />
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
+const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
+  data,
+  isLoading,
+  onFormClick,
+  navigateToDataEntry,
+}) => {
+  const { t } = useLanguageSafe();
+  const navigate = useNavigate();
 
-const LoadingState = () => {
+  // Örnek veri varsa kullan, yoksa boş array
+  const pendingForms: FormItem[] = data?.recentForms?.filter(form => 
+    form.status === 'pending' || form.status === 'draft') || [];
+  
+  const upcomingDeadlines: DeadlineItem[] = data?.upcomingDeadlines || [];
+
+  if (isLoading) {
+    return (
+      <div className="h-24 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {/* Skeleton loading state */}
-      <div className="col-span-full lg:col-span-2">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-40" />
-            <Skeleton className="h-4 w-60" />
+    <div className="grid gap-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">{t('dashboard')}</h2>
+        <Button onClick={navigateToDataEntry} className="flex gap-2 items-center">
+          <FilePlus className="h-4 w-4" />
+          {t('newDataEntry')}
+        </Button>
+      </div>
+
+      <StatusCards formStats={data.formStats} />
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="md:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>{t('yourForms')}</CardTitle>
+            <Button variant="outline" size="sm" onClick={navigateToDataEntry}>
+              {t('viewAll')}
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
+            <FormTabs 
+              pendingForms={pendingForms} 
+              upcomingDeadlines={upcomingDeadlines} 
+              onFormClick={onFormClick} 
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>{t('completionRate')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            <CompletionProgress rate={data.completionRate} />
+            
+            {data.completionRate < 100 && (
+              <div className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+                <AlertCircle className="h-4 w-4 mt-0.5 text-amber-500" />
+                <div>
+                  <p className="font-medium">{t('incompleteFormsWarning')}</p>
+                  <p className="text-muted-foreground mt-1">
+                    {t('pleaseCompleteAllRequiredForms')}
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-      <div className="col-span-full lg:col-span-1 space-y-4">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-28 w-full" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-36" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-40 w-full" />
-          </CardContent>
-        </Card>
-      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('notifications')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <NotificationList 
+            notifications={data.notifications || []} 
+            limit={5}
+            emptyMessage={t('noNotifications')}
+            onViewAll={() => navigate('/notifications')}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 };

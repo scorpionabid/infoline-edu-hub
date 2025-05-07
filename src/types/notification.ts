@@ -1,19 +1,4 @@
 
-export interface DashboardNotification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
-  date: string;
-  isRead: boolean;
-  read?: boolean;
-  createdAt?: string;
-  timestamp?: string;
-  priority?: 'normal' | 'high' | 'critical';
-  relatedEntityId?: string;
-  relatedEntityType?: string;
-}
-
 // Notification interfeysi və açıq adapterlər
 export interface Notification {
   id: string;
@@ -38,6 +23,22 @@ export interface AppNotification {
   type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
   date: string;
   isRead: boolean;
+  priority?: 'normal' | 'high' | 'critical';
+  relatedEntityId?: string;
+  relatedEntityType?: string;
+}
+
+// Dashboard notifikasiyası
+export interface DashboardNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
+  date: string;
+  isRead: boolean;
+  read?: boolean;
+  createdAt?: string;
+  timestamp?: string;
   priority?: 'normal' | 'high' | 'critical';
   relatedEntityId?: string;
   relatedEntityType?: string;

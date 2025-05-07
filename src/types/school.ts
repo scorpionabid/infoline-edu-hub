@@ -1,38 +1,70 @@
 
+// School interface
 export interface School {
   id: string;
   name: string;
+  address?: string;
   region_id: string;
   sector_id: string;
+  admin_id?: string;
+  admin_email?: string;
   status?: string;
-  principal_name?: string;
-  address?: string;
   phone?: string;
   email?: string;
   student_count?: number;
   teacher_count?: number;
+  completion_rate?: number;
   type?: string;
   language?: string;
   created_at?: string;
   updated_at?: string;
-  completion_rate?: number;
+  principal_name?: string;
   logo?: string;
-  admin_id?: string;
-  admin_email?: string;
-  adminEmail?: string; // Uyğunluq üçün
 }
 
-export interface SchoolFormData {
+export interface AdminCreateData {
   name: string;
+  email: string;
+  password: string;
+}
+
+export type Region = {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  admin_id?: string;
+  admin_email?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type Sector = {
+  id: string;
+  name: string;
+  description?: string;
   region_id: string;
-  sector_id: string;
-  principal_name?: string;
+  region_name?: string;
+  status?: string;
+  admin_id?: string;
+  admin_email?: string;
+  created_at?: string;
+  updated_at?: string;
+  completion_rate?: number;
+};
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  status: string;
+  lastUpdate: string;
+  pendingForms: number;
+  principal?: string;
+  formsCompleted?: number;
+  formsTotal?: number;
+  totalForms?: number; 
   address?: string;
   phone?: string;
   email?: string;
-  student_count?: number;
-  teacher_count?: number;
-  type?: string;
-  language?: string;
-  status?: 'active' | 'inactive';
 }

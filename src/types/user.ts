@@ -1,119 +1,83 @@
-
+// @girmə1 - Əlavə etsə bütün FullUserData tipindən istifadə edən yerlərdə avatar və position xassələrini əlavə edək
 import { UserRole } from './supabase';
-
-// İlk yaradan Region tipi
-export interface RegionFormData {
-  name: string;
-  description?: string;
-  status?: 'active' | 'inactive';
-}
 
 export interface User {
   id: string;
-  email?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  role?: string;
-  fullName?: string;
-  full_name?: string; // Uyğunluq üçün əlavə edildi
-  name?: string; // Uyğunluq üçün əlavə edildi
+  email: string;
+  role?: string | UserRole;
+  name?: string;
+  full_name?: string;
+  phone?: string;
   position?: string;
-  phoneNumber?: string;
-  avatar?: string;
-  status?: 'active' | 'inactive' | 'blocked' | 'pending';
-  region?: {
-    id: string;
-    name: string;
-  };
-  sector?: {
-    id: string;
-    name: string;
-  };
-  school?: {
-    id: string;
-    name: string;
-  };
-}
-
-export interface UserRole {
-  id: string;
-  user_id: string;
-  role: 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+  language?: string;
+  status: 'active' | 'inactive' | 'blocked';
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  created_at?: string;
-  updated_at?: string;
+  avatar?: string;
 }
 
 export interface FullUserData {
   id: string;
   email: string;
-  full_name: string;
-  fullName?: string; // Uyğunluq üçün
-  name?: string; // Uyğunluq üçün
-  phone?: string;
-  position?: string;
-  avatar?: string;
-  status: 'active' | 'inactive' | 'blocked' | 'pending';
-  language: string;
-  last_login?: string;
-  lastLogin?: string; // Uyğunluq üçün
-  created_at: string;
-  updated_at: string;
-  createdAt?: string; // Uyğunluq üçün
-  updatedAt?: string; // Uyğunluq üçün
-  role?: UserRole | string;
+  full_name?: string;
+  name?: string; // Alias to make it compatible with different components
+  role?: string | UserRole;
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  regionId?: string; // Uyğunluq üçün
-  sectorId?: string; // Uyğunluq üçün
-  schoolId?: string; // Uyğunluq üçün
-  twoFactorEnabled?: boolean;
-  notificationSettings?: {
-    email: boolean;
-    push: boolean;
-    inApp: boolean;
-    browser?: boolean;
-    sms?: boolean;
-    system?: boolean;
-    deadline?: boolean;
-  };
-  adminEntity?: {
-    id: string;
-    name: string;
-    type: 'region' | 'sector' | 'school';
-    regionName?: string;
-    sectorName?: string;
-    schoolName?: string;
-  };
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  status?: 'active' | 'inactive' | 'pending';
+  last_login?: string;
+  lastLogin?: string;
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
+  avatar?: string;
 }
 
 export interface UserFormData {
   id?: string;
-  email: string;
-  full_name: string;
+  name?: string;
+  full_name?: string;
+  email?: string;
+  role?: string;
   phone?: string;
   position?: string;
-  role: string;
+  language?: string;
+  status?: string;
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  status: 'active' | 'inactive' | 'blocked' | 'pending';
-  password?: string;
-  language: string;
-  avatar?: string;
-  notificationSettings?: {
-    email: boolean;
-    inApp: boolean;
-    sms: boolean;
-    deadlineReminders: boolean;
-    system?: boolean;
-  };
-  // Əlavə alias adlar
-  name?: string; 
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
+  password?: string;
+  notificationSettings?: {
+    email: boolean;
+    inApp: boolean;
+    push: boolean;
+    system: boolean;
+    deadline: boolean;
+  };
+}
+
+export interface AuthContextType {
+  user: FullUserData | null;
+  authenticated: boolean;
+  loading: boolean;
+  error: string | null;
+  logIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
+  logOut: () => Promise<void>;
+  register: (userData: any) => Promise<any>;
+  updateUser?: (userData: Partial<FullUserData>) => Promise<void>;
+  updateUserProfile?: (userData: Partial<FullUserData>) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  setError: (error: string | null) => void;
 }

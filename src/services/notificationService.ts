@@ -5,155 +5,144 @@ import { Notification, adaptDbNotificationToApp } from '@/types/notification';
 // Bildiriş yaratmaq
 export const createNotification = async (
   userId: string,
-  type: string,
   title: string,
   message: string,
-  priority = 'normal',
-  relatedEntityId?: string,
-  relatedEntityType?: string
-): Promise<{ success: boolean; error?: string; notification?: Notification }> => {
+  type: string = 'info',
+  priority: string = 'normal',
+  relatedEntityType?: string,
+  relatedEntityId?: string
+): Promise<any> => {
   try {
     const { data, error } = await supabase
       .from('notifications')
-      .insert({
-        user_id: userId,
-        type,
-        title,
-        message,
-        priority,
-        related_entity_id: relatedEntityId,
-        related_entity_type: relatedEntityType,
-        is_read: false,
-        created_at: new Date().toISOString()
-      })
-      .select()
+      .insert([
+        {
+          user_id: userId,
+          title,
+          message,
+          type,
+          priority,
+          is_read: false,
+          related_entity_id: relatedEntityId,
+          related_entity_type: relatedEntityType,
+          created_at: new Date().toISOString()
+        }
+      ])
+      .select('*')
       .single();
+    
+    if (error) {
+      console.error('Bildiriş yaratma xətası:', error);
+      throw error;
+    }
+    
+    return adaptDbNotificationToApp(data);
+  } catch (error) {
+    console.error('Bildiriş yaratma xətası:', error);
+    throw error;
+  }
+};
 
-    if (error) throw error;
-
-    return {
-      success: true,
-      notification: adaptDbNotificationToApp(data)
-    };
-  } catch (error: any) {
-    console.error('Bildiriş yaradılarkən xəta:', error);
-    return {
-      success: false,
-      error: error.message
-    };
+// İstifadəçi üçün bildirişləri əldə etmək
+export const getUserNotifications = async (userId: string, limit: number = 10): Promise<Notification[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (error) {
+      console.error('Bildirişləri əldə etmə xətası:', error);
+      throw error;
+    }
+    
+    return data.map(adaptDbNotificationToApp);
+  } catch (error) {
+    console.error('Bildirişləri əldə etmə xətası:', error);
+    throw error;
   }
 };
 
 // Bildirişi oxunmuş kimi işarələmək
-export const markNotificationAsRead = async (notificationId: string, userId: string): Promise<boolean> => {
+export const markNotificationAsRead = async (notificationId: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
-      .eq('id', notificationId)
-      .eq('user_id', userId);
-
-    if (error) throw error;
-    return true;
+      .eq('id', notificationId);
+    
+    if (error) {
+      console.error('Bildirişi oxunmuş kimi işarələmə xətası:', error);
+      throw error;
+    }
   } catch (error) {
-    console.error('Bildiriş oxunmuş kimi işarələnərkən xəta:', error);
-    return false;
+    console.error('Bildirişi oxunmuş kimi işarələmə xətası:', error);
+    throw error;
+  }
+};
+
+// Bildirişi silmək
+export const deleteNotification = async (notificationId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', notificationId);
+    
+    if (error) {
+      console.error('Bildirişi silmə xətası:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Bildirişi silmə xətası:', error);
+    throw error;
   }
 };
 
 // Bütün bildirişləri oxunmuş kimi işarələmək
-export const markAllNotificationsAsRead = async (userId: string): Promise<boolean> => {
+export const markAllNotificationsAsRead = async (userId: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
       .eq('user_id', userId)
       .eq('is_read', false);
-
-    if (error) throw error;
-    return true;
+    
+    if (error) {
+      console.error('Bildirişləri oxunmuş kimi işarələmə xətası:', error);
+      throw error;
+    }
   } catch (error) {
-    console.error('Bütün bildirişlər oxunmuş kimi işarələnərkən xəta:', error);
-    return false;
+    console.error('Bildirişləri oxunmuş kimi işarələmə xətası:', error);
+    throw error;
   }
 };
 
-// Bildirişləri əldə etmək
-export const getNotifications = async (userId: string): Promise<Notification[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-      
-    if (error) throw error;
-    
-    return data ? data.map(notification => adaptDbNotificationToApp(notification)) : [];
-  } catch (error) {
-    console.error('Bildirişləri əldə edərkən xəta:', error);
-    return [];
-  }
-};
-
-// Son tarix xəbərdarlığı bildirişi yaratmaq
-export const createDeadlineNotification = async (
-  userId: string,
-  categoryName: string,
-  deadline: string,
-  categoryId: string,
-  isApproaching = true
-): Promise<boolean> => {
-  try {
-    const title = isApproaching ? 'Son tarix yaxınlaşır' : 'Son tarix keçdi';
-    const message = isApproaching
-      ? `${categoryName} kateqoriyası üçün son tarix yaxınlaşır: ${deadline}`
-      : `${categoryName} kateqoriyası üçün son tarix keçdi: ${deadline}`;
-    
-    await createNotification(
-      userId,
-      'deadline',
-      title,
-      message,
-      isApproaching ? 'normal' : 'high',
-      categoryId,
-      'category'
-    );
-    
-    return true;
-  } catch (error) {
-    console.error('Son tarix bildirişi yaradılarkən xəta:', error);
-    return false;
-  }
-};
-
-// Təsdiq/rədd bildirişi yaratmaq
+// Təsdiq işlemi hakkında bildirim oluşturma
 export const createApprovalNotification = async (
   userId: string,
   categoryName: string,
   categoryId: string,
   isApproved: boolean,
   rejectionReason?: string
-): Promise<boolean> => {
-  try {
-    const title = isApproved ? 'Məlumatlar təsdiqləndi' : 'Məlumatlar rədd edildi';
-    const message = isApproved
-      ? `${categoryName} kateqoriyası üçün məlumatlar təsdiqləndi`
-      : `${categoryName} kateqoriyası üçün məlumatlar rədd edildi: ${rejectionReason || 'Səbəb göstərilməyib'}`;
-    
-    await createNotification(
-      userId,
-      isApproved ? 'success' : 'error',
-      title,
-      message,
-      isApproved ? 'normal' : 'high',
-      categoryId,
-      'category'
-    );
-    
-    return true;
-  } catch (error) {
-    console.error('Təsdiq bildirişi yaradılarkən xəta:', error);
-    return false;
-  }
+): Promise<any> => {
+  const title = isApproved 
+    ? 'Məlumatlar təsdiqləndi'
+    : 'Məlumatlar rədd edildi';
+  
+  const message = isApproved
+    ? `${categoryName} kateqoriyası üçün daxil etdiyiniz məlumatlar təsdiqləndi.`
+    : `${categoryName} kateqoriyası üçün daxil etdiyiniz məlumatlar rədd edildi. ${rejectionReason ? 'Səbəb: ' + rejectionReason : ''}`;
+  
+  return createNotification(
+    userId,
+    title,
+    message,
+    isApproved ? 'success' : 'error',
+    'high',
+    'category',
+    categoryId
+  );
 };

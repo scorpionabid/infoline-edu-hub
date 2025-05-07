@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSectorsStore } from '@/hooks/useSectorsStore';
@@ -203,6 +204,7 @@ const Sectors = () => {
         <SectorDialog
           open={openSectorDialog}
           onClose={() => setOpenSectorDialog(false)}
+          onSubmit={handleFormSubmit}
         />
         
         {selectedSector && (
@@ -210,6 +212,7 @@ const Sectors = () => {
             open={openEditDialog}
             onClose={() => setOpenEditDialog(false)}
             sector={selectedSector}
+            onSubmit={handleFormSubmit}
           />
         )}
         
@@ -218,6 +221,12 @@ const Sectors = () => {
             open={openDeleteDialog}
             onClose={() => setOpenDeleteDialog(false)}
             sector={selectedSector}
+            isDeleteDialog={true}
+            onSubmit={async () => {
+              await handleDeleteSector(selectedSector.id);
+              setOpenDeleteDialog(false);
+              setRefreshTrigger(prev => prev + 1);
+            }}
           />
         )}
         
@@ -226,10 +235,7 @@ const Sectors = () => {
           setOpen={setOpenAdminDialog}
           sector={selectedSector}
           createdSector={createdSector}
-          onAdminAssigned={() => {
-            setRefreshTrigger(prev => prev + 1);
-            setCreatedSector(null);
-          }}
+          onAdminAssigned={handleAdminAssigned}
         />
       </div>
     </>

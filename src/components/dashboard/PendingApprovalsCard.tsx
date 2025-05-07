@@ -1,27 +1,29 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PendingApprovalItem } from '@/types/dashboard'; // Artıq dashboard.ts-də təyin edilib
+import { PendingApproval } from '@/types/dashboard'; 
 import { Button } from '@/components/ui/button';
 import { Clock, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguageSafe } from '@/context/LanguageContext';
 
 interface PendingApprovalsCardProps {
-  items: PendingApprovalItem[];
+  items: PendingApproval[];
 }
 
 export const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ items }) => {
   const navigate = useNavigate();
+  const { t } = useLanguageSafe();
   
   if (!items || items.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Təsdiq gözləyənlər</CardTitle>
+          <CardTitle>{t('pendingApprovals')}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-center py-6">
-            Təsdiq gözləyən məlumat yoxdur
+            {t('noPendingApprovals')}
           </p>
         </CardContent>
       </Card>
@@ -31,18 +33,18 @@ export const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ item
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Təsdiq gözləyənlər</CardTitle>
+        <CardTitle>{t('pendingApprovals')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {items.slice(0, 5).map((item) => (
             <div key={item.id} className="flex justify-between items-center border-b pb-3 last:border-0">
               <div>
-                <h4 className="font-medium">{item.categoryName}</h4>
+                <h4 className="font-medium">{item.category}</h4>
                 <div className="text-sm text-muted-foreground">{item.schoolName}</div>
                 <div className="flex items-center text-xs mt-1 text-muted-foreground">
                   <Clock className="h-3 w-3 mr-1" />
-                  {item.submittedAt}
+                  {item.submittedDate}
                 </div>
               </div>
               <Button 
@@ -52,7 +54,7 @@ export const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ item
                 onClick={() => navigate(`/approvals?id=${item.id}`)}
               >
                 <Eye className="h-4 w-4 mr-1" />
-                İncələ
+                {t('review')}
               </Button>
             </div>
           ))}
@@ -64,7 +66,7 @@ export const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ item
               size="sm"
               onClick={() => navigate('/approvals')}
             >
-              {items.length - 5} daha görüntülə
+              {items.length - 5} {t('seeMore')}
             </Button>
           )}
         </div>
@@ -72,3 +74,5 @@ export const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ item
     </Card>
   );
 };
+
+export default PendingApprovalsCard;

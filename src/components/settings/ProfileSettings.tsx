@@ -1,187 +1,179 @@
 
-import { useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
-import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CameraIcon } from 'lucide-react';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useLanguageSafe } from "@/context/LanguageContext";
+import { useAuth } from "@/context/auth";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Camera } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuthStore } from "@/hooks/auth/useAuthStore";
 
-export function ProfileSettings() {
-  const { t } = useLanguage();
-  const { user, updateUserProfile } = useAuth();
-  const [saving, setSaving] = useState(false);
-  
-  // Form state
-  const [formData, setFormData] = useState({
-    full_name: user?.full_name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    position: user?.position || ''
-  });
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-  
+const ProfileSettings = () => {
+  const { t } = useLanguageSafe();
+  const { user } = useAuth();
+  const { updateUser } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+  const [fullName, setFullName] = useState(user?.full_name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [position, setPosition] = useState(user?.position || "");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar || null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setLoading(true);
+
     try {
-      setSaving(true);
-      
-      // Update profile
-      await updateUserProfile({
-        full_name: formData.full_name,
-        phone: formData.phone,
-        position: formData.position
+      const updates = {
+        full_name: fullName,
+        phone: phone,
+        position: position,
+        avatar: avatarUrl,
+      };
+
+      if (avatarFile) {
+        // Dosya yükleme işlemi
+        const timestamp = Date.now();
+        const fileExt = avatarFile.name.split(".").pop();
+        const filePath = `avatars/${user?.id}-${timestamp}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, avatarFile);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        // Dosya URL'ini al
+        const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+        updates.avatar = data.publicUrl;
+        setAvatarUrl(data.publicUrl);
+      }
+
+      // Profili güncelle
+      await updateUser(updates);
+
+      toast.success(t("profileUpdated"), {
+        description: t("profileUpdatedDesc"),
       });
-      
-      toast.success(t('profileUpdated'));
-    } catch (error) {
-      console.error('Profil yenilənərkən xəta:', error);
-      toast.error(t('profileUpdateError'));
+    } catch (error: any) {
+      console.error("Profile update error:", error);
+      toast.error(t("profileUpdateError"), {
+        description: error.message || t("unexpectedError"),
+      });
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
-  
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    
-    const file = files[0];
-    if (!file.type.startsWith('image/')) {
-      toast.error(t('onlyImageFiles'));
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) {
       return;
     }
-    
-    try {
-      setSaving(true);
-      
-      // Here you would upload the file to storage and get the URL
-      // For now just simulate it
-      const avatarUrl = URL.createObjectURL(file);
-      
-      // In a real app, upload to Supabase storage then update profile
-      // await updateUserProfile({ avatar: avatarUrl });
-      
-      toast.success(t('avatarUpdated'));
-    } catch (error) {
-      console.error('Avatar yenilənərkən xəta:', error);
-      toast.error(t('avatarUpdateError'));
-    } finally {
-      setSaving(false);
+    const file = e.target.files[0];
+    if (file.size > 2 * 1024 * 1024) {
+      // 2MB limit
+      toast.error(t("fileSizeError"), {
+        description: t("fileSizeErrorDesc"),
+      });
+      return;
     }
+    setAvatarFile(file);
+    setAvatarUrl(URL.createObjectURL(file));
   };
-  
-  const getInitials = () => {
-    if (user?.full_name) {
-      return user.full_name
-        .split(' ')
-        .map(part => part.charAt(0))
-        .slice(0, 2)
-        .join('')
-        .toUpperCase();
-    }
-    return 'U';
-  };
-  
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('personalInformation')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex flex-col items-center justify-center space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
-            <div className="relative">
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("profileSettings")}</CardTitle>
+        <CardDescription>{t("profileSettingsDescription")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="flex flex-col items-center mb-6">
+            <div className="relative mb-4">
               <Avatar className="h-24 w-24">
-                <AvatarImage src={user?.avatar} alt={user?.full_name || ''} />
-                <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
+                {avatarUrl ? (
+                  <AvatarImage src={avatarUrl} alt={user?.full_name || ""} />
+                ) : (
+                  <AvatarFallback>
+                    {user?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
+                  </AvatarFallback>
+                )}
               </Avatar>
-              <label 
-                htmlFor="avatar-upload" 
-                className="absolute bottom-0 right-0 rounded-full bg-primary p-1 text-white cursor-pointer hover:bg-primary/90 transition-colors"
+              <label
+                htmlFor="avatar-upload"
+                className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1 cursor-pointer hover:opacity-90 transition-opacity"
               >
-                <CameraIcon className="h-4 w-4" />
-                <span className="sr-only">{t('uploadAvatar')}</span>
+                <Camera className="h-4 w-4" />
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
               </label>
-              <input 
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="sr-only"
-              />
             </div>
-            <div>
-              <h3 className="text-lg font-medium">{formData.full_name}</h3>
-              <p className="text-sm text-muted-foreground">{formData.email}</p>
-              {formData.position && (
-                <p className="text-xs text-muted-foreground">{formData.position}</p>
-              )}
-            </div>
+            <p className="text-sm text-muted-foreground">{t("avatarRecommendation")}</p>
           </div>
-          
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+          <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="full_name">{t('fullName')}</Label>
+              <Label htmlFor="fullName">{t("fullName")}</Label>
               <Input
-                id="full_name"
-                name="full_name"
-                value={formData.full_name}
-                onChange={handleChange}
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="email">{t('email')}</Label>
+              <Label htmlFor="email">{t("email")}</Label>
               <Input
                 id="email"
-                name="email"
-                value={formData.email}
-                disabled
-                className="bg-muted"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled // Email değiştirmeye izin vermiyoruz
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="phone">{t('phone')}</Label>
+              <Label htmlFor="phone">{t("phone")}</Label>
               <Input
                 id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="+994XXXXXXXXX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder={t("enterPhone")}
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="position">{t('position')}</Label>
+              <Label htmlFor="position">{t("position")}</Label>
               <Input
                 id="position"
-                name="position"
-                value={formData.position}
-                onChange={handleChange}
-                placeholder={t('positionPlaceholder')}
+                value={position}
+                onChange={(e) => setPosition(e.target.value)}
+                placeholder={t("enterPosition")}
               />
             </div>
           </div>
-          
+
           <div className="flex justify-end">
-            <Button type="submit" disabled={saving}>
-              {saving ? t('saving') : t('saveChanges')}
+            <Button type="submit" disabled={loading}>
+              {loading ? t("saving") : t("saveChanges")}
             </Button>
           </div>
-        </CardContent>
-      </Card>
-    </form>
+        </form>
+      </CardContent>
+    </Card>
   );
-}
+};
 
 export default ProfileSettings;

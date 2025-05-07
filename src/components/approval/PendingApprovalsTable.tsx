@@ -14,16 +14,9 @@ import { useLanguageSafe } from '@/context/LanguageContext';
 import { formatDate } from '@/utils/date';
 import { Check, Eye } from 'lucide-react';
 import ApprovalDialog from './ApprovalDialog';
+import { PendingApproval } from '@/types/dashboard';
 
-export interface PendingApprovalItem {
-  id: string;
-  schoolId: string;
-  schoolName: string;
-  categoryId: string;
-  categoryName: string;
-  submittedAt: string;
-  status: string;
-}
+export type PendingApprovalItem = PendingApproval;
 
 interface PendingApprovalsTableProps {
   items: PendingApprovalItem[];
@@ -72,8 +65,8 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
           {items.map((item) => (
             <TableRow key={item.id}>
               <TableCell className="font-medium">{item.schoolName}</TableCell>
-              <TableCell>{item.categoryName}</TableCell>
-              <TableCell>{formatDate(item.submittedAt)}</TableCell>
+              <TableCell>{item.category}</TableCell>
+              <TableCell>{formatDate(item.submittedDate)}</TableCell>
               <TableCell>
                 <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200">
                   {t('pending')}
@@ -101,7 +94,7 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
           schoolId={selectedItem.schoolId}
           schoolName={selectedItem.schoolName}
           categoryId={selectedItem.categoryId}
-          categoryName={selectedItem.categoryName}
+          categoryName={selectedItem.category}
           onComplete={handleApprovalCompleted}
         />
       )}

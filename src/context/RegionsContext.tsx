@@ -1,146 +1,81 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
-
-interface Region {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-  admin_id?: string;
-  admin_email?: string;
-}
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from './LanguageContext';
+import { Region, Sector } from '@/types/school';
 
 interface RegionsContextType {
   regions: Region[];
+  sectors: Sector[];
+  selectedRegion: string | null;
+  setSelectedRegion: (id: string | null) => void;
   loading: boolean;
   error: string | null;
   fetchRegions: () => Promise<void>;
-  refresh: () => Promise<void>;
-  addRegion: (regionData: Partial<Region>) => Promise<any>;
-  updateRegion: (id: string, regionData: Partial<Region>) => Promise<any>;
-  deleteRegion: (id: string) => Promise<any>;
-  assignRegionAdmin: (regionId: string, userId: string) => Promise<any>;
+  fetchSectorsByRegion: (regionId: string) => Promise<Sector[]>;
 }
 
 const RegionsContext = createContext<RegionsContextType>({
   regions: [],
+  sectors: [],
+  selectedRegion: null,
+  setSelectedRegion: () => {},
   loading: false,
   error: null,
   fetchRegions: async () => {},
-  refresh: async () => {},
-  addRegion: async () => {},
-  updateRegion: async () => {},
-  deleteRegion: async () => {},
-  assignRegionAdmin: async () => {}
+  fetchSectorsByRegion: async () => [],
 });
 
-export const RegionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const useRegionsContext = () => useContext(RegionsContext);
+
+interface RegionsProviderProps {
+  children: ReactNode;
+}
+
+export const RegionsProvider: React.FC<RegionsProviderProps> = ({ children }) => {
   const [regions, setRegions] = useState<Region[]>([]);
+  const [sectors, setSectors] = useState<Sector[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const fetchRegions = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
+    try {
       const { data, error } = await supabase
         .from('regions')
         .select('*')
-        .eq('status', 'active')
         .order('name', { ascending: true });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
 
       setRegions(data || []);
     } catch (err: any) {
-      console.error('Regionları yükləyərkən xəta:', err);
-      setError(err.message);
-      toast.error('Regionları yükləyərkən xəta baş verdi');
+      console.error('Error fetching regions:', err);
+      setError(err.message || t('errorFetchingRegions'));
     } finally {
       setLoading(false);
     }
   };
 
-  const refresh = async () => {
-    await fetchRegions();
-  };
-
-  const addRegion = async (regionData: Partial<Region>) => {
+  const fetchSectorsByRegion = async (regionId: string) => {
     try {
       const { data, error } = await supabase
-        .from('regions')
-        .insert(regionData)
-        .select();
+        .from('sectors')
+        .select('*')
+        .eq('region_id', regionId)
+        .order('name', { ascending: true });
 
-      if (error) throw error;
-      await fetchRegions();
-      return { success: true, data };
+      if (error) throw new Error(error.message);
+      
+      setSectors(data || []);
+      return data || [];
     } catch (err: any) {
-      console.error('Region əlavə edilərkən xəta:', err);
-      return { success: false, error: err.message };
-    }
-  };
-
-  const updateRegion = async (id: string, regionData: Partial<Region>) => {
-    try {
-      const { data, error } = await supabase
-        .from('regions')
-        .update(regionData)
-        .eq('id', id)
-        .select();
-
-      if (error) throw error;
-      await fetchRegions();
-      return { success: true, data };
-    } catch (err: any) {
-      console.error('Region yenilənərkən xəta:', err);
-      return { success: false, error: err.message };
-    }
-  };
-
-  const deleteRegion = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('regions')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      await fetchRegions();
-      return { success: true };
-    } catch (err: any) {
-      console.error('Region silinərkən xəta:', err);
-      return { success: false, error: err.message };
-    }
-  };
-
-  const assignRegionAdmin = async (regionId: string, userId: string) => {
-    try {
-      // User role təyin et
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({ region_id: regionId })
-        .eq('user_id', userId)
-        .eq('role', 'regionadmin');
-
-      if (roleError) throw roleError;
-
-      // Region-a admin_id təyin et
-      const { error: regionError } = await supabase
-        .from('regions')
-        .update({ admin_id: userId })
-        .eq('id', regionId);
-
-      if (regionError) throw regionError;
-
-      await fetchRegions();
-      return { success: true };
-    } catch (err: any) {
-      console.error('Region admin təyin edilərkən xəta:', err);
-      return { success: false, error: err.message };
+      console.error('Error fetching sectors by region:', err);
+      return [];
     }
   };
 
@@ -148,18 +83,25 @@ export const RegionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchRegions();
   }, []);
 
+  useEffect(() => {
+    if (selectedRegion) {
+      fetchSectorsByRegion(selectedRegion);
+    } else {
+      setSectors([]);
+    }
+  }, [selectedRegion]);
+
   return (
-    <RegionsContext.Provider 
-      value={{ 
-        regions, 
-        loading, 
-        error, 
-        fetchRegions, 
-        refresh,
-        addRegion, 
-        updateRegion, 
-        deleteRegion, 
-        assignRegionAdmin 
+    <RegionsContext.Provider
+      value={{
+        regions,
+        sectors,
+        selectedRegion,
+        setSelectedRegion,
+        loading,
+        error,
+        fetchRegions,
+        fetchSectorsByRegion,
       }}
     >
       {children}
@@ -167,4 +109,4 @@ export const RegionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 };
 
-export const useRegions = () => useContext(RegionsContext);
+export default RegionsContext;

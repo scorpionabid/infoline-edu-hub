@@ -30,8 +30,12 @@ export interface FormStats {
 // Approval tipləri
 export interface PendingApproval {
   id: string;
+  schoolId: string;
   schoolName: string;
+  categoryId: string;
+  categoryName: string;
   category: string;
+  submittedAt: string;
   submittedDate: string;
   status: 'pending' | 'approved' | 'rejected';
 }
@@ -98,34 +102,43 @@ export interface SchoolStat {
   lastUpdate: string;
   pendingForms: number;
   principal?: string;
+  formsCompleted?: number;
+  formsTotal?: number;
+  totalForms?: number; 
+  address?: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface FormItem {
   id: string;
-  name: string;
+  name?: string;
+  title?: string;
   status: 'pending' | 'approved' | 'rejected' | 'draft' | 'submitted';
   deadline?: string;
+  dueDate?: string;
   category: string;
+  categoryName?: string;
   lastUpdate: string;
+  createdAt?: string;
+  completionRate?: number;
 }
 
 export interface DeadlineItem {
   id: string;
   category: string;
+  categoryName?: string;
   deadline: string;
   daysRemaining: number;
   completionRate: number;
+  name?: string;
+  title?: string;
+  status?: string;
+  dueDate?: string;
+  createdAt?: string;
 }
 
 // Status Cards Props
 export interface StatusCardsProps {
-  formStats?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    draft: number;
-    incomplete?: number;
-    dueSoon?: number;
-    overdue?: number;
-  }
+  formStats?: FormStats;
 }
