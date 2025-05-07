@@ -39,7 +39,7 @@ const PendingApprovals: React.FC<PendingApprovalsProps> = ({
             <h4 className="font-medium">{item.schoolName}</h4>
             <div className="text-sm text-muted-foreground">{item.categoryName}</div>
             <div className="text-xs mt-1 text-muted-foreground">
-              {formatDate(item.date)}
+              {formatDate(item.submittedAt)}
             </div>
           </div>
           <Button 

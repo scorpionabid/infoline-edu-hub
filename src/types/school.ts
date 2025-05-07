@@ -14,14 +14,15 @@ export interface School {
   student_count?: number;
   teacher_count?: number;
   completion_rate?: number;
+  completionRate?: number;
   type?: string;
   language?: string;
   created_at?: string;
   updated_at?: string;
-  principal_name?: string; // Əlavə edilən xüsusiyyət
-  principalName?: string; // TypeScript camelCase alias
+  principal_name?: string;
+  principalName?: string;
   logo?: string;
-  lastUpdate?: string; // Əlavə etdiyimiz xüsusiyyət
+  lastUpdate?: string;
 }
 
 export interface AdminCreateData {
@@ -63,7 +64,7 @@ export interface SchoolStat {
   lastUpdate: string;
   pendingForms: number;
   principal?: string;
-  principalName?: string; // Əlavə edilən xüsusiyyət
+  principalName?: string;
   formsCompleted?: number;
   totalForms?: number; 
   address?: string;
@@ -74,8 +75,10 @@ export interface SchoolStat {
 // SectorSchool tipini əlavə edək
 export interface SectorSchool extends School {
   lastUpdate?: string;
-  updated_at?: string;
   pendingForms?: number;
   formsCompleted?: number;
   totalForms?: number;
+  completionRate?: number;
+  principalName?: string;
+  principal_name?: string;
 }

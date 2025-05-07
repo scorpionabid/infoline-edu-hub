@@ -1,104 +1,87 @@
 
+// Əvvəlcə, gərək bütün interfeysi dəyişək
+import { useMemo } from 'react';
 import { useAuth } from '@/context/auth';
 import { UserRole } from '@/types/user';
 
+// Define the return type for the hook
 export interface UsePermissionsResult {
-  // Əsas rol
   userRole: UserRole;
-  currentRole: UserRole;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  
-  // Rola əsaslanan bacarıqlar
   isSuperAdmin: boolean;
   isRegionAdmin: boolean;
   isSectorAdmin: boolean;
   isSchoolAdmin: boolean;
-  
-  // İdarəetmə icazələri
-  canManageUsers: boolean;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
   canManageRegions: boolean;
   canManageSectors: boolean;
   canManageSchools: boolean;
+  canManageUsers: boolean;
   canManageCategories: boolean;
   canApproveData: boolean;
   canEnterData: boolean;
-  canGenerateReports: boolean;
-  canViewSettings: boolean;
-  
-  // Spesifik sahələr üçün icazələr
-  hasAccessToRegion: (regionId: string) => boolean;
-  hasAccessToSector: (sectorId: string) => boolean;
-  hasAccessToSchool: (schoolId: string) => boolean;
+  canExportData: boolean;
 }
 
 export const usePermissions = (): UsePermissionsResult => {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   
-  const userRole = user?.role || 'guest';
-  
-  // Rol yoxlamaları
-  const isSuperAdmin = userRole === 'superadmin';
-  const isRegionAdmin = userRole === 'regionadmin';
-  const isSectorAdmin = userRole === 'sectoradmin';
-  const isSchoolAdmin = userRole === 'schooladmin';
-  
-  // İcazələr
-  const canManageUsers = isSuperAdmin || isRegionAdmin;
-  const canManageRegions = isSuperAdmin;
-  const canManageSectors = isSuperAdmin || isRegionAdmin;
-  const canManageSchools = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const canManageCategories = isSuperAdmin || isRegionAdmin;
-  const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const canEnterData = isSchoolAdmin;
-  const canGenerateReports = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const canViewSettings = true; // Hər kəs öz hesab ayarlarını redaktə edə bilər
-  
-  // Region icazələri
-  const hasAccessToRegion = (regionId: string): boolean => {
-    if (isSuperAdmin) return true;
-    if (isRegionAdmin) return user?.region_id === regionId;
-    if (isSectorAdmin) {
-      const sector = user?.sector_id;
-      return sector && user?.region_id === regionId;
-    }
-    return false;
-  };
-  
-  // Sektor icazələri
-  const hasAccessToSector = (sectorId: string): boolean => {
-    if (isSuperAdmin || isRegionAdmin) return true;
-    if (isSectorAdmin) return user?.sector_id === sectorId;
-    return false;
-  };
-  
-  // Məktəb icazələri
-  const hasAccessToSchool = (schoolId: string): boolean => {
-    if (isSuperAdmin || isRegionAdmin || isSectorAdmin) return true;
-    if (isSchoolAdmin) return user?.school_id === schoolId;
-    return false;
-  };
-  
-  return {
-    userRole,
-    currentRole: userRole,
-    isAuthenticated,
-    isLoading: loading,
-    isSuperAdmin,
-    isRegionAdmin,
-    isSectorAdmin,
-    isSchoolAdmin,
-    canManageUsers,
-    canManageRegions,
-    canManageSectors,
-    canManageSchools,
-    canManageCategories,
-    canApproveData,
-    canEnterData,
-    canGenerateReports,
-    canViewSettings,
-    hasAccessToRegion,
-    hasAccessToSector,
-    hasAccessToSchool
-  };
+  return useMemo(() => {
+    // Default permissions for non-authenticated users
+    const defaultPermissions: UsePermissionsResult = {
+      userRole: 'user',
+      isSuperAdmin: false,
+      isRegionAdmin: false,
+      isSectorAdmin: false,
+      isSchoolAdmin: false,
+      canManageRegions: false,
+      canManageSectors: false,
+      canManageSchools: false,
+      canManageUsers: false,
+      canManageCategories: false,
+      canApproveData: false,
+      canEnterData: false,
+      canExportData: false,
+      regionId: undefined,
+      sectorId: undefined,
+      schoolId: undefined
+    };
+    
+    // Return default permissions if not authenticated or no user
+    if (!isAuthenticated || !user) return defaultPermissions;
+    
+    const userRole = user.role || 'user';
+    const regionId = user.region_id;
+    const sectorId = user.sector_id;
+    const schoolId = user.school_id;
+    
+    // Determine user role type
+    const isSuperAdmin = userRole === 'superadmin';
+    const isRegionAdmin = userRole === 'regionadmin';
+    const isSectorAdmin = userRole === 'sectoradmin';
+    const isSchoolAdmin = userRole === 'schooladmin';
+    
+    // Define permissions based on role
+    return {
+      userRole,
+      isSuperAdmin,
+      isRegionAdmin,
+      isSectorAdmin,
+      isSchoolAdmin,
+      regionId,
+      sectorId,
+      schoolId,
+      // Manage entities permissions
+      canManageRegions: isSuperAdmin,
+      canManageSectors: isSuperAdmin || isRegionAdmin,
+      canManageSchools: isSuperAdmin || isRegionAdmin || isSectorAdmin,
+      canManageUsers: isSuperAdmin || isRegionAdmin || isSectorAdmin,
+      canManageCategories: isSuperAdmin || isRegionAdmin,
+      // Data permissions
+      canApproveData: isSuperAdmin || isRegionAdmin || isSectorAdmin,
+      canEnterData: isSchoolAdmin,
+      canExportData: isSuperAdmin || isRegionAdmin || isSectorAdmin
+    };
+  }, [user, isAuthenticated]);
 };

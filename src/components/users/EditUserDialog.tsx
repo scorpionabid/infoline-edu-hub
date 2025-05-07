@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { FullUserData } from '@/types/user';
+import { FullUserData, UserRole } from '@/types/user';
 import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import UserForm from './UserForm';
@@ -34,7 +35,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
       setFormData({
         fullName: user.full_name || '',
         email: user.email || '',
-        role: user.role || '',
+        role: (user.role as UserRole) || 'user',
         regionId: user.region_id || user.regionId || '',
         sectorId: user.sector_id || user.sectorId || '',
         schoolId: user.school_id || user.schoolId || '',

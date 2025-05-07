@@ -46,7 +46,7 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
               <TableRow key={approval.id}>
                 <TableCell>{approval.schoolName}</TableCell>
                 <TableCell>{approval.categoryName}</TableCell>
-                <TableCell className="hidden md:table-cell">{formatDate(approval.date)}</TableCell>
+                <TableCell className="hidden md:table-cell">{formatDate(approval.submittedAt)}</TableCell>
                 {showActions && (
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

@@ -30,7 +30,8 @@ export const useAuth = (): AuthContextType => {
         sms: false,
         deadlineReminders: false
       }
-    } : null
+    } : null,
+    logout: context.logout || (async () => {})
   };
 };
 

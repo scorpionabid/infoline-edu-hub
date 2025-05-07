@@ -1,33 +1,28 @@
 
-import { Session } from '@supabase/supabase-js';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'guest';
+export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
 
 export interface User {
   id: string;
   email: string;
-  full_name: string;
+  full_name?: string;
+  fullName?: string;
+  role?: UserRole;
+  status?: UserStatus;
   phone?: string;
-  role: UserRole;
-  status: 'active' | 'inactive' | 'pending';
-  region_id?: string;
-  region_name?: string;
-  sector_id?: string;
-  sector_name?: string;
-  school_id?: string;
-  school_name?: string;
   language?: string;
-  created_at?: string;
-  updated_at?: string;
-  last_login?: string;
-  avatar?: string;
   position?: string;
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
+  last_login?: string;
+  lastLogin?: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
   notificationSettings?: NotificationSettings;
-  entityName?: {
-    region?: string;
-    sector?: string;
-    school?: string;
-  };
 }
 
 export interface NotificationSettings {
@@ -41,83 +36,58 @@ export interface NotificationSettings {
 }
 
 export interface FullUserData extends User {
-  notificationSettings: NotificationSettings;
+  avatar?: string;
+  region_id?: string;
+  regionId?: string;
+  region_name?: string;
+  regionName?: string;
+  sector_id?: string;
+  sectorId?: string;
+  sector_name?: string;
+  sectorName?: string;
+  school_id?: string;
+  schoolId?: string;
+  school_name?: string;
+  schoolName?: string;
+  entityName?: {
+    region?: string;
+    sector?: string;
+    school?: string;
+  };
 }
 
-export type AuthErrorType = string | null;
-
 export interface UserFormData {
-  full_name: string;
   email: string;
-  phone?: string;
-  role: UserRole;
+  fullName: string;
   password?: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
+  role?: UserRole;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
   language?: string;
-  avatar?: string;
   position?: string;
-  status?: 'active' | 'inactive' | 'pending';
+  phone?: string;
+}
+
+export interface AuthErrorType {
+  message: string;
+  code?: string;
+  status?: number;
 }
 
 export interface AuthContextType {
   user: FullUserData | null;
-  session: Session | null;
+  session: any | null;
   isAuthenticated: boolean;
   authenticated: boolean;
-  loading: boolean; 
+  loading: boolean;
   error: AuthErrorType;
-  signIn: (email: string, password: string) => Promise<{data: any, error: any}>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{data: any, error: any}>;
-  updatePassword: (password: string) => Promise<{data: any, error: any}>;
-  updateProfile: (data: Partial<User>) => Promise<{data: any, error: any}>;
-  updateNotificationSettings: (settings: Partial<NotificationSettings>) => Promise<{data: any, error: any}>;
-  updateEmail: (email: string) => Promise<{data: any, error: any}>;
-  loadUserProfile: () => Promise<void>;
-  createUser?: (userData: UserFormData) => Promise<{data: any, error: any}>;
-  updateUser?: (userId: string, userData: Partial<UserFormData>) => Promise<{data: any, error: any}>;
-}
-
-export interface UserWithRole {
-  id: string;
-  email: string;
-  full_name: string;
-  role: UserRole;
-  roleObj?: {
-    id: string;
-    role: UserRole;
-    region_id?: string;
-    sector_id?: string;
-    school_id?: string;
-  };
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-}
-
-export interface Profile {
-  id: string;
-  full_name: string;
-  avatar?: string;
-  phone?: string;
-  position?: string;
-  language: string;
-  last_login?: string;
-  created_at: string;
-  updated_at: string;
-  status: string;
-  email: string;
-}
-
-export interface UserRoleData {
-  id: string;
-  user_id: string;
-  role: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  created_at?: string;
-  updated_at?: string;
+  login: (email: string, password: string) => Promise<{ user: any; error: AuthErrorType | null }>;
+  signup: (email: string, password: string, options?: any) => Promise<{ user: any; error: AuthErrorType | null }>;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ data: any; error: AuthErrorType | null }>;
+  updatePassword: (newPassword: string) => Promise<{ data: any; error: AuthErrorType | null }>;
+  updateProfile: (data: Partial<FullUserData>) => Promise<{ data: any; error: AuthErrorType | null }>;
+  refreshSession: () => Promise<void>;
+  createUser?: (userData: UserFormData) => Promise<{ data: any; error: any }>;
 }

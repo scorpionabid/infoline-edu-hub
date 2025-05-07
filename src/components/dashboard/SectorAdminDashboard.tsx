@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import EnhancedApprovalDialog from '../approval/EnhancedApprovalDialog';
 import SchoolsTable from './sector-admin/SchoolsTable';
+import { SchoolStat } from '@/types/dashboard';
+import { SectorSchool } from '@/types/school';
 
 interface SectorAdminDashboardData {
   // Add properties of SectorAdminDashboardData type here
@@ -41,12 +44,12 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
     viewEntryDetails,
   } = useSectorAdminDashboard();
 
-  const schoolStatsData = useMemo(() => {
-    return schools.map((school) => ({
+  const schoolStatsData: SchoolStat[] = useMemo(() => {
+    return schools.map((school: SectorSchool) => ({
       id: school.id,
       name: school.name,
       status: school.status,
-      completionRate: school.completion_rate || 0,
+      completionRate: school.completionRate || 0,
       lastUpdate: school.lastUpdate || school.updated_at || '-',
       pendingForms: school.pendingForms || 0,
       formsCompleted: school.formsCompleted || 0,
@@ -55,7 +58,7 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
       address: school.address || '-',
       phone: school.phone || '-',
       email: school.email || '-'
-    } as SchoolStat));
+    }));
   }, [schools]);
 
   const handleViewDetails = async (approval: any) => {

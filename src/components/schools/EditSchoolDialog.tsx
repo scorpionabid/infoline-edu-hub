@@ -1,5 +1,4 @@
 
-// Faylı yoxlayıb, onSuccess prop-nu əlavə edirik
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
