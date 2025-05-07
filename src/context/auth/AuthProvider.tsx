@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     },
     updateUser: async (updates) => {
-      if (!user) return;
+      if (!user) return false;
       setIsLoading(true);
       try {
         if (useAuthStore.getState().updateUser) {
@@ -79,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsLoading(false);
           return result;
         }
+        return false;
       } catch (error) {
         setIsLoading(false);
         throw error;

@@ -63,7 +63,6 @@ export interface SchoolStat {
   pendingForms: number;
   principal?: string;
   formsCompleted?: number;
-  formsTotal?: number; 
   totalForms?: number; 
   address?: string;
   phone?: string;
