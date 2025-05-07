@@ -63,6 +63,7 @@ export interface SchoolStat {
   lastUpdate: string;
   pendingForms: number;
   principal?: string;
+  principalName?: string; // Əlavə edilən xüsusiyyət - tip uyğunsuzluğunu həll etmək üçün
   formsCompleted?: number;
   totalForms?: number; 
   address?: string;

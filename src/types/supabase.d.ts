@@ -9,7 +9,7 @@ export interface Region {
   admin_email?: string;
   created_at: string;
   updated_at: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | string;
 }
 
 export interface Sector {
@@ -21,7 +21,7 @@ export interface Sector {
   admin_email?: string;
   created_at: string;
   updated_at: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | string;
   completion_rate?: number;
 }
 
@@ -38,9 +38,10 @@ export interface School {
   admin_email?: string;
   created_at: string;
   updated_at: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | string;
   logo?: string;
   principal_name?: string;
+  principalName?: string; // TypeScript camelCase alias
   type?: string;
   teacher_count?: number;
   student_count?: number;
@@ -54,6 +55,10 @@ export interface SchoolStat extends School {
   formsCompleted: number;
   formsPending: number;
   lastUpdate: string;
+  pendingForms?: number; 
+  completionRate?: number;
+  principal?: string;
+  principalName?: string; // TypeScript camelCase alias
 }
 
 export interface UserReported {

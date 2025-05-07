@@ -110,11 +110,7 @@ export const RegionDialogs = () => {
   // Handle add region
   const handleAddRegion = async () => {
     if (!formData.name.trim()) {
-      toast({
-        title: t('validationError'),
-        description: t('regionNameRequired'),
-        variant: 'destructive',
-      });
+      toast.error(t('regionNameRequired'));
       return;
     }
     
@@ -125,47 +121,27 @@ export const RegionDialogs = () => {
         status: formData.status
       });
       
-      toast({
-        title: t('success'),
-        description: t('regionAddedSuccessfully'),
-      });
-      
+      toast.success(t('regionAddedSuccessfully'));
       closeAddRegion();
     } catch (error: any) {
-      toast({
-        title: t('error'),
-        description: error.message || t('errorAddingRegion'),
-        variant: 'destructive',
-      });
+      toast.error(error.message || t('errorAddingRegion'));
     }
   };
   
   // Handle edit region
   const handleEditRegion = async () => {
     if (!selectedRegion || !formData.name.trim()) {
-      toast({
-        title: t('validationError'),
-        description: t('regionNameRequired'),
-        variant: 'destructive',
-      });
+      toast.error(t('regionNameRequired'));
       return;
     }
     
     try {
       // Implementation would go here
       
-      toast({
-        title: t('success'),
-        description: t('regionUpdatedSuccessfully'),
-      });
-      
+      toast.success(t('regionUpdatedSuccessfully'));
       closeEditRegion();
     } catch (error: any) {
-      toast({
-        title: t('error'),
-        description: error.message || t('errorUpdatingRegion'),
-        variant: 'destructive',
-      });
+      toast.error(error.message || t('errorUpdatingRegion'));
     }
   };
   
@@ -176,18 +152,10 @@ export const RegionDialogs = () => {
     try {
       // Implementation would go here
       
-      toast({
-        title: t('success'),
-        description: t('regionDeletedSuccessfully'),
-      });
-      
+      toast.success(t('regionDeletedSuccessfully'));
       closeDeleteRegion();
     } catch (error: any) {
-      toast({
-        title: t('error'),
-        description: error.message || t('errorDeletingRegion'),
-        variant: 'destructive',
-      });
+      toast.error(error.message || t('errorDeletingRegion'));
     }
   };
   
@@ -197,29 +165,16 @@ export const RegionDialogs = () => {
     
     if (adminType === 'existing') {
       if (!existingUserId) {
-        toast({
-          title: t('validationError'),
-          description: t('selectUserRequired'),
-          variant: 'destructive',
-        });
+        toast.error(t('selectUserRequired'));
         return;
       }
       
       try {
         await assignRegionAdmin(selectedRegion.id, existingUserId);
-        
-        toast({
-          title: t('success'),
-          description: t('adminAssignedSuccessfully'),
-        });
-        
+        toast.success(t('adminAssignedSuccessfully'));
         closeAdminDialog();
       } catch (error: any) {
-        toast({
-          title: t('error'),
-          description: error.message || t('errorAssigningAdmin'),
-          variant: 'destructive',
-        });
+        toast.error(error.message || t('errorAssigningAdmin'));
       }
     } else {
       // Handle creating new admin

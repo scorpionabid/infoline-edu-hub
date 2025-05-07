@@ -11,6 +11,7 @@ interface PendingApprovalsTableProps {
   pendingApprovals: PendingApproval[];
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
+  onRefresh?: () => void;
   showActions?: boolean;
 }
 
@@ -18,6 +19,7 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
   pendingApprovals,
   onApprove,
   onReject,
+  onRefresh,
   showActions = true
 }) => {
   const { t } = useLanguage();

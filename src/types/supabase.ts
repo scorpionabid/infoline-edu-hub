@@ -17,7 +17,7 @@ export interface Region {
   id: string;
   name: string;
   description?: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | string;
   created_at?: string;
   updated_at?: string;
   admin_id?: string;
@@ -29,7 +29,7 @@ export interface Sector {
   name: string;
   region_id: string;
   description?: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | string;
   created_at?: string;
   updated_at?: string;
   admin_id?: string;
@@ -43,7 +43,7 @@ export interface School {
   address?: string;
   sector_id: string;
   region_id: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | string;
   student_count?: number;
   teacher_count?: number;
   phone?: string;
@@ -59,6 +59,8 @@ export interface School {
   region_name?: string;
   completion_rate?: number;
   admin_id?: string;
+  principal_name?: string; // Əlavə edildi
+  principalName?: string; // TypeScript camelCase alias əlavə edildi
 }
 
 export type Language = 'az' | 'en' | 'tr' | 'ru';
