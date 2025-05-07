@@ -1,10 +1,9 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
-import { NotificationType, adaptDbNotificationToApp } from '@/types/notification';
+import { NotificationType, adaptDashboardNotificationToApp } from '@/types/notification';
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
@@ -34,7 +33,7 @@ export const useNotifications = () => {
       
       if (data) {
         // Bildirişləri tətbiq formatına çevir
-        const appNotifications = data.map(notification => adaptDbNotificationToApp(notification));
+        const appNotifications = data.map(notification => adaptDashboardNotificationToApp(notification));
         
         setNotifications(appNotifications);
         
@@ -154,7 +153,7 @@ export const useNotifications = () => {
       
       if (data && data.length > 0) {
         // Yeni bildirişi yerli olara əlavə et
-        const appNotification = adaptDbNotificationToApp(data[0]);
+        const appNotification = adaptDashboardNotificationToApp(data[0]);
         
         setNotifications(prev => [appNotification, ...prev]);
         
