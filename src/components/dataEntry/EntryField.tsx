@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Column } from '@/types/column';
 import { Input } from '@/components/ui/input';
@@ -126,7 +127,7 @@ const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error,
                   ? (option.label || optionValue) 
                   : option;
                 return (
-                  <SelectItem key={index} value={optionValue}>
+                  <SelectItem key={index} value={optionValue || `option-${index}`}>
                     {optionLabel}
                   </SelectItem>
                 );

@@ -41,7 +41,7 @@ export const SelectInput = <T extends Record<string, any>>({
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem key={option.value} value={option.value || `option-${option.label}`}>
               {option.label}
             </SelectItem>
           ))}

@@ -79,7 +79,7 @@ const ExistingUserSectorAdminDialog = ({ isOpen, onClose, sectorId, sectorName, 
             </SelectTrigger>
             <SelectContent>
               {users.map((user) => (
-                <SelectItem key={user.id} value={user.id || 'default-id'}>
+                <SelectItem key={user.id} value={user.id || `user-${user.email || Math.random()}`}>
                   {user.full_name} ({user.email})
                 </SelectItem>
               ))}

@@ -54,7 +54,7 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
             <SelectItem value="none">{t('selectUser') || 'İstifadəçi seçin'}</SelectItem>
             {users.length > 0 ? (
               users.map((user) => (
-                <SelectItem key={user.id} value={user.id}>
+                <SelectItem key={user.id} value={user.id || "default-user-id"}>
                   {user.full_name || user.email} 
                   {user.email && ` (${user.email})`}
                 </SelectItem>

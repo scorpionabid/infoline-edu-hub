@@ -107,7 +107,7 @@ export const SectorAdminUserSelector: React.FC<SectorAdminUserSelectorProps> = (
             </div>
           ) : (
             <Select
-              value={selectedUserId}
+              value={selectedUserId || "default-select-value"}
               onValueChange={onUserSelect}
             >
               <SelectTrigger id="user-select" className="w-full">
@@ -116,7 +116,7 @@ export const SectorAdminUserSelector: React.FC<SectorAdminUserSelectorProps> = (
               <SelectContent>
                 <ScrollArea className="h-72">
                   {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id} className="py-2">
+                    <SelectItem key={user.id} value={user.id || `user-${Math.random()}`} className="py-2">
                       <div className="flex flex-col">
                         <div className="flex items-center">
                           <UserPlus className="h-4 w-4 mr-2 text-muted-foreground" />
