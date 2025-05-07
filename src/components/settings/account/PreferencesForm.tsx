@@ -1,169 +1,180 @@
 
-import { useState, useEffect } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
-import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { supabase } from '@/lib/supabase';
-
-type Language = 'az' | 'en' | 'tr' | 'ru';
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
+import { useLanguage } from "@/context/LanguageContext";
+import { FullUserData } from "@/types/user";
+import { useAuth } from "@/context/auth";
+import { Language } from "@/types/language";
 
 export function PreferencesForm() {
-  const { t, changeLanguage, currentLanguage } = useLanguage();
+  const { t, changeLanguage, language } = useLanguage();
+  const { toast } = useToast();
   const { user, updateUserProfile } = useAuth();
-  const [saving, setSaving] = useState(false);
   
-  const [notificationSettings, setNotificationSettings] = useState({
-    email: true,
-    push: true,
-    deadline: true,
-    system: false
-  });
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const [emailNotifications, setEmailNotifications] = useState(
+    user?.notificationSettings?.email ?? true
+  );
+  
+  const [inAppNotifications, setInAppNotifications] = useState(
+    user?.notificationSettings?.inApp ?? true
+  );
+  
+  const [pushNotifications, setPushNotifications] = useState(
+    user?.notificationSettings?.push ?? true
+  );
+  
+  const [systemNotifications, setSystemNotifications] = useState(
+    user?.notificationSettings?.system ?? true
+  );
+  
+  const [currentLanguage, setCurrentLanguage] = useState<string>(
+    user?.language || language || "az"
+  );
 
-  useEffect(() => {
-    // Load user's notification settings
-    if (user?.notificationSettings) {
-      setNotificationSettings({
-        email: user.notificationSettings.email ?? true,
-        push: user.notificationSettings.inApp ?? true,
-        deadline: user.notificationSettings.deadline ?? true,
-        system: user.notificationSettings.system ?? false
-      });
-    }
-  }, [user]);
-
-  const handleLanguageChange = async (value: string) => {
+  const handleSavePreferences = async () => {
+    if (!user || !updateUserProfile) return;
+    
+    setIsSaving(true);
     try {
-      setSaving(true);
-      
-      // Update language in user profile
-      await updateUserProfile({ language: value as Language });
-      
-      // Change UI language
-      changeLanguage(value as Language);
-      
-      toast.success(t('languageUpdated'));
-    } catch (error) {
-      console.error('Dil dəyişdirilərkən xəta:', error);
-      toast.error(t('languageUpdateError'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleNotificationToggle = async (key: string) => {
-    try {
-      const updatedSettings = {
-        ...notificationSettings,
-        [key]: !notificationSettings[key as keyof typeof notificationSettings]
-      };
-      
-      setNotificationSettings(updatedSettings);
-      
-      // Update in profile
       await updateUserProfile({
+        id: user.id,
+        language: currentLanguage as Language,
         notificationSettings: {
-          email: updatedSettings.email,
-          inApp: updatedSettings.push,
-          deadline: updatedSettings.deadline,
-          system: updatedSettings.system
+          email: emailNotifications,
+          inApp: inAppNotifications,
+          push: pushNotifications,
+          system: systemNotifications,
+          deadline: true
         }
       });
       
-      toast.success(t('preferencesUpdated'));
+      // Update UI language
+      changeLanguage(currentLanguage as Language);
+      
+      toast({
+        title: t("preferencesUpdated"),
+        description: t("yourPreferencesHaveBeenUpdated"),
+      });
     } catch (error) {
-      console.error('Bildiriş parametrləri yenilənərkən xəta:', error);
-      toast.error(t('preferencesUpdateError'));
+      console.error("Error updating preferences:", error);
+      toast({
+        title: t("error"),
+        description: t("errorUpdatingPreferences"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('languagePreferences')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="language">{t('interfaceLanguage')}</Label>
-            <Select 
-              value={currentLanguage} 
-              onValueChange={handleLanguageChange}
-              disabled={saving}
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("preferences")}</CardTitle>
+        <CardDescription>
+          {t("manageYourApplicationPreferences")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">{t("notifications")}</h3>
+          <div className="grid gap-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="email-notifications" className="flex-1">
+                {t("emailNotifications")}
+                <p className="text-sm text-muted-foreground">
+                  {t("receiveEmailNotifications")}
+                </p>
+              </Label>
+              <Switch
+                id="email-notifications"
+                checked={emailNotifications}
+                onCheckedChange={setEmailNotifications}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="app-notifications" className="flex-1">
+                {t("inAppNotifications")}
+                <p className="text-sm text-muted-foreground">
+                  {t("receiveInAppNotifications")}
+                </p>
+              </Label>
+              <Switch
+                id="app-notifications"
+                checked={inAppNotifications}
+                onCheckedChange={setInAppNotifications}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="push-notifications" className="flex-1">
+                {t("pushNotifications")}
+                <p className="text-sm text-muted-foreground">
+                  {t("receivePushNotifications")}
+                </p>
+              </Label>
+              <Switch
+                id="push-notifications"
+                checked={pushNotifications}
+                onCheckedChange={setPushNotifications}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="system-notifications" className="flex-1">
+                {t("systemNotifications")}
+                <p className="text-sm text-muted-foreground">
+                  {t("receiveSystemNotifications")}
+                </p>
+              </Label>
+              <Switch
+                id="system-notifications"
+                checked={systemNotifications}
+                onCheckedChange={setSystemNotifications}
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">{t("language")}</h3>
+          <div className="grid gap-3">
+            <Label htmlFor="language">{t("selectLanguage")}</Label>
+            <Select
+              value={currentLanguage}
+              onValueChange={setCurrentLanguage}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t('selectLanguage')} />
+              <SelectTrigger>
+                <SelectValue placeholder={t("selectLanguage")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="az">Azərbaycan dili</SelectItem>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="ru">Русский язык</SelectItem>
-                <SelectItem value="tr">Türkçe</SelectItem>
+                <SelectItem value="az">{t("azerbaijani")}</SelectItem>
+                <SelectItem value="en">{t("english")}</SelectItem>
+                <SelectItem value="ru">{t("russian")}</SelectItem>
+                <SelectItem value="tr">{t("turkish")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('notificationPreferences')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="email-notifications">{t('emailNotifications')}</Label>
-              <p className="text-sm text-muted-foreground">{t('emailNotificationsDesc')}</p>
-            </div>
-            <Switch
-              id="email-notifications"
-              checked={notificationSettings.email}
-              onCheckedChange={() => handleNotificationToggle('email')}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="push-notifications">{t('pushNotifications')}</Label>
-              <p className="text-sm text-muted-foreground">{t('pushNotificationsDesc')}</p>
-            </div>
-            <Switch
-              id="push-notifications"
-              checked={notificationSettings.push}
-              onCheckedChange={() => handleNotificationToggle('push')}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="deadline-notifications">{t('deadlineNotifications')}</Label>
-              <p className="text-sm text-muted-foreground">{t('deadlineNotificationsDesc')}</p>
-            </div>
-            <Switch
-              id="deadline-notifications"
-              checked={notificationSettings.deadline}
-              onCheckedChange={() => handleNotificationToggle('deadline')}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="system-notifications">{t('systemNotifications')}</Label>
-              <p className="text-sm text-muted-foreground">{t('systemNotificationsDesc')}</p>
-            </div>
-            <Switch
-              id="system-notifications"
-              checked={notificationSettings.system}
-              onCheckedChange={() => handleNotificationToggle('system')}
-            />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button
+          onClick={handleSavePreferences}
+          disabled={isSaving}
+          className="ml-auto"
+        >
+          {isSaving ? t("saving") : t("saveChanges")}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
 

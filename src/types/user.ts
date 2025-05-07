@@ -1,3 +1,4 @@
+
 // @girmə1 - Əlavə etsə bütün FullUserData tipindən istifadə edən yerlərdə avatar və position xassələrini əlavə edək
 import { UserRole } from './supabase';
 
@@ -32,7 +33,7 @@ export interface FullUserData {
   phone?: string;
   position?: string;
   language?: string;
-  status?: 'active' | 'inactive' | 'pending';
+  status?: 'active' | 'inactive' | 'pending' | 'blocked';
   last_login?: string;
   lastLogin?: string;
   created_at?: string;
@@ -40,6 +41,16 @@ export interface FullUserData {
   updated_at?: string;
   updatedAt?: string;
   avatar?: string;
+  adminEntity?: string;
+  notificationSettings?: {
+    email: boolean;
+    inApp: boolean;
+    push: boolean;
+    system: boolean;
+    deadline: boolean;
+    sms?: boolean;
+    deadlineReminders?: boolean;
+  };
 }
 
 export interface UserFormData {
@@ -65,6 +76,8 @@ export interface UserFormData {
     push: boolean;
     system: boolean;
     deadline: boolean;
+    sms?: boolean;
+    deadlineReminders?: boolean;
   };
 }
 
@@ -76,7 +89,7 @@ export interface AuthContextType {
   logIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
   logOut: () => Promise<void>;
   register: (userData: any) => Promise<any>;
-  updateUser?: (userData: Partial<FullUserData>) => Promise<void>;
+  updateUser: (userData: Partial<FullUserData>) => Promise<void>;
   updateUserProfile?: (userData: Partial<FullUserData>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   setError: (error: string | null) => void;

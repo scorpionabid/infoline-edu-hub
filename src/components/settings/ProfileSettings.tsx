@@ -1,179 +1,146 @@
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 import { useLanguageSafe } from "@/context/LanguageContext";
 import { useAuth } from "@/context/auth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { Label } from "@/components/ui/label";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Camera } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuthStore } from "@/hooks/auth/useAuthStore";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const ProfileSettings = () => {
+export function ProfileSettings() {
   const { t } = useLanguageSafe();
-  const { user } = useAuth();
-  const { updateUser } = useAuthStore();
-  const [loading, setLoading] = useState(false);
-  const [fullName, setFullName] = useState(user?.full_name || "");
-  const [email, setEmail] = useState(user?.email || "");
-  const [phone, setPhone] = useState(user?.phone || "");
-  const [position, setPosition] = useState(user?.position || "");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar || null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const { toast } = useToast();
+  const { user, updateUser, loading } = useAuth();
+  
+  const [fullName, setFullName] = useState(user?.full_name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [position, setPosition] = useState(user?.position || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
+  const handleSave = async () => {
+    if (!user) return;
+    
+    setIsSaving(true);
     try {
-      const updates = {
+      await updateUser({
+        id: user.id,
         full_name: fullName,
-        phone: phone,
-        position: position,
-        avatar: avatarUrl,
-      };
-
-      if (avatarFile) {
-        // Dosya yükleme işlemi
-        const timestamp = Date.now();
-        const fileExt = avatarFile.name.split(".").pop();
-        const filePath = `avatars/${user?.id}-${timestamp}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("avatars")
-          .upload(filePath, avatarFile);
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        // Dosya URL'ini al
-        const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
-        updates.avatar = data.publicUrl;
-        setAvatarUrl(data.publicUrl);
-      }
-
-      // Profili güncelle
-      await updateUser(updates);
-
-      toast.success(t("profileUpdated"), {
-        description: t("profileUpdatedDesc"),
+        phone,
+        position
+      });
+      
+      toast({
+        title: t('profileUpdated'),
+        description: t('profileUpdatedDescription')
       });
     } catch (error: any) {
-      console.error("Profile update error:", error);
-      toast.error(t("profileUpdateError"), {
-        description: error.message || t("unexpectedError"),
+      console.error('Error updating profile:', error);
+      toast({
+        title: t('error'),
+        description: error.message || t('errorUpdatingProfile'),
+        variant: 'destructive'
       });
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) {
-      return;
-    }
-    const file = e.target.files[0];
-    if (file.size > 2 * 1024 * 1024) {
-      // 2MB limit
-      toast.error(t("fileSizeError"), {
-        description: t("fileSizeErrorDesc"),
-      });
-      return;
-    }
-    setAvatarFile(file);
-    setAvatarUrl(URL.createObjectURL(file));
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
+
+  if (!user) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('profile')}</CardTitle>
+          <CardDescription>{t('loading')}</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("profileSettings")}</CardTitle>
-        <CardDescription>{t("profileSettingsDescription")}</CardDescription>
+        <CardTitle>{t('profileSettings')}</CardTitle>
+        <CardDescription>{t('updateYourProfileInformation')}</CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex flex-col items-center mb-6">
-            <div className="relative mb-4">
-              <Avatar className="h-24 w-24">
-                {avatarUrl ? (
-                  <AvatarImage src={avatarUrl} alt={user?.full_name || ""} />
-                ) : (
-                  <AvatarFallback>
-                    {user?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <label
-                htmlFor="avatar-upload"
-                className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1 cursor-pointer hover:opacity-90 transition-opacity"
-              >
-                <Camera className="h-4 w-4" />
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarChange}
-                />
-              </label>
-            </div>
-            <p className="text-sm text-muted-foreground">{t("avatarRecommendation")}</p>
+      <CardContent className="space-y-6">
+        <div className="flex items-center space-x-4">
+          <Avatar className="w-20 h-20">
+            <AvatarImage src={user.avatar || ''} alt={user.full_name} />
+            <AvatarFallback className="text-lg">
+              {getInitials(user.full_name || user.email)}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h3 className="font-medium">{user.full_name || user.email}</h3>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
+            <p className="text-sm text-muted-foreground">{user.role}</p>
           </div>
+        </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">{t("fullName")}</Label>
-              <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">{t("email")}</Label>
-              <Input
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled // Email değiştirmeye izin vermiyoruz
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">{t("phone")}</Label>
-              <Input
-                id="phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder={t("enterPhone")}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="position">{t("position")}</Label>
-              <Input
-                id="position"
-                value={position}
-                onChange={(e) => setPosition(e.target.value)}
-                placeholder={t("enterPosition")}
-              />
-            </div>
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="name">{t('fullName')}</Label>
+            <Input 
+              id="name" 
+              value={fullName} 
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder={t('enterYourName')} 
+            />
           </div>
-
-          <div className="flex justify-end">
-            <Button type="submit" disabled={loading}>
-              {loading ? t("saving") : t("saveChanges")}
-            </Button>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="email">{t('email')}</Label>
+            <Input 
+              id="email" 
+              value={user.email} 
+              disabled 
+              readOnly
+            />
           </div>
-        </form>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="phone">{t('phone')}</Label>
+            <Input 
+              id="phone" 
+              value={phone} 
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder={t('enterYourPhone')} 
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="position">{t('position')}</Label>
+            <Input 
+              id="position" 
+              value={position} 
+              onChange={(e) => setPosition(e.target.value)}
+              placeholder={t('enterYourPosition')} 
+            />
+          </div>
+        </div>
       </CardContent>
+      <CardFooter className="flex justify-end">
+        <Button 
+          onClick={handleSave} 
+          disabled={isSaving || loading}
+        >
+          {isSaving ? t('saving') : t('saveChanges')}
+        </Button>
+      </CardFooter>
     </Card>
   );
-};
+}
 
 export default ProfileSettings;

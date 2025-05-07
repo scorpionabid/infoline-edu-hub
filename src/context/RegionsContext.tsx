@@ -13,6 +13,9 @@ interface RegionsContextType {
   error: string | null;
   fetchRegions: () => Promise<void>;
   fetchSectorsByRegion: (regionId: string) => Promise<Sector[]>;
+  createRegion: (regionData: Partial<Region>) => Promise<any>;
+  updateRegion: (id: string, regionData: Partial<Region>) => Promise<any>;
+  deleteRegion: (id: string) => Promise<any>;
 }
 
 const RegionsContext = createContext<RegionsContextType>({
@@ -24,6 +27,9 @@ const RegionsContext = createContext<RegionsContextType>({
   error: null,
   fetchRegions: async () => {},
   fetchSectorsByRegion: async () => [],
+  createRegion: async () => {},
+  updateRegion: async () => {},
+  deleteRegion: async () => {},
 });
 
 export const useRegionsContext = () => useContext(RegionsContext);
@@ -79,6 +85,58 @@ export const RegionsProvider: React.FC<RegionsProviderProps> = ({ children }) =>
     }
   };
 
+  const createRegion = async (regionData: Partial<Region>) => {
+    try {
+      const { data, error } = await supabase
+        .from('regions')
+        .insert(regionData)
+        .select();
+
+      if (error) throw new Error(error.message);
+      
+      fetchRegions(); // Yeniləmək
+      return { success: true, data };
+    } catch (err: any) {
+      console.error('Error creating region:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const updateRegion = async (id: string, regionData: Partial<Region>) => {
+    try {
+      const { data, error } = await supabase
+        .from('regions')
+        .update(regionData)
+        .eq('id', id)
+        .select();
+
+      if (error) throw new Error(error.message);
+      
+      fetchRegions(); // Yeniləmək
+      return { success: true, data };
+    } catch (err: any) {
+      console.error('Error updating region:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const deleteRegion = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('regions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw new Error(error.message);
+      
+      fetchRegions(); // Yeniləmək
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error deleting region:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
   useEffect(() => {
     fetchRegions();
   }, []);
@@ -102,6 +160,9 @@ export const RegionsProvider: React.FC<RegionsProviderProps> = ({ children }) =>
         error,
         fetchRegions,
         fetchSectorsByRegion,
+        createRegion,
+        updateRegion,
+        deleteRegion
       }}
     >
       {children}

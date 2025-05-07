@@ -74,6 +74,25 @@ export interface SchoolAdminDashboardData {
   upcomingDeadlines: DeadlineItem[];
   completionRate: number;
   notifications: DashboardNotification[];
+  completion?: {
+    percentage: number;
+    total: number;
+    completed: number;
+  };
+  status?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    total: number;
+  };
+  forms?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    dueSoon: number;
+    overdue: number;
+    total: number;
+  };
 }
 
 // -------------- Köməkçi İnterfeyslər --------------
@@ -141,4 +160,10 @@ export interface DeadlineItem {
 // Status Cards Props
 export interface StatusCardsProps {
   formStats?: FormStats;
+  pending?: number;
+  approved?: number;
+  rejected?: number;
+  draft?: number;
+  dueSoon?: number;
+  overdue?: number;
 }

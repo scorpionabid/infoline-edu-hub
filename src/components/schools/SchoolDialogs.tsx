@@ -1,119 +1,126 @@
 
-import React from 'react';
-import { 
-  DeleteDialog, 
-  EditDialog, 
-  AddDialog, 
-  AdminDialog 
-} from './school-dialogs';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
 import { School } from '@/types/school';
-import { SchoolFormData } from '@/types/school-form';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import CreateSchoolDialog from './CreateSchoolDialog';
+import EditSchoolDialog from './EditSchoolDialog';
+import DeleteSchoolDialog from './DeleteSchoolDialog';
+import ImportDialog from './ImportDialog';
+import AdminDialog from './school-dialogs/AdminDialog';
 
 interface SchoolDialogsProps {
-  isDeleteDialogOpen: boolean;
-  isEditDialogOpen: boolean;
-  isAddDialogOpen: boolean;
-  isAdminDialogOpen: boolean;
-  selectedSchool: School | null;
-  selectedAdmin: School | null;
-  closeDeleteDialog: () => void;
-  closeEditDialog: () => void;
-  closeAddDialog: () => void;
-  closeAdminDialog: () => void;
-  handleDeleteConfirm: () => void;
-  handleAddSubmit: () => void;
-  handleEditSubmit: () => void;
-  handleAdminUpdate: () => void;
-  handleResetPassword: (newPassword: string) => void;
-  formData: SchoolFormData;
-  handleFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-  currentTab: string;
-  setCurrentTab: (tab: string) => void;
-  filteredSectors: Array<{ id: string; name: string; regionId: string }>;
+  refreshSchools: () => void;
 }
 
-const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
-  isDeleteDialogOpen,
-  isEditDialogOpen,
-  isAddDialogOpen,
-  isAdminDialogOpen,
-  selectedSchool,
-  selectedAdmin,
-  closeDeleteDialog,
-  closeEditDialog,
-  closeAddDialog,
-  closeAdminDialog,
-  handleDeleteConfirm,
-  handleAddSubmit,
-  handleEditSubmit,
-  handleAdminUpdate,
-  handleResetPassword,
-  formData,
-  handleFormChange,
-  currentTab,
-  setCurrentTab,
-  filteredSectors
+export const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
+  refreshSchools,
 }) => {
+  const { t } = useLanguage();
+
+  // Dialog states
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+
+  // Selected school
+  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
+
+  // Handle opening edit dialog
+  const handleEditSchool = (school: School) => {
+    setSelectedSchool(school);
+    setEditOpen(true);
+  };
+
+  // Handle opening delete dialog
+  const handleDeleteSchool = (school: School) => {
+    setSelectedSchool(school);
+    setDeleteOpen(true);
+  };
+
+  // Handle opening admin dialog
+  const handleViewAdmin = (school: School) => {
+    setSelectedSchool(school);
+    setAdminDialogOpen(true);
+  };
+
+  // Reset admin password
+  const handleResetPassword = async (newPassword: string) => {
+    if (!selectedSchool?.admin_id) {
+      toast.error(t('noAdminAssigned'));
+      return;
+    }
+
+    try {
+      // Update password in Supabase
+      const { error } = await supabase.admin.updateUserById(
+        selectedSchool.admin_id,
+        { password: newPassword }
+      );
+
+      if (error) throw error;
+
+      toast.success(t('passwordResetSuccess'));
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      toast.error(t('errorResettingPassword'), {
+        description: error.message,
+      });
+    }
+  };
+
   return (
     <>
-      <DeleteDialog 
-        isOpen={isDeleteDialogOpen} 
-        onClose={closeDeleteDialog} 
-        onConfirm={handleDeleteConfirm} 
-      />
-      
-      <AddDialog 
-        isOpen={isAddDialogOpen} 
-        onClose={closeAddDialog} 
-        onSubmit={handleAddSubmit} 
-        formData={formData} 
-        handleFormChange={handleFormChange} 
-        currentTab={currentTab} 
-        setCurrentTab={setCurrentTab} 
-        filteredSectors={filteredSectors}
-      />
-      
-      <EditDialog 
-        isOpen={isEditDialogOpen} 
-        onClose={closeEditDialog} 
-        onSubmit={handleEditSubmit} 
-        formData={formData} 
-        handleFormChange={handleFormChange} 
-        filteredSectors={filteredSectors}
-      />
-      
-      <AdminDialog 
-        open={isAdminDialogOpen} 
-        onClose={closeAdminDialog} 
-        onResetPassword={handleResetPassword} 
-        school={selectedAdmin}
-        onUpdate={handleAdminUpdate}
-      />
-    </>
-  );
-};
+      <Button onClick={() => setCreateOpen(true)}>{t('addSchool')}</Button>
+      <Button variant="outline" onClick={() => setImportOpen(true)}>
+        {t('import')}
+      </Button>
 
-export const AdminDialogWrapper = ({ 
-  selectedAdmin, 
-  isOpen, 
-  onClose, 
-  onUpdate, 
-  onResetPassword 
-}: { 
-  selectedAdmin: School; 
-  isOpen: boolean; 
-  onClose: () => void; 
-  onUpdate: () => void;
-  onResetPassword: (newPassword: string) => void; 
-}) => {
-  return (
-    <AdminDialog 
-      school={selectedAdmin}
-      open={isOpen} 
-      onClose={onClose}
-      onUpdate={onUpdate}
-      onResetPassword={onResetPassword}
-    />
+      {/* Create School Dialog */}
+      <CreateSchoolDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSuccess={refreshSchools}
+      />
+
+      {/* Edit School Dialog */}
+      {selectedSchool && (
+        <EditSchoolDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          school={selectedSchool}
+          onSuccess={refreshSchools}
+        />
+      )}
+
+      {/* Delete School Dialog */}
+      {selectedSchool && (
+        <DeleteSchoolDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          school={selectedSchool}
+          onSuccess={refreshSchools}
+        />
+      )}
+
+      {/* Import Dialog */}
+      <ImportDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={refreshSchools} />
+
+      {/* Admin Dialog */}
+      {selectedSchool && (
+        <AdminDialog
+          open={adminDialogOpen}
+          onClose={() => setAdminDialogOpen(false)}
+          school={selectedSchool}
+          onUpdate={refreshSchools}
+          onResetPassword={handleResetPassword}
+        />
+      )}
+    </>
   );
 };
 

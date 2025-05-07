@@ -1,105 +1,106 @@
 
-import React, { useEffect, useState } from "react";
-import { FormField, FormItem, FormLabel } from "@/components/ui/form";
+import React, { useState, useEffect } from "react";
+import { useFormContext, Control } from "react-hook-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useLanguageSafe } from "@/context/LanguageContext";
-import { RegionsContext } from "@/context/RegionsContext";
 import { useRegionsContext } from "@/context/RegionsContext";
-import { useControl } from "react-hook-form";
-import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Sector } from "@/types/school";
+import { UserFormData } from "@/types/user";
 
 interface SectorSectionProps {
-  form: any;
   disabled?: boolean;
 }
 
-const SectorSection: React.FC<SectorSectionProps> = ({ form, disabled = false }) => {
+const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
   const { t } = useLanguageSafe();
+  const { regions, fetchSectorsByRegion } = useRegionsContext();
+  const { getValues, setValue, watch } = useFormContext<UserFormData>();
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const regionId = form.watch("region_id");
+  const regionId = watch("region_id");
+  const sectorId = watch("sector_id");
 
-  // Region seçildiyində sektorları yükləyək
   useEffect(() => {
-    const fetchSectors = async () => {
-      if (!regionId) {
+    const loadSectors = async () => {
+      if (regionId) {
+        setLoading(true);
+        try {
+          const sectorsData = await fetchSectorsByRegion(regionId);
+          setSectors(sectorsData);
+          
+          // If current sectorId doesn't exist in the new sectors list, reset it
+          if (sectorId && !sectorsData.find(s => s.id === sectorId)) {
+            setValue("sector_id", "");
+          }
+        } catch (err) {
+          console.error("Error loading sectors:", err);
+        } finally {
+          setLoading(false);
+        }
+      } else {
         setSectors([]);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const { data, error } = await supabase
-          .from('sectors')
-          .select('*')
-          .eq('region_id', regionId)
-          .order('name', { ascending: true });
-
-        if (error) throw new Error(error.message);
-        
-        setSectors(data || []);
-      } catch (err: any) {
-        console.error('Error fetching sectors:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+        setValue("sector_id", "");
       }
     };
+    
+    loadSectors();
+  }, [regionId, fetchSectorsByRegion, setValue, sectorId]);
 
-    fetchSectors();
-  }, [regionId]);
+  const handleRegionChange = (value: string) => {
+    setValue("region_id", value);
+    setValue("sector_id", ""); // Clear sector when region changes
+    setValue("school_id", ""); // Clear school when region changes
+  };
+
+  const handleSectorChange = (value: string) => {
+    setValue("sector_id", value);
+    setValue("school_id", ""); // Clear school when sector changes
+  };
 
   return (
-    <FormField
-      control={form.control}
-      name="sector_id"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{t("sector")}</FormLabel>
-          <Select
-            onValueChange={(value) => {
-              field.onChange(value);
-              // Sektoru seçəndə məktəbi sıfırlayırıq, çünki bir başqa sektora qeçdik
-              form.setValue("school_id", "");
-            }}
-            value={field.value || ""}
-            disabled={disabled || !regionId}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={t("selectSector")} />
-            </SelectTrigger>
-            <SelectContent>
-              {loading ? (
-                <div className="flex items-center justify-center p-4">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  {t("loading")}
-                </div>
-              ) : error ? (
-                <div className="p-4 text-center text-destructive">{error}</div>
-              ) : !sectors.length ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  {regionId
-                    ? t("noSectorsInRegion")
-                    : t("pleaseSelectRegion")}
-                </div>
-              ) : (
-                sectors.map((sector) => (
-                  <SelectItem key={sector.id} value={sector.id}>
-                    {sector.name}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </FormItem>
-      )}
-    />
+    <div className="grid gap-4 mb-4">
+      <div className="space-y-2">
+        <Label htmlFor="region_id">{t("region")}</Label>
+        <Select
+          value={getValues("region_id") || ""}
+          onValueChange={handleRegionChange}
+          disabled={disabled}
+        >
+          <SelectTrigger id="region_id">
+            <SelectValue placeholder={t("selectRegion")} />
+          </SelectTrigger>
+          <SelectContent>
+            {regions.map((region) => (
+              <SelectItem key={region.id} value={region.id}>
+                {region.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="sector_id">{t("sector")}</Label>
+        <Select
+          value={getValues("sector_id") || ""}
+          onValueChange={handleSectorChange}
+          disabled={disabled || loading || !regionId}
+        >
+          <SelectTrigger id="sector_id">
+            <SelectValue placeholder={loading ? t("loading") : t("selectSector")} />
+          </SelectTrigger>
+          <SelectContent>
+            {sectors.map((sector) => (
+              <SelectItem key={sector.id} value={sector.id}>
+                {sector.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
   );
 };
 

@@ -1,313 +1,222 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "../ui/checkbox";
-import { Loader2 } from "lucide-react";
-import { useLanguageSafe } from "@/context/LanguageContext";
-import { useRegions } from "@/hooks/regions/useRegions";
-import { Region, Sector } from "@/types/school";
-import { useToast } from "../ui/use-toast";
-import { EnhancedSector } from '@/hooks/useSectorsStore';
-
-// Form validasiya sxemi
-const sectorSchema = z.object({
-  name: z.string().min(2, "Ad ən azı 2 simvol olmalıdır").max(100, "Ad maksimum 100 simvol ola bilər"),
-  description: z.string().optional(),
-  region_id: z.string().min(1, "Region seçilməlidir"),
-  status: z.string().optional(),
-  addAdmin: z.boolean().optional()
-});
-
-type SectorFormValues = z.infer<typeof sectorSchema>;
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Sector } from '@/types/school';
+import { useLanguage } from '@/context/LanguageContext';
+import { useRegionsContext } from '@/context/RegionsContext';
+import { toast } from 'sonner';
 
 interface SectorDialogProps {
   open: boolean;
-  onClose: () => void;
-  onSubmit?: (values: SectorFormValues) => void;
-  sector?: EnhancedSector | null;
-  isDeleteDialog?: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (sector: Partial<Sector>) => Promise<void>;
+  initialData?: Partial<Sector>;
+  mode?: 'create' | 'edit';
 }
 
-// Əsas SectorDialog komponenti
-const SectorDialog: React.FC<SectorDialogProps> = ({
+export const SectorDialog: React.FC<SectorDialogProps> = ({
   open,
-  onClose,
+  onOpenChange,
   onSubmit,
-  sector,
-  isDeleteDialog = false
+  initialData,
+  mode = 'create',
 }) => {
-  const { t } = useLanguageSafe();
-  const { regions, loading: regionsLoading } = useRegions();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [addAdmin, setAddAdmin] = useState(false);
-
-  const form = useForm<SectorFormValues>({
-    resolver: zodResolver(sectorSchema),
-    defaultValues: {
-      name: sector?.name || "",
-      description: sector?.description || "",
-      region_id: sector?.region_id || "",
-      status: sector?.status || "active",
-      addAdmin: false
-    }
+  const { t } = useLanguage();
+  const { regions } = useRegionsContext();
+  
+  const [formData, setFormData] = useState<Partial<Sector>>({
+    name: '',
+    description: '',
+    region_id: '',
+    status: 'active',
   });
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (sector) {
-      form.reset({
-        name: sector.name || "",
-        description: sector.description || "",
-        region_id: sector.region_id || "",
-        status: sector.status || "active",
-        addAdmin: false
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        description: initialData.description || '',
+        region_id: initialData.region_id || '',
+        status: initialData.status || 'active',
       });
     } else {
-      form.reset({
-        name: "",
-        description: "",
-        region_id: "",
-        status: "active",
-        addAdmin: false
+      setFormData({
+        name: '',
+        description: '',
+        region_id: '',
+        status: 'active',
       });
     }
-  }, [sector, form]);
+  }, [initialData, open]);
 
-  const handleSubmit = async (values: SectorFormValues) => {
-    if (isDeleteDialog) {
-      handleDelete();
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      if (onSubmit) {
-        await onSubmit({ ...values, addAdmin });
-      }
-      form.reset();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: t('error'),
-        description: error.message || t('unexpectedError'),
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDelete = async () => {
-    if (!sector) return;
-
-    setIsSubmitting(true);
-    try {
-      if (onSubmit) {
-        await onSubmit({
-          name: sector.name,
-          region_id: sector.region_id,
-          status: "deleted"
-        });
-      }
-      toast({
-        title: t('sectorDeleted'),
-        description: t('sectorDeletedDesc')
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: t('error'),
-        description: error.message || t('unexpectedError'),
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const dialogTitle = isDeleteDialog
-    ? t('deleteSector')
-    : sector
-      ? t('editSector')
-      : t('createSector');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      if (!formData.name?.trim()) {
+        throw new Error(t('sectorNameRequired'));
+      }
+
+      if (!formData.region_id) {
+        throw new Error(t('regionRequired'));
+      }
+
+      await onSubmit(formData);
+      onOpenChange(false);
+      
+      toast.success(
+        mode === 'create' ? t('sectorCreatedSuccess') : t('sectorUpdatedSuccess')
+      );
+    } catch (err: any) {
+      console.error('Sektor əməliyyatında xəta:', err);
+      setError(err.message || t('unexpectedError'));
+      
+      toast.error(t('error'), {
+        description: err.message || t('unexpectedError'),
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !isSubmitting && !open && onClose()}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogTitle>
+            {mode === 'create' ? t('createNewSector') : t('editSector')}
+          </DialogTitle>
+          <DialogDescription>
+            {mode === 'create'
+              ? t('fillSectorDetails')
+              : t('updateSectorDetails')}
+          </DialogDescription>
         </DialogHeader>
 
-        {isDeleteDialog ? (
-          <div className="py-4">
-            <p>{t('deleteSectorConfirmation')}</p>
-            <p className="font-semibold mt-2">{sector?.name}</p>
-          </div>
-        ) : (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
-              <FormField
-                control={form.control}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-50 p-3 rounded-md border border-red-200 text-red-600 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">{t('sectorName')} *</Label>
+              <Input
+                id="name"
                 name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('name')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t('enterSectorName')} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                value={formData.name}
+                onChange={handleChange}
+                placeholder={t('enterSectorName')}
+                required
               />
+            </div>
 
-              <FormField
-                control={form.control}
+            <div className="space-y-2">
+              <Label htmlFor="description">{t('description')}</Label>
+              <Textarea
+                id="description"
                 name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('description')}</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder={t('enterSectorDescription')} 
-                        {...field} 
-                        value={field.value || ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                value={formData.description}
+                onChange={handleChange}
+                placeholder={t('enterDescription')}
+                rows={3}
               />
+            </div>
 
-              <FormField
-                control={form.control}
-                name="region_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('region')}</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('selectRegion')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {regionsLoading ? (
-                          <div className="flex items-center justify-center p-4">
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            {t('loading')}
-                          </div>
-                        ) : (
-                          regions.map((region: Region) => (
-                            <SelectItem key={region.id} value={region.id}>
-                              {region.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-2">
+              <Label htmlFor="region_id">{t('region')} *</Label>
+              <Select
+                value={formData.region_id}
+                onValueChange={(value) => handleSelectChange('region_id', value)}
+                required
+              >
+                <SelectTrigger id="region_id">
+                  <SelectValue placeholder={t('selectRegion')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((region) => (
+                    <SelectItem key={region.id} value={region.id}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('status')}</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('selectStatus')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="active">{t('active')}</SelectItem>
-                        <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-2">
+              <Label htmlFor="status">{t('status')}</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => handleSelectChange('status', value)}
+              >
+                <SelectTrigger id="status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">{t('active')}</SelectItem>
+                  <SelectItem value="inactive">{t('inactive')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-              {!sector && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="addAdmin"
-                    checked={addAdmin}
-                    onCheckedChange={(checked: boolean) => setAddAdmin(checked)}
-                  />
-                  <label
-                    htmlFor="addAdmin"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {t('addAdminAfterCreation')}
-                  </label>
-                </div>
-              )}
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={isSubmitting}
-                >
-                  {t('cancel')}
-                </Button>
-                <Button type="submit" disabled={isSubmitting || (isDeleteDialog ? false : !form.formState.isDirty)}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isDeleteDialog
-                    ? t('delete')
-                    : sector
-                      ? t('update')
-                      : t('create')}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        )}
-
-        {isDeleteDialog && (
-          <DialogFooter>
+          <DialogFooter className="pt-4">
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
-              disabled={isSubmitting}
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
             >
               {t('cancel')}
             </Button>
-            <Button 
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isSubmitting}
-            >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('delete')}
+            <Button type="submit" disabled={loading}>
+              {loading
+                ? t('loading')
+                : mode === 'create'
+                ? t('createSector')
+                : t('updateSector')}
             </Button>
           </DialogFooter>
-        )}
+        </form>
       </DialogContent>
     </Dialog>
   );
 };
 
-export { SectorDialog };
+export default SectorDialog;
