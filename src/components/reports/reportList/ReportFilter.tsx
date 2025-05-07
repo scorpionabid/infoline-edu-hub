@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import {
@@ -50,31 +49,31 @@ export const ReportFilter: React.FC<ReportFilterProps> = ({
       />
       
       <div className="flex gap-4">
-        <Select value={filters.type} onValueChange={handleTypeChange}>
+        <Select value={filters.type || 'all'} onValueChange={handleTypeChange}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder={t('reportType')} />
+            <SelectValue placeholder={t("reportType")} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">{t('allTypes')}</SelectItem>
-              <SelectItem value={ReportTypeValues.BAR}>{t('statistics')}</SelectItem>
-              <SelectItem value={ReportTypeValues.PIE}>{t('completion')}</SelectItem>
-              <SelectItem value={ReportTypeValues.LINE}>{t('comparison')}</SelectItem>
-              <SelectItem value={ReportTypeValues.TABLE}>{t('column')}</SelectItem>
+              <SelectItem value="all">{t("allTypes")}</SelectItem>
+              <SelectItem value={ReportTypeValues.BAR || 'bar'}>{t("statistics")}</SelectItem>
+              <SelectItem value={ReportTypeValues.PIE || 'pie'}>{t("completion")}</SelectItem>
+              <SelectItem value={ReportTypeValues.LINE || 'line'}>{t("comparison")}</SelectItem>
+              <SelectItem value={ReportTypeValues.TABLE || 'table'}>{t("column")}</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
         
-        <Select value={filters.status} onValueChange={handleStatusChange}>
+        <Select value={filters.status || 'all'} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder={t('status')} />
+            <SelectValue placeholder={t("status")} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">{t('allStatuses')}</SelectItem>
-              <SelectItem value="draft">{t('draft')}</SelectItem>
-              <SelectItem value="published">{t('published')}</SelectItem>
-              <SelectItem value="archived">{t('archived')}</SelectItem>
+              <SelectItem value="all">{t("allStatuses")}</SelectItem>
+              <SelectItem value="draft">{t("draft")}</SelectItem>
+              <SelectItem value="published">{t("published")}</SelectItem>
+              <SelectItem value="archived">{t("archived")}</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>

@@ -251,7 +251,7 @@ const Columns: React.FC = () => {
           
           <div className="flex flex-col md:flex-row gap-2">
             <Select 
-              value={categoryFilter} 
+              value={categoryFilter || 'all'} 
               onValueChange={setCategoryFilter}
             >
               <SelectTrigger className="w-[180px]">
@@ -260,7 +260,7 @@ const Columns: React.FC = () => {
               <SelectContent>
                 <SelectItem value="all">{t("allCategories")}</SelectItem>
                 {categories?.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
+                  <SelectItem key={category.id} value={category.id || `category-${Math.random()}`}>
                     {category.name}
                   </SelectItem>
                 ))}
@@ -268,7 +268,7 @@ const Columns: React.FC = () => {
             </Select>
             
             <Select 
-              value={typeFilter} 
+              value={typeFilter || 'all'} 
               onValueChange={setTypeFilter}
             >
               <SelectTrigger className="w-[180px]">
@@ -288,7 +288,7 @@ const Columns: React.FC = () => {
             </Select>
             
             <Select 
-              value={statusFilter} 
+              value={statusFilter || 'all'} 
               onValueChange={setStatusFilter}
             >
               <SelectTrigger className="w-[180px]">

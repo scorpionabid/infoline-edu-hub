@@ -116,8 +116,11 @@ const FormField: React.FC<FormFieldProps> = ({
                 </div>
               ) : (
                 Array.isArray(normalizedOptions) && normalizedOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                  <SelectItem 
+                    key={option.value || `option-${Math.random().toString(36).substr(2, 9)}`} 
+                    value={option.value || `default-${Math.random().toString(36).substr(2, 9)}`}
+                  >
+                    {option.label || 'Seçim'}
                   </SelectItem>
                 ))
               )}

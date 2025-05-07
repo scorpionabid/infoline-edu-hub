@@ -18,7 +18,7 @@ export const LanguageSwitcher = () => {
   }
   
   return (
-    <Select value={currentLanguage} onValueChange={handleLanguageChange}>
+    <Select value={currentLanguage || 'az'} onValueChange={handleLanguageChange}>
       <SelectTrigger className="w-[100px]" aria-label={t('selectLanguage')}>
         <div className="flex items-center gap-2">
           <Globe className="h-4 w-4" />

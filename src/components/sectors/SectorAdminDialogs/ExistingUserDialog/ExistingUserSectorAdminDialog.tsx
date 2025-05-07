@@ -73,13 +73,13 @@ const ExistingUserSectorAdminDialog = ({ isOpen, onClose, sectorId, sectorName, 
           <Label htmlFor="userId" className="text-right">
             {t('selectUser') || 'İstifadəçi seçin'}
           </Label>
-          <Select onValueChange={setUserId} defaultValue={userId} >
+          <Select onValueChange={setUserId} defaultValue={userId || undefined}>
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectUser')} />
             </SelectTrigger>
             <SelectContent>
               {users.map((user) => (
-                <SelectItem key={user.id} value={user.id}>
+                <SelectItem key={user.id} value={user.id || 'default-id'}>
                   {user.full_name} ({user.email})
                 </SelectItem>
               ))}

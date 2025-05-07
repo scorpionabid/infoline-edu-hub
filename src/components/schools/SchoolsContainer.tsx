@@ -275,33 +275,33 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
-          <Select value={regionFilter} onValueChange={setRegionFilter}>
+          <Select value={regionFilter || 'all'} onValueChange={setRegionFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t('filterByRegion')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('allRegions')}</SelectItem>
               {regionsArray.map(region => (
-                <SelectItem key={region.id} value={region.id}>
+                <SelectItem key={region.id} value={region.id || `region-${Math.random().toString(36).substr(2, 9)}`}>
                   {regionNames[region.id] || region.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={sectorFilter} onValueChange={setSectorFilter}>
+          <Select value={sectorFilter || 'all'} onValueChange={setSectorFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t('filterBySector')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('allSectors')}</SelectItem>
               {sectorsArray.map(sector => (
-                <SelectItem key={sector.id} value={sector.id}>
+                <SelectItem key={sector.id} value={sector.id || `sector-${Math.random().toString(36).substr(2, 9)}`}>
                   {sectorNames[sector.id] || sector.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter || 'all'} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder={t('filterByStatus')} />
             </SelectTrigger>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Column } from '@/types/column';
 import { Input } from '@/components/ui/input';
@@ -120,8 +119,12 @@ const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error,
             </SelectTrigger>
             <SelectContent>
               {options.map((option, index) => {
-                const optionValue = typeof option === 'object' ? option.value || '' : option;
-                const optionLabel = typeof option === 'object' ? option.label || optionValue : option;
+                const optionValue = typeof option === 'object' 
+                  ? (option.value || `option-${index}`)
+                  : (option || `option-${index}`);
+                const optionLabel = typeof option === 'object' 
+                  ? (option.label || optionValue) 
+                  : option;
                 return (
                   <SelectItem key={index} value={optionValue}>
                     {optionLabel}

@@ -1,139 +1,71 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Route,
-  Routes,
-  Navigate,
-  useLocation,
-} from 'react-router-dom';
-import { Toaster } from 'sonner';
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
-import Login from '@/pages/Login';
-import DashboardPage from '@/pages/Dashboard';
-import ProfilePage from '@/pages/Profile';
-import SettingsPage from '@/pages/Settings';
-import RegionsPage from '@/pages/Regions';
-import SectorsPage from '@/pages/Sectors';
-import SchoolsPage from '@/pages/Schools';
-import UsersPage from '@/pages/Users';
-import CategoriesPage from '@/pages/Categories';
-import ColumnsPage from '@/pages/Columns';
-import ApprovalsPage from '@/pages/Approvals';
-import ReportsPage from '@/pages/Reports';
-import StatisticsPage from '@/pages/Statistics';
-import SidebarLayout from '@/components/layout/SidebarLayout';
-import RequireRole from '@/components/auth/RequireRole';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from '@/components/ui/toaster';
+import { AppQueryProvider } from '@/context/QueryClientProvider';
+
+// Layout components
+import DefaultLayout from '@/layouts/DefaultLayout';
+import AuthLayout from '@/layouts/AuthLayout';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+
+// Auth pages
+import Login from '@/pages/auth/Login';
+import Register from '@/pages/auth/Register';
+import ForgotPassword from '@/pages/auth/ForgotPassword';
+import ResetPassword from '@/pages/auth/ResetPassword';
+import VerifyEmail from '@/pages/auth/VerifyEmail';
+
+// Main pages
+import Dashboard from '@/pages/Dashboard';
+import Profile from '@/pages/Profile';
+import Categories from '@/pages/Categories';
+import Columns from '@/pages/Columns';
+import Schools from '@/pages/Schools';
+import Regions from '@/pages/Regions';
+import Sectors from '@/pages/Sectors';
+import Users from '@/pages/Users';
+import Reports from '@/pages/Reports';
+import Settings from '@/pages/Settings';
+import Forms from '@/pages/Forms';
+import Approvals from '@/pages/Approvals';
 import NotFound from '@/pages/NotFound';
-import DataEntryPage from '@/pages/DataEntryPage';
 
-const App: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuthStore();
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const location = useLocation();
-
-  const handleOnlineStatus = useCallback(() => {
-    setIsOnline(navigator.onLine);
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('online', handleOnlineStatus);
-    window.addEventListener('offline', handleOnlineStatus);
-
-    return () => {
-      window.removeEventListener('online', handleOnlineStatus);
-      window.removeEventListener('offline', handleOnlineStatus);
-    };
-  }, [handleOnlineStatus]);
-  
+const App = () => {
   return (
-    <>
-      <Toaster richColors position="top-right" />
+    <AppQueryProvider>
       <Routes>
-        <Route 
-          path="/login" 
-          element={
-            isAuthenticated ? 
-              <Navigate to="/dashboard" replace /> : 
-              <Login />
-          } 
-        />
-        <Route path="/404" element={<NotFound />} />
-        <Route 
-          path="/" 
-          element={<Navigate to="/dashboard" replace />} 
-        />
-        
-        {/* Protected routes - SidebarLayout artıq autentifikasiya yoxlaması edir */}
-        <Route element={<SidebarLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          
-          {/* Data entry routes */}
-          <Route path="/data-entry" element={<DataEntryPage />} />
-          <Route path="/data-entry/:categoryId" element={<DataEntryPage />} />
-          
-          {/* SuperAdmin routes */}
-          <Route path="/regions" element={
-            <RequireRole roles={['superadmin']}>
-              <RegionsPage />
-            </RequireRole>
-          } />
-          <Route path="/sectors" element={
-            <RequireRole roles={['superadmin', 'regionadmin']}>
-              <SectorsPage />
-            </RequireRole>
-          } />
-          <Route path="/schools" element={
-            <RequireRole roles={['superadmin', 'regionadmin', 'sectoradmin']}>
-              <SchoolsPage />
-            </RequireRole>
-          } />
-          <Route path="/users" element={
-            <RequireRole roles={['superadmin', 'regionadmin', 'sectoradmin']}>
-              <UsersPage />
-            </RequireRole>
-          } />
-          <Route path="/categories" element={
-            <RequireRole roles={['superadmin', 'regionadmin']}>
-              <CategoriesPage />
-            </RequireRole>
-          } />
-          <Route path="/categories/:id" element={
-            <RequireRole roles={['superadmin', 'regionadmin']}>
-              <CategoriesPage />
-            </RequireRole>
-          } />
-          <Route path="/columns" element={
-            <RequireRole roles={['superadmin', 'regionadmin']}>
-              <ColumnsPage />
-            </RequireRole>
-          } />
-          <Route path="/columns/:id" element={
-            <RequireRole roles={['superadmin', 'regionadmin']}>
-              <ColumnsPage />
-            </RequireRole>
-          } />
-          <Route path="/approvals" element={
-            <RequireRole roles={['sectoradmin', 'regionadmin']}>
-              <ApprovalsPage />
-            </RequireRole>
-          } />
-          <Route path="/reports" element={
-            <RequireRole roles={['superadmin', 'regionadmin', 'sectoradmin']}>
-              <ReportsPage />
-            </RequireRole>
-          } />
-          <Route path="/statistics" element={
-            <RequireRole roles={['superadmin', 'regionadmin', 'sectoradmin']}>
-              <StatisticsPage />
-            </RequireRole>
-          } />
+        {/* Auth routes */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
         </Route>
-        
-        <Route path="*" element={<Navigate to="/404" replace />} />
+
+        {/* Protected routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<DefaultLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/columns" element={<Columns />} />
+            <Route path="/schools" element={<Schools />} />
+            <Route path="/regions" element={<Regions />} />
+            <Route path="/sectors" element={<Sectors />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/forms" element={<Forms />} />
+            <Route path="/approvals" element={<Approvals />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Route>
       </Routes>
-    </>
+      <Toaster />
+    </AppQueryProvider>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -50,9 +49,9 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
             <FormLabel>{t("categoryLabel")}</FormLabel>
             <Select 
               disabled={isEditMode}
-              defaultValue={editColumn?.category_id}
+              defaultValue={editColumn?.category_id || undefined}
               onValueChange={field.onChange} 
-              value={field.value}
+              value={field.value || undefined}
             >
               <FormControl>
                 <SelectTrigger>
@@ -61,7 +60,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
               </FormControl>
               <SelectContent>
                 {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
+                  <SelectItem key={category.id} value={category.id || `category-${Math.random()}`}>
                     {category.name}
                   </SelectItem>
                 ))}
