@@ -28,7 +28,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
   const enhancedSchools: SchoolStat[] = data.schoolStats.map(school => ({
     ...school,
     lastUpdate: school.lastUpdate || new Date().toISOString(),
-    pendingForms: Math.floor(Math.random() * 5) // Mock data
+    pendingForms: school.pendingForms || Math.floor(Math.random() * 5) // Mock data
   }));
 
   return (

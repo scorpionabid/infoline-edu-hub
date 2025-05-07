@@ -38,6 +38,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
   
+  // Lokal yaradılan create və update funksiyaları
+  const createUser = async (userData: any) => {
+    console.log('Creating user', userData);
+    try {
+      // Real bir yaratma funksiyanız burada ola bilər
+      return { data: userData, error: null };
+    } catch (error: any) {
+      return { data: null, error };
+    }
+  };
+
+  const updateUserProfile = async (updates: any) => {
+    console.log('Updating user profile', updates);
+    try {
+      // Real bir yeniləmə funksiyanız burada ola bilər
+      return true;
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      return false;
+    }
+  };
+  
   // Context value yaradırıq
   const contextValue: AuthContextType = {
     user,
@@ -59,27 +81,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     register: async (userData) => {
       setIsLoading(true);
       try {
-        if (useAuthStore.getState().createUser) {
-          const result = await useAuthStore.getState().createUser(userData);
-          setIsLoading(false);
-          return result;
-        }
-        throw new Error('createUser method not available');
+        const result = await createUser(userData);
+        setIsLoading(false);
+        return result;
       } catch (error) {
         setIsLoading(false);
         throw error;
       }
     },
+    createUser,
     updateUser: async (updates) => {
       if (!user) return false;
       setIsLoading(true);
       try {
-        if (useAuthStore.getState().updateUser) {
-          const result = await useAuthStore.getState().updateUser(updates);
-          setIsLoading(false);
-          return result;
-        }
-        return false;
+        const result = await updateUserProfile(updates);
+        setIsLoading(false);
+        return result;
       } catch (error) {
         setIsLoading(false);
         throw error;

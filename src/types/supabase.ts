@@ -65,6 +65,31 @@ export interface School {
 
 export type Language = 'az' | 'en' | 'tr' | 'ru';
 
+export interface Profile {
+  id: string;
+  full_name: string;
+  avatar?: string;
+  phone?: string;
+  position?: string;
+  language?: Language;
+  last_login?: string;
+  created_at?: string;
+  updated_at?: string;
+  status?: string;
+  email?: string;
+}
+
+export interface UserRoleData {
+  user_id: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  id: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface FullUserData extends User {
   email: string;
   full_name: string;
@@ -81,10 +106,13 @@ export interface FullUserData extends User {
   last_login?: string;
   status?: 'active' | 'inactive' | 'pending';
   twoFactorEnabled?: boolean;
+  position?: string;
+  avatar?: string;
   notificationSettings?: {
     email: boolean;
     push: boolean;
     deadline: boolean;
+    system?: boolean;
   };
 }
 

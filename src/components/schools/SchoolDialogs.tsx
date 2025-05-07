@@ -90,8 +90,8 @@ export const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
       {/* Edit School Dialog */}
       {selectedSchool && (
         <EditSchoolDialog
-          open={editOpen}
-          onOpenChange={setEditOpen}
+          isOpen={editOpen}
+          onClose={() => setEditOpen(false)}
           school={selectedSchool}
           onSuccess={refreshSchools}
         />
@@ -100,10 +100,10 @@ export const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
       {/* Delete School Dialog */}
       {selectedSchool && (
         <DeleteSchoolDialog
-          open={deleteOpen}
-          onOpenChange={setDeleteOpen}
+          isOpen={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+          onConfirm={refreshSchools}
           school={selectedSchool}
-          onSuccess={refreshSchools}
         />
       )}
 

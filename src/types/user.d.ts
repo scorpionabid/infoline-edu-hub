@@ -71,3 +71,24 @@ export interface UserFormData {
   sectorId?: string;
   schoolId?: string;
 }
+
+export interface AuthContextType {
+  user: FullUserData | null;
+  session: any | null;
+  isAuthenticated: boolean;
+  authenticated: boolean; // isAuthenticated ilə eynidir
+  loading: boolean;
+  error: string | null;
+  logIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
+  logOut: () => Promise<void>;
+  logout: () => Promise<void>; // logOut üçün alias
+  signOut: () => Promise<void>; // logOut üçün alias
+  register: (userData: any) => Promise<any>;
+  updateUser: (updates: Partial<FullUserData>) => Promise<boolean | void>;
+  updateUserProfile?: (userData: Partial<FullUserData>) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  setError: (error: string | null) => void;
+  clearError?: () => void;
+  refreshProfile?: () => Promise<FullUserData | null>;
+  createUser?: (userData: UserFormData) => Promise<{ data: any; error: any }>;
+}

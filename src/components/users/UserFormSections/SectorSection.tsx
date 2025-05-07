@@ -7,6 +7,7 @@ import { useLanguageSafe } from "@/context/LanguageContext";
 import { useRegionsContext } from "@/context/RegionsContext";
 import { Sector } from "@/types/school";
 import { UserFormData } from "@/types/user";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SectorSectionProps {
   disabled?: boolean;
@@ -14,13 +15,30 @@ interface SectorSectionProps {
 
 const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
   const { t } = useLanguageSafe();
-  const { regions, fetchSectorsByRegion } = useRegionsContext();
+  const { regions } = useRegionsContext();
   const { getValues, setValue, watch } = useFormContext<UserFormData>();
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loading, setLoading] = useState(false);
 
   const regionId = watch("region_id");
   const sectorId = watch("sector_id");
+
+  // fetchSectorsByRegion funksiyasını burada təyin edirik
+  const fetchSectorsByRegion = async (regionId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('sectors')
+        .select('*')
+        .eq('region_id', regionId)
+        .eq('status', 'active');
+
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('Error fetching sectors:', err);
+      return [];
+    }
+  };
 
   useEffect(() => {
     const loadSectors = async () => {
@@ -46,7 +64,7 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
     };
     
     loadSectors();
-  }, [regionId, fetchSectorsByRegion, setValue, sectorId]);
+  }, [regionId, setValue, sectorId]);
 
   const handleRegionChange = (value: string) => {
     setValue("region_id", value);

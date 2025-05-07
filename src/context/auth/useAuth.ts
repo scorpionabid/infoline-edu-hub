@@ -8,7 +8,12 @@ export const useAuth = (): AuthContextType => {
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context;
+  
+  // Contextə authenticated xassəsini əlavə et
+  return {
+    ...context,
+    authenticated: context.isAuthenticated
+  };
 };
 
 // Avtorizasiya olmayan halda xəta atır
