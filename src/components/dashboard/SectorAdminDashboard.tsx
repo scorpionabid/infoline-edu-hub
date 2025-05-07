@@ -235,8 +235,10 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
               <ScrollArea className="h-[400px]">
                 <SchoolsTable schools={schools.map(school => ({
                   ...school,
-                  formsCompleted: 0,
-                  totalForms: 0
+                  pendingForms: 0,
+                  lastUpdate: school.updated_at || new Date().toISOString(),
+                  formsCompleted: school.formsCompleted || 0,
+                  totalForms: school.totalForms || 0
                 }))} />
               </ScrollArea>
             </CardContent>

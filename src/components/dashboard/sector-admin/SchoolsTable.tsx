@@ -1,71 +1,131 @@
 
 import React from 'react';
-import { SchoolStat } from '@/types/dashboard';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { 
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { formatPercentage, formatDate } from '@/utils/formatters';
 import { useLanguage } from '@/context/LanguageContext';
+import { SchoolStat } from '@/types/school';
+import { format } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { ArrowUpDown, FileText, MoreHorizontal } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SchoolsTableProps {
   schools: SchoolStat[];
+  onSort?: (field: string) => void;
+  sortField?: string;
+  sortDirection?: 'asc' | 'desc';
+  onViewClick?: (schoolId: string) => void;
 }
 
-const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools }) => {
+const SchoolsTable: React.FC<SchoolsTableProps> = ({ 
+  schools,
+  onSort,
+  sortField,
+  sortDirection,
+  onViewClick
+}) => {
   const { t } = useLanguage();
-
-  if (!schools || schools.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        {t('noSchoolsData')}
-      </div>
-    );
-  }
-
+  const navigate = useNavigate();
+  
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '—';
+    try {
+      return format(new Date(dateString), 'dd.MM.yyyy');
+    } catch (e) {
+      return dateString;
+    }
+  };
+  
+  const handleViewClick = (schoolId: string) => {
+    if (onViewClick) {
+      onViewClick(schoolId);
+    } else {
+      navigate(`/schools/${schoolId}`);
+    }
+  };
+  
   return (
-    <div className="rounded-md border overflow-x-auto">
-      <Table>
-        <TableHeader>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>
+            {onSort ? (
+              <div className="flex items-center cursor-pointer" onClick={() => onSort('name')}>
+                {t('schoolName')}
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </div>
+            ) : (
+              t('schoolName')
+            )}
+          </TableHead>
+          <TableHead>{t('principal')}</TableHead>
+          <TableHead>{t('completionRate')}</TableHead>
+          <TableHead>{t('pendingForms')}</TableHead>
+          <TableHead>{t('lastUpdate')}</TableHead>
+          <TableHead>{t('actions')}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {schools.length === 0 ? (
           <TableRow>
-            <TableHead>{t('school')}</TableHead>
-            <TableHead>{t('completionRate')}</TableHead>
-            <TableHead className="hidden sm:table-cell">{t('principal')}</TableHead>
-            <TableHead className="text-right">{t('status')}</TableHead>
+            <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+              {t('noSchoolsFound')}
+            </TableCell>
           </TableRow>
-        </TableHeader>
-        <TableBody>
-          {schools.map((school) => (
+        ) : (
+          schools.map((school) => (
             <TableRow key={school.id}>
-              <TableCell className="font-medium">
-                {school.name}
-              </TableCell>
+              <TableCell className="font-medium">{school.name}</TableCell>
+              <TableCell>{school.principalName || school.principal || '—'}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <span>{formatPercentage(school.completionRate)}</span>
-                  <div className="w-24 h-1.5 bg-gray-200 rounded-full">
-                    <div 
-                      className={`h-1.5 rounded-full ${
-                        (school.completionRate || 0) >= 75 ? 'bg-green-500' : 
-                        (school.completionRate || 0) >= 50 ? 'bg-amber-500' : 
-                        'bg-red-500'
-                      }`} 
-                      style={{ width: `${school.completionRate || 0}%` }}
-                    />
-                  </div>
+                  <Progress 
+                    value={school.completionRate} 
+                    className="h-2 w-20" 
+                    indicatorClassName={
+                      school.completionRate < 30 ? "bg-red-500" : 
+                      school.completionRate < 70 ? "bg-amber-500" : 
+                      "bg-green-500"
+                    } 
+                  />
+                  <span>{Math.round(school.completionRate)}%</span>
                 </div>
               </TableCell>
-              <TableCell className="hidden sm:table-cell">
-                {school.principal || school.principalName || '-'}
+              <TableCell>
+                {(school.pendingForms || 0) > 0 ? (
+                  <Badge variant="outline" className="bg-amber-50 border-amber-200 text-amber-700">
+                    {school.pendingForms}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700">
+                    0
+                  </Badge>
+                )}
               </TableCell>
-              <TableCell className="text-right">
-                <Badge variant={school.status === 'active' ? 'default' : 'secondary'}>
-                  {school.status === 'active' ? t('active') : t('inactive')}
-                </Badge>
+              <TableCell>{formatDate(school.lastUpdate)}</TableCell>
+              <TableCell>
+                <Button 
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleViewClick(school.id)}
+                >
+                  <FileText className="h-4 w-4" />
+                  <span className="sr-only">{t('view')}</span>
+                </Button>
               </TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          ))
+        )}
+      </TableBody>
+    </Table>
   );
 };
 

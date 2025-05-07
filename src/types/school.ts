@@ -75,4 +75,8 @@ export interface SchoolStat {
 export interface SectorSchool extends School {
   lastUpdate?: string;
   updated_at?: string;
+  pendingForms?: number;
+  formsCompleted?: number;
+  totalForms?: number;
 }
+

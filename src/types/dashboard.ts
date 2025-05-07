@@ -1,4 +1,3 @@
-
 import { AppNotification, DashboardNotification } from './notification';
 import { Region, Sector, SchoolStat } from './school';
 
@@ -73,6 +72,31 @@ export interface CategoryItem {
     percentage: number;
   };
   completionRate?: number;
+}
+
+// Əksik eksport edilən Dashboard tiplərini əlavə edək
+export interface DashboardCategory {
+  id: string;
+  name: string;
+  description?: string;
+  submissionCount: number;
+  completionPercentage: number;
+  deadline?: string;
+  status: string;
+}
+
+export interface CategoryWithCompletion {
+  id: string;
+  name: string;
+  completionRate: number;
+  formsCompleted: number;
+  totalForms: number;
+}
+
+export interface SchoolCompletionItem {
+  id: string;
+  name: string;
+  completionRate: number;
 }
 
 // Sector completion item

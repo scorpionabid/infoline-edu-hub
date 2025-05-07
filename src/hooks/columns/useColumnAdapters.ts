@@ -1,105 +1,95 @@
 
-import { Column, ColumnOption, ColumnType, ColumnValidation } from '@/types/column';
-import { supabase } from '@/integrations/supabase/client';
+import { Column } from '@/types/column';
+import { ValidationRules, ColumnValidation } from '@/types/column';
 
-// Supabasedən gələn xam sütun məlumatlarını Column tipinə çevirmək
-export const adaptColumn = (rawColumn: any): Column => {
-  // Options və validation JSON sahələrini parse et
-  const options = parseJsonField(rawColumn.options);
-  const validation = parseJsonField(rawColumn.validation);
-
-  return {
-    id: rawColumn.id,
-    category_id: rawColumn.category_id,
-    name: rawColumn.name,
-    type: rawColumn.type as ColumnType,
-    is_required: rawColumn.is_required,
-    placeholder: rawColumn.placeholder || '',
-    help_text: rawColumn.help_text || '',
-    order_index: rawColumn.order_index,
-    options: options || [],
-    validation: validation || {},
-    default_value: rawColumn.default_value || '',
-    status: rawColumn.status || 'active',
-    created_at: rawColumn.created_at,
-    updated_at: rawColumn.updated_at,
-    parent_column_id: rawColumn.parent_column_id
-  };
-};
-
-// JSON sahələrini parse etmək üçün köməkçi funksiya
-const parseJsonField = (value: any): any => {
-  if (!value) return null;
-  
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value);
-    } catch (e) {
-      // Xüsusi format: {"label":"X","value":"x"},{"label":"Y","value":"y"}
-      if (value.includes('},{')) {
-        try {
-          const jsonStr = value.startsWith('[') ? value : `[${value}]`;
-          return JSON.parse(jsonStr);
-        } catch (err) {
-          console.warn('Xüsusi formatı parse etmək alınmadı');
-        }
-      }
-      
-      // Vergüllə ayrılmış siyahı
-      if (value.includes(',')) {
-        return value.split(',')
-          .map(item => item.trim())
-          .filter(Boolean)
-          .map(item => ({ label: item, value: item }));
-      }
-      
-      return value;
-    }
-  }
-  
-  return value;
-};
-
-// Sütunları kateqoriyalara görə qruplaşdırmaq üçün
-export const groupColumnsByCategory = (columns: Column[]): Record<string, Column[]> => {
-  return columns.reduce((acc, column) => {
-    const categoryId = column.category_id;
-    if (!acc[categoryId]) {
-      acc[categoryId] = [];
-    }
-    acc[categoryId].push(column);
-    return acc;
-  }, {} as Record<string, Column[]>);
-};
-
-// Sütunları oxumaq üçün Supabase sorğusu
-export const fetchColumns = async (categoryId?: string): Promise<Column[]> => {
-  try {
-    let query = supabase.from('columns').select('*');
-    
-    if (categoryId) {
-      query = query.eq('category_id', categoryId);
-    }
-    
-    query = query.order('order_index', { ascending: true });
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    return (data || []).map(adaptColumn);
-  } catch (error) {
-    console.error('Error fetching columns:', error);
-    throw error;
-  }
-};
-
+// Column tipini API-dən frontend tiplərə çevirmək üçün adapter
 export const useColumnAdapters = () => {
+  // API-dən alınan sütun məlumatlarını frontend tipinə çevirmək
+  const adaptColumnFromApi = (apiColumn: any): Column => {
+    return {
+      id: apiColumn.id,
+      name: apiColumn.name,
+      type: apiColumn.type,
+      category_id: apiColumn.category_id,
+      is_required: apiColumn.is_required || false,
+      order_index: apiColumn.order_index || 0,
+      options: apiColumn.options ? JSON.parse(apiColumn.options) : undefined,
+      validation: apiColumn.validation ? JSON.parse(apiColumn.validation) : undefined,
+      help_text: apiColumn.help_text,
+      placeholder: apiColumn.placeholder,
+      default_value: apiColumn.default_value,
+      parent_column_id: apiColumn.parent_column_id,
+      conditional_display: apiColumn.conditional_display ? JSON.parse(apiColumn.conditional_display) : undefined,
+      status: apiColumn.status || 'active',
+      created_at: apiColumn.created_at,
+      updated_at: apiColumn.updated_at
+    };
+  };
+  
+  // Frontend sütun məlumatlarını API formatına çevirmək
+  const adaptColumnToApi = (column: Partial<Column>): any => {
+    const apiColumn: any = {
+      name: column.name,
+      type: column.type,
+      category_id: column.category_id,
+      is_required: column.is_required || false,
+      order_index: column.order_index || 0
+    };
+    
+    if (column.options) {
+      apiColumn.options = JSON.stringify(column.options);
+    }
+    
+    if (column.validation) {
+      apiColumn.validation = JSON.stringify(column.validation);
+    }
+    
+    if (column.help_text) {
+      apiColumn.help_text = column.help_text;
+    }
+    
+    if (column.placeholder) {
+      apiColumn.placeholder = column.placeholder;
+    }
+    
+    if (column.default_value !== undefined) {
+      apiColumn.default_value = column.default_value;
+    }
+    
+    if (column.parent_column_id) {
+      apiColumn.parent_column_id = column.parent_column_id;
+    }
+    
+    if (column.conditional_display) {
+      apiColumn.conditional_display = JSON.stringify(column.conditional_display);
+    }
+    
+    if (column.status) {
+      apiColumn.status = column.status;
+    }
+    
+    return apiColumn;
+  };
+  
+  // Validation qaydalarını formata çevirmək
+  const adaptValidationRules = (rules: ValidationRules): ColumnValidation => {
+    return {
+      required: rules.required,
+      minLength: rules.minLength,
+      maxLength: rules.maxLength,
+      min: rules.min,
+      max: rules.max,
+      minValue: rules.minValue,
+      maxValue: rules.maxValue,
+      pattern: rules.pattern,
+      email: rules.email,
+      url: rules.url
+    };
+  };
+  
   return {
-    adaptColumn,
-    groupColumnsByCategory,
-    fetchColumns
+    adaptColumnFromApi,
+    adaptColumnToApi,
+    adaptValidationRules
   };
 };
-
-export default useColumnAdapters;

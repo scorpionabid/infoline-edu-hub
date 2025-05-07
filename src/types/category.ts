@@ -38,3 +38,11 @@ export interface CategoryWithColumns extends Category {
 export interface FormCategory extends Category {
   completionRate?: number;
 }
+
+export interface CategoryFilter {
+  search?: string;
+  status?: string[];
+  assignment?: string[];
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}

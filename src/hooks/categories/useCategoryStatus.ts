@@ -1,97 +1,66 @@
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { CategoryWithColumns } from '@/types/category';
-import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
 import { useLanguage } from '@/context/LanguageContext';
 
-interface UseCategoryStatusOptions {
-  entries?: DataEntry[];
-}
-
-export const useCategoryStatus = (category: CategoryWithColumns, options?: UseCategoryStatusOptions) => {
-  const [status, setStatus] = useState<DataEntryStatus | 'partial'>(category.status as DataEntryStatus || 'draft');
-  const [completionPercentage, setCompletionPercentage] = useState<number>(category.completionPercentage || 0);
+// Kateqoriya statuslarını idarə edən hook
+export const useCategoryStatus = (category: CategoryWithColumns) => {
   const { t } = useLanguage();
-
-  // Statusun badge rəngini qaytar
-  const getStatusBadgeColor = (status: DataEntryStatus | 'partial') => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800 border-green-300';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-300';
+  
+  // Tamamlanma nisbətini hesabla
+  const completionPercentage = useMemo(() => {
+    return category.completionRate || 0;
+  }, [category.completionRate]);
+  
+  // Status rəngini müəyyən et
+  const statusColor = useMemo(() => {
+    switch (category.status) {
+      case 'active':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'archived':
+        return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'draft':
-        return 'bg-gray-100 text-gray-800 border-gray-300';
-      case 'partial':
-        return 'bg-blue-100 text-blue-800 border-blue-300';
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-  };
-
-  // Statusun label mətnini qaytar
-  const getStatusLabel = (status: DataEntryStatus | 'partial') => {
-    switch (status) {
-      case 'approved':
-        return t('approved');
-      case 'pending':
-        return t('pending');
-      case 'rejected':
-        return t('rejected');
+  }, [category.status]);
+  
+  // Tamamlanma rəngini müəyyən et
+  const completionColor = useMemo(() => {
+    if (completionPercentage >= 75) {
+      return 'bg-green-500';
+    } else if (completionPercentage >= 50) {
+      return 'bg-amber-500';
+    } else if (completionPercentage >= 25) {
+      return 'bg-orange-500';
+    } else {
+      return 'bg-red-500';
+    }
+  }, [completionPercentage]);
+  
+  // Tərcümə edilmiş status adı
+  const statusName = useMemo(() => {
+    switch (category.status) {
+      case 'active':
+        return t('active');
+      case 'inactive':
+        return t('inactive');
+      case 'archived':
+        return t('archived');
       case 'draft':
         return t('draft');
-      case 'partial':
-        return t('partial');
       default:
         return t('unknown');
     }
-  };
-
-  // Entries dəyişəndə statusu yenidən hesabla
-  useEffect(() => {
-    if (!options?.entries || !category.columns) {
-      return;
-    }
-
-    const entries = options.entries;
-    const totalColumns = category.columns.length;
-    const filledColumns = entries.length;
-    
-    // Tamamlanma faizini hesabla
-    const percentage = totalColumns > 0 ? Math.round((filledColumns / totalColumns) * 100) : 0;
-    setCompletionPercentage(percentage);
-
-    // Statusu təyin et
-    if (filledColumns === 0) {
-      setStatus('draft');
-    } else if (filledColumns < totalColumns) {
-      setStatus('partial');
-    } else {
-      // Əgər bütün sütunlar doldurulubsa, entrieslərin ümumi statusunu hesabla
-      const approvedCount = entries.filter(e => e.status === 'approved').length;
-      const rejectedCount = entries.filter(e => e.status === 'rejected').length;
-      const pendingCount = entries.filter(e => e.status === 'pending').length;
-      
-      if (rejectedCount > 0) {
-        setStatus('rejected');
-      } else if (pendingCount > 0) {
-        setStatus('pending');
-      } else if (approvedCount === totalColumns) {
-        setStatus('approved');
-      } else {
-        setStatus('partial');
-      }
-    }
-  }, [options?.entries, category.columns]);
-
+  }, [category.status, t]);
+  
   return {
-    status,
     completionPercentage,
-    getStatusBadgeColor,
-    getStatusLabel
+    statusColor,
+    completionColor,
+    statusName
   };
 };
-
-export default useCategoryStatus;

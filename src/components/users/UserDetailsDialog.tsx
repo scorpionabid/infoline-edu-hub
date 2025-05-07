@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -154,21 +153,21 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
                       {user.role === 'regionadmin' && user.region_id && (
                         <div className="flex items-center space-x-2">
                           <MapPin className="w-4 h-4 text-muted-foreground" />
-                          <span>{user.adminEntity?.regionName || t('region')}</span>
+                          <span>{user.entityName || t('region')}</span>
                         </div>
                       )}
                       
                       {user.role === 'sectoradmin' && user.sector_id && (
                         <div className="flex items-center space-x-2">
                           <MapPin className="w-4 h-4 text-muted-foreground" />
-                          <span>{user.adminEntity?.sectorName || t('sector')}</span>
+                          <span>{user.entityName || t('sector')}</span>
                         </div>
                       )}
                       
                       {user.role === 'schooladmin' && user.school_id && (
                         <div className="flex items-center space-x-2">
                           <MapPin className="w-4 h-4 text-muted-foreground" />
-                          <span>{user.adminEntity?.name || t('school')}</span>
+                          <span>{user.entityName || t('school')}</span>
                         </div>
                       )}
                       
