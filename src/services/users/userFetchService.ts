@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserRole } from '@/types/supabase';
 import { fetchAdminEntityData, formatUserData } from './userUtilService';
@@ -19,140 +18,93 @@ export const getUsers = async (
   }
 ) => {
   try {
-    let query = supabase
-      .from('user_roles')
-      .select(`
-        *,
-        profiles:profiles(*)
-      `, { count: 'exact' });
+    // Bütün istifadəçiləri əldə et
+    const { data: allUsers, error } = await supabase.rpc('get_full_user_data');
+    
+    if (error) throw error;
+    
+    let filteredUsers = allUsers || [];
     
     // Filtrləri tətbiq et
     if (filters) {
       if (filters.role) {
-        query = query.eq('role', filters.role as any);
+        filteredUsers = filteredUsers.filter(user => user.role === filters.role);
       }
       
       if (filters.region_id) {
-        query = query.eq('region_id', filters.region_id);
+        filteredUsers = filteredUsers.filter(user => user.region_id === filters.region_id);
       }
       
       if (filters.sector_id) {
-        query = query.eq('sector_id', filters.sector_id);
+        filteredUsers = filteredUsers.filter(user => user.sector_id === filters.sector_id);
       }
       
       if (filters.school_id) {
-        query = query.eq('school_id', filters.school_id);
+        filteredUsers = filteredUsers.filter(user => user.school_id === filters.school_id);
       }
       
       if (filters.status) {
-        query = query.eq('profiles.status', filters.status);
+        filteredUsers = filteredUsers.filter(user => user.status === filters.status);
       }
       
       if (filters.search) {
-        query = query.or(`profiles.full_name.ilike.%${filters.search}%,profiles.email.ilike.%${filters.search}%`);
+        const searchLower = filters.search.toLowerCase();
+        filteredUsers = filteredUsers.filter(user => 
+          (user.full_name && user.full_name.toLowerCase().includes(searchLower)) || 
+          (user.email && user.email.toLowerCase().includes(searchLower)) ||
+          (user.phone && user.phone.toLowerCase().includes(searchLower))
+        );
       }
     }
+    
+    // Ümumi sayı saxlayaq
+    const count = filteredUsers.length;
     
     // Pagination
     if (pagination) {
       const { page, pageSize } = pagination;
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-      
-      query = query.range(from, to);
+      const startIndex = (page - 1) * pageSize;
+      filteredUsers = filteredUsers.slice(startIndex, startIndex + pageSize);
     }
     
-    const { data, error, count } = await query;
-    
-    if (error) throw error;
-    
-    // Auth API ilə e-poçt məlumatlarını əldə etmək
-    const userIds = data.map(item => item.user_id);
-    
-    // İstifadəçiləri əldə etmək üçün admin_getUserById çağırışı - bu sadəcə demo üçündür
-    // Həqiqi layihədə server tərəfdə adminlar üçün bir edge function olmalıdır
-    const emails: Record<string, string> = {};
-    
-    // Mock data üçün e-poçtları təyin edirik
-    for (const userId of userIds) {
-      const mockEmail = `user-${userId.substring(0, 6)}@infoline.edu`;
-      emails[userId] = mockEmail;
-    }
-    
-    // Default profil məlumatları
-    const defaultProfile = {
-      full_name: '',
-      avatar: null,
-      phone: null,
-      position: null,
-      language: 'az',
-      last_login: null,
-      status: 'active' as 'active' | 'inactive' | 'blocked',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    
-    // Tam istifadəçi məlumatlarını birləşdiririk
-    const formattedUsers: FullUserData[] = data.map(item => {
-      // Supabase-dən gələn profil məlumatları
-      // Burada profiles bir obyekt olmalıdır, əgər deyilsə, boş bir obyekt istifadə edirik
-      const profileData = item.profiles && typeof item.profiles === 'object' ? item.profiles : {};
+    // Formatlaşdırılmış istifadəçi məlumatlarını hazırlayaq
+    const formattedUsers: FullUserData[] = filteredUsers.map(user => ({
+      id: user.id,
+      email: user.email || '',
+      full_name: user.full_name || '',
+      role: user.role as UserRole,
+      region_id: user.region_id,
+      sector_id: user.sector_id,
+      school_id: user.school_id,
+      phone: user.phone,
+      position: user.user_position, // user_position kimi gəldiyi üçün position-a çeviririk
+      language: user.language,
+      avatar: user.avatar,
+      status: user.status as 'active' | 'inactive' | 'blocked',
+      last_login: user.last_login,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
       
-      // Profil məlumatlarını defaultProfile ilə birləşdiririk
-      const profile = {
-        ...defaultProfile,
-        ...profileData
-      };
+      // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
+      name: user.full_name || '',
+      regionId: user.region_id,
+      sectorId: user.sector_id,
+      schoolId: user.school_id,
+      lastLogin: user.last_login,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
       
-      // Status dəyərini düzgün tipə çevirək
-      let typedStatus: 'active' | 'inactive' | 'blocked' = 'active';
-      const statusValue = profile.status || 'active';
-      
-      if (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') {
-        typedStatus = statusValue as 'active' | 'inactive' | 'blocked';
+      // Əlavə tətbiq xüsusiyyətləri
+      twoFactorEnabled: false,
+      notificationSettings: {
+        email: true,
+        system: true
       }
-      
-      // String tipli role istifadə edirik
-      const roleValue = String(item.role) as UserRole;
-      
-      return {
-        id: item.user_id,
-        email: emails[item.user_id] || '',
-        full_name: profile.full_name,
-        role: roleValue,
-        region_id: item.region_id,
-        sector_id: item.sector_id,
-        school_id: item.school_id,
-        phone: profile.phone,
-        position: profile.position,
-        language: profile.language,
-        avatar: profile.avatar,
-        status: typedStatus,
-        last_login: profile.last_login,
-        created_at: profile.created_at,
-        updated_at: profile.updated_at,
-        
-        // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-        name: profile.full_name,
-        regionId: item.region_id,
-        sectorId: item.sector_id,
-        schoolId: item.school_id,
-        lastLogin: profile.last_login,
-        createdAt: profile.created_at,
-        updatedAt: profile.updated_at,
-        
-        // Əlavə tətbiq xüsusiyyətləri
-        twoFactorEnabled: false,
-        notificationSettings: {
-          email: true,
-          system: true
-        }
-      };
-    });
+    }));
     
     return { 
       data: formattedUsers, 
-      count: count || 0 
+      count
     };
   } catch (error: any) {
     console.error('İstifadəçiləri əldə edərkən xəta baş verdi:', error);
@@ -163,81 +115,52 @@ export const getUsers = async (
 // İstifadəçini əldə et
 export const getUser = async (userId: string): Promise<FullUserData | null> => {
   try {
-    // Rol məlumatlarını əldə et
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    // Yeni yaratdığımız get_full_user_data(uuid) funksiyasını çağıraq
+    const { data: userData, error } = await supabase.rpc('get_full_user_data', { 
+      user_id_param: userId 
+    });
     
-    if (roleError) throw roleError;
+    if (error) throw error;
     
-    // Profil məlumatlarını əldə et
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    // Əgər məlumat yoxdursa
+    if (!userData) return null;
     
-    if (profileError) {
-      console.warn('Profil məlumatlarını əldə edərkən xəta:', profileError);
-      // Xəta olsa da davam edirik, amma boş profil məlumatları istifadə edirik
-    }
+    const user = userData as any;
     
-    // Default profil məlumatları
-    const profile = {
-      full_name: '',
-      avatar: null,
-      phone: null,
-      position: null,
-      language: 'az',
-      last_login: null,
-      status: 'active' as 'active' | 'inactive' | 'blocked',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      ...(profileData || {})
-    };
+    // Admin entity məlumatları (ehtiyac olmasa silinə bilər)
+    const adminEntityData = await fetchAdminEntityData({
+      role: user.role,
+      region_id: user.region_id,
+      sector_id: user.sector_id,
+      school_id: user.school_id
+    });
     
-    // Mock email - həqiqi layihədə server-side edge function ilə əldə ediləcək
-    const mockEmail = `user-${userId.substring(0, 6)}@infoline.edu`;
-    
-    // Status dəyərini düzgün tipə çevirək
-    let typedStatus: 'active' | 'inactive' | 'blocked' = 'active';
-    const statusValue = profile.status || 'active';
-    
-    if (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') {
-      typedStatus = statusValue as 'active' | 'inactive' | 'blocked';
-    }
-    
-    // Admin entity məlumatları
-    const adminEntityData = await fetchAdminEntityData(roleData);
-    
-    // Tam istifadəçi məlumatlarını birləşdiririk
+    // Tam istifadəçi məlumatlarını düzəlt
     const fullUserData: FullUserData = {
-      id: userId,
-      email: mockEmail,
-      full_name: profile.full_name,
-      role: roleData.role,
-      region_id: roleData.region_id,
-      sector_id: roleData.sector_id,
-      school_id: roleData.school_id,
-      phone: profile.phone,
-      position: profile.position,
-      language: profile.language,
-      avatar: profile.avatar,
-      status: typedStatus,
-      last_login: profile.last_login,
-      created_at: profile.created_at,
-      updated_at: profile.updated_at,
+      id: user.id,
+      email: user.email || '',
+      full_name: user.full_name || '',
+      role: user.role,
+      region_id: user.region_id,
+      sector_id: user.sector_id,
+      school_id: user.school_id,
+      phone: user.phone,
+      position: user.position, // JSON daxilində artıq position kimi qayıdır
+      language: user.language,
+      avatar: user.avatar,
+      status: user.status as 'active' | 'inactive' | 'blocked',
+      last_login: user.last_login,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
       
       // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-      name: profile.full_name,
-      regionId: roleData.region_id,
-      sectorId: roleData.sector_id,
-      schoolId: roleData.school_id,
-      lastLogin: profile.last_login,
-      createdAt: profile.created_at,
-      updatedAt: profile.updated_at,
+      name: user.full_name,
+      regionId: user.region_id,
+      sectorId: user.sector_id,
+      schoolId: user.school_id,
+      lastLogin: user.last_login,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
       
       // Admin entitysi haqqında məlumatlar
       adminEntity: adminEntityData,

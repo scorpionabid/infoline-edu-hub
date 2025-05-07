@@ -845,8 +845,24 @@ export type Database = {
         Returns: number
       }
       get_full_user_data: {
-        Args: { user_id_param: string }
-        Returns: Json
+        Args: Record<PropertyKey, never> | { user_id_param: string }
+        Returns: {
+          id: string
+          email: string
+          full_name: string
+          role: string
+          region_id: string
+          sector_id: string
+          school_id: string
+          phone: string
+          user_position: string
+          language: string
+          avatar: string
+          status: string
+          last_login: string
+          created_at: string
+          updated_at: string
+        }[]
       }
       get_recent_activities: {
         Args: { limit_param?: number }

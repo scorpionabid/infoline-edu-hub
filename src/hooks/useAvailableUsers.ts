@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { FullUserData } from '@/types/supabase';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Mövcud istifadəçiləri əldə etmək üçün hook
@@ -13,6 +14,7 @@ export const useAvailableUsers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { user: currentUser, isAuthenticated } = useAuth();
+  const { toast } = useToast();
 
   const fetchAvailableUsers = useCallback(async () => {
     if (!isAuthenticated || !currentUser) {
@@ -29,41 +31,31 @@ export const useAvailableUsers = () => {
       
       console.log('İstifadəçiləri əldə etmə başladı. Cari istifadəçi:', currentUser.id);
       
-      // Edge function-dan bütün istifadəçiləri və rollarını əldə edirik
-      const { data, error: functionError } = await supabase.functions.invoke('get_all_users_with_roles');
+      // Yeni yaratdığımız get_full_user_data() funksiyasını çağırırıq
+      const { data, error: functionError } = await supabase.rpc('get_full_user_data');
       
       if (functionError) {
-        console.error('Edge function ilə istifadəçilər əldə edilərkən xəta:', functionError);
+        console.error('Funksiya ilə istifadəçilər əldə edilərkən xəta:', functionError);
         throw new Error(`İstifadəçilər əldə edilərkən xəta: ${functionError.message}`);
       }
       
       // Dataların təhlükəsiz şəkildə yoxlanması
       if (!data) {
-        console.log('Edge function boş data qaytardı');
+        console.log('Funksiya boş data qaytardı');
         setUsers([]);
         setLoading(false);
         return;
       }
       
-      // data.users-in massiv olduğunu yoxlayaq
-      if (!data.users || !Array.isArray(data.users)) {
-        console.log('Edge function düzgün formatda data qaytarmadı');
-        // Burada data.users-i yeni bir boş massiv olaraq təyin edirik
-        const safeUsers: any[] = [];
-        // Növbəti əməliyyatlarda data.users əvəzinə safeUsers istifadə edəcəyik
-        data.users = safeUsers;
-      }
+      console.log(`${data.length} istifadəçi əldə edildi`);
       
-      console.log(`${data.users.length} istifadəçi əldə edildi`);
-      
-      // Özünü çıxaraq - data.users-in təhlükəsiz olduğundan əmin olaq
-      const safeUsers = Array.isArray(data.users) ? data.users : [];
-      const otherUsers = safeUsers.filter(user => user && user.id && user.id !== currentUser.id);
+      // Özünü çıxaraq
+      const otherUsers = data.filter(user => user && user.id && user.id !== currentUser.id);
       console.log(`Cari istifadəçi çıxarıldıqdan sonra ${otherUsers.length} istifadəçi qalır`);
       
       // Admin təyinatı üçün lazımi statusda olan istifadəçiləri filtrlə
       const availableUsers = otherUsers.filter(user => {
-        // İstifadəçi aktiv vəziyyətdədirsə və profiles cədvəlində tam məlumatları varsa
+        // İstifadəçi aktiv vəziyyətdədirsə
         const isActive = user.status !== 'blocked' && user.full_name;
         
         // Təyin edilməmiş istifadəçilər (rolu user və ya boşdursa)
@@ -96,7 +88,7 @@ export const useAvailableUsers = () => {
         sector_id: user.sector_id,
         school_id: user.school_id,
         phone: user.phone,
-        position: user.position,
+        position: user.user_position, // user_position kimi gəldiyi üçün position-a çeviririk
         language: user.language || 'az',
         avatar: user.avatar,
         status: user.status || 'active',
@@ -114,7 +106,7 @@ export const useAvailableUsers = () => {
         updatedAt: user.updated_at,
         
         // Admin entity məlumatları
-        adminEntity: user.adminEntity || null
+        adminEntity: null
       } as FullUserData));
       
       setUsers(formattedUsers);
@@ -126,7 +118,7 @@ export const useAvailableUsers = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentUser, isAuthenticated]);
+  }, [currentUser, isAuthenticated, toast]);
 
   // Komponent yükləndikdə istifadəçiləri avtomatik əldə et
   useEffect(() => {
