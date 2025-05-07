@@ -1,276 +1,275 @@
-import React, { useState, useCallback } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { School } from '@/types/supabase';
+
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Download, Upload, X } from 'lucide-react';
-import { Progress } from "@/components/ui/progress"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { cn } from "@/lib/utils"
+import { useLanguage } from '@/context/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Download, Upload, AlertTriangle } from 'lucide-react';
 
 interface ImportDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onCreate: (school: Omit<School, 'id'>) => Promise<void>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
 }
 
-interface ExcelRow {
-  [key: string]: any;
-}
-
-const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onCreate }) => {
-  const { t } = useLanguageSafe();
-  const { toast: useToastHook } = useToast();
-
+const ImportDialog: React.FC<ImportDialogProps> = ({ 
+  open, 
+  onOpenChange, 
+  onSuccess 
+}) => {
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  
   const [file, setFile] = useState<File | null>(null);
-  const [templateFile, setTemplateFile] = useState<File | null>(null);
-  const [data, setData] = useState<ExcelRow[]>([]);
-  const [isImporting, setIsImporting] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [importProgress, setImportProgress] = useState(0);
-  const [importResults, setImportResults] = useState<{ success: number; failed: number }>({ success: 0, failed: 0 });
-  const [errorMessages, setErrorMessages] = useState<string[]>([]);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0] || null;
-    setFile(selectedFile);
-    setData([]);
-    setErrorMessages([]);
-    setImportResults({ success: 0, failed: 0 });
-  };
-
-  const handleTemplateFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0] || null;
-    setTemplateFile(selectedFile);
-  };
-
-  const processFile = async (file: File) => {
-    setIsProcessing(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        const binaryStr = e.target.result;
-        const workbook = XLSX.read(binaryStr, { type: 'binary' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const excelData: ExcelRow[] = XLSX.utils.sheet_to_json(worksheet, { raw: false });
-        setData(excelData);
-      };
-      reader.onerror = () => {
-        toast.error(t('fileReadError') || 'Fayl oxunarkən xəta baş verdi.');
-      };
-      reader.onabort = () => {
-        toast.warning(t('fileReadAborted') || 'Fayl oxunması dayandırıldı.');
-      };
-      reader.readAsBinaryString(file);
-    } catch (error) {
-      console.error("Fayl işləmə xətası:", error);
-      toast.error(t('fileProcessingError') || 'Fayl işləmə zamanı xəta baş verdi.');
-    } finally {
-      setIsProcessing(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<{ success: number; failed: number } | null>(null);
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+      setError(null);
     }
   };
-
-  const processImport = async (file: File) => {
-    processFile(file);
+  
+  const downloadTemplate = () => {
+    // Create a template for schools import
+    const headers = [
+      'name',
+      'principal_name',
+      'address',
+      'region_id',
+      'sector_id',
+      'phone',
+      'email',
+      'student_count',
+      'teacher_count',
+      'status',
+      'type',
+      'language',
+      'admin_email'
+    ];
+    
+    const csvContent = headers.join(',') + '\n';
+    
+    // Create a blob and download it
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'schools_import_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
-
-  const startImport = async (templateFile: File | null) => {
-    if (!data || data.length === 0) {
-      toast.error(t('noDataToImport') || 'İdxal etmək üçün məlumat yoxdur.');
-      return;
-    }
-
-    setIsImporting(true);
-    setImportProgress(0);
-    setImportResults({ success: 0, failed: 0 });
-    setErrorMessages([]);
-
-    const totalRows = data.length;
-    let successfulImports = 0;
-    let failedImports = 0;
-    const currentErrorMessages: string[] = [];
-
-    for (let i = 0; i < totalRows; i++) {
-      try {
-        const row = data[i];
-        const schoolData: Omit<School, 'id'> = {
-          name: row[t('schoolNameColumn')] || '',
-          region_id: row[t('regionColumn')] || '',
-          sector_id: row[t('sectorColumn')] || '',
-          address: row[t('addressColumn')] || '',
-          principal_name: row[t('principalNameColumn')] || '',
-          contact_phone: row[t('contactPhoneColumn')] || '',
-          email: row[t('emailColumn')] || '',
-          status: row[t('statusColumn')] || 'active',
-          notes: row[t('notesColumn')] || '',
-        };
-
-        await onCreate(schoolData);
-        successfulImports++;
-      } catch (error: any) {
-        console.error(`Sətir ${i + 1} idxal edilərkən xəta:`, error);
-        failedImports++;
-        currentErrorMessages.push(`${t('row')} ${i + 1}: ${error.message || t('importFailed')}`);
-      }
-
-      const progress = ((i + 1) / totalRows) * 100;
-      setImportProgress(progress);
-    }
-
-    setIsImporting(false);
-    setImportResults({ success: successfulImports, failed: failedImports });
-    setErrorMessages(currentErrorMessages);
-
-    if (failedImports === 0) {
-      toast.success(t('allSchoolsImported') || 'Bütün məktəblər uğurla idxal edildi!');
-    } else {
-      toast.success(`${successfulImports} ${t('schoolsImported')} ${failedImports} ${t('schoolsFailed')}`);
-    }
-  };
-
-  const handleImportWithTemplate = async (withTemplate: boolean) => {
-    if (withTemplate && !templateFile) {
-      toast.error(t('noTemplateFileSelected') || 'Zəhmət olmasa, şablon faylı seçin.');
-      return;
-    }
-
+  
+  const handleImport = async () => {
     if (!file) {
-      toast.error(t('noFileSelected') || 'Zəhmət olmasa, fayl seçin.');
+      setError(t('pleaseSelectFile'));
       return;
     }
-
-    startImport(templateFile);
+    
+    if (file.type !== 'text/csv' && file.type !== 'application/vnd.ms-excel') {
+      setError(t('invalidFileType'));
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Read the CSV file
+      const text = await file.text();
+      const lines = text.split('\n');
+      
+      // Parse headers and validate
+      const headers = lines[0].split(',').map(h => h.trim());
+      const requiredHeaders = ['name', 'sector_id'];
+      
+      const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+      if (missingHeaders.length > 0) {
+        throw new Error(`${t('missingRequiredFields')}: ${missingHeaders.join(', ')}`);
+      }
+      
+      // Process data rows
+      const dataRows = lines.slice(1).filter(line => line.trim());
+      const schools = [];
+      const errors = [];
+      
+      for (let i = 0; i < dataRows.length; i++) {
+        try {
+          const values = dataRows[i].split(',').map(v => v.trim());
+          if (values.length !== headers.length) {
+            errors.push(`${t('row')} ${i + 2}: ${t('invalidColumnCount')}`);
+            continue;
+          }
+          
+          const school: Record<string, any> = {};
+          headers.forEach((header, index) => {
+            school[header] = values[index];
+          });
+          
+          // Validate required fields
+          if (!school.name || !school.sector_id) {
+            errors.push(`${t('row')} ${i + 2}: ${t('missingNameOrSector')}`);
+            continue;
+          }
+          
+          // Convert numeric fields
+          if (school.student_count) {
+            school.student_count = parseInt(school.student_count);
+          }
+          if (school.teacher_count) {
+            school.teacher_count = parseInt(school.teacher_count);
+          }
+          
+          schools.push(school);
+        } catch (err) {
+          errors.push(`${t('row')} ${i + 2}: ${(err as Error).message}`);
+        }
+      }
+      
+      if (errors.length > 0) {
+        throw new Error(`${t('validationErrors')}:\n${errors.join('\n')}`);
+      }
+      
+      // Insert schools into database
+      let successCount = 0;
+      const failedRows: number[] = [];
+      
+      for (let i = 0; i < schools.length; i++) {
+        try {
+          const { error } = await supabase.from('schools').insert([schools[i]]);
+          
+          if (error) throw error;
+          successCount++;
+        } catch (err) {
+          failedRows.push(i + 2); // +2 for 1-indexing and header row
+          console.error(`Error on row ${i + 2}:`, err);
+        }
+      }
+      
+      if (failedRows.length > 0) {
+        setError(`${t('someRowsFailed')}: ${failedRows.join(', ')}`);
+      }
+      
+      setResults({
+        success: successCount,
+        failed: failedRows.length
+      });
+      
+      if (successCount > 0) {
+        toast({
+          title: t('importSuccess'),
+          description: `${successCount} ${t('schoolsImported')}${failedRows.length > 0 ? `, ${failedRows.length} ${t('failed')}` : ''}`,
+        });
+        
+        if (successCount === schools.length) {
+          // All schools imported successfully
+          onSuccess();
+          handleClose();
+        }
+      } else {
+        toast({
+          title: t('importFailed'),
+          description: t('noSchoolsImported'),
+          variant: 'destructive'
+        });
+      }
+      
+    } catch (err) {
+      console.error('Import error:', err);
+      setError((err as Error).message);
+      
+      toast({
+        title: t('importFailed'),
+        description: (err as Error).message,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
-
+  
+  const handleClose = () => {
+    setFile(null);
+    setError(null);
+    setResults(null);
+    onOpenChange(false);
+  };
+  
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[625px]">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{t('importSchools')}</DialogTitle>
-          <DialogDescription>
-            {t('importSchoolsDescription')}
-          </DialogDescription>
         </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="importFile" className="text-right">
-              {t('importFileLabel')}
-            </Label>
-            <Input
+        
+        <div className="py-4 space-y-6">
+          <Button 
+            variant="outline" 
+            onClick={downloadTemplate}
+            className="w-full"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {t('downloadTemplate')}
+          </Button>
+          
+          <div className="border-2 border-dashed rounded-md p-6 text-center">
+            <input
               type="file"
-              id="importFile"
-              className="col-span-3"
+              id="file-upload"
+              accept=".csv,.xls,.xlsx"
               onChange={handleFileChange}
-              disabled={isImporting}
+              className="hidden"
             />
+            <label 
+              htmlFor="file-upload" 
+              className="cursor-pointer flex flex-col items-center"
+            >
+              <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+              <span className="text-sm font-medium mb-1">
+                {file ? file.name : t('clickToUpload')}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                CSV {t('filesOnly')}
+              </span>
+            </label>
           </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="templateFile" className="text-right">
-              {t('templateFileLabel')}
-            </Label>
-            <Input
-              type="file"
-              id="templateFile"
-              className="col-span-3"
-              onChange={handleTemplateFileChange}
-              disabled={isImporting}
-            />
-          </div>
-
-          {isProcessing && (
-            <div className="flex items-center space-x-2">
-              <Progress value={100} className="flex-1" />
-              <span>{t('processingFile')}</span>
+          
+          {error && (
+            <div className="bg-destructive/10 p-3 rounded-md border border-destructive/20 text-sm text-destructive flex items-start">
+              <AlertTriangle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+              <div className="whitespace-pre-wrap">{error}</div>
             </div>
           )}
-
-          {data.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">{t('previewData')}</h4>
-              <ScrollArea className="max-h-[300px]">
-                <Table>
-                  <TableCaption>{t('previewOfImportedData')}</TableCaption>
-                  <TableHeader>
-                    <TableRow>
-                      {Object.keys(data[0]).map((key) => (
-                        <TableHead key={key}>{key}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.map((row, index) => (
-                      <TableRow key={index}>
-                        {Object.values(row).map((value, i) => (
-                          <TableCell key={i}>{value}</TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </div>
-          )}
-
-          {isImporting && (
-            <div className="flex items-center space-x-2">
-              <Progress value={importProgress} className="flex-1" />
-              <span>{t('importing')} {importProgress.toFixed(0)}%</span>
-            </div>
-          )}
-
-          {errorMessages.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">{t('importErrors')}</h4>
-              <ul className="list-disc pl-5">
-                {errorMessages.map((message, index) => (
-                  <li key={index} className="text-red-500 text-sm">{message}</li>
-                ))}
-              </ul>
+          
+          {results && (
+            <div className="bg-green-50 p-3 rounded-md border border-green-200 text-sm">
+              <p>
+                <strong>{t('importResults')}</strong>
+              </p>
+              <p className="text-green-600">
+                ✓ {results.success} {t('schoolsImportedSuccessfully')}
+              </p>
+              {results.failed > 0 && (
+                <p className="text-red-600">
+                  ✗ {results.failed} {t('schoolsFailedToImport')}
+                </p>
+              )}
             </div>
           )}
         </div>
-
+        
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isImporting}>
+          <Button variant="outline" onClick={handleClose}>
             {t('cancel')}
           </Button>
-          <Button
-            type="button"
-            onClick={() => handleImportWithTemplate(true)}
-            disabled={isImporting || isProcessing || !file}
-          >
-            {t('importWithTemplate')}
-          </Button>
-          <Button
-            type="button"
-            onClick={() => handleImportWithTemplate(false)}
-            disabled={isImporting || isProcessing || !file}
-          >
-            {t('importWithoutTemplate')}
+          <Button onClick={handleImport} disabled={!file || isLoading}>
+            {isLoading ? t('importing') : t('import')}
           </Button>
         </DialogFooter>
       </DialogContent>

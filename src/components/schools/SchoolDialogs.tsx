@@ -56,11 +56,11 @@ export const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
     }
 
     try {
-      // Update password in Supabase
-      const { error } = await supabase.admin.updateUserById(
-        selectedSchool.admin_id,
-        { password: newPassword }
-      );
+      // Supabase admin API bu client-side yoxdur, auth.admin əvəzinə RPC istifadə edə bilərsiniz
+      const { error } = await supabase.rpc('reset_user_password', { 
+        user_id: selectedSchool.admin_id,
+        new_password: newPassword
+      });
 
       if (error) throw error;
 
@@ -108,7 +108,11 @@ export const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
       )}
 
       {/* Import Dialog */}
-      <ImportDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={refreshSchools} />
+      <ImportDialog 
+        open={importOpen} 
+        onOpenChange={setImportOpen} 
+        onSuccess={refreshSchools} 
+      />
 
       {/* Admin Dialog */}
       {selectedSchool && (
@@ -116,7 +120,6 @@ export const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
           open={adminDialogOpen}
           onClose={() => setAdminDialogOpen(false)}
           school={selectedSchool}
-          onUpdate={refreshSchools}
           onResetPassword={handleResetPassword}
         />
       )}

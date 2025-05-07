@@ -1,4 +1,3 @@
-
 // School interface
 export interface School {
   id: string;
@@ -19,6 +18,7 @@ export interface School {
   created_at?: string;
   updated_at?: string;
   principal_name?: string;
+  principalName?: string; // TypeScript camelCase alias
   logo?: string;
 }
 
@@ -62,7 +62,7 @@ export interface SchoolStat {
   pendingForms: number;
   principal?: string;
   formsCompleted?: number;
-  formsTotal?: number;
+  formsTotal?: number; 
   totalForms?: number; 
   address?: string;
   phone?: string;

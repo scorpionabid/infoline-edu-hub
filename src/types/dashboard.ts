@@ -159,7 +159,6 @@ export interface DeadlineItem {
 
 // Status Cards Props
 export interface StatusCardsProps {
-  formStats?: FormStats;
   pending?: number;
   approved?: number;
   rejected?: number;

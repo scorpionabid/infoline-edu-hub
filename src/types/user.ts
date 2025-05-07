@@ -88,6 +88,8 @@ export interface AuthContextType {
   error: string | null;
   logIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
   logOut: () => Promise<void>;
+  logout: () => Promise<void>; // Alias for logOut
+  signOut: () => Promise<void>; // Alias for logOut
   register: (userData: any) => Promise<any>;
   updateUser: (userData: Partial<FullUserData>) => Promise<void>;
   updateUserProfile?: (userData: Partial<FullUserData>) => Promise<void>;

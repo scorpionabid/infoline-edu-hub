@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { 
   Card, 
@@ -15,9 +16,9 @@ import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { ActivityLogCard } from '@/components/dashboard/sector-admin/ActivityLogCard';
 import { SchoolsList } from '@/components/dashboard/sector-admin/SchoolsList';
-import { SchoolsTable } from '@/components/dashboard/sector-admin/SchoolsTable';
+import SchoolsTable from '@/components/dashboard/sector-admin/SchoolsTable';
 import SectorStatsCard from '@/components/dashboard/sector-admin/SectorStatsCard';
-import { SchoolStat } from '@/types/school';
+import { SchoolStat } from '@/types/dashboard';
 
 interface ActivityLogCardProps {
   items: {
@@ -93,6 +94,7 @@ const SectorAdminDashboard: React.FC = () => {
             if (statsError) throw statsError;
             
             if (statsData) {
+              const currentDate = new Date().toISOString();
               const schoolStatsList = statsData.map(school => {
                 // Bu məktəb üçün təxmini tamamlanma faizi hesabla
                 // Əsl məlumatları verilənlər bazasından gətirmək üçün
@@ -100,14 +102,17 @@ const SectorAdminDashboard: React.FC = () => {
                 const formsCompleted = Math.floor(Math.random() * 10);
                 const totalForms = 10; // Bu dəyər dinamik olaraq hesablanmalıdır
                 const completionRate = school.completion_rate || Math.floor((formsCompleted / totalForms) * 100);
+                const pendingForms = Math.floor(Math.random() * 5);
                 
                 return {
                   id: school.id,
                   name: school.name,
-                  formsCompleted,
-                  totalForms,
                   completionRate,
-                  status: school.status
+                  status: school.status,
+                  lastUpdate: currentDate,
+                  pendingForms,
+                  formsCompleted,
+                  totalForms
                 };
               });
               

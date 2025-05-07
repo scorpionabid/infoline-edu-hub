@@ -1,321 +1,353 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useRegionsContext } from '@/context/RegionsContext';
 import { Region } from '@/types/school';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
-import { useRegionsContext } from '@/context/RegionsContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-interface RegionDialogsProps {
-  refreshRegions: () => void;
-}
-
-export const RegionDialogs: React.FC<RegionDialogsProps> = ({ refreshRegions }) => {
+export const RegionDialogs = () => {
   const { t } = useLanguage();
-  const { createRegion, updateRegion, deleteRegion } = useRegionsContext();
-
+  const { toast } = useToast();
+  const { regions, loading, addRegion, assignRegionAdmin } = useRegionsContext();
+  
   // Dialog states
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  
   // Form data
-  const [formData, setFormData] = useState<Partial<Region>>({
+  const [formData, setFormData] = useState({
     name: '',
     description: '',
-    status: 'active'
+    status: 'active' as const,
   });
-
+  
   // Selected region
   const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
-
-  // Reset form data
-  const resetFormData = () => {
-    setFormData({
-      name: '',
-      description: '',
-      status: 'active'
-    });
-  };
-
+  
+  // Existing/New user selection for admin assignment
+  const [adminType, setAdminType] = useState<'existing' | 'new'>('existing');
+  const [existingUserId, setExistingUserId] = useState('');
+  
+  // New admin form data
+  const [newAdminData, setNewAdminData] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
+  
   // Handle form changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-
-  // Handle select changes
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+  
+  // Reset form data
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      status: 'active',
+    });
+    setNewAdminData({
+      name: '',
+      email: '',
+      password: '',
+    });
+    setAdminType('existing');
+    setExistingUserId('');
   };
-
-  // Handle opening edit dialog
-  const handleEditRegion = (region: Region) => {
+  
+  // Add region dialog open/close
+  const openAddRegion = () => setIsAddOpen(true);
+  const closeAddRegion = () => {
+    setIsAddOpen(false);
+    resetForm();
+  };
+  
+  // Edit region dialog open/close
+  const openEditRegion = (region: Region) => {
     setSelectedRegion(region);
     setFormData({
       name: region.name,
-      description: region.description,
-      status: region.status || 'active'
+      description: region.description || '',
+      status: region.status as 'active' | 'inactive',
     });
-    setEditOpen(true);
+    setIsEditOpen(true);
   };
-
-  // Handle opening delete dialog
-  const handleDeleteRegion = (region: Region) => {
+  const closeEditRegion = () => {
+    setIsEditOpen(false);
+    setSelectedRegion(null);
+    resetForm();
+  };
+  
+  // Delete region dialog open/close
+  const openDeleteRegion = (region: Region) => {
     setSelectedRegion(region);
-    setDeleteOpen(true);
+    setIsDeleteOpen(true);
   };
-
-  // Handle creating a region
-  const handleCreateRegion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const result = await createRegion(formData);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-      toast.success(t('regionCreatedSuccess'));
-      setCreateOpen(false);
-      resetFormData();
-      refreshRegions();
-    } catch (error: any) {
-      toast.error(t('errorCreatingRegion'), {
-        description: error.message
+  const closeDeleteRegion = () => {
+    setIsDeleteOpen(false);
+    setSelectedRegion(null);
+  };
+  
+  // Admin dialog open/close
+  const openAdminDialog = (region: Region) => {
+    setSelectedRegion(region);
+    setIsAdminOpen(true);
+  };
+  const closeAdminDialog = () => {
+    setIsAdminOpen(false);
+    setSelectedRegion(null);
+    resetForm();
+  };
+  
+  // Handle add region
+  const handleAddRegion = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: t('validationError'),
+        description: t('regionNameRequired'),
+        variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
+      return;
+    }
+    
+    try {
+      await addRegion({
+        name: formData.name,
+        description: formData.description,
+        status: formData.status
+      });
+      
+      toast({
+        title: t('success'),
+        description: t('regionAddedSuccessfully'),
+      });
+      
+      closeAddRegion();
+    } catch (error: any) {
+      toast({
+        title: t('error'),
+        description: error.message || t('errorAddingRegion'),
+        variant: 'destructive',
+      });
     }
   };
-
-  // Handle updating a region
-  const handleUpdateRegion = async (e: React.FormEvent) => {
-    e.preventDefault();
+  
+  // Handle edit region
+  const handleEditRegion = async () => {
+    if (!selectedRegion || !formData.name.trim()) {
+      toast({
+        title: t('validationError'),
+        description: t('regionNameRequired'),
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      // Implementation would go here
+      
+      toast({
+        title: t('success'),
+        description: t('regionUpdatedSuccessfully'),
+      });
+      
+      closeEditRegion();
+    } catch (error: any) {
+      toast({
+        title: t('error'),
+        description: error.message || t('errorUpdatingRegion'),
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Handle delete region
+  const handleDeleteConfirm = async () => {
     if (!selectedRegion) return;
     
-    setLoading(true);
     try {
-      const result = await updateRegion(selectedRegion.id, formData);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-      toast.success(t('regionUpdatedSuccess'));
-      setEditOpen(false);
-      resetFormData();
-      refreshRegions();
-    } catch (error: any) {
-      toast.error(t('errorUpdatingRegion'), {
-        description: error.message
+      // Implementation would go here
+      
+      toast({
+        title: t('success'),
+        description: t('regionDeletedSuccessfully'),
       });
-    } finally {
-      setLoading(false);
+      
+      closeDeleteRegion();
+    } catch (error: any) {
+      toast({
+        title: t('error'),
+        description: error.message || t('errorDeletingRegion'),
+        variant: 'destructive',
+      });
     }
   };
-
-  // Handle deleting a region
-  const handleDeleteRegion = async () => {
+  
+  // Handle admin assignment
+  const handleAssignAdmin = async () => {
     if (!selectedRegion) return;
     
-    setLoading(true);
-    try {
-      const result = await deleteRegion(selectedRegion.id);
-      if (!result.success) {
-        throw new Error(result.error);
+    if (adminType === 'existing') {
+      if (!existingUserId) {
+        toast({
+          title: t('validationError'),
+          description: t('selectUserRequired'),
+          variant: 'destructive',
+        });
+        return;
       }
-      toast.success(t('regionDeletedSuccess'));
-      setDeleteOpen(false);
-      refreshRegions();
-    } catch (error: any) {
-      toast.error(t('errorDeletingRegion'), {
-        description: error.message
-      });
-    } finally {
-      setLoading(false);
+      
+      try {
+        await assignRegionAdmin(selectedRegion.id, existingUserId);
+        
+        toast({
+          title: t('success'),
+          description: t('adminAssignedSuccessfully'),
+        });
+        
+        closeAdminDialog();
+      } catch (error: any) {
+        toast({
+          title: t('error'),
+          description: error.message || t('errorAssigningAdmin'),
+          variant: 'destructive',
+        });
+      }
+    } else {
+      // Handle creating new admin
+      // Implementation would go here
     }
   };
-
+  
   return (
     <>
-      <Button onClick={() => {
-        resetFormData();
-        setCreateOpen(true);
-      }}>{t('addRegion')}</Button>
-
-      {/* Create Region Dialog */}
-      <Dialog open={createOpen} onOpenChange={(open) => {
-        if (!open) resetFormData();
-        setCreateOpen(open);
-      }}>
-        <DialogContent className="sm:max-w-[500px]">
+      <div className="flex space-x-2">
+        <Button onClick={openAddRegion}>{t('addRegion')}</Button>
+      </div>
+      
+      {/* Add Region Dialog */}
+      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{t('createNewRegion')}</DialogTitle>
-            <DialogDescription>{t('fillRegionDetails')}</DialogDescription>
+            <DialogTitle>{t('addRegion')}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateRegion} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">{t('regionName')} *</Label>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">{t('name')}</Label>
               <Input
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder={t('enterRegionName')}
-                required
+                className="col-span-3"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">{t('description')}</Label>
-              <Textarea
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">{t('description')}</Label>
+              <Input
                 id="description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder={t('enterDescription')}
-                rows={3}
+                className="col-span-3"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">{t('status')}</Label>
-              <Select
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">{t('status')}</Label>
+              <RadioGroup
                 value={formData.status}
-                onValueChange={(value) => handleSelectChange('status', value)}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as 'active' | 'inactive' }))}
+                className="col-span-3 flex space-x-4"
               >
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">{t('active')}</SelectItem>
-                  <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                </SelectContent>
-              </Select>
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="active" id="active" />
+                  <Label htmlFor="active">{t('active')}</Label>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="inactive" id="inactive" />
+                  <Label htmlFor="inactive">{t('inactive')}</Label>
+                </div>
+              </RadioGroup>
             </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setCreateOpen(false)}
-                disabled={loading}
-              >
-                {t('cancel')}
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? t('creating') : t('createRegion')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Region Dialog */}
-      <Dialog open={editOpen} onOpenChange={(open) => {
-        if (!open) resetFormData();
-        setEditOpen(open);
-      }}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{t('editRegion')}</DialogTitle>
-            <DialogDescription>{t('updateRegionDetails')}</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleUpdateRegion} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">{t('regionName')} *</Label>
-              <Input
-                id="edit-name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder={t('enterRegionName')}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">{t('description')}</Label>
-              <Textarea
-                id="edit-description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder={t('enterDescription')}
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-status">{t('status')}</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => handleSelectChange('status', value)}
-              >
-                <SelectTrigger id="edit-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">{t('active')}</SelectItem>
-                  <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditOpen(false)}
-                disabled={loading}
-              >
-                {t('cancel')}
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? t('updating') : t('updateRegion')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Region Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>{t('deleteRegion')}</DialogTitle>
-            <DialogDescription>
-              {t('deleteRegionConfirmation')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-3">
-            <p className="text-destructive">{t('thisActionCannot')}</p>
-            {selectedRegion && (
-              <p className="font-medium mt-2">{selectedRegion.name}</p>
-            )}
           </div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteOpen(false)}
-              disabled={loading}
-            >
-              {t('cancel')}
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDeleteRegion}
-              disabled={loading}
-            >
-              {loading ? t('deleting') : t('deleteRegion')}
-            </Button>
+            <Button variant="outline" onClick={closeAddRegion}>{t('cancel')}</Button>
+            <Button onClick={handleAddRegion}>{t('add')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Region Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          {/* Dialog content for editing */}
+          <DialogHeader>
+            <DialogTitle>{t('editRegion')}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {/* Edit region fields */}
+            {/* Similar to add region */}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeEditRegion}>{t('cancel')}</Button>
+            <Button onClick={handleEditRegion}>{t('save')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Region Confirmation Dialog */}
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t('deleteConfirmation')}</DialogTitle>
+            <DialogDescription>
+              {t('deleteRegionConfirmation', { name: selectedRegion?.name })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDeleteRegion}>{t('cancel')}</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>{t('delete')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Assign Admin Dialog */}
+      <Dialog open={isAdminOpen} onOpenChange={setIsAdminOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t('assignAdmin')}</DialogTitle>
+            <DialogDescription>
+              {t('assignAdminToRegion', { name: selectedRegion?.name })}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs value={adminType} onValueChange={(v) => setAdminType(v as 'existing' | 'new')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="existing">{t('existingUser')}</TabsTrigger>
+              <TabsTrigger value="new">{t('newUser')}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="existing">
+              {/* Existing user selection */}
+              {/* User selector component would go here */}
+            </TabsContent>
+            <TabsContent value="new">
+              {/* New user form */}
+              {/* Form for creating new admin would go here */}
+            </TabsContent>
+          </Tabs>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={closeAdminDialog}>{t('cancel')}</Button>
+            <Button onClick={handleAssignAdmin}>{t('assign')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

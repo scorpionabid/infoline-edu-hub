@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -12,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import EnhancedApprovalDialog from '../approval/EnhancedApprovalDialog';
-import { SchoolsTable } from './sector-admin/SchoolsTable';
+import SchoolsTable from './sector-admin/SchoolsTable';
 
 interface SectorAdminDashboardData {
   // Add properties of SectorAdminDashboardData type here
@@ -282,3 +283,5 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
     </>
   );
 };
+
+export default SectorAdminDashboard;

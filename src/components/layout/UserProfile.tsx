@@ -10,11 +10,11 @@ import { usePermissions } from '@/hooks/auth/usePermissions';
 const UserProfile = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const { currentRole } = usePermissions();
   
   const handleSignOut = async () => {
-    await signOut();
+    await logout();
     navigate('/login');
   };
 

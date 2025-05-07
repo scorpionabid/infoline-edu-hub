@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
-import { NotificationsCard } from '../common/NotificationsCard';
+import NotificationsCard from '../common/NotificationsCard';
 import { SchoolAdminDashboardData, FormItem, StatusCardsProps } from '@/types/dashboard';
 import { Loader2 } from 'lucide-react';
 import { adaptDashboardNotificationToApp, DashboardNotification } from '@/types/notification';
@@ -74,7 +73,7 @@ export function SchoolAdminDashboard({
     : [];
 
   // formStats obyekti üçün dəyərləri hazırlayırıq
-  const formStatsValues: StatusCardsProps = {
+  const formStatsValues = {
     pending: data.formStats?.pending || data.forms?.pending || 0,
     approved: data.formStats?.approved || data.forms?.approved || 0, 
     rejected: data.formStats?.rejected || data.forms?.rejected || 0,
@@ -129,7 +128,7 @@ export function SchoolAdminDashboard({
         <NotificationsCard 
           title="Bildirişlər" 
           notifications={adaptedNotifications}
-          emptyMessage="Heç bir bildiriş yoxdur"
+          emptyMessage="Bildiriş yoxdur" 
         />
       </Grid>
     </div>
