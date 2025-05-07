@@ -8,15 +8,32 @@ export interface DashboardStats {
   totalSchools: number;
   totalRegions: number;
   totalSectors: number;
-  schools?: SchoolStat[];
+  schools?: SchoolStat[] | {
+    total: number;
+    active: number;
+    inactive: number;
+  };
   forms?: FormStats;
-  categories?: number;
-  users?: number;
+  categories?: number | {
+    total: number;
+    active: number;
+    upcoming: number;
+    expired: number;
+  };
+  users?: number | {
+    total: number;
+    active: number;
+    pending: number;
+  };
   sectors?: any[];
   regions?: any[];
 }
 
 // Region admin dashboard data
+export interface RegionAdminDashboardProps {
+  data: RegionAdminDashboardData;
+}
+
 export interface RegionAdminDashboardData {
   completion: {
     percentage: number;
@@ -29,6 +46,18 @@ export interface RegionAdminDashboardData {
   notifications: DashboardNotification[];
   pendingApprovals: PendingApproval[];
   schoolStats?: SchoolStat[];
+  stats?: {
+    totalSectors?: number;
+    totalSchools?: number;
+    totalForms?: number;
+    totalCategories?: number;
+    completion_rate?: number;
+    pending_count?: number;
+    pending_schools?: number;
+    total_entries?: number;
+  };
+  sectorStats?: any[];
+  completionRate?: number;
 }
 
 // Category item
@@ -38,6 +67,12 @@ export interface CategoryItem {
   progress: number;
   dueDate?: string;
   status?: 'pending' | 'approved' | 'rejected' | 'late' | 'notStarted';
+  completion?: {
+    total: number;
+    completed: number;
+    percentage: number;
+  };
+  completionRate?: number;
 }
 
 // Sector completion item
@@ -54,6 +89,7 @@ export interface DeadlineItem {
   id: string;
   title: string;
   categoryId: string;
+  category?: string;
   deadline: string;
   daysRemaining: number;
   completionRate: number;
@@ -63,7 +99,8 @@ export interface DeadlineItem {
 export interface FormItem {
   id: string;
   title: string;
-  category: string;
+  category?: string;
+  categoryName?: string;
   categoryId: string;
   deadline: string | null;
   status: 'pending' | 'approved' | 'rejected' | 'draft';
@@ -77,9 +114,20 @@ export interface FormStats {
   rejected: number;
   draft: number;
   total: number;
-  incomplete?: number; // Opsional xüsusiyyət
-  dueSoon?: number; // Opsional xüsusiyyət
-  overdue?: number; // Opsional xüsusiyyət 
+  incomplete?: number;
+  dueSoon?: number; 
+  overdue?: number;
+}
+
+// School admin dashboard props
+export interface SchoolAdminDashboardProps {
+  data?: SchoolAdminDashboardData;
+  isLoading?: boolean;
+  error?: any;
+  onRefresh?: () => void;
+  handleFormClick?: (id: string) => void;
+  navigateToDataEntry?: () => void;
+  schoolId?: string;
 }
 
 // School admin dashboard data
@@ -92,7 +140,7 @@ export interface SchoolAdminDashboardData {
   status: FormStats;
   categories: CategoryItem[];
   upcoming: DeadlineItem[];
-  forms: {
+  forms?: {
     pending: number;
     approved: number;
     rejected: number;
@@ -100,9 +148,21 @@ export interface SchoolAdminDashboardData {
     overdue: number;
     total: number;
   };
+  formStats?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    draft: number;
+    total: number;
+    incomplete?: number;
+    dueSoon?: number;
+    overdue?: number;
+  };
   pendingForms: FormItem[];
   completionRate: number;
   notifications: DashboardNotification[];
+  recentForms?: FormItem[];
+  upcomingDeadlines?: DeadlineItem[];
 }
 
 // Sektor admininin dashboard məlumatları üçün tip
@@ -119,6 +179,10 @@ export interface SectorAdminDashboardData {
   schools?: any[];
 }
 
+export interface SectorAdminDashboardProps {
+  data: SectorAdminDashboardData;
+}
+
 // Pending approval item
 export interface PendingApproval {
   id: string;
@@ -127,7 +191,12 @@ export interface PendingApproval {
   categoryId: string;
   categoryName: string;
   date: string;
+  submittedAt?: string;
+  submittedDate?: string;
+  submittedBy?: string;
   status: 'pending' | 'approved' | 'rejected';
+  category?: string;
+  school?: any;
 }
 
 export type PendingApprovalItem = PendingApproval;
@@ -137,3 +206,48 @@ export interface CompletionStats {
   completedCategories: number;
   completionRate: number;
 }
+
+// Super admin dashboard data
+export interface SuperAdminDashboardData {
+  stats: {
+    regions?: number;
+    sectors?: number;
+    schools: number;
+    users?: number;
+  };
+  formsByStatus: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    total: number;
+  };
+  completionRate: number;
+  pendingApprovals?: PendingApproval[];
+  regions?: any[];
+  notifications: AppNotification[];
+  categories?: CategoryItem[];
+}
+
+export interface SuperAdminDashboardProps {
+  data: SuperAdminDashboardData;
+}
+
+// Qrafik məlumatları üçün tiplər
+export interface ChartData {
+  activityData: Array<{name: string, value: number}>;
+  regionSchoolsData: Array<{name: string, value: number}>;
+  categoryCompletionData: Array<{name: string, completed: number}>;
+}
+
+// Status kartları üçün props tipi
+export interface StatusCardsProps {
+  completion: { total: number; completed: number; percentage: number };
+  status: { pending: number; approved: number; rejected: number; total: number };
+  formStats?: FormStats;
+}
+
+// SchoolStat tipini də ixrac edək
+export { SchoolStat };
+
+// DashboardNotification tipini də ixrac edək
+export { DashboardNotification };

@@ -1,21 +1,13 @@
+
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
 import NotificationsCard from '../common/NotificationsCard';
-import { SchoolAdminDashboardData, FormItem, StatusCardsProps } from '@/types/dashboard';
+import { SchoolAdminDashboardData, FormItem, SchoolAdminDashboardProps } from '@/types/dashboard';
 import { Loader2 } from 'lucide-react';
-import { adaptDashboardNotificationToApp, DashboardNotification } from '@/types/notification';
+import { adaptDashboardNotificationToApp, AppNotification } from '@/types/notification';
 import CompletionProgress from '../CompletionProgress';
-
-interface SchoolAdminDashboardProps {
-  data: SchoolAdminDashboardData;
-  isLoading?: boolean;
-  error?: any;
-  onRefresh?: () => void;
-  handleFormClick?: (id: string) => void;
-  navigateToDataEntry?: () => void;
-}
 
 export function SchoolAdminDashboard({ 
   data, 
@@ -23,7 +15,8 @@ export function SchoolAdminDashboard({
   error,
   onRefresh,
   navigateToDataEntry,
-  handleFormClick
+  handleFormClick,
+  schoolId
 }: SchoolAdminDashboardProps) {
   
   if (isLoading) {
@@ -62,13 +55,14 @@ export function SchoolAdminDashboard({
     );
   }
 
+  if (!data) {
+    return null;
+  }
+
   // Bildirişləri adapterlə çevirək - tip problemini həll edirik
-  const adaptedNotifications: DashboardNotification[] = Array.isArray(data.notifications) 
+  const adaptedNotifications = Array.isArray(data.notifications) 
     ? data.notifications.map((notification) => {
-        return adaptDashboardNotificationToApp({
-          ...notification,
-          createdAt: notification.createdAt || new Date().toISOString()
-        });
+        return notification; // Artıq düzgün tipdədir
       })
     : [];
 
@@ -80,6 +74,7 @@ export function SchoolAdminDashboard({
     draft: data.formStats?.draft || 0,
     dueSoon: data.formStats?.dueSoon || data.forms?.dueSoon || 0,
     overdue: data.formStats?.overdue || data.forms?.overdue || 0,
+    incomplete: data.formStats?.incomplete || 0,
   };
   
   return (
@@ -116,7 +111,7 @@ export function SchoolAdminDashboard({
         />
         <StatsCard 
           title="Tamamlanmamış" 
-          value={data.formStats?.incomplete || 0} 
+          value={formStatsValues.incomplete || 0} 
           icon="!"
         />
       </Grid>

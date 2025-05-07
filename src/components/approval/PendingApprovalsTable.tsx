@@ -97,4 +97,3 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
 };
 
 export default PendingApprovalsTable;
-export type { PendingApproval };

@@ -3,21 +3,16 @@ import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
-import { NotificationsCard } from '../common/NotificationsCard';
+import NotificationsCard from '../common/NotificationsCard';
 import { RegionAdminDashboardData } from '@/types/dashboard';
 import { adaptDashboardNotificationToApp } from '@/types/notification';
 
 interface RegionAdminDashboardProps {
   data: RegionAdminDashboardData;
+  regionId?: string;
 }
 
-export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
-  // Sektör statistikası üçün default dəyərlər təyin edirik
-  const sectorStatsTotal = data.sectorStats?.length || (data.stats?.totalSectors || 0);
-  const activePercentage = sectorStatsTotal > 0 ? 
-    Math.round((sectorStatsTotal / sectorStatsTotal) * 100) : 
-    100;
-
+export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data, regionId }) => {
   // Bildirişleri adapterlə çevirək
   const adaptedNotifications = Array.isArray(data.notifications) 
     ? data.notifications.map((notification) => adaptDashboardNotificationToApp(notification))
@@ -30,23 +25,23 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
       <Grid columns={3} className="gap-6">
         <StatsCard
           title="Sektorlar"
-          value={data.stats?.totalSectors}
+          value={data.sectors?.length || 0}
           icon="S"
           description="Toplam sektor sayı"
-          trend={`${activePercentage}% aktiv`}
+          trend={`${data.sectors?.length || 0} aktiv`}
           trendDirection="up"
         />
         <StatsCard
           title="Məktəblər"
-          value={data.stats?.totalSchools}
+          value={data.schoolStats?.length || 0}
           icon="M"
           description="Toplam məktəb sayı"
-          trend={`0 tamamlanmamış`} // data.schoolStats?.incomplete || 0 burada istifadə edə bilərsiniz
+          trend={`0 tamamlanmamış`}
           trendDirection="neutral"
         />
         <StatsCard
           title="Formlar"
-          value={data.stats?.totalForms || 0}
+          value={data.status?.total || 0}
           icon="F"
           description="Toplam form sayı"
           trend="Aktiv formlar"
@@ -56,7 +51,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
 
       <Grid columns={2} className="gap-6">
         <CompletionRateCard
-          completionRate={data.completionRate || 0}
+          completionRate={data.completion?.percentage || 0}
           title="Ümumi Tamamlanma"
         />
                 

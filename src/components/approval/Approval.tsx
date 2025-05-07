@@ -12,8 +12,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PendingApproval } from '@/types/dashboard';
 import PendingApprovalsTable from './PendingApprovalsTable';
-import DataEntryTable from '@/components/dataEntry/DataEntryTable';
-import { DataEntryTableData } from '@/types/dataEntry';
 import { useToast } from '@/components/ui/use-toast';
 
 const Approval: React.FC = () => {
@@ -59,7 +57,7 @@ const Approval: React.FC = () => {
   }, [canApproveData, navigate, toast, t]);
 
   // Axtarış funksiyası
-  const filteredItems = pendingItems.filter(item => 
+  const filteredItems = pendingItems.filter((item: any) => 
     item.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (item.categoryName?.toLowerCase() || item.category?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
@@ -114,7 +112,7 @@ const Approval: React.FC = () => {
                   <p>{searchTerm ? t('noResultsFound') : t('noPendingApprovals')}</p>
                 </div>
               ) : (
-                <PendingApprovalsTable items={filteredItems} onRefresh={refetch} />
+                <PendingApprovalsTable pendingApprovals={filteredItems} onRefresh={refetch} />
               )}
             </TabsContent>
             
@@ -127,7 +125,7 @@ const Approval: React.FC = () => {
                   <p>{searchTerm ? t('noResultsFound') : t('noApprovedData')}</p>
                 </div>
               ) : (
-                <PendingApprovalsTable items={filteredItems} onRefresh={refetch} />
+                <PendingApprovalsTable pendingApprovals={filteredItems} onRefresh={refetch} />
               )}
             </TabsContent>
             
@@ -140,7 +138,7 @@ const Approval: React.FC = () => {
                   <p>{searchTerm ? t('noResultsFound') : t('noRejectedData')}</p>
                 </div>
               ) : (
-                <PendingApprovalsTable items={filteredItems} onRefresh={refetch} />
+                <PendingApprovalsTable pendingApprovals={filteredItems} onRefresh={refetch} />
               )}
             </TabsContent>
           </Tabs>

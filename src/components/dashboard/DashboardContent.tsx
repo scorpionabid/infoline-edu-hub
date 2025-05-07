@@ -6,28 +6,93 @@ import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
 import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
-import { DashboardStats, FormStats } from '@/types/dashboard';
+import { DashboardStats, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData, SuperAdminDashboardData } from '@/types/dashboard';
 
 const DashboardContent: React.FC = () => {
   const { userRole, regionId, sectorId, schoolId } = usePermissions();
   const { t } = useLanguage();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalUsers: 0,
-    totalSchools: 0,
-    totalRegions: 0,
-    totalSectors: 0,
-    schools: [],
-    forms: {
+  const [superAdminData, setSuperAdminData] = useState<SuperAdminDashboardData>({
+    stats: {
+      regions: 0,
+      sectors: 0,
+      schools: 0,
+      users: 0
+    },
+    formsByStatus: {
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      total: 0
+    },
+    completionRate: 0,
+    notifications: [],
+  });
+  
+  const [regionAdminData, setRegionAdminData] = useState<RegionAdminDashboardData>({
+    completion: {
+      percentage: 0,
+      total: 0,
+      completed: 0
+    },
+    status: {
       pending: 0,
       approved: 0,
       rejected: 0,
       draft: 0,
       total: 0
     },
-    categories: 0,
-    users: 0,
+    categories: [],
     sectors: [],
-    regions: []
+    notifications: [],
+    pendingApprovals: []
+  });
+  
+  const [sectorAdminData, setSectorAdminData] = useState<SectorAdminDashboardData>({
+    schoolStats: [],
+    completion: {
+      percentage: 0,
+      total: 0,
+      completed: 0
+    },
+    status: {
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      draft: 0,
+      total: 0
+    },
+    pendingApprovals: [],
+    notifications: []
+  });
+  
+  const [schoolAdminData, setSchoolAdminData] = useState<SchoolAdminDashboardData>({
+    completion: {
+      percentage: 0,
+      total: 0,
+      completed: 0
+    },
+    status: {
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      draft: 0,
+      total: 0
+    },
+    categories: [],
+    upcoming: [],
+    formStats: {
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      draft: 0,
+      total: 0,
+      incomplete: 0,
+      dueSoon: 0,
+      overdue: 0
+    },
+    pendingForms: [],
+    completionRate: 0,
+    notifications: []
   });
   
   const [isLoading, setIsLoading] = useState(true);
@@ -36,28 +101,98 @@ const DashboardContent: React.FC = () => {
   useEffect(() => {
     // Əsl sistemdə burada API sorğusu olacaq
     setTimeout(() => {
-      setStats({
-        totalUsers: 120,
-        totalSchools: 450,
-        totalRegions: 14,
-        totalSectors: 78,
-        schools: [],
-        forms: {
+      // SuperAdmin məlumatlarını təyin edirik
+      setSuperAdminData({
+        stats: {
+          regions: 14,
+          sectors: 78,
+          schools: 450,
+          users: 120
+        },
+        formsByStatus: {
           pending: 85,
           approved: 347,
           rejected: 42,
-          draft: 26,
           total: 500
         },
-        categories: 25,
-        users: 120,
-        sectors: [
-          { id: '1', name: 'Bakı şəhəri', schools: 150 },
-          { id: '2', name: 'Sumqayıt şəhəri', schools: 75 },
-          { id: '3', name: 'Gəncə şəhəri', schools: 52 }
-        ],
-        regions: []
+        completionRate: 75,
+        notifications: [],
       });
+      
+      // RegionAdmin məlumatlarını təyin edirik
+      setRegionAdminData({
+        completion: {
+          percentage: 65,
+          total: 100,
+          completed: 65
+        },
+        status: {
+          pending: 12,
+          approved: 73,
+          rejected: 8,
+          draft: 7,
+          total: 100
+        },
+        categories: [],
+        sectors: [
+          { id: '1', name: 'Bakı şəhəri', completionRate: 75, schoolsCount: 150 },
+          { id: '2', name: 'Sumqayıt şəhəri', completionRate: 62, schoolsCount: 75 },
+          { id: '3', name: 'Gəncə şəhəri', completionRate: 48, schoolsCount: 52 }
+        ],
+        notifications: [],
+        pendingApprovals: []
+      });
+      
+      // SectorAdmin məlumatlarını təyin edirik
+      setSectorAdminData({
+        schoolStats: [],
+        completion: {
+          percentage: 58,
+          total: 50,
+          completed: 29
+        },
+        status: {
+          pending: 5,
+          approved: 42,
+          rejected: 3,
+          draft: 0,
+          total: 50
+        },
+        pendingApprovals: [],
+        notifications: []
+      });
+      
+      // SchoolAdmin məlumatlarını təyin edirik
+      setSchoolAdminData({
+        completion: {
+          percentage: 80,
+          total: 10,
+          completed: 8
+        },
+        status: {
+          pending: 1,
+          approved: 8,
+          rejected: 0,
+          draft: 1,
+          total: 10
+        },
+        categories: [],
+        upcoming: [],
+        formStats: {
+          pending: 1,
+          approved: 8,
+          rejected: 0,
+          draft: 1,
+          total: 10,
+          incomplete: 2,
+          dueSoon: 1,
+          overdue: 0
+        },
+        pendingForms: [],
+        completionRate: 80,
+        notifications: []
+      });
+      
       setIsLoading(false);
     }, 500);
   }, []);
@@ -73,16 +208,16 @@ const DashboardContent: React.FC = () => {
 
   switch (userRole) {
     case 'superadmin':
-      return <SuperAdminDashboard stats={stats} />;
+      return <SuperAdminDashboard data={superAdminData} />;
     
     case 'regionadmin':
-      return <RegionAdminDashboard regionId={regionId} />;
+      return <RegionAdminDashboard data={regionAdminData} regionId={regionId} />;
     
     case 'sectoradmin':
-      return <SectorAdminDashboard sectorId={sectorId} />;
+      return <SectorAdminDashboard data={sectorAdminData} />;
     
     case 'schooladmin':
-      return <SchoolAdminDashboard schoolId={schoolId} />;
+      return <SchoolAdminDashboard data={schoolAdminData} schoolId={schoolId} />;
     
     default:
       return (

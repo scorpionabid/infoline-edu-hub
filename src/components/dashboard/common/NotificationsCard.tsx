@@ -1,90 +1,73 @@
 
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { DashboardNotification } from '@/types/dashboard';
-import { Button } from '@/components/ui/button';
-import { Bell, ArrowUpRight } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Bell } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { formatDistanceToNow } from 'date-fns';
-import { az, tr, ru, enUS } from 'date-fns/locale';
-import NotificationItem from '../NotificationItem';
+import { AppNotification } from '@/types/notification';
+import { formatDate } from '@/utils/formatters';
 
 export interface NotificationsCardProps {
-  title: string;
-  notifications: DashboardNotification[];
-  maxItems?: number;
-  onViewAll?: () => void;
+  title?: string;
+  notifications: AppNotification[];
   emptyMessage?: string;
+  onMarkAsRead?: (id: string) => void;
+  limit?: number;
+  className?: string;
 }
 
-export const NotificationsCard: React.FC<NotificationsCardProps> = ({
-  title,
-  notifications,
-  maxItems = 5,
-  onViewAll,
-  emptyMessage = "Bildiriş yoxdur"
+export const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
+  title = 'Bildirişlər',
+  notifications = [], 
+  emptyMessage = 'Bildiriş yoxdur',
+  onMarkAsRead,
+  limit = 5,
+  className
 }) => {
-  const { t, currentLanguage } = useLanguage();
-  
-  // Dil lokallaşdırmasını əldə et
-  const getLocale = () => {
-    switch (currentLanguage) {
-      case 'az': return az;
-      case 'tr': return tr;
-      case 'ru': return ru;
-      default: return enUS;
-    }
-  };
-  
-  const locale = getLocale();
-  
-  // Bildirişləri tarixi ilə formatla
-  const formattedNotifications = notifications?.map(notification => ({
-    ...notification,
-    formattedDate: notification.date 
-      ? formatDistanceToNow(new Date(notification.date), { addSuffix: true, locale })
-      : ''
-  })) || [];
-  
-  const displayNotifications = formattedNotifications.slice(0, maxItems);
-  
+  const { t } = useLanguage();
+
+  // Bildirişləri tarix əsasında sıralayaq
+  const sortedNotifications = [...notifications]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, limit);
+
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center">
-          <Bell className="h-5 w-5 mr-2 text-muted-foreground" /> 
-          {title}
-        </CardTitle>
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>{title || t('notifications')}</CardTitle>
       </CardHeader>
-      <CardContent className="pb-2">
-        {displayNotifications.length > 0 ? (
-          <div className="space-y-4">
-            {displayNotifications.map((notification, i) => (
-              <NotificationItem 
-                key={notification.id || i}
-                notification={notification}
-              />
-            ))}
+      <CardContent>
+        {sortedNotifications.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground flex flex-col items-center justify-center">
+            <Bell className="h-8 w-8 mb-2 opacity-25" />
+            <p>{emptyMessage || t('noNotifications')}</p>
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <Bell className="h-10 w-10 mx-auto mb-3 opacity-20" />
-            <p>{emptyMessage}</p>
+          <div className="space-y-4">
+            {sortedNotifications.map((notification) => (
+              <div 
+                key={notification.id} 
+                className={`p-3 rounded-md border ${notification.read || notification.isRead ? 'bg-background' : 'bg-accent'}`}
+                onClick={() => onMarkAsRead && onMarkAsRead(notification.id)}
+              >
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    notification.type === 'success' ? 'bg-green-500' : 
+                    notification.type === 'error' ? 'bg-red-500' : 
+                    notification.type === 'warning' ? 'bg-amber-500' : 
+                    notification.type === 'deadline' ? 'bg-purple-500' :
+                    'bg-blue-500'
+                  }`} />
+                  <h4 className="font-medium text-sm">{notification.title}</h4>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                <div className="text-xs text-muted-foreground mt-2">
+                  {formatDate(notification.timestamp || notification.createdAt || notification.date)}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>
-      {onViewAll && notifications.length > 0 && (
-        <CardFooter>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full"
-            onClick={onViewAll}
-          >
-            {t('viewAllNotifications')} <ArrowUpRight className="ml-2 h-4 w-4" />
-          </Button>
-        </CardFooter>
-      )}
     </Card>
   );
 };
