@@ -11,15 +11,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { formatDate } from '@/utils/date';
+import { formatDate } from '@/utils/formatters';
 import { Check, Eye } from 'lucide-react';
 import ApprovalDialog from './ApprovalDialog';
 import { PendingApproval } from '@/types/dashboard';
 
-export type PendingApprovalItem = PendingApproval;
-
 interface PendingApprovalsTableProps {
-  items: PendingApprovalItem[];
+  items: PendingApproval[];
   onRefresh: () => void;
 }
 
@@ -28,10 +26,10 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
   onRefresh 
 }) => {
   const { t } = useLanguageSafe();
-  const [selectedItem, setSelectedItem] = useState<PendingApprovalItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<PendingApproval | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleReview = (item: PendingApprovalItem) => {
+  const handleReview = (item: PendingApproval) => {
     setSelectedItem(item);
     setIsDialogOpen(true);
   };
@@ -65,8 +63,8 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
           {items.map((item) => (
             <TableRow key={item.id}>
               <TableCell className="font-medium">{item.schoolName}</TableCell>
-              <TableCell>{item.category}</TableCell>
-              <TableCell>{formatDate(item.submittedDate)}</TableCell>
+              <TableCell>{item.categoryName || item.category}</TableCell>
+              <TableCell>{formatDate(item.submittedDate || item.submittedAt || '')}</TableCell>
               <TableCell>
                 <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200">
                   {t('pending')}
@@ -94,7 +92,7 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
           schoolId={selectedItem.schoolId}
           schoolName={selectedItem.schoolName}
           categoryId={selectedItem.categoryId}
-          categoryName={selectedItem.category}
+          categoryName={selectedItem.categoryName || selectedItem.category || ''}
           onComplete={handleApprovalCompleted}
         />
       )}

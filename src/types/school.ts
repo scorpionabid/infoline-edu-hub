@@ -21,6 +21,7 @@ export interface School {
   principal_name?: string;
   principalName?: string; // TypeScript camelCase alias
   logo?: string;
+  lastUpdate?: string; // Əlavə etdiyimiz xüsusiyyət
 }
 
 export interface AdminCreateData {
@@ -67,4 +68,10 @@ export interface SchoolStat {
   address?: string;
   phone?: string;
   email?: string;
+}
+
+// SectorSchool tipini əlavə edək
+export interface SectorSchool extends School {
+  lastUpdate?: string;
+  updated_at?: string;
 }

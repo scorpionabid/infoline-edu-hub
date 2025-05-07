@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { NotificationType } from '@/types/notification';
+import { AppNotification } from '@/types/notification';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Check, CheckCircle, AlertTriangle, Bell, Info, Clock, X } from 'lucide-react';
@@ -8,7 +8,7 @@ import { formatDistance } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface NotificationItemProps {
-  notification: NotificationType;
+  notification: AppNotification;
   onMarkAsRead: (id: string) => void;
 }
 
@@ -81,7 +81,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           {notification.message}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          {getRelativeTime(notification.createdAt || notification.timestamp)}
+          {getRelativeTime(notification.createdAt || notification.timestamp || notification.date)}
         </p>
       </div>
       {!isRead && (

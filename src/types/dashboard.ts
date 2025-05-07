@@ -12,6 +12,10 @@ export interface DashboardStats {
     rejected: number;
     draft: number;
     total: number;
+    submitted?: number;
+    incomplete?: number;
+    dueSoon?: number;
+    overdue?: number;
   };
   categories: {
     total: number;
@@ -47,8 +51,12 @@ export interface FormStats {
   pending: number;
   approved: number;
   rejected: number;
-  draft: number; // required field
+  draft: number; 
   total: number;
+  submitted?: number;
+  incomplete?: number;
+  dueSoon?: number;
+  overdue?: number;
 }
 
 // Form elementini təsvir edir
@@ -56,10 +64,12 @@ export interface FormItem {
   id: string;
   title: string;
   category: string;
+  categoryName?: string;
   status: 'pending' | 'approved' | 'rejected' | 'draft';
   dueDate?: string;
   submitDate?: string;
   lastUpdate?: string;
+  completionRate?: number;
 }
 
 // Dashboard kateqoriya məlumatları
@@ -104,7 +114,7 @@ export interface DashboardNotification {
   date: string;
   createdAt?: string;
   read: boolean;
-  type: 'info' | 'warning' | 'error' | 'success';
+  type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
   link?: string;
   category?: string;
   entity?: {
@@ -112,6 +122,8 @@ export interface DashboardNotification {
     id: string;
     name?: string;
   };
+  priority?: 'normal' | 'high' | 'critical';
+  timestamp?: string;
 }
 
 // Sektor tamamlanma elementi
@@ -135,12 +147,7 @@ export interface SuperAdminDashboardData {
   stats: DashboardStats;
   completionRate?: number;
   categories?: CategoryWithCompletion[];
-  formsByStatus?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    draft: number;
-  };
+  formsByStatus?: FormStats;
   regions?: SectorCompletionItem[];
   sectors?: SectorCompletionItem[];
   schools?: SchoolCompletionItem[];
@@ -158,20 +165,18 @@ export interface RegionAdminDashboardData {
     pending_count?: number;
     pending_schools?: number;
     total_entries?: number;
+    sectors?: number;
+    schools?: number;
+    users?: number;
+    categories?: number;
   };
   region?: {
     id: string;
     name: string;
     status: string;
   };
-  sectors?: {
-    total: number;
-    active: number;
-  };
-  schools?: {
-    total: number;
-    active: number;
-  };
+  sectors?: SectorCompletionItem[];
+  schools?: SchoolCompletionItem[];
   completionRate?: number;
   sectorStats?: SectorCompletionItem[];
   notifications?: DashboardNotification[];
@@ -214,15 +219,19 @@ export interface SchoolAdminDashboardData {
   };
   completionRate?: number;
   categories?: CategoryWithCompletion[];
-  formStats?: {
+  formStats?: FormStats;
+  upcomingDeadlines?: DeadlineItem[];
+  notifications?: DashboardNotification[];
+  forms?: FormStats;
+  pendingForms?: FormItem[];
+  upcoming?: DeadlineItem[];
+  completion?: CompletionStats;
+  status?: {
     pending: number;
     approved: number;
     rejected: number;
-    draft: number;
     total: number;
   };
-  upcomingDeadlines?: DeadlineItem[];
-  notifications?: DashboardNotification[];
 }
 
 // Son tarix elementləri
@@ -234,6 +243,9 @@ export interface DeadlineItem {
   deadline: string;
   daysLeft: number;
   status: 'pending' | 'completed' | 'overdue';
+  daysRemaining?: number;
+  completionRate?: number;
+  category?: string;
 }
 
 // Fəaliyyət jurnalı elementi
@@ -253,9 +265,17 @@ export interface PendingApproval {
   schoolId: string;
   schoolName: string;
   categoryId: string;
-  category: string;
-  submittedDate: string;
+  categoryName?: string;
+  category?: string;
+  submittedDate?: string;
+  submittedAt?: string;
   status: 'pending';
+  submittedBy?: string;
+}
+
+// PendingApprovalItem tipini əlavə edək
+export interface PendingApprovalItem extends PendingApproval {
+  // PendingApproval-dan bütün xüsusiyyətləri miras alır
 }
 
 // StatusCards props tipi

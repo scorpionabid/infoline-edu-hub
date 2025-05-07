@@ -6,9 +6,13 @@ export interface AppNotification {
   message: string;
   date: string;
   read?: boolean;
-  type: 'info' | 'warning' | 'error' | 'success';
+  isRead?: boolean;
+  type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
   link?: string;
   category?: string;
+  priority?: 'normal' | 'high' | 'critical';
+  createdAt?: string;
+  timestamp?: string;
   entity?: {
     type: string;
     id: string;
@@ -23,15 +27,21 @@ export interface DashboardNotification {
   message: string;
   date: string;
   read: boolean;
-  type: 'info' | 'warning' | 'error' | 'success';
+  type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
   link?: string;
   category?: string;
+  priority?: 'normal' | 'high' | 'critical';
+  createdAt?: string;
+  timestamp?: string;
   entity?: {
     type: string;
     id: string;
     name?: string;
   };
 }
+
+// Əlavə olunan - NotificationType əlavə edək
+export type NotificationType = AppNotification;
 
 /**
  * Dashboard bildirişini app bildirişinə çevirmək üçün adapter
@@ -46,6 +56,9 @@ export const adaptDashboardNotificationToApp = (notification: DashboardNotificat
     type: notification.type,
     link: notification.link,
     category: notification.category,
+    createdAt: notification.createdAt || notification.date,
+    timestamp: notification.timestamp || notification.date,
+    priority: notification.priority,
     entity: notification.entity
   };
 };
@@ -59,10 +72,13 @@ export const adaptAppNotificationToDashboard = (notification: AppNotification): 
     title: notification.title,
     message: notification.message,
     date: notification.date,
-    read: notification.read ?? false,
+    read: notification.read ?? notification.isRead ?? false,
     type: notification.type,
     link: notification.link,
     category: notification.category,
+    createdAt: notification.createdAt || notification.date,
+    timestamp: notification.timestamp || notification.date,
+    priority: notification.priority,
     entity: notification.entity
   };
 };

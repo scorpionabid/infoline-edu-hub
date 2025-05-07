@@ -6,7 +6,7 @@ import { useLanguageSafe } from '@/context/LanguageContext';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays, Clock, PenSquare, FileCheck, AlertCircle } from 'lucide-react';
 import { FormItem, DeadlineItem } from '@/types/dashboard';
-import { formatDate } from '@/utils/date';
+import { formatDate } from '@/utils/formatters';
 
 interface FormTabsProps {
   pendingForms: FormItem[];
@@ -108,31 +108,33 @@ const FormTabs: React.FC<FormTabsProps> = ({ pendingForms, upcomingDeadlines, on
             <div key={deadline.id} className="flex flex-col p-4 border rounded-lg space-y-2">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-medium">{deadline.category}</h3>
+                  <h3 className="font-medium">{deadline.categoryName}</h3>
                   <div className="flex items-center mt-1 text-sm text-muted-foreground">
                     <CalendarDays className="mr-1 h-4 w-4" /> 
                     {deadline.deadline}
                   </div>
                 </div>
                 <Badge 
-                  variant={deadline.daysRemaining <= 3 ? "destructive" : "outline"}
-                  className={deadline.daysRemaining <= 3 ? "" : "bg-orange-50 text-orange-700 border-orange-200"}
+                  variant={deadline.daysLeft <= 3 ? "destructive" : "outline"}
+                  className={deadline.daysLeft <= 3 ? "" : "bg-orange-50 text-orange-700 border-orange-200"}
                 >
-                  {deadline.daysRemaining === 0 
+                  {deadline.daysLeft === 0 
                     ? t('dueToday') 
-                    : deadline.daysRemaining < 0 
+                    : deadline.daysLeft < 0 
                       ? t('overdue') 
-                      : t('daysRemaining', { count: deadline.daysRemaining })}
+                      : t('daysRemaining', { count: deadline.daysLeft })}
                 </Badge>
               </div>
               <div className="text-sm flex items-center justify-between">
-                <span className="text-muted-foreground">{t('completion')}: {Math.round(deadline.completionRate)}%</span>
+                <span className="text-muted-foreground">
+                  {t('completion')}: {Math.round(deadline.completionRate || 0)}%
+                </span>
                 <Button 
                   variant="link" 
                   className="px-0 h-auto font-normal text-primary" 
                   onClick={() => onFormClick(deadline.id)}
                 >
-                  {deadline.completionRate < 100 ? t('complete') : t('view')}
+                  {(deadline.completionRate || 0) < 100 ? t('complete') : t('view')}
                 </Button>
               </div>
             </div>

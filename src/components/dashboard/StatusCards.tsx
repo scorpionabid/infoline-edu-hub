@@ -3,24 +3,25 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useLanguage } from '@/context/LanguageContext';
+import { FormStats } from '@/types/dashboard';
 
 interface StatusCardsProps {
   completion: { total: number; completed: number; percentage: number };
   status: { pending: number; approved: number; rejected: number; total: number };
-  formStats?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    draft: number;
-    total: number;
-  };
+  formStats?: FormStats;
 }
 
 export const StatusCards: React.FC<StatusCardsProps> = ({ completion, status, formStats }) => {
   const { t } = useLanguage();
 
   // formStats varsa onu, yoxsa status istifadə et
-  const stats = formStats || status;
+  const stats = formStats || {
+    pending: status.pending,
+    approved: status.approved,
+    rejected: status.rejected,
+    total: status.total,
+    draft: 0 // FormStats tipinə uyğun əlavə olundu
+  };
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

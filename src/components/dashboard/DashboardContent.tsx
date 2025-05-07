@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
@@ -9,7 +10,10 @@ import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
 import {
   SuperAdminDashboardData,
   RegionAdminDashboardData,
-  SchoolAdminDashboardData
+  SectorAdminDashboardData,
+  SchoolAdminDashboardData,
+  FormStats,
+  DashboardStats
 } from '@/types/dashboard';
 
 const DashboardContent = () => {
@@ -20,10 +24,34 @@ const DashboardContent = () => {
   // Mock data obyektləri
   const superAdminData: SuperAdminDashboardData = {
     stats: {
-      totalUsers: 0,
-      totalSchools: 0,
+      schools: {
+        total: 0,
+        active: 0,
+        inactive: 0
+      },
+      forms: {
+        total: 0,
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        draft: 0,
+        submitted: 0
+      },
+      categories: {
+        total: 0,
+        active: 0,
+        upcoming: 0,
+        expired: 0
+      },
+      users: {
+        total: 0,
+        active: 0,
+        pending: 0
+      },
       totalRegions: 0,
       totalSectors: 0,
+      totalSchools: 0,
+      totalUsers: 0
     },
     formsByStatus: {
       total: 0,
@@ -31,7 +59,7 @@ const DashboardContent = () => {
       approved: 0,
       rejected: 0,
       draft: 0,
-      submitted: 0,
+      submitted: 0
     },
     completionRate: 0,
     notifications: []
@@ -39,13 +67,13 @@ const DashboardContent = () => {
   
   const regionAdminData: RegionAdminDashboardData = {
     stats: {
+      totalSectors: 0,
+      totalSchools: 0,
+      totalForms: 0,
       sectors: 0,
       schools: 0,
       users: 0,
-      totalSchools: 0,
-      totalSectors: 0,
-      totalForms: 0,
-      totalCategories: 0
+      categories: 0
     },
     sectorStats: [],
     schoolStats: [],
@@ -53,14 +81,16 @@ const DashboardContent = () => {
     notifications: []
   };
   
-  const sectorAdminData = { 
-    statistics: {
+  const sectorAdminData: SectorAdminDashboardData = { 
+    stats: {
       totalSchools: 0,
-      activeSchools: 0,
-      pendingSubmissions: 0,
-      completedSubmissions: 0
+      totalEntries: 0,
+      pendingApprovals: 0,
+      completionRate: 0
     },
-    schools: []
+    schools: [],
+    completionRate: 0,
+    notifications: []
   };
   
   const schoolAdminData: SchoolAdminDashboardData = {
@@ -74,7 +104,7 @@ const DashboardContent = () => {
       dueSoon: 0,
       overdue: 0
     },
-    recentForms: [],
+    pendingForms: [],
     upcomingDeadlines: [],
     completionRate: 0,
     notifications: []
@@ -97,7 +127,7 @@ const DashboardContent = () => {
       )}
       
       {currentRole === 'sectoradmin' && (
-        <SectorAdminDashboard />
+        <SectorAdminDashboard data={sectorAdminData} />
       )}
       
       {currentRole === 'schooladmin' && (

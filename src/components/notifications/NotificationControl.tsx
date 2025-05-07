@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useLanguage } from '@/context/LanguageContext';
 import NotificationList from './NotificationList';
-import { NotificationType } from '@/types/notification';
+import { AppNotification } from '@/types/notification';
 
 // Props interfeysi əlavə edildi
 interface NotificationControlProps {
-  notifications: NotificationType[];
+  notifications: AppNotification[];
   onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
   onClearAll: () => void;

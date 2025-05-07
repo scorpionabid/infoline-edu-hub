@@ -15,7 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { NotificationItem } from './NotificationItem'; 
-import { NotificationType } from '@/types/notification';
+import { AppNotification } from '@/types/notification';
 
 export const NotificationComponent: React.FC = () => {
   const { t } = useLanguage();
@@ -52,7 +52,7 @@ export const NotificationComponent: React.FC = () => {
     return (
       <ScrollArea className="h-[300px]">
         <div className="space-y-2 p-2">
-          {notifications.map((notification: NotificationType) => (
+          {notifications.map((notification: AppNotification) => (
             <NotificationItem 
               key={notification.id} 
               notification={notification}

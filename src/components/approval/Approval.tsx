@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Search, RefreshCw, Info } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { PendingApprovalItem } from '@/types/dashboard';
+import { PendingApproval } from '@/types/dashboard';
 import PendingApprovalsTable from './PendingApprovalsTable';
 import DataEntryTable from '@/components/dataEntry/DataEntryTable';
 import { DataEntryTableData } from '@/types/dataEntry';
@@ -61,7 +61,7 @@ const Approval: React.FC = () => {
   // Axtarış funksiyası
   const filteredItems = pendingItems.filter(item => 
     item.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    item.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
+    (item.categoryName?.toLowerCase() || item.category?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   return (
