@@ -36,7 +36,7 @@ export interface SchoolStat {
   email?: string;
 }
 
-// Məktəb tipi
+// Məktəb tipi - updated to make compatible with Supabase.School
 export interface School {
   id: string;
   name: string;
@@ -48,8 +48,8 @@ export interface School {
   principal_name?: string;
   principalName?: string;
   status: string;
-  created_at: string | Date;
-  updated_at?: string | Date;
+  created_at: string; // Changed from string | Date to just string
+  updated_at?: string; // Changed from string | Date to just string
   teacher_count?: number;
   student_count?: number;
   completion_rate?: number;
@@ -61,19 +61,19 @@ export interface School {
   sector_name?: string;
 }
 
-// Region tipi
+// Region tipi - updated to make compatible with Supabase.Region
 export interface Region {
   id: string;
   name: string;
   description?: string;
   admin_id?: string;
   admin_email?: string;
-  created_at: string | Date;
-  updated_at?: string | Date;
+  created_at: string; // Changed from string | Date to just string
+  updated_at: string; // Changed from string | Date to just string
   status: string;
 }
 
-// Sector tipi
+// Sector tipi - updated to make compatible with Supabase.Sector
 export interface Sector {
   id: string;
   name: string;
@@ -81,10 +81,12 @@ export interface Sector {
   region_id: string;
   admin_id?: string;
   admin_email?: string;
-  created_at: string | Date;
-  updated_at?: string | Date;
+  created_at: string; // Changed from string | Date to just string
+  updated_at: string; // Changed from string | Date to just string
   status: string;
   completion_rate?: number;
+  regionName?: string; // Added to match EnhancedSector
+  region_name?: string; // Added to match usage in SectorCard
 }
 
 // SchoolForm props tipi

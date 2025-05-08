@@ -17,13 +17,17 @@ interface PreferencesFormProps {
 const PreferencesForm: React.FC<PreferencesFormProps> = ({ user, onSubmit }) => {
   const { t } = useLanguageSafe();
   const [loading, setLoading] = useState(false);
+  
+  // Get default notification settings or provide fallbacks
+  const defaultNotifications = {
+    email: user?.notificationSettings?.email ?? true,
+    inApp: user?.notificationSettings?.inApp ?? true,
+    push: user?.notificationSettings?.push ?? true,
+    system: user?.notificationSettings?.system ?? true,
+  };
+  
   const { register, handleSubmit, setValue, watch } = useForm({
-    defaultValues: {
-      email: (user?.notificationSettings?.email ?? true),
-      inApp: (user?.notificationSettings?.inApp ?? true),
-      push: (user?.notificationSettings?.push ?? true),
-      system: (user?.notificationSettings?.system ?? true),
-    }
+    defaultValues: defaultNotifications
   });
 
   const handleFormSubmit = async (formData: any) => {

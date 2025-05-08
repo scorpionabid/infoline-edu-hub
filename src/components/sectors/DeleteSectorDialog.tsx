@@ -1,15 +1,24 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Sector } from '@/types/supabase';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { Loader2 } from 'lucide-react';
 
 interface DeleteSectorDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => Promise<void>;
-  sector: Sector;
+  sector: Sector | null;
   isSubmitting?: boolean;
 }
 
@@ -22,42 +31,39 @@ const DeleteSectorDialog: React.FC<DeleteSectorDialogProps> = ({
 }) => {
   const { t } = useLanguageSafe();
 
-  const handleDelete = async () => {
-    try {
-      await onConfirm();
-    } catch (error) {
-      console.error("Error deleting sector:", error);
-    }
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader>
-          <DialogTitle>{t('deleteSector')}</DialogTitle>
-          <DialogDescription>
-            {t('deleteSectorConfirmation', { name: sector.name })}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex justify-end space-x-2">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onClose}
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t('deleteSector')}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t('deleteSectorConfirmation')}
+            {sector && (
+              <span className="font-semibold block mt-2">{sector.name}</span>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={(e) => {
+              e.preventDefault();
+              onConfirm();
+            }} 
+            className="bg-destructive hover:bg-destructive/90"
           >
-            {t('cancel')}
-          </Button>
-          <Button 
-            type="button"
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? t('deleting') : t('delete')}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('deleting')}
+              </>
+            ) : (
+              t('delete')
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 

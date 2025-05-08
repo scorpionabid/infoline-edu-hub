@@ -9,7 +9,29 @@ interface SectorCardProps {
 }
 
 const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
+  // Check if it's an enhanced sector with additional properties
   const isEnhanced = 'schoolCount' in sector || 'school_count' in sector || 'completionRate' in sector || 'completion_rate' in sector;
+  
+  // Helper function to safely get region name
+  const getRegionName = () => {
+    if ('regionName' in sector) return sector.regionName;
+    if ('region_name' in sector) return sector.region_name;
+    return 'Unknown';
+  };
+  
+  // Helper function to safely get school count
+  const getSchoolCount = () => {
+    if ('schoolCount' in sector) return sector.schoolCount;
+    if ('school_count' in (sector as any)) return (sector as any).school_count;
+    return 0;
+  };
+  
+  // Helper function to safely get completion rate
+  const getCompletionRate = () => {
+    if ('completionRate' in sector) return sector.completionRate;
+    if ('completion_rate' in sector) return sector.completion_rate;
+    return 0;
+  };
   
   return (
     <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={onClick}>
@@ -24,8 +46,7 @@ const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
           <div>
             <p className="font-medium">Region:</p>
             <p className="text-muted-foreground">
-              {/* Use proper property checking to avoid TypeScript errors */}
-              {sector.regionName || (sector as any).region_name || 'Unknown'}
+              {getRegionName()}
             </p>
           </div>
           <div>
@@ -40,11 +61,11 @@ const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
             <>
               <div>
                 <p className="font-medium">Schools:</p>
-                <p>{(sector as EnhancedSector).schoolCount || (sector as any).school_count || 0}</p>
+                <p>{getSchoolCount()}</p>
               </div>
               <div>
                 <p className="font-medium">Completion:</p>
-                <p>{Math.round((sector as EnhancedSector).completionRate || (sector as EnhancedSector).completion_rate || 0)}%</p>
+                <p>{Math.round(getCompletionRate())}%</p>
               </div>
             </>
           )}

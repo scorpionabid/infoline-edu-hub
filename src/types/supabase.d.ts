@@ -47,8 +47,8 @@ export interface Sector {
   regionName?: string;
   description?: string;
   status: string;
-  created_at: string | Date;
-  updated_at?: string | Date;
+  created_at: string;
+  updated_at: string;
   admin_id?: string;
   admin_email?: string;
   completion_rate?: number;
@@ -71,8 +71,8 @@ export interface Region {
   status: string;
   admin_id?: string;
   admin_email?: string;
-  created_at: string | Date;
-  updated_at?: string | Date;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface School {
@@ -94,8 +94,8 @@ export interface School {
   status: string;
   type?: string;
   language?: string;
-  created_at: string | Date;
-  updated_at?: string | Date;
+  created_at: string;
+  updated_at?: string;
   completion_rate?: number;
   completionRate?: number;
   logo?: string;
@@ -112,9 +112,9 @@ export interface Profile {
   position?: string;
   language?: 'az' | 'en' | 'ru' | 'tr';
   status?: 'active' | 'inactive' | 'blocked';
-  created_at: string | Date;
-  updated_at: string | Date;
-  last_login?: string | Date;
+  created_at: string;
+  updated_at: string;
+  last_login?: string;
 }
 
 export interface SchoolFormProps {

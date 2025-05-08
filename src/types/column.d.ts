@@ -1,83 +1,37 @@
 
-export interface TabDefinition {
-  id: string;
-  label: string;
-  content: React.ReactNode;
-}
-
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'multiselect' | 'checkbox' | 'radio' | 'textarea' | 'email' | 'phone' | 'file' | 'image' | 'boolean';
-
-export interface ColumnOption {
-  label: string;
-  value: string;
-}
-
-export interface ColumnValidation {
-  required?: boolean;
-  min?: number;
-  max?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  patternMessage?: string;
-}
-
 export interface Column {
   id: string;
   name: string;
-  type: ColumnType;
+  type: string;
   category_id?: string;
   is_required?: boolean;
-  order_index: number;
-  help_text?: string;
+  order_index?: number;
+  options?: string[] | Record<string, string> | any;
+  validation?: any;
   placeholder?: string;
-  default_value?: string | number | boolean;
-  options?: ColumnOption[];
-  validation?: ColumnValidation;
-  status?: string;
+  help_text?: string;
+  default_value?: string;
   created_at?: string;
   updated_at?: string;
-  // Frontend specific properties
-  label?: string;
-  section?: string;
-  parent_column_id?: string | null;
-  conditional_display?: any | null;
+  status?: string;
 }
 
-export interface ColumnFormData {
-  id?: string;
-  name: string;
-  type: ColumnType;
-  category_id?: string;
-  is_required?: boolean;
-  help_text?: string;
-  placeholder?: string;
-  options?: ColumnOption[];
-  default_value?: any;
-  order_index?: number;
-}
-
-export interface Category {
+export interface CategoryWithColumns {
   id: string;
   name: string;
   description?: string;
-  deadline?: string;
   status?: string;
-  priority?: number;
+  deadline?: string | Date;
+  created_at?: string | Date;
+  updated_at?: string | Date;
   column_count?: number;
-  created_at?: string;
-  updated_at?: string;
+  priority?: number;
+  assignment?: string;
+  archived?: boolean;
+  columns: Column[];
 }
 
-export interface CategoryWithColumns extends Category {
-  columns?: Column[];
-  completionRate?: number;
-  entries?: any[];
-}
-
-export interface CategoryFilter {
-  search?: string;
-  status?: string;
-  sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
+export interface TabDefinition {
+  id: string;
+  label: string;
 }
