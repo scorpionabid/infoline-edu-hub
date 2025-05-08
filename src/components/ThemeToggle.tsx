@@ -31,4 +31,6 @@ const ThemeToggle = () => {
   );
 };
 
+// Həm default, həm də named export etməklə hər iki import üslubunu dəstəkləyirik
 export default ThemeToggle;
+export { ThemeToggle };
