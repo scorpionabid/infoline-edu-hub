@@ -51,9 +51,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId })
 
   // Bildirişləri adaptasiya etmək
   useEffect(() => {
-    const dashboardNotifications: DashboardNotification[] = notifications.map(notification => ({
-      ...adaptAppNotificationToDashboard(notification)
-    }));
+    const dashboardNotifications = notifications.map(notification => 
+      adaptAppNotificationToDashboard(notification)
+    );
 
     setDashboardData(prev => ({
       ...prev,

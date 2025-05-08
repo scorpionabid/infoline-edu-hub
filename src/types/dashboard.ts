@@ -31,7 +31,7 @@ export interface SectorCompletionItem {
   id: string;
   name: string;
   completionRate: number;
-  schoolCount: number;
+  schoolCount?: number;
   schoolsCount?: number;
   schoolStats?: SchoolCompletionItem[];
 }
@@ -69,9 +69,9 @@ export interface PendingApproval {
   id: string;
   schoolName: string;
   categoryName: string;
-  submittedBy: string;
+  submittedBy?: string;
   submittedAt: string;
-  date: string; // Added date property to fix errors
+  date: string;
   status: 'pending' | 'approved' | 'rejected';
   schoolId?: string;
   categoryId?: string;
@@ -103,10 +103,19 @@ export interface DashboardNotification {
   title: string;
   message: string;
   date: string;
+  read: boolean;
   isRead: boolean;
-  read: boolean; // Added to accommodate all uses
-  type: 'info' | 'warning' | 'error' | 'success';
-  priority?: 'low' | 'medium' | 'high';
+  type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
+  link?: string;
+  category?: string;
+  priority?: 'normal' | 'high' | 'critical' | 'low' | 'medium';
+  createdAt?: string;
+  timestamp?: string;
+  entity?: {
+    type: string;
+    id: string;
+    name?: string;
+  };
 }
 
 // Kateqoriyalar tipi
@@ -117,10 +126,10 @@ export interface CategoryItem {
   submissionCount?: number;
   completionPercentage?: number;
   deadline?: string;
-  dueDate?: string; // Əlavə edildi
+  dueDate?: string; 
   status: string;
-  progress: number; // Əlavə edildi
-  categoryId?: string; // Əlavə edildi
+  progress: number;
+  categoryId?: string;
 }
 
 // Məktəb statistikası tipi
@@ -146,10 +155,10 @@ export interface PendingForm {
   categoryName: string;
   deadline?: string;
   status: string;
-  categoryId?: string; // Added for FormTabs
-  name?: string; // Added to make it compatible with FormItem
-  title?: string; // Added for FormTabs
-  category?: string; // Added for FormTabs
+  categoryId?: string;
+  name?: string;
+  title?: string;
+  category?: string;
 }
 
 export interface UpcomingDeadline {
@@ -157,10 +166,10 @@ export interface UpcomingDeadline {
   categoryName: string;
   deadline: string;
   status: string;
-  title?: string; // Added for FormTabs
-  completionRate?: number; // Added for FormTabs
-  daysRemaining?: number; // Added for FormTabs
-  categoryId?: string; // Added for FormTabs
+  title?: string;
+  completionRate?: number;
+  daysRemaining?: number;
+  categoryId?: string;
 }
 
 export interface DeadlineItem extends UpcomingDeadline {
@@ -176,9 +185,10 @@ export interface FormItem {
   deadline?: string;
   status: string;
   completionRate?: number;
-  categoryId: string; // Added for FormTabs
-  title: string; // Added for FormTabs
-  category: string; // Added for FormTabs
+  categoryId: string;
+  title: string;
+  category: string;
+  categoryName?: string;
 }
 
 // Dashboard verilənləri tiplər
@@ -258,5 +268,18 @@ export interface SuperAdminDashboardProps {
 export interface StatusCardsProps {
   completion: CompletionData;
   status: DashboardStatus;
-  formStats: DashboardFormStats;
+  formStats?: DashboardFormStats;
+}
+
+export interface ChartData {
+  activityData: Array<{ name: string; value: number }>;
+  regionSchoolsData: Array<{ name: string; value: number }>;
+  categoryCompletionData: Array<{ name: string; completed: number }>;
+}
+
+export interface CategoryStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  completion: CompletionData;
 }

@@ -100,8 +100,8 @@ const FormTabs: React.FC<FormTabsProps> = ({
                 {pendingForms.length > 0 ? (
                   pendingForms.map(form => (
                     <TableRow key={form.id}>
-                      <TableCell>{form.title || form.name || form.categoryName}</TableCell>
-                      <TableCell>{form.category || form.categoryName}</TableCell>
+                      <TableCell>{form.title || form.name}</TableCell>
+                      <TableCell>{form.category}</TableCell>
                       <TableCell>
                         <Badge 
                           variant="outline" 
@@ -114,7 +114,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleNavigateToForm(form.categoryId || form.id)}
+                          onClick={() => handleNavigateToForm(form.categoryId)}
                         >
                           {t('continue')}
                         </Button>

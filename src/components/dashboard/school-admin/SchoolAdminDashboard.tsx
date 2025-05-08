@@ -6,7 +6,7 @@ import { CompletionRateCard } from '../common/CompletionRateCard';
 import NotificationsCard from '../common/NotificationsCard';
 import { SchoolAdminDashboardData, FormItem, SchoolAdminDashboardProps } from '@/types/dashboard';
 import { Loader2 } from 'lucide-react';
-import { adaptDashboardNotificationToApp, AppNotification } from '@/types/notification';
+import { adaptDashboardNotificationToApp } from '@/types/notification';
 import CompletionProgress from '../CompletionProgress';
 
 export function SchoolAdminDashboard({ 
@@ -62,7 +62,7 @@ export function SchoolAdminDashboard({
   // Bildirişləri adapterlə çevirək - tip problemini həll edirik
   const adaptedNotifications = Array.isArray(data.notifications) 
     ? data.notifications.map((notification) => {
-        return notification; // Artıq düzgün tipdədir
+        return adaptDashboardNotificationToApp(notification); 
       })
     : [];
 

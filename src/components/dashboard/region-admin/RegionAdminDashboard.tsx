@@ -13,9 +13,17 @@ interface RegionAdminDashboardProps {
 }
 
 export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data, regionId }) => {
-  // Bildirişleri adapterlə çevirək
+  // Bildirişlər notifcation.ts-dən gəlir və dashboard.ts-dən fərqli ola bilər
+  // Adaptasiyadan əvvəl yoxlanış edirik ki, adaptasiya funksiyası mövcud tiplərlə işləyir
   const adaptedNotifications = Array.isArray(data.notifications) 
-    ? data.notifications.map((notification) => adaptDashboardNotificationToApp(notification))
+    ? data.notifications.map(notification => {
+        const notificationWithAllFields = {
+          ...notification,
+          read: notification.read || notification.isRead || false,
+          isRead: notification.isRead || notification.read || false
+        };
+        return adaptDashboardNotificationToApp(notificationWithAllFields);
+      })
     : [];
 
   return (

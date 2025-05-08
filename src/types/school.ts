@@ -83,4 +83,6 @@ export interface SectorSchool extends School {
   completionRate?: number;
   principalName?: string;
   principal_name?: string;
+  completion_rate?: number;
+  updated_at?: string;
 }

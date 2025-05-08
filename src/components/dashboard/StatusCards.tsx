@@ -5,7 +5,12 @@ import { Progress } from '@/components/ui/progress';
 import { useLanguage } from '@/context/LanguageContext';
 import { StatusCardsProps } from '@/types/dashboard';
 
-const StatusCards: React.FC<StatusCardsProps> = ({ completion, status, formStats }) => {
+const StatusCards: React.FC<StatusCardsProps> = ({ completion, status, formStats = {
+  pending: status.pending,
+  approved: status.approved,
+  rejected: status.rejected,
+  total: status.total
+} }) => {
   const { t } = useLanguage();
 
   return (

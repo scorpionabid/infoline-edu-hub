@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -17,25 +17,33 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
   const { notifications, markAsRead } = useNotifications();
   
   // Bildirişləri adaptasiya etmək
-  useEffect(() => {
+  const adaptedNotifications = useMemo(() => {
     if (notifications && notifications.length > 0) {
-      const adaptedNotifications = notifications.map(n => adaptAppNotificationToDashboard(n));
-      // Burada adaptedNotifications-i state-ə yaza bilərdik amma data prop-u olduğu üçün etmirik
+      return notifications.map(n => adaptAppNotificationToDashboard(n));
     }
+    return [];
   }, [notifications]);
 
   // Məktəblərin lastUpdate və pendingForms xüsusiyyətlərini əlavə edirik
-  const enhancedSchools: SchoolStat[] = data.schoolStats.map(school => ({
-    ...school,
-    lastUpdate: school.lastUpdate || new Date().toISOString(),
-    pendingForms: school.pendingForms || Math.floor(Math.random() * 5) // Mock data
-  }));
+  const enhancedSchools: SchoolStat[] = useMemo(() => {
+    return data.schoolStats.map(school => ({
+      ...school,
+      lastUpdate: school.lastUpdate || new Date().toISOString(),
+      pendingForms: school.pendingForms || Math.floor(Math.random() * 5) // Mock data
+    }));
+  }, [data.schoolStats]);
 
   return (
     <div className="space-y-6">
       <StatusCards
         completion={data.completion}
         status={data.status}
+        formStats={{
+          pending: data.status.pending,
+          approved: data.status.approved,
+          rejected: data.status.rejected,
+          total: data.status.total
+        }}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -67,7 +75,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
 
         <div className="space-y-6">
           <NotificationsCard 
-            notifications={notifications} 
+            notifications={adaptedNotifications} 
             onMarkAsRead={markAsRead} 
           />
           

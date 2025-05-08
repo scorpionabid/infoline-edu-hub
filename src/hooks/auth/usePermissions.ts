@@ -18,6 +18,12 @@ export interface UsePermissionsResult {
   canCreateCategory: boolean;
   canCreateColumn: boolean;
   canResetData: boolean;
+  canManageUsers: boolean;
+  canManageRegions: boolean;
+  canManageSectors: boolean;
+  canManageSchools: boolean;
+  canManageCategories: boolean;
+  canViewSectorCategories: boolean;
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
@@ -45,6 +51,12 @@ export const usePermissions = (): UsePermissionsResult => {
         canCreateCategory: false,
         canCreateColumn: false,
         canResetData: false,
+        canManageUsers: false,
+        canManageRegions: false,
+        canManageSectors: false,
+        canManageSchools: false,
+        canManageCategories: false,
+        canViewSectorCategories: false,
       };
     }
     
@@ -75,6 +87,12 @@ export const usePermissions = (): UsePermissionsResult => {
       canCreateCategory: isSuperAdmin || isRegionAdmin,
       canCreateColumn: isSuperAdmin || isRegionAdmin,
       canResetData: isSuperAdmin,
+      canManageUsers: isSuperAdmin || isRegionAdmin || isSectorAdmin,
+      canManageRegions: isSuperAdmin,
+      canManageSectors: isSuperAdmin || isRegionAdmin,
+      canManageSchools: isSuperAdmin || isRegionAdmin || isSectorAdmin,
+      canManageCategories: isSuperAdmin || isRegionAdmin,
+      canViewSectorCategories: isSuperAdmin || isRegionAdmin || isSectorAdmin,
     };
   }, [user, isAuthenticated]);
 };

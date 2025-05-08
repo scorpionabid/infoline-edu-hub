@@ -5,12 +5,12 @@ export interface AppNotification {
   title: string;
   message: string;
   date: string;
-  read: boolean; // optional deyil
+  read: boolean; 
   isRead?: boolean;
   type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
   link?: string;
   category?: string;
-  priority?: 'normal' | 'high' | 'critical';
+  priority?: 'normal' | 'high' | 'critical' | 'low' | 'medium';
   createdAt?: string;
   timestamp?: string;
   entity?: {
@@ -27,11 +27,11 @@ export interface DashboardNotification {
   message: string;
   date: string;
   read: boolean;
-  isRead?: boolean; // İki interfeys arasında uyğunluq təmin etmək üçün
+  isRead?: boolean; 
   type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
   link?: string;
   category?: string;
-  priority?: 'normal' | 'high' | 'critical';
+  priority?: 'normal' | 'high' | 'critical' | 'low' | 'medium';
   createdAt?: string;
   timestamp?: string;
   entity?: {
@@ -56,6 +56,7 @@ export const adaptDashboardNotificationToApp = (notification: DashboardNotificat
     message: notification.message,
     date: notification.date,
     read: notification.read || notification.isRead || false,
+    isRead: notification.isRead || notification.read || false,
     type: notification.type,
     link: notification.link,
     category: notification.category,

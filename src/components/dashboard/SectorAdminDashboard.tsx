@@ -44,12 +44,12 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
     viewEntryDetails,
   } = useSectorAdminDashboard();
 
-  const schoolStatsData = useMemo(() => {
-    return schools.map((school: SectorSchool) => ({
+  const schoolStatsData: SchoolStat[] = useMemo(() => {
+    return (schools || []).map((school: SectorSchool) => ({
       id: school.id,
       name: school.name,
       status: school.status,
-      completionRate: school.completionRate || 0,
+      completionRate: school.completionRate || school.completion_rate || 0,
       lastUpdate: school.lastUpdate || school.updated_at || '-',
       pendingForms: school.pendingForms || 0,
       formsCompleted: school.formsCompleted || 0,

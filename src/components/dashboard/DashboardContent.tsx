@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useLanguage } from '@/context/LanguageContext';
@@ -5,7 +6,15 @@ import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
 import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
-import { DashboardStats, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData, SuperAdminDashboardData } from '@/types/dashboard';
+import { 
+  DashboardStats, 
+  RegionAdminDashboardData, 
+  SectorAdminDashboardData, 
+  SchoolAdminDashboardData, 
+  SuperAdminDashboardData,
+  CompletionData,
+  DashboardStatus
+} from '@/types/dashboard';
 
 const DashboardContent: React.FC = () => {
   const { userRole, regionId, sectorId, schoolId } = usePermissions();
@@ -134,9 +143,9 @@ const DashboardContent: React.FC = () => {
         },
         categories: [],
         sectors: [
-          { id: '1', name: 'Bakı şəhəri', completionRate: 75, schoolCount: 150, schoolsCount: 150 },
-          { id: '2', name: 'Sumqayıt şəhəri', completionRate: 62, schoolCount: 75, schoolsCount: 75 },
-          { id: '3', name: 'Gəncə şəhəri', completionRate: 48, schoolCount: 52, schoolsCount: 52 }
+          { id: '1', name: 'Bakı şəhəri', completionRate: 75, schoolCount: 150 },
+          { id: '2', name: 'Sumqayıt şəhəri', completionRate: 62, schoolCount: 75 },
+          { id: '3', name: 'Gəncə şəhəri', completionRate: 48, schoolCount: 52 }
         ],
         notifications: [],
         pendingApprovals: []
