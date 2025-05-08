@@ -31,24 +31,30 @@ const AccountSettings: React.FC = () => {
       if (updateUser) {
         updateUser({
           ...user,
-          notificationSettings: data.notificationSettings
+          notificationSettings: data.notificationSettings as NotificationSettings
         });
       }
       
       toast.success('Preferences updated successfully');
     } catch (error: any) {
-      console.error('Failed to update preferences:', error);
-      toast.error('Failed to update preferences');
-      throw error;
+      console.error('Error updating preferences:', error);
+      toast.error('Error updating preferences', {
+        description: error.message
+      });
     }
   };
-  
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="space-y-6">
       <PasswordChangeForm />
+      
       <PreferencesForm 
-        user={user as FullUserData} 
-        onSubmit={handleUpdatePreferences} 
+        user={user}
+        onSubmit={handleUpdatePreferences}
       />
     </div>
   );

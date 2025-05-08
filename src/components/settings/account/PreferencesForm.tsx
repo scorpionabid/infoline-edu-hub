@@ -29,7 +29,7 @@ export const PreferencesForm: React.FC<PreferencesFormProps> = ({ user, onSubmit
   const { t } = useLanguage();
 
   // Use default empty notification settings if not provided
-  const defaultSettings: NotificationSettings = {
+  const defaultSettings: FormValues = {
     email: true,
     inApp: true,
     push: false,
@@ -49,7 +49,7 @@ export const PreferencesForm: React.FC<PreferencesFormProps> = ({ user, onSubmit
   const handleSubmit = async (values: FormValues) => {
     try {
       await onSubmit({
-        notificationSettings: values as NotificationSettings,
+        notificationSettings: values
       });
     } catch (error) {
       console.error('Error updating preferences:', error);

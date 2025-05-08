@@ -1,73 +1,118 @@
 
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Sector } from '@/types/sector';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
 import { Badge } from '@/components/ui/badge';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { Sector, EnhancedSector } from '@/types/supabase';
-import { formatDate } from '@/utils/date';
-import { 
-  SchoolIcon, 
-  CheckCircleIcon, 
-  PieChartIcon 
-} from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface SectorCardProps {
-  sector: Sector | EnhancedSector;
-  onClick?: () => void;
+  sector: Sector;
+  onEdit?: (sector: Sector) => void;
+  onDelete?: (sector: Sector) => void;
+  onManageAdmin?: (sector: Sector) => void;
+  regionNames?: Record<string, string>;
+  showRegion?: boolean;
 }
 
-export const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
-  const { t } = useLanguageSafe();
+const SectorCard: React.FC<SectorCardProps> = ({ 
+  sector, 
+  onEdit, 
+  onDelete,
+  onManageAdmin,
+  regionNames = {},
+  showRegion = true
+}) => {
+  const { t } = useLanguage();
   
-  // Ensure we use regionName or region_name safely
-  const regionName = 
-    'regionName' in sector ? sector.regionName : 
-    'region_name' in sector ? sector.region_name : 
-    '';
-
-  // Ensure we use schoolCount or school_count safely
-  const schoolCount = 
-    'schoolCount' in sector ? sector.schoolCount : 
-    'school_count' in sector ? sector.school_count : 
-    0;
-
-  // Ensure we use completionRate or completion_rate safely
-  const completionRate = 
-    'completionRate' in sector ? sector.completionRate : 
-    'completion_rate' in sector ? sector.completion_rate : 
-    0;
+  // Helper function to get region name
+  const getRegionName = () => {
+    if (!showRegion) return null;
+    const regionName = sector.regionName || sector.region_name || regionNames[sector.region_id];
+    return regionName || t('unknownRegion');
+  };
 
   return (
-    <Card 
-      className="h-full cursor-pointer transform transition-transform hover:scale-[1.01]"
-      onClick={onClick}
-    >
+    <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-semibold">{sector.name}</CardTitle>
-          <Badge variant={sector.status === 'active' ? 'default' : 'outline'}>
-            {t(sector.status || 'active')}
-          </Badge>
-        </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          {regionName || t('noRegion')}
-        </p>
-      </CardHeader>
-      <CardContent className="pb-2">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center text-sm">
-            <SchoolIcon className="mr-2 h-4 w-4 text-primary" />
-            <span>{t('schools')}: {schoolCount}</span>
+        <CardTitle className="flex justify-between items-start">
+          <div className="truncate">
+            {sector.name}
+            {showRegion && (
+              <div className="text-sm text-gray-600 mt-1 font-normal">
+                {t('region')}: {getRegionName()}
+              </div>
+            )}
           </div>
-          <div className="flex items-center text-sm">
-            <PieChartIcon className="mr-2 h-4 w-4 text-primary" />
-            <span>{t('completionRate')}: {Math.round(Number(completionRate))}%</span>
+          <Badge className="ml-2" variant={sector.status === 'active' ? 'default' : 'secondary'}>
+            {sector.status === 'active' ? t('active') : t('inactive')}
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {sector.description && (
+          <p className="text-sm text-gray-600 mb-4">{sector.description}</p>
+        )}
+        
+        <div className="flex justify-between items-center">
+          <div className="text-sm">
+            {sector.admin_email ? (
+              <span className="text-gray-600">{sector.admin_email}</span>
+            ) : (
+              <span className="text-gray-400">{t('noAdmin')}</span>
+            )}
+          </div>
+          
+          <div className="flex space-x-1">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              asChild
+              className="text-xs"
+            >
+              <Link to={`/sectors/${sector.id}`}>
+                <ExternalLink className="h-3 w-3 mr-1" />
+                {t('view')}
+              </Link>
+            </Button>
+            
+            {onEdit && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onEdit(sector)}
+                className="text-xs"
+              >
+                {t('edit')}
+              </Button>
+            )}
+            
+            {onManageAdmin && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onManageAdmin(sector)}
+                className="text-xs"
+              >
+                {t('admin')}
+              </Button>
+            )}
+            
+            {onDelete && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
+                onClick={() => onDelete(sector)}
+              >
+                {t('delete')}
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>
-      <CardFooter className="pt-2 text-xs text-muted-foreground">
-        {t('updatedAt')}: {formatDate(sector.updated_at || '')}
-      </CardFooter>
     </Card>
   );
 };

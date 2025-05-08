@@ -36,7 +36,7 @@ export interface SchoolStat {
   email?: string;
 }
 
-// Məktəb tipi - updated to make compatible with Supabase.School
+// Məktəb tipi - updated to match with Supabase.School
 export interface School {
   id: string;
   name: string;
@@ -47,9 +47,9 @@ export interface School {
   phone?: string;
   principal_name?: string;
   principalName?: string;
-  status: string;
-  created_at: string; // Changed from string | Date to just string
-  updated_at?: string; // Changed from string | Date to just string
+  status: string; 
+  created_at: string;
+  updated_at: string; // Changed to required to match supabase interface
   teacher_count?: number;
   student_count?: number;
   completion_rate?: number;
@@ -63,19 +63,19 @@ export interface School {
   sectorName?: string;
 }
 
-// Region tipi - updated to make compatible with Supabase.Region
+// Region tipi - updated to match with Supabase.Region
 export interface Region {
   id: string;
   name: string;
   description?: string;
   admin_id?: string;
   admin_email?: string;
-  created_at: string; // Changed from string | Date to just string
-  updated_at: string; // Changed from string | Date to just string
+  created_at: string; 
+  updated_at: string; // Changed to required to match supabase interface
   status: string;
 }
 
-// Sector tipi - updated to make compatible with Supabase.Sector
+// Sector tipi - updated to match with Supabase.Sector
 export interface Sector {
   id: string;
   name: string;
@@ -83,12 +83,12 @@ export interface Sector {
   region_id: string;
   admin_id?: string;
   admin_email?: string;
-  created_at: string; // Changed from string | Date to just string
-  updated_at: string; // Changed from string | Date to just string
+  created_at: string;
+  updated_at: string; // Changed to required to match supabase interface
   status: string;
   completion_rate?: number;
-  regionName?: string; // Added to match EnhancedSector
-  region_name?: string; // Added to match usage in SectorCard
+  regionName?: string; // Added to match usage in components
+  region_name?: string;
 }
 
 // SchoolForm props tipi

@@ -1,4 +1,5 @@
 
+
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
 export interface User {
@@ -8,30 +9,32 @@ export interface User {
 }
 
 export interface NotificationSettings {
-  email: {
-    enabled: boolean;
-    daily?: boolean;
-    weekly?: boolean;
-    immediate?: boolean;
-  };
-  app: {
-    enabled: boolean;
-    approvals?: boolean;
-    deadlines?: boolean;
-    system?: boolean;
-  };
+  email: boolean;
+  inApp: boolean;
+  push: boolean;
+  system: boolean;
+  deadline?: boolean;
+  sms?: boolean;
+  deadlineReminders?: boolean;
 }
 
 export interface UserFormData {
   id?: string;
   email: string;
   full_name: string;
+  fullName?: string;
   phone?: string;
   position?: string;
   language?: string;
   status?: string;
   role?: UserRole;
   region_id?: string;
+  regionId?: string;
   sector_id?: string;
+  sectorId?: string;
   school_id?: string;
+  schoolId?: string;
+  password?: string;
+  name?: string; // Sometimes used interchangeably with full_name
 }
+

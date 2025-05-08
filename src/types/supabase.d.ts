@@ -46,9 +46,9 @@ export interface Sector {
   region_name?: string;
   regionName?: string;
   description?: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
+  status: string; // Made required to match school.ts
+  created_at: string; // Made required to match school.ts
+  updated_at: string; // Made required to match school.ts
   admin_id?: string;
   admin_email?: string;
   completion_rate?: number;
@@ -68,11 +68,11 @@ export interface Region {
   id: string;
   name: string;
   description?: string;
-  status: string;
+  status: string; // Made required to match school.ts
   admin_id?: string;
   admin_email?: string;
-  created_at: string;
-  updated_at: string;
+  created_at: string; // Made required to match school.ts
+  updated_at: string; // Made required to match school.ts
 }
 
 export interface School {
@@ -91,11 +91,11 @@ export interface School {
   email?: string;
   student_count?: number;
   teacher_count?: number;
-  status: string;
+  status: string; // Made required to match school.ts
   type?: string;
   language?: string;
-  created_at: string;
-  updated_at?: string;
+  created_at: string; // Made required to match school.ts
+  updated_at: string; // Made required to match school.ts
   completion_rate?: number;
   completionRate?: number;
   logo?: string;
