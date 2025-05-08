@@ -167,12 +167,12 @@ export interface SuperAdminDashboardProps {
 
 export interface RegionAdminDashboardProps {
   data: RegionAdminDashboardData;
-  regionId: string;
+  regionId?: string;
 }
 
 export interface SectorAdminDashboardProps {
   data: SectorAdminDashboardData;
-  sectorId: string;
+  sectorId?: string;
 }
 
 export interface SchoolAdminDashboardProps {
@@ -186,7 +186,7 @@ export interface SchoolAdminDashboardProps {
 }
 
 export interface SchoolStatsCardProps {
-  schools: SchoolStat[];
+  stats: SchoolStat[];
 }
 
 export interface FormTabsProps {

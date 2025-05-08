@@ -7,8 +7,7 @@ import StatusCards from '@/components/dashboard/StatusCards';
 import SchoolStatsCard from '@/components/dashboard/common/SchoolStatsCard';
 import PendingApprovals from '@/components/approval/PendingApprovals';
 import NotificationsCard from '@/components/dashboard/common/NotificationsCard';
-import { SectorAdminDashboardData, SectorAdminDashboardProps } from '@/types/dashboard';
-import { SchoolStat, SectorSchool } from '@/types/school';
+import { SectorAdminDashboardData, SectorAdminDashboardProps, SchoolStat } from '@/types/dashboard';
 import SchoolsTable from './SchoolsTable';
 import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
 
@@ -26,30 +25,20 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
 
   // Məktəblərin lastUpdate və pendingForms xüsusiyyətlərini əlavə edirik
   const enhancedSchools: SchoolStat[] = useMemo(() => {
-    return data.schoolStats.map(school => {
-      // Əgər SectorSchool tipindədirsə çevirmə edirik
-      if ('sector_id' in school) {
-        const sectorSchool = school as SectorSchool;
-        return {
-          id: sectorSchool.id,
-          name: sectorSchool.name,
-          status: sectorSchool.status,
-          completionRate: sectorSchool.completionRate || sectorSchool.completion_rate || 0,
-          lastUpdate: sectorSchool.lastUpdate || sectorSchool.updated_at || new Date().toISOString(),
-          pendingForms: sectorSchool.pendingForms || 0,
-          formsCompleted: sectorSchool.formsCompleted || 0,
-          totalForms: sectorSchool.totalForms || 0,
-          principalName: sectorSchool.principalName || sectorSchool.principal_name || '',
-          address: sectorSchool.address || '',
-          phone: sectorSchool.phone || '',
-          email: sectorSchool.email || ''
-        };
-      }
-      
-      // Əgər artıq SchoolStat tipindədirsə olduğu kimi qaytarırıq
+    return (data.schoolStats || []).map(school => {
       return {
-        ...school as SchoolStat,
-        lastUpdate: (school as any).lastUpdate || new Date().toISOString()
+        id: school.id || '',
+        name: school.name || '',
+        status: school.status || 'active',
+        completionRate: school.completionRate || school.completion_rate || 0,
+        lastUpdate: school.lastUpdate || school.updated_at || new Date().toISOString(),
+        pendingForms: school.pendingForms || 0,
+        formsCompleted: school.formsCompleted || 0,
+        totalForms: school.totalForms || 0,
+        principalName: school.principalName || school.principal_name || '',
+        address: school.address || '',
+        phone: school.phone || '',
+        email: school.email || ''
       };
     });
   }, [data.schoolStats]);
@@ -88,7 +77,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
             </CardHeader>
             <CardContent>
               <PendingApprovals
-                pendingApprovals={data.pendingApprovals}
+                pendingApprovals={data.pendingApprovals || []}
                 limit={5}
                 showViewAllButton={true}
               />

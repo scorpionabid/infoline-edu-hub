@@ -70,6 +70,7 @@ export interface ColumnFormValues {
   validation?: ColumnValidation;
   status?: 'active' | 'inactive';
   description?: string;
+  section?: string; // Added for CategoryForm.tsx
 }
 
 export interface CategoryWithColumns {

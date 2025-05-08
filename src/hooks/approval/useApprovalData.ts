@@ -1,140 +1,109 @@
-
-import { useState, useCallback } from 'react';
-import { toast } from 'sonner';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { usePermissions } from '@/hooks/auth/usePermissions';
+import { useToast } from '@/hooks/use-toast';
 
-interface ApprovalItem {
-  id: string;
-  categoryId: string;
-  categoryName: string;
-  columnId: string;
-  columnName: string;
-  schoolId: string;
-  schoolName: string;
-  sectorName: string;
-  value: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submittedDate: string;
+interface ApprovalData {
+  pendingApprovals: any[];
+  loading: boolean;
+  error: any;
 }
 
-export const useApprovalData = () => {
-  const [data, setData] = useState<ApprovalItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-  const { isSectorAdmin, regionId, sectorId } = usePermissions();
+export const useApprovalData = (): ApprovalData => {
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { toast } = useToast();
 
-  const loadData = useCallback(async (status: 'pending' | 'approved' | 'rejected') => {
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    const fetchPendingApprovals = async () => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      // Sektor admini və ya Region admini üçün uyğun filtr əlavə et
-      let query = supabase
-        .from('data_entries')
-        .select(`
-          id,
-          category_id,
-          categories(name),
-          column_id,
-          columns(name),
-          school_id,
-          schools(name, sector_id, sectors(name)),
-          value,
-          status,
-          created_at
-        `)
-        .eq('status', status);
+      try {
+        const { data: approvals, error: approvalsError } = await supabase
+          .from('data_entries')
+          .select(`
+            id,
+            form_id,
+            school_id,
+            category_id,
+            submitted_at,
+            status,
+            school:schools (name),
+            category:categories (name)
+          `)
+          .eq('status', 'pending');
 
-      if (isSectorAdmin && sectorId) {
-        // Sektor admini yalnız öz sektorundakı məktəblərə aid olan məlumatları görə bilər
-        query = query.eq('schools.sector_id', sectorId);
-      } else if (regionId) {
-        // Region admini yalnız öz regionundakı məktəblərə aid olan məlumatları görə bilər
-        query = query.eq('schools.region_id', regionId);
+        if (approvalsError) {
+          throw new Error(approvalsError.message);
+        }
+
+        // Fetch additional details for regions and sectors
+        const schoolIds = [...new Set(approvals.map(approval => approval.school_id))];
+        const categoryIds = [...new Set(approvals.map(approval => approval.category_id))];
+
+        const { data: schools, error: schoolsError } = await supabase
+          .from('schools')
+          .select('id, name, sector_id, region_id');
+
+        if (schoolsError) {
+          throw new Error(schoolsError.message);
+        }
+
+        const { data: sectors, error: sectorsError } = await supabase
+          .from('sectors')
+          .select('id, name, region_id');
+
+        if (sectorsError) {
+          throw new Error(sectorsError.message);
+        }
+
+        const { data: regionsWithSectors, error: regionsWithSectorsError } = await supabase
+          .from('regions')
+          .select('id, name, sectors(id, name)');
+
+        if (regionsWithSectorsError) {
+          throw new Error(regionsWithSectorsError.message);
+        }
+
+        const enrichedApprovals = approvals.map(approval => {
+          const school = schools.find(s => s.id === approval.school_id);
+          const category = approval.category;
+          const regions = regionsWithSectors?.filter(r => r.id === school?.region_id);
+          const regionName = regions?.length > 0 && regions[0]?.name ? regions[0].name : '';
+          const sectorName = sectors?.length > 0 && sectors[0]?.name ? sectors[0].name : '';
+          const sectorRegionName = regionsWithSectors?.length > 0 && regionsWithSectors[0]?.name 
+            ? regionsWithSectors[0].name 
+            : '';
+          const sectorSectors = regionsWithSectors?.length > 0 && regionsWithSectors[0]?.sectors 
+            ? regionsWithSectors[0].sectors 
+            : [];
+
+          return {
+            ...approval,
+            schoolName: school?.name || 'Unknown School',
+            categoryName: category?.name || 'Unknown Category',
+            regionName: regionName || 'Unknown Region',
+            sectorName: sectorName || 'Unknown Sector',
+            sectorRegionName: sectorRegionName || 'Unknown Region',
+          };
+        });
+
+        setPendingApprovals(enrichedApprovals);
+      } catch (err: any) {
+        setError(err);
+        toast({
+          title: 'Error fetching pending approvals',
+          description: err.message,
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const { data: entries, error } = await query;
+    fetchPendingApprovals();
+  }, [toast]);
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const formattedData = entries.map(entry => ({
-        id: entry.id,
-        categoryId: entry.category_id,
-        categoryName: entry.categories?.name || 'Unknown Category',
-        columnId: entry.column_id,
-        columnName: entry.columns?.name || 'Unknown Column',
-        schoolId: entry.school_id,
-        schoolName: entry.schools?.name || 'Unknown School',
-        sectorName: entry.schools?.sectors?.name || 'Unknown Sector',
-        value: entry.value || '',
-        status: entry.status as 'pending' | 'approved' | 'rejected',
-        submittedDate: new Date(entry.created_at).toLocaleDateString(),
-      }));
-
-      setData(formattedData);
-
-    } catch (err: any) {
-      console.error('Error loading approval data:', err);
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [isSectorAdmin, regionId, sectorId]);
-
-  const approveItem = useCallback(async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('data_entries')
-        .update({
-          status: 'approved',
-          approved_at: new Date().toISOString(),
-          approved_by: (await supabase.auth.getUser()).data.user?.id,
-        })
-        .eq('id', id);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return true;
-    } catch (err) {
-      console.error('Error approving item:', err);
-      return false;
-    }
-  }, []);
-
-  const rejectItem = useCallback(async (id: string, reason: string) => {
-    try {
-      const { error } = await supabase
-        .from('data_entries')
-        .update({
-          status: 'rejected',
-          rejected_at: new Date().toISOString(),
-          rejected_by: (await supabase.auth.getUser()).data.user?.id,
-          rejection_reason: reason,
-        })
-        .eq('id', id);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return true;
-    } catch (err) {
-      console.error('Error rejecting item:', err);
-      return false;
-    }
-  }, []);
-
-  return {
-    data,
-    loading,
-    error,
-    loadData,
-    approveItem,
-    rejectItem,
-  };
+  return { pendingApprovals, loading, error };
 };

@@ -90,10 +90,12 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   authenticated: boolean;
   loading: boolean;
-  error: AuthErrorType;
+  error: AuthErrorType | string;
   login: (email: string, password: string) => Promise<{ user: any; error: AuthErrorType | null }>;
   signup: (email: string, password: string, options?: any) => Promise<{ user: any; error: AuthErrorType | null }>;
   logout: () => Promise<void>;
+  logIn?: (email: string, password: string) => Promise<any>;
+  logOut?: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ data: any; error: AuthErrorType | null }>;
   updatePassword: (newPassword: string) => Promise<{ data: any; error: AuthErrorType | null }>;
   updateProfile: (data: Partial<FullUserData>) => Promise<{ data: any; error: AuthErrorType | null }>;
@@ -101,4 +103,6 @@ export interface AuthContextType {
   createUser?: (userData: UserFormData) => Promise<{ data: any; error: any }>;
   updateUser?: (updates: Partial<FullUserData>) => Promise<boolean | void>;
   updateUserProfile?: (userData: Partial<FullUserData>) => Promise<void>;
+  setError?: (error: string | null) => void;
+  clearError?: () => void;
 }

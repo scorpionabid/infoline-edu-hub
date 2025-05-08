@@ -1,47 +1,37 @@
 
-import { useContext } from 'react';
-import { AuthContext } from './context';
-import { AuthContextType } from '@/types/user'; 
+import { useContext, createContext } from 'react';
+import { AuthContextType } from '@/types/user';
 
-export const useAuth = (): AuthContextType => {
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export const AuthProvider = AuthContext.Provider;
+
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   
-  // Contextə authenticated xassəsini əlavə et və notificationSettings tipini uyğunlaşdır
+  // Make sure we provide all properties required by AuthContextType
   return {
     ...context,
     authenticated: context.isAuthenticated,
-    user: context.user ? {
-      ...context.user,
-      notificationSettings: context.user.notificationSettings ? {
-        ...context.user.notificationSettings,
-        inApp: context.user.notificationSettings.push || false,
-        sms: context.user.notificationSettings.sms || false,
-        system: context.user.notificationSettings.system || false,
-        deadlineReminders: context.user.notificationSettings.deadline || false
-      } : {
-        email: false,
-        inApp: false,
-        push: false,
-        system: false,
-        deadline: false,
-        sms: false,
-        deadlineReminders: false
+    logout: context.logout,
+    logIn: context.login,
+    logOut: context.logout,
+    signOut: context.logout,
+    loading: context.loading,
+    setError: (error: string | null) => {
+      if (context.clearError && typeof error === 'string') {
+        context.clearError();
       }
-    } : null,
-    logout: context.logout || (async () => {})
+    },
+    clearError: context.clearError || (() => {}),
+    refreshProfile: async (): Promise<any> => {
+      await context.refreshSession();
+      return context.user;
+    }
   };
 };
 
-// Avtorizasiya olmayan halda xəta atır
-export const useAuthSafe = () => {
-  const auth = useAuth();
-  
-  if (!auth.user && !auth.loading) { 
-    throw new Error('useAuthSafe must be used within an authenticated context and after loading is complete');
-  }
-  
-  return auth;
-};
+export default useAuth;

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, UserPlus, School } from 'lucide-react';
-import { Sector } from '@/types/school';
+import { EnhancedSector } from '@/types/supabase';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { formatDate } from '@/utils/date';
 
@@ -19,12 +19,12 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading = false }
   const { t } = useLanguage();
   const { sectors } = useSectorsStore();
   const { isSuperAdmin, isRegionAdmin } = usePermissions();
-  const [filteredSectors, setFilteredSectors] = useState<Sector[]>([]);
+  const [filteredSectors, setFilteredSectors] = useState<EnhancedSector[]>([]);
   
   // Sektorların lokallaşdırılması və filterlənməsi
   useEffect(() => {
     if (sectors) {
-      setFilteredSectors(sectors);
+      setFilteredSectors(sectors as EnhancedSector[]);
     }
   }, [sectors]);
 

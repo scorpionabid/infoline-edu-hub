@@ -1,4 +1,3 @@
-
 import { User } from '@/types/user';
 
 export const mockUsers: User[] = [
@@ -20,7 +19,9 @@ export const mockUsers: User[] = [
       email: true,
       push: true,
       sms: false,
-      system: true
+      system: true,
+      inApp: true,
+      deadline: true
     }
   },
   {
@@ -42,7 +43,9 @@ export const mockUsers: User[] = [
       email: true,
       push: true,
       sms: false,
-      system: true
+      system: true,
+      inApp: true,
+      deadline: true
     }
   },
   {
@@ -65,7 +68,9 @@ export const mockUsers: User[] = [
       email: true,
       push: true,
       sms: false,
-      system: true
+      system: true,
+      inApp: true,
+      deadline: true
     }
   },
   {
@@ -89,7 +94,9 @@ export const mockUsers: User[] = [
       email: true,
       push: true,
       sms: false,
-      system: true
+      system: true,
+      inApp: true,
+      deadline: true
     }
   },
   {
@@ -112,7 +119,9 @@ export const mockUsers: User[] = [
       email: true,
       push: true,
       sms: false,
-      system: false
+      system: false,
+      inApp: true,
+      deadline: true
     }
   },
   {
@@ -136,7 +145,9 @@ export const mockUsers: User[] = [
       email: true,
       push: true,
       sms: false,
-      system: true
+      system: true,
+      inApp: true,
+      deadline: true
     }
   },
   {
@@ -158,7 +169,9 @@ export const mockUsers: User[] = [
       email: true,
       push: true,
       sms: false,
-      system: true
+      system: true,
+      inApp: true,
+      deadline: true
     }
   },
   {
@@ -181,7 +194,9 @@ export const mockUsers: User[] = [
       email: true,
       push: true,
       sms: false,
-      system: true
+      system: true,
+      inApp: true,
+      deadline: true
     }
   }
 ];

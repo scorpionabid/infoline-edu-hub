@@ -6,11 +6,12 @@ import StatusCards from '../StatusCards';
 import NotificationsCard from '../common/NotificationsCard';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
-import { CategoryItem, DashboardNotification } from '@/types/dashboard';
+import { CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
 import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 import FormTabs from './FormTabs';
 import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
+import { AppNotification } from '@/types/notification';
 
 interface SchoolAdminDashboardProps {
   schoolId?: string;
@@ -73,7 +74,10 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
       // Transform any Category objects to CategoryItem objects by ensuring completionRate is present
       const processedCategories: CategoryItem[] = Array.isArray(data.categories) 
         ? data.categories.map(cat => ({
-          ...cat,
+          id: cat.id,
+          name: cat.name,
+          description: cat.description,
+          deadline: cat.deadline,
           completionRate: cat.completionRate || 0
         }))
         : [];
@@ -83,9 +87,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
         completion: data.completion,
         status: data.status,
         categories: processedCategories,
-        upcoming: data.upcoming,
+        upcoming: data.upcoming || [],
         pendingForms: data.pendingForms || [],
-        completionRate: data.completionRate,
+        completionRate: data.completionRate || 0,
         formStats: data.formStats || {
           pending: data.status?.pending || 0,
           approved: data.status?.approved || 0,
@@ -135,7 +139,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
 
         <div className="space-y-6">
           <NotificationsCard 
-            notifications={dashboardData.notifications.map(n => adaptDashboardNotificationToApp(n))} 
+            notifications={dashboardData.notifications.map(n => adaptDashboardNotificationToApp(n)) as AppNotification[]} 
             onMarkAsRead={markAsRead} 
           />
 

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useLanguage } from '@/context/LanguageContext';
-import { School, Region, Sector, SchoolFormProps } from '@/types/school';
+import { School, Region, Sector } from '@/types/supabase';
 import SchoolForm from './SchoolForm';
 
 interface EditSchoolDialogProps {
@@ -10,11 +10,12 @@ interface EditSchoolDialogProps {
   onClose: () => void;
   school: School;
   onSubmit: (schoolData: School) => Promise<void>;
-  regions: Region[];
-  sectors: Sector[];
-  regionNames: Record<string, string>;
-  sectorNames: Record<string, string>;
-  isSubmitting: boolean;
+  onSuccess?: () => void;
+  regions?: Region[];
+  sectors?: Sector[];
+  regionNames?: Record<string, string>;
+  sectorNames?: Record<string, string>;
+  isSubmitting?: boolean;
 }
 
 const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
@@ -22,16 +23,18 @@ const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
   onClose,
   school,
   onSubmit,
+  onSuccess,
   isSubmitting,
-  regions,
-  sectors,
-  regionNames,
-  sectorNames
+  regions = [],
+  sectors = [],
+  regionNames = {},
+  sectorNames = {}
 }) => {
   const { t } = useLanguage();
 
   const handleSubmit = async (data: Partial<School>) => {
     await onSubmit(data as School);
+    if (onSuccess) onSuccess();
   };
 
   return (

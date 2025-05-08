@@ -4,11 +4,10 @@ import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './region-admin/RegionAdminDashboard'; 
 import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import { useNavigate } from 'react-router-dom';
-import SchoolAdminDashboard from '@/components/dashboard/SchoolAdminDashboard';
-import { SchoolStat } from '@/types/dashboard';
-import { PendingApproval, CategoryItem, DeadlineItem, FormItem, DashboardNotification } from '@/types/dashboard';
+import SchoolAdminDashboard from '@/components/dashboard/school-admin/SchoolAdminDashboard';
+import { SchoolStat, PendingApproval, CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
 import { ArrowRight } from 'lucide-react';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 const mockSuperAdminData = () => ({
   completion: {
@@ -321,10 +320,6 @@ const DashboardContent: React.FC = () => {
         <SchoolAdminDashboard 
           schoolId={user.school_id || user.schoolId || ''}
           data={mockSchoolAdminData()}
-          isLoading={false}
-          error={null}
-          navigateToDataEntry={navigateToDataEntry}
-          handleFormClick={handleFormClick}
         />
       );
     default:
