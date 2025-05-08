@@ -4,37 +4,29 @@ export interface Column {
   name: string;
   type: string;
   category_id: string;
-  is_required?: boolean;
-  placeholder?: string;
-  help_text?: string;
-  status: string;
-  order_index?: number;
-  default_value?: string;
-  options?: any[] | Record<string, string>;
-  validation?: ValidationRules;
-  dependsOn?: DependsOnCondition;
   description?: string;
+  is_required?: boolean;
+  validation?: any;
+  options?: string[];
+  order?: number;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
 }
-
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'email' | 'phone' | 'file' | 'image' | 'url' | 'color' | 'password' | 'richtext' | 'range' | 'time' | 'datetime';
 
 export interface CategoryWithColumns {
   id: string;
   name: string;
   description?: string;
+  assignment?: string;
+  deadline?: string;
   status?: string;
-  completionRate?: number;
   columns: Column[];
-}
-
-export interface CategoryWithEntries {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
   completionRate: number;
-  entries?: Record<string, any>;
-  values?: Array<{columnId: string; value: any}>;
+  overallRate?: number;
+  archived?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TabDefinition {
@@ -44,10 +36,11 @@ export interface TabDefinition {
 }
 
 export interface CategoryFilter {
-  status?: string;
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  name?: string;
+  status?: string[];
+  assignment?: string[];
+  deadlineBefore?: Date;
+  deadlineAfter?: Date;
 }
 
 export interface ColumnFormData {
@@ -55,37 +48,10 @@ export interface ColumnFormData {
   name: string;
   type: string;
   category_id: string;
-  is_required: boolean;
-  placeholder?: string;
-  help_text?: string;
+  description?: string;
+  is_required?: boolean;
+  validation?: any;
+  options?: string[];
+  order?: number;
   status?: string;
-  order_index?: number;
-  default_value?: string;
-  options?: any[] | Record<string, string>;
-  validation?: ValidationRules;
-}
-
-export interface ValidationRules {
-  min?: number;
-  max?: number;
-  minValue?: number;
-  maxValue?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  patternError?: string;
-  minDate?: string;
-  maxDate?: string;
-  warningThreshold?: {
-    min?: number;
-    max?: number;
-  };
-}
-
-export interface DependsOnCondition {
-  columnId: string;
-  condition: {
-    type: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan';
-    value: any;
-  };
 }

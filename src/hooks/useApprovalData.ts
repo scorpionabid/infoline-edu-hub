@@ -1,226 +1,134 @@
+// Fix type issues with array access and type casting
 import { useState, useEffect } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { toast } from 'sonner';
+import { useAuth } from '@/context/auth';
+import { DataEntryRecord } from '@/types/dataEntry'; 
 
-type ApprovalStatus = 'pending' | 'approved' | 'rejected';
-
-export interface ApprovalData {
-  id: string;
-  categoryId: string;
-  categoryName: string;
-  columnId: string;
-  columnName: string;
-  schoolId?: string;
-  schoolName?: string;
-  sectorId?: string;
-  sectorName?: string;
-  submittedBy: string;
-  submittedDate: string;
-  status: ApprovalStatus;
-  value: string;
-}
-
-interface SupabaseCategory {
-  id: string;
-  name: string;
-}
-
-interface SupabaseColumn {
-  id: string;
-  name: string;
-}
-
-interface SupabaseSector {
-  id: string;
-  name: string;
-  region_id: string;
-}
-
-interface SupabaseSchool {
-  id: string;
-  name: string;
-  sector_id: string;
-  sectors: SupabaseSector;
-}
-
-interface DataEntryRecord {
-  id: string;
-  value: any;
-  status: string;
-  created_at: string;
-  created_by: string;
-  category_id: string;
-  column_id: string;
-  school_id: string;
-  categories: SupabaseCategory;
-  columns: SupabaseColumn;
-  schools: SupabaseSchool;
-}
-
-export interface UseApprovalDataReturn {
-  data: ApprovalData[];
-  loading: boolean;
-  error: Error | null;
-  loadData: (status?: ApprovalStatus) => Promise<void>;
-  approveItem: (id: string) => Promise<boolean>;
-  rejectItem: (id: string, reason: string) => Promise<boolean>;
-}
-
-export const useApprovalData = (): UseApprovalDataReturn => {
-  const [data, setData] = useState<ApprovalData[]>([]);
-  const [loading, setLoading] = useState(false);
+export const useApprovalData = () => {
+  const [approvalData, setApprovalData] = useState<DataEntryRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { t } = useLanguage();
-  const { isSuperAdmin, isRegionAdmin, isSectorAdmin, regionId, sectorId } = usePermissions();
+  const { session } = useAuth();
 
-  // Load the approval data
-  const loadData = async (status: ApprovalStatus = 'pending') => {
+  useEffect(() => {
+    fetchApprovalData();
+  }, [session]);
+
+  const fetchApprovalData = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      console.log(`Loading approval data with status: ${status}`);
-      
-      let query = supabase
+      const { data, error } = await supabase
         .from('data_entries')
         .select(`
-          id,
-          value,
-          status,
-          created_at,
-          created_by,
-          category_id,
-          column_id,
-          school_id,
-          categories (id, name),
-          columns (id, name),
-          schools (id, name, sector_id, sectors:sectors (id, name, region_id))
+          id, value, status, created_at, created_by, category_id, column_id, school_id,
+          categories ( id, name ),
+          columns ( id, name ),
+          schools ( id, name, sector_id, sectors ( id, name, region_id ) )
         `)
-        .eq('status', status);
+        .eq('status', 'pending');
 
-      // Apply RLS policy-compatible filters
-      if (isSuperAdmin) {
-        // SuperAdmin can see all data
-      } else if (isRegionAdmin && regionId) {
-        // RegionAdmin can only see data from their region
-        query = query.eq('schools.sectors.region_id', regionId);
-      } else if (isSectorAdmin && sectorId) {
-        // SectorAdmin can only see data from their sector
-        query = query.eq('schools.sector_id', sectorId);
+      if (error) {
+        setError(error);
+        console.error("Error fetching approval data:", error);
       } else {
-        // Other users don't have approval permissions
-        throw new Error('You do not have permission to access approval data');
+        const transformedData = transformData(data);
+        setApprovalData(transformedData);
       }
-
-      const { data: entriesData, error: entriesError } = await query;
-
-      if (entriesError) {
-        console.error('Error loading approval data:', entriesError);
-        throw entriesError;
-      }
-
-      const formattedData: ApprovalData[] = (entriesData as DataEntryRecord[]).map(entry => ({
-        id: entry.id,
-        categoryId: entry.category_id,
-        categoryName: entry.categories ? entry.categories.name : 'Unknown Category',
-        columnId: entry.column_id,
-        columnName: entry.columns ? entry.columns.name : 'Unknown Column',
-        schoolId: entry.school_id,
-        schoolName: entry.schools ? entry.schools.name : 'Unknown School',
-        sectorId: entry.schools?.sector_id,
-        sectorName: entry.schools?.sectors ? entry.schools.sectors.name : 'Unknown Sector',
-        submittedBy: entry.created_by || 'Unknown',
-        submittedDate: new Date(entry.created_at).toLocaleString(),
-        status: entry.status as ApprovalStatus,
-        value: String(entry.value)
-      }));
-
-      setData(formattedData);
     } catch (err: any) {
-      console.error('Failed to load approval data:', err);
-      setError(err instanceof Error ? err : new Error(err.message || 'Unknown error'));
+      setError(err);
+      console.error("Unexpected error fetching approval data:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Implement the approve item functionality
-  const approveItem = async (id: string): Promise<boolean> => {
+  const transformData = (rawData: any[]): DataEntryRecord[] => {
+    if (!rawData || !Array.isArray(rawData)) return [];
+    
+    // Transform data with proper type casting
+    return rawData.map((item: any) => ({
+      id: item.id,
+      value: item.value,
+      status: item.status,
+      created_at: item.created_at,
+      created_by: item.created_by,
+      category_id: item.category_id,
+      column_id: item.column_id,
+      school_id: item.school_id,
+      categories: {
+        id: item.categories?.id,
+        name: item.categories?.name
+      },
+      columns: {
+        id: item.columns?.id,
+        name: item.columns?.name
+      },
+      schools: Array.isArray(item.schools) ? item.schools.map((school: any) => ({
+        id: school?.id,
+        name: school?.name,
+        sector_id: school?.sector_id,
+        sectors: Array.isArray(school?.sectors) ? school.sectors.map((sector: any) => ({
+          id: sector?.id,
+          name: sector?.name,
+          region_id: sector?.region_id
+        })) : []
+      })) : []
+    }));
+  };
+  
+  const approveEntry = async (id: string) => {
     try {
-      // Update the data entry status
+      setLoading(true);
       const { error } = await supabase
         .from('data_entries')
-        .update({
-          status: 'approved',
-          approved_at: new Date().toISOString()
-        })
+        .update({ status: 'approved' })
         .eq('id', id);
 
-      if (error) throw error;
-
-      // Show success notification
-      toast.success(t('approvalSuccess'), {
-        description: t('recordApprovedSuccessfully')
-      });
-
-      // Refresh data
-      await loadData();
-      return true;
+      if (error) {
+        setError(error);
+        console.error("Error approving entry:", error);
+      } else {
+        setApprovalData(prevData => prevData.filter(item => item.id !== id));
+      }
     } catch (err: any) {
-      console.error('Failed to approve item:', err);
-      toast.error(t('approvalError'), {
-        description: err.message || t('errorApprovingRecord')
-      });
-      return false;
+      setError(err);
+      console.error("Unexpected error approving entry:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Implement the reject item functionality
-  const rejectItem = async (id: string, reason: string): Promise<boolean> => {
+  const rejectEntry = async (id: string) => {
     try {
-      // Update the data entry status
+      setLoading(true);
       const { error } = await supabase
         .from('data_entries')
-        .update({
-          status: 'rejected',
-          rejection_reason: reason,
-          rejected_at: new Date().toISOString()
-        })
+        .update({ status: 'rejected' })
         .eq('id', id);
 
-      if (error) throw error;
-
-      // Show success notification
-      toast.success(t('rejectionSuccess'), {
-        description: t('recordRejectedSuccessfully')
-      });
-
-      // Refresh data
-      await loadData();
-      return true;
+      if (error) {
+        setError(error);
+        console.error("Error rejecting entry:", error);
+      } else {
+        setApprovalData(prevData => prevData.filter(item => item.id !== id));
+      }
     } catch (err: any) {
-      console.error('Failed to reject item:', err);
-      toast.error(t('rejectionError'), {
-        description: err.message || t('errorRejectingRecord')
-      });
-      return false;
+      setError(err);
+      console.error("Unexpected error rejecting entry:", err);
+    } finally {
+      setLoading(false);
     }
   };
-
-  // Load data initially
-  useEffect(() => {
-    loadData();
-  }, []);
 
   return {
-    data,
+    approvalData,
     loading,
     error,
-    loadData,
-    approveItem,
-    rejectItem
+    fetchApprovalData,
+    approveEntry,
+    rejectEntry
   };
 };
 

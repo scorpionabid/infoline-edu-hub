@@ -1,94 +1,49 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
-
-export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
-
 export interface User {
   id: string;
   email: string;
   full_name?: string;
-  fullName?: string;
   role?: UserRole;
-  status?: UserStatus;
-  phone?: string;
-  language?: string;
-  position?: string;
-  created_at?: string;
-  createdAt?: string;
-  updated_at?: string;
-  updatedAt?: string;
-  last_login?: string;
-  lastLogin?: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  notificationSettings?: NotificationSettings;
-  name?: string;
-  avatar?: string;
-}
-
-export interface NotificationSettings {
-  email: boolean;
-  inApp: boolean;
-  push: boolean;
-  system: boolean;
-  deadline: boolean;
-  sms?: boolean;
-  deadlineReminders?: boolean;
-}
-
-export interface FullUserData extends User {
-  avatar?: string;
   region_id?: string;
   regionId?: string;
-  region_name?: string;
-  regionName?: string;
   sector_id?: string;
   sectorId?: string;
-  sector_name?: string;
-  sectorName?: string;
   school_id?: string;
   schoolId?: string;
-  school_name?: string;
-  schoolName?: string;
-  name?: string;
-  entityName?: {
-    region?: string;
-    sector?: string;
-    school?: string;
-  };
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  status?: string;
+  last_login?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+
+export interface UserFilter {
+  role?: UserRole[];
+  status?: string[];
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  search?: string;
 }
 
 export interface UserFormData {
-  fullName: string;
-  full_name?: string;
-  name?: string;
+  id?: string;
   email: string;
   password?: string;
-  role: UserRole;
-  regionId?: string;
-  region_id?: string;
-  sectorId?: string;
-  sector_id?: string;
-  schoolId?: string;
-  school_id?: string;
-  phone?: string;
-  position?: string;
-  status?: string;
+  full_name: string;
+  role: string;
+  region_id?: string | null;
+  sector_id?: string | null;
+  school_id?: string | null;
+  phone?: string | null;
+  position?: string | null;
   language?: string;
-  notificationSettings?: NotificationSettings;
-}
-
-export interface UserFilter {
-  role?: UserRole | UserRole[];
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  status?: UserStatus | UserStatus[];
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
+  avatar?: string | null;
+  status?: string;
+  notification_settings?: any;
 }

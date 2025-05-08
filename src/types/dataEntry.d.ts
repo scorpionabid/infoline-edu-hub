@@ -48,3 +48,32 @@ export interface ColumnValidationError {
   severity?: 'error' | 'warning';
   categoryId?: string;
 }
+
+export interface DataEntryRecord {
+  id: string;
+  value: any;
+  status: string;
+  created_at: string;
+  created_by: string;
+  category_id: string;
+  column_id: string;
+  school_id: string;
+  categories: {
+    id: string;
+    name: string;
+  };
+  columns: {
+    id: string;
+    name: string;
+  };
+  schools: {
+    id: string;
+    name: string;
+    sector_id: string;
+    sectors: {
+      id: string;
+      name: string;
+      region_id: string;
+    }[];
+  }[];
+}

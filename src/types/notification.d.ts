@@ -3,28 +3,12 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: NotificationType;
+  createdAt: string;
   read: boolean;
-  date: string;
-  user_id: string;
-  created_at?: string;
-  related_entity_id?: string;
-  related_entity_type?: string;
+  type: NotificationType;
+  priority?: 'low' | 'normal' | 'high';
+  entityId?: string;
+  entityType?: string;
 }
 
-export type NotificationType = 
-  | 'info' 
-  | 'warning' 
-  | 'error' 
-  | 'success'
-  | 'deadline'
-  | 'approval'
-  | 'rejection'
-  | 'system';
-
-export interface NotificationFilters {
-  read?: boolean;
-  type?: NotificationType | NotificationType[];
-  startDate?: string;
-  endDate?: string;
-}
+export type NotificationType = 'info' | 'warning' | 'error' | 'success';

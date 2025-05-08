@@ -9,7 +9,8 @@ import {
   SectorAdminDashboardData, 
   SchoolAdminDashboardData,
   ChartData,
-  CategoryStat
+  CategoryStat,
+  PendingApproval
 } from '@/types/dashboard';
 
 // Müvəqqəti mock data - CORS xətaları həll olunana qədər
@@ -179,9 +180,36 @@ export const useRealDashboardData = () => {
             },
             completionRate: 72,
             pendingApprovals: [
-              { id: '1', title: 'Məktəb infrastruktur hesabatı', date: new Date().toISOString(), status: 'pending', school: 'Bakı, 45 saylı məktəb' },
-              { id: '2', title: 'Müəllim hazırlığı hesabatı', date: new Date().toISOString(), status: 'pending', school: 'Sumqayıt, 12 saylı məktəb' },
-              { id: '3', title: 'Tədris materialları hesabatı', date: new Date().toISOString(), status: 'pending', school: 'Gəncə, 8 saylı məktəb' }
+              { 
+                id: '1', 
+                title: 'Məktəb infrastruktur hesabatı', 
+                date: new Date().toISOString(), 
+                status: 'pending', 
+                school: 'Bakı, 45 saylı məktəb',
+                schoolName: 'Bakı 45 saylı məktəb',
+                categoryName: 'İnfrastruktur',
+                submittedAt: new Date().toISOString()
+              },
+              { 
+                id: '2', 
+                title: 'Müəllim hazırlığı hesabatı', 
+                date: new Date().toISOString(), 
+                status: 'pending', 
+                school: 'Sumqayıt, 12 saylı məktəb',
+                schoolName: 'Sumqayıt 12 saylı məktəb',
+                categoryName: 'Müəllim hazırlığı',
+                submittedAt: new Date().toISOString()
+              },
+              { 
+                id: '3', 
+                title: 'Tədris materialları hesabatı', 
+                date: new Date().toISOString(), 
+                status: 'pending', 
+                school: 'Gəncə, 8 saylı məktəb',
+                schoolName: 'Gəncə 8 saylı məktəb',
+                categoryName: 'Tədris materialları',
+                submittedAt: new Date().toISOString()
+              }
             ],
             regions: [
               { id: '1', name: 'Bakı', sectorCount: 12, schoolCount: 120, completionRate: 85 },

@@ -1,143 +1,157 @@
-
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+// Fix only the problematic parts - update references to UserFilter properties
+import { useState, useCallback } from 'react';
 import { User, UserFilter } from '@/types/user';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface PaginationResult<T> {
+  data: T[];
+  total: number;
+}
 
 export const useOptimizedUserList = (initialFilters?: UserFilter) => {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [totalUsers, setTotalUsers] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
   const [filters, setFilters] = useState<UserFilter>(initialFilters || {});
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
 
-  const fetchUserCount = useCallback(async (filter: UserFilter) => {
-    try {
-      let query = supabase.from('users').select('*', { count: 'exact', head: true });
+  const itemsPerPage = 10;
 
-      // Apply filters
-      if (filter.role && Array.isArray(filter.role) && filter.role.length > 0) {
-        query = query.in('role', filter.role);
-      } else if (filter.role) {
-        query = query.eq('role', filter.role);
-      }
-      
-      if (filter.status && Array.isArray(filter.status) && filter.status.length > 0) {
-        query = query.in('status', filter.status);
-      } else if (filter.status) {
-        query = query.eq('status', filter.status);
-      }
+  const buildFilterQuery = useCallback((query: any, filters: UserFilter) => {
+    let builtQuery = query;
 
-      if (filter.regionId) query = query.eq('region_id', filter.regionId);
-      if (filter.sectorId) query = query.eq('sector_id', filter.sectorId);
-      if (filter.schoolId) query = query.eq('school_id', filter.schoolId);
-      
-      if (filter.search) {
-        query = query.or(`full_name.ilike.%${filter.search}%,email.ilike.%${filter.search}%`);
-      }
-
-      const { count, error } = await query;
-
-      if (error) throw error;
-      if (count !== null) setTotalUsers(count);
-    } catch (err) {
-      console.error('Error fetching user count:', err);
+    // Apply filters
+    if (filters.role && filters.role.length > 0) {
+      builtQuery = builtQuery.in('role', filters.role);
     }
+
+    if (filters.status && filters.status.length > 0) {
+      builtQuery = builtQuery.in('status', filters.status);
+    }
+
+    if (filters.regionId) {
+      builtQuery = builtQuery.eq('region_id', filters.regionId);
+    }
+
+    if (filters.sectorId) {
+      builtQuery = builtQuery.eq('sector_id', filters.sectorId);
+    }
+
+    if (filters.schoolId) {
+      builtQuery = builtQuery.eq('school_id', filters.schoolId);
+    }
+
+    if (filters.search && filters.search.trim() !== '') {
+      builtQuery = builtQuery.or(
+        `full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
+      );
+    }
+
+    return builtQuery;
   }, []);
 
-  const fetchUsers = useCallback(async (page = 1, pageSize = 10, filter: UserFilter = filters) => {
+  const fetchUsers = useCallback(async (page = 1, newFilters?: UserFilter) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Calculate offset for pagination
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
+      const activeFilters = newFilters || filters;
 
-      // Start building the query
+      // Build RLS filters
+      const rlsFilters: any = {};
+      if (activeFilters.role && activeFilters.role.length > 0) {
+        rlsFilters.role = activeFilters.role;
+      }
+      if (activeFilters.regionId) {
+        rlsFilters.region_id = activeFilters.regionId;
+      }
+      if (activeFilters.sectorId) {
+        rlsFilters.sector_id = activeFilters.sectorId;
+      }
+      if (activeFilters.schoolId) {
+        rlsFilters.school_id = activeFilters.schoolId;
+      }
+
+      // Fetch total count
+      let countQuery = supabase
+        .from('profiles')
+        .select('*', { count: 'exact' });
+
+      countQuery = buildFilterQuery(countQuery, activeFilters);
+      const { count, error: countError } = await countQuery;
+
+      if (countError) {
+        throw countError;
+      }
+
+      const total = count || 0;
+      setTotalUsers(total);
+
+      // Calculate total pages
+      const totalPageCount = Math.ceil(total / itemsPerPage);
+      setTotalPages(totalPageCount);
+
+      // Fetch paginated data
       let query = supabase
-        .from('users')
-        .select(`
-          *,
-          regions:region_id (id, name),
-          sectors:sector_id (id, name),
-          schools:school_id (id, name)
-        `)
-        .range(from, to);
+        .from('profiles')
+        .select('*')
+        .range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
 
-      // Apply filters
-      if (filter.role && Array.isArray(filter.role) && filter.role.length > 0) {
-        query = query.in('role', filter.role);
-      } else if (filter.role) {
-        query = query.eq('role', filter.role);
+      query = buildFilterQuery(query, activeFilters);
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
       }
 
-      if (filter.status && Array.isArray(filter.status) && filter.status.length > 0) {
-        query = query.in('status', filter.status);
-      } else if (filter.status) {
-        query = query.eq('status', filter.status);
-      }
-
-      if (filter.regionId) query = query.eq('region_id', filter.regionId);
-      if (filter.sectorId) query = query.eq('sector_id', filter.sectorId);
-      if (filter.schoolId) query = query.eq('school_id', filter.schoolId);
-      
-      if (filter.search) {
-        query = query.or(`full_name.ilike.%${filter.search}%,email.ilike.%${filter.search}%`);
-      }
-
-      // Apply sorting
-      if (filter.sortBy) {
-        const sortOrder = filter.sortOrder || 'asc';
-        query = query.order(filter.sortBy, { ascending: sortOrder === 'asc' });
-      } else {
-        // Default sort by creation date
-        query = query.order('created_at', { ascending: false });
-      }
-
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) throw fetchError;
-
-      // Format user data
-      const formattedUsers = data?.map(user => ({
-        ...user,
-        regionName: user.regions?.name,
-        sectorName: user.sectors?.name, 
-        schoolName: user.schools?.name
-      })) || [];
-
-      setUsers(formattedUsers);
-      setCurrentPage(page);
-
-      // Update total count
-      await fetchUserCount(filter);
+      setUsers(data || []);
+      setPage(page);
     } catch (err: any) {
-      console.error('Error fetching users:', err);
-      setError(err.message || 'Failed to fetch users');
+      setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
-  }, [filters, fetchUserCount]);
+  }, [buildFilterQuery, filters]);
 
-  // Fetch users when filters change
-  useEffect(() => {
-    fetchUsers(currentPage, pageSize);
-  }, [currentPage, pageSize, fetchUsers]);
+  const nextPage = useCallback(() => {
+    if (page < totalPages) {
+      fetchUsers(page + 1);
+    }
+  }, [page, totalPages, fetchUsers]);
+
+  const prevPage = useCallback(() => {
+    if (page > 1) {
+      fetchUsers(page - 1);
+    }
+  }, [page, fetchUsers]);
+
+  const applyFilters = useCallback(
+    (newFilters: UserFilter) => {
+      setFilters(newFilters);
+      setPage(1); // Reset to first page when filters change
+      fetchUsers(1, newFilters); // Apply filters on the first page
+    },
+    [fetchUsers]
+  );
 
   return {
     users,
+    totalUsers,
     loading,
     error,
-    totalUsers,
-    currentPage,
-    pageSize,
-    setPageSize,
-    setCurrentPage,
+    page,
+    totalPages,
     fetchUsers,
+    refetch: () => fetchUsers(page),
+    nextPage,
+    prevPage,
     filters,
-    setFilters
+    setFilters,
+    applyFilters
   };
 };
 

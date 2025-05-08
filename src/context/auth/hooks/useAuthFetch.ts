@@ -490,22 +490,45 @@ const useAuthFetch = (): AuthContextType => {
     });
   }, [setAuth, handleSession, cookies, getFullUserData]);
 
-  return {
-    ...state,
-    logIn,
-    logOut,
-    signOut: logOut,
+  const contextValue: AuthContextType = {
+    user: state.user,
+    session: state.session,
+    isAuthenticated: state.isAuthenticated,
+    authenticated: state.isAuthenticated,
+    loading: state.isLoading,
+    error: state.error,
+    logIn: async (email, password) => {
+      try {
+        const result = await logIn(email, password);
+        return { data: result, error: null };
+      } catch (error: any) {
+        return { data: null, error: error?.message || "Login failed" };
+      }
+    },
+    login: async (email, password) => {
+      try {
+        const result = await logIn(email, password);
+        return { user: result, error: null };
+      } catch (error: any) {
+        return { user: null, error: error?.message || "Login failed" };
+      }
+    },
+    logOut: logOut,
     logout: logOut,
-    updateUser,
-    clearError,
-    refreshProfile,
-    refreshSession,
-    updatePassword,
-    updateProfile,
-    resetPassword,
-    register,
-    setError
+    signOut: logOut,
+    updateUser: updateUser,
+    clearError: clearError,
+    refreshProfile: refreshProfile,
+    refreshSession: refreshSession,
+    updatePassword: updatePassword,
+    updateProfile: updateProfile,
+    resetPassword: resetPassword,
+    register: register,
+    setError: setError,
+    loading: state.isLoading
   };
+
+  return contextValue;
 };
 
 export default useAuthFetch;

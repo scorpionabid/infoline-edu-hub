@@ -1,129 +1,134 @@
-
-import { useState, useEffect } from 'react';
-import { Report } from '@/types/report';
+import { useState, useCallback } from 'react';
+import { Report, ReportType } from '@/types/report';
 
 export const useMockReports = () => {
-  const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    // Demo hesabatlar (API-dən gələcək məlumatları simulasiya edir)
-    const mockReports: Report[] = [
-      {
-        id: '1',
-        name: 'İllik Statistika Hesabatı',
-        title: 'İllik Statistika Hesabatı',
-        description: 'Bütün regionların illik statistik məlumatlarının analizi',
-        type: 'statistics',
-        created: '2025-03-01',
-        status: 'published',
-        createdBy: 'admin',
-        data: [
-          { name: 'Bakı', value: 400, count: 120 },
-          { name: 'Sumqayıt', value: 300, count: 80 },
-          { name: 'Gəncə', value: 300, count: 70 },
-          { name: 'Şəki', value: 200, count: 50 },
-          { name: 'Lənkəran', value: 278, count: 60 },
-          { name: 'Quba', value: 189, count: 40 }
-        ]
-      },
-      {
-        id: '2',
-        name: 'Tamamlanma Analizi',
-        title: 'Tamamlanma Analizi',
-        description: 'Kateqoriyalar üzrə məlumat tamamlanma faizinin analizi',
-        type: 'completion',
-        created: '2025-03-15',
-        status: 'published',
-        createdBy: 'admin',
-        data: [
-          { name: 'Tamamlanmış', value: 68 },
-          { name: 'Gözləyən', value: 23 },
-          { name: 'Rədd edilmiş', value: 9 }
-        ]
-      },
-      {
-        id: '3',
-        name: 'Regionlar Müqayisəsi',
-        title: 'Regionlar Müqayisəsi',
-        description: 'Regionlar arasında məlumat doluluk faizinin müqayisəsi',
-        type: 'comparison',
-        created: '2025-03-20',
-        status: 'draft',
-        createdBy: 'admin',
-        data: [
-          { name: 'Bakı', value: 95 },
-          { name: 'Sumqayıt', value: 88 },
-          { name: 'Gəncə', value: 82 },
-          { name: 'Şəki', value: 75 },
-          { name: 'Lənkəran', value: 70 },
-          { name: 'Quba', value: 65 }
-        ]
-      },
-      {
-        id: '4',
-        name: 'Aylıq Proqres',
-        title: 'Aylıq Proqres',
-        description: 'Son 6 ay ərzində məlumatların toplanma tempi',
-        type: 'custom',
-        created: '2025-04-01',
-        status: 'published',
-        createdBy: 'admin',
-        data: [
-          { name: 'Yanvar', value: 40 },
-          { name: 'Fevral', value: 45 },
-          { name: 'Mart', value: 60 },
-          { name: 'Aprel', value: 90 },
-          { name: 'May', value: 120 },
-          { name: 'İyun', value: 145 }
-        ]
-      },
-      {
-        id: '5',
-        name: 'Məktəb Performans Hesabatı',
-        title: 'Məktəb Performans Hesabatı',
-        description: 'Top 10 məktəbin məlumat təqdim etmə performansı',
-        type: 'school',
-        created: '2025-04-05',
-        status: 'published',
-        createdBy: 'admin',
-        data: [
-          { name: 'Məktəb 1', value: 98 },
-          { name: 'Məktəb 2', value: 95 },
-          { name: 'Məktəb 3', value: 93 },
-          { name: 'Məktəb 4', value: 91 },
-          { name: 'Məktəb 5', value: 90 },
-          { name: 'Məktəb 6', value: 89 },
-          { name: 'Məktəb 7', value: 87 },
-          { name: 'Məktəb 8', value: 85 },
-          { name: 'Məktəb 9', value: 84 },
-          { name: 'Məktəb 10', value: 82 }
-        ]
-      },
-      {
-        id: '6',
-        name: 'Təhsil Səviyyəsi Analizi',
-        title: 'Təhsil Səviyyəsi Analizi',
-        description: 'Müxtəlif təhsil səviyyələri üzrə məlumat analizi',
-        type: 'category',
-        created: '2025-04-08',
-        status: 'draft',
-        createdBy: 'admin',
-        data: [
-          { name: 'İbtidai', value: 89 },
-          { name: 'Orta', value: 76 },
-          { name: 'Tam Orta', value: 82 },
-          { name: 'Texniki', value: 68 },
-          { name: 'Peşə', value: 72 }
-        ]
+  const [reports, setReports] = useState<Report[]>([
+    {
+      id: '1',
+      title: 'Ümumi Təhsil Statistikası',
+      description: 'Bütün regionlar üzrə məktəblərin ümumi təhsil statistikası',
+      type: 'statistics' as ReportType,
+      createdAt: new Date(2023, 4, 15),
+      updatedAt: new Date(2023, 4, 15),
+      createdBy: 'admin@example.com',
+      parameters: {
+        startDate: '2023-01-01',
+        endDate: '2023-04-30',
+        includeCharts: true
       }
-    ];
-    
-    setTimeout(() => {
-      setReports(mockReports);
-      setLoading(false);
-    }, 500); // Yüklənmə simulyasiyası
+    },
+    {
+      id: '2',
+      title: 'Kateqoriya Tamamlanma Hesabatı',
+      description: 'Bütün məktəblərdə kateqoriyaların tamamlanma statusu',
+      type: 'completion' as ReportType,
+      createdAt: new Date(2023, 4, 10),
+      updatedAt: new Date(2023, 4, 10),
+      createdBy: 'admin@example.com',
+      parameters: {
+        startDate: '2023-01-01',
+        endDate: '2023-04-30'
+      }
+    },
+    {
+      id: '3',
+      title: 'Region Müqayisəsi',
+      description: 'Regionlar arası məlumat tamamlanma müqayisəsi',
+      type: 'comparison' as ReportType,
+      createdAt: new Date(2023, 4, 5),
+      updatedAt: new Date(2023, 4, 7),
+      createdBy: 'admin@example.com',
+      parameters: {
+        startDate: '2023-01-01',
+        endDate: '2023-04-30',
+        includeCharts: true
+      }
+    },
+    {
+      id: '4',
+      title: 'Xüsusi Hesabat: Təhsil Materialları',
+      description: 'Tədris materialları ilə bağlı xüsusi hesabat',
+      type: 'custom' as ReportType,
+      createdAt: new Date(2023, 3, 28),
+      updatedAt: new Date(2023, 3, 28),
+      createdBy: 'admin@example.com',
+      parameters: {
+        categoryId: '12345',
+        includeCharts: true
+      }
+    },
+    {
+      id: '5',
+      title: 'Bakı Məktəbləri Hesabatı',
+      description: 'Bakı şəhərindəki məktəblər üzrə detallı hesabat',
+      type: 'school' as ReportType,
+      createdAt: new Date(2023, 3, 20),
+      updatedAt: new Date(2023, 4, 1),
+      createdBy: 'admin@example.com',
+      parameters: {
+        regionId: 'baku-123',
+        startDate: '2023-01-01',
+        endDate: '2023-03-31'
+      }
+    },
+    {
+      id: '6',
+      title: 'İnfrastruktur Kateqoriyası Hesabatı',
+      description: 'İnfrastruktur kateqoriyası üzrə detallı hesabat',
+      type: 'category' as ReportType,
+      createdAt: new Date(2023, 3, 15),
+      updatedAt: new Date(2023, 3, 15),
+      createdBy: 'admin@example.com',
+      parameters: {
+        categoryId: 'infrastructure-123',
+        startDate: '2023-01-01',
+        endDate: '2023-03-31',
+        includeCharts: true
+      }
+    }
+  ]);
+
+  const createReport = useCallback((reportData: Omit<Report, 'id' | 'createdAt' | 'updatedAt' | 'type'>>) => {
+    const newReport: Report = {
+      id: Math.random().toString(36).substring(2, 9),
+      ...reportData,
+      type: 'basic', // Default type
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: 'current-user'
+    };
+    setReports(prev => [...prev, newReport]);
+    return newReport;
   }, []);
-  
-  return { reports, loading };
+
+  const updateReport = useCallback((id: string, reportData: Partial<Report>) => {
+    setReports(prev =>
+      prev.map(report => (report.id === id ? { ...report, ...reportData, updatedAt: new Date() } : report))
+    );
+  }, []);
+
+  const deleteReport = useCallback((id: string) => {
+    setReports(prev => prev.filter(report => report.id !== id));
+  }, []);
+
+  const fetchReports = useCallback(() => {
+    // Mock fetching reports
+    return new Promise<Report[]>((resolve) => {
+      setTimeout(() => {
+        resolve(reports);
+      }, 500);
+    });
+  }, [reports]);
+
+  return {
+    reports,
+    loading: false,
+    error: null,
+    getReport: (id: string) => reports.find(r => r.id === id) || null,
+    createReport,
+    updateReport,
+    deleteReport
+  };
 };
+
+export default useMockReports;
