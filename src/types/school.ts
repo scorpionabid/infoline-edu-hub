@@ -1,97 +1,57 @@
-// School interface
-export interface School {
+
+// Sector məktəbləri üçün tip
+export interface SectorSchool {
   id: string;
   name: string;
-  address?: string;
+  status: string;
   region_id: string;
   sector_id: string;
-  admin_id?: string;
-  admin_email?: string;
-  status: string | 'active' | 'inactive';
+  completionRate?: number;
+  completion_rate?: number;
+  lastUpdate?: string;
+  updated_at?: string;
+  pendingForms?: number;
+  formsCompleted?: number;
+  totalForms?: number;
+  principalName?: string;
+  principal_name?: string;
+  address?: string;
   phone?: string;
   email?: string;
-  student_count?: number;
-  teacher_count?: number;
-  completion_rate?: number;
-  completionRate?: number;
-  type?: string;
-  language?: string;
-  created_at?: string;
-  updated_at?: string;
-  principal_name?: string;
-  principalName?: string;
-  logo?: string;
-  lastUpdate?: string;
 }
 
-export interface AdminCreateData {
-  name: string;
-  email: string;
-  password: string;
-}
-
-export type Region = {
-  id: string;
-  name: string;
-  description?: string;
-  status: string | 'active' | 'inactive';
-  admin_id?: string;
-  admin_email?: string;
-  created_at?: string;
-  updated_at?: string;
-};
-
-export type Sector = {
-  id: string;
-  name: string;
-  description?: string;
-  region_id: string;
-  region_name?: string;
-  status: string | 'active' | 'inactive';
-  admin_id?: string;
-  admin_email?: string;
-  created_at?: string;
-  updated_at?: string;
-  completion_rate?: number;
-};
-
+// Məktəb statistikası üçün tip
 export interface SchoolStat {
   id: string;
   name: string;
   completionRate: number;
   status: string;
-  lastUpdate: string;
-  pendingForms: number;
-  principal?: string;
-  principalName?: string;
+  lastUpdate?: string;
+  pendingForms?: number;
   formsCompleted?: number;
-  totalForms?: number; 
+  totalForms?: number;
+  principalName?: string;
   address?: string;
   phone?: string;
   email?: string;
 }
 
-// SectorSchool tipinə əlavə özəlliklər təyin edirik
-export interface SectorSchool extends School {
+// Məktəb tipi
+export interface School {
+  id: string;
+  name: string;
   region_id: string;
   sector_id: string;
-  lastUpdate?: string;
-  pendingForms?: number;
-  formsCompleted?: number;
-  totalForms?: number;
-  completionRate?: number;
-  principalName?: string;
+  address?: string;
+  email?: string;
+  phone?: string;
   principal_name?: string;
-  completion_rate?: number;
+  status: 'active' | 'inactive';
+  created_at?: string;
   updated_at?: string;
-}
-
-export interface SchoolFormProps {
-  onSubmit: (data: Partial<School>) => Promise<void>;
-  isSubmitting: boolean;
-  initialData: School;
-  regions: Region[];
-  sectors: Sector[];
-  regionNames: Record<string, string>;
-  sectorNames: Record<string, string>;
+  teacher_count?: number;
+  student_count?: number;
+  completion_rate?: number;
+  type?: string;
+  language?: string;
 }

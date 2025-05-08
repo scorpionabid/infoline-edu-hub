@@ -1,7 +1,22 @@
 
 import { useRole } from '@/context/auth/useRole';
+import { UserRole } from '@/types/supabase';
 
 export interface UsePermissionsResult {
+  // Role çekleri
+  isSuperAdmin: boolean;
+  isRegionAdmin: boolean;
+  isSectorAdmin: boolean;
+  isSchoolAdmin: boolean;
+
+  // İstifadəçi məlumatları
+  userRole?: UserRole;
+  userId?: string;
+  regionId?: string | null;
+  sectorId?: string | null;
+  schoolId?: string | null;
+  
+  // İcazə funksiyaları
   canManageUsers: boolean;
   canViewUsers: boolean;
   canManageCategories: boolean;
@@ -20,6 +35,14 @@ export interface UsePermissionsResult {
   canDeleteColumn: boolean;
   canEditColumn: boolean;
   canCreateColumn: boolean;
+  
+  // Əlavə edilən funksiyalar
+  checkRegionAccess?: (regionId: string, level?: string) => Promise<boolean>;
+  checkSectorAccess?: (sectorId: string, level?: string) => Promise<boolean>;
+  checkSchoolAccess?: (schoolId: string, level?: string) => Promise<boolean>;
+  checkCategoryAccess?: (categoryId: string, level?: string) => Promise<boolean>;
+  checkColumnAccess?: (columnId: string, level?: string) => Promise<boolean>;
+  canViewSectorCategories?: boolean;
 }
 
 export const usePermissions = (): UsePermissionsResult => {
@@ -33,6 +56,11 @@ export const usePermissions = (): UsePermissionsResult => {
   // Superadmin hər şeyə icazəsi var
   if (isSuperAdmin) {
     return {
+      isSuperAdmin: true,
+      isRegionAdmin: false,
+      isSectorAdmin: false,
+      isSchoolAdmin: false,
+      userRole: 'superadmin',
       canManageUsers: true,
       canViewUsers: true,
       canManageCategories: true,
@@ -51,12 +79,18 @@ export const usePermissions = (): UsePermissionsResult => {
       canDeleteColumn: true,
       canEditColumn: true,
       canCreateColumn: true,
+      canViewSectorCategories: true
     };
   }
 
   // RegionAdmin icazələri
   if (isRegionAdmin) {
     return {
+      isSuperAdmin: false,
+      isRegionAdmin: true,
+      isSectorAdmin: false,
+      isSchoolAdmin: false,
+      userRole: 'regionadmin',
       canManageUsers: true,
       canViewUsers: true,
       canManageCategories: true,
@@ -75,12 +109,18 @@ export const usePermissions = (): UsePermissionsResult => {
       canDeleteColumn: true,
       canEditColumn: true,
       canCreateColumn: true,
+      canViewSectorCategories: true
     };
   }
 
   // SectorAdmin icazələri
   if (isSectorAdmin) {
     return {
+      isSuperAdmin: false,
+      isRegionAdmin: false,
+      isSectorAdmin: true,
+      isSchoolAdmin: false,
+      userRole: 'sectoradmin',
       canManageUsers: false,
       canViewUsers: true,
       canManageCategories: false,
@@ -99,12 +139,18 @@ export const usePermissions = (): UsePermissionsResult => {
       canDeleteColumn: false,
       canEditColumn: false,
       canCreateColumn: false,
+      canViewSectorCategories: true
     };
   }
 
   // SchoolAdmin icazələri
   if (isSchoolAdmin) {
     return {
+      isSuperAdmin: false,
+      isRegionAdmin: false,
+      isSectorAdmin: false,
+      isSchoolAdmin: true,
+      userRole: 'schooladmin',
       canManageUsers: false,
       canViewUsers: false,
       canManageCategories: false,
@@ -123,11 +169,16 @@ export const usePermissions = (): UsePermissionsResult => {
       canDeleteColumn: false,
       canEditColumn: false,
       canCreateColumn: false,
+      canViewSectorCategories: false
     };
   }
 
   // Default olaraq heç bir icazə yoxdur
   return {
+    isSuperAdmin: false,
+    isRegionAdmin: false,
+    isSectorAdmin: false,
+    isSchoolAdmin: false,
     canManageUsers: false,
     canViewUsers: false,
     canManageCategories: false,
@@ -145,6 +196,6 @@ export const usePermissions = (): UsePermissionsResult => {
     canCreateCategory: false,
     canDeleteColumn: false,
     canEditColumn: false,
-    canCreateColumn: false,
+    canCreateColumn: false
   };
 };

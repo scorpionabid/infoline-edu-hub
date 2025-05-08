@@ -1,155 +1,28 @@
 
-import { SupabaseClient, User as SupabaseUser } from '@supabase/supabase-js';
+// Supabase üçün tiplər
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
-
-export interface User {
+export interface UserRoleRecord {
   id: string;
-  email?: string;
-  full_name?: string;
-  role?: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
+  user_id: string;
+  role: UserRole;
+  region_id?: string | null;
+  sector_id?: string | null;
+  school_id?: string | null;
+  created_at: string;
+  updated_at: string;
 }
-
-export interface Region {
-  id: string;
-  name: string;
-  description?: string;
-  status: 'active' | 'inactive' | string;
-  created_at?: string;
-  updated_at?: string;
-  admin_id?: string;
-  admin_email?: string;
-}
-
-export interface Sector {
-  id: string;
-  name: string;
-  region_id: string;
-  description?: string;
-  status: 'active' | 'inactive' | string;
-  created_at?: string;
-  updated_at?: string;
-  admin_id?: string;
-  admin_email?: string;
-  region_name?: string;
-}
-
-export interface School {
-  id: string;
-  name: string;
-  address?: string;
-  sector_id: string;
-  region_id: string;
-  status: 'active' | 'inactive' | string;
-  student_count?: number;
-  teacher_count?: number;
-  phone?: string;
-  email?: string;
-  director_name?: string;
-  admin_email?: string;
-  contact_phone?: string;
-  type?: string;
-  language?: string;
-  created_at?: string;
-  updated_at?: string;
-  sector_name?: string;
-  region_name?: string;
-  completion_rate?: number;
-  admin_id?: string;
-  principal_name?: string; // Əlavə edildi
-  principalName?: string; // TypeScript camelCase alias əlavə edildi
-}
-
-export type Language = 'az' | 'en' | 'tr' | 'ru';
 
 export interface Profile {
   id: string;
-  full_name: string;
-  avatar?: string;
-  phone?: string;
-  position?: string;
-  language?: Language;
-  last_login?: string;
-  created_at?: string;
-  updated_at?: string;
-  status?: string;
   email?: string;
-}
-
-export interface UserRoleData {
-  user_id: string;
-  role: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  id: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface FullUserData extends User {
-  email: string;
   full_name: string;
-  role: UserRole;
-  entityName?: string;
-  regionName?: string;
-  sectorName?: string;
-  schoolName?: string;
-  created_at?: string;
-  updated_at?: string;
-  phone?: string;
-  language?: Language;
-  avatar_url?: string;
-  last_login?: string;
-  status?: 'active' | 'inactive' | 'pending';
-  twoFactorEnabled?: boolean;
-  position?: string;
   avatar?: string;
-  notificationSettings?: {
-    email: boolean;
-    push: boolean;
-    deadline: boolean;
-    system?: boolean;
-  };
-}
-
-export type Supabase = SupabaseClient;
-
-export interface SessionUser extends SupabaseUser {
-  role?: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-}
-
-export interface UserFormData {
-  id?: string;
-  email: string;
-  full_name: string;
-  role: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
   phone?: string;
-  language?: string;
-  status?: 'active' | 'inactive' | 'pending';
-  avatar_url?: string;
-  twoFactorEnabled?: boolean;
-  notificationSettings?: {
-    email: boolean;
-    push: boolean;
-    deadline: boolean;
-  };
-}
-
-export interface UserFilter {
-  search?: string;
-  role?: string[];
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  status?: string[];
+  position?: string;
+  language?: 'az' | 'en' | 'ru' | 'tr';
+  status?: 'active' | 'inactive' | 'blocked';
+  created_at: string;
+  updated_at: string;
+  last_login?: string;
 }

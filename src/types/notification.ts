@@ -1,89 +1,39 @@
 
-// Bildiriş tipi
+// Bildiriş tipləri
+
 export interface AppNotification {
   id: string;
   title: string;
   message: string;
-  date: string;
-  read: boolean; 
-  isRead?: boolean;
-  type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
-  link?: string;
-  category?: string;
-  priority?: 'normal' | 'high' | 'critical' | 'low' | 'medium';
-  createdAt?: string;
-  timestamp?: string;
-  entity?: {
-    type: string;
-    id: string;
-    name?: string;
-  };
+  createdAt: string;
+  isRead: boolean;
+  type: 'info' | 'warning' | 'error' | 'success';
+  priority?: 'low' | 'medium' | 'high';
+  relatedEntityId?: string;
+  relatedEntityType?: string;
 }
 
-// Dashboard bildiriş tipi
 export interface DashboardNotification {
   id: string;
   title: string;
   message: string;
   date: string;
-  read: boolean;
-  isRead: boolean; // Məcburi etdik
-  type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
-  link?: string;
-  category?: string;
-  priority?: 'normal' | 'high' | 'critical' | 'low' | 'medium';
-  createdAt?: string;
-  timestamp?: string;
-  entity?: {
-    type: string;
-    id: string;
-    name?: string;
-  };
+  isRead: boolean;
+  type: 'info' | 'warning' | 'error' | 'success';
+  priority?: 'low' | 'medium' | 'high';
 }
 
-export type NotificationType = AppNotification;
-
-// Notification alias - legacy support
-export type Notification = AppNotification;
-
-/**
- * Dashboard bildirişini app bildirişinə çevirmək üçün adapter
- */
-export const adaptDashboardNotificationToApp = (notification: DashboardNotification): AppNotification => {
+// AppNotification-ı DashboardNotification-a çevirmək üçün adaptasiya funksiyası
+export const adaptAppNotificationToDashboard = (
+  notification: AppNotification
+): DashboardNotification => {
   return {
     id: notification.id,
     title: notification.title,
     message: notification.message,
-    date: notification.date,
-    read: notification.read || notification.isRead || false,
-    isRead: notification.isRead || notification.read || false,
+    date: notification.createdAt,
+    isRead: notification.isRead,
     type: notification.type,
-    link: notification.link,
-    category: notification.category,
-    createdAt: notification.createdAt || notification.date,
-    timestamp: notification.timestamp || notification.date,
-    priority: notification.priority,
-    entity: notification.entity
-  };
-};
-
-/**
- * App bildirişini dashboard bildirişinə çevirmək üçün adapter
- */
-export const adaptAppNotificationToDashboard = (notification: AppNotification): DashboardNotification => {
-  return {
-    id: notification.id,
-    title: notification.title,
-    message: notification.message,
-    date: notification.date,
-    read: notification.read ?? notification.isRead ?? false,
-    isRead: notification.isRead ?? notification.read ?? false,
-    type: notification.type,
-    link: notification.link,
-    category: notification.category,
-    createdAt: notification.createdAt || notification.date,
-    timestamp: notification.timestamp || notification.date,
-    priority: notification.priority,
-    entity: notification.entity
+    priority: notification.priority
   };
 };
