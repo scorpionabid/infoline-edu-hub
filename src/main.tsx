@@ -6,20 +6,23 @@ import App from './App'
 import './index.css'
 import './i18n'; // i18n initialazisiya faylını import edirik
 import { LanguageProvider } from '@/context/LanguageContext';
-import { AuthProvider } from '@/context/auth/AuthProvider';
+import { AuthProvider } from '@/context/auth';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { AppQueryProvider } from '@/context/QueryClientProvider';
 
 // Əsas render
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <LanguageProvider>
-      <AuthProvider>
-        <ThemeProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </ThemeProvider>
-      </AuthProvider>
-    </LanguageProvider>
+    <ThemeProvider>
+      <AppQueryProvider>
+        <AuthProvider>
+          <LanguageProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </LanguageProvider>
+        </AuthProvider>
+      </AppQueryProvider>
+    </ThemeProvider>
   </React.StrictMode>,
 )

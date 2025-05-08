@@ -1,45 +1,38 @@
+
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+
+export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
+
 export interface User {
   id: string;
   email: string;
+  full_name?: string;
+  fullName?: string;
+  role?: UserRole;
+  status?: UserStatus;
+  phone?: string;
+  language?: string;
+  position?: string;
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
+  last_login?: string;
+  lastLogin?: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  notificationSettings?: NotificationSettings;
   name?: string;
-  role?: string;
-  status?: 'active' | 'inactive' | 'pending';
-  created_at?: string | Date;
-  last_login?: string | Date;
-  avatar?: string;
+  avatar?: string; // Added the avatar property
 }
 
-export interface UserListItem extends User {
-  region?: string;
-  sector?: string;
-  school?: string;
-}
-
-export interface UserRoles {
-  id: string;
-  name: string;
-  permissions: string[];
-}
-
-export interface UserPermission {
-  id: string;
-  name: string;
-  description?: string;
-  group?: string;
-}
-
-export interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
-  refreshAuth: () => Promise<void>;
-  clearError: () => void;
-  setUser: (user: User | null) => void;
-  setSession: (session: any) => void;
-  setError: (error: string | null) => void;
-  setIsLoading: (isLoading: boolean) => void;
-  resetAuth: () => void;
+export interface NotificationSettings {
+  email: boolean;
+  inApp: boolean;
+  push: boolean;
+  system: boolean;
+  deadline: boolean;
+  sms?: boolean;
+  deadlineReminders?: boolean;
 }

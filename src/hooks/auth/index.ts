@@ -5,4 +5,4 @@ export * from './types';
 export * from './usePermissions';
 export * from './useAuthStore';
 export * from './userDataService';
-export { default as useSupabaseAuth } from './useSupabaseAuth';
+export { useSupabaseAuth } from './useSupabaseAuth';

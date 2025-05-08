@@ -2,12 +2,14 @@
 import { useState, useCallback } from 'react';
 import { CategoryFilter } from '@/types/column';
 
-// CategoryFilter istifadə edən hook
-export const useCategoryFilters = (initialFilter: CategoryFilter = {}) => {
-  const [filters, setFilters] = useState<CategoryFilter>(initialFilter);
+export const useCategoryFilters = (initialFilters: CategoryFilter = {}) => {
+  const [filters, setFilters] = useState<CategoryFilter>(initialFilters);
 
-  const updateFilter = useCallback((key: keyof CategoryFilter, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+  const updateFilter = useCallback((key: keyof CategoryFilter, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
   }, []);
 
   const resetFilters = useCallback(() => {
@@ -17,7 +19,6 @@ export const useCategoryFilters = (initialFilter: CategoryFilter = {}) => {
   return {
     filters,
     updateFilter,
-    resetFilters,
-    setFilters
+    resetFilters
   };
 };

@@ -366,3 +366,6 @@ export const useSupabaseAuth = (
     updateProfile
   };
 };
+
+// Export as default as well for backward compatibility
+export default useSupabaseAuth;

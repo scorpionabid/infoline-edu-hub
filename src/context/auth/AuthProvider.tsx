@@ -93,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateProfile: async () => ({ data: null, error: null }),
     refreshSession: async () => {},
     refreshProfile: async () => {
-      // Just return the current user since this is a mock implementation
+      // Implementation for refreshProfile
       console.log("Refreshing user profile");
       return user;
     },

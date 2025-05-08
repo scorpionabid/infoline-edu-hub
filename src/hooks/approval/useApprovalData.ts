@@ -1,103 +1,123 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/auth/usePermissions';
+import { useToast } from '@/components/ui/use-toast';
 
-interface ApprovalData {
-  pendingApprovals: any[];
-  loading: boolean;
-  error: any;
-}
-
-export const useApprovalData = (): ApprovalData => {
-  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
+export const useApprovalData = () => {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [approvalData, setApprovalData] = useState<any[]>([]);
   const { toast } = useToast();
-
+  const { userRole, regionId, sectorId, schoolId } = usePermissions();
+  
   useEffect(() => {
-    const fetchPendingApprovals = async () => {
-      setLoading(true);
-      setError(null);
-
+    const fetchApprovals = async () => {
       try {
-        const { data: approvals, error: approvalsError } = await supabase
+        setLoading(true);
+        
+        let query = supabase
           .from('data_entries')
           .select(`
             id,
-            form_id,
-            school_id,
-            category_id,
-            submitted_at,
+            value,
             status,
-            school:schools (name),
-            category:categories (name)
+            created_at,
+            updated_at,
+            created_by,
+            approved_by,
+            approved_at,
+            rejected_by,
+            rejection_reason,
+            schools!inner (
+              id,
+              name,
+              region_id,
+              sector_id
+            ),
+            categories!inner (
+              id,
+              name
+            ),
+            columns!inner (
+              id,
+              name,
+              type
+            )
           `)
           .eq('status', 'pending');
-
-        if (approvalsError) {
-          throw new Error(approvalsError.message);
+        
+        // Filter based on user role
+        if (userRole === 'regionadmin' && regionId) {
+          query = query.eq('schools.region_id', regionId);
+        } else if (userRole === 'sectoradmin' && sectorId) {
+          query = query.eq('schools.sector_id', sectorId);
+        } else if (userRole === 'schooladmin' && schoolId) {
+          query = query.eq('school_id', schoolId);
         }
-
-        // Fetch additional details for regions and sectors
-        const schoolIds = [...new Set(approvals.map(approval => approval.school_id))];
-        const categoryIds = [...new Set(approvals.map(approval => approval.category_id))];
-
-        const { data: schools, error: schoolsError } = await supabase
-          .from('schools')
-          .select('id, name, sector_id, region_id');
-
-        if (schoolsError) {
-          throw new Error(schoolsError.message);
-        }
-
-        const { data: sectors, error: sectorsError } = await supabase
-          .from('sectors')
-          .select('id, name, region_id');
-
-        if (sectorsError) {
-          throw new Error(sectorsError.message);
-        }
-
-        const { data: regionsWithSectors, error: regionsWithSectorsError } = await supabase
-          .from('regions')
-          .select('id, name, sectors(id, name)');
-
-        if (regionsWithSectorsError) {
-          throw new Error(regionsWithSectorsError.message);
-        }
-
-        const enrichedApprovals = approvals.map(approval => {
-          const school = schools.find(s => s.id === approval.school_id) || {};
-          const category = approval.category || { name: 'Unknown Category' };
-          const regions = regionsWithSectors?.filter(r => r.id === school?.region_id) || [];
-          const sectorName = sectors?.find(s => s.id === school?.sector_id)?.name || 'Unknown Sector';
-          const regionName = regions.length > 0 ? regions[0].name || 'Unknown Region' : 'Unknown Region';
+        
+        const { data, error } = await query.order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        // Process and transform the data for display
+        const processedData = data.map(item => ({
+          id: item.id,
+          schoolName: item.schools?.name || 'Unknown School',
+          categoryName: item.categories?.name || 'Unknown Category',
+          columnName: item.columns?.name || 'Unknown Column',
+          value: item.value,
+          status: item.status,
+          submittedAt: new Date(item.created_at).toLocaleString(),
+          // Specify types for region_id and sector_id to avoid TS errors
+          region_id: (item.schools as { region_id: string }).region_id || '',
+          sector_id: (item.schools as { sector_id: string }).sector_id || '',
+          // Add region and sector names - these would come from additional queries in a real app
+          regionName: '', // Will be filled later
+          sectorName: '' // Will be filled later
+        }));
+        
+        // In a real app, you would fetch region and sector names
+        const enhancedData = await Promise.all(processedData.map(async (item) => {
+          // Fetch region name if needed
+          if (item.region_id) {
+            const { data: regionData } = await supabase
+              .from('regions')
+              .select('name')
+              .eq('id', item.region_id)
+              .single();
+              
+            item.regionName = regionData?.name || 'Unknown Region';
+          }
           
-          return {
-            ...approval,
-            schoolName: school?.name || 'Unknown School',
-            categoryName: category?.name || 'Unknown Category',
-            regionName: regionName,
-            sectorName: sectorName
-          };
-        });
-
-        setPendingApprovals(enrichedApprovals);
-      } catch (err: any) {
-        setError(err);
+          // Fetch sector name if needed
+          if (item.sector_id) {
+            const { data: sectorData } = await supabase
+              .from('sectors')
+              .select('name')
+              .eq('id', item.sector_id)
+              .single();
+              
+            item.sectorName = sectorData?.name || 'Unknown Sector';
+          }
+          
+          return item;
+        }));
+        
+        setApprovalData(enhancedData);
+      } catch (error: any) {
+        console.error('Error fetching approval data:', error);
         toast({
-          title: 'Error fetching pending approvals',
-          description: err.message,
-          variant: 'destructive',
+          title: 'Failed to load approvals',
+          description: error.message,
+          variant: 'destructive'
         });
       } finally {
         setLoading(false);
       }
     };
-
-    fetchPendingApprovals();
-  }, [toast]);
-
-  return { pendingApprovals, loading, error };
+    
+    fetchApprovals();
+  }, [userRole, regionId, sectorId, schoolId, toast]);
+  
+  return { loading, approvalData };
 };

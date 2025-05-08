@@ -1,94 +1,92 @@
 
-import { Column, ColumnValidation, ValidationRules } from '@/types/column';
+import { Column } from '@/types/column';
+import { ColumnValidation } from '@/types/column';
 
-// Column tipini API-dən frontend tiplərə çevirmək üçün adapter
-export const useColumnAdapters = () => {
-  // API-dən alınan sütun məlumatlarını frontend tipinə çevirmək
-  const adaptColumnFromApi = (apiColumn: any): Column => {
-    return {
-      id: apiColumn.id,
-      name: apiColumn.name,
-      type: apiColumn.type,
-      category_id: apiColumn.category_id,
-      is_required: apiColumn.is_required || false,
-      order_index: apiColumn.order_index || 0,
-      options: apiColumn.options ? JSON.parse(apiColumn.options) : undefined,
-      validation: apiColumn.validation ? JSON.parse(apiColumn.validation) : undefined,
-      help_text: apiColumn.help_text,
-      placeholder: apiColumn.placeholder,
-      default_value: apiColumn.default_value,
-      parent_column_id: apiColumn.parent_column_id,
-      conditional_display: apiColumn.conditional_display ? JSON.parse(apiColumn.conditional_display) : undefined,
-      status: apiColumn.status || 'active',
-      created_at: apiColumn.created_at,
-      updated_at: apiColumn.updated_at
-    };
-  };
-  
-  // Frontend sütun məlumatlarını API formatına çevirmək
-  const adaptColumnToApi = (column: Partial<Column>): any => {
-    const apiColumn: any = {
-      name: column.name,
-      type: column.type,
-      category_id: column.category_id,
-      is_required: column.is_required || false,
-      order_index: column.order_index || 0
-    };
-    
-    if (column.options) {
-      apiColumn.options = JSON.stringify(column.options);
-    }
-    
-    if (column.validation) {
-      apiColumn.validation = JSON.stringify(column.validation);
-    }
-    
-    if (column.help_text) {
-      apiColumn.help_text = column.help_text;
-    }
-    
-    if (column.placeholder) {
-      apiColumn.placeholder = column.placeholder;
-    }
-    
-    if (column.default_value !== undefined) {
-      apiColumn.default_value = column.default_value;
-    }
-    
-    if (column.parent_column_id) {
-      apiColumn.parent_column_id = column.parent_column_id;
-    }
-    
-    if (column.conditional_display) {
-      apiColumn.conditional_display = JSON.stringify(column.conditional_display);
-    }
-    
-    if (column.status) {
-      apiColumn.status = column.status;
-    }
-    
-    return apiColumn;
-  };
-  
-  // Validation qaydalarını formata çevirmək
-  const adaptValidationRules = (rules: ValidationRules): ColumnValidation => {
-    return {
-      required: rules.required,
-      minLength: rules.minLength,
-      maxLength: rules.maxLength,
-      min: rules.min,
-      max: rules.max,
-      minValue: rules.minValue,
-      maxValue: rules.maxValue,
-      pattern: rules.pattern,
-      email: rules.email,
-      url: rules.url
-    };
-  };
-  
+// Convert DB column to frontend column
+export const adaptDbColumnToFrontend = (dbColumn: any): Column => {
   return {
-    adaptColumnFromApi,
-    adaptColumnToApi,
-    adaptValidationRules
+    id: dbColumn.id,
+    name: dbColumn.name,
+    label: dbColumn.label || dbColumn.name,
+    description: dbColumn.description,
+    type: dbColumn.type,
+    category_id: dbColumn.category_id,
+    options: dbColumn.options || [],
+    is_required: dbColumn.is_required !== false,
+    status: dbColumn.status || 'active',
+    order: dbColumn.order_index || 0,
+    created_at: dbColumn.created_at,
+    updated_at: dbColumn.updated_at,
+    validation: dbColumn.validation || {},
+    section: dbColumn.section,
+    parent_column_id: dbColumn.parent_column_id,
+    help_text: dbColumn.help_text,
+    placeholder: dbColumn.placeholder,
+    default_value: dbColumn.default_value,
+    order_index: dbColumn.order_index || 0,
+    conditional_display: dbColumn.conditional_display
+  };
+};
+
+// Convert frontend column to DB format
+export const adaptColumnToDb = (column: Partial<Column>): any => {
+  const {
+    name,
+    label,
+    description,
+    type,
+    category_id,
+    options,
+    is_required,
+    status,
+    validation,
+    section,
+    help_text,
+    placeholder,
+    default_value,
+    order_index
+  } = column;
+
+  const dbColumn: any = {
+    name,
+    type,
+    category_id,
+  };
+
+  // Add optional fields only if they exist
+  if (label !== undefined) dbColumn.label = label;
+  if (description !== undefined) dbColumn.description = description;
+  if (options !== undefined) dbColumn.options = options;
+  if (is_required !== undefined) dbColumn.is_required = is_required;
+  if (status !== undefined) dbColumn.status = status;
+  if (validation !== undefined) dbColumn.validation = validation;
+  if (section !== undefined) dbColumn.section = section;
+  if (help_text !== undefined) dbColumn.help_text = help_text;
+  if (placeholder !== undefined) dbColumn.placeholder = placeholder;
+  if (default_value !== undefined) dbColumn.default_value = default_value;
+  if (order_index !== undefined) dbColumn.order_index = order_index;
+  if (column.parent_column_id !== undefined) {
+    dbColumn.parent_column_id = column.parent_column_id;
+  }
+  if (column.conditional_display !== undefined) {
+    dbColumn.conditional_display = column.conditional_display;
+  }
+
+  return dbColumn;
+};
+
+// Helper to create a new column template
+export const createColumnTemplate = (categoryId: string): Column => {
+  return {
+    id: crypto.randomUUID(),
+    name: '',
+    type: 'text',
+    category_id: categoryId,
+    is_required: true,
+    options: [],
+    status: 'active',
+    help_text: '',
+    placeholder: '',
+    order_index: 0
   };
 };

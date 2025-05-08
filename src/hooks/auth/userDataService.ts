@@ -1,122 +1,111 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
-import { UserRole } from '@/types/supabase';
+import { UserRole } from '@/types/user';
 
-export const getUserProfile = async (userId: string): Promise<FullUserData | null> => {
+// Function to fetch user data from Supabase
+export async function fetchUserData(userId: string): Promise<FullUserData | null> {
   try {
-    const defaultRole: UserRole = 'user';  // Using the correct type now
-
+    if (!userId) return null;
+    
+    // Fetch both profile and role information
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-      
+    
     if (profileError) throw profileError;
     
+    // Get user role
     const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
-      .select('role, region_id, sector_id, school_id')
+      .select('*')
       .eq('user_id', userId)
       .single();
-      
-    if (roleError && roleError.code !== 'PGRST116') {
-      // PGRST116 is "no rows returned" - not a critical error, we'll use default role
-      console.warn('Error fetching user role:', roleError);
+    
+    // Default role
+    let role: UserRole = 'user';
+    let region_id = null;
+    let sector_id = null;
+    let school_id = null;
+    
+    if (!roleError && roleData) {
+      role = roleData.role as UserRole;
+      region_id = roleData.region_id;
+      sector_id = roleData.sector_id;
+      school_id = roleData.school_id;
     }
     
+    // Create FullUserData object from profile and role data
     const userData: FullUserData = {
       id: userId,
       email: profile.email || '',
-      full_name: profile.full_name || '',
-      name: profile.full_name || '',
-      role: (roleData?.role as UserRole) || defaultRole,
-      region_id: roleData?.region_id || null,
-      regionId: roleData?.region_id || null,
-      sector_id: roleData?.sector_id || null,
-      sectorId: roleData?.sector_id || null,
-      school_id: roleData?.school_id || null,
-      schoolId: roleData?.school_id || null,
-      phone: profile.phone || null,
-      position: profile.position || null,
-      avatar: profile.avatar || null,
+      full_name: profile.full_name,
+      name: profile.full_name,
+      avatar: profile.avatar,
+      phone: profile.phone,
+      position: profile.position,
+      role: role,
+      region_id: region_id,
+      regionId: region_id,
+      sector_id: sector_id,
+      sectorId: sector_id,
+      school_id: school_id,
+      schoolId: school_id,
       language: profile.language || 'az',
       status: profile.status || 'active',
-      last_login: profile.last_login || null,
-      lastLogin: profile.last_login || null,
-      created_at: profile.created_at || null,
-      createdAt: profile.created_at || null,
-      updated_at: profile.updated_at || null,
-      updatedAt: profile.updated_at || null
+      last_login: profile.last_login,
+      lastLogin: profile.last_login,
+      created_at: profile.created_at,
+      createdAt: profile.created_at,
+      updated_at: profile.updated_at,
+      updatedAt: profile.updated_at,
     };
     
     return userData;
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    console.error('Error fetching user data:', error);
     return null;
   }
-};
+}
 
-export const updateUserProfile = async (
-  userId: string, 
-  userData: Partial<FullUserData>
-): Promise<{ success: boolean; error: any }> => {
+// Function to update user profile
+export async function updateUserProfile(userId: string, updates: Partial<FullUserData>): Promise<boolean> {
   try {
-    // Extract profile fields (exclude role and related properties)
+    if (!userId) return false;
+    
+    // Extract profile fields from updates
     const { 
-      role, region_id, sector_id, school_id, regionId, sectorId, schoolId, 
-      ...profileData 
-    } = userData;
-
-    // Update profile data
+      full_name, 
+      avatar, 
+      phone, 
+      position, 
+      language, 
+      status
+    } = updates;
+    
+    const profileUpdates = {
+      ...(full_name !== undefined && { full_name }),
+      ...(avatar !== undefined && { avatar }),
+      ...(phone !== undefined && { phone }),
+      ...(position !== undefined && { position }),
+      ...(language !== undefined && { language }),
+      ...(status !== undefined && { status }),
+      updated_at: new Date().toISOString()
+    };
+    
+    // Update profile
     const { error } = await supabase
       .from('profiles')
-      .update(profileData)
+      .update(profileUpdates)
       .eq('id', userId);
-
+    
     if (error) throw error;
     
-    // Update user roles if role or related IDs are provided
-    if (role || region_id || sector_id || school_id || regionId || sectorId || schoolId) {
-      // Check if this user already has a role entry
-      const { data: existingRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId);
-      
-      if (rolesError) throw rolesError;
-      
-      // Prepare role data
-      const roleData = {
-        role: role as UserRole,
-        region_id: region_id || regionId,
-        sector_id: sector_id || sectorId,
-        school_id: school_id || schoolId,
-      };
-      
-      // Insert or update role
-      if (existingRoles && existingRoles.length > 0) {
-        const { error: updateError } = await supabase
-          .from('user_roles')
-          .update(roleData)
-          .eq('user_id', userId);
-          
-        if (updateError) throw updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: userId,
-            ...roleData
-          });
-          
-        if (insertError) throw insertError;
-      }
-    }
-    
-    return { success: true, error: null };
+    return true;
   } catch (error) {
     console.error('Error updating user profile:', error);
-    return { success: false, error };
+    return false;
   }
-};
+}

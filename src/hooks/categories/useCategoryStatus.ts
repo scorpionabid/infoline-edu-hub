@@ -1,66 +1,67 @@
 
 import { useMemo } from 'react';
 import { CategoryWithColumns } from '@/types/column';
-import { useLanguage } from '@/context/LanguageContext';
 
-// Kateqoriya statuslarını idarə edən hook
-export const useCategoryStatus = (category: CategoryWithColumns) => {
-  const { t } = useLanguage();
-  
-  // Tamamlanma nisbətini hesabla
-  const completionPercentage = useMemo(() => {
-    return category.completionRate || 0;
-  }, [category.completionRate]);
-  
-  // Status rəngini müəyyən et
-  const statusColor = useMemo(() => {
-    switch (category.status) {
-      case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'archived':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'draft':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+/**
+ * Hook that determines the status of a category based on its completion rate
+ * and deadline status
+ */
+export const useCategoryStatus = (category: CategoryWithColumns | null) => {
+  const statusInfo = useMemo(() => {
+    if (!category) {
+      return { status: 'unknown', label: 'Unknown', color: 'gray' };
     }
-  }, [category.status]);
-  
-  // Tamamlanma rəngini müəyyən et
-  const completionColor = useMemo(() => {
-    if (completionPercentage >= 75) {
-      return 'bg-green-500';
-    } else if (completionPercentage >= 50) {
-      return 'bg-amber-500';
-    } else if (completionPercentage >= 25) {
-      return 'bg-orange-500';
+
+    // If completionRate is not defined in category, default to 0
+    const completionRate = category.completionRate ?? 0;
+    
+    // Calculate days left if deadline exists
+    let daysLeft = null;
+    if (category.deadline) {
+      const deadline = new Date(category.deadline);
+      const today = new Date();
+      const diffTime = deadline.getTime() - today.getTime();
+      daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    // Determine status based on completion rate and deadline
+    if (completionRate === 100) {
+      return { 
+        status: 'completed',
+        label: 'Tamamlanıb',
+        color: 'green',
+        daysLeft
+      };
+    } else if (daysLeft !== null && daysLeft < 0) {
+      return { 
+        status: 'overdue',
+        label: 'Gecikib',
+        color: 'red',
+        daysLeft
+      };
+    } else if (daysLeft !== null && daysLeft <= 7) {
+      return { 
+        status: 'urgent',
+        label: 'Təcili',
+        color: 'orange',
+        daysLeft
+      };
+    } else if (completionRate > 0) {
+      return { 
+        status: 'in-progress',
+        label: 'Davam edir',
+        color: 'blue',
+        daysLeft
+      };
     } else {
-      return 'bg-red-500';
+      return { 
+        status: 'not-started',
+        label: 'Başlanmayıb',
+        color: 'gray',
+        daysLeft
+      };
     }
-  }, [completionPercentage]);
-  
-  // Tərcümə edilmiş status adı
-  const statusName = useMemo(() => {
-    switch (category.status) {
-      case 'active':
-        return t('active');
-      case 'inactive':
-        return t('inactive');
-      case 'archived':
-        return t('archived');
-      case 'draft':
-        return t('draft');
-      default:
-        return t('unknown');
-    }
-  }, [category.status, t]);
-  
-  return {
-    completionPercentage,
-    statusColor,
-    completionColor,
-    statusName
-  };
+  }, [category]);
+
+  return statusInfo;
 };
