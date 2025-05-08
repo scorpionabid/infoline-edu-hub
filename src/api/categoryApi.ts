@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/category';
+import { Category, CategoryStatus, CategoryAssignment } from '@/types/column';
 
 // Bütün kateqoriyaları əldə et
 export const fetchAllCategories = async (): Promise<Category[]> => {
@@ -19,11 +19,26 @@ export const fetchAllCategories = async (): Promise<Category[]> => {
 
 // Kateqoriya əlavə et
 export const createCategory = async (category: Omit<Category, 'id'>): Promise<Category> => {
+  const now = new Date().toISOString();
+  
+  // Convert deadline to string if it's a Date object
+  let deadlineStr: string | undefined = undefined;
+  if (category.deadline) {
+    deadlineStr = category.deadline instanceof Date 
+      ? category.deadline.toISOString() 
+      : category.deadline;
+  }
+  
   const newCategory = {
-    ...category,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    archived: false,
+    name: category.name,
+    description: category.description || '',
+    assignment: category.assignment || 'all',
+    status: category.status || 'active',
+    deadline: deadlineStr,
+    priority: category.priority || 0,
+    created_at: now,
+    updated_at: now,
+    archived: false
   };
 
   const { data, error } = await supabase
@@ -41,10 +56,15 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
 
 // Kateqoriya yenilə
 export const updateCategory = async (category: Partial<Category> & { id: string }): Promise<Category> => {
-  const updatedCategory = {
+  // Convert deadline to string if it's a Date object
+  let updatedCategory: any = {
     ...category,
-    updated_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   };
+  
+  if (category.deadline instanceof Date) {
+    updatedCategory.deadline = category.deadline.toISOString();
+  }
 
   const { data, error } = await supabase
     .from('categories')

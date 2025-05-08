@@ -31,7 +31,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId }) => {
           name: 'Sample Category',
           description: 'This is a sample category for data entry',
           status: 'active',
-          completionRate: 0,
+          // We need to add completionRate to CategoryWithColumns interface
           columns: [
             {
               id: 'col1',

@@ -1,31 +1,70 @@
 
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+
+export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
+
 export interface User {
   id: string;
   email: string;
   full_name?: string;
   fullName?: string;
   role?: UserRole;
+  status?: UserStatus;
+  phone?: string;
+  language?: string;
+  position?: string;
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
+  last_login?: string;
+  lastLogin?: string;
   region_id?: string;
   regionId?: string;
   sector_id?: string;
   sectorId?: string;
   school_id?: string;
   schoolId?: string;
-  phone?: string;
-  position?: string;
-  language?: string;
-  avatar?: string;
-  status?: string;
-  last_login?: string;
-  created_at?: string;
-  updated_at?: string;
+  notificationSettings?: NotificationSettings;
   name?: string;
+  avatar?: string;
 }
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+export interface NotificationSettings {
+  email: boolean;
+  inApp: boolean;
+  push: boolean;
+  system: boolean;
+  deadline: boolean;
+  sms?: boolean;
+  deadlineReminders?: boolean;
+}
+
+export interface FullUserData extends User {
+  avatar?: string;
+  region_id?: string;
+  regionId?: string;
+  region_name?: string;
+  regionName?: string;
+  sector_id?: string;
+  sectorId?: string;
+  sector_name?: string;
+  sectorName?: string;
+  school_id?: string;
+  schoolId?: string;
+  school_name?: string;
+  schoolName?: string;
+  name?: string;
+  entityName?: {
+    region?: string;
+    sector?: string;
+    school?: string;
+  };
+  notification_settings?: NotificationSettings;
+}
 
 export interface UserFilter {
-  role?: UserRole[];
+  role?: UserRole[] | string[];
   status?: string[];
   regionId?: string;
   sectorId?: string;
@@ -61,24 +100,15 @@ export interface UserFormData {
   notificationSettings?: any;
 }
 
-export interface FullUserData extends User {
-  name?: string;
-  avatar?: string;
-  region_id?: string;
-  regionId?: string;
-  region_name?: string;
-  regionName?: string;
-  sector_id?: string;
-  sectorId?: string;
-  sector_name?: string;
-  sectorName?: string;
-  school_id?: string;
-  schoolId?: string;
-  school_name?: string;
-  schoolName?: string;
-  entityName?: {
-    region?: string;
-    sector?: string;
-    school?: string;
-  };
+export interface Sector {
+  id: string;
+  name: string;
+  region_id: string;
+  description?: string;
+  status?: string;
+  created_at: string;
+  updated_at?: string;
+  admin_id?: string;
+  admin_email?: string;
+  completion_rate?: number;
 }

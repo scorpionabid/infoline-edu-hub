@@ -1,153 +1,92 @@
 
 import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
-import { School } from '@/types/school';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import CreateSchoolDialog from './CreateSchoolDialog';
-import EditSchoolDialog from './EditSchoolDialog';
-import DeleteSchoolDialog from './DeleteSchoolDialog';
-import ImportDialog from './ImportDialog';
-import AdminDialog from './school-dialogs/AdminDialog';
-import { School as SupabaseSchool } from '@/types/supabase';
+import { useLanguage } from '@/context/LanguageContext';
 
-interface SchoolDialogsProps {
-  refreshSchools: () => void;
+interface ResetPasswordDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  schoolId: string;
+  schoolName: string;
+  adminEmail?: string;
 }
 
-export const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
-  refreshSchools,
+export const ResetPasswordDialog: React.FC<ResetPasswordDialogProps> = ({
+  isOpen,
+  onClose,
+  schoolId,
+  schoolName,
+  adminEmail
 }) => {
   const { t } = useLanguage();
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Dialog states
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
-  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
-
-  // Selected school
-  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
-
-  // Handle opening edit dialog
-  const handleEditSchool = (school: School) => {
-    setSelectedSchool(school);
-    setEditOpen(true);
-  };
-
-  // Handle opening delete dialog
-  const handleDeleteSchool = (school: School) => {
-    setSelectedSchool(school);
-    setDeleteOpen(true);
-  };
-
-  // Handle opening admin dialog
-  const handleViewAdmin = (school: School) => {
-    setSelectedSchool(school);
-    setAdminDialogOpen(true);
-  };
-
-  // Update school handler
-  const handleUpdateSchool = async (schoolData: School) => {
-    try {
-      // Convert School to SupabaseSchool for the API call
-      const { error } = await supabase
-        .from('schools')
-        .update(schoolData as any)
-        .eq('id', schoolData.id);
-        
-      if (error) throw error;
-      
-      toast.success(t('schoolUpdated'));
-      refreshSchools();
-    } catch (error: any) {
-      console.error('Error updating school:', error);
-      toast.error(t('errorUpdatingSchool'), {
-        description: error.message,
-      });
-    }
-  };
-
-  // Reset admin password
-  const handleResetPassword = async (newPassword: string) => {
-    if (!selectedSchool?.admin_id) {
-      toast.error(t('noAdminAssigned'));
+  const handleResetPassword = async () => {
+    if (!adminEmail) {
+      toast.error(t('noAdminEmailFound'));
       return;
     }
-
+    
+    setIsLoading(true);
     try {
-      // Supabase admin API bu client-side yoxdur, auth.admin əvəzinə RPC istifadə edə bilərsiniz
-      const { error } = await supabase.rpc('reset_user_password', { 
-        user_id: selectedSchool.admin_id,
-        new_password: newPassword
+      // Use resetPasswordForEmail instead of a custom function
+      const { error } = await supabase.auth.resetPasswordForEmail(adminEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
-
+      
       if (error) throw error;
-
-      toast.success(t('passwordResetSuccess'));
+      
+      toast.success(t('passwordResetLinkSent'), {
+        description: t('passwordResetLinkSentDescription', { email: adminEmail }),
+      });
+      onClose();
     } catch (error: any) {
-      console.error('Password reset error:', error);
+      console.error('Error resetting password:', error);
       toast.error(t('errorResettingPassword'), {
         description: error.message,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <>
-      <Button onClick={() => setCreateOpen(true)}>{t('addSchool')}</Button>
-      <Button variant="outline" onClick={() => setImportOpen(true)}>
-        {t('import')}
-      </Button>
-
-      {/* Create School Dialog */}
-      <CreateSchoolDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSuccess={refreshSchools}
-      />
-
-      {/* Edit School Dialog */}
-      {selectedSchool && (
-        <EditSchoolDialog
-          isOpen={editOpen}
-          onClose={() => setEditOpen(false)}
-          school={selectedSchool}
-          onSubmit={handleUpdateSchool}
-          onSuccess={refreshSchools}
-        />
-      )}
-
-      {/* Delete School Dialog */}
-      {selectedSchool && (
-        <DeleteSchoolDialog
-          isOpen={deleteOpen}
-          onClose={() => setDeleteOpen(false)}
-          onConfirm={refreshSchools}
-          school={selectedSchool}
-        />
-      )}
-
-      {/* Import Dialog */}
-      <ImportDialog 
-        open={importOpen} 
-        onOpenChange={setImportOpen} 
-        onSuccess={refreshSchools} 
-      />
-
-      {/* Admin Dialog */}
-      {selectedSchool && (
-        <AdminDialog
-          open={adminDialogOpen}
-          onClose={() => setAdminDialogOpen(false)}
-          school={selectedSchool}
-          onResetPassword={handleResetPassword}
-        />
-      )}
-    </>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{t('resetAdminPassword')}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">
+              {t('school')}
+            </Label>
+            <Input id="name" value={schoolName} disabled className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="email" className="text-right">
+              {t('adminEmail')}
+            </Label>
+            <Input id="email" value={adminEmail || t('noEmailFound')} disabled className="col-span-3" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {t('cancel')}
+          </Button>
+          <Button 
+            onClick={handleResetPassword}
+            disabled={isLoading || !adminEmail}
+          >
+            {isLoading ? t('sending') : t('sendResetLink')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
-
-export default SchoolDialogs;

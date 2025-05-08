@@ -1,324 +1,281 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/auth';
-import { FullUserData, User } from '@/types/user';
-import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCaption, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
+import { FullUserData, UserRole } from '@/types/user';
+import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { formatDistance } from 'date-fns';
-import UserFilters from './UserFilters';
-import UserDetailsDialog from './UserDetailsDialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
+import { Eye, UserCog, PlusCircle, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { UserFilter } from '@/hooks/user/useOptimizedUserList';
 import EditUserDialog from './EditUserDialog';
-import { UserFilter, FilterOption } from './UserSelectParts/types';
-import { usePermissions } from '@/hooks/auth/usePermissions';
+import AddUserDialog from './AddUserDialog';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserListProps {
-  onCreateUser?: () => void;
+  users: FullUserData[];
+  filter: UserFilter;
+  onFilterChange: (filter: UserFilter) => void;
+  loading: boolean;
+  totalPages?: number;
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
+  refetch: () => void;
 }
 
-const UserList: React.FC<UserListProps> = ({ onCreateUser }) => {
+const UserList: React.FC<UserListProps> = ({
+  users,
+  filter,
+  onFilterChange,
+  loading,
+  totalPages = 1,
+  currentPage = 1,
+  onPageChange,
+  refetch
+}) => {
   const { t } = useLanguage();
-  const { user: currentUser } = useAuth();
-  const { isSuperAdmin, isRegionAdmin } = usePermissions();
-  const [isLoading, setIsLoading] = useState(false);
-  const [users, setUsers] = useState<FullUserData[]>([]);
+  const [searchQuery, setSearchQuery] = useState(filter.search || '');
   const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [filter, setFilter] = useState<UserFilter>({
-    role: [],
-    status: [],
-    search: '',
-    page: 1,
-    limit: 50
-  });
-  
-  // Rol və status seçimləri üçün sabit dəyərlər
-  const roleOptions: FilterOption[] = [
-    { value: 'superadmin', label: t('superadmin') },
-    { value: 'regionadmin', label: t('regionadmin') },
-    { value: 'sectoradmin', label: t('sectoradmin') },
-    { value: 'schooladmin', label: t('schooladmin') },
-    { value: 'user', label: t('user') }
-  ];
-  
-  const statusOptions: FilterOption[] = [
-    { value: 'active', label: t('active') },
-    { value: 'inactive', label: t('inactive') },
-    { value: 'blocked', label: t('blocked') },
-    { value: 'pending', label: t('pending') }
-  ];
-  
-  // İstifadəçi siyahısını yüklə
-  const loadUsers = async () => {
-    setIsLoading(true);
-    try {
-      let query = supabase.rpc('get_full_user_data');
-      
-      // Filtrlər
-      if (filter.role && filter.role.length > 0) {
-        query = query.in('role', filter.role);
-      }
-      
-      if (filter.status && filter.status.length > 0) {
-        query = query.in('status', filter.status);
-      }
-      
-      if (filter.region_id) {
-        query = query.eq('region_id', filter.region_id);
-      }
-      
-      if (filter.sector_id) {
-        query = query.eq('sector_id', filter.sector_id);
-      }
-      
-      if (filter.search) {
-        query = query.or(`email.ilike.%${filter.search}%, full_name.ilike.%${filter.search}%`);
-      }
-      
-      // Sıralama və limit
-      query = query.order('created_at', { ascending: false })
-        .range((filter.page - 1) * filter.limit, filter.page * filter.limit - 1);
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setUsers(data?.map(user => ({
-        ...user,
-        // Əgər name yoxdursa, full_name'i istifadə edək
-        name: user.full_name,
-        // type çevirmələri üçün alias-lar əlavə edək
-        regionId: user.region_id,
-        sectorId: user.sector_id,
-        schoolId: user.school_id,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at,
-        lastLogin: user.last_login,
-        // notificationSettings objectini əlavə edək
-        notificationSettings: {
-          email: true,
-          inApp: true,
-          push: true,
-          system: true,
-          deadline: true
-        }
-      })) || []);
-      
-    } catch (err: any) {
-      console.error('Error loading users:', err);
-      toast.error(t('errorLoadingUsers'), {
-        description: err.message
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // İlkin yüklənmə və filter dəyişikliyi
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [processedUsers, setProcessedUsers] = useState<FullUserData[]>(users);
+
+  // Process user data when it changes
   useEffect(() => {
-    loadUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
-  // İstifadəçi detallarını göstər
-  const handleViewDetails = (user: FullUserData) => {
-    setSelectedUser(user);
-    setIsDetailsOpen(true);
+    if (users && users.length > 0) {
+      // Process users to normalize property names
+      const processed = users.map(user => {
+        // Make sure the processed user objects have the correct type
+        const processedUser: FullUserData = {
+          id: user.id,
+          email: user.email,
+          full_name: user.full_name || user.fullName || user.name || '',
+          name: user.full_name || user.fullName || user.name || '',
+          role: user.role as UserRole,
+          region_id: user.region_id || user.regionId || '',
+          regionId: user.region_id || user.regionId || '',
+          sector_id: user.sector_id || user.sectorId || '',
+          sectorId: user.sector_id || user.sectorId || '',
+          school_id: user.school_id || user.schoolId || '',
+          schoolId: user.school_id || user.schoolId || '',
+          status: user.status || '',
+          phone: user.phone || '',
+          position: user.position || '',
+          language: user.language || '',
+          created_at: user.created_at || user.createdAt || '',
+          updated_at: user.updated_at || user.updatedAt || '',
+          last_login: user.last_login || user.lastLogin || '',
+          avatar: user.avatar || '',
+          notificationSettings: user.notificationSettings || {
+            email: true,
+            inApp: true,
+            push: true,
+            system: true,
+            deadline: true
+          }
+        };
+        return processedUser;
+      });
+      
+      setProcessedUsers(processed);
+    } else {
+      setProcessedUsers([]);
+    }
+  }, [users]);
+
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    // Debounce search
+    const timer = setTimeout(() => {
+      onFilterChange({
+        ...filter,
+        search: value,
+        page: 1 // Reset to first page on search
+      });
+    }, 300);
+    
+    return () => clearTimeout(timer);
   };
-  
-  // İstifadəçini redaktə et
+
+  // Show edit user dialog
   const handleEditUser = (user: FullUserData) => {
     setSelectedUser(user);
-    setIsEditOpen(true);
+    setIsEditDialogOpen(true);
   };
-  
-  // İstifadəçi statusunu dəyişmək
-  const handleToggleStatus = async (user: Partial<User>) => {
-    if (!user.id || !user.status) return;
-    
-    try {
-      const newStatus = user.status === 'active' ? 'inactive' : 'active';
-      const { error } = await supabase
-        .from('profiles')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      // Müvəffəqiyyətli mesaj göstər
-      const successMessage = newStatus === 'active' ? t('userActivated') : t('userDeactivated');
-      toast.success(successMessage);
-      
-      // İstifadəçi siyahısını yenilə
-      loadUsers();
-      
-    } catch (err: any) {
-      console.error('Error updating user status:', err);
-      toast.error(t('errorUpdatingUserStatus'), {
-        description: err.message
-      });
-    }
+
+  // Handle dialog close
+  const handleDialogClose = () => {
+    setIsEditDialogOpen(false);
+    setIsAddDialogOpen(false);
+    setSelectedUser(null);
   };
-  
-  // Format tarixi
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '-';
-    try {
-      return formatDistance(new Date(dateString), new Date(), { addSuffix: true });
-    } catch (e) {
-      return dateString;
-    }
+
+  // Handle dialog complete
+  const handleDialogComplete = () => {
+    handleDialogClose();
+    refetch();
   };
-  
-  // Status badge
-  const renderStatusBadge = (status?: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge variant="success">{t('active')}</Badge>;
-      case 'inactive':
-        return <Badge variant="secondary">{t('inactive')}</Badge>;
-      case 'blocked':
-        return <Badge variant="destructive">{t('blocked')}</Badge>;
-      case 'pending':
-        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{t('pending')}</Badge>;
-      default:
-        return <Badge variant="outline">{status || t('unknown')}</Badge>;
-    }
-  };
-  
+
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between">
-        <h2 className="text-2xl font-bold">{t('userManagement')}</h2>
-        {(isSuperAdmin || isRegionAdmin) && (
-          <Button onClick={onCreateUser}>
-            {t('createUser')}
-          </Button>
-        )}
-      </div>
+    <>
+      <Card>
+        <CardHeader className="flex-col space-y-2 md:flex-row md:items-center md:justify-between md:space-y-0">
+          <div>
+            <CardTitle>{t('users')}</CardTitle>
+            <CardDescription>
+              {loading 
+                ? t('loadingUsers') 
+                : t('totalUsersCount', { count: processedUsers.length })}
+            </CardDescription>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder={t('searchUsers')}
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="w-full md:w-[200px] pl-8"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => {
+                    setSearchQuery('');
+                    onFilterChange({
+                      ...filter,
+                      search: '',
+                      page: 1
+                    });
+                  }}
+                  className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              {t('addUser')}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-3 px-4 text-left font-medium">{t('name')}</th>
+                  <th className="py-3 px-4 text-left font-medium">{t('email')}</th>
+                  <th className="py-3 px-4 text-left font-medium">{t('role')}</th>
+                  <th className="py-3 px-4 text-left font-medium">{t('entity')}</th>
+                  <th className="py-3 px-4 text-left font-medium">{t('status')}</th>
+                  <th className="py-3 px-4 text-left font-medium">{t('actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="py-4 text-center">
+                      <div className="flex justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : processedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-4 text-center text-muted-foreground">
+                      {searchQuery ? t('noUsersFound') : t('noUsers')}
+                    </td>
+                  </tr>
+                ) : (
+                  processedUsers.map(user => (
+                    <tr key={user.id} className="border-b hover:bg-muted/50">
+                      <td className="py-3 px-4">
+                        <div className="font-medium">{user.full_name}</div>
+                      </td>
+                      <td className="py-3 px-4">{user.email}</td>
+                      <td className="py-3 px-4">
+                        <Badge variant="outline" className="capitalize">
+                          {user.role?.replace('admin', ' Admin')}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        {user.school_name || user.sector_name || user.region_name || '-'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge
+                          variant={user.status === 'active' ? 'default' : 'secondary'}
+                          className="capitalize"
+                        >
+                          {user.status || 'unknown'}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditUser(user)}
+                          >
+                            <UserCog className="h-4 w-4 mr-1" />
+                            {t('edit')}
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && onPageChange && (
+            <div className="flex items-center justify-end space-x-2 py-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage <= 1 || loading}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="text-sm">
+                {t('pageOf', { current: currentPage, total: totalPages })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages || loading}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
       
-      <UserFilters 
-        filter={filter}
-        setFilter={setFilter}
-        roleOptions={roleOptions}
-        statusOptions={statusOptions}
-        onSearch={loadUsers}
+      {/* Edit User Dialog */}
+      <EditUserDialog
+        isOpen={isEditDialogOpen}
+        onClose={handleDialogClose}
+        onComplete={handleDialogComplete}
+        user={selectedUser}
       />
       
-      <div className="border rounded-md">
-        <Table>
-          <TableCaption>
-            {isLoading ? t('loading') : t('userListCaption')}
-          </TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t('name')}</TableHead>
-              <TableHead>{t('email')}</TableHead>
-              <TableHead>{t('role')}</TableHead>
-              <TableHead>{t('status')}</TableHead>
-              <TableHead>{t('lastLogin')}</TableHead>
-              <TableHead className="text-right">{t('actions')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">
-                  {user.full_name || user.name || t('noName')}
-                </TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{t(String(user.role).toLowerCase())}</TableCell>
-                <TableCell>{renderStatusBadge(user.status)}</TableCell>
-                <TableCell>{formatDate(user.last_login || user.lastLogin)}</TableCell>
-                <TableCell className="text-right space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleViewDetails(user)}
-                  >
-                    {t('view')}
-                  </Button>
-                  {(isSuperAdmin || (isRegionAdmin && user.region_id === currentUser?.region_id)) && (
-                    <>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEditUser(user)}
-                      >
-                        {t('edit')}
-                      </Button>
-                      {user.id !== currentUser?.id && (
-                        <Button 
-                          variant={user.status === 'active' ? 'destructive' : 'default'}
-                          size="sm"
-                          onClick={() => handleToggleStatus(user as User)}
-                        >
-                          {user.status === 'active' ? t('deactivate') : t('activate')}
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-            {users.length === 0 && !isLoading && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
-                  {t('noUsersFound')}
-                </TableCell>
-              </TableRow>
-            )}
-            {isLoading && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      
-      {/* İstifadəçi Detalları Dialoqu */}
-      {selectedUser && (
-        <UserDetailsDialog 
-          isOpen={isDetailsOpen}
-          onClose={() => setIsDetailsOpen(false)}
-          user={selectedUser}
-          onEditClick={() => {
-            setIsDetailsOpen(false);
-            setIsEditOpen(true);
-          }}
-        />
-      )}
-      
-      {/* İstifadəçi Düzəliş Dialoqu */}
-      {selectedUser && (
-        <EditUserDialog 
-          isOpen={isEditOpen}
-          onClose={() => setIsEditOpen(false)}
-          onComplete={() => {
-            setIsEditOpen(false);
-            loadUsers();
-          }}
-          user={selectedUser}
-        />
-      )}
-    </div>
+      {/* Add User Dialog */}
+      <AddUserDialog
+        isOpen={isAddDialogOpen}
+        onClose={handleDialogClose}
+        onComplete={handleDialogComplete}
+      />
+    </>
   );
 };
 

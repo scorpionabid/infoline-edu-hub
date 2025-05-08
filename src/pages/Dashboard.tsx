@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
-  // Change isLoading to loading to match the auth context property name
   const { user, isAuthenticated, loading } = useAuth();
   const [initialCheck, setInitialCheck] = useState(true);
   const navigate = useNavigate();

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, UserFilter } from '@/types/user';
@@ -54,8 +55,8 @@ export const useUsers = ({ filter }: UseUsersProps = {}) => {
         setError(queryError.message);
         console.error('Error fetching users:', queryError);
       } else {
-        const usersList = data.map((userData: any) => {
-          return {
+        if (data) {
+          const usersList = data.map((userData: any) => ({
             id: userData?.id || '',
             email: userData?.email || '',
             full_name: userData?.full_name || '',
@@ -66,9 +67,12 @@ export const useUsers = ({ filter }: UseUsersProps = {}) => {
             status: userData?.status || '',
             created_at: userData?.created_at || '',
             updated_at: userData?.updated_at || ''
-          } as User;
-        });
-        setUsers(usersList);
+          }) as User);
+          
+          setUsers(usersList);
+        } else {
+          setUsers([]);
+        }
         setCount(resultCount || 0);
       }
     } catch (err: any) {

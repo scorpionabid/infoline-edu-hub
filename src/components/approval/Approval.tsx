@@ -10,9 +10,21 @@ import { Input } from '@/components/ui/input';
 import { Loader2, CheckCircle, XCircle, Search, RefreshCw, Info } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { PendingApproval } from '@/types/dashboard';
+import { DataEntryRecord } from '@/types/dataEntry';
 import PendingApprovalsTable from './PendingApprovalsTable';
 import { useToast } from '@/components/ui/use-toast';
+
+// Define a type for the approval data
+interface PendingApproval {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  categoryId: string;
+  categoryName: string;
+  status: string;
+  createdAt: string;
+  count: number;
+}
 
 const Approval: React.FC = () => {
   const { t } = useLanguageSafe();
@@ -22,7 +34,7 @@ const Approval: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
 
-  // Təsdiq gözləyən məlumatları əldə edirk
+  // Fetch pending approvals data
   const {
     data: pendingItems = [],
     isLoading,
@@ -32,14 +44,20 @@ const Approval: React.FC = () => {
   } = useQuery({
     queryKey: ['approvals', activeTab],
     queryFn: async () => {
-      // Əvvəlcə məktəblərə aid kateqoriyalar üzrə təsdiq gözləyən məlumatları qruplaşdırırıq
-      const { data, error } = await supabase.rpc('get_pending_approvals_grouped', {
-        p_status: activeTab
-      });
+      try {
+        // Call a stored function that returns grouped approvals
+        const { data, error } = await supabase
+          .rpc('get_pending_approvals_grouped', {
+            p_status: activeTab
+          });
 
-      if (error) throw new Error(error.message);
-      
-      return data || [];
+        if (error) throw error;
+        
+        return data as PendingApproval[] || [];
+      } catch (err) {
+        console.error('Error fetching approval data:', err);
+        throw err;
+      }
     },
     enabled: canApproveData
   });
@@ -57,10 +75,12 @@ const Approval: React.FC = () => {
   }, [canApproveData, navigate, toast, t]);
 
   // Axtarış funksiyası
-  const filteredItems = pendingItems.filter((item: any) => 
-    item.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (item.categoryName?.toLowerCase() || item.category?.toLowerCase() || '').includes(searchTerm.toLowerCase())
-  );
+  const filteredItems = Array.isArray(pendingItems) 
+    ? pendingItems.filter((item: PendingApproval) => 
+        item.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        item.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="space-y-6">

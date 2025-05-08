@@ -5,12 +5,14 @@ import { CategoryWithColumns } from '@/types/column';
 export function useCategoryStatus(category: CategoryWithColumns | null) {
   const isComplete = useMemo(() => {
     if (!category) return false;
+    if (category.completionRate === undefined) return false;
     return category.completionRate === 100;
   }, [category]);
 
   const isPending = useMemo(() => {
     if (!category) return false;
-    return category.completionRate !== undefined && category.completionRate > 0 && category.completionRate < 100;
+    if (category.completionRate === undefined) return false;
+    return category.completionRate > 0 && category.completionRate < 100;
   }, [category]);
 
   const status = useMemo(() => {

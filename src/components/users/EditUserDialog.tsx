@@ -171,7 +171,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     try {
       // İstifadəçini deaktiv et
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ status: 'inactive', updated_at: new Date().toISOString() })
         .eq('id', user.id);
       
@@ -195,7 +195,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     try {
       // İstifadəçini aktivləşdir
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ status: 'active', updated_at: new Date().toISOString() })
         .eq('id', user.id);
       

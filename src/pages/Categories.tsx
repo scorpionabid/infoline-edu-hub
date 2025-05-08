@@ -1,55 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useCategoryOperations } from '@/hooks/categories/useCategoryOperations';
+import { useCategoryFilters } from '@/hooks/categories/useCategoryFilters';
 import { useLanguage } from '@/context/LanguageContext';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
-import DeleteCategoryDialog from '@/components/categories/DeleteCategoryDialog';
-import { Category } from '@/types/category';
-import PageHeader from '@/components/layout/PageHeader';
-import EmptyState from '@/components/common/EmptyState';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { CalendarIcon } from '@radix-ui/react-icons';
-import { useCategoryFilters } from '@/hooks/categories/useCategoryFilters';
-import { useCategoryOperations, AddCategoryFormData } from '@/hooks/categories/useCategoryOperations';
-import { usePermissions } from '@/hooks/auth/usePermissions';
+} from '@/components/ui/select';
+import { Loader2, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AddCategoryDialog } from '@/components/categories/AddCategoryDialog';
+import { CategoryCard } from '@/components/categories/CategoryCard';
 import { toast } from 'sonner';
+import { Category } from '@/types/column';
 
-const Categories: React.FC = () => {
+const Categories = () => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  const { userRole } = usePermissions();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [addDialog, setAddDialog] = useState({ isOpen: false });
-  const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, categoryId: '', categoryName: '' });
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Region admin və SuperAdmin kateqoriya əlavə və redaktə edə bilər
-  const canManageCategories = userRole === 'superadmin' || userRole === 'regionadmin';
-
-  // Custom hooklarımızı istifadə edək
-  const {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const { fetchCategories, addCategory, error } = useCategoryOperations();
+  const { 
     filters,
     updateFilter,
     resetFilters,
@@ -60,279 +36,155 @@ const Categories: React.FC = () => {
   } = useCategoryFilters();
 
   const {
-    error,
-    isSubmitting,
-    fetchCategories,
-    addCategory,
-    deleteCategory,
-    setError
-  } = useCategoryOperations();
+    data: categories = [],
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ['categories', filters],
+    queryFn: () => fetchCategories(searchQuery || '', filters),
+  });
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
+  const handleAddCategory = async (categoryData: any) => {
     try {
-      const data = await fetchCategories(searchQuery, filters);
-      setCategories(data);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchCategories, filters, searchQuery, setError]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleOpenAddDialog = () => {
-    if (!canManageCategories) {
-      toast.error(t('noPermission'), {
-        description: t('adminPermissionRequired')
+      await addCategory(categoryData);
+      setIsDialogOpen(false);
+      refetch();
+    } catch (err: any) {
+      toast.error(t('errorAddingCategory'), {
+        description: err.message,
       });
-      return;
     }
-    setAddDialog({ isOpen: true });
   };
 
-  const handleCloseAddDialog = () => {
-    setAddDialog({ isOpen: false });
-  };
-
-  const handleAddCategory = async (newCategory: AddCategoryFormData): Promise<boolean> => {
-    if (!canManageCategories) {
-      toast.error(t('noPermission'));
-      return false;
-    }
-    
-    const success = await addCategory(newCategory);
-    if (success) {
-      await fetchData();
-    }
-    return success;
-  };
-
-  const handleOpenDeleteDialog = (categoryId: string, categoryName: string) => {
-    if (!canManageCategories) {
-      toast.error(t('noPermission'), {
-        description: t('adminPermissionRequired')
-      });
-      return;
-    }
-    setDeleteDialog({ isOpen: true, categoryId: categoryId, categoryName: categoryName });
-  };
-
-  const handleCloseDeleteDialog = () => {
-    setDeleteDialog({ isOpen: false, categoryId: '', categoryName: '' });
-  };
-
-  const handleDeleteCategory = async (categoryId: string): Promise<boolean> => {
-    if (!canManageCategories) {
-      toast.error(t('noPermission'));
-      return false;
-    }
-    
-    const success = await deleteCategory(categoryId);
-    if (success) {
-      await fetchData();
-    }
-    return success;
-  };
-
-  const handleEditCategory = (categoryId: string) => {
-    if (!canManageCategories) {
-      toast.error(t('noPermission'), {
-        description: t('adminPermissionRequired')
-      });
-      return;
-    }
-    navigate(`/categories/${categoryId}`);
-  };
-
-  const content = (
-    <div className="container mx-auto py-6 space-y-6">
-      <PageHeader 
-        title={t('categories')} 
-        description={t('categoriesDescription')}
-      />
-
-      <div className="flex justify-between items-center mb-4">
-        {canManageCategories && (
-          <Button onClick={handleOpenAddDialog}>
-            <Plus className="h-4 w-4 mr-2" />
-            {t('addCategory')}
-          </Button>
-        )}
-
-        <div className="flex space-x-4">
-          <Select 
-            value={filters.type} 
-            onValueChange={(value) => updateFilter('type', value as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={t('type')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('all')}</SelectItem>
-              <SelectItem value="sectors">Sectors</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select 
-            value={filters.deadline} 
-            onValueChange={(value) => updateFilter('deadline', value as any)}
-          >
-            <SelectTrigger id="deadline">
-              <SelectValue placeholder={t('all')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('all')}</SelectItem>
-              <SelectItem value="upcoming">Upcoming</SelectItem>
-              <SelectItem value="past">Past</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "justify-start text-left font-normal",
-                  !date && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date?.from ? (
-                  date.to ? (
-                    `${format(date.from, "LLL dd, y")} - ${format(date.to, "LLL dd, y")}`
-                  ) : (
-                    format(date.from, "LLL dd, y")
-                  )
-                ) : (
-                  <span>Pick a date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="range"
-                defaultMonth={date?.from}
-                selected={date}
-                onSelect={handleDateChange}
-                numberOfMonths={2}
-                pagedNavigation
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">{t('categories')}</h1>
+        <Button onClick={() => setIsDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          {t('addCategory')}
+        </Button>
       </div>
 
-      {isLoading && (
-        <div className="flex items-center justify-center h-48">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
-      )}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>{t('categoriesList')}</CardTitle>
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('search')}
+                  className="w-[200px] pl-8"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+              >
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                {t('filters')}
+              </Button>
+            </div>
+          </div>
+          
+          {isFilterOpen && (
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <Select
+                value={filters.status || 'all'}
+                onValueChange={(value) => updateFilter('status', value)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder={t('status')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all')}</SelectItem>
+                  <SelectItem value="active">{t('active')}</SelectItem>
+                  <SelectItem value="inactive">{t('inactive')}</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select
+                value={filters.assignment || 'all'}
+                onValueChange={(value) => updateFilter('assignment', value)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder={t('assignment')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('allAssignments')}</SelectItem>
+                  <SelectItem value="sectors">{t('sectorsOnly')}</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select
+                value={filters.deadline || 'all'}
+                onValueChange={(value) => updateFilter('deadline', value)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder={t('deadline')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('allDeadlines')}</SelectItem>
+                  <SelectItem value="upcoming">{t('upcoming')}</SelectItem>
+                  <SelectItem value="past">{t('past')}</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetFilters}
+                className="ml-auto"
+              >
+                <X className="mr-2 h-4 w-4" />
+                {t('resetFilters')}
+              </Button>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                {searchQuery ? t('noSearchResults') : t('noCategories')}
+              </p>
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSearchChange('')}
+                  className="mt-2"
+                >
+                  {t('clearSearch')}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categories.map((category: Category) => (
+                <CategoryCard 
+                  key={category.id} 
+                  category={category}
+                  onUpdate={refetch} 
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {error && (
-        <div className="text-red-500">Error: {error}</div>
-      )}
-
-      {!isLoading && categories.length === 0 && (
-        <EmptyState
-          icon={<Plus className="h-12 w-12" />}
-          title={t('noCategoriesFound')}
-          description={t('noCategoriesFoundDesc')}
-          action={canManageCategories ? {
-            label: t('addFirstCategory'),
-            onClick: handleOpenAddDialog
-          } : undefined}
-        />
-      )}
-
-      {!isLoading && categories.length > 0 && (
-        <CategoryTable 
-          categories={categories}
-          onEdit={handleEditCategory}
-          onDelete={handleOpenDeleteDialog}
-          canManageCategories={canManageCategories}
-        />
-      )}
-
-      {addDialog.isOpen && (
-        <AddCategoryDialog
-          isOpen={addDialog.isOpen}
-          onClose={handleCloseAddDialog}
-          onAddCategory={handleAddCategory}
-          isSubmitting={isSubmitting}
-        />
-      )}
-
-      {deleteDialog.isOpen && (
-        <DeleteCategoryDialog
-          isOpen={deleteDialog.isOpen}
-          onClose={handleCloseDeleteDialog}
-          onConfirm={handleDeleteCategory}
-          category={deleteDialog.categoryId}
-          categoryName={deleteDialog.categoryName}
-          isSubmitting={isSubmitting}
-        />
-      )}
-    </div>
-  );
-
-  return (
-    <>
-      {content}
-    </>
-  );
-};
-
-// Kategoriya cədvəli komponenti
-const CategoryTable: React.FC<{
-  categories: Category[];
-  onEdit: (id: string) => void;
-  onDelete: (id: string, name: string) => void;
-  canManageCategories: boolean;
-}> = ({ categories, onEdit, onDelete, canManageCategories }) => {
-  const { t } = useLanguage();
-  
-  return (
-    <div className="w-full">
-      <Table>
-        <TableCaption>A list of your categories.</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[200px]">Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {categories.map((category) => (
-            <TableRow key={category.id}>
-              <TableCell className="font-medium">{category.name}</TableCell>
-              <TableCell>{category.description}</TableCell>
-              <TableCell>{category.status}</TableCell>
-              <TableCell>
-                {canManageCategories ? (
-                  <>
-                    <Button variant="ghost" size="sm" onClick={() => onEdit(category.id)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      {t('edit')}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => onDelete(category.id, category.name)}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      {t('delete')}
-                    </Button>
-                  </>
-                ) : (
-                  <span className="text-sm text-muted-foreground">Yalnız baxış üçün</span>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <AddCategoryDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onSubmit={handleAddCategory}
+      />
     </div>
   );
 };

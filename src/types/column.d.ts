@@ -35,7 +35,7 @@ export interface Category {
 export interface CategoryWithColumns extends Category {
   columns?: Column[];
   completionRate?: number;
-  assignment?: string;
+  assignment?: CategoryAssignment;
 }
 
 export interface TabDefinition {
@@ -89,3 +89,6 @@ export interface DependsOnCondition {
     value: any;
   };
 }
+
+export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft';
+export type CategoryAssignment = 'all' | 'sectors';

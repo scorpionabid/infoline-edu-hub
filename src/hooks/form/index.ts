@@ -2,8 +2,13 @@
 import { useState, useCallback } from 'react';
 import { DataEntryForm, EntryValue } from '@/types/dataEntry';
 
-export const useForm = (initialData?: DataEntryForm) => {
-  const [form, setForm] = useState<DataEntryForm>(
+// Extend DataEntryForm to include isModified
+interface ExtendedDataEntryForm extends DataEntryForm {
+  isModified?: boolean;
+}
+
+export const useForm = (initialData?: ExtendedDataEntryForm) => {
+  const [form, setForm] = useState<ExtendedDataEntryForm>(
     initialData || {
       categoryId: '',
       schoolId: '',
