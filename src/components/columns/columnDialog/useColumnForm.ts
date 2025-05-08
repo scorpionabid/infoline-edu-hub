@@ -74,46 +74,24 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
   // Form submit handler
   const onSubmit = async (data: ColumnFormValues) => {
     try {
-      // Ensure category_id is set and is required
-      const formData = {
+      // Create a complete column data object with all required fields
+      const formData: Omit<Column, "id"> = {
         ...data,
         category_id: data.category_id || categoryId || '',
+        options: ['select', 'radio', 'checkbox'].includes(data.type) ? options : [],
+        status: data.status || 'active',
+        is_required: data.is_required || false,
+        type: data.type,
+        name: data.name,
       };
 
-      // Əgər sütun tipi seçimlərdən biridirsə, options sahəsini əlavə et
-      if (['select', 'radio', 'checkbox'].includes(data.type)) {
-        formData.options = options;
-      } else {
-        formData.options = [];
-      }
-
-      // Validation rule'ları düzəlt (boolean tipi string'ə çevrilməsin)
-      if (formData.validation) {
-        const validation = formData.validation;
-        
-        if (validation.required === true || validation.required === false) {
-          validation.required = validation.required;
-        }
-        
-        if (validation.email === true || validation.email === false) {
-          validation.email = validation.email;
-        }
-        
-        if (validation.url === true || validation.url === false) {
-          validation.url = validation.url;
-        }
-        
-        if (validation.tel === true || validation.tel === false) {
-          validation.tel = validation.tel;
-        }
-      }
-
+      // Include the ID if we're editing
       const columnData = {
         ...(column?.id ? { id: column.id } : {}),
         ...formData,
       };
 
-      // Sütunu yaddaşa ver və nəticəni qaytarın
+      // Save the column and return the result
       const success = await onSave(columnData);
       return success;
     } catch (error) {

@@ -45,7 +45,7 @@ export interface CategoryItem {
   id: string;
   name: string;
   description?: string;
-  deadline: string;
+  deadline?: string;
   completionRate: number;
 }
 
@@ -53,8 +53,11 @@ export interface Category {
   id: string;
   name: string;
   description?: string;
-  deadline: string;
-  completionRate?: number;
+  deadline?: string;
+  completionRate: number; // Making this required to match CategoryItem
+  columns?: any[];
+  status?: string;
+  assignment?: string;
 }
 
 // For backward compatibility
@@ -67,7 +70,7 @@ export interface DeadlineItem {
   categoryId?: string;
   categoryName?: string;
   dueDate: string;
-  status: "upcoming" | "overdue" | "completed";
+  status: "upcoming" | "overdue" | "completed" | "pending" | "draft"; // Added pending and draft
   completionRate: number;
 }
 
@@ -87,10 +90,10 @@ export interface SchoolStat {
   completionRate: number;
   lastUpdate: string;
   status?: string;
-  pendingForms?: number;
-  formsCompleted?: number;
-  totalForms?: number;
-  principalName?: string;
+  pendingForms: number;
+  formsCompleted: number;
+  totalForms: number;
+  principalName: string;
   address?: string;
   phone?: string;
   email?: string;
@@ -122,6 +125,7 @@ export interface SuperAdminDashboardData {
   schoolStats?: any[];
   formStats?: DashboardFormStats;
   upcomingDeadlines?: DeadlineItem[];
+  categories?: CategoryItem[];
 }
 
 export interface RegionAdminDashboardData {
@@ -172,12 +176,13 @@ export interface SectorAdminDashboardProps {
 }
 
 export interface SchoolAdminDashboardProps {
-  isLoading: boolean;
-  error: any;
+  data?: SchoolAdminDashboardData;
+  isLoading?: boolean;
+  error?: any;
   onRefresh?: () => void;
-  navigateToDataEntry: () => void;
-  handleFormClick: (id: string) => void;
-  schoolId: string;
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (id: string) => void;
+  schoolId?: string;
 }
 
 export interface SchoolStatsCardProps {
@@ -188,6 +193,8 @@ export interface FormTabsProps {
   categories: CategoryItem[];
   upcoming: DeadlineItem[];
   pendingForms: FormItem[];
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (id: string) => void;
 }
 
 export interface PendingApprovalsTableProps {
@@ -196,3 +203,54 @@ export interface PendingApprovalsTableProps {
   showViewAllButton?: boolean;
   onRefresh?: () => void;
 }
+
+// For charts and data visualization
+export interface ChartData {
+  activityData?: { name: string; value: number }[];
+  regionSchoolsData?: { name: string; value: number }[];
+  categoryCompletionData?: { name: string; completed: number }[];
+}
+
+export interface CategoryStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  completion?: CompletionData;
+}
+
+// Stats type for backward compatibility
+export type DashboardStats = {
+  schools: {
+    total: number;
+    active: number;
+    inactive: number;
+  };
+  forms: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    draft?: number;
+    total: number;
+  };
+  categories: {
+    total: number;
+    active: number;
+    upcoming: number;
+    expired: number;
+  };
+  users: {
+    total: number;
+    active: number;
+    pending: number;
+  };
+  regions: {
+    total: number;
+    completed: number;
+    inProgress: number;
+  };
+  sectors: {
+    total: number;
+    completed: number;
+    inProgress: number;
+  };
+};

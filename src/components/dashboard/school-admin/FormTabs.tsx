@@ -1,196 +1,193 @@
 
 import React from 'react';
-import { TabsContent } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DeadlineItem, FormItem, CategoryItem } from '@/types/dashboard';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
-import { format, isAfter } from 'date-fns';
-import { useLanguage } from '@/context/LanguageContext';
+import { TabsContent } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
+import { Calendar, ClipboardCheck, Clock, PlusCircle } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { format } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
 
 interface FormTabsProps {
   categories: CategoryItem[];
   upcoming: DeadlineItem[];
   pendingForms: FormItem[];
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (id: string) => void;
 }
 
-const FormTabs: React.FC<FormTabsProps> = ({ categories, upcoming, pendingForms }) => {
+const FormTabs: React.FC<FormTabsProps> = ({ categories, upcoming, pendingForms, navigateToDataEntry, handleFormClick }) => {
   const { t } = useLanguage();
-
+  
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'dd MMM yyyy');
-    } catch (error) {
-      console.error("Date format error:", error, dateString);
-      return "Invalid date";
+    } catch {
+      return dateString || 'N/A';
     }
   };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'upcoming':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'overdue':
-        return 'bg-red-50 text-red-700 border-red-200';
-      case 'completed':
-        return 'bg-green-50 text-green-700 border-green-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
-  };
-
-  const getDeadlineStatus = (dueDate: string) => {
-    try {
-      const due = new Date(dueDate);
-      const isOverdue = isAfter(new Date(), due);
-      return isOverdue ? 'overdue' : 'upcoming';
-    } catch (error) {
-      console.error("Date comparison error:", error);
-      return 'upcoming';
-    }
-  };
-
+  
   return (
     <>
-      <TabsContent value="upcoming">
+      <TabsContent value="upcoming" className="mt-0">
         <Card>
           <CardHeader>
             <CardTitle>{t('upcomingDeadlines')}</CardTitle>
             <CardDescription>{t('upcomingDeadlinesDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
-            {upcoming && upcoming.length > 0 ? (
+            {upcoming.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Clock className="mx-auto h-12 w-12 mb-2 opacity-50" />
+                <p>{t('noUpcomingDeadlines')}</p>
+              </div>
+            ) : (
               <div className="space-y-4">
-                {upcoming.map(item => (
-                  <div key={item.id} className="border rounded-md p-4 flex justify-between items-center">
-                    <div>
-                      <h3 className="font-medium">{item.categoryName}</h3>
-                      <div className="flex items-center text-sm text-muted-foreground mt-1">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {formatDate(item.dueDate)}
+                {upcoming.slice(0, 5).map((item) => (
+                  <div key={item.id} className="flex items-center justify-between space-x-4 border-b pb-4 last:border-0">
+                    <div className="flex items-center space-x-4">
+                      <div className={`rounded-full w-8 h-8 flex items-center justify-center 
+                        ${item.status === 'upcoming' ? 'bg-orange-100 text-orange-600' : 
+                          item.status === 'overdue' ? 'bg-red-100 text-red-600' : 
+                          'bg-gray-100 text-gray-600'}`}>
+                        <Calendar className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{item.categoryName}</h4>
+                        <div className="text-xs text-muted-foreground">{formatDate(item.dueDate)}</div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <Badge className={getStatusColor(item.status)}>
-                        {item.status === 'upcoming' && <Clock className="h-3 w-3 mr-1" />}
-                        {item.status === 'overdue' && <AlertTriangle className="h-3 w-3 mr-1" />}
-                        {item.status === 'completed' && <CheckCircle className="h-3 w-3 mr-1" />}
-                        {t(item.status)}
-                      </Badge>
-                      <div className="text-sm font-medium">
-                        {item.completionRate}%
-                      </div>
+                    <div className="flex flex-col space-y-1 items-end">
+                      <div className="text-sm font-medium">{`${item.completionRate}%`}</div>
+                      <Progress value={item.completionRate} className="h-2 w-24" />
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>{t('noUpcomingDeadlines')}</p>
-              </div>
             )}
           </CardContent>
+          {navigateToDataEntry && (
+            <CardFooter>
+              <Button onClick={navigateToDataEntry} className="ml-auto">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                {t('newDataEntry')}
+              </Button>
+            </CardFooter>
+          )}
         </Card>
       </TabsContent>
-
-      <TabsContent value="pending">
+      
+      <TabsContent value="pending" className="mt-0">
         <Card>
           <CardHeader>
             <CardTitle>{t('pendingForms')}</CardTitle>
             <CardDescription>{t('pendingFormsDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
-            {pendingForms && pendingForms.length > 0 ? (
+            {pendingForms.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <ClipboardCheck className="mx-auto h-12 w-12 mb-2 opacity-50" />
+                <p>{t('noPendingForms')}</p>
+              </div>
+            ) : (
               <div className="space-y-4">
-                {pendingForms.map(form => (
-                  <div key={form.id} className="border rounded-md p-4 flex justify-between items-center">
-                    <div>
-                      <h3 className="font-medium">{form.categoryName}</h3>
-                      {form.submittedAt && (
-                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {t('submittedOn')} {formatDate(form.submittedAt)}
-                        </div>
-                      )}
+                {pendingForms.map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="flex items-center justify-between space-x-4 border-b pb-4 last:border-0 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                    onClick={() => handleFormClick && handleFormClick(item.id)}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="rounded-full bg-amber-100 text-amber-600 w-8 h-8 flex items-center justify-center">
+                        <Clock className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{item.categoryName}</h4>
+                        {item.submittedAt && (
+                          <div className="text-xs text-muted-foreground">
+                            {`${t('submitted')}: ${formatDate(item.submittedAt)}`}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <Badge variant="outline">
-                        {form.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                        {form.status === 'approved' && <CheckCircle className="h-3 w-3 mr-1" />}
-                        {form.status === 'rejected' && <AlertTriangle className="h-3 w-3 mr-1" />}
-                        {t(form.status)}
-                      </Badge>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {}}
-                      >
-                        {t('viewDetails')}
-                      </Button>
+                    <div className="flex items-center space-x-2">
+                      <div className={`text-sm rounded-full px-2 py-1 
+                        ${item.status === 'pending' ? 'bg-amber-100 text-amber-600' : 
+                          item.status === 'approved' ? 'bg-green-100 text-green-600' : 
+                          item.status === 'rejected' ? 'bg-red-100 text-red-600' : 
+                          'bg-gray-100 text-gray-600'}`}>
+                        {item.status === 'pending' ? t('pending') : 
+                         item.status === 'approved' ? t('approved') : 
+                         item.status === 'rejected' ? t('rejected') : 
+                         item.status}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>{t('noPendingForms')}</p>
-              </div>
             )}
           </CardContent>
+          {navigateToDataEntry && (
+            <CardFooter>
+              <Button onClick={navigateToDataEntry} className="ml-auto">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                {t('newDataEntry')}
+              </Button>
+            </CardFooter>
+          )}
         </Card>
       </TabsContent>
-
-      <TabsContent value="categories">
+      
+      <TabsContent value="categories" className="mt-0">
         <Card>
           <CardHeader>
             <CardTitle>{t('allCategories')}</CardTitle>
             <CardDescription>{t('allCategoriesDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
-            {categories && categories.length > 0 ? (
+            {categories.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <ClipboardCheck className="mx-auto h-12 w-12 mb-2 opacity-50" />
+                <p>{t('noCategories')}</p>
+              </div>
+            ) : (
               <div className="space-y-4">
-                {categories.map(category => (
-                  <div key={category.id} className="border rounded-md p-4 flex justify-between items-center">
-                    <div>
-                      <h3 className="font-medium">{category.name}</h3>
-                      {category.description && (
-                        <p className="text-sm text-muted-foreground">{category.description}</p>
-                      )}
-                      {category.deadline && (
-                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {t('deadline')}: {formatDate(category.deadline)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      {category.deadline && (
-                        <Badge className={getStatusColor(getDeadlineStatus(category.deadline))}>
-                          {getDeadlineStatus(category.deadline) === 'upcoming' ? 
-                            t('upcoming') : t('overdue')}
-                        </Badge>
-                      )}
-                      <div className="text-sm font-medium">
-                        {category.completionRate}%
+                {categories.map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="flex items-center justify-between space-x-4 border-b pb-4 last:border-0"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="rounded-full bg-blue-100 text-blue-600 w-8 h-8 flex items-center justify-center">
+                        <ClipboardCheck className="h-4 w-4" />
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {}}
-                      >
-                        {t('fillData')}
-                      </Button>
+                      <div>
+                        <h4 className="font-medium">{item.name}</h4>
+                        {item.description && (
+                          <div className="text-xs text-muted-foreground line-clamp-1">
+                            {item.description}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col space-y-1 items-end">
+                      <div className="text-sm font-medium">{`${item.completionRate}%`}</div>
+                      <Progress value={item.completionRate} className="h-2 w-24" />
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>{t('noCategories')}</p>
-              </div>
             )}
           </CardContent>
+          {navigateToDataEntry && (
+            <CardFooter>
+              <Button onClick={navigateToDataEntry} className="ml-auto">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                {t('newDataEntry')}
+              </Button>
+            </CardFooter>
+          )}
         </Card>
       </TabsContent>
     </>

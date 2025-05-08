@@ -82,6 +82,12 @@ const SchoolAdminDashboard: React.FC<ExtendedSchoolAdminDashboardProps> = ({
     total: 0
   };
 
+  // Ensure all categories have completionRate
+  const processedCategories = data.categories ? data.categories.map(cat => ({
+    ...cat,
+    completionRate: cat.completionRate || 0
+  })) : [];
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Məktəb Dashboard</h2>
@@ -128,7 +134,7 @@ const SchoolAdminDashboard: React.FC<ExtendedSchoolAdminDashboardProps> = ({
       {data.upcoming && data.categories && data.pendingForms && (
         <FormTabs 
           upcoming={data.upcoming}
-          categories={data.categories}
+          categories={processedCategories}
           pendingForms={data.pendingForms}
           navigateToDataEntry={navigateToDataEntry}
           handleFormClick={handleFormClick}

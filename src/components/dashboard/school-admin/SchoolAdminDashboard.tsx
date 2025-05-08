@@ -6,7 +6,7 @@ import StatusCards from '../StatusCards';
 import NotificationsCard from '../common/NotificationsCard';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
-import { DashboardNotification, CategoryItem } from '@/types/dashboard';
+import { CategoryItem, DashboardNotification } from '@/types/dashboard';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
 import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 import FormTabs from './FormTabs';
@@ -87,11 +87,11 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
         pendingForms: data.pendingForms || [],
         completionRate: data.completionRate,
         formStats: data.formStats || {
-          pending: data.status.pending,
-          approved: data.status.approved,
-          rejected: data.status.rejected,
-          draft: data.status.draft,
-          total: data.status.total,
+          pending: data.status?.pending || 0,
+          approved: data.status?.approved || 0,
+          rejected: data.status?.rejected || 0,
+          draft: data.status?.draft || 0,
+          total: data.status?.total || 0,
           dueSoon: 0,
           overdue: 0
         },
@@ -127,8 +127,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
 
             <FormTabs 
               categories={dashboardData.categories}
-              upcoming={dashboardData.upcoming}
-              pendingForms={dashboardData.pendingForms}
+              upcoming={dashboardData.upcoming || []}
+              pendingForms={dashboardData.pendingForms || []}
             />
           </Tabs>
         </div>
@@ -146,12 +146,12 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {Math.round(dashboardData.completionRate)}%
+                {Math.round(dashboardData.completionRate || 0)}%
               </div>
               <div className="mt-4 text-sm text-muted-foreground">
                 {t('completedFormsInfo', {
-                  completed: dashboardData.completion.completed,
-                  total: dashboardData.completion.total
+                  completed: dashboardData.completion?.completed || 0,
+                  total: dashboardData.completion?.total || 0
                 })}
               </div>
             </CardContent>

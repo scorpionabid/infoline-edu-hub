@@ -1,16 +1,14 @@
-
-// Update the SuperAdminDashboardData to include upcomingDeadlines
 import React from 'react';
 import { useAuth } from '@/context/auth';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './region-admin/RegionAdminDashboard'; 
 import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import { useNavigate } from 'react-router-dom';
-import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
+import SchoolAdminDashboard from '@/components/dashboard/SchoolAdminDashboard';
 import { SchoolStat } from '@/types/dashboard';
 import { PendingApproval, CategoryItem, DeadlineItem, FormItem, DashboardNotification } from '@/types/dashboard';
 import { ArrowRight } from 'lucide-react';
-import LoadingSpinner from '../ui/loadingSpinner';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const mockSuperAdminData = () => ({
   completion: {

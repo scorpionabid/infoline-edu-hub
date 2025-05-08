@@ -1,57 +1,32 @@
 
-import { AppNotification, DashboardNotification } from '@/types/notification';
+import { DashboardNotification } from '@/types/dashboard';
+import { AppNotification } from '@/types/notification';
 
-// DashboardNotification-ı AppNotification-a çevirmək üçün adaptasiya funksiyası
-export const adaptDashboardNotificationToApp = (
-  notification: DashboardNotification
-): AppNotification => {
+export const adaptDashboardNotificationToApp = (notification: any): AppNotification => {
   return {
     id: notification.id,
     title: notification.title,
-    message: notification.message,
-    createdAt: notification.createdAt || notification.date || notification.timestamp || new Date().toISOString(),
-    isRead: notification.isRead || notification.read || false,
-    read: notification.read || notification.isRead || false,
-    type: notification.type,
-    priority: notification.priority,
-    link: notification.link,
-    category: notification.category,
-    timestamp: notification.timestamp || notification.createdAt || notification.date,
-    date: notification.date || notification.createdAt || notification.timestamp,
-    entity: notification.entity
+    message: notification.message || '',
+    timestamp: notification.date || new Date().toISOString(),
+    isRead: notification.isRead || false,
+    type: notification.type || 'info',
+    entityType: notification.entityType || 'notification',
+    entityId: notification.entityId || null,
+    userId: notification.userId || '',
   };
 };
 
-// Birden çox bildirişi çevirmək üçün köməkçi funksiya
-export const adaptDashboardNotificationsToApp = (
-  notifications: DashboardNotification[]
-): AppNotification[] => {
-  return notifications.map(adaptDashboardNotificationToApp);
-};
-
-// AppNotification-ı DashboardNotification-a çevirmək üçün adaptasiya funksiyası
-export const adaptAppNotificationToDashboard = (
-  notification: AppNotification
-): DashboardNotification => {
+export const adaptAppNotificationToDashboard = (notification: AppNotification): DashboardNotification => {
   return {
     id: notification.id,
     title: notification.title,
-    message: notification.message,
-    date: notification.date || notification.createdAt || notification.timestamp || new Date().toISOString(),
-    isRead: notification.isRead || notification.read || false,
-    read: notification.read || notification.isRead || false,
-    type: notification.type,
-    priority: notification.priority,
-    link: notification.link,
-    category: notification.category,
-    createdAt: notification.createdAt || notification.date || notification.timestamp,
-    timestamp: notification.timestamp || notification.createdAt || notification.date,
-    entity: notification.entity
+    message: notification.message || '',
+    date: notification.timestamp || new Date().toISOString(),
+    isRead: notification.isRead || false,
+    type: notification.type || 'info',
   };
 };
 
-// SuperAdminDashboard və RegionAdminDashboard komponentlərində istifadə edilən funksiya üçün alias
+// Alias functions for backward compatibility
 export const adaptDashboardToAppNotification = adaptDashboardNotificationToApp;
-
-// SectorAdminDashboard komponenti üçün funksiya üçün alias
 export const adaptAppToDashboardNotification = adaptAppNotificationToDashboard;

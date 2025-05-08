@@ -53,18 +53,29 @@ export interface School {
   completion_rate?: number;
 }
 
+// Enhanced School with statistics
 export interface SchoolStat extends School {
   completion_rate: number;
   formsTotal: number;
   formsCompleted: number;
   formsPending: number;
   lastUpdate: string;
-  pendingForms?: number; 
+  pendingForms: number; 
   completionRate?: number;
   principal?: string;
-  principalName?: string; // TypeScript camelCase alias
+  principalName?: string; 
 }
 
+// Enhanced Sector with additional stats
+export interface SectorSchool extends Sector {
+  completionRate?: number;
+  lastUpdate?: string;
+  pendingForms?: number;
+  formsCompleted?: number;
+  totalForms?: number;
+}
+
+// User related types
 export interface UserReported {
   id: string;
   email: string;
@@ -108,4 +119,10 @@ export interface NotificationSettings {
   sms: boolean;
   system: boolean;
   deadline: boolean;
+}
+
+export interface EnhancedSector extends Sector {
+  region_name: string;
+  school_count: number;
+  completion_rate: number;
 }
