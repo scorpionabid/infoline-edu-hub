@@ -86,3 +86,9 @@ export interface SectorSchool extends School {
   completion_rate?: number;
   updated_at?: string;
 }
+
+export interface SchoolFormProps {
+  onSubmit: (data: Partial<School>) => Promise<void>;
+  isSubmitting: boolean;
+  initialData: School;
+}

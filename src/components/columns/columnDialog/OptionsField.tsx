@@ -31,7 +31,7 @@ export default function OptionsField({
 }: OptionsFieldProps) {
   const { t } = useLanguage();
   const [editingOptionIndex, setEditingOptionIndex] = useState<number | null>(null);
-  const [editOption, setEditOption] = useState<ColumnOption>({ value: '', label: '' });
+  const [editOption, setEditOption] = useState<ColumnOption>({ id: '', value: '', label: '' });
   
   // Bir option-u düzənləmə rejimini aktivləşdirir
   const startEditing = (option: ColumnOption, index: number) => {
@@ -47,7 +47,7 @@ export default function OptionsField({
         updateOption(options[editingOptionIndex], editOption);
       }
       setEditingOptionIndex(null);
-      setEditOption({ value: '', label: '' });
+      setEditOption({ id: '', value: '', label: '' });
     }
   };
   

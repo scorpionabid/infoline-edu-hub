@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Column, ColumnFormValues, ColumnOption, ColumnType } from '@/types/column';
+import { Column, ColumnFormValues, ColumnOption, ColumnType, columnTypes } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 
 // Column form validation schema
@@ -21,11 +21,12 @@ const createColumnFormSchema = (t: (key: string) => string) => {
     status: z.enum(['active', 'inactive', 'draft']),
     order_index: z.number().optional(),
     default_value: z.string().optional(),
+    description: z.string().optional(),
     options: z.array(
       z.object({
         value: z.string(),
         label: z.string(),
-        id: z.string().optional(),
+        id: z.string(),
         color: z.string().optional(),
       })
     ).optional(),
@@ -53,6 +54,11 @@ export const useColumnForm = (
   const schema = createColumnFormSchema(t);
   const isEditMode = !!column;
   
+  // Generate UUID helper
+  const generateId = () => {
+    return Math.random().toString(36).substring(2, 9);
+  };
+
   // Default values for form initialization
   const defaultValues: ColumnFormValues = {
     name: column?.name || '',
@@ -60,6 +66,7 @@ export const useColumnForm = (
     is_required: column?.is_required === undefined ? true : column?.is_required,
     placeholder: column?.placeholder || '',
     help_text: column?.help_text || '',
+    description: column?.description || '',
     status: (column?.status as 'active' | 'inactive' | 'draft') || 'active',
     order_index: column?.order_index || 0,
     default_value: column?.default_value || '',
@@ -90,8 +97,10 @@ export const useColumnForm = (
   const selectedType = watchType;
   
   // Options state
-  const [options, setOptions] = useState<ColumnOption[]>(column?.options || []);
-  const [newOption, setNewOption] = useState<ColumnOption>({ value: '', label: '' });
+  const [options, setOptions] = useState<ColumnOption[]>(
+    column?.options?.map(opt => ({...opt, id: opt.id || generateId()})) || []
+  );
+  const [newOption, setNewOption] = useState<ColumnOption>({ id: '', value: '', label: '' });
   
   // Handle form type changes
   const [showOptions, setShowOptions] = useState(
@@ -109,7 +118,7 @@ export const useColumnForm = (
       setOptions([]);
     } else if (!form.getValues('options')?.length) {
       // Add default empty option if switching to a type that uses options
-      const defaultOption = { value: '', label: '' };
+      const defaultOption = { id: generateId(), value: '', label: '' };
       form.setValue('options', [defaultOption]);
       setOptions([defaultOption]);
     }
@@ -119,10 +128,11 @@ export const useColumnForm = (
   const addOption = useCallback(() => {
     if (!newOption.label || !newOption.value) return;
     
-    const updatedOptions = [...options, { ...newOption }];
+    const optionWithId = { ...newOption, id: generateId() };
+    const updatedOptions = [...options, optionWithId];
     setOptions(updatedOptions);
     form.setValue('options', updatedOptions);
-    setNewOption({ value: '', label: '' });
+    setNewOption({ id: '', value: '', label: '' });
   }, [newOption, options, form]);
   
   const removeOption = useCallback((index: number) => {
@@ -145,22 +155,23 @@ export const useColumnForm = (
         is_required: values.is_required,
         placeholder: values.placeholder,
         help_text: values.help_text,
+        description: values.description,
         status: values.status as 'active' | 'inactive' | 'draft',
         order_index: values.order_index,
         default_value: values.default_value,
         options: options.length > 0 ? options : undefined,
         validation: {
-          min: values.validation.min ? Number(values.validation.min) : undefined,
-          max: values.validation.max ? Number(values.validation.max) : undefined,
-          minLength: values.validation.minLength ? Number(values.validation.minLength) : undefined,
-          maxLength: values.validation.maxLength ? Number(values.validation.maxLength) : undefined,
-          pattern: values.validation.pattern || undefined,
-          email: values.validation.email,
-          url: values.validation.url,
-          tel: values.validation.tel,
-          required: values.is_required, // Added required field
-          minDate: values.validation.minDate || undefined,
-          maxDate: values.validation.maxDate || undefined,
+          min: values.validation?.min ? Number(values.validation.min) : undefined,
+          max: values.validation?.max ? Number(values.validation.max) : undefined,
+          minLength: values.validation?.minLength ? Number(values.validation.minLength) : undefined,
+          maxLength: values.validation?.maxLength ? Number(values.validation.maxLength) : undefined,
+          pattern: values.validation?.pattern || undefined,
+          email: values.validation?.email,
+          url: values.validation?.url,
+          tel: values.validation?.tel,
+          required: values.is_required,
+          minDate: values.validation?.minDate || undefined,
+          maxDate: values.validation?.maxDate || undefined,
         },
         category_id: column?.category_id || categories[0]?.id,
         created_at: column?.created_at || new Date().toISOString(),

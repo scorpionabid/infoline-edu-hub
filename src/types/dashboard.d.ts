@@ -3,9 +3,12 @@ import { School, SchoolStat } from './school';
 
 export interface PendingApproval {
   id: string;
+  schoolId?: string;
   schoolName: string;
+  categoryId?: string;
   categoryName: string;
-  date: string;
+  submittedAt: string;
+  date?: string;
   status: 'pending' | 'approved' | 'rejected';
 }
 
@@ -21,6 +24,8 @@ export interface DashboardStatus {
   rejected: number;
   draft?: number;
   total: number;
+  active: number;
+  inactive: number;
 }
 
 export interface DashboardFormStats {
@@ -115,6 +120,7 @@ export interface SectorAdminDashboardData {
   status: DashboardStatus;
   schoolStats: SchoolStat[];
   pendingApprovals: PendingApproval[];
+  formStats?: DashboardFormStats;
 }
 
 export interface SectorAdminDashboardProps {
@@ -128,8 +134,35 @@ export interface RegionAdminDashboardData {
   bestSchools: SchoolStat[];
   worstSchools: SchoolStat[];
   pendingApprovals: PendingApproval[];
+  formStats?: DashboardFormStats;
 }
 
 export interface RegionAdminDashboardProps {
   data: RegionAdminDashboardData;
+}
+
+export interface SuperAdminDashboardProps {
+  data: SuperAdminDashboardData;
+}
+
+export interface SuperAdminDashboardData {
+  completion: DashboardCompletion;
+  status: DashboardStatus;
+  regions: number;
+  sectors: number;
+  schools: number;
+  notifications: DashboardNotification[];
+  formStats?: DashboardFormStats;
+}
+
+export interface StatusCardsProps {
+  completion?: DashboardCompletion;
+  status?: DashboardStatus;
+  formStats?: DashboardFormStats;
+}
+
+export interface DashboardStats {
+  total: number;
+  active: number;
+  inactive: number;
 }
