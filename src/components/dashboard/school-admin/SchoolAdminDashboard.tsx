@@ -6,8 +6,8 @@ import StatusCards from '../StatusCards';
 import NotificationsCard from '../common/NotificationsCard';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
-import { CategoryItem, DeadlineItem, FormItem, DashboardNotification } from '@/types/dashboard';
-import { SchoolAdminDashboardData } from '@/types/dashboard';
+import { CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
+import { SchoolAdminDashboardData, DashboardNotification } from '@/types/dashboard';
 import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 import FormTabs from './FormTabs';
 import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
@@ -78,7 +78,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
           name: cat.name,
           description: cat.description,
           deadline: cat.deadline,
-          completionRate: cat.completionRate || 0
+          completionRate: cat.completionRate || 0,
+          status: cat.status
         }))
         : [];
         

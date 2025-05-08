@@ -1,4 +1,5 @@
 import { Column, ColumnOption } from '@/types/column';
+import { ColumnType } from '@/types/column.d';
 
 // Make sure ColumnOption has id fields
 const statusOptions: ColumnOption[] = [

@@ -1,13 +1,7 @@
 
 import React from 'react';
 import { Input } from '@/components/ui/input';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SectorFiltersProps {
   searchQuery: string;
@@ -24,7 +18,7 @@ const SectorFilters: React.FC<SectorFiltersProps> = ({
 }) => {
   return (
     <div className="flex flex-col md:flex-row gap-4 mb-6">
-      <div className="flex-1">
+      <div className="md:w-2/3">
         <Input
           placeholder="Search sectors..."
           value={searchQuery}
@@ -32,7 +26,7 @@ const SectorFilters: React.FC<SectorFiltersProps> = ({
           className="w-full"
         />
       </div>
-      <div className="w-full md:w-48">
+      <div className="md:w-1/3">
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
           <SelectTrigger>
             <SelectValue placeholder="Filter by status" />

@@ -15,6 +15,10 @@ export interface Column {
   validation?: ColumnValidation;
   section?: string;
   parent_column_id?: string;
+  help_text?: string;
+  placeholder?: string;
+  default_value?: string | number | boolean;
+  order_index?: number;
   conditional_display?: {
     column_id: string;
     value: string | string[];
@@ -31,7 +35,18 @@ export type ColumnType =
   | 'checkbox' 
   | 'radio' 
   | 'textarea'
-  | 'file';
+  | 'file'
+  | 'email'
+  | 'phone'
+  | 'image'
+  | 'datetime'
+  | 'time'
+  | 'url'
+  | 'color'
+  | 'password'
+  | 'richtext'
+  | 'range'
+  | 'boolean';
 
 export interface ColumnOption {
   id: string;
@@ -49,6 +64,13 @@ export interface ColumnValidation {
   maxLength?: number;
   pattern?: string;
   patternMessage?: string;
+  email?: boolean;
+  url?: boolean;
+  tel?: boolean;
+  minDate?: string;
+  maxDate?: string;
+  minValue?: number;
+  maxValue?: number;
 }
 
 export interface CategoryFilter {
@@ -66,4 +88,11 @@ export interface CategoryWithColumns {
   status?: string;
   deadline?: string;
   completionRate?: number;
+}
+
+// Define TabDefinition interface for CategoryForm
+export interface TabDefinition {
+  id: string;
+  title: string;
+  columns: Column[];
 }

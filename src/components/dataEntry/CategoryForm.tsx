@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Column } from '@/types/column';
+import { Column, TabDefinition } from '@/types/column.d';
 import { useLanguage } from '@/context/LanguageContext';
 import { CategoryWithColumns } from '@/types/column.d';
 
@@ -12,12 +12,6 @@ interface CategoryFormProps {
   isLoading?: boolean;
   initialValues?: Record<string, string>;
   readOnly?: boolean;
-}
-
-interface TabDefinition {
-  id: string;
-  title: string;
-  columns: Column[];
 }
 
 const CategoryForm: React.FC<CategoryFormProps> = ({

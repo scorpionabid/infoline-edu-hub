@@ -1,28 +1,55 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sector } from '@/types/supabase';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Sector, EnhancedSector } from '@/types/supabase';
 
 interface SectorCardProps {
-  sector: Sector;
+  sector: Sector | EnhancedSector;
   onClick?: () => void;
 }
 
 const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
+  const isEnhanced = 'school_count' in sector;
+  
   return (
-    <Card className="cursor-pointer hover:bg-accent/50" onClick={onClick}>
-      <CardHeader className="pb-2">
+    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={onClick}>
+      <CardHeader>
         <CardTitle className="text-lg">{sector.name}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">{sector.description || 'No description'}</p>
-        <div className="mt-2">
-          <span className="text-sm font-medium">Status: </span>
-          <span className={`text-sm ${sector.status === 'active' ? 'text-green-600' : 'text-red-600'}`}>
-            {sector.status}
-          </span>
+        {sector.description && (
+          <p className="text-sm text-muted-foreground mb-4">{sector.description}</p>
+        )}
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <p className="font-medium">Region:</p>
+            <p className="text-muted-foreground">{sector.region_name || 'Unknown'}</p>
+          </div>
+          <div>
+            <p className="font-medium">Status:</p>
+            <div className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+              sector.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
+              {sector.status}
+            </div>
+          </div>
+          {isEnhanced && (
+            <>
+              <div>
+                <p className="font-medium">Schools:</p>
+                <p>{(sector as EnhancedSector).school_count}</p>
+              </div>
+              <div>
+                <p className="font-medium">Completion:</p>
+                <p>{Math.round((sector as EnhancedSector).completion_rate)}%</p>
+              </div>
+            </>
+          )}
         </div>
       </CardContent>
+      <CardFooter className="text-xs text-muted-foreground">
+        Created: {new Date(sector.created_at).toLocaleDateString()}
+      </CardFooter>
     </Card>
   );
 };

@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { AuthContext } from './context';
 import { AuthContextType } from './types';
@@ -36,28 +37,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('AuthProvider unmounted');
     };
   }, []);
-  
-  // Lokal yaradılan create və update funksiyaları
-  const createUser = async (userData: any) => {
-    console.log('Creating user', userData);
-    try {
-      // Real bir yaratma funksiyanız burada ola bilər
-      return { data: userData, error: null };
-    } catch (error: any) {
-      return { data: null, error };
-    }
-  };
-
-  const updateUserProfile = async (updates: any) => {
-    console.log('Updating user profile', updates);
-    try {
-      // Real bir yeniləmə funksiyanız burada ola bilər
-      return true;
-    } catch (error) {
-      console.error('Error updating user profile:', error);
-      return false;
-    }
-  };
   
   // Context value yaradırıq
   const contextValue: AuthContextType = {
@@ -113,6 +92,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updatePassword: async () => ({ data: null, error: null }),
     updateProfile: async () => ({ data: null, error: null }),
     refreshSession: async () => {},
+    refreshProfile: async () => {
+      // Just return the current user since this is a mock implementation
+      console.log("Refreshing user profile");
+      return user;
+    },
     signup: async () => ({ user: null, error: null })
   };
 
@@ -122,3 +106,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
+
+export default AuthProvider;
