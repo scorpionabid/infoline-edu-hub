@@ -1,175 +1,182 @@
-import React, { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Category, CategoryWithColumns, TabDefinition } from '@/types/category';
 import { useLanguage } from '@/context/LanguageContext';
-import { Category, CategoryWithColumns, TabDefinition } from '@/types/column';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
 
 interface CategoryFormProps {
-  categoryId?: string;
+  category: CategoryWithColumns;
+  isSubmitting?: boolean;
+  isApproving?: boolean;
+  onSubmit: () => void;
+  onCancel?: () => void;
+  onApprove?: () => void;
 }
 
-const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId }) => {
+const CategoryForm = ({
+  category,
+  isSubmitting = false,
+  isApproving = false,
+  onSubmit,
+  onCancel,
+  onApprove
+}: CategoryFormProps) => {
   const { t } = useLanguage();
-  const [category, setCategory] = useState<CategoryWithColumns | null>(null);
-  const [tabs, setTabs] = useState<TabDefinition[]>([]);
-  const [activeTab, setActiveTab] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [formValues, setFormValues] = useState<Record<string, any>>({});
+  const [activeTab, setActiveTab] = useState<string>("general");
   
-  // useEffect to fetch category data
-  useEffect(() => {
-    // This would normally fetch data from an API
-    const fetchCategoryData = async () => {
-      if (!categoryId) return;
-      
-      setLoading(true);
-      try {
-        // Mock data for now
-        const mockCategory: CategoryWithColumns = {
-          id: categoryId,
-          name: 'Sample Category',
-          description: 'This is a sample category for data entry',
-          status: 'active',
-          // We need to add completionRate to CategoryWithColumns interface
-          columns: [
-            {
-              id: 'col1',
-              name: 'Full Name',
-              type: 'text',
-              category_id: categoryId,
-              is_required: true,
-              status: 'active'
-            },
-            {
-              id: 'col2',
-              name: 'Age',
-              type: 'number',
-              category_id: categoryId,
-              is_required: true,
-              status: 'active'
-            }
-          ]
-        };
-        
-        setCategory(mockCategory);
-        
-        // Generate tabs from columns
-        if (mockCategory.columns) {
-          const generatedTabs: TabDefinition[] = [
-            {
-              id: 'general',
-              label: t('general'),
-              columns: mockCategory.columns.filter(col => !col.order_index || col.order_index < 5)
-            }
-          ];
-          
-          setTabs(generatedTabs);
-          setActiveTab('general');
-        }
-      } catch (error) {
-        console.error('Error fetching category data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchCategoryData();
-  }, [categoryId, t]);
-  
-  // Handle input change
-  const handleChange = (columnId: string, value: any) => {
-    setFormValues(prev => ({
-      ...prev,
-      [columnId]: value
-    }));
-  };
-  
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      // This would submit data to an API
-      console.log('Form values to submit:', formValues);
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      alert('Form submitted successfully!');
-    } catch (error) {
-      console.error('Error submitting form:', error);
+  // Define tabs with general tab and column tabs if needed
+  const tabs: TabDefinition[] = [
+    {
+      id: "general",
+      label: t('general'),
+      columns: []
     }
+  ];
+  
+  if (category.columns && category.columns.length > 0) {
+    // Group columns by 8 per tab
+    const columnGroups = [];
+    for (let i = 0; i < category.columns.length; i += 8) {
+      const group = category.columns.slice(i, i + 8);
+      columnGroups.push(group);
+    }
+    
+    // Create tabs for each column group
+    columnGroups.forEach((group, index) => {
+      tabs.push({
+        id: `columns-${index + 1}`,
+        label: `${t('columns')} ${index + 1}`,
+        columns: group
+      });
+    });
+  }
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit();
   };
 
-  if (loading) {
-    return <div className="flex justify-center p-8">Loading...</div>;
-  }
-  
-  if (!category) {
-    return <div className="flex justify-center p-8">Category not found</div>;
-  }
-  
-  // Make sure to set completionRate as a property when needed
-  const categoryWithCompletionRate: CategoryWithColumns = {
-    ...category,
-    completionRate: category.completionRate || 0
-  };
-  
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{categoryWithCompletionRate.name}</h1>
-        <p className="text-gray-500">{categoryWithCompletionRate.description}</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">{category.name}</h2>
+          {category.description && <p className="text-muted-foreground">{category.description}</p>}
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          {onCancel && (
+            <Button 
+              variant="outline" 
+              onClick={onCancel}
+              disabled={isSubmitting || isApproving}
+            >
+              {t('cancel')}
+            </Button>
+          )}
+          <Button 
+            onClick={onSubmit}
+            disabled={isSubmitting || isApproving}
+          >
+            {isSubmitting ? t('saving') : t('save')}
+          </Button>
+          {onApprove && (
+            <Button 
+              variant="default" 
+              onClick={onApprove}
+              disabled={isSubmitting || isApproving}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isApproving ? t('approving') : t('approve')}
+            </Button>
+          )}
+        </div>
       </div>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {tabs.length > 0 ? (
-          <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              {tabs.map(tab => (
-                <TabsTrigger key={tab.id} value={tab.id}>
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            
-            {tabs.map(tab => (
-              <TabsContent key={tab.id} value={tab.id} className="space-y-4">
-                {tab.columns.map(column => (
-                  <div key={column.id} className="space-y-2">
-                    <label className="block text-sm font-medium">
-                      {column.name} {column.is_required && <span className="text-red-500">*</span>}
-                    </label>
-                    <input
-                      type={column.type === 'number' ? 'number' : 'text'}
-                      className="w-full p-2 border rounded"
-                      placeholder={column.placeholder}
-                      value={formValues[column.id] || ''}
-                      onChange={(e) => handleChange(column.id, e.target.value)}
-                      required={column.is_required}
-                    />
-                    {column.help_text && (
-                      <p className="text-xs text-gray-500">{column.help_text}</p>
-                    )}
-                  </div>
-                ))}
-              </TabsContent>
-            ))}
-          </Tabs>
-        ) : (
-          <div className="p-4 bg-yellow-50 rounded">
-            {t('noColumnsFound')}
-          </div>
-        )}
-        
-        <div className="flex justify-end space-x-3">
-          <Button type="button" variant="outline">
-            {t('cancel')}
-          </Button>
-          <Button type="submit">
-            {t('submit')}
-          </Button>
+      <div className="space-y-2">
+        <div className="flex justify-between">
+          <span className="text-sm font-medium">{t('completionStatus')}</span>
+          <span className="text-sm font-medium">
+            {category.completionRate || 0}%
+          </span>
         </div>
-      </form>
+        <Progress value={category.completionRate || 0} />
+      </div>
+      
+      <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4 w-full overflow-x-auto">
+          {tabs.map((tab) => (
+            <TabsTrigger key={tab.id} value={tab.id}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        
+        {tabs.map((tab) => (
+          <TabsContent key={tab.id} value={tab.id} className="space-y-4">
+            <Card className="p-4">
+              {tab.id === "general" ? (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium">{t('categoryInformation')}</h3>
+                    <p className="text-muted-foreground">{t('categoryInformationDesc')}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium">{t('categoryName')}</p>
+                      <p className="text-sm text-muted-foreground">{category.name}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium">{t('status')}</p>
+                      <p className="text-sm text-muted-foreground">{t(category.status || 'active')}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium">{t('deadline')}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {category.deadline 
+                          ? new Date(category.deadline).toLocaleDateString() 
+                          : t('noDeadline')}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium">{t('assignment')}</p>
+                      <p className="text-sm text-muted-foreground">{t(category.assignment || 'all')}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Column content would go here */}
+                  <div>
+                    <h3 className="text-lg font-medium">{t('columns')}</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {tab.columns.map((column: any) => (
+                      <div key={column.id} className="border p-4 rounded-md">
+                        <h4 className="font-medium">{column.name}</h4>
+                        <p className="text-sm text-muted-foreground">{column.type}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 };

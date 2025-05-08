@@ -15,10 +15,10 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AddCategoryDialog } from '@/components/categories/AddCategoryDialog';
-import { CategoryCard } from '@/components/categories/CategoryCard';
+import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
+import CategoryCard from '@/components/categories/CategoryCard';
 import { toast } from 'sonner';
-import { Category } from '@/types/column';
+import { Category } from '@/types/category';
 
 const Categories = () => {
   const { t } = useLanguage();
@@ -172,7 +172,9 @@ const Categories = () => {
                 <CategoryCard 
                   key={category.id} 
                   category={category}
-                  onUpdate={refetch} 
+                  onView={() => {}}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
                 />
               ))}
             </div>

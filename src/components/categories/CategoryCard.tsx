@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Category } from '@/types/column';
+import { Category } from '@/types/category';
 import { useLanguage } from '@/context/LanguageContext';
 import { CalendarIcon, PenIcon, Trash2Icon, EyeIcon } from 'lucide-react';
 import { format } from 'date-fns';

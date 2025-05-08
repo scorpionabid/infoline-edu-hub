@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { CategoryFilter } from '@/types/column';
+import { CategoryFilter } from '@/types/category';
 
 export const useCategoryFilters = (initialFilters: CategoryFilter = {}) => {
   const [filters, setFilters] = useState<CategoryFilter>(initialFilters);

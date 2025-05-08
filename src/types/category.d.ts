@@ -7,7 +7,7 @@ export interface Category {
   name: string;
   description?: string;
   assignment: CategoryAssignment;
-  deadline?: string;
+  deadline?: string | Date;
   status: CategoryStatus;
   priority?: number;
   created_at?: string;
@@ -30,4 +30,32 @@ export interface FormItem {
   dueDate: string;
   createdAt: string;
   completionRate: number;
+}
+
+export interface CategoryFilter {
+  status?: string;
+  deadline?: string;
+  search?: string;
+  date?: string | Date;
+  assignment?: string;
+}
+
+export interface ColumnData {
+  id: string;
+  name: string;
+  type: string;
+  is_required: boolean;
+  options?: any;
+  validation?: any;
+  help_text?: string;
+  placeholder?: string;
+  category_id: string;
+  order_index?: number;
+  status?: string;
+}
+
+export interface TabDefinition {
+  id: string;
+  label: string;
+  columns: any[];
 }

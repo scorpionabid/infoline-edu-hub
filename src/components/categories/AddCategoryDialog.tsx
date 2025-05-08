@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -54,14 +55,14 @@ type FormValues = z.infer<typeof formSchema>;
 interface AddCategoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddCategory: (data: AddCategoryFormData) => Promise<boolean>;
+  onSubmit: (data: AddCategoryFormData) => Promise<void>;
   isSubmitting?: boolean;
 }
 
 const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   isOpen,
   onClose,
-  onAddCategory,
+  onSubmit,
   isSubmitting = false,
 }) => {
   const { t } = useLanguage();
@@ -77,12 +78,8 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
     },
   });
   
-  const onSubmit = async (data: FormValues) => {
-    const success = await onAddCategory(data as AddCategoryFormData);
-    if (success) {
-      form.reset();
-      onClose();
-    }
+  const handleSubmit = async (data: FormValues) => {
+    await onSubmit(data as AddCategoryFormData);
   };
   
   const handleClose = () => {
@@ -101,7 +98,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="name"

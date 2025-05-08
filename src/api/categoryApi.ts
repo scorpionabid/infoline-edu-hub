@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Category, CategoryStatus, CategoryAssignment } from '@/types/column';
+import { Category, CategoryStatus, CategoryAssignment } from '@/types/category';
 
 // Bütün kateqoriyaları əldə et
 export const fetchAllCategories = async (): Promise<Category[]> => {
@@ -24,7 +24,7 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
   // Convert deadline to string if it's a Date object
   let deadlineStr: string | undefined = undefined;
   if (category.deadline) {
-    deadlineStr = category.deadline instanceof Date 
+    deadlineStr = typeof category.deadline === 'object' 
       ? category.deadline.toISOString() 
       : category.deadline;
   }
@@ -59,7 +59,7 @@ export const updateCategory = async (category: Partial<Category> & { id: string 
   // Convert deadline to string if it's a Date object
   let deadlineStr: string | undefined = undefined;
   if (category.deadline) {
-    deadlineStr = category.deadline instanceof Date 
+    deadlineStr = typeof category.deadline === 'object' 
       ? category.deadline.toISOString() 
       : category.deadline;
   }
