@@ -56,7 +56,7 @@ export interface Sector {
 }
 
 export interface EnhancedSector extends Sector {
-  school_count: number;
+  school_count?: number;
   schoolCount?: number;
   completion_rate: number;
   completionRate?: number;

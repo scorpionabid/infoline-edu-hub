@@ -9,7 +9,7 @@ interface SectorCardProps {
 }
 
 const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
-  const isEnhanced = 'school_count' in sector || 'schoolCount' in sector;
+  const isEnhanced = 'schoolCount' in sector || 'school_count' in sector;
   
   return (
     <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={onClick}>
@@ -23,7 +23,7 @@ const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
             <p className="font-medium">Region:</p>
-            <p className="text-muted-foreground">{sector.region_name || sector.regionName || 'Unknown'}</p>
+            <p className="text-muted-foreground">{sector.regionName || sector.region_name || 'Unknown'}</p>
           </div>
           <div>
             <p className="font-medium">Status:</p>
@@ -37,11 +37,11 @@ const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
             <>
               <div>
                 <p className="font-medium">Schools:</p>
-                <p>{(sector as EnhancedSector).school_count || (sector as EnhancedSector).schoolCount}</p>
+                <p>{(sector as EnhancedSector).schoolCount || (sector as EnhancedSector).school_count}</p>
               </div>
               <div>
                 <p className="font-medium">Completion:</p>
-                <p>{Math.round((sector as EnhancedSector).completion_rate || (sector as EnhancedSector).completionRate || 0)}%</p>
+                <p>{Math.round((sector as EnhancedSector).completionRate || (sector as EnhancedSector).completion_rate || 0)}%</p>
               </div>
             </>
           )}

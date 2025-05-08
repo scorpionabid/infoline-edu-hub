@@ -28,6 +28,7 @@ export const adaptDbColumnToFrontend = (column: Column): ExtendedColumn => {
 
 // This function adapts a frontend column to the database format
 export const adaptFrontendColumnToDb = (column: Partial<ExtendedColumn>): Partial<Column> => {
+  // Create a copy with all properties
   const dbColumn: Partial<Column> = {
     ...column,
     name: column.name || column.label || '',

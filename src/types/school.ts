@@ -47,8 +47,8 @@ export interface School {
   phone?: string;
   principal_name?: string;
   principalName?: string;
-  status: string;
-  created_at: string | Date;
+  status: string; // Make status required to match supabase.d.ts
+  created_at: string | Date; // Match created_at type with supabase.d.ts
   updated_at?: string | Date;
   teacher_count?: number;
   student_count?: number;
@@ -57,6 +57,8 @@ export interface School {
   language?: string;
   admin_id?: string;
   admin_email?: string;
+  region_name?: string;
+  sector_name?: string;
 }
 
 // Region tipi
@@ -66,9 +68,9 @@ export interface Region {
   description?: string;
   admin_id?: string;
   admin_email?: string;
-  created_at: string | Date;
+  created_at: string | Date; // Match created_at type with supabase.d.ts
   updated_at?: string | Date;
-  status: string;
+  status: string; // Make status required to match supabase.d.ts
 }
 
 // Sector tipi
@@ -79,9 +81,9 @@ export interface Sector {
   region_id: string;
   admin_id?: string;
   admin_email?: string;
-  created_at: string | Date;
+  created_at: string | Date; // Match created_at type with supabase.d.ts
   updated_at?: string | Date;
-  status: string;
+  status: string; // Make status required to match supabase.d.ts
   completion_rate?: number;
 }
 

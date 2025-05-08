@@ -1,3 +1,8 @@
+export interface TabDefinition {
+  id: string;
+  label: string;
+  content: React.ReactNode;
+}
 
 export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'multiselect' | 'checkbox' | 'radio' | 'textarea' | 'email' | 'phone' | 'file' | 'image' | 'boolean';
 
@@ -38,6 +43,19 @@ export interface Column {
   conditional_display?: any | null;
 }
 
+export interface ColumnFormData {
+  id?: string;
+  name: string;
+  type: ColumnType;
+  category_id?: string;
+  is_required?: boolean;
+  help_text?: string;
+  placeholder?: string;
+  options?: ColumnOption[];
+  default_value?: any;
+  order_index?: number;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -61,23 +79,4 @@ export interface CategoryFilter {
   status?: string;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
-}
-
-export interface ColumnFormData {
-  id?: string;
-  name: string;
-  type: ColumnType;
-  category_id?: string;
-  is_required?: boolean;
-  help_text?: string;
-  placeholder?: string;
-  options?: ColumnOption[];
-  default_value?: any;
-  order_index?: number;
-}
-
-export interface TabDefinition {
-  id: string;
-  label: string;
-  content: React.ReactNode;
 }

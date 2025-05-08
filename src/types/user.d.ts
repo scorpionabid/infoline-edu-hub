@@ -1,4 +1,3 @@
-
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
 export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
@@ -40,9 +39,10 @@ export interface NotificationSettings {
 export interface UserFormData {
   email: string;
   password?: string;
-  full_name: string;
+  full_name?: string;
+  fullName?: string;
   name?: string;
-  role: string;
+  role: UserRole | string;
   region_id?: string | null;
   regionId?: string | null;
   sector_id?: string | null;

@@ -1,4 +1,3 @@
-
 export type CompletionData = {
   percentage: number;
   total: number;
