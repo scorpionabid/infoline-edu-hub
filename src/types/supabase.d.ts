@@ -2,6 +2,8 @@
 import { Session } from '@supabase/supabase-js';
 import { User, UserRole } from './user';
 
+export { User, UserRole, FullUserData } from './user';
+
 export interface FullUserData extends User {
   full_name?: string;
   avatar?: string;
@@ -43,6 +45,9 @@ export interface Sector {
   status?: string;
   created_at: string | Date;
   updated_at?: string | Date;
+  admin_id?: string;
+  admin_email?: string;
+  completion_rate?: number;
 }
 
 export interface EnhancedSector extends Sector {
@@ -98,5 +103,3 @@ export interface Profile {
   status?: string;
   email?: string;
 }
-
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';

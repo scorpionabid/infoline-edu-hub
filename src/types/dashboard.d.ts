@@ -115,3 +115,39 @@ export interface PendingApproval {
   submittedBy?: string;
   submittedAt?: string | Date;
 }
+
+export interface CompletionData {
+  percentage: number;
+  completed: number;
+  total: number;
+}
+
+export interface DashboardStatus {
+  pending: number;
+  approved: number;
+  rejected: number;
+  draft?: number;
+  total: number;
+  active: number; 
+  inactive: number; 
+}
+
+export interface DashboardFormStats {
+  pending: number;
+  approved: number;
+  rejected: number;
+  draft?: number;
+  dueSoon: number;
+  overdue: number;
+  incomplete?: number;
+  total: number;
+}
+
+export interface CategoryWithColumns {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  columns: any[];
+  completionRate?: number;
+}

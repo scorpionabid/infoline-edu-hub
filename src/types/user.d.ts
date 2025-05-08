@@ -24,7 +24,7 @@ export interface User {
   school_id?: string;
   notificationSettings?: NotificationSettings;
   name?: string;
-  avatar?: string;
+  avatar?: string; // Added avatar property
 }
 
 export interface NotificationSettings {
@@ -35,4 +35,25 @@ export interface NotificationSettings {
   deadline: boolean;
   sms?: boolean;
   deadlineReminders?: boolean;
+}
+
+export interface FullUserData extends User {
+  avatar?: string;
+  region_id?: string;
+  regionId?: string;
+  region_name?: string;
+  regionName?: string;
+  sector_id?: string;
+  sectorId?: string;
+  sector_name?: string;
+  sectorName?: string;
+  school_id?: string;
+  schoolId?: string;
+  school_name?: string;
+  schoolName?: string;
+  entityName?: {
+    region?: string;
+    sector?: string;
+    school?: string;
+  };
 }

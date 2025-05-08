@@ -1,123 +1,176 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/context/auth';
+
+interface ApprovalData {
+  schools: any[];
+  regions: any[];
+  sectors: any[];
+  categories: any[];
+}
 
 export const useApprovalData = () => {
+  const [data, setData] = useState<ApprovalData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [approvalData, setApprovalData] = useState<any[]>([]);
-  const { toast } = useToast();
-  const { userRole, regionId, sectorId, schoolId } = usePermissions();
-  
+  const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth();
+
+  // Helper functions to fetch data
+  const fetchSchools = async () => {
+    const { data, error } = await supabase
+      .from('schools')
+      .select('id, name, region_id, sector_id');
+    if (error) {
+      console.error('Error fetching schools:', error);
+      throw error;
+    }
+    return data;
+  };
+
+  const fetchRegions = async () => {
+    const { data, error } = await supabase
+      .from('regions')
+      .select('id, name');
+    if (error) {
+      console.error('Error fetching regions:', error);
+      throw error;
+    }
+    return data;
+  };
+
+  const fetchSectors = async () => {
+    const { data, error } = await supabase
+      .from('sectors')
+      .select('id, name, region_id');
+    if (error) {
+      console.error('Error fetching sectors:', error);
+      throw error;
+    }
+    return data;
+  };
+
+  const fetchCategories = async () => {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('id, name, type');
+    if (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
+    }
+    return data;
+  };
+
+  // Fetch all data
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [schools, regions, sectors, categories] = await Promise.all([
+        fetchSchools(),
+        fetchRegions(),
+        fetchSectors(),
+        fetchCategories(),
+      ]);
+
+      setData({
+        schools,
+        regions,
+        sectors,
+        categories,
+      });
+    } catch (error: any) {
+      setError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchApprovals = async () => {
-      try {
-        setLoading(true);
-        
-        let query = supabase
-          .from('data_entries')
-          .select(`
-            id,
-            value,
-            status,
-            created_at,
-            updated_at,
-            created_by,
-            approved_by,
-            approved_at,
-            rejected_by,
-            rejection_reason,
-            schools!inner (
-              id,
-              name,
-              region_id,
-              sector_id
-            ),
-            categories!inner (
-              id,
-              name
-            ),
-            columns!inner (
-              id,
-              name,
-              type
-            )
-          `)
-          .eq('status', 'pending');
-        
-        // Filter based on user role
-        if (userRole === 'regionadmin' && regionId) {
-          query = query.eq('schools.region_id', regionId);
-        } else if (userRole === 'sectoradmin' && sectorId) {
-          query = query.eq('schools.sector_id', sectorId);
-        } else if (userRole === 'schooladmin' && schoolId) {
-          query = query.eq('school_id', schoolId);
-        }
-        
-        const { data, error } = await query.order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        // Process and transform the data for display
-        const processedData = data.map(item => ({
-          id: item.id,
-          schoolName: item.schools?.name || 'Unknown School',
-          categoryName: item.categories?.name || 'Unknown Category',
-          columnName: item.columns?.name || 'Unknown Column',
-          value: item.value,
-          status: item.status,
-          submittedAt: new Date(item.created_at).toLocaleString(),
-          // Specify types for region_id and sector_id to avoid TS errors
-          region_id: (item.schools as { region_id: string }).region_id || '',
-          sector_id: (item.schools as { sector_id: string }).sector_id || '',
-          // Add region and sector names - these would come from additional queries in a real app
-          regionName: '', // Will be filled later
-          sectorName: '' // Will be filled later
-        }));
-        
-        // In a real app, you would fetch region and sector names
-        const enhancedData = await Promise.all(processedData.map(async (item) => {
-          // Fetch region name if needed
-          if (item.region_id) {
-            const { data: regionData } = await supabase
-              .from('regions')
-              .select('name')
-              .eq('id', item.region_id)
-              .single();
-              
-            item.regionName = regionData?.name || 'Unknown Region';
-          }
-          
-          // Fetch sector name if needed
-          if (item.sector_id) {
-            const { data: sectorData } = await supabase
-              .from('sectors')
-              .select('name')
-              .eq('id', item.sector_id)
-              .single();
-              
-            item.sectorName = sectorData?.name || 'Unknown Sector';
-          }
-          
-          return item;
-        }));
-        
-        setApprovalData(enhancedData);
-      } catch (error: any) {
-        console.error('Error fetching approval data:', error);
-        toast({
-          title: 'Failed to load approvals',
-          description: error.message,
-          variant: 'destructive'
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchApprovals();
-  }, [userRole, regionId, sectorId, schoolId, toast]);
+    fetchData();
+  }, []);
+
+  // Fix the functions that work with arrays
+const getItemsById = (items: any[], ids: string[]): any[] => {
+  return items.filter(item => ids.includes(item.id));
+};
+
+const getFilteredSchools = (schools: any[], regionId?: string, sectorId?: string): any[] => {
+  if (!schools || schools.length === 0) return [];
   
-  return { loading, approvalData };
+  let filteredSchools = [...schools];
+  
+  if (regionId) {
+    filteredSchools = filteredSchools.filter(school => school.region_id === regionId);
+  }
+  
+  if (sectorId) {
+    filteredSchools = filteredSchools.filter(school => school.sector_id === sectorId);
+  }
+  
+  return filteredSchools;
+};
+
+  const getFilteredRegions = (regions: any[], schoolId?: string): any[] => {
+    if (!regions || regions.length === 0) return [];
+    if (!schoolId) return regions;
+    
+    return regions.filter(region => region.id === schoolId);
+  };
+
+  const getFilteredSectors = (sectors: any[], regionId?: string): any[] => {
+    if (!sectors || sectors.length === 0) return [];
+    if (!regionId) return sectors;
+    
+    return sectors.filter(sector => sector.region_id === regionId);
+  };
+
+  const getCategoriesByType = (categories: any[], type?: string): any[] => {
+    if (!categories || categories.length === 0) return [];
+    if (!type) return categories;
+    
+    return categories.filter(category => category.type === type);
+  };
+
+  // Fix the mapEntities function
+const mapEntities = (data: any) => {
+  if (!data) return {};
+  
+  const schools = Array.isArray(data.schools) ? data.schools : [];
+  const regions = Array.isArray(data.regions) ? data.regions : [];
+  const sectors = Array.isArray(data.sectors) ? data.sectors : [];
+  
+  const schoolsById = schools.reduce((acc: Record<string, any>, school: any) => {
+    acc[school.id] = school;
+    return acc;
+  }, {});
+  
+  const regionsById = regions.reduce((acc: Record<string, any>, region: any) => {
+    acc[region.id] = region;
+    return acc;
+  }, {});
+  
+  const sectorsById = sectors.reduce((acc: Record<string, any>, sector: any) => {
+    acc[sector.id] = sector;
+    return acc;
+  }, {});
+  
+  return {
+    schoolsById,
+    regionsById,
+    sectorsById,
+    regionId: regions.length > 0 ? regions[0].id : null,
+    sectorId: sectors.length > 0 ? sectors[0].id : null
+  };
+};
+
+  return {
+    data,
+    loading,
+    error,
+    getItemsById,
+    getFilteredSchools,
+    getFilteredRegions,
+    getFilteredSectors,
+    getCategoriesByType,
+    mapEntities,
+  };
 };

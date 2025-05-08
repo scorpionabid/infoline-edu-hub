@@ -1,28 +1,28 @@
 
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import App from './App'
-import './index.css'
-import './i18n'; // i18n initialazisiya faylını import edirik
-import { LanguageProvider } from '@/context/LanguageContext';
-import { AuthProvider } from '@/context/auth';
-import { ThemeProvider } from '@/context/ThemeContext';
-import { AppQueryProvider } from '@/context/QueryClientProvider';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import App from './App';
+import './index.css';
 
-// Əsas render
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <AppQueryProvider>
-        <AuthProvider>
-          <LanguageProvider>
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
-          </LanguageProvider>
-        </AuthProvider>
-      </AppQueryProvider>
-    </ThemeProvider>
-  </React.StrictMode>,
-)
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </BrowserRouter>
+  </React.StrictMode>
+);

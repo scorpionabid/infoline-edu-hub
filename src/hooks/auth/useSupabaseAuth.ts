@@ -1,235 +1,144 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData } from '@/types/supabase';
+import { Session } from '@supabase/supabase-js';
+import { FullUserData } from '@/types/user';
 
-export interface UseSupabaseAuthResult {
-  user: FullUserData | null;
-  session: any;
-  isLoading: boolean;
-  error: Error | null;
-  signIn: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string, userData?: any) => Promise<any>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<any>;
-  updatePassword: (newPassword: string) => Promise<any>;
-  refreshSession: () => Promise<void>;
-}
-
-export const useSupabaseAuth = (): UseSupabaseAuthResult => {
+export const useSupabaseAuth = () => {
+  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<FullUserData | null>(null);
-  const [session, setSession] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Initial session check
-  useEffect(() => {
-    const fetchSession = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        setSession(data.session);
-        
-        if (data.session?.user) {
-          const { data: userData, error: userError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.session.user.id)
-            .single();
-          
-          if (userError && userError.code !== 'PGRST116') throw userError;
-          
-          setUser({
-            ...data.session.user,
-            ...userData
-          });
-        }
-      } catch (e) {
-        console.error('Error fetching session:', e);
-        setError(e as Error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSession();
-
-    // Set up auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      console.log('Auth state changed:', event);
-      setSession(currentSession);
-      
-      if (currentSession?.user) {
-        try {
-          const { data: userData, error: userError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentSession.user.id)
-            .single();
-          
-          if (userError && userError.code !== 'PGRST116') throw userError;
-          
-          setUser({
-            ...currentSession.user,
-            ...userData
-          });
-        } catch (e) {
-          console.error('Error fetching user data:', e);
-        }
-      } else {
-        setUser(null);
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  const signIn = useCallback(async (email: string, password: string) => {
+  // Authentication functions
+  const loginWithEmail = async (email: string, password: string) => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
+      setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-      
+
       if (error) throw error;
       return data;
-    } catch (e) {
-      setError(e as Error);
-      throw e;
+    } catch (error: any) {
+      setError(error.message);
+      throw error;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, []);
+  };
 
-  const signUp = useCallback(async (email: string, password: string, userData?: any) => {
+  const signOut = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: userData
-        }
-      });
-      
-      if (error) throw error;
-      return data;
-    } catch (e) {
-      setError(e as Error);
-      throw e;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const signOut = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
       setUser(null);
       setSession(null);
-    } catch (e) {
-      setError(e as Error);
-      throw e;
+    } catch (error: any) {
+      setError(error.message);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, []);
+  };
 
-  const resetPassword = useCallback(async (email: string) => {
+  const resetPassword = async (email: string) => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
+      setLoading(true);
       const { data, error } = await supabase.auth.resetPasswordForEmail(email);
       if (error) throw error;
-      return data;
-    } catch (e) {
-      setError(e as Error);
-      throw e;
+      return { data, error: null };
+    } catch (error: any) {
+      setError(error.message);
+      return { data: null, error };
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, []);
+  };
 
-  const updatePassword = useCallback(async (newPassword: string) => {
+  // Get user profile from Supabase
+  const getUserProfile = async (userId: string): Promise<FullUserData | null> => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const { data, error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-      
-      if (error) throw error;
-      return data;
-    } catch (e) {
-      setError(e as Error);
-      throw e;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
+      if (error) throw error;
+      return data as FullUserData;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+  };
+
+  // Check and refresh session
   const refreshSession = useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
+      setLoading(true);
+      const { data } = await supabase.auth.getSession();
       
-      const { data, error } = await supabase.auth.refreshSession();
-      if (error) throw error;
-      
-      setSession(data.session);
-      if (data.user) {
-        try {
-          const { data: userData, error: userError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single();
-          
-          if (userError && userError.code !== 'PGRST116') throw userError;
-          
-          setUser({
-            ...data.user,
-            ...userData
-          });
-        } catch (e) {
-          console.error('Error fetching user data:', e);
+      if (data.session) {
+        setSession(data.session);
+        
+        if (data.session.user) {
+          const profile = await getUserProfile(data.session.user.id);
+          if (profile) {
+            setUser({
+              ...profile,
+              email: data.session.user.email || profile.email,
+              id: data.session.user.id
+            });
+          }
         }
       }
-    } catch (e) {
-      setError(e as Error);
-      throw e;
+    } catch (error) {
+      console.error('Session refresh error:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, []);
+
+  // Set up auth change listener
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        if (session?.user) {
+          const profile = await getUserProfile(session.user.id);
+          if (profile) {
+            setUser({
+              ...profile,
+              email: session.user.email || profile.email,
+              id: session.user.id
+            });
+          }
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    // Initial session check
+    refreshSession();
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [refreshSession]);
 
   return {
     user,
     session,
-    isLoading,
+    loading,
     error,
-    signIn,
-    signUp,
+    loginWithEmail,
     signOut,
     resetPassword,
-    updatePassword,
-    refreshSession
+    refreshSession,
+    setError
   };
 };
-
-export default useSupabaseAuth;

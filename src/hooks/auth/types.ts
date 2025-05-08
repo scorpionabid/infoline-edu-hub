@@ -1,5 +1,5 @@
 
-import { FullUserData } from '@/types/supabase';
+import { FullUserData } from '@/types/user';
 
 export interface UsePermissionsResult {
   userRole: string | null; 
@@ -17,7 +17,7 @@ export interface UsePermissionsResult {
   isSchoolAdmin: boolean;
   canRegionAdminManageCategoriesColumns: boolean;
   canViewSectorCategories: boolean;
-  // Add missing properties
+  // Required properties
   canViewUsers: boolean;
   canManageUsers: boolean;
   canViewRegions: boolean;

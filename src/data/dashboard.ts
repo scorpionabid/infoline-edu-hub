@@ -3,13 +3,12 @@ import {
   CompletionData,
   DashboardStatus, 
   FormStats,
-  SchoolStat as SchoolCompletionItem,
-  Category as DashboardCategory,
+  SchoolCompletionData as SchoolCompletionItem,
   CategoryItem as CategoryWithCompletion,
   CompletionData as CompletionStats,
   DashboardNotification
 } from '@/types/dashboard';
-import { Sector } from '@/types/supabase';
+import { Sector } from '@/types/user';
 
 type SectorCompletionItem = Sector & { completionRate: number };
 
