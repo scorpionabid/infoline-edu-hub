@@ -26,6 +26,9 @@ export interface DashboardFormStats {
   total: number;
 }
 
+// For convenience in the code to replace FormStats
+export type FormStats = DashboardFormStats;
+
 // Dashboard item types
 export interface PendingApproval {
   id: string;
@@ -51,8 +54,12 @@ export interface Category {
   name: string;
   description?: string;
   deadline: string;
-  completionRate: number;
+  completionRate?: number;
 }
+
+// For backward compatibility
+export type DashboardCategory = Category;
+export type CategoryWithCompletion = CategoryItem;
 
 export interface DeadlineItem {
   id: string;
@@ -78,7 +85,7 @@ export interface SchoolStat {
   id: string;
   name: string;
   completionRate: number;
-  lastUpdate?: string;
+  lastUpdate: string;
   status?: string;
   pendingForms?: number;
   formsCompleted?: number;
@@ -88,6 +95,13 @@ export interface SchoolStat {
   phone?: string;
   email?: string;
 }
+
+// Alias for SchoolStat
+export type SchoolCompletionItem = SchoolStat;
+// Alias for category stats
+export type SectorCompletionItem = Sector & { completionRate: number };
+// Alias for CompletionData
+export type CompletionStats = CompletionData;
 
 export interface DashboardNotification {
   id: string;
@@ -106,6 +120,8 @@ export interface SuperAdminDashboardData {
   regionStats?: any[];
   sectorStats?: any[];
   schoolStats?: any[];
+  formStats?: DashboardFormStats;
+  upcomingDeadlines?: DeadlineItem[];
 }
 
 export interface RegionAdminDashboardData {
@@ -115,6 +131,7 @@ export interface RegionAdminDashboardData {
   sectors?: any[];
   schoolStats?: SchoolStat[];
   formStats?: DashboardFormStats;
+  upcomingDeadlines?: DeadlineItem[];
 }
 
 export interface SectorAdminDashboardData {
@@ -124,6 +141,7 @@ export interface SectorAdminDashboardData {
   schoolStats?: SchoolStat[];
   formStats?: DashboardFormStats;
   pendingApprovals?: PendingApproval[];
+  upcomingDeadlines?: DeadlineItem[];
 }
 
 export interface SchoolAdminDashboardData {
@@ -135,6 +153,7 @@ export interface SchoolAdminDashboardData {
   categories?: CategoryItem[];
   upcoming?: DeadlineItem[];
   pendingForms?: FormItem[];
+  upcomingDeadlines?: DeadlineItem[];
 }
 
 // Component props types
@@ -163,4 +182,17 @@ export interface SchoolAdminDashboardProps {
 
 export interface SchoolStatsCardProps {
   schools: SchoolStat[];
+}
+
+export interface FormTabsProps {
+  categories: CategoryItem[];
+  upcoming: DeadlineItem[];
+  pendingForms: FormItem[];
+}
+
+export interface PendingApprovalsTableProps {
+  pendingApprovals: PendingApproval[];
+  limit?: number;
+  showViewAllButton?: boolean;
+  onRefresh?: () => void;
 }

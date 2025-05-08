@@ -6,7 +6,7 @@ import StatusCards from '../StatusCards';
 import NotificationsCard from '../common/NotificationsCard';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
-import { AppNotification, DashboardNotification } from '@/types/notification';
+import { DashboardNotification, CategoryItem } from '@/types/dashboard';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
 import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 import FormTabs from './FormTabs';
@@ -70,11 +70,19 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
   // Real data və ya mock data yükləmək
   useEffect(() => {
     if (!isLoading && data) {
+      // Transform any Category objects to CategoryItem objects by ensuring completionRate is present
+      const processedCategories: CategoryItem[] = Array.isArray(data.categories) 
+        ? data.categories.map(cat => ({
+          ...cat,
+          completionRate: cat.completionRate || 0
+        }))
+        : [];
+        
       setDashboardData(prev => ({
         ...prev,
         completion: data.completion,
         status: data.status,
-        categories: data.categories,
+        categories: processedCategories,
         upcoming: data.upcoming,
         pendingForms: data.pendingForms || [],
         completionRate: data.completionRate,

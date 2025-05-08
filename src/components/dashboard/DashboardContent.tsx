@@ -1,305 +1,342 @@
 
-// Əvvəlcədən SectorAdminDashboard-da olan SchoolStatsCard komponentini düzəldək
-import React, { useEffect, useState } from 'react';
+// Update the SuperAdminDashboardData to include upcomingDeadlines
+import React from 'react';
 import { useAuth } from '@/context/auth';
-import { usePermissions } from '@/hooks/auth/usePermissions';
 import SuperAdminDashboard from './SuperAdminDashboard';
-import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
+import RegionAdminDashboard from './region-admin/RegionAdminDashboard'; 
 import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
+import { useNavigate } from 'react-router-dom';
 import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
-import { 
-  CompletionData,
-  SuperAdminDashboardData,
-  RegionAdminDashboardData,
-  SectorAdminDashboardData,
-  SchoolAdminDashboardData,
-  DashboardStatus
-} from '@/types/dashboard';
+import { SchoolStat } from '@/types/dashboard';
+import { PendingApproval, CategoryItem, DeadlineItem, FormItem, DashboardNotification } from '@/types/dashboard';
+import { ArrowRight } from 'lucide-react';
+import LoadingSpinner from '../ui/loadingSpinner';
 
-const DashboardContent = () => {
-  const { user, loading } = useAuth();
-  const { userRole, regionId, sectorId, schoolId } = usePermissions();
+const mockSuperAdminData = () => ({
+  completion: {
+    percentage: 62,
+    total: 120,
+    completed: 74
+  },
+  status: {
+    pending: 35,
+    approved: 74,
+    rejected: 11,
+    total: 120,
+    active: 85,
+    inactive: 35
+  },
+  formStats: {
+    pending: 35,
+    approved: 74,
+    rejected: 11,
+    dueSoon: 15,
+    overdue: 8,
+    total: 120
+  },
+  upcomingDeadlines: [
+    {
+      id: "1",
+      categoryId: "c1",
+      categoryName: "Ümumi məlumatlar",
+      dueDate: new Date(Date.now() + 86400000 * 3).toISOString(),
+      status: "upcoming",
+      completionRate: 65
+    },
+    {
+      id: "2",
+      categoryId: "c2",
+      categoryName: "Maliyyə hesabatları",
+      dueDate: new Date(Date.now() + 86400000 * 5).toISOString(),
+      status: "upcoming",
+      completionRate: 30
+    }
+  ]
+});
+
+const mockRegionAdminData = () => ({
+  completion: {
+    percentage: 58,
+    total: 85,
+    completed: 49
+  },
+  status: {
+    pending: 27,
+    approved: 49,
+    rejected: 9,
+    total: 85,
+    active: 65,
+    inactive: 20
+  },
+  formStats: {
+    pending: 27,
+    approved: 49,
+    rejected: 9,
+    dueSoon: 12,
+    overdue: 7,
+    total: 85
+  },
+  upcomingDeadlines: [
+    {
+      id: "1",
+      categoryId: "c1",
+      categoryName: "Ümumi məlumatlar",
+      dueDate: new Date(Date.now() + 86400000 * 2).toISOString(),
+      status: "upcoming",
+      completionRate: 62
+    },
+    {
+      id: "2",
+      categoryId: "c2",
+      categoryName: "Maliyyə hesabatları",
+      dueDate: new Date(Date.now() + 86400000 * 4).toISOString(),
+      status: "upcoming",
+      completionRate: 28
+    }
+  ]
+});
+
+const mockSectorAdminData = () => ({
+  completion: {
+    percentage: 65,
+    total: 45,
+    completed: 29
+  },
+  status: {
+    pending: 14,
+    approved: 29,
+    rejected: 2,
+    total: 45,
+    active: 38,
+    inactive: 7
+  },
+  formStats: {
+    pending: 14,
+    approved: 29,
+    rejected: 2,
+    dueSoon: 8,
+    overdue: 5,
+    total: 45
+  },
+  pendingApprovals: [
+    {
+      id: "pa1",
+      schoolName: "135 nömrəli məktəb",
+      categoryName: "Ümumi məlumatlar",
+      submittedAt: new Date(Date.now() - 86400000).toISOString(),
+      status: "pending"
+    },
+    {
+      id: "pa2",
+      schoolName: "67 nömrəli məktəb",
+      categoryName: "Müəllim statistikası",
+      submittedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+      status: "pending"
+    }
+  ] as PendingApproval[],
+  schoolStats: [
+    {
+      id: "s1",
+      name: "135 nömrəli məktəb",
+      completionRate: 78,
+      lastUpdate: new Date(Date.now() - 86400000).toISOString(),
+      status: "active",
+      pendingForms: 2,
+      formsCompleted: 7,
+      totalForms: 10
+    },
+    {
+      id: "s2",
+      name: "67 nömrəli məktəb",
+      completionRate: 45,
+      lastUpdate: new Date(Date.now() - 86400000 * 3).toISOString(),
+      status: "active",
+      pendingForms: 4,
+      formsCompleted: 4,
+      totalForms: 10
+    }
+  ] as SchoolStat[],
+  upcomingDeadlines: [
+    {
+      id: "1",
+      categoryId: "c1",
+      categoryName: "Ümumi məlumatlar",
+      dueDate: new Date(Date.now() + 86400000 * 2).toISOString(),
+      status: "upcoming",
+      completionRate: 70
+    }
+  ] as DeadlineItem[]
+});
+
+const mockSchoolAdminData = () => {
+  // Fix the categories to make sure they have completionRate
+  const categories: CategoryItem[] = [
+    {
+      id: "c1",
+      name: "Ümumi məlumatlar",
+      description: "Məktəbin ümumi məlumatları",
+      deadline: new Date(Date.now() + 86400000 * 3).toISOString(),
+      completionRate: 70
+    },
+    {
+      id: "c2",
+      name: "Müəllim statistikası",
+      description: "Müəllimlərlə bağlı statistik məlumatlar",
+      deadline: new Date(Date.now() + 86400000 * 5).toISOString(),
+      completionRate: 30
+    }
+  ];
   
-  // Mockdatas hazırlayaq (bunu daha sonra API ilə əvəz edirik)
-  const [superAdminData, setSuperAdminData] = useState<SuperAdminDashboardData>({
-    completion: {
-      percentage: 78,
-      total: 1200,
-      completed: 936,
+  // Create upcoming deadlines
+  const upcoming: DeadlineItem[] = [
+    {
+      id: "d1",
+      categoryId: "c1",
+      categoryName: "Ümumi məlumatlar",
+      dueDate: new Date(Date.now() + 86400000 * 3).toISOString(),
+      status: "upcoming",
+      completionRate: 70
     },
-    status: {
-      pending: 156,
-      approved: 936,
-      rejected: 48,
-      draft: 60,
-      total: 1200,
-      active: 25,
-      inactive: 5
+    {
+      id: "d2",
+      categoryId: "c2",
+      categoryName: "Müəllim statistikası",
+      dueDate: new Date(Date.now() + 86400000 * 5).toISOString(),
+      status: "pending",
+      completionRate: 30
     },
-    formStats: {
-      pending: 156,
-      approved: 936,
-      rejected: 48,
-      draft: 60,
-      total: 1200,
-      dueSoon: 24,
-      overdue: 12
-    },
-    schoolStats: [],
-    regionStats: [],
-    sectorStats: [],
-    upcomingDeadlines: [],
-    notifications: [
-      {
-        id: '1',
-        title: 'Yeni region əlavə edildi',
-        message: 'Bakı regionu sistemə əlavə edildi.',
-        date: '2023-11-01T09:00:00Z',
-        isRead: false,
-        type: 'info',
-      },
-      {
-        id: '2',
-        title: 'Məktəb statistikası yeniləndi',
-        message: '10 məktəb üçün statistika yeniləndi.',
-        date: '2023-11-01T07:30:00Z',
-        isRead: true,
-        type: 'success',
-      },
-    ]
-  });
+    {
+      id: "d3",
+      categoryId: "c3",
+      categoryName: "Şagird statistikası",
+      dueDate: new Date(Date.now() - 86400000 * 2).toISOString(),
+      status: "draft",
+      completionRate: 0
+    }
+  ];
+  
+  const pendingForms: FormItem[] = [
+    {
+      id: "f1",
+      categoryId: "c1",
+      categoryName: "Ümumi məlumatlar",
+      status: "pending",
+      completionRate: 90,
+      submittedAt: new Date(Date.now() - 86400000).toISOString()
+    }
+  ];
+  
+  const notifications: DashboardNotification[] = [
+    {
+      id: "n1",
+      title: "Form təsdiqləndi",
+      message: "Ümumi məlumatlar formu təsdiqləndi",
+      date: new Date(Date.now() - 86400000).toISOString(),
+      isRead: false,
+      type: "success"
+    }
+  ];
 
-  const [regionAdminData, setRegionAdminData] = useState<RegionAdminDashboardData>({
-    completion: {
-      percentage: 72,
-      total: 600,
-      completed: 432,
-    },
-    status: {
-      pending: 96,
-      approved: 432,
-      rejected: 36,
-      draft: 36,
-      total: 600,
-      active: 15,
-      inactive: 3
-    },
-    sectors: [],
-    schoolStats: [],
-    formStats: {
-      pending: 96,
-      approved: 432,
-      rejected: 36,
-      draft: 36,
-      total: 600,
-      dueSoon: 12,
-      overdue: 8
-    },
-    notifications: [
-      {
-        id: '1',
-        title: 'Yeni sektor əlavə edildi',
-        message: 'Bakı Binəqədi sektoru sistemə əlavə edildi.',
-        date: '2023-11-01T10:30:00Z',
-        isRead: false,
-        type: 'info',
-      }
-    ]
-  });
-
-  const [sectorAdminData, setSectorAdminData] = useState<SectorAdminDashboardData>({
+  return {
     completion: {
       percentage: 68,
-      total: 200,
-      completed: 136,
+      total: 10,
+      completed: 7
     },
+    completionRate: 68,
     status: {
-      pending: 40,
-      approved: 136,
-      rejected: 12,
-      draft: 12,
-      total: 200,
-      active: 8,
-      inactive: 2
-    },
-    schoolStats: [],
-    formStats: {
-      pending: 40,
-      approved: 136,
-      rejected: 12,
-      draft: 12,
-      total: 200,
-      dueSoon: 6,
-      overdue: 4
-    },
-    pendingApprovals: [
-      {
-        id: '1',
-        schoolId: '101',
-        schoolName: '20 nömrəli məktəb',
-        categoryId: '201',
-        categoryName: 'Aylıq hesabat',
-        status: 'pending',
-        submittedAt: '2023-11-01T11:00:00Z'
-      },
-      {
-        id: '2',
-        schoolId: '102',
-        schoolName: '28 nömrəli məktəb',
-        categoryId: '202',
-        categoryName: 'Rüblük statistika',
-        status: 'pending',
-        submittedAt: '2023-11-01T10:45:00Z'
-      }
-    ],
-    notifications: [
-      {
-        id: '1',
-        title: 'Təcili diqqət',
-        message: '3 məktəb formu son tarixə çatdırmadı.',
-        date: '2023-11-01T09:15:00Z',
-        isRead: false,
-        type: 'warning',
-      }
-    ]
-  });
-
-  const [schoolAdminData, setSchoolAdminData] = useState<SchoolAdminDashboardData>({
-    completion: {
-      percentage: 85,
-      total: 40,
-      completed: 34,
-    },
-    status: {
-      pending: 3,
-      approved: 34,
+      pending: 2,
+      approved: 7,
       rejected: 1,
-      draft: 2,
-      total: 40,
-      active: 5,
-      inactive: 0
+      draft: 3,
+      total: 13,
+      active: 10,
+      inactive: 3
     },
     formStats: {
-      pending: 3,
-      approved: 34,
+      pending: 2,
+      approved: 7, 
       rejected: 1,
-      draft: 2,
-      total: 40,
+      draft: 3,
       dueSoon: 2,
-      overdue: 1
+      overdue: 1,
+      total: 13
     },
-    categories: [
-      {
-        id: '201',
-        name: 'Aylıq hesabat',
-        description: 'Hər ay təqdim edilməli olan hesabat',
-        deadline: '2023-11-15T23:59:59Z',
-      },
-      {
-        id: '202',
-        name: 'Rüblük statistika',
-        description: 'Rüb ərzində toplanmış statistika',
-        deadline: '2023-12-31T23:59:59Z',
-      }
-    ],
-    upcoming: [
-      {
-        id: '301',
-        category: 'Aylıq hesabat',
-        categoryId: '201',
-        categoryName: 'Aylıq hesabat',
-        dueDate: '2023-11-15T23:59:59Z',
-        status: 'pending',
-        completionRate: 30
-      },
-      {
-        id: '302',
-        category: 'Rüblük statistika',
-        categoryId: '202',
-        categoryName: 'Rüblük statistika',
-        dueDate: '2023-12-31T23:59:59Z',
-        status: 'draft',
-        completionRate: 15
-      }
-    ],
-    pendingForms: [
-      {
-        id: '401',
-        category: 'Aylıq hesabat',
-        categoryId: '201',
-        categoryName: 'Aylıq hesabat',
-        status: 'pending',
-        completionRate: 100,
-        submittedAt: '2023-10-31T16:45:00Z'
-      }
-    ],
-    completionRate: 85,
-    notifications: [
-      {
-        id: '1',
-        title: 'Təsdiq edildi',
-        message: 'Aylıq hesabatınız təsdiqləndi.',
-        date: '2023-10-30T14:00:00Z',
-        isRead: true,
-        type: 'success',
-      },
-      {
-        id: '2',
-        title: 'Son tarix yaxınlaşır',
-        message: 'Rüblük statistika son tarixi 2 həftədən az qalıb.',
-        date: '2023-10-31T09:00:00Z',
-        isRead: false,
-        type: 'warning',
-      }
-    ]
-  });
+    categories,
+    upcoming,
+    pendingForms,
+    notifications
+  };
+};
 
+const DashboardContent: React.FC = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  
+  const navigateToDataEntry = () => {
+    navigate('/data-entry');
+  };
+  
+  const handleFormClick = (id: string) => {
+    navigate(`/data-entry/${id}`);
+  };
+  
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
-
+  
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">
-          İstifadəçi giriş etməlidir
-        </p>
+      <div className="flex flex-col items-center justify-center py-20">
+        <h2 className="text-2xl font-semibold mb-4">Səhifəyə giriş üçün login olmalısınız</h2>
+        <button 
+          onClick={() => navigate('/login')}
+          className="flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-md"
+        >
+          Login səhifəsinə keç <ArrowRight className="ml-2 h-4 w-4" />
+        </button>
       </div>
     );
   }
-
-  return (
-    <div>
-      {userRole === 'superadmin' && (
-        <SuperAdminDashboard data={superAdminData} />
-      )}
-
-      {userRole === 'regionadmin' && (
+  
+  switch (user.role) {
+    case 'superadmin':
+      return (
+        <SuperAdminDashboard data={mockSuperAdminData()} />
+      );
+    case 'regionadmin':
+      return (
         <RegionAdminDashboard 
-          data={regionAdminData} 
-          regionId={regionId} 
+          data={mockRegionAdminData()} 
+          regionId={user.region_id || user.regionId || ''}
         />
-      )}
-
-      {userRole === 'sectoradmin' && (
+      );
+    case 'sectoradmin':
+      return (
         <SectorAdminDashboard 
-          data={sectorAdminData} 
-          sectorId={sectorId} 
+          data={mockSectorAdminData()} 
+          sectorId={user.sector_id || user.sectorId || ''}
         />
-      )}
-
-      {userRole === 'schooladmin' && (
+      );
+    case 'schooladmin':
+      return (
         <SchoolAdminDashboard 
-          data={schoolAdminData} 
-          schoolId={schoolId} 
+          schoolId={user.school_id || user.schoolId || ''}
+          data={mockSchoolAdminData()}
+          isLoading={false}
+          error={null}
+          navigateToDataEntry={navigateToDataEntry}
+          handleFormClick={handleFormClick}
         />
-      )}
-    </div>
-  );
+      );
+    default:
+      return (
+        <div className="text-center py-10">
+          <h2 className="text-xl font-medium">Rolunuza uyğun dashboard tapılmadı</h2>
+          <p className="text-muted-foreground mt-2">Rol: {user.role}</p>
+        </div>
+      );
+  }
 };
 
 export default DashboardContent;

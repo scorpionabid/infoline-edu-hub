@@ -51,7 +51,8 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
     newOption,
     setNewOption,
     onSubmit,
-    isEditMode
+    isEditMode,
+    setOptions
   } = useColumnForm({
     column: editColumn,
     categoryId: editColumn?.category_id,

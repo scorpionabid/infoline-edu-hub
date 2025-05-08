@@ -74,21 +74,22 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
   // Form submit handler
   const onSubmit = async (data: ColumnFormValues) => {
     try {
-      // Ensure category_id is set
-      if (!data.category_id) {
-        data.category_id = categoryId || '';
-      }
+      // Ensure category_id is set and is required
+      const formData = {
+        ...data,
+        category_id: data.category_id || categoryId || '',
+      };
 
       // Əgər sütun tipi seçimlərdən biridirsə, options sahəsini əlavə et
       if (['select', 'radio', 'checkbox'].includes(data.type)) {
-        data.options = options;
+        formData.options = options;
       } else {
-        data.options = [];
+        formData.options = [];
       }
 
       // Validation rule'ları düzəlt (boolean tipi string'ə çevrilməsin)
-      if (data.validation) {
-        const validation = data.validation;
+      if (formData.validation) {
+        const validation = formData.validation;
         
         if (validation.required === true || validation.required === false) {
           validation.required = validation.required;
@@ -109,7 +110,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
 
       const columnData = {
         ...(column?.id ? { id: column.id } : {}),
-        ...data,
+        ...formData,
       };
 
       // Sütunu yaddaşa ver və nəticəni qaytarın
@@ -133,6 +134,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
     onSubmit,
     isEditMode,
     isOptionsMode,
-    setIsOptionsMode
+    setIsOptionsMode,
+    setOptions
   };
 };
