@@ -51,8 +51,19 @@ const PreferencesForm: React.FC<PreferencesFormProps> = ({ user, onSubmit }) => 
   });
 
   const handleSubmit = async (values: z.infer<typeof notificationFormSchema>) => {
+    // Make sure all required fields are present
+    const settings: NotificationSettings = {
+      email: values.email,
+      inApp: values.inApp,
+      push: values.push,
+      system: values.system,
+      deadline: values.deadline,
+      sms: values.sms,
+      deadlineReminders: values.deadlineReminders
+    };
+    
     await onSubmit({
-      notificationSettings: values
+      notificationSettings: settings
     });
   };
 

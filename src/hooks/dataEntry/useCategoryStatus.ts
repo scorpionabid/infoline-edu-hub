@@ -18,7 +18,7 @@ export const useCategoryStatus = (): UseCategoryStatusResult => {
     const requiredColumns = category.columns.filter(col => col.is_required);
     if (requiredColumns.length === 0) return 0;
 
-    // Count filled required fields
+    // Count filled required entries
     const filledRequiredEntries = category.entries.filter(entry => {
       const column = requiredColumns.find(col => col.id === entry.column_id);
       return column && entry.value && entry.value.trim() !== '';
@@ -29,8 +29,7 @@ export const useCategoryStatus = (): UseCategoryStatusResult => {
 
   // Get status based on completion rate
   const getCategoryStatus = useCallback((category: CategoryWithEntries) => {
-    const completionRate = category.completionRate !== undefined ? 
-      category.completionRate : calculateCompletionRate(category);
+    const completionRate = category.completionRate ?? calculateCompletionRate(category);
     
     if (completionRate === 0) return 'not_started';
     if (completionRate < 100) return 'in_progress';

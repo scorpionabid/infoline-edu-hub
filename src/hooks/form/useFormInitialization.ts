@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { DataEntry, DataEntryForm, DataEntrySaveStatus, EntryValue } from '@/types/dataEntry';
 import { supabase } from '@/integrations/supabase/client';

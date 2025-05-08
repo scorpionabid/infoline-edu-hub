@@ -1,26 +1,19 @@
 
 export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 
-export enum DataEntrySaveStatus {
-  IDLE = 'idle',
-  SAVING = 'saving',
-  SUCCESS = 'success',
-  ERROR = 'error'
-}
-
 export interface DataEntry {
   id?: string;
   column_id: string;
   category_id: string;
   school_id: string;
-  value: any;
+  value: string;
   status?: DataEntryStatus;
   created_at?: string;
   updated_at?: string;
   created_by?: string;
   approved_by?: string;
-  rejected_by?: string;
   approved_at?: string;
+  rejected_by?: string;
   rejection_reason?: string;
 }
 
@@ -28,32 +21,49 @@ export interface EntryValue {
   id?: string;
   columnId: string;
   value: any;
-  status?: DataEntryStatus;
+  status?: string;
+}
+
+export enum DataEntrySaveStatus {
+  IDLE = 'idle',
+  SAVING = 'saving',
+  SUCCESS = 'success',
+  ERROR = 'error'
 }
 
 export interface DataEntryForm {
-  id?: string;
-  categoryId: string;
-  schoolId: string;
   entries: EntryValue[];
   isModified?: boolean;
   saveStatus?: DataEntrySaveStatus;
   error?: string | null;
+  schoolId?: string;
+  categoryId?: string;
   status?: DataEntryStatus;
 }
 
-export interface CategoryEntryData {
+export interface DataEntryTableData {
   id: string;
-  name: string;
-  completionPercentage: number;
+  categoryId: string;
+  schoolId: string;
+  columnId: string;
+  columnName: string;
+  value: any;
   status: string;
-  lastUpdated?: string;
+  columnType: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface SchoolEntryData {
-  id: string;
-  name: string;
-  completionPercentage: number;
-  status: string;
-  lastUpdated?: string;
+// Define data structures for the form initializer and other components
+export interface DataEntryField {
+  columnId: string;
+  value: any;
+}
+
+export interface DataEntryFormState {
+  fields: DataEntryField[];
+  isModified: boolean;
+  isSaving: boolean;
+  isSubmitting: boolean;
+  error: string | null;
 }

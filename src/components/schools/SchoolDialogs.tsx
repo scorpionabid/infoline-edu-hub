@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { School } from '@/types/school';
+import { School, adaptSchoolFromSupabase } from '@/types/school';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import CreateSchoolDialog from './CreateSchoolDialog';
@@ -10,6 +10,7 @@ import EditSchoolDialog from './EditSchoolDialog';
 import DeleteSchoolDialog from './DeleteSchoolDialog';
 import ImportDialog from './ImportDialog';
 import AdminDialog from './school-dialogs/AdminDialog';
+import { School as SupabaseSchool } from '@/types/supabase';
 
 interface SchoolDialogsProps {
   refreshSchools: () => void;
@@ -51,9 +52,10 @@ export const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
   // Update school handler
   const handleUpdateSchool = async (schoolData: School) => {
     try {
+      // Convert School to SupabaseSchool for the API call
       const { error } = await supabase
         .from('schools')
-        .update(schoolData)
+        .update(schoolData as any)
         .eq('id', schoolData.id);
         
       if (error) throw error;

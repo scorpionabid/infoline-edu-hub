@@ -32,7 +32,7 @@ const AccountSettings: React.FC = () => {
         updateUser({
           ...user,
           notificationSettings: data.notificationSettings
-        });
+        } as FullUserData);
       }
       
       toast.success('Preferences updated successfully');

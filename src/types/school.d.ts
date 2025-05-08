@@ -1,4 +1,6 @@
 
+import { School as SupabaseSchool, Region as SupabaseRegion, Sector as SupabaseSector } from './supabase';
+
 // Sector məktəbləri üçün tip
 export interface SectorSchool {
   id: string;
@@ -36,60 +38,14 @@ export interface SchoolStat {
   email?: string;
 }
 
-// Məktəb tipi - updated to match with Supabase.School
-export interface School {
-  id: string;
-  name: string;
-  region_id: string;
-  sector_id: string;
-  address?: string;
-  email?: string;
-  phone?: string;
-  principal_name?: string;
-  principalName?: string;
-  status: string; 
-  created_at: string;
-  updated_at: string; // Changed to required to match supabase interface
-  teacher_count?: number;
-  student_count?: number;
-  completion_rate?: number;
-  type?: string;
-  language?: string;
-  admin_id?: string;
-  admin_email?: string;
-  region_name?: string;
-  sector_name?: string;
-  regionName?: string;
-  sectorName?: string;
-}
+// Məktəb tipi - matched with Supabase.School
+export interface School extends SupabaseSchool {}
 
-// Region tipi - updated to match with Supabase.Region
-export interface Region {
-  id: string;
-  name: string;
-  description?: string;
-  admin_id?: string;
-  admin_email?: string;
-  created_at: string; 
-  updated_at: string; // Changed to required to match supabase interface
-  status: string;
-}
+// Region tipi - matched with Supabase.Region
+export interface Region extends SupabaseRegion {}
 
-// Sector tipi - updated to match with Supabase.Sector
-export interface Sector {
-  id: string;
-  name: string;
-  description?: string;
-  region_id: string;
-  admin_id?: string;
-  admin_email?: string;
-  created_at: string;
-  updated_at: string; // Changed to required to match supabase interface
-  status: string;
-  completion_rate?: number;
-  regionName?: string; // Added to match usage in components
-  region_name?: string;
-}
+// Sector tipi - matched with Supabase.Sector
+export interface Sector extends SupabaseSector {}
 
 // SchoolForm props tipi
 export interface SchoolFormProps {
@@ -116,4 +72,17 @@ export interface EnhancedSchoolFormProps extends SchoolFormProps {
   sectors: Sector[];
   regionNames: Record<string, string>;
   sectorNames: Record<string, string>;
+}
+
+// Helper functions for type adaptation
+export function adaptSchoolFromSupabase(school: SupabaseSchool): School {
+  return school as School;
+}
+
+export function adaptRegionFromSupabase(region: SupabaseRegion): Region {
+  return region as Region;
+}
+
+export function adaptSectorFromSupabase(sector: SupabaseSector): Sector {
+  return sector as Sector;
 }

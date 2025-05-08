@@ -25,7 +25,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
 }) => {
   const [currentTab, setCurrentTab] = useState(tabs.length > 0 ? tabs[0].id : 'default');
 
-  // Əgər tabs verilməyibsə, kateqoriyanın adı ilə bir tab yaradaq
+  // Əgər tabs verilməyibs��, kateqoriyanın adı ilə bir tab yaradaq
   const effectiveTabs = tabs.length > 0
     ? tabs
     : [{ id: 'default', label: category?.name || 'Məlumatlar' }];

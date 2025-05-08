@@ -1,33 +1,43 @@
 
-// Ana hooks indexi
-// Burada bütün alt-qruplardan exportlar toplanır
+// Core hooks
+export * from './useToast';
+export * from './useMediaQuery';
+export * from './useDebounce';
+export * from './useCopyToClipboard';
+export * from './useLocalStorage';
+export * from './useNotifications';
 
-// Admin hookları
-export * from './admin';
-
-// Auth hookları
+// Auth hooks
 export * from './auth';
 
-// Kateqoriya hookları
-export * from './categories';
+// Data hooks
+export * from './useCategories';
+export * from './useSchools';
+export * from './useSectors';
+export * from './useRegions';
+export * from './useUsers';
 
-// Ümumi yardımçı hooklar
-export * from './common';
-
-// Sütunlar və data hookları
-export * from './columns';
-
-// Dashboard hookları
+// Dashboard hooks
 export * from './dashboard';
 
-// Data entry hookları
+// Feature hooks
+export * from './categories';
+export { useCategories as useCategoryList } from './categories'; 
+export { useCategoryStatus as useCategoriesStatus } from './categories';
+export * from './columns';
 export * from './dataEntry';
-
-// Form hookları
 export * from './form';
-
-// Məktəblər ilə işləmək üçün hooklar
+export * from './reports';
 export * from './schools';
+export * from './sectors';
+export * from './regions';
 
-// İstifadəçi hookları
-export * from './user';
+// UI hooks
+export * from './ui';
+
+// Utility hooks
+export * from './useSearch';
+export * from './useSorting';
+export * from './useFilters';
+export * from './useApproval';
+export * from './useApprovalData';

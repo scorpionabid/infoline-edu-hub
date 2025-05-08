@@ -72,3 +72,5 @@ export interface CategoryEntryData {
   value: string;
   status?: string;
 }
+
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'multiselect' | 'checkbox' | 'file' | 'textarea';

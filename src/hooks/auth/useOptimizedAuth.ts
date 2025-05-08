@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from './useAuthStore';
 import { FullUserData } from '@/types/supabase';
@@ -139,6 +138,35 @@ const useOptimizedAuth = () => {
       setLoading(false);
     }
   }, []);
+
+  const formatUserData = (userData: any): FullUserData => {
+    return {
+      id: userData.id,
+      email: userData.email,
+      full_name: userData.full_name || userData.user_metadata?.full_name,
+      fullName: userData.full_name || userData.user_metadata?.full_name,
+      name: userData.full_name || userData.user_metadata?.full_name, // Support name property
+      avatar: userData.avatar,
+      role: userData.role,
+      status: userData.status,
+      language: userData.language,
+      region_id: userData.region_id,
+      regionId: userData.region_id,
+      sector_id: userData.sector_id,
+      sectorId: userData.sector_id,
+      school_id: userData.school_id,
+      schoolId: userData.school_id,
+      phone: userData.phone,
+      position: userData.position,
+      last_login: userData.last_login,
+      lastLogin: userData.last_login,
+      created_at: userData.created_at,
+      createdAt: userData.created_at,
+      updated_at: userData.updated_at,
+      updatedAt: userData.updated_at,
+      notificationSettings: userData.notification_settings
+    };
+  };
 
   return {
     isAuthenticated,

@@ -1,111 +1,78 @@
-
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
-import { UserRole } from '@/types/user';
 
-// Function to fetch user data from Supabase
-export async function fetchUserData(userId: string): Promise<FullUserData | null> {
-  try {
-    if (!userId) return null;
-    
-    // Fetch both profile and role information
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    
-    if (profileError) throw profileError;
-    
-    // Get user role
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    
-    // Default role
-    let role: UserRole = 'user';
-    let region_id = null;
-    let sector_id = null;
-    let school_id = null;
-    
-    if (!roleError && roleData) {
-      role = roleData.role as UserRole;
-      region_id = roleData.region_id;
-      sector_id = roleData.sector_id;
-      school_id = roleData.school_id;
+const useUserDataService = (userId: string | undefined) => {
+  const [userData, setUserData] = useState<FullUserData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!userId) {
+      setLoading(false);
+      return;
     }
-    
-    // Create FullUserData object from profile and role data
-    const userData: FullUserData = {
-      id: userId,
-      email: profile.email || '',
-      full_name: profile.full_name,
-      name: profile.full_name,
-      avatar: profile.avatar,
-      phone: profile.phone,
-      position: profile.position,
-      role: role,
-      region_id: region_id,
-      regionId: region_id,
-      sector_id: sector_id,
-      sectorId: sector_id,
-      school_id: school_id,
-      schoolId: school_id,
-      language: profile.language || 'az',
-      status: profile.status || 'active',
-      last_login: profile.last_login,
-      lastLogin: profile.last_login,
-      created_at: profile.created_at,
-      createdAt: profile.created_at,
-      updated_at: profile.updated_at,
-      updatedAt: profile.updated_at,
-    };
-    
-    return userData;
-  } catch (error) {
-    console.error('Error fetching user data:', error);
-    return null;
-  }
-}
 
-// Function to update user profile
-export async function updateUserProfile(userId: string, updates: Partial<FullUserData>): Promise<boolean> {
-  try {
-    if (!userId) return false;
-    
-    // Extract profile fields from updates
-    const { 
-      full_name, 
-      avatar, 
-      phone, 
-      position, 
-      language, 
-      status
-    } = updates;
-    
-    const profileUpdates = {
-      ...(full_name !== undefined && { full_name }),
-      ...(avatar !== undefined && { avatar }),
-      ...(phone !== undefined && { phone }),
-      ...(position !== undefined && { position }),
-      ...(language !== undefined && { language }),
-      ...(status !== undefined && { status }),
-      updated_at: new Date().toISOString()
+    const fetchUserData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { data, error } = await supabase.functions.invoke('get-full-user-data', {
+          body: { userIdParam: userId },
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (!data || data.length === 0) {
+          setUserData(null);
+        } else {
+          const formattedData = formatUserData(data[0]);
+          setUserData(formattedData);
+        }
+      } catch (err: any) {
+        setError(err);
+        setUserData(null);
+      } finally {
+        setLoading(false);
+      }
     };
-    
-    // Update profile
-    const { error } = await supabase
-      .from('profiles')
-      .update(profileUpdates)
-      .eq('id', userId);
-    
-    if (error) throw error;
-    
-    return true;
-  } catch (error) {
-    console.error('Error updating user profile:', error);
-    return false;
-  }
-}
+
+    fetchUserData();
+  }, [userId]);
+
+  return { userData, loading, error };
+};
+
+export default useUserDataService;
+
+const formatUserData = (userData: any): FullUserData => {
+  return {
+    id: userData.id,
+    email: userData.email || '',
+    full_name: userData.full_name || userData.user_metadata?.full_name || '',
+    fullName: userData.full_name || userData.user_metadata?.full_name || '',
+    name: userData.full_name || userData.user_metadata?.full_name || '', // Support name property
+    avatar: userData.avatar || '',
+    role: userData.role,
+    region_id: userData.region_id,
+    regionId: userData.region_id,
+    sector_id: userData.sector_id,
+    sectorId: userData.sector_id,
+    school_id: userData.school_id,
+    schoolId: userData.school_id,
+    phone: userData.phone,
+    position: userData.user_position,
+    language: userData.language,
+    status: userData.status,
+    last_login: userData.last_login,
+    lastLogin: userData.last_login,
+    created_at: userData.created_at,
+    createdAt: userData.created_at,
+    updated_at: userData.updated_at,
+    updatedAt: userData.updated_at,
+    notificationSettings: userData.notification_settings
+  } as FullUserData;
+};

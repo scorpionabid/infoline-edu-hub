@@ -10,7 +10,7 @@ export const useCategoryStatus = (): UseCategoryStatusResult => {
   // Inside the useCategoryStatus function, ensure completionRate is handled properly
   const getCategoryStatus = useCallback((category: CategoryWithColumns) => {
     // Add completionRate if it doesn't exist
-    const completionRate = category.completionRate !== undefined ? category.completionRate : 0;
+    const completionRate = category.completionRate ?? 0;
     
     // Get status based on completion rate
     if (completionRate === 0) return 'not_started';

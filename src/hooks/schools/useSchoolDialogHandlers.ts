@@ -55,7 +55,7 @@ export const useSchoolDialogHandlers = () => {
     handleDeleteConfirm: operationDeleteConfirm,
     handleAdminUpdate: operationAdminUpdate,
     handleResetPassword: operationResetPassword
-  } = useSchoolOperations(onSuccess, onCloseDialog);
+  } = useSchoolOperations(onSuccess);
 
   const handleAddDialogOpen = useCallback(() => {
     resetForm();
@@ -76,12 +76,12 @@ export const useSchoolDialogHandlers = () => {
     await operationDeleteConfirm(selectedSchool);
   }, [selectedSchool, operationDeleteConfirm]);
 
-  const handleAdminUpdate = useCallback(() => {
-    operationAdminUpdate();
+  const handleAdminUpdate = useCallback(async () => {
+    await operationAdminUpdate();
   }, [operationAdminUpdate]);
 
-  const handleResetPassword = useCallback((newPassword: string) => {
-    operationResetPassword(newPassword);
+  const handleResetPassword = useCallback(async (newPassword: string) => {
+    await operationResetPassword(newPassword);
   }, [operationResetPassword]);
 
   return {

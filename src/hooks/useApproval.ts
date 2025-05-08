@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,13 +63,7 @@ export const useApproval = (schoolId?: string, categoryId?: string) => {
         const status = entries.length > 0 ? entries[0].status : 'pending';
         
         // Məlumatları uyğun formata çevir
-        const formattedEntries: DataEntryTableData[] = entries.map((entry: any) => ({
-          columnName: entry.column?.name || 'Unknown',
-          columnId: entry.column_id,
-          value: entry.value || '',
-          status: entry.status || 'pending',
-          columnType: entry.column?.type || 'text'
-        }));
+        const formattedEntries: DataEntryTableData[] = formatEntries(entries);
         
         setData({
           entries: formattedEntries,
@@ -89,6 +82,21 @@ export const useApproval = (schoolId?: string, categoryId?: string) => {
     
     loadData();
   }, [resolvedSchoolId, resolvedCategoryId]);
+  
+  const formatEntries = (entries: any[]): DataEntryTableData[] => {
+    return entries.map(entry => ({
+      id: entry.id,
+      categoryId: entry.category_id,
+      schoolId: entry.school_id,
+      columnId: entry.column_id,
+      columnName: entry.columnName || '',
+      value: entry.value,
+      status: entry.status || 'pending',
+      columnType: entry.columnType || 'text',
+      createdAt: entry.created_at || new Date().toISOString(),
+      updatedAt: entry.updated_at || new Date().toISOString()
+    }));
+  };
   
   // Təsdiq et
   const handleApprove = useCallback(async () => {
