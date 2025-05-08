@@ -12,7 +12,10 @@ export function useCategoryStatus(categories: CategoryWithColumns[] = []) {
   }, [categories]);
 
   const completedCount = useMemo(() => {
-    return categories.filter(category => category.status === 'completed' || category.completionRate === 100).length;
+    return categories.filter(category => 
+      category.status === 'completed' || 
+      (typeof category.completionRate === 'number' && category.completionRate === 100)
+    ).length;
   }, [categories]);
 
   return {

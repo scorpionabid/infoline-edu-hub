@@ -1,10 +1,11 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
-import { SchoolAdminDashboardData, FormItem, DashboardNotification } from '@/types/dashboard';
+import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
 
 const useSchoolAdminDashboard = () => {
   const [data, setData] = useState<SchoolAdminDashboardData | null>(null);
@@ -53,11 +54,13 @@ const useSchoolAdminDashboard = () => {
             pending: 0,
             approved: 0,
             rejected: 0,
-            total: 0
+            total: 0,
+            active: 0,
+            inactive: 0
           },
           categories: [],
           upcoming: [],
-          forms: {
+          formStats: {
             pending: 0,
             approved: 0,
             rejected: 0,
@@ -73,7 +76,18 @@ const useSchoolAdminDashboard = () => {
         setData(defaultData);
       } else {
         console.log('Dashboard məlumatları uğurla yükləndi:', dashboardData);
-        setData(dashboardData);
+        
+        // Ensure status has active and inactive properties
+        const enhancedData = {
+          ...dashboardData,
+          status: {
+            ...dashboardData.status,
+            active: dashboardData.status?.active || 0,
+            inactive: dashboardData.status?.inactive || 0
+          }
+        };
+        
+        setData(enhancedData);
       }
     } catch (err: any) {
       console.error('Dashboard məlumatlarını yükləyərkən xəta:', err);
@@ -86,10 +100,24 @@ const useSchoolAdminDashboard = () => {
       // Minimal default məlumatlar - xəta halında
       const defaultData: SchoolAdminDashboardData = {
         completion: { percentage: 0, total: 0, completed: 0 },
-        status: { pending: 0, approved: 0, rejected: 0, total: 0 },
+        status: { 
+          pending: 0, 
+          approved: 0, 
+          rejected: 0, 
+          total: 0,
+          active: 0,
+          inactive: 0
+        },
         categories: [],
         upcoming: [],
-        forms: { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 },
+        formStats: { 
+          pending: 0, 
+          approved: 0, 
+          rejected: 0, 
+          dueSoon: 0, 
+          overdue: 0, 
+          total: 0 
+        },
         pendingForms: [],
         completionRate: 0,
         notifications: []

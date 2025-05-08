@@ -4,48 +4,41 @@ import { Report } from '@/types/dashboard';
 
 export function useReportActions() {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   
-  const generateReport = async (reportId: string): Promise<boolean> => {
+  const downloadReport = async (report: Report) => {
     setLoading(true);
-    setError(null);
-    
     try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      return true;
-    } catch (err) {
-      console.error('Error generating report:', err);
-      setError('Failed to generate report');
-      return false;
-    } finally {
+      // Mock download functionality
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log(`Downloading report: ${report.title}`);
       setLoading(false);
+      return true;
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      setLoading(false);
+      return false;
     }
   };
   
-  const downloadReport = async (reportId: string, format: 'pdf' | 'excel' = 'pdf'): Promise<boolean> => {
+  const shareReport = async (report: Report, email: string) => {
     setLoading(true);
-    setError(null);
-    
     try {
-      // Mock API call
+      // Mock share functionality
       await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log(`Downloading report ${reportId} in ${format} format`);
-      return true;
-    } catch (err) {
-      console.error('Error downloading report:', err);
-      setError('Failed to download report');
-      return false;
-    } finally {
+      console.log(`Sharing report: ${report.title} with ${email}`);
       setLoading(false);
+      return true;
+    } catch (error) {
+      console.error('Error sharing report:', error);
+      setLoading(false);
+      return false;
     }
   };
   
   return {
     loading,
-    error,
-    generateReport,
-    downloadReport
+    downloadReport,
+    shareReport
   };
 }
 

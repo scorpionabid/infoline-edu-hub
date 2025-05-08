@@ -1,21 +1,6 @@
 
 import { useMemo } from 'react';
-
-// Define the CategoryWithEntries interface locally if it's missing from types
-export interface CategoryWithEntries {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-  deadline?: string;
-  completionRate: number;
-  entries?: {
-    id: string;
-    columnId: string;
-    value: string;
-    status: string;
-  }[];
-}
+import { CategoryWithEntries } from '@/types/column';
 
 export function useCategoryStatus(category: CategoryWithEntries | null) {
   const isComplete = useMemo(() => {

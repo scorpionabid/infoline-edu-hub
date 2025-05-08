@@ -2,14 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { CategoryWithColumns, Column } from '@/types/column';
+import { CategoryWithColumns, Column, TabDefinition } from '@/types/column';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-interface TabDefinition {
-  id: string;
-  label: string;
-  columns: Column[];
-}
 
 interface CategoryFormProps {
   categoryId?: string;
@@ -46,7 +40,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId }) => {
               category_id: categoryId,
               is_required: true,
               placeholder: 'Enter your full name',
-              status: 'active' // Added required status property
+              status: 'active'
             },
             {
               id: 'col2',
@@ -55,7 +49,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId }) => {
               category_id: categoryId,
               is_required: true,
               placeholder: 'Enter your age',
-              status: 'active' // Added required status property
+              status: 'active'
             }
           ]
         };

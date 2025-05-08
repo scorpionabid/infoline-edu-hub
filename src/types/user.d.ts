@@ -22,6 +22,8 @@ export interface NotificationSettings {
 
 export interface FullUserData extends User {
   full_name?: string;
+  name?: string; // Added for backward compatibility
+  fullName?: string; // Added for backward compatibility
   avatar?: string;
   phone?: string;
   position?: string;
@@ -33,9 +35,7 @@ export interface FullUserData extends User {
   last_login?: string;
   created_at?: string;
   updated_at?: string;
-  name?: string;
   notificationSettings?: NotificationSettings;
-  fullName?: string; // Added for backward compatibility
 }
 
 export interface UserFormData {

@@ -87,6 +87,11 @@ export interface CategoryStat {
   name: string;
   completionRate: number;
   formsCount?: number;
+  completion?: {
+    total: number;
+    completed: number;
+    percentage: number;
+  };
 }
 
 export interface DashboardNotification {

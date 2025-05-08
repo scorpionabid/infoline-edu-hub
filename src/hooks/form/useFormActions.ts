@@ -1,6 +1,12 @@
 
 import { useState } from 'react';
-import { DataEntryForm } from '../form';
+
+export interface DataEntryForm {
+  entries: Record<string, string>;
+  status: 'draft' | 'pending' | 'approved' | 'rejected';
+  isModified?: boolean;
+  schoolId?: string;
+}
 
 export function useFormActions(initialForm: DataEntryForm) {
   const [form, setForm] = useState<DataEntryForm>(initialForm);

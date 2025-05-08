@@ -9,14 +9,13 @@ export * from './auth';
 
 // Feature hooks
 export * from './categories';
-export { useCategories } from './categories'; 
-export { useCategoryStatus } from './categories';
+export { useCategoryStatus } from './categories'; 
 export * from './columns';
 export * from './dataEntry';
 export * from './form';
 export * from './reports';
 
-// Necessary exports from hooks/dashboard
+// Dashboard hooks
 export { useDashboard, useDashboardData } from './dashboard';
 
 // Remove unused exports to prevent errors

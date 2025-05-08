@@ -1,110 +1,71 @@
 
-import { useState, useEffect } from 'react';
-import { SchoolAdminDashboardData } from '@/types/dashboard';
+import { useState, useCallback } from 'react';
 
-export function useDashboard(schoolId?: string) {
-  const [data, setData] = useState<SchoolAdminDashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+interface DashboardItem {
+  id: string;
+  name: string;
+  status: 'draft' | 'pending' | 'completed' | 'upcoming' | 'overdue';
+  deadline?: string;
+  progress?: number;
+}
+
+export function useDashboard() {
+  const [items, setItems] = useState<DashboardItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!schoolId) return;
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // Mock API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock data
-        const mockData: SchoolAdminDashboardData = {
-          status: {
-            pending: 5,
-            approved: 15,
-            rejected: 2,
-            total: 22,
-            active: 20,
-            inactive: 2
-          },
-          formStats: {
-            pending: 5,
-            approved: 15,
-            rejected: 2,
-            draft: 3,
-            dueSoon: 4,
-            overdue: 1,
-            total: 30
-          },
-          completion: {
-            percentage: 70,
-            total: 10,
-            completed: 7
-          },
-          categories: [
-            {
-              id: '1',
-              name: 'School Assessment',
-              completionRate: 80,
-              status: 'active'
-            },
-            {
-              id: '2',
-              name: 'Teacher Evaluation',
-              completionRate: 60,
-              status: 'active'
-            }
-          ],
-          upcoming: [
-            {
-              id: '1',
-              categoryName: 'School Assessment',
-              deadline: new Date(Date.now() + 3 * 86400000).toISOString(),
-              completionRate: 80,
-              status: 'active'
-            }
-          ],
-          pendingForms: [
-            {
-              id: '1',
-              name: 'Monthly Report',
-              categoryName: 'School Assessment',
-              status: 'pending'
-            }
-          ],
-          notifications: [
-            {
-              id: '1',
-              title: 'Form approval required',
-              message: 'A new form submission needs your approval',
-              type: 'approval',
-              date: new Date().toISOString(),
-              isRead: false,
-              priority: 'high'
-            }
-          ]
-        };
-        
-        setData(mockData);
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError(err instanceof Error ? err : new Error('Failed to fetch dashboard data'));
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     
-    fetchDashboardData();
-  }, [schoolId]);
+    try {
+      // Mock fetch from API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const mockItems: DashboardItem[] = [
+        {
+          id: '1',
+          name: 'School Infrastructure Report',
+          status: 'pending',
+          deadline: new Date(Date.now() + 86400000 * 3).toISOString(),
+          progress: 45,
+        },
+        {
+          id: '2',
+          name: 'Teacher Evaluation',
+          status: 'completed',
+          deadline: new Date(Date.now() - 86400000 * 2).toISOString(),
+          progress: 100,
+        },
+        {
+          id: '3',
+          name: 'Student Achievement Data',
+          status: 'draft',
+          deadline: new Date(Date.now() + 86400000 * 10).toISOString(),
+          progress: 15,
+        },
+        {
+          id: '4',
+          name: 'Annual Resource Allocation',
+          status: 'pending',
+          deadline: new Date(Date.now() + 86400000 * 5).toISOString(),
+          progress: 60,
+        },
+      ];
+      
+      setItems(mockItems);
+    } catch (err: any) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
   
   return {
-    data,
+    items,
     loading,
     error,
-    refresh: () => {
-      // Implement refresh logic if needed
-    }
+    loadDashboard
   };
 }
 
