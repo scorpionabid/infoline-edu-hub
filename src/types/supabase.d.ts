@@ -102,16 +102,16 @@ export interface School {
 
 export interface Profile {
   id: string;
+  email?: string;
   full_name: string;
   avatar?: string;
   phone?: string;
   position?: string;
-  language?: string;
-  last_login?: string | Date;
+  language?: 'az' | 'en' | 'ru' | 'tr';
+  status?: 'active' | 'inactive' | 'blocked';
   created_at: string | Date;
   updated_at: string | Date;
-  status?: string;
-  email?: string;
+  last_login?: string | Date;
 }
 
 export interface SchoolFormProps {

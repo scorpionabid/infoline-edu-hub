@@ -1,181 +1,120 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
-import { useLanguage } from "@/context/LanguageContext";
-import { FullUserData } from "@/types/user";
-import { useAuth } from "@/context/auth";
-import { Language } from "@/types/language";
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { FullUserData } from '@/types/supabase';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
-export function PreferencesForm() {
-  const { t, changeLanguage, language } = useLanguage();
-  const { toast } = useToast();
-  const { user, updateUserProfile } = useAuth();
-  
-  const [isSaving, setIsSaving] = useState(false);
-  
-  const [emailNotifications, setEmailNotifications] = useState(
-    user?.notificationSettings?.email ?? true
-  );
-  
-  const [inAppNotifications, setInAppNotifications] = useState(
-    user?.notificationSettings?.inApp ?? true
-  );
-  
-  const [pushNotifications, setPushNotifications] = useState(
-    user?.notificationSettings?.push ?? true
-  );
-  
-  const [systemNotifications, setSystemNotifications] = useState(
-    user?.notificationSettings?.system ?? true
-  );
-  
-  const [currentLanguage, setCurrentLanguage] = useState<string>(
-    user?.language || language || "az"
-  );
+interface PreferencesFormProps {
+  user?: FullUserData;
+  onSubmit: (data: Partial<FullUserData>) => Promise<void>;
+}
 
-  const handleSavePreferences = async () => {
-    if (!user || !updateUserProfile) return;
-    
-    setIsSaving(true);
+const PreferencesForm: React.FC<PreferencesFormProps> = ({ user, onSubmit }) => {
+  const { t } = useLanguageSafe();
+  const [loading, setLoading] = useState(false);
+  const { register, handleSubmit, setValue, watch } = useForm({
+    defaultValues: {
+      email: (user?.notificationSettings?.email ?? true),
+      inApp: (user?.notificationSettings?.inApp ?? true),
+      push: (user?.notificationSettings?.push ?? true),
+      system: (user?.notificationSettings?.system ?? true),
+    }
+  });
+
+  const handleFormSubmit = async (formData: any) => {
+    setLoading(true);
     try {
-      await updateUserProfile({
-        id: user.id,
-        language: currentLanguage as Language,
+      await onSubmit({
         notificationSettings: {
-          email: emailNotifications,
-          inApp: inAppNotifications,
-          push: pushNotifications,
-          system: systemNotifications,
-          deadline: true
+          email: formData.email,
+          inApp: formData.inApp,
+          push: formData.push,
+          system: formData.system,
+          deadline: true,
         }
-      });
-      
-      // Update UI language
-      changeLanguage(currentLanguage as Language);
-      
-      toast({
-        title: t("preferencesUpdated"),
-        description: t("yourPreferencesHaveBeenUpdated"),
-      });
+      } as Partial<FullUserData>);
+      toast.success(t('preferencesSaved'));
     } catch (error) {
-      console.error("Error updating preferences:", error);
-      toast({
-        title: t("error"),
-        description: t("errorUpdatingPreferences"),
-        variant: "destructive",
-      });
+      toast.error(t('errorSavingPreferences'));
+      console.error('Error saving preferences:', error);
     } finally {
-      setIsSaving(false);
+      setLoading(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("preferences")}</CardTitle>
-        <CardDescription>
-          {t("manageYourApplicationPreferences")}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">{t("notifications")}</h3>
-          <div className="grid gap-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="email-notifications" className="flex-1">
-                {t("emailNotifications")}
-                <p className="text-sm text-muted-foreground">
-                  {t("receiveEmailNotifications")}
-                </p>
-              </Label>
-              <Switch
-                id="email-notifications"
-                checked={emailNotifications}
-                onCheckedChange={setEmailNotifications}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <Label htmlFor="app-notifications" className="flex-1">
-                {t("inAppNotifications")}
-                <p className="text-sm text-muted-foreground">
-                  {t("receiveInAppNotifications")}
-                </p>
-              </Label>
-              <Switch
-                id="app-notifications"
-                checked={inAppNotifications}
-                onCheckedChange={setInAppNotifications}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <Label htmlFor="push-notifications" className="flex-1">
-                {t("pushNotifications")}
-                <p className="text-sm text-muted-foreground">
-                  {t("receivePushNotifications")}
-                </p>
-              </Label>
-              <Switch
-                id="push-notifications"
-                checked={pushNotifications}
-                onCheckedChange={setPushNotifications}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <Label htmlFor="system-notifications" className="flex-1">
-                {t("systemNotifications")}
-                <p className="text-sm text-muted-foreground">
-                  {t("receiveSystemNotifications")}
-                </p>
-              </Label>
-              <Switch
-                id="system-notifications"
-                checked={systemNotifications}
-                onCheckedChange={setSystemNotifications}
-              />
-            </div>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="email-notifications">{t('emailNotifications')}</Label>
+            <p className="text-sm text-muted-foreground">{t('emailNotificationsDesc')}</p>
           </div>
+          <Switch
+            id="email-notifications"
+            {...register('email')}
+            checked={watch('email')}
+            onCheckedChange={(checked) => setValue('email', checked)}
+          />
         </div>
-        
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">{t("language")}</h3>
-          <div className="grid gap-3">
-            <Label htmlFor="language">{t("selectLanguage")}</Label>
-            <Select
-              value={currentLanguage}
-              onValueChange={setCurrentLanguage}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("selectLanguage")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="az">{t("azerbaijani")}</SelectItem>
-                <SelectItem value="en">{t("english")}</SelectItem>
-                <SelectItem value="ru">{t("russian")}</SelectItem>
-                <SelectItem value="tr">{t("turkish")}</SelectItem>
-              </SelectContent>
-            </Select>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="in-app-notifications">{t('inAppNotifications')}</Label>
+            <p className="text-sm text-muted-foreground">{t('inAppNotificationsDesc')}</p>
           </div>
+          <Switch
+            id="in-app-notifications"
+            {...register('inApp')}
+            checked={watch('inApp')}
+            onCheckedChange={(checked) => setValue('inApp', checked)}
+          />
         </div>
-      </CardContent>
-      <CardFooter>
-        <Button
-          onClick={handleSavePreferences}
-          disabled={isSaving}
-          className="ml-auto"
-        >
-          {isSaving ? t("saving") : t("saveChanges")}
-        </Button>
-      </CardFooter>
-    </Card>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="push-notifications">{t('pushNotifications')}</Label>
+            <p className="text-sm text-muted-foreground">{t('pushNotificationsDesc')}</p>
+          </div>
+          <Switch
+            id="push-notifications"
+            {...register('push')}
+            checked={watch('push')}
+            onCheckedChange={(checked) => setValue('push', checked)}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="system-notifications">{t('systemNotifications')}</Label>
+            <p className="text-sm text-muted-foreground">{t('systemNotificationsDesc')}</p>
+          </div>
+          <Switch
+            id="system-notifications"
+            {...register('system')}
+            checked={watch('system')}
+            onCheckedChange={(checked) => setValue('system', checked)}
+          />
+        </div>
+      </div>
+
+      <Button type="submit" disabled={loading}>
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {t('saving')}
+          </>
+        ) : (
+          t('savePreferences')
+        )}
+      </Button>
+    </form>
   );
-}
+};
 
 export default PreferencesForm;
