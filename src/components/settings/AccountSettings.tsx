@@ -11,7 +11,7 @@ import { NotificationSettings } from '@/types/user';
 const AccountSettings: React.FC = () => {
   const { user, updateUser } = useAuth();
   
-  const handleUpdatePreferences = async (data: Partial<FullUserData>) => {
+  const handleUpdatePreferences = async (data: Partial<FullUserData & { notificationSettings?: NotificationSettings }>) => {
     try {
       if (!user?.id) {
         throw new Error('User ID not found');
@@ -31,7 +31,7 @@ const AccountSettings: React.FC = () => {
       if (updateUser) {
         updateUser({
           ...user,
-          notificationSettings: data.notificationSettings as NotificationSettings
+          notificationSettings: data.notificationSettings
         });
       }
       

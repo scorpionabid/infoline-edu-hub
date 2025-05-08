@@ -49,7 +49,7 @@ export interface School {
   principalName?: string;
   status: string; 
   created_at: string;
-  updated_at?: string;
+  updated_at: string; // Changed to required to match supabase interface
   teacher_count?: number;
   student_count?: number;
   completion_rate?: number;
@@ -70,8 +70,8 @@ export interface Region {
   description?: string;
   admin_id?: string;
   admin_email?: string;
-  created_at: string;
-  updated_at: string;
+  created_at: string; 
+  updated_at: string; // Changed to required to match supabase interface
   status: string;
 }
 
@@ -84,10 +84,10 @@ export interface Sector {
   admin_id?: string;
   admin_email?: string;
   created_at: string;
-  updated_at: string;
+  updated_at: string; // Changed to required to match supabase interface
   status: string;
   completion_rate?: number;
-  regionName?: string;
+  regionName?: string; // Added to match usage in components
   region_name?: string;
 }
 

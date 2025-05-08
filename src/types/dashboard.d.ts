@@ -16,6 +16,8 @@ export interface DashboardFormStats {
   total: number;
 }
 
+export interface FormStats extends DashboardFormStats {} // Adding FormStats for compatibility
+
 export interface DashboardStatus {
   pending: number;
   approved: number;
@@ -82,6 +84,7 @@ export interface SchoolAdminDashboardData {
   pendingForms?: FormItem[];
   completionRate: number;
   notifications: DashboardNotification[];
+  forms?: DashboardFormStats; // Added for backward compatibility
 }
 
 export interface SchoolAdminDashboardProps {
@@ -91,4 +94,31 @@ export interface SchoolAdminDashboardProps {
   navigateToDataEntry?: (categoryId: string) => void;
   handleFormClick?: (formId: string) => void;
   schoolId?: string;
+}
+
+export interface SectorAdminDashboardData {
+  completion?: DashboardCompletion;
+  status: DashboardStatus;
+  schoolStats?: SchoolStat[];
+  pendingApprovals?: any[];
+  formStats?: DashboardFormStats;
+}
+
+export interface SectorAdminDashboardProps {
+  data: SectorAdminDashboardData;
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  status?: string;
+  lastUpdate?: string;
+  pendingForms?: number;
+  formsCompleted?: number;
+  totalForms?: number;
+  principalName?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
 }

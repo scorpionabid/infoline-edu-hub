@@ -31,7 +31,7 @@ const SectorCard: React.FC<SectorCardProps> = ({
   const getRegionName = () => {
     if (!showRegion) return null;
     const regionName = sector.regionName || sector.region_name || regionNames[sector.region_id];
-    return regionName || t('unknownRegion');
+    return regionName || t('unknownRegion') as string;
   };
 
   return (
@@ -61,7 +61,7 @@ const SectorCard: React.FC<SectorCardProps> = ({
             {sector.admin_email ? (
               <span className="text-gray-600">{sector.admin_email}</span>
             ) : (
-              <span className="text-gray-400">{t('noAdmin')}</span>
+              <span className="text-gray-400">{t('noAdmin') as string}</span>
             )}
           </div>
           
