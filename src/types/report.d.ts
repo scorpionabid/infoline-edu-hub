@@ -26,13 +26,13 @@ export interface Report {
   createdBy?: string;
   category?: string;
   sharedWith?: string[];
-  created_at?: string; // geriyə uyğunluq üçün
-  updated_at?: string; // geriyə uyğunluq üçün
+  created_at?: string; 
+  updated_at?: string; 
   content?: any;
   filters?: any;
-  created_by?: string; // geriyə uyğunluq üçün
+  created_by?: string; 
   is_template?: boolean;
-  shared_with?: string[]; // geriyə uyğunluq üçün
+  shared_with?: string[]; 
 }
 
 export interface ReportChartProps {

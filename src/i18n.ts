@@ -2,34 +2,48 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-// Tərcümə faylları
-import translationsAz from '@/translations/az';
-import translationsEn from '@/translations/en';
-import translationsRu from '@/translations/ru';
-import translationsTr from '@/translations/tr';
-
-// Yüklənmiş tərcümələr
+// Import language resources
 const resources = {
-  az: translationsAz,
-  en: translationsEn,
-  ru: translationsRu,
-  tr: translationsTr,
+  en: {
+    translation: {
+      welcome: 'Welcome to InfoLine',
+      login: 'Login',
+      logout: 'Logout',
+      email: 'Email',
+      password: 'Password',
+      submit: 'Submit',
+      cancel: 'Cancel',
+      save: 'Save',
+      edit: 'Edit',
+      delete: 'Delete',
+      // Add more translations as needed
+    },
+  },
+  az: {
+    translation: {
+      welcome: 'InfoLine-a xoş gəlmisiniz',
+      login: 'Daxil ol',
+      logout: 'Çıxış',
+      email: 'E-poçt',
+      password: 'Şifrə',
+      submit: 'Təsdiq et',
+      cancel: 'Ləğv et',
+      save: 'Saxla',
+      edit: 'Düzəliş et',
+      delete: 'Sil',
+      // Add more translations as needed
+    },
+  },
 };
-
-// Lokal yaddaşdan dil parametrini əldə edirik
-const savedLanguage = localStorage.getItem('language') || 'az';
 
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: savedLanguage,
-    fallbackLng: 'az',
+    lng: 'az', // Default language
+    fallbackLng: 'en',
     interpolation: {
-      escapeValue: false, // React özü XSS hücumlarını önləyir
-    },
-    react: {
-      useSuspense: false, // useSuspense seçimini söndürürük, belə ki, yükləmə zamanı problemlər olmasın
+      escapeValue: false, // React already escapes values
     },
   });
 

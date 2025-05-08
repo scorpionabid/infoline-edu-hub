@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from 'react';
-import { DataEntryForm } from '@/types/dataEntry';
+import { DataEntryForm, EntryValue } from '@/types/dataEntry';
 
 export const useForm = (initialForm?: DataEntryForm) => {
   const [form, setForm] = useState<DataEntryForm>(initialForm || {
-    entries: {},
+    entries: [],
     status: 'draft',
     categoryId: '',
     schoolId: '',
@@ -13,19 +13,27 @@ export const useForm = (initialForm?: DataEntryForm) => {
 
   // Helper functions for the form
   const updateField = (field: string, value: string) => {
-    setForm(prev => ({
-      ...prev,
-      entries: {
-        ...(prev.entries || {}),
-        [field]: value
-      },
-      isModified: true
-    }));
+    setForm(prev => {
+      const newEntries = [...(prev.entries || [])];
+      const entryIndex = newEntries.findIndex(entry => entry.columnId === field);
+
+      if (entryIndex > -1) {
+        newEntries[entryIndex] = { ...newEntries[entryIndex], value };
+      } else {
+        newEntries.push({ columnId: field, value });
+      }
+
+      return {
+        ...prev,
+        entries: newEntries,
+        isModified: true
+      };
+    });
   };
 
   const resetForm = () => {
     setForm({
-      entries: {},
+      entries: [],
       status: 'draft',
       categoryId: form.categoryId || '',
       schoolId: form.schoolId || '',

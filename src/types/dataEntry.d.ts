@@ -1,46 +1,45 @@
 
-export interface ColumnValidationError {
+export interface EntryValue {
   columnId: string;
-  message: string;
-  categoryId?: string;
-  severity?: 'error' | 'warning';
+  value: string | number | boolean | null;
 }
 
-export interface ColumnValidationResult {
-  isValid: boolean;
-  errors: ColumnValidationError[];
+export interface DataEntryForm {
+  id?: string;
+  categoryId: string;
+  schoolId: string;
+  status: DataEntryStatus;
+  entries: EntryValue[];
+  isModified?: boolean;
 }
 
-export interface DataEntryStatus {
-  DRAFT: 'draft';
-  PENDING: 'pending';
-  APPROVED: 'approved';
-  REJECTED: 'rejected';
-}
+export type DataEntryStatus = 
+  | 'draft' 
+  | 'pending' 
+  | 'approved' 
+  | 'rejected'
+  | 'incomplete';
 
-export interface DataEntrySaveStatus {
-  IDLE: 'idle';
-  SAVING: 'saving';
-  SAVED: 'saved';
-  SUBMITTING: 'submitting';
-  SUBMITTED: 'submitted';
-  ERROR: 'error';
+export enum DataEntrySaveStatus {
+  IDLE = 'idle',
+  SAVING = 'saving',
+  SAVED = 'saved',
+  SUBMITTING = 'submitting',
+  SUBMITTED = 'submitted',
+  ERROR = 'error'
 }
 
 export interface CategoryEntryData {
   id: string;
-  categoryId: string;
-  schoolId?: string;
-  values: Array<{columnId: string; value: any; errorMessage?: string; warningMessage?: string}>;
-  status?: string;
-  isModified?: boolean;
-  errors?: Record<string, string>;
+  name: string;
+  completionRate: number;
+  status: string;
+  values: Array<{columnId: string; value: any}>;
 }
 
-export interface DataEntryForm {
-  entries: Record<string, string>;
-  status: string;
-  schoolId?: string;
-  categoryId?: string;
-  isModified?: boolean;
+export interface ColumnValidationError {
+  columnId: string;
+  columnName: string;
+  errorMessage: string;
+  severity: 'error' | 'warning';
 }

@@ -13,7 +13,7 @@ export interface Column {
   options?: any[] | Record<string, string>;
   validation?: ValidationRules;
   dependsOn?: DependsOnCondition;
-  completionRate?: number; // Add this to fix completionRate errors
+  completionRate?: number;
 }
 
 export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'email' | 'phone' | 'file' | 'image' | 'url';
@@ -23,7 +23,7 @@ export interface CategoryWithColumns {
   name: string;
   description?: string;
   status?: string;
-  completionRate?: number; // Add this to fix completionRate errors
+  completionRate?: number;
   columns: Column[];
 }
 

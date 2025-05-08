@@ -10,7 +10,7 @@ export function useCategoryStatus(category: CategoryWithColumns | null) {
 
   const isPending = useMemo(() => {
     if (!category) return false;
-    return category.completionRate && category.completionRate > 0 && category.completionRate < 100;
+    return category.completionRate !== undefined && category.completionRate > 0 && category.completionRate < 100;
   }, [category]);
 
   const status = useMemo(() => {
