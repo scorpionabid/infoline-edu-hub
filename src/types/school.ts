@@ -46,6 +46,7 @@ export interface School {
   email?: string;
   phone?: string;
   principal_name?: string;
+  principalName?: string;
   status: 'active' | 'inactive';
   created_at?: string;
   updated_at?: string;
@@ -54,4 +55,39 @@ export interface School {
   completion_rate?: number;
   type?: string;
   language?: string;
+  admin_id?: string;
+  admin_email?: string;
+}
+
+// Region tipi
+export interface Region {
+  id: string;
+  name: string;
+  description?: string;
+  admin_id?: string;
+  admin_email?: string;
+  created_at?: string;
+  updated_at?: string;
+  status: 'active' | 'inactive' | string;
+}
+
+// Sector tipi
+export interface Sector {
+  id: string;
+  name: string;
+  description?: string;
+  region_id: string;
+  admin_id?: string;
+  admin_email?: string;
+  created_at?: string;
+  updated_at?: string;
+  status: 'active' | 'inactive' | string;
+  completion_rate?: number;
+}
+
+// SchoolForm props tipi
+export interface SchoolFormProps {
+  onSubmit: (data: Partial<School>) => Promise<void>;
+  isSubmitting: boolean;
+  initialData?: School;
 }

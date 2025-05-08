@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,12 +14,15 @@ import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
 
 interface SchoolAdminDashboardProps {
   schoolId?: string;
+  data?: SchoolAdminDashboardData;
 }
 
-const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId }) => {
+const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, data: propData }) => {
   const { t } = useLanguage();
   const { notifications, markAsRead } = useNotifications();
-  const { data, isLoading, error } = useSchoolAdminDashboard();
+  const { data: fetchedData, isLoading, error } = useSchoolAdminDashboard();
+  
+  const data = propData || fetchedData;
   
   const [dashboardData, setDashboardData] = useState<SchoolAdminDashboardData>({
     completion: {
@@ -74,6 +78,15 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId })
         upcoming: data.upcoming,
         pendingForms: data.pendingForms || [],
         completionRate: data.completionRate,
+        formStats: data.formStats || {
+          pending: data.status.pending,
+          approved: data.status.approved,
+          rejected: data.status.rejected,
+          draft: data.status.draft,
+          total: data.status.total,
+          dueSoon: 0,
+          overdue: 0
+        },
       }));
     }
   }, [isLoading, data]);

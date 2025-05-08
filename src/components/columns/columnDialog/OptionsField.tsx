@@ -1,26 +1,24 @@
 
-import React, { useState } from 'react';
-import { Control } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { PlusCircle, Trash2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { ColumnOption } from '@/types/column';
+import React from 'react';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Control } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Plus, Trash, Edit, ArrowUp, ArrowDown, Check, X } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { ColumnOption } from '@/types/column';
 
 interface OptionsFieldProps {
   control: Control<any>;
   options: ColumnOption[];
-  newOption: ColumnOption;
-  setNewOption: React.Dispatch<React.SetStateAction<ColumnOption>>;
+  newOption: string;
+  setNewOption: React.Dispatch<React.SetStateAction<string>>;
   addOption: () => void;
-  removeOption: (index: number) => void;
+  removeOption: (id: string) => void;
   updateOption: (oldOption: ColumnOption, newOption: ColumnOption) => boolean;
 }
 
-export default function OptionsField({
+const OptionsField: React.FC<OptionsFieldProps> = ({
   control,
   options,
   newOption,
@@ -28,147 +26,161 @@ export default function OptionsField({
   addOption,
   removeOption,
   updateOption
-}: OptionsFieldProps) {
+}) => {
   const { t } = useLanguage();
-  const [editingOptionIndex, setEditingOptionIndex] = useState<number | null>(null);
-  const [editOption, setEditOption] = useState<ColumnOption>({ id: '', value: '', label: '' });
-  
-  // Bir option-u düzənləmə rejimini aktivləşdirir
-  const startEditing = (option: ColumnOption, index: number) => {
-    setEditingOptionIndex(index);
-    setEditOption({ ...option });
-  };
-  
-  // Düzənləməni tamamlayır
-  const finishEditing = () => {
-    if (editingOptionIndex !== null) {
-      // Əgər həm value, həm də label dəyərlidirsə, option-u yeniləyirik
-      if (editOption.value && editOption.label) {
-        updateOption(options[editingOptionIndex], editOption);
-      }
-      setEditingOptionIndex(null);
-      setEditOption({ id: '', value: '', label: '' });
+  const [editingIndex, setEditingIndex] = React.useState<string | null>(null);
+  const [editValue, setEditValue] = React.useState('');
+
+  const handleAddOption = () => {
+    if (newOption.trim()) {
+      addOption();
     }
   };
-  
-  // Enter düyməsi basıldıqda düzənləməni tamamla
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (editingOptionIndex !== null) {
-        finishEditing();
-      } else {
-        addOption();
-      }
-    }
+
+  const startEditing = (option: ColumnOption) => {
+    setEditingIndex(option.id);
+    setEditValue(option.label);
   };
-  
+
+  const cancelEditing = () => {
+    setEditingIndex(null);
+    setEditValue('');
+  };
+
+  const saveEditing = (option: ColumnOption) => {
+    if (editValue.trim() && editValue !== option.label) {
+      const updatedOption: ColumnOption = {
+        ...option,
+        label: editValue,
+        value: editValue.toLowerCase().replace(/\s+/g, '_')
+      };
+      
+      updateOption(option, updatedOption);
+    }
+    cancelEditing();
+  };
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4">
-        <fieldset className="border rounded-md p-4 space-y-4">
-          <legend className="px-2 text-sm font-medium">{t("options")}</legend>
-          
-          {/* Mövcud seçimlərin siyahısı */}
-          {options.length > 0 ? (
-            <div className="space-y-2">
-              {options.map((option, index) => (
-                <div key={option.id || index} className="flex items-center gap-2">
-                  {editingOptionIndex === index ? (
-                    <>
-                      <div className="grid grid-cols-2 gap-2 flex-1">
-                        <Input
-                          value={editOption.value}
-                          onChange={(e) => setEditOption(prev => ({ ...prev, value: e.target.value }))}
-                          placeholder={t("value")}
-                          autoFocus
-                          onKeyDown={handleKeyDown}
-                          onBlur={finishEditing}
-                        />
-                        <Input
-                          value={editOption.label}
-                          onChange={(e) => setEditOption(prev => ({ ...prev, label: e.target.value }))}
-                          placeholder={t("label")}
-                          onKeyDown={handleKeyDown}
-                          onBlur={finishEditing}
-                        />
-                      </div>
-                      <Button type="button" size="sm" variant="ghost" onClick={finishEditing}>
-                        {t("save")}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Badge 
-                        variant="outline" 
-                        className="flex-1 justify-between overflow-hidden cursor-pointer hover:bg-secondary"
-                        onClick={() => startEditing(option, index)}
-                        style={{ backgroundColor: option.color }}
-                      >
-                        <span className="truncate">{option.label || option.value}</span>
-                        {option.value !== option.label && (
-                          <span className="text-xs text-muted-foreground ml-2 truncate">
+      <FormField
+        control={control}
+        name="options"
+        render={({ field }) => (
+          <FormItem className="space-y-2">
+            <FormLabel>{t("optionsLabel")}</FormLabel>
+            <div className="flex space-x-2 mb-2">
+              <FormControl>
+                <Input
+                  value={newOption}
+                  onChange={(e) => setNewOption(e.target.value)}
+                  placeholder={t("enterNewOption")}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddOption();
+                    }
+                  }}
+                />
+              </FormControl>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleAddOption}
+                disabled={!newOption.trim()}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                {t("add")}
+              </Button>
+            </div>
+            <div className="border rounded-md p-2">
+              {options.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  {t("noOptionsAdded")}
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {options.map((option) => (
+                    <li
+                      key={option.id}
+                      className="bg-muted p-2 rounded-md flex justify-between items-center"
+                    >
+                      {editingIndex === option.id ? (
+                        <div className="flex-1 flex items-center space-x-2">
+                          <Input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="flex-1"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                saveEditing(option);
+                              } else if (e.key === 'Escape') {
+                                cancelEditing();
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => saveEditing(option)}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={cancelEditing}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex items-center">
+                          <span className="text-sm font-medium">{option.label}</span>
+                          <span className="ml-2 text-xs text-muted-foreground">
                             ({option.value})
                           </span>
-                        )}
-                      </Badge>
-                      <Button 
-                        type="button" 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => removeOption(index)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              ))}
+                        </div>
+                      )}
+
+                      {editingIndex !== option.id && (
+                        <div className="flex items-center">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0"
+                            onClick={() => startEditing(option)}
+                          >
+                            <span className="sr-only">{t("edit")}</span>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
+                            onClick={() => removeOption(option.id)}
+                          >
+                            <span className="sr-only">{t("remove")}</span>
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-          ) : (
-            <div className="text-center p-4 text-sm text-muted-foreground bg-muted rounded-md">
-              {t("noOptionsAdded")}
-            </div>
-          )}
-          
-          {/* Yeni seçim əlavə etmək üçün forma */}
-          <div className="grid grid-cols-2 gap-2 items-end">
-            <div>
-              <Label htmlFor="option-value">{t("value")}</Label>
-              <Input
-                id="option-value"
-                value={newOption.value}
-                onChange={(e) => setNewOption(prev => ({ ...prev, value: e.target.value }))}
-                placeholder={t("enterValue")}
-                onKeyDown={handleKeyDown}
-              />
-            </div>
-            <div>
-              <Label htmlFor="option-label">{t("label")}</Label>
-              <Input
-                id="option-label"
-                value={newOption.label}
-                onChange={(e) => setNewOption(prev => ({ ...prev, label: e.target.value }))}
-                placeholder={t("enterLabel")}
-                onKeyDown={handleKeyDown}
-              />
-            </div>
-          </div>
-          
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addOption}
-            disabled={!newOption.value || !newOption.label}
-            className="w-full"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            {t("addOption")}
-          </Button>
-        </fieldset>
-      </div>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
-}
+};
+
+export default OptionsField;

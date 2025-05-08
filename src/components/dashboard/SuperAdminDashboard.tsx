@@ -1,7 +1,10 @@
+
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
+import RegionCompletionCard from './superadmin/RegionCompletionCard';
+import SectorCompletionCard from './superadmin/SectorCompletionCard';
 import NotificationsCard from './common/NotificationsCard'; 
 import { SuperAdminDashboardData } from '@/types/dashboard';
 import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
@@ -11,12 +14,12 @@ interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
 }
 
-const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
-  // Bildirişləri adaptasiya edək
-  const adaptedNotifications = data.notifications 
-    ? data.notifications.map(notification => adaptDashboardNotificationToApp(notification))
+export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
+  // Bildirişləri uyğunlaşdır
+  const adaptedNotifications = Array.isArray(data.notifications) 
+    ? data.notifications.map(notification => adaptDashboardNotificationToApp(notification)) 
     : [];
-  
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Super Admin Dashboard</h2>
@@ -24,67 +27,53 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
       <Grid columns={4} className="gap-6">
         <StatsCard
           title="Regionlar"
-          value={data.stats?.regions || 0}
+          value={data.regionStats?.length || 0}
           icon="R"
-          description="Toplam regionlar"
+          description="Toplam region sayı"
+          trend={`${data.regionStats?.filter(r => r.status === 'active').length || 0} aktiv`}
+          trendDirection="up"
         />
         <StatsCard
           title="Sektorlar"
-          value={data.stats?.sectors || 0}
+          value={data.sectorStats?.length || 0}
           icon="S"
-          description="Toplam sektorlar"
+          description="Toplam sektor sayı"
+          trend={`${data.sectorStats?.filter(s => s.status === 'active').length || 0} aktiv`}
+          trendDirection="up"
         />
         <StatsCard
           title="Məktəblər"
-          value={data.stats?.schools || 0}
+          value={data.schoolStats?.length || 0}
           icon="M"
-          description="Toplam məktəblər"
+          description="Toplam məktəb sayı"
+          trend={`${data.schoolStats?.filter(s => s.status === 'active').length || 0} aktiv`}
+          trendDirection="up"
         />
         <StatsCard
-          title="İstifadəçilər"
-          value={data.stats?.users || 0}
-          icon="U"
-          description="Toplam istifadəçilər"
+          title="Formlar"
+          value={data.status?.total || 0}
+          icon="F"
+          description="Toplam form sayı"
+          trend={`${data.status?.approved || 0} təsdiqlənmiş`}
+          trendDirection="up"
+        />
+      </Grid>
+
+      <Grid columns={2} className="gap-6">
+        <CompletionRateCard
+          completionRate={data.completion?.percentage || 0}
+          title="Ümumi Tamamlanma"
+        />
+                
+        <NotificationsCard
+          title="Bildirişlər"
+          notifications={adaptedNotifications as AppNotification[]}
         />
       </Grid>
       
       <Grid columns={2} className="gap-6">
-        <Grid columns={2} className="gap-6">
-          <StatsCard
-            title="Təsdiqlənmiş"
-            value={data.formsByStatus?.approved || 0}
-            icon="✓"
-            trendDirection="up"
-          />
-          <StatsCard
-            title="Gözləmədə"
-            value={data.formsByStatus?.pending || 0}
-            icon="⏳"
-          />
-          <StatsCard
-            title="Rədd edilmiş"
-            value={data.formsByStatus?.rejected || 0}
-            icon="✗"
-            trendDirection="down"
-          />
-          <StatsCard
-            title="Cəmi"
-            value={data.formsByStatus?.total || 0}
-            icon="#"
-          />
-        </Grid>
-        
-        <CompletionRateCard
-          completionRate={data.completionRate || 0}
-          title="Ümumi Tamamlanma"
-        />
-      </Grid>
-      
-      <Grid columns={1} className="gap-6">
-        <NotificationsCard
-          title="Bildirişlər"
-          notifications={adaptedNotifications}
-        />
+        <RegionCompletionCard regions={data.regionStats || []} />
+        <SectorCompletionCard sectors={data.sectorStats || []} />
       </Grid>
     </div>
   );

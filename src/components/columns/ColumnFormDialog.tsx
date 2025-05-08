@@ -52,7 +52,11 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
     setNewOption,
     onSubmit,
     isEditMode
-  } = useColumnForm(categories, editColumn, onSaveColumn);
+  } = useColumnForm({
+    column: editColumn,
+    categoryId: editColumn?.category_id,
+    onSave: onSaveColumn
+  });
 
   // Dialog açıldıqda və ya bağlandıqda log edirik
   useEffect(() => {

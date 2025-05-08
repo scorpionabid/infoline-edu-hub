@@ -1,102 +1,78 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { SchoolStat } from '@/types/dashboard';
-import { formatDate } from '@/utils/formatters';
-import { ExternalLink } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLanguage } from '@/context/LanguageContext';
+import { SchoolStat } from '@/types/school';
 
-interface SchoolStatsCardProps {
-  school: SchoolStat;
-  onViewDetails?: (schoolId: string) => void;
+export interface SchoolStatsCardProps {
+  stats: SchoolStat[];
 }
 
-export const SchoolStatsCard: React.FC<SchoolStatsCardProps> = ({ school, onViewDetails }) => {
-  const navigate = useNavigate();
-
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return <Badge className="bg-green-500">Aktiv</Badge>;
-      case 'inactive':
-        return <Badge variant="outline">Qeyri-aktiv</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-
-  const getProgressColor = (completion: number) => {
-    if (completion >= 80) return 'bg-green-500';
-    if (completion >= 50) return 'bg-amber-500';
-    return 'bg-red-500';
-  };
-
-  const handleViewDetails = () => {
-    if (onViewDetails) {
-      onViewDetails(school.id);
-    } else {
-      navigate(`/schools/${school.id}`);
-    }
-  };
+const SchoolStatsCard: React.FC<SchoolStatsCardProps> = ({ stats }) => {
+  const { t } = useLanguage();
+  
+  // Məktəb statistikalarını hesabla
+  const activeSchools = stats.filter(s => s.status === 'active').length;
+  const totalCompletionRate = stats.length > 0 
+    ? stats.reduce((sum, s) => sum + s.completionRate, 0) / stats.length 
+    : 0;
+    
+  const pendingForms = stats.reduce((sum, s) => sum + (s.pendingForms || 0), 0);
+  const completedForms = stats.reduce((sum, s) => sum + (s.formsCompleted || 0), 0);
+  const totalForms = stats.reduce((sum, s) => sum + (s.totalForms || 0), 0);
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-bold flex items-center justify-between">
-          <span className="truncate">{school.name}</span>
-          {getStatusBadge(school.status)}
-        </CardTitle>
-        <CardDescription>
-          {school.principalName && (
-            <span className="text-xs">Direktor: {school.principalName}</span>
-          )}
-        </CardDescription>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('schoolStats')}</CardTitle>
       </CardHeader>
-      <CardContent className="pb-2">
+      <CardContent>
         <div className="space-y-4">
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span>Tamamlanma</span>
-              <span className="font-medium">{school.completionRate}%</span>
-            </div>
-            <Progress 
-              value={school.completionRate} 
-              className={`h-2 ${getProgressColor(school.completionRate)}`} 
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-muted-foreground text-xs">Gözləmədə</p>
-              <p className="font-medium">{school.pendingForms || 0}</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {t('totalSchools')}
+              </p>
+              <p className="text-2xl font-bold">{stats.length}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">Tamamlanıb</p>
-              <p className="font-medium">{school.formsCompleted || 0} / {school.totalForms || 0}</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {t('activeSchools')}
+              </p>
+              <p className="text-2xl font-bold">{activeSchools}</p>
             </div>
           </div>
-
-          {school.lastUpdate && (
-            <div className="text-xs text-muted-foreground">
-              Son yeniləmə: {formatDate(school.lastUpdate)}
+          
+          <div className="pt-2">
+            <p className="text-sm font-medium text-muted-foreground">
+              {t('avgCompletionRate')}
+            </p>
+            <p className="text-2xl font-bold">{Math.round(totalCompletionRate)}%</p>
+          </div>
+          
+          <div className="pt-2">
+            <p className="text-sm font-medium text-muted-foreground">
+              {t('pendingForms')}
+            </p>
+            <p className="text-xl font-bold">{pendingForms}</p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                {t('completedForms')}
+              </p>
+              <p className="text-lg font-bold">{completedForms}</p>
             </div>
-          )}
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                {t('totalForms')}
+              </p>
+              <p className="text-lg font-bold">{totalForms}</p>
+            </div>
+          </div>
         </div>
       </CardContent>
-      <CardFooter className="pt-2">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="w-full justify-center"
-          onClick={handleViewDetails}
-        >
-          <ExternalLink className="h-4 w-4 mr-1" />
-          Ətraflı
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Column, ColumnFormValues, ColumnType, columnTypes } from '@/types/column';
+import { Column, ColumnFormValues, ColumnType, ColumnOption, columnTypes } from '@/types/column';
 import { toast } from 'sonner';
 
 // Formun defolt dəyərləri
@@ -45,9 +45,9 @@ export const useColumnForm = ({
   const [isOptionsMode, setIsOptionsMode] = useState(
     column?.type === 'select' || column?.type === 'radio' || column?.type === 'checkbox'
   );
-  const [options, setOptions] = useState<{id: string; label: string; value: string}[]>([]);
+  const [options, setOptions] = useState<ColumnOption[]>([]);
   const [newOption, setNewOption] = useState('');
-  const [selectedType, setSelectedType] = useState(column?.type || 'text');
+  const [selectedType, setSelectedType] = useState<ColumnType>(column?.type || 'text');
   const [isEditMode, setIsEditMode] = useState(Boolean(column));
 
   // Form yaratma
@@ -56,14 +56,14 @@ export const useColumnForm = ({
     defaultValues: column
       ? {
           name: column.name,
-          type: column.type as ColumnType,
+          type: column.type,
           category_id: column.category_id,
           is_required: column.is_required || false,
           order_index: column.order_index || 0,
           help_text: column.help_text,
           placeholder: column.placeholder,
           default_value: column.default_value,
-          status: (column.status as 'active' | 'inactive' | 'draft') || 'active',
+          status: column.status || 'active',
           description: column.description,
         }
       : {
@@ -76,7 +76,7 @@ export const useColumnForm = ({
   const addOption = () => {
     if (!newOption.trim()) return;
     
-    const option = {
+    const option: ColumnOption = {
       id: crypto.randomUUID(),
       label: newOption,
       value: newOption.toLowerCase().replace(/\s+/g, '_')
@@ -100,7 +100,7 @@ export const useColumnForm = ({
   };
 
   // Tip dəyişdikdə təsdiqlənmə qaydalarını yeniləmək
-  const updateValidationByType = (type: string) => {
+  const updateValidationByType = (type: ColumnType) => {
     const validation = form.getValues('validation') || {};
 
     switch (type) {
@@ -135,17 +135,17 @@ export const useColumnForm = ({
 
   // Tip dəyişdikdə optionsMode ayarla
   const onTypeChange = (type: string) => {
-    setSelectedType(type);
+    setSelectedType(type as ColumnType);
     const isOption = type === 'select' || type === 'radio' || type === 'checkbox';
     setIsOptionsMode(isOption);
     
     // Təsdiqlənmə qaydalarını yenilə
-    updateValidationByType(type);
+    updateValidationByType(type as ColumnType);
 
     // Əgər options tipinə keçirsə və options mövcud deyilsə, 
     // varsayılan bir option əlavə et
     if (isOption && (!form.getValues('options') || form.getValues('options')?.length === 0)) {
-      const defaultOption = {
+      const defaultOption: ColumnOption = {
         id: crypto.randomUUID(),
         label: 'Option 1',
         value: 'option_1',

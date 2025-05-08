@@ -50,8 +50,8 @@ export const adaptAppNotificationToDashboard = (
   };
 };
 
-// SuperAdminDashboard və RegionAdminDashboard komponentlərində istifadə edilən funksiya
+// SuperAdminDashboard və RegionAdminDashboard komponentlərində istifadə edilən funksiya üçün alias
 export const adaptDashboardToAppNotification = adaptDashboardNotificationToApp;
 
-// SectorAdminDashboard komponenti üçün funksiya
+// SectorAdminDashboard komponenti üçün funksiya üçün alias
 export const adaptAppToDashboardNotification = adaptAppNotificationToDashboard;

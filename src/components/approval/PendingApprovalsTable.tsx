@@ -1,97 +1,94 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { PendingApproval } from '@/types/dashboard';
-import { Table, TableHead, TableHeader, TableRow, TableCell, TableBody } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { formatDate } from '@/utils/formatters';
+import { PendingApproval } from '@/types/dashboard';
+import { Button } from '@/components/ui/button';
+import { Eye, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { format, parseISO } from 'date-fns';
 
 interface PendingApprovalsTableProps {
   pendingApprovals: PendingApproval[];
-  onApprove?: (id: string) => void;
-  onReject?: (id: string) => void;
-  onRefresh?: () => void;
-  showActions?: boolean;
+  onReview?: (approvalId: string) => void;
 }
 
-const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
+const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({ 
   pendingApprovals,
-  onApprove,
-  onReject,
-  onRefresh,
-  showActions = true
+  onReview
 }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   
-  const handleView = (approval: PendingApproval) => {
-    navigate(`/approvals/${approval.id}`);
+  const handleReview = (id: string) => {
+    if (onReview) {
+      onReview(id);
+    } else {
+      navigate(`/approvals/${id}`);
+    }
   };
   
+  // Tarixi formatla
+  const formatDate = (dateString: string) => {
+    try {
+      return format(parseISO(dateString), 'dd.MM.yyyy HH:mm');
+    } catch (e) {
+      return dateString;
+    }
+  };
+  
+  // Əgər təsdiq gözləyən maddələr yoxdursa
+  if (!pendingApprovals || pendingApprovals.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <p>{t('noPendingApprovals')}</p>
+      </div>
+    );
+  }
+  
   return (
-    <div className="rounded-md border overflow-hidden">
+    <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>{t('school')}</TableHead>
             <TableHead>{t('category')}</TableHead>
-            <TableHead className="hidden md:table-cell">{t('submittedDate')}</TableHead>
-            {showActions && <TableHead className="text-right">{t('actions')}</TableHead>}
+            <TableHead>{t('submittedAt')}</TableHead>
+            <TableHead>{t('status')}</TableHead>
+            <TableHead className="text-right">{t('actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {pendingApprovals.length > 0 ? (
-            pendingApprovals.map(approval => (
-              <TableRow key={approval.id}>
-                <TableCell>{approval.schoolName}</TableCell>
-                <TableCell>{approval.categoryName}</TableCell>
-                <TableCell className="hidden md:table-cell">{formatDate(approval.submittedAt)}</TableCell>
-                {showActions && (
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleView(approval)}
-                      >
-                        {t('view')}
-                      </Button>
-                      
-                      {onApprove && (
-                        <Button 
-                          variant="default" 
-                          size="sm"
-                          onClick={() => onApprove(approval.id)}
-                        >
-                          {t('approve')}
-                        </Button>
-                      )}
-                      
-                      {onReject && (
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => onReject(approval.id)}
-                        >
-                          {t('reject')}
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell 
-                colSpan={showActions ? 4 : 3} 
-                className="text-center py-6 text-muted-foreground"
-              >
-                {t('noPendingApprovals')}
+          {pendingApprovals.map((item) => (
+            <TableRow key={item.id}>
+              <TableCell>{item.schoolName}</TableCell>
+              <TableCell>{item.categoryName}</TableCell>
+              <TableCell>{formatDate(item.submittedAt || item.date || '')}</TableCell>
+              <TableCell>
+                <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-100">
+                  {t('pending')}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => handleReview(item.id)}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  {t('review')}
+                </Button>
               </TableCell>
             </TableRow>
-          )}
+          ))}
         </TableBody>
       </Table>
     </div>

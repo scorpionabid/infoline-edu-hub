@@ -44,3 +44,25 @@
 - Region və School typlerini `school.ts` və `supabase.ts` faylları arasında uyğunlaşdırmaq lazımdır
 - SchoolTable və digər School komponentlərini yeniləmək lazımdır 
 - SchoolForm və əlaqəli komponentləri yeniləmək lazımdır
+
+## 2025-05-09 Tarixində Həll Edilmiş Xətalar
+
+### ColumnFormDialog və useColumnForm Xətaları
+
+1. **ColumnFormDialog Xətaları**
+   - `useColumnForm` funksiyasının çağırılması düzəldildi, qaytarılan dəyərlər düzgün istifadə edilir
+   - OptionsField props tipləri düzəldildi (ColumnOption tipi əvəzinə string tipindən istifadə)
+   - `updateOption` funksiyası təkmilləşdirildi
+
+2. **useColumnForm.ts Xətaları**
+   - TypeScript uyğunluqları üçün düzəlişlər edildi 
+   - `onTypeChange` funksiyasında tip konversiyası düzəldildi
+
+3. **SchoolAdminDashboard Props Tipi**
+   - `data` propsu artıq düzgün qəbul edilir
+   - İmport və tip tərifləri uyğunlaşdırıldı
+
+4. **Region, School, Sector Tipləri və İmportları**
+   - `types/school.ts` və `types/supabase.ts` arasında tiplərin uyğunlaşdırılması üçün əlavə Region, Sector tiplər əlavə edildi
+   - `SchoolFormProps` interfeysi əlavə edildi və istifadə edildi
+   - `admin_id` və `admin_email` xassələri School tipinə əlavə edildi

@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
@@ -46,7 +47,10 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
       }
       
       // Əgər artıq SchoolStat tipindədirsə olduğu kimi qaytarırıq
-      return school as SchoolStat;
+      return {
+        ...school as SchoolStat,
+        lastUpdate: (school as any).lastUpdate || new Date().toISOString()
+      };
     });
   }, [data.schoolStats]);
 
@@ -98,7 +102,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
             onMarkAsRead={markAsRead} 
           />
           
-          <SchoolStatsCard schoolStats={enhancedSchools} />
+          <SchoolStatsCard stats={enhancedSchools} />
         </div>
       </div>
     </div>
