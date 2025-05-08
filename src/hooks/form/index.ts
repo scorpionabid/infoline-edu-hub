@@ -11,9 +11,8 @@ export const useForm = (initialCategories = []) => {
   
   // UseFormActions hook-a əsas məlumatları ötürürük
   const formActions = useFormActions({
-    formData,
-    setFormData,
-    updateFormData,
+    schoolId: formData?.schoolId || '',
+    categoryId: formData?.categoryId || '',
     categories: initialCategories
   });
   

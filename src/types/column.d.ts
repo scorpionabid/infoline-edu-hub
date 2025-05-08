@@ -52,3 +52,27 @@ export interface CategoryFilter {
   value: string;
   checked: boolean;
 }
+
+export type ColumnType = 
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'select'
+  | 'date'
+  | 'checkbox'
+  | 'radio';
+
+export interface TabDefinition {
+  id: string;
+  label: string;
+}
+
+export interface CategoryWithColumns {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  columns: Column[];
+  completionRate?: number;
+  entries?: any[];
+}

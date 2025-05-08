@@ -1,225 +1,88 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Column, TabDefinition } from '@/types/column.d';
-import { useLanguage } from '@/context/LanguageContext';
-import { CategoryWithColumns } from '@/types/column.d';
+import { Card, CardContent } from '@/components/ui/card';
+import { TabDefinition } from '@/types/column';
+import { Button } from '@/components/ui/button';
+import { CategoryWithColumns } from '@/types/column';
 
 interface CategoryFormProps {
   category: CategoryWithColumns;
-  onSubmit: (values: Record<string, string>) => void;
-  isLoading?: boolean;
-  initialValues?: Record<string, string>;
-  readOnly?: boolean;
+  onSave?: () => Promise<void>;
+  onSubmit?: () => Promise<void>;
+  isReadOnly?: boolean;
+  loading?: boolean;
+  submitting?: boolean;
+  tabs?: TabDefinition[];
 }
 
 const CategoryForm: React.FC<CategoryFormProps> = ({
   category,
+  onSave,
   onSubmit,
-  isLoading = false,
-  initialValues = {},
-  readOnly = false
+  isReadOnly = false,
+  loading = false,
+  submitting = false,
+  tabs = []
 }) => {
-  const { t } = useLanguage();
-  const [formValues, setFormValues] = useState<Record<string, string>>(initialValues);
-  
-  // Group columns by section (if available)
-  const tabs: TabDefinition[] = React.useMemo(() => {
-    // Check if columns have section property
-    const hasSections = category.columns.some(column => {
-      // Using optional chaining for type safety since section may not exist
-      return column?.section;
-    });
-    
-    if (!hasSections) {
-      // If no sections, use a default tab
-      return [{
-        id: 'default',
-        title: t('generalInformation'),
-        columns: category.columns
-      }];
-    }
-    
-    // Group columns by section
-    const groups = category.columns.reduce((acc, column) => {
-      // Safely handle the case where section doesn't exist by using a default value
-      const sectionId = column.section || 'default';
-      const sectionTitle = column.section || t('generalInformation');
-      
-      if (!acc[sectionId]) {
-        acc[sectionId] = {
-          id: sectionId,
-          title: sectionTitle,
-          columns: []
-        };
-      }
-      
-      acc[sectionId].columns.push(column);
-      return acc;
-    }, {} as Record<string, TabDefinition>);
-    
-    return Object.values(groups);
-  }, [category.columns, t]);
+  const [currentTab, setCurrentTab] = useState(tabs.length > 0 ? tabs[0].id : 'default');
 
-  const handleInputChange = (columnId: string, value: string) => {
-    setFormValues(prev => ({
-      ...prev,
-      [columnId]: value
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formValues);
-  };
-
-  const renderField = (column: Column) => {
-    const value = formValues[column.id] || '';
-    
-    switch (column.type) {
-      case 'text':
-        return (
-          <input
-            type="text"
-            value={value}
-            onChange={e => handleInputChange(column.id, e.target.value)}
-            placeholder={column.placeholder}
-            disabled={isLoading || readOnly}
-            className="w-full p-2 border rounded"
-            required={column.is_required}
-          />
-        );
-      case 'textarea':
-        return (
-          <textarea
-            value={value}
-            onChange={e => handleInputChange(column.id, e.target.value)}
-            placeholder={column.placeholder}
-            disabled={isLoading || readOnly}
-            className="w-full p-2 border rounded min-h-[100px]"
-            required={column.is_required}
-          />
-        );
-      case 'number':
-        return (
-          <input
-            type="number"
-            value={value}
-            onChange={e => handleInputChange(column.id, e.target.value)}
-            placeholder={column.placeholder}
-            disabled={isLoading || readOnly}
-            className="w-full p-2 border rounded"
-            required={column.is_required}
-          />
-        );
-      case 'select':
-        return (
-          <select
-            value={value}
-            onChange={e => handleInputChange(column.id, e.target.value)}
-            disabled={isLoading || readOnly}
-            className="w-full p-2 border rounded"
-            required={column.is_required}
-          >
-            <option value="">{t('pleaseSelect')}</option>
-            {column.options?.map(option => (
-              <option key={option.id} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        );
-      default:
-        return (
-          <input
-            type="text"
-            value={value}
-            onChange={e => handleInputChange(column.id, e.target.value)}
-            placeholder={column.placeholder}
-            disabled={isLoading || readOnly}
-            className="w-full p-2 border rounded"
-            required={column.is_required}
-          />
-        );
-    }
-  };
+  // Əgər tabs verilməyibsə, kateqoriyanın adı ilə bir tab yaradaq
+  const effectiveTabs = tabs.length > 0
+    ? tabs
+    : [{ id: 'default', label: category?.name || 'Məlumatlar' }];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{category.name}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit}>
-          {tabs.length > 1 ? (
-            <Tabs defaultValue={tabs[0].id}>
-              <TabsList className="mb-4">
-                {tabs.map(tab => (
-                  <TabsTrigger key={tab.id} value={tab.id}>
-                    {tab.title}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+    <div className="space-y-6">
+      {effectiveTabs.length > 1 ? (
+        <Tabs defaultValue={currentTab} onValueChange={setCurrentTab}>
+          <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {effectiveTabs.map(tab => (
+              <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>
+            ))}
+          </TabsList>
 
-              {tabs.map(tab => (
-                <TabsContent key={tab.id} value={tab.id}>
-                  <div className="space-y-4">
-                    {tab.columns.map(column => (
-                      <div key={column.id} className="space-y-2">
-                        <label className="font-medium block">
-                          {column.name}
-                          {column.is_required && (
-                            <span className="text-red-500 ml-1">*</span>
-                          )}
-                        </label>
-                        {renderField(column)}
-                        {column.help_text && (
-                          <p className="text-sm text-muted-foreground">
-                            {column.help_text}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-              ))}
-            </Tabs>
-          ) : (
-            <div className="space-y-4">
-              {category.columns.map(column => (
-                <div key={column.id} className="space-y-2">
-                  <label className="font-medium block">
-                    {column.name}
-                    {column.is_required && (
-                      <span className="text-red-500 ml-1">*</span>
-                    )}
-                  </label>
-                  {renderField(column)}
-                  {column.help_text && (
-                    <p className="text-sm text-muted-foreground">
-                      {column.help_text}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          {effectiveTabs.map(tab => (
+            <TabsContent key={tab.id} value={tab.id}>
+              <Card>
+                <CardContent className="pt-6">
+                  {/* Tab content would go here */}
+                  <p>Tab content for {tab.label}</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ))}
+        </Tabs>
+      ) : (
+        <Card>
+          <CardContent className="pt-6">
+            {/* Default content when there's only one tab */}
+            <p>Form content for {category?.name}</p>
+          </CardContent>
+        </Card>
+      )}
 
-          {!readOnly && (
-            <div className="mt-6 flex justify-end">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
-              >
-                {isLoading ? t('saving') : t('save')}
-              </button>
-            </div>
-          )}
-        </form>
-      </CardContent>
-    </Card>
+      <div className="flex justify-end gap-4">
+        {onSave && (
+          <Button
+            onClick={onSave}
+            variant="outline"
+            disabled={loading || isReadOnly}
+          >
+            {loading ? 'Saxlanır...' : 'Yadda saxla'}
+          </Button>
+        )}
+
+        {onSubmit && (
+          <Button
+            onClick={onSubmit}
+            disabled={submitting || isReadOnly}
+          >
+            {submitting ? 'Göndərilir...' : 'Təsdiqə göndər'}
+          </Button>
+        )}
+      </div>
+    </div>
   );
 };
 

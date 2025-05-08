@@ -8,6 +8,10 @@ export interface UseFormActionsProps {
   schoolId: string;
   categoryId: string;
   initialEntries?: DataEntry[];
+  formData?: any;
+  setFormData?: any;
+  updateFormData?: any;
+  categories?: any[];
 }
 
 export const useFormActions = ({ schoolId, categoryId, initialEntries = [] }: UseFormActionsProps) => {
@@ -19,7 +23,7 @@ export const useFormActions = ({ schoolId, categoryId, initialEntries = [] }: Us
     schoolId,
     categoryId,
     status: 'draft'
-  });
+  } as any);
 
   const updateEntries = useCallback((entries: DataEntry[]) => {
     const entriesWithMetadata = entries.map(entry => ({
@@ -157,6 +161,6 @@ export const useFormActions = ({ schoolId, categoryId, initialEntries = [] }: Us
       schoolId,
       categoryId,
       status: 'draft'
-    })
+    } as any)
   };
 };

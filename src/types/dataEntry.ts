@@ -62,6 +62,8 @@ export interface DataEntryForm {
 export interface DataEntry {
   id?: string;
   column_id: string;
+  category_id?: string;
+  school_id?: string;
   value: any;
   status?: DataEntryStatus;
 }
@@ -89,4 +91,13 @@ export interface ColumnValue {
   isRequired: boolean;
   isValid: boolean;
   errorMessage?: string;
+}
+
+export interface CategoryEntryData {
+  categoryId: string;
+  entries: DataEntry[];
+  status: DataEntryStatus;
+  submittedAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
 }

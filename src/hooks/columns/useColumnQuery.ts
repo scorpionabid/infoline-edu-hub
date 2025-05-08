@@ -2,59 +2,38 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Column } from '@/types/column';
-import { useToast } from '@/components/ui/use-toast';
-import { usePermissions } from '@/hooks/auth/usePermissions';
+import { usePermissions } from '../auth';
 import { adaptDbColumnToFrontend } from './useColumnAdapters';
 
-export const useColumnQuery = (categoryId: string | null) => {
-  const { toast } = useToast();
+interface UseColumnsQueryParams {
+  categoryId: string;
+}
+
+export const useColumnsQuery = ({ categoryId }: UseColumnsQueryParams) => {
   const permissions = usePermissions();
-  
-  return useQuery({
+
+  const fetchColumns = useQuery({
     queryKey: ['columns', categoryId, permissions],
-    queryFn: async (): Promise<Column[]> => {
-      if (!categoryId) {
-        return [];
-      }
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('category_id', categoryId)
+        .order('order_index', { ascending: true });
 
-      try {
-        // Fetch columns for the category
-        const { data, error } = await supabase
-          .from('columns')
-          .select('*')
-          .eq('category_id', categoryId)
-          .order('order_index', { ascending: true });
-
-        if (error) {
-          throw error;
-        }
-
-        // Convert database columns to frontend format
-        const columns: Column[] = data.map(adaptDbColumnToFrontend);
-        return columns;
-      } catch (error: any) {
+      if (error) {
         console.error('Error fetching columns:', error);
-        throw error;
+        throw new Error(error.message);
       }
+
+      return (data as Column[]).map(adaptDbColumnToFrontend);
     },
-    enabled: !!categoryId,
+    enabled: !!categoryId && !!permissions,
+    initialData: [],
     meta: {
-      onError: (error: Error) => {
-        toast({
-          title: 'Error fetching columns',
-          description: error.message,
-          variant: 'destructive',
-        });
-      }
+      errorMessage: 'Failed to load columns'
     }
   });
-};
 
-export const useColumnsByCategory = (categoryId: string | null) => {
-  const result = useColumnQuery(categoryId);
-  
-  return {
-    ...result,
-    columns: result.data || [],
-  };
+  return fetchColumns;
 };

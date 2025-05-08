@@ -23,7 +23,8 @@ export interface User {
   sector_id?: string;
   school_id?: string;
   notificationSettings?: NotificationSettings;
-  name?: string; // Bu əlavə olundu çünki DeleteUserDialog-da istifadə olunur
+  name?: string;
+  avatar?: string; // Added avatar property
 }
 
 export interface NotificationSettings {
@@ -55,54 +56,17 @@ export interface FullUserData extends User {
     sector?: string;
     school?: string;
   };
-  name?: string;
 }
 
-export interface UserFormData {
-  email: string;
-  fullName: string;
-  full_name?: string; // Bu əlavə olundu AddUserDialog və digər komponentləri dəstəkləmək üçün
-  name?: string; // Bu əlavə olundu DeleteUserDialog-u dəstəkləmək üçün
-  password?: string;
-  role?: UserRole;
-  regionId?: string;
-  region_id?: string; // Bu əlavə olundu AddUserDialog üçün
-  sectorId?: string;
-  sector_id?: string; // Bu əlavə olundu AddUserDialog üçün
-  schoolId?: string;
-  school_id?: string; // Bu əlavə olundu AddUserDialog üçün
-  language?: string;
-  position?: string;
-  phone?: string;
-  status?: UserStatus;
-  notificationSettings?: NotificationSettings;
-}
-
-export interface AuthErrorType {
-  message: string;
-  code?: string;
-  status?: number;
-}
-
-export interface AuthContextType {
-  user: FullUserData | null;
-  session: any | null;
-  isAuthenticated: boolean;
-  authenticated: boolean;
-  loading: boolean;
-  error: AuthErrorType | string;
-  login: (email: string, password: string) => Promise<{ user: any; error: AuthErrorType | null }>;
-  signup: (email: string, password: string, options?: any) => Promise<{ user: any; error: AuthErrorType | null }>;
-  logout: () => Promise<void>;
-  logIn?: (email: string, password: string) => Promise<any>;
-  logOut?: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ data: any; error: AuthErrorType | null }>;
-  updatePassword: (newPassword: string) => Promise<{ data: any; error: AuthErrorType | null }>;
-  updateProfile: (data: Partial<FullUserData>) => Promise<{ data: any; error: AuthErrorType | null }>;
-  refreshSession: () => Promise<void>;
-  createUser?: (userData: UserFormData) => Promise<{ data: any; error: any }>;
-  updateUser?: (updates: Partial<FullUserData>) => Promise<boolean | void>;
-  updateUserProfile?: (userData: Partial<FullUserData>) => Promise<void>;
-  setError?: (error: string | null) => void;
-  clearError?: () => void;
+export interface Sector {
+  id: string;
+  name: string;
+  region_id: string;
+  description?: string;
+  status?: string;
+  created_at: string;
+  updated_at?: string;
+  admin_id?: string;
+  admin_email?: string;
+  completion_rate?: number;
 }

@@ -70,6 +70,7 @@ export interface School {
   id: string;
   name: string;
   principal_name?: string;
+  principalName?: string; 
   address?: string;
   region_id: string;
   region_name?: string;
@@ -102,4 +103,10 @@ export interface Profile {
   updated_at: string | Date;
   status?: string;
   email?: string;
+}
+
+export interface SchoolFormProps {
+  initialData?: School;
+  onSubmit: (data: Partial<School>) => Promise<void>;
+  isSubmitting?: boolean;
 }

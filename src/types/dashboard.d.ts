@@ -24,6 +24,7 @@ export interface DashboardNotification {
   message: string;
   date: string | Date;
   read: boolean;
+  isRead?: boolean;
   priority: 'low' | 'medium' | 'high';
   type: 'info' | 'warning' | 'error' | 'success';
 }
@@ -150,4 +151,5 @@ export interface CategoryWithColumns {
   status?: string;
   columns: any[];
   completionRate?: number;
+  entries?: any[];
 }

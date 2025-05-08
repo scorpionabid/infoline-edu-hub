@@ -3,8 +3,8 @@ import {
   CompletionData,
   DashboardStatus, 
   FormStats,
-  SchoolCompletionData as SchoolCompletionItem,
-  CategoryItem as CategoryWithCompletion,
+  SchoolCompletionData,
+  CategoryItem,
   CompletionData as CompletionStats,
   DashboardNotification
 } from '@/types/dashboard';

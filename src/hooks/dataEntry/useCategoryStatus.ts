@@ -1,76 +1,63 @@
 
+import { useState, useEffect, useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/column';
-import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
 
-/**
- * Kateqoriyanın tamamlanma faizini hesablamaq üçün utilitləri təqdim edən hook
- */
-export const useCategoryStatus = () => {
-  
-  /**
-   * Sütunlar və entry-lər əsasında tamamlanma faizini hesablayır
-   */
-  const calculateCompletionPercentage = (columns: any[], entries: DataEntry[] = []): number => {
-    if (!columns.length) return 0;
-    
-    // Məcburi sütunları tap
-    const requiredColumns = columns.filter(col => col.is_required);
-    
-    // Tamamlanmış sütunları tap (bura məcburi olmayan doldurulmuş sütunlar da daxildir)
-    const completedEntries = entries.filter(entry => entry.value && entry.value.trim() !== '');
-    
-    // Əgər heç bir məcburi sütun yoxdursa
-    if (!requiredColumns.length) {
-      return completedEntries.length > 0 ? 100 : 0;
+interface UseCategoryStatusResult {
+  status: 'loading' | 'not_started' | 'in_progress' | 'completed' | 'error';
+  completionPercentage: number;
+  isCompleted: boolean;
+  isStarted: boolean;
+  error: Error | null;
+}
+
+export const useCategoryStatus = (category: CategoryWithColumns | null): UseCategoryStatusResult => {
+  const [status, setStatus] = useState<'loading' | 'not_started' | 'in_progress' | 'completed' | 'error'>('loading');
+  const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [error, setError] = useState<Error | null>(null);
+
+  const calculateStatus = useCallback(() => {
+    if (!category) {
+      setStatus('loading');
+      setCompletionPercentage(0);
+      return;
     }
-    
-    // Məcburi sütunların neçəsi doldurulub
-    const filledRequiredColumns = requiredColumns.filter(column => 
-      entries.some(entry => entry.column_id === column.id && entry.value && entry.value.trim() !== '')
-    );
-    
-    return Math.round((filledRequiredColumns.length / requiredColumns.length) * 100);
-  };
-  
-  /**
-   * Entry-lər əsasında kateqoriya statusunu təyin edir
-   */
-  const determineStatus = (entries: DataEntry[] = []): DataEntryStatus | 'partial' => {
-    if (!entries.length) return 'draft';
-    
-    const statuses = entries.map(entry => entry.status);
-    
-    if (statuses.every(status => status === 'approved')) return 'approved';
-    if (statuses.every(status => status === 'rejected')) return 'rejected';
-    if (statuses.every(status => status === 'pending')) return 'pending';
-    if (statuses.every(status => status === 'draft')) return 'draft';
-    
-    // Qarışıq statuslar
-    if (statuses.some(status => status === 'approved')) return 'partial';
-    if (statuses.some(status => status === 'pending')) return 'pending';
-    if (statuses.some(status => status === 'rejected')) return 'partial';
-    
-    return 'draft';
-  };
-  
-  /**
-   * Entry-lər əsasında tamamlanma xəritəsi yaradır
-   */
-  const generateSummary = (category: CategoryWithColumns) => {
-    const { columns = [], entries = [] } = category;
-    const completionPercentage = calculateCompletionPercentage(columns, entries as DataEntry[]);
-    const status = determineStatus(entries as DataEntry[]);
-    
-    return {
-      ...category,
-      completionPercentage,
-      status
-    };
-  };
-  
+
+    try {
+      // Use the completionRate if it exists
+      let completion = category.completionRate || 0;
+      
+      // If not defined but we have columns, calculate it from entries
+      if (completion === 0 && category.entries && category.columns) {
+        const totalColumns = category.columns.length;
+        const filledEntries = (category.entries || []).length;
+        completion = totalColumns > 0 ? (filledEntries / totalColumns) * 100 : 0;
+      }
+
+      setCompletionPercentage(completion);
+
+      if (completion === 0) {
+        setStatus('not_started');
+      } else if (completion < 100) {
+        setStatus('in_progress');
+      } else {
+        setStatus('completed');
+      }
+    } catch (err) {
+      console.error('Error calculating category status:', err);
+      setStatus('error');
+      setError(err instanceof Error ? err : new Error('Unknown error calculating status'));
+    }
+  }, [category]);
+
+  useEffect(() => {
+    calculateStatus();
+  }, [calculateStatus]);
+
   return {
-    calculateCompletionPercentage,
-    determineStatus,
-    generateSummary
+    status,
+    completionPercentage,
+    isCompleted: status === 'completed',
+    isStarted: status !== 'not_started' && status !== 'loading',
+    error
   };
 };
