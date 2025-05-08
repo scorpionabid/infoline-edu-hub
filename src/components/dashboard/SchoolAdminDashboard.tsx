@@ -6,7 +6,7 @@ import StatusCards from './StatusCards';
 import NotificationsCard from './common/NotificationsCard';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
-import { DashboardNotification } from '@/types/notification';
+import { AppNotification, DashboardNotification } from '@/types/notification';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
 import { adaptAppNotificationToDashboard } from '@/types/notification';
 import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
@@ -70,7 +70,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId })
         status: data.status,
         categories: data.categories,
         upcoming: data.upcoming,
-        pendingForms: data.pendingForms,
+        pendingForms: data.pendingForms || [],
         completionRate: data.completionRate,
       }));
     }
@@ -118,7 +118,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId })
 
         <div className="space-y-6">
           <NotificationsCard 
-            notifications={dashboardData.notifications} 
+            notifications={dashboardData.notifications as unknown as AppNotification[]} 
             onMarkAsRead={markAsRead} 
           />
 

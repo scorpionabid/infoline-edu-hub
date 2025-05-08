@@ -72,7 +72,7 @@ export interface SchoolStat {
   email?: string;
 }
 
-// SectorSchool tipini əlavə edək
+// SectorSchool tipinə region_id və sector_id tipini məcburi təyin etdik
 export interface SectorSchool extends School {
   region_id: string;
   sector_id: string;

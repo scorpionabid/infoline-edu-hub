@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import {
@@ -25,8 +26,6 @@ import { useSchools } from '@/hooks/useSchools';
 import { toast } from 'sonner';
 import { UserFormData } from '@/types/user';
 
-// Biz öncə tam UserFormData tipi təyin etdik, artıq uyğun atributları istifadə edə bilərik
-
 interface AddUserDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -52,8 +51,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const [userData, setUserData] = useState<UserFormData>({
     email: '',
     password: '',
-    full_name: '',
-    name: '', // Eyni zamal full_name ilə eyni dəyərdə saxlayırıq
+    fullName: '',
+    name: '', // Eyni zamal fullName ilə eyni dəyərdə saxlayırıq
     role: 'schooladmin',
     language: 'az',
     status: 'active'
@@ -61,24 +60,24 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   
   // Seçilmiş regiondan asılı olaraq sektorları yeniləmək
   useEffect(() => {
-    if (userData.region_id) {
-      fetchSectorsByRegion(userData.region_id);
+    if (userData.regionId) {
+      fetchSectorsByRegion(userData.regionId);
     }
-  }, [userData.region_id, fetchSectorsByRegion]);
+  }, [userData.regionId, fetchSectorsByRegion]);
   
   // Seçilmiş sektordan asılı olaraq məktəbləri yeniləmək
   useEffect(() => {
-    if (userData.sector_id) {
-      fetchSchoolsBySector(userData.sector_id);
+    if (userData.sectorId) {
+      fetchSchoolsBySector(userData.sectorId);
     }
-  }, [userData.sector_id, fetchSchoolsBySector]);
+  }, [userData.sectorId, fetchSchoolsBySector]);
   
   // Formu təmizləmək
   const resetForm = () => {
     setUserData({
       email: '',
       password: '',
-      full_name: '',
+      fullName: '',
       name: '',
       role: 'schooladmin',
       language: 'az',
@@ -96,9 +95,9 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setUserData(prev => {
-      // name full_name olduqda, eyni zamanda name sahəsini də yeniləyək
-      if (name === 'full_name') {
-        return { ...prev, [name]: value, name: value };
+      // name fullName olduqda, eyni zamanda name sahəsini də yeniləyək
+      if (name === 'fullName') {
+        return { ...prev, [name]: value, name: value, full_name: value };
       }
       return { ...prev, [name]: value };
     });
@@ -107,20 +106,32 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   // Select dəyişikliyini işləmək
   const handleSelectChange = (name: string, value: string) => {
     // Əgər region dəyişirsə, sektor və məktəb seçimlərini sıfırla
-    if (name === 'region_id') {
+    if (name === 'regionId') {
       setUserData(prev => ({ 
         ...prev, 
         [name]: value,
+        region_id: value,
+        sectorId: undefined,
         sector_id: undefined,
+        schoolId: undefined,
         school_id: undefined
       }));
     }
     // Əgər sektor dəyişirsə, məktəb seçimini sıfırla
-    else if (name === 'sector_id') {
+    else if (name === 'sectorId') {
       setUserData(prev => ({ 
         ...prev, 
         [name]: value,
+        sector_id: value,
+        schoolId: undefined,
         school_id: undefined
+      }));
+    }
+    else if (name === 'schoolId') {
+      setUserData(prev => ({ 
+        ...prev, 
+        [name]: value,
+        school_id: value
       }));
     }
     else {
@@ -131,7 +142,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   // İstifadəçini yaratmaq
   const handleSubmit = async () => {
     // Validiasiya
-    if (!userData.email || !userData.password || !userData.full_name) {
+    if (!userData.email || !userData.password || !userData.fullName) {
       toast.error(t('requiredFieldsMissing'));
       return;
     }
@@ -141,17 +152,17 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       return;
     }
     
-    if (userData.role === 'regionadmin' && !userData.region_id) {
+    if (userData.role === 'regionadmin' && !userData.regionId) {
       toast.error(t('selectRegion'));
       return;
     }
     
-    if (userData.role === 'sectoradmin' && !userData.sector_id) {
+    if (userData.role === 'sectoradmin' && !userData.sectorId) {
       toast.error(t('selectSector'));
       return;
     }
     
-    if (userData.role === 'schooladmin' && !userData.school_id) {
+    if (userData.role === 'schooladmin' && !userData.schoolId) {
       toast.error(t('selectSchool'));
       return;
     }
@@ -159,7 +170,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     try {
       const result = await createUser({
         ...userData,
-        name: userData.full_name // name sahəsini təmin etmək üçün
+        full_name: userData.fullName,
+        name: userData.fullName
       });
       
       if (result.success) {
@@ -184,13 +196,13 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
         <div className="grid gap-4 py-4">
           {/* Ad Soyad */}
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="full_name" className="text-right">
+            <Label htmlFor="fullName" className="text-right">
               {t('fullName')}
             </Label>
             <Input
-              id="full_name"
-              name="full_name"
-              value={userData.full_name}
+              id="fullName"
+              name="fullName"
+              value={userData.fullName}
               onChange={handleChange}
               className="col-span-3"
             />
@@ -255,12 +267,12 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
           {/* Region seçimi - əgər region admin və ya digər rollardırsa */}
           {(userData.role === 'regionadmin' || userData.role === 'sectoradmin' || userData.role === 'schooladmin') && (
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="region_id" className="text-right">
+              <Label htmlFor="regionId" className="text-right">
                 {t('region')}
               </Label>
               <Select
-                value={userData.region_id}
-                onValueChange={(value) => handleSelectChange('region_id', value)}
+                value={userData.regionId}
+                onValueChange={(value) => handleSelectChange('regionId', value)}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder={t('selectRegion')} />
@@ -277,14 +289,14 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
           )}
           
           {/* Sektor seçimi - əgər sektor admin və ya məktəb admindirsə və region seçilibsə */}
-          {(userData.role === 'sectoradmin' || userData.role === 'schooladmin') && userData.region_id && (
+          {(userData.role === 'sectoradmin' || userData.role === 'schooladmin') && userData.regionId && (
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="sector_id" className="text-right">
+              <Label htmlFor="sectorId" className="text-right">
                 {t('sector')}
               </Label>
               <Select
-                value={userData.sector_id}
-                onValueChange={(value) => handleSelectChange('sector_id', value)}
+                value={userData.sectorId}
+                onValueChange={(value) => handleSelectChange('sectorId', value)}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder={t('selectSector')} />
@@ -301,14 +313,14 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
           )}
           
           {/* Məktəb seçimi - əgər məktəb admindirsə və sektor seçilibsə */}
-          {userData.role === 'schooladmin' && userData.sector_id && (
+          {userData.role === 'schooladmin' && userData.sectorId && (
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="school_id" className="text-right">
+              <Label htmlFor="schoolId" className="text-right">
                 {t('school')}
               </Label>
               <Select
-                value={userData.school_id}
-                onValueChange={(value) => handleSelectChange('school_id', value)}
+                value={userData.schoolId}
+                onValueChange={(value) => handleSelectChange('schoolId', value)}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder={t('selectSchool')} />

@@ -32,7 +32,7 @@ export interface SectorCompletionItem {
   name: string;
   completionRate: number;
   schoolCount?: number;
-  schoolsCount?: number;
+  schoolsCount?: number; // Alternativ sahə adı, ikisindən biri olmalıdır
   schoolStats?: SchoolCompletionItem[];
 }
 
@@ -97,7 +97,7 @@ export interface DashboardFormStats {
   total: number;
 }
 
-// Bildirişlər tipi
+// Bildirişlər tipi - notification.ts-dəki ilə eyni olduğunu təmin et
 export interface DashboardNotification {
   id: string;
   title: string;
@@ -219,6 +219,7 @@ export interface SectorAdminDashboardData {
   status: DashboardStatus;
   schoolStats: SchoolStat[];
   pendingApprovals: PendingApproval[];
+  formStats?: DashboardFormStats;
   notifications?: DashboardNotification[];
   sectors?: SectorCompletionItem[];
   categories?: CategoryItem[];

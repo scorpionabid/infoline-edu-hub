@@ -1,238 +1,142 @@
 
 import React from 'react';
 import { TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
-import { Clock, AlertCircle, Check } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { useNavigate } from 'react-router-dom';
+import { formatDistance } from 'date-fns';
+import { CalendarIcon, CheckCircle2Icon, ClockIcon } from 'lucide-react';
 import { CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
-import { formatDate } from '@/utils/formatters';
+import { Progress } from '@/components/ui/progress';
 
 interface FormTabsProps {
   categories: CategoryItem[];
   upcoming: DeadlineItem[];
   pendingForms: FormItem[];
+  onFormClick?: (formId: string) => void;
 }
 
 const FormTabs: React.FC<FormTabsProps> = ({
   categories,
   upcoming,
-  pendingForms
+  pendingForms,
+  onFormClick
 }) => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-
-  const handleNavigateToForm = (categoryId: string) => {
-    navigate(`/data-entry/${categoryId}`);
+  
+  const formatDeadline = (date?: string) => {
+    if (!date) return t('noDeadline');
+    try {
+      return formatDistance(new Date(date), new Date(), { addSuffix: true });
+    } catch (e) {
+      return date;
+    }
   };
 
   return (
     <>
-      <TabsContent value="upcoming">
-        <div className="grid grid-cols-1 gap-4">
-          {upcoming.length > 0 ? (
-            upcoming.map(item => (
-              <Card key={item.id} className="overflow-hidden">
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="flex justify-between">
-                    <div>{item.title || item.categoryName}</div>
-                    {getDaysRemainingBadge(item.daysRemaining || 0)}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <div>{t('deadline')}: {formatDate(item.deadline)}</div>
-                    <div>{t('categoryId')}: {item.categoryId || item.id}</div>
-                  </div>
-                  <Progress
-                    value={item.completionRate || 0}
-                    className="h-2"
-                  />
-                  <div className="flex justify-end">
-                    <div className="text-xs text-muted-foreground">
-                      {Math.round(item.completionRate || 0)}% {t('completed')}
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-4 pt-0 flex justify-end">
-                  <Button 
-                    onClick={() => handleNavigateToForm(item.categoryId || item.id)}
-                  >
-                    {t('goToForm')}
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))
-          ) : (
-            <Card>
-              <CardContent className="p-6 text-center text-muted-foreground">
-                <div className="flex justify-center mb-4">
-                  <Check className="h-12 w-12" />
+      <TabsContent value="upcoming" className="space-y-4">
+        {upcoming.length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <CheckCircle2Icon className="w-12 h-12 text-primary mx-auto mb-2" />
+              <p>{t('noUpcomingDeadlines')}</p>
+            </CardContent>
+          </Card>
+        ) : (
+          upcoming.map((deadline) => (
+            <Card key={deadline.id} className="cursor-pointer hover:shadow-md transition-shadow" 
+                 onClick={() => onFormClick?.(deadline.categoryId)}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-semibold">{deadline.title || deadline.categoryName}</h3>
+                  <Badge variant={deadline.daysRemaining < 2 ? "destructive" : "outline"}>
+                    {deadline.daysRemaining} {t('daysLeft')}
+                  </Badge>
                 </div>
-                <p>{t('noUpcomingDeadlines')}</p>
+                <div className="flex items-center text-sm text-muted-foreground mb-3">
+                  <CalendarIcon className="mr-1 h-4 w-4" />
+                  {formatDeadline(deadline.deadline)}
+                </div>
+                <Progress value={deadline.completionRate} className="h-2" />
+                <div className="flex justify-between items-center mt-2 text-sm">
+                  <span>{t('completion')}</span>
+                  <span>{Math.round(deadline.completionRate)}%</span>
+                </div>
               </CardContent>
             </Card>
-          )}
-        </div>
+          ))
+        )}
       </TabsContent>
 
-      <TabsContent value="pending">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('pendingForms')}</CardTitle>
-            <CardDescription>{t('pendingFormsDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('formTitle')}</TableHead>
-                  <TableHead>{t('category')}</TableHead>
-                  <TableHead>{t('status')}</TableHead>
-                  <TableHead className="text-right">{t('actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pendingForms.length > 0 ? (
-                  pendingForms.map(form => (
-                    <TableRow key={form.id}>
-                      <TableCell>{form.title || form.name}</TableCell>
-                      <TableCell>{form.category}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={getStatusClass(form.status)}
-                        >
-                          {t(form.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleNavigateToForm(form.categoryId)}
-                        >
-                          {t('continue')}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center h-32">
-                      <div className="flex flex-col items-center justify-center text-muted-foreground">
-                        <Check className="h-8 w-8 mb-2" />
-                        <p>{t('noFormsWaiting')}</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="categories">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('allCategories')}</CardTitle>
-            <CardDescription>{t('allCategoriesDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {categories.map(category => (
-                <Card key={category.id}>
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-base">{category.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <Progress
-                      value={category.progress || category.completionPercentage || 0}
-                      className="h-2 my-2"
-                    />
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">
-                        {Math.round(category.progress || category.completionPercentage || 0)}% {t('completed')}
-                      </span>
-                      {(category.dueDate || category.deadline) && (
-                        <span className="text-muted-foreground">
-                          {t('due')}: {formatDate(category.dueDate || category.deadline)}
-                        </span>
-                      )}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="p-4 pt-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleNavigateToForm(category.id)}
-                    >
-                      {t('open')}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-
-              {categories.length === 0 && (
-                <div className="col-span-2 text-center p-12 text-muted-foreground">
-                  <AlertCircle className="mx-auto h-12 w-12 mb-4" />
-                  <p>{t('noCategoriesFound')}</p>
+      <TabsContent value="pending" className="space-y-4">
+        {pendingForms.length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <CheckCircle2Icon className="w-12 h-12 text-primary mx-auto mb-2" />
+              <p>{t('noPendingForms')}</p>
+            </CardContent>
+          </Card>
+        ) : (
+          pendingForms.map((form) => (
+            <Card key={form.id} className="cursor-pointer hover:shadow-md transition-shadow"
+                 onClick={() => onFormClick?.(form.categoryId)}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-semibold">{form.title || form.category || form.categoryName}</h3>
+                  <Badge variant={form.status === 'pending' ? "outline" : 
+                                 form.status === 'rejected' ? "destructive" : "secondary"}>
+                    {t(form.status)}
+                  </Badge>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                {form.deadline && (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <ClockIcon className="mr-1 h-4 w-4" />
+                    {formatDeadline(form.deadline)}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </TabsContent>
+
+      <TabsContent value="categories" className="space-y-4">
+        {categories.length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <p>{t('noCategories')}</p>
+            </CardContent>
+          </Card>
+        ) : (
+          categories.map((category) => (
+            <Card key={category.id} className="cursor-pointer hover:shadow-md transition-shadow"
+                 onClick={() => onFormClick?.(category.id)}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-semibold">{category.name}</h3>
+                  <Badge variant="outline">{t(category.status)}</Badge>
+                </div>
+                <div className="flex items-center text-sm text-muted-foreground mb-3">
+                  {category.dueDate && (
+                    <>
+                      <CalendarIcon className="mr-1 h-4 w-4" />
+                      {formatDeadline(category.dueDate)}
+                    </>
+                  )}
+                </div>
+                <Progress value={category.progress} className="h-2" />
+                <div className="flex justify-between items-center mt-2 text-sm">
+                  <span>{t('completion')}</span>
+                  <span>{Math.round(category.progress)}%</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </TabsContent>
     </>
   );
-};
-
-// Statuslara görə stil sinifləri
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'approved':
-      return 'bg-green-100 text-green-800 border-green-300';
-    case 'rejected':
-      return 'bg-red-100 text-red-800 border-red-300';
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-    case 'draft':
-      return 'bg-gray-100 text-gray-800 border-gray-300';
-    default:
-      return '';
-  }
-};
-
-// Qalan günlərə görə nişan
-const getDaysRemainingBadge = (daysRemaining: number) => {
-  if (daysRemaining < 0) {
-    return (
-      <Badge variant="destructive" className="flex items-center gap-1">
-        <AlertCircle className="h-4 w-4" />
-        {Math.abs(daysRemaining)} {Math.abs(daysRemaining) === 1 ? 'gün' : 'gün'} gecikir
-      </Badge>
-    );
-  } else if (daysRemaining <= 3) {
-    return (
-      <Badge variant="warning" className="bg-amber-500 text-white flex items-center gap-1">
-        <Clock className="h-4 w-4" />
-        {daysRemaining} {daysRemaining === 1 ? 'gün' : 'gün'} qalır
-      </Badge>
-    );
-  } else {
-    return (
-      <Badge variant="outline" className="flex items-center gap-1">
-        <Clock className="h-4 w-4" />
-        {daysRemaining} {daysRemaining === 1 ? 'gün' : 'gün'} qalır
-      </Badge>
-    );
-  }
 };
 
 export default FormTabs;

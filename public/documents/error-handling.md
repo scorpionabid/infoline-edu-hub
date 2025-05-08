@@ -17,12 +17,12 @@
 ### PendingApproval interfeysində date/submittedAt ziddiyəti
 - **Problem**: Bəzi komponentlər date istifadə edir, digərləri submittedAt istifadə edir
 - **Həll**: PendingApproval tipində ikisinin də olmasını təmin etmək
-- **Təsir edən fayllar**: src/types/dashboard.d.ts, src/components/approval/PendingApprovals.tsx
+- **Təsir edən fayllar**: src/types/dashboard.ts, src/components/approval/PendingApprovals.tsx
 
 ### DashboardNotification və AppNotification arası uyğunsuzluq
 - **Problem**: isRead/read xüsusiyyət ziddiyyəti və priority tipində fərqlər
-- **Həll**: Tip adapterlərində bu fərqləri nəzərə almaq
-- **Təsir edən fayllar**: src/types/notification.ts, src/types/dashboard.ts
+- **Həll**: Tip adapterlərində bu fərqləri nəzərə almaq və tipləri əlavə etmək
+- **Təsir edən fayllar**: src/types/notification.ts, src/types/dashboard.ts, src/components/dashboard/RegionAdminDashboard.tsx
 
 ### SectorSchool tipi ilə bağlı xətalar
 - **Problem**: Əksik və uyğun olmayan xüsusiyyətlər (completionRate/completion_rate, lastUpdate/updated_at və s.)
@@ -47,3 +47,16 @@
 - **Həll**: StatusCardsProps tipinə formStats parametrini əlavə etmək və komponentdə default dəyər təyin etmək
 - **Təsir edən fayllar**: src/types/dashboard.ts, src/components/dashboard/StatusCards.tsx
 - **Tarixi**: 2025-05-08
+
+### UserFormData tipində uyğunsuzluqlar
+- **Problem**: Komponentlər full_name və region_id kimi sahələri istifadə edir, amma UserFormData tipində bunlar yoxdur
+- **Həll**: UserFormData tipinə alternativ adlandırmalı eyni xüsusiyyətləri əlavə etmək
+- **Təsir edən fayllar**: src/types/user.ts, src/components/users/AddUserDialog.tsx, src/components/users/UserFormSections
+- **Tarixi**: 2025-05-08
+
+### SchoolAdminDashboard və SectorAdminDashboard tipləri arasında uyğunsuzluqlar
+- **Problem**: farqli tip adlandırma və xüsusiyyət adlandırma konvensiyalarını istifadə edirlər
+- **Həll**: SchoolAdminDashboardData və SectorAdminDashboardData tiplərini uyğunlaşdırmaq
+- **Təsir edən fayllar**: src/types/dashboard.ts, src/components/dashboard/SchoolAdminDashboard.tsx, src/components/dashboard/SectorAdminDashboard.tsx
+- **Tarixi**: 2025-05-08
+

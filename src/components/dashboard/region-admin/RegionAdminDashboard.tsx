@@ -5,7 +5,7 @@ import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
 import NotificationsCard from '../common/NotificationsCard';
 import { RegionAdminDashboardData } from '@/types/dashboard';
-import { adaptDashboardNotificationToApp } from '@/types/notification';
+import { adaptDashboardNotificationToApp, AppNotification } from '@/types/notification';
 
 interface RegionAdminDashboardProps {
   data: RegionAdminDashboardData;
@@ -65,7 +65,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
                 
         <NotificationsCard
           title="Bildirişlər"
-          notifications={adaptedNotifications}
+          notifications={adaptedNotifications as AppNotification[]}
         />
       </Grid>
     </div>

@@ -45,7 +45,7 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
   } = useSectorAdminDashboard();
 
   const schoolStatsData: SchoolStat[] = useMemo(() => {
-    return (schools || []).map((school: SectorSchool) => ({
+    return (schools || []).map((school) => ({
       id: school.id,
       name: school.name,
       status: school.status,

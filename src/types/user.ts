@@ -23,6 +23,7 @@ export interface User {
   sector_id?: string;
   school_id?: string;
   notificationSettings?: NotificationSettings;
+  name?: string; // Bu əlavə olundu çünki DeleteUserDialog-da istifadə olunur
 }
 
 export interface NotificationSettings {
@@ -59,14 +60,21 @@ export interface FullUserData extends User {
 export interface UserFormData {
   email: string;
   fullName: string;
+  full_name?: string; // Bu əlavə olundu AddUserDialog və digər komponentləri dəstəkləmək üçün
+  name?: string; // Bu əlavə olundu DeleteUserDialog-u dəstəkləmək üçün
   password?: string;
   role?: UserRole;
   regionId?: string;
+  region_id?: string; // Bu əlavə olundu AddUserDialog üçün
   sectorId?: string;
+  sector_id?: string; // Bu əlavə olundu AddUserDialog üçün
   schoolId?: string;
+  school_id?: string; // Bu əlavə olundu AddUserDialog üçün
   language?: string;
   position?: string;
   phone?: string;
+  status?: UserStatus;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface AuthErrorType {
@@ -90,4 +98,7 @@ export interface AuthContextType {
   updateProfile: (data: Partial<FullUserData>) => Promise<{ data: any; error: AuthErrorType | null }>;
   refreshSession: () => Promise<void>;
   createUser?: (userData: UserFormData) => Promise<{ data: any; error: any }>;
+  updateUser?: (updates: Partial<FullUserData>) => Promise<boolean | void>;
+  updateUserProfile?: (userData: Partial<FullUserData>) => Promise<void>;
 }
+
