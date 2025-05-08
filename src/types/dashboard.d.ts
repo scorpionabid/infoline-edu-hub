@@ -68,6 +68,46 @@ export interface SchoolAdminDashboardData {
   notifications: DashboardNotification[];
 }
 
+export interface SchoolStat {
+  id: string;
+  name: string;
+  status: string;
+  completionRate: number;
+  lastUpdate: string;
+  pendingForms: number;
+  formsCompleted: number;
+  totalForms: number;
+  principalName?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface SectorAdminDashboardProps {
+  data: SectorAdminDashboardData;
+  isLoading?: boolean;
+  error?: Error | null;
+  onRefresh?: () => void;
+}
+
+export interface SectorAdminDashboardData {
+  completion: CompletionData;
+  status: DashboardStatus;
+  formStats?: FormStats;
+  schoolStats: SchoolStat[];
+  pendingApprovals?: any[];
+}
+
+export interface SchoolAdminDashboardProps {
+  data?: SchoolAdminDashboardData;
+  isLoading?: boolean;
+  error?: Error | null;
+  onRefresh?: () => void;
+  navigateToDataEntry?: (categoryId: string) => void;
+  handleFormClick?: (item: any) => void;
+  schoolId?: string;
+}
+
 export interface DashboardNotification {
   id: string;
   title: string;

@@ -37,27 +37,6 @@ export interface NotificationSettings {
   deadlineReminders?: boolean;
 }
 
-export interface FullUserData extends User {
-  avatar?: string;
-  region_id?: string;
-  regionId?: string;
-  region_name?: string;
-  regionName?: string;
-  sector_id?: string;
-  sectorId?: string;
-  sector_name?: string;
-  sectorName?: string;
-  school_id?: string;
-  schoolId?: string;
-  school_name?: string;
-  schoolName?: string;
-  entityName?: {
-    region?: string;
-    sector?: string;
-    school?: string;
-  };
-}
-
 export interface UserFormData {
   email: string;
   password?: string;
@@ -73,17 +52,4 @@ export interface UserFormData {
   avatar?: string | null;
   status?: string;
   notificationSettings?: NotificationSettings;
-}
-
-export interface Sector {
-  id: string;
-  name: string;
-  region_id: string;
-  description?: string;
-  status?: string;
-  created_at: string;
-  updated_at?: string;
-  admin_id?: string;
-  admin_email?: string;
-  completion_rate?: number;
 }

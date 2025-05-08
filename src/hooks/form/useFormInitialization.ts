@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { DataEntry, DataEntryForm, DataEntrySaveStatus } from '@/types/dataEntry';
+import { DataEntry, DataEntryForm, DataEntrySaveStatus, EntryValue } from '@/types/dataEntry';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
 
@@ -39,9 +39,17 @@ export const useFormInitialization = ({ schoolId, categoryId }: UseFormInitializ
 
         if (error) throw error;
 
+        // Transform DB entries to form entries
+        const formEntries: EntryValue[] = data?.map(entry => ({
+          id: entry.id,
+          columnId: entry.column_id,
+          value: entry.value,
+          status: entry.status
+        })) || [];
+
         setForm(prev => ({
           ...prev,
-          entries: data || [],
+          entries: formEntries,
           status: data?.length > 0 ? (data[0].status as any) : 'draft',
           isModified: false,
           saveStatus: DataEntrySaveStatus.IDLE,
@@ -67,3 +75,5 @@ export const useFormInitialization = ({ schoolId, categoryId }: UseFormInitializ
     isLoading
   };
 };
+
+export default useFormInitialization;

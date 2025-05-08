@@ -108,7 +108,7 @@ export const useFormActions = ({ categoryId, schoolId, categories }: UseFormActi
         // Add new entry
         return {
           ...prev,
-          entries: [...prev.entries, { columnId, value }],
+          entries: [...prev.entries, { columnId, value } as EntryValue],
           isModified: true
         };
       }
@@ -123,3 +123,5 @@ export const useFormActions = ({ categoryId, schoolId, categories }: UseFormActi
     updateEntry
   };
 };
+
+export default useFormActions;

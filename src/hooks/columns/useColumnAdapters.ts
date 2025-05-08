@@ -1,12 +1,12 @@
 
 import { Column } from '@/types/column';
-import { ColumnValidation } from '@/types/column';
 import { useCallback } from 'react';
 
 // This function adapts a column from the database to the frontend format
 export const adaptDbColumnToFrontend = (column: Column): Column => {
   return {
     ...column,
+    // Add frontend-specific properties
     label: column.name || '',
     is_required: column.is_required !== undefined ? column.is_required : true,
     validation: column.validation || {},
@@ -26,41 +26,22 @@ export const adaptFrontendColumnToDb = (column: Partial<Column>): Partial<Column
   };
   
   // Clean up frontend-only properties
-  delete dbColumn.label;
-  delete dbColumn.section;
+  if ('label' in dbColumn) delete dbColumn.label;
+  if ('section' in dbColumn) delete dbColumn.section;
+  if ('parent_column_id' in dbColumn && !dbColumn.parent_column_id) delete dbColumn.parent_column_id;
+  if ('conditional_display' in dbColumn && !dbColumn.conditional_display) delete dbColumn.conditional_display;
 
   return dbColumn;
 };
 
-// Custom hook with column adapter utilities
-export const useColumnAdapters = () => {
+// Custom hook for column adapter utilities
+const useColumnAdapters = () => {
   const adaptToFrontend = useCallback((column: Column): Column => {
     return adaptDbColumnToFrontend(column);
   }, []);
 
   const adaptToDb = useCallback((column: Partial<Column>): Partial<Column> => {
-    const dbColumn = { ...column };
-
-    // Convert frontend-specific fields to database fields
-    if (dbColumn.label) {
-      dbColumn.name = dbColumn.label;
-      delete dbColumn.label;
-    }
-
-    if (dbColumn.section) {
-      delete dbColumn.section;
-    }
-
-    // Handle optional fields
-    if ('parent_column_id' in dbColumn && !dbColumn.parent_column_id) {
-      delete dbColumn.parent_column_id;
-    }
-    
-    if ('conditional_display' in dbColumn && !dbColumn.conditional_display) {
-      delete dbColumn.conditional_display;
-    }
-
-    return dbColumn;
+    return adaptFrontendColumnToDb(column);
   }, []);
 
   return {
