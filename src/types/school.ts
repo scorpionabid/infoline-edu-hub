@@ -1,4 +1,3 @@
-
 // School interface
 export interface School {
   id: string;
@@ -91,4 +90,8 @@ export interface SchoolFormProps {
   onSubmit: (data: Partial<School>) => Promise<void>;
   isSubmitting: boolean;
   initialData: School;
+  regions: Region[];
+  sectors: Sector[];
+  regionNames: Record<string, string>;
+  sectorNames: Record<string, string>;
 }

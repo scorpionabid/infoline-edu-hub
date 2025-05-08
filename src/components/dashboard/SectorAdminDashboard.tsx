@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -20,6 +19,24 @@ import { SectorSchool } from '@/types/school';
 interface SectorAdminDashboardData {
   // Add properties of SectorAdminDashboardData type here
 }
+
+// Şəxsi adapter funksiyasını yazaq
+const adaptSchoolToSchoolStat = (school: SectorSchool): SchoolStat => {
+  return {
+    id: school.id,
+    name: school.name,
+    status: school.status,
+    completionRate: school.completionRate || school.completion_rate || 0,
+    lastUpdate: school.lastUpdate || school.updated_at || '',
+    pendingForms: school.pendingForms || 0,
+    formsCompleted: school.formsCompleted || 0,
+    totalForms: school.totalForms || 0,
+    principalName: school.principalName || school.principal_name || '',
+    address: school.address || '',
+    phone: school.phone || '',
+    email: school.email || ''
+  };
+};
 
 export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> = ({ data }) => {
   const { t } = useLanguage();
@@ -45,20 +62,7 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
   } = useSectorAdminDashboard();
 
   const schoolStatsData: SchoolStat[] = useMemo(() => {
-    return (schools || []).map((school) => ({
-      id: school.id,
-      name: school.name,
-      status: school.status,
-      completionRate: school.completionRate || school.completion_rate || 0,
-      lastUpdate: school.lastUpdate || school.updated_at || '-',
-      pendingForms: school.pendingForms || 0,
-      formsCompleted: school.formsCompleted || 0,
-      totalForms: school.totalForms || 0,
-      principalName: school.principal_name || school.principalName || '-',
-      address: school.address || '-',
-      phone: school.phone || '-',
-      email: school.email || '-'
-    }));
+    return (schools || []).map(adaptSchoolToSchoolStat);
   }, [schools]);
 
   const handleViewDetails = async (approval: any) => {

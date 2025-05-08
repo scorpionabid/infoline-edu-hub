@@ -1,71 +1,38 @@
 
 import React from 'react';
-import { LanguageSwitcher } from './LanguageSwitcher';
-import { useAuth } from '@/context/auth';
-import { UserProfile } from './UserProfile';
-import { Bell } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { usePermissions } from '@/hooks/auth/usePermissions';
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
+import UserProfile from './UserProfile';
+import LanguageSwitcher from './LanguageSwitcher';
+import NavigationMenu from './NavigationMenu';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
-export const Header = () => {
-  const { isAuthenticated } = useAuth();
-  const { isSuperAdmin, isRegionAdmin } = usePermissions();
-  const navigate = useNavigate();
-  
-  // Örnək bildiriş sayı (əsl sistemdə bu API-dən gələcək)
-  const notificationCount = 5;
-  
-  // Admin panelə keçid
-  const goToAdmin = () => {
-    navigate('/admin');
-  };
+interface HeaderProps {
+  onSidebarToggle?: () => void;
+  isSidebarOpen?: boolean;
+}
 
+const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
   return (
-    <header className="border-b sticky top-0 z-50 w-full bg-background">
-      <div className="max-w-7xl mx-auto flex justify-between items-center p-3">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-xl font-bold">InfoLine</h1>
-          
-          {(isSuperAdmin || isRegionAdmin) && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={goToAdmin}
-              className="hidden md:flex"
-            >
-              Admin Panel
-            </Button>
-          )}
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+      <div className="flex h-16 items-center justify-between px-4">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mr-2 md:hidden"
+            onClick={onSidebarToggle}
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle menu</span>
+          </Button>
+          <NavigationMenu />
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-3">
           <LanguageSwitcher />
-          
-          {isAuthenticated && (
-            <>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {notificationCount > 0 && (
-                  <Badge 
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0"
-                    variant="destructive"
-                  >
-                    {notificationCount}
-                  </Badge>
-                )}
-              </Button>
-              
-              <UserProfile />
-            </>
-          )}
-          
-          {!isAuthenticated && (
-            <Button size="sm" onClick={() => navigate('/login')}>
-              Giriş
-            </Button>
-          )}
+          <ThemeToggle />
+          <UserProfile />
         </div>
       </div>
     </header>

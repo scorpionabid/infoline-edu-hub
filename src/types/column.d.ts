@@ -205,3 +205,4 @@ export const columnTypeDefinitions: Record<string, { label: string; description:
 };
 
 export const columnTypes = columnTypeDefinitions;
+

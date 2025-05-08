@@ -39,6 +39,13 @@ export interface DashboardFormStats {
   total: number;
 }
 
+// Statistika va dashboard komponentləri üçün əlavə tip
+export interface DashboardStats {
+  total: number;
+  active: number;
+  inactive: number;
+}
+
 export interface DashboardNotification {
   id: string;
   title: string;
@@ -76,6 +83,34 @@ export interface SchoolCompletionItem {
 export interface SectorCompletionItem {
   id: string;
   name: string;
+  completionRate: number;
+}
+
+export interface FormItem {
+  id: string;
+  categoryName: string;
+  deadline?: string;
+  status: string;
+  title?: string;
+  categoryId?: string;
+  completionRate?: number;
+}
+
+export interface DeadlineItem {
+  id: string;
+  categoryName: string;
+  deadline: string;
+  status: string;
+  title?: string;
+  categoryId?: string;
+  completionRate?: number;
+}
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+  deadline?: string;
+  status: string;
   completionRate: number;
 }
 
@@ -141,28 +176,23 @@ export interface RegionAdminDashboardProps {
   data: RegionAdminDashboardData;
 }
 
-export interface SuperAdminDashboardProps {
-  data: SuperAdminDashboardData;
-}
-
 export interface SuperAdminDashboardData {
   completion: DashboardCompletion;
   status: DashboardStatus;
   regions: number;
   sectors: number;
   schools: number;
+  stats?: DashboardStats;
   notifications: DashboardNotification[];
   formStats?: DashboardFormStats;
+}
+
+export interface SuperAdminDashboardProps {
+  data: SuperAdminDashboardData;
 }
 
 export interface StatusCardsProps {
   completion?: DashboardCompletion;
   status?: DashboardStatus;
   formStats?: DashboardFormStats;
-}
-
-export interface DashboardStats {
-  total: number;
-  active: number;
-  inactive: number;
 }
