@@ -1,4 +1,3 @@
-
 // Dashboard tipləri
 
 export interface DashboardCompletion {
@@ -13,8 +12,8 @@ export interface DashboardStatus {
   rejected: number;
   draft?: number;
   total: number;
-  active: number; // Əlavə edildi
-  inactive: number; // Əlavə edildi
+  active: number; 
+  inactive: number; 
 }
 
 export interface DashboardFormStats {
@@ -32,43 +31,53 @@ export interface PendingApproval {
   id: string;
   title?: string;
   school?: string;
+  schoolName: string;
+  categoryName: string;
   status?: 'pending' | 'approved' | 'rejected';
-  date?: string; // Əlavə edildi
+  date?: string;
+  submittedAt: string;
   createdAt?: string;
   timestamp?: string;
   entity?: any;
+  schoolId?: string;
+  categoryId?: string;
 }
 
 export interface DeadlineItem {
   id: string;
   name?: string;
-  title?: string; // Əlavə edildi
+  title?: string;
   dueDate?: string;
-  completionRate?: number; // Əlavə edildi
-  progress?: number; // Əlavə edildi
+  completionRate?: number;
+  progress?: number;
   status?: 'upcoming' | 'overdue' | 'completed';
   category?: string;
+  categoryName?: string;
   timestamp?: string;
   deadline?: string;
+  categoryId?: string;
 }
 
 export interface FormItem {
   id: string;
   name?: string;
-  title?: string; // Əlavə edildi
+  title?: string;
   status?: 'pending' | 'approved' | 'rejected' | 'draft';
-  deadline?: string; // Əlavə edildi
+  deadline?: string;
   category?: string;
+  categoryName?: string;
   dueDate?: string;
   completionRate?: number;
+  categoryId?: string;
+  submittedAt?: string;
 }
 
 export interface CategoryItem {
   id: string;
   name: string;
   completionRate: number;
-  dueDate?: string; // Əlavə edildi
-  progress?: number; // Əlavə edildi
+  dueDate?: string;
+  progress?: number;
   deadline?: string;
   status?: 'active' | 'inactive' | 'archived';
   description?: string;
@@ -83,7 +92,7 @@ export interface SchoolStat {
   pendingForms: number;
   formsCompleted: number;
   totalForms: number;
-  principalName: string; // principal əvəzinə principalName olmalıdır
+  principalName: string;
   address?: string;
   phone?: string;
   email?: string;

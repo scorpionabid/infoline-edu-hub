@@ -49,3 +49,9 @@ export const adaptAppNotificationToDashboard = (
     entity: notification.entity
   };
 };
+
+// SuperAdminDashboard və RegionAdminDashboard komponentlərində istifadə edilən funksiya
+export const adaptDashboardToAppNotification = adaptDashboardNotificationToApp;
+
+// SectorAdminDashboard komponenti üçün funksiya
+export const adaptAppToDashboardNotification = adaptAppNotificationToDashboard;

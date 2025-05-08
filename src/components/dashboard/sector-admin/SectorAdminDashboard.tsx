@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
@@ -10,7 +9,7 @@ import NotificationsCard from '@/components/dashboard/common/NotificationsCard';
 import { SectorAdminDashboardData, SectorAdminDashboardProps } from '@/types/dashboard';
 import { SchoolStat, SectorSchool } from '@/types/school';
 import SchoolsTable from './SchoolsTable';
-import { adaptAppToDashboardNotification } from '@/utils/notificationUtils';
+import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
 
 const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
@@ -19,7 +18,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
   // Bildirişləri adaptasiya etmək
   const adaptedNotifications = useMemo(() => {
     if (notifications && notifications.length > 0) {
-      return notifications.map(n => adaptAppToDashboardNotification(n));
+      return notifications.map(n => adaptDashboardNotificationToApp(n));
     }
     return [];
   }, [notifications]);

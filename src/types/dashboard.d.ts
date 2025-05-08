@@ -1,4 +1,3 @@
-
 import { School, SchoolStat } from './school';
 
 export interface PendingApproval {

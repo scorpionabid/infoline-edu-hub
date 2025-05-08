@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import NotificationsCard from './common/NotificationsCard'; 
 import { SuperAdminDashboardData } from '@/types/dashboard';
-import { adaptDashboardToAppNotification } from '@/utils/notificationUtils';
+import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
 import { AppNotification } from '@/types/notification';
 
 interface SuperAdminDashboardProps {
@@ -15,7 +14,7 @@ interface SuperAdminDashboardProps {
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   // Bildirişləri adaptasiya edək
   const adaptedNotifications = data.notifications 
-    ? data.notifications.map(notification => adaptDashboardToAppNotification(notification))
+    ? data.notifications.map(notification => adaptDashboardNotificationToApp(notification))
     : [];
   
   return (

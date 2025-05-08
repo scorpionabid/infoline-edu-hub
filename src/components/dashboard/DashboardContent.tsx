@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useLanguage } from '@/context/LanguageContext';
@@ -30,6 +29,20 @@ const DashboardContent: React.FC = () => {
       approved: 0,
       rejected: 0,
       total: 0
+    },
+    status: {
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      draft: 0,
+      total: 0,
+      active: 0,
+      inactive: 0
+    },
+    completion: {
+      percentage: 0,
+      total: 0,
+      completed: 0
     },
     completionRate: 0,
     notifications: [],
@@ -97,11 +110,10 @@ const DashboardContent: React.FC = () => {
       pending: 0,
       approved: 0,
       rejected: 0,
-      draft: 0,
-      total: 0,
       dueSoon: 0,
       overdue: 0,
-      incomplete: 0
+      draft: 0,
+      total: 0
     },
     pendingForms: [],
     completionRate: 0,
@@ -127,6 +139,20 @@ const DashboardContent: React.FC = () => {
           approved: 347,
           rejected: 42,
           total: 500
+        },
+        status: {
+          pending: 85,
+          approved: 347,
+          rejected: 42,
+          draft: 0,
+          total: 500,
+          active: 0,
+          inactive: 0
+        },
+        completion: {
+          percentage: 75,
+          total: 500,
+          completed: 375
         },
         completionRate: 75,
         notifications: [],
@@ -201,11 +227,10 @@ const DashboardContent: React.FC = () => {
           pending: 1,
           approved: 8,
           rejected: 0,
-          draft: 1,
-          total: 10,
           dueSoon: 2,
           overdue: 0,
-          incomplete: 2
+          draft: 1,
+          total: 10
         },
         pendingForms: [],
         completionRate: 80,

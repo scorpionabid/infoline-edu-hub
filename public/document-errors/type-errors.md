@@ -1,5 +1,4 @@
-
-# Tip Xətaları və Həlləri
+# Tip Xətaları
 
 Bu sənəd InfoLine layihəsində rast gəlinən tip xətaları və onların həll yollarını əhatə edir.
 
@@ -179,3 +178,86 @@ Burada olan xətaları və həllərini qeyd edə bilərsiniz:
 1. ...
 2. ...
 3. ...
+
+## PendingApproval Tip Xətaları
+
+**Problem:** PendingApproval tipində `schoolName`, `categoryName` və `submittedAt` xassələri mövcud deyildi.
+
+**Həll:** `dashboard.d.ts` və `dashboard.ts` fayllarda PendingApproval tipini genişləndirdik və əlavə xassələri əlavə etdik:
+
+```typescript
+export interface PendingApproval {
+  id: string;
+  schoolId?: string;
+  schoolName: string;
+  categoryId?: string;
+  categoryName: string;
+  submittedAt: string;
+  date?: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+```
+
+## DashboardStatus və DashboardFormStats Tip Xətaları
+
+**Problem:** DashboardStatus tipində `active` və `inactive` xassələri yox idi, DashboardFormStats tipində isə `dueSoon` və `overdue` xassələri mövcud deyildi.
+
+**Həll:** `dashboard.ts` faylında bu tipləri tamamladıq və SchoolAdminDashboard komponentində istifadə etdiyimiz obyektləri bu tiplərə uyğunlaşdırdıq:
+
+```typescript
+export interface DashboardStatus {
+  pending: number;
+  approved: number;
+  rejected: number;
+  draft?: number;
+  total: number;
+  active: number; 
+  inactive: number; 
+}
+
+export interface DashboardFormStats {
+  pending: number;
+  approved: number;
+  rejected: number;
+  draft?: number;
+  dueSoon: number;
+  overdue: number;
+  incomplete?: number;
+  total: number;
+}
+```
+
+## DeadlineItem və FormItem Xassə Adları
+
+**Problem:** `FormTabs.tsx` faylında `categoryName` xassəsi istifadə edilirdi, lakin tip təriflərində bu xassənin adı `category` idi.
+
+**Həll:** Tiplərə `categoryName` xassəsini əlavə etdik:
+
+```typescript
+export interface DeadlineItem {
+  // ... mövcud xassələr
+  categoryName?: string;
+}
+
+export interface FormItem {
+  // ... mövcud xassələr
+  categoryName?: string;
+}
+```
+
+## SchoolStats Tip Uyğunsuzluğu
+
+**Problem:** `school.ts` və `dashboard.ts` fayllarda eyni adlı (SchoolStat) fərqli tiplər var idi.
+
+**Həlli:** Tipdəki xassələrin adlarını uyğunlaşdırdıq.
+
+## notificationUtils Funksiya Adları
+
+**Problem:** `adaptDashboardToAppNotification` və `adaptAppToDashboardNotification` funksiyaları `notificationUtils.ts` faylında mövcud deyildi.
+
+**Həll:** Bu funksiyaları əlavə etdik və mövcud `adaptDashboardNotificationToApp` və `adaptAppNotificationToDashboard` funksiyalarına istinad etdik:
+
+```typescript
+export const adaptDashboardToAppNotification = adaptDashboardNotificationToApp;
+export const adaptAppToDashboardNotification = adaptAppNotificationToDashboard;
+```

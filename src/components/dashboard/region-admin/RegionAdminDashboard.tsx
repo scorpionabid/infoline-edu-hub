@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
 import NotificationsCard from '../common/NotificationsCard';
 import { RegionAdminDashboardData } from '@/types/dashboard';
-import { adaptDashboardToAppNotification } from '@/utils/notificationUtils';
+import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
 import { AppNotification } from '@/types/notification';
 
 interface RegionAdminDashboardProps {
@@ -22,7 +21,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
           ...notification,
           isRead: notification.isRead || false
         };
-        return adaptDashboardToAppNotification(notificationWithAllFields);
+        return adaptDashboardNotificationToApp(notificationWithAllFields);
       })
     : [];
 

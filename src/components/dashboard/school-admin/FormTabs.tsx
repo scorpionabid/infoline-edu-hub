@@ -64,7 +64,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
               >
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium">{item.categoryName || item.name}</h3>
+                    <h3 className="font-medium">{item.categoryName || item.name || item.title}</h3>
                     {getStatusBadge(item.status)}
                   </div>
                   <div className="text-sm text-muted-foreground flex gap-2 items-center mb-2">
@@ -117,7 +117,11 @@ const FormTabs: React.FC<FormTabsProps> = ({
                       <span>Son tarix: {formatDate(form.deadline)}</span>
                     </div>
                   )}
-                  {/* submittedAt xassəsi olmadığı üçün onu istifadə etmirik */}
+                  {form.submittedAt && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      <span className="text-xs">Təqdim edilib: {formatDate(form.submittedAt)}</span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

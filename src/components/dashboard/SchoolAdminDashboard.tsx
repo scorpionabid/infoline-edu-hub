@@ -6,20 +6,21 @@ import StatusCards from './StatusCards';
 import NotificationsCard from './common/NotificationsCard';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
-import { AppNotification, DashboardNotification } from '@/types/notification';
+import { AppNotification } from '@/types/notification';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
-import { adaptAppNotificationToDashboard } from '@/types/notification';
 import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 import FormTabs from './school-admin/FormTabs';
+import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
 
 interface SchoolAdminDashboardProps {
   schoolId?: string;
+  data?: SchoolAdminDashboardData;
 }
 
-const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId }) => {
+const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, data: initialData }) => {
   const { t } = useLanguage();
   const { notifications, markAsRead } = useNotifications();
-  const { data, isLoading, error } = useSchoolAdminDashboard();
+  const { data: fetchedData, isLoading, error } = useSchoolAdminDashboard();
   
   const [dashboardData, setDashboardData] = useState<SchoolAdminDashboardData>({
     completion: {
@@ -33,16 +34,19 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId })
       rejected: 0,
       draft: 0,
       total: 0,
+      active: 0,
+      inactive: 0
     },
     categories: [],
     upcoming: [],
-    forms: {
+    formStats: {
       pending: 0,
       approved: 0,
       rejected: 0,
       dueSoon: 0,
       overdue: 0,
       total: 0,
+      draft: 0
     },
     pendingForms: [],
     completionRate: 0,
@@ -52,7 +56,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId })
   // Bildirişləri adaptasiya etmək
   useEffect(() => {
     const dashboardNotifications = notifications.map(notification => 
-      adaptAppNotificationToDashboard(notification)
+      adaptDashboardNotificationToApp(notification)
     );
 
     setDashboardData(prev => ({
@@ -63,21 +67,37 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId })
 
   // Real data və ya mock data yükləmək
   useEffect(() => {
-    if (!isLoading && data) {
+    if (initialData) {
       setDashboardData(prev => ({
         ...prev,
-        completion: data.completion,
-        status: data.status,
-        categories: data.categories,
-        upcoming: data.upcoming,
-        pendingForms: data.pendingForms || [],
-        completionRate: data.completionRate,
+        ...initialData,
+      }));
+    } else if (!isLoading && fetchedData) {
+      setDashboardData(prev => ({
+        ...prev,
+        completion: fetchedData.completion || prev.completion,
+        status: {
+          ...prev.status,
+          ...fetchedData.status,
+          active: fetchedData.status?.active || 0,
+          inactive: fetchedData.status?.inactive || 0
+        },
+        categories: fetchedData.categories || prev.categories,
+        upcoming: fetchedData.upcoming || prev.upcoming,
+        pendingForms: fetchedData.pendingForms || prev.pendingForms,
+        completionRate: fetchedData.completionRate || prev.completionRate,
+        formStats: {
+          ...prev.formStats,
+          ...(fetchedData.formStats || {}),
+          dueSoon: fetchedData.formStats?.dueSoon || 0,
+          overdue: fetchedData.formStats?.overdue || 0
+        }
       }));
     }
-  }, [isLoading, data]);
+  }, [isLoading, fetchedData, initialData]);
 
   // Loading state
-  if (isLoading && !data) {
+  if (isLoading && !fetchedData && !initialData) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -90,13 +110,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId })
       <StatusCards
         completion={dashboardData.completion}
         status={dashboardData.status}
-        formStats={{
-          pending: dashboardData.status.pending,
-          approved: dashboardData.status.approved,
-          rejected: dashboardData.status.rejected,
-          draft: dashboardData.status.draft,
-          total: dashboardData.status.total
-        }}
+        formStats={dashboardData.formStats}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -118,7 +132,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId })
 
         <div className="space-y-6">
           <NotificationsCard 
-            notifications={dashboardData.notifications as unknown as AppNotification[]} 
+            notifications={dashboardData.notifications.map(n => adaptDashboardNotificationToApp(n))} 
             onMarkAsRead={markAsRead} 
           />
 

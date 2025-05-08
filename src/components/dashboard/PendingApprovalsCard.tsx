@@ -44,7 +44,7 @@ export const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ item
                 <div className="text-sm text-muted-foreground">{item.schoolName}</div>
                 <div className="flex items-center text-xs mt-1 text-muted-foreground">
                   <Clock className="h-3 w-3 mr-1" />
-                  {item.submittedAt || ''}
+                  {item.submittedAt || item.date || ''}
                 </div>
               </div>
               <Button 
