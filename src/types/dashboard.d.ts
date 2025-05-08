@@ -57,6 +57,15 @@ export interface FormItem {
   categoryName?: string;
 }
 
+export interface DashboardNotification {
+  id: string;
+  title: string;
+  message: string;
+  date: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  isRead: boolean;
+}
+
 export interface SchoolAdminDashboardData {
   completion: CompletionData;
   status: DashboardStatus;
@@ -106,13 +115,4 @@ export interface SchoolAdminDashboardProps {
   navigateToDataEntry?: (categoryId: string) => void;
   handleFormClick?: (item: any) => void;
   schoolId?: string;
-}
-
-export interface DashboardNotification {
-  id: string;
-  title: string;
-  message: string;
-  date: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  isRead: boolean;
 }

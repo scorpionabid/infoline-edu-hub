@@ -44,8 +44,11 @@ export interface UserFormData {
   name?: string;
   role: string;
   region_id?: string | null;
+  regionId?: string | null;
   sector_id?: string | null;
+  sectorId?: string | null;
   school_id?: string | null;
+  schoolId?: string | null;
   phone?: string | null;
   position?: string | null;
   language?: string;

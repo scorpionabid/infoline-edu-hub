@@ -1,59 +1,54 @@
 
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 
-interface CategoryStatus {
-  status: 'not_started' | 'in_progress' | 'completed' | 'pending' | 'approved' | 'rejected';
-  completionPercentage: number;
+interface Entry {
+  id: string;
+  status: string;
+  value?: any;
 }
 
-export const useCategoryStatus = (categories: CategoryWithColumns[] = []) => {
-  const getStatus = useCallback((category: CategoryWithColumns): CategoryStatus => {
-    // Use the completion rate from the category or calculate it if not provided
-    const completionRate = typeof category.completionRate !== 'undefined' ? category.completionRate : 0;
-    
-    // Check if entries exist in the category
-    const hasEntries = category.entries && Array.isArray(category.entries) && category.entries.length > 0;
-    
-    // Check approved/rejected/pending status from entries if available
-    if (hasEntries) {
-      const pendingEntries = category.entries.filter(entry => entry.status === 'pending');
-      const rejectedEntries = category.entries.filter(entry => entry.status === 'rejected');
-      const approvedEntries = category.entries.filter(entry => entry.status === 'approved');
-      
-      if (pendingEntries.length > 0) {
-        return { status: 'pending', completionPercentage: completionRate };
-      }
-      
-      if (rejectedEntries.length > 0) {
-        return { status: 'rejected', completionPercentage: completionRate };
-      }
-      
-      if (approvedEntries.length > 0 && completionRate === 100) {
-        return { status: 'approved', completionPercentage: 100 };
-      }
+interface CategoryWithEntries extends CategoryWithColumns {
+  entries?: Entry[];
+}
+
+interface UseCategoryStatusResult {
+  getCategoryStatus: (category: CategoryWithEntries) => 'not_started' | 'in_progress' | 'completed';
+  getCompletionRate: (category: CategoryWithEntries) => number;
+}
+
+export const useCategoryStatus = (): UseCategoryStatusResult => {
+  const getCompletionRate = useMemo(() => (category: CategoryWithEntries) => {
+    // If completionRate is already set, use it
+    if (typeof category.completionRate === 'number') {
+      return category.completionRate;
     }
-    
-    // Default statuses based on completion rate
-    if (completionRate === 0) {
-      return { status: 'not_started', completionPercentage: 0 };
-    } else if (completionRate < 100) {
-      return { status: 'in_progress', completionPercentage: completionRate };
+
+    // Calculate from entries if available
+    if (category.entries && category.entries.length > 0 && category.columns && category.columns.length > 0) {
+      const totalEntries = category.columns.length;
+      const filledEntries = category.entries.filter(entry => entry.value !== null && entry.value !== undefined && entry.value !== '').length;
+      return Math.floor((filledEntries / totalEntries) * 100);
     }
-    
-    return { status: 'completed', completionPercentage: 100 };
+
+    return 0;
   }, []);
 
-  const categoryStatuses = useMemo(() => {
-    return categories.map(category => ({
-      id: category.id,
-      status: getStatus(category)
-    }));
-  }, [categories, getStatus]);
+  const getCategoryStatus = useMemo(() => (category: CategoryWithEntries) => {
+    const completionRate = getCompletionRate(category);
+    
+    if (completionRate === 0) {
+      return 'not_started';
+    } else if (completionRate < 100) {
+      return 'in_progress';
+    } else {
+      return 'completed';
+    }
+  }, [getCompletionRate]);
 
   return {
-    getStatus,
-    categoryStatuses
+    getCategoryStatus,
+    getCompletionRate
   };
 };
 

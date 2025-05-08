@@ -25,24 +25,30 @@ const SectorsContainer: React.FC = () => {
             name: 'Sector 1',
             description: 'First sector description',
             region_id: 'region1',
-            region_name: 'Region A',
+            regionName: 'Region A',
+            regionId: 'region1',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             status: 'active',
             school_count: 15,
-            completion_rate: 75
+            schoolCount: 15,
+            completion_rate: 75,
+            completionRate: 75
           },
           {
             id: '2',
             name: 'Sector 2',
             description: 'Second sector description',
             region_id: 'region1',
-            region_name: 'Region A', 
+            regionName: 'Region A',
+            regionId: 'region1',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             status: 'inactive',
             school_count: 8,
-            completion_rate: 45
+            schoolCount: 8,
+            completion_rate: 45,
+            completionRate: 45
           }
         ];
         

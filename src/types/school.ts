@@ -47,9 +47,9 @@ export interface School {
   phone?: string;
   principal_name?: string;
   principalName?: string;
-  status: 'active' | 'inactive';
-  created_at?: string;
-  updated_at?: string;
+  status: string;
+  created_at: string | Date;
+  updated_at?: string | Date;
   teacher_count?: number;
   student_count?: number;
   completion_rate?: number;
@@ -66,9 +66,9 @@ export interface Region {
   description?: string;
   admin_id?: string;
   admin_email?: string;
-  created_at?: string;
-  updated_at?: string;
-  status: 'active' | 'inactive' | string;
+  created_at: string | Date;
+  updated_at?: string | Date;
+  status: string;
 }
 
 // Sector tipi
@@ -79,9 +79,9 @@ export interface Sector {
   region_id: string;
   admin_id?: string;
   admin_email?: string;
-  created_at?: string;
-  updated_at?: string;
-  status: 'active' | 'inactive' | string;
+  created_at: string | Date;
+  updated_at?: string | Date;
+  status: string;
   completion_rate?: number;
 }
 

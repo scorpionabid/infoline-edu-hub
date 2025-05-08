@@ -1,13 +1,8 @@
 
 import { useEffect, useRef } from 'react';
 
-/**
- * Custom hook for setting intervals
- * @param callback Function to call on interval
- * @param delay Delay in milliseconds (null to pause)
- */
-const useInterval = (callback: () => void, delay: number | null): void => {
-  const savedCallback = useRef<() => void>(callback);
+function useInterval(callback: () => void, delay: number | null) {
+  const savedCallback = useRef<() => void>();
 
   // Remember the latest callback
   useEffect(() => {
@@ -16,11 +11,15 @@ const useInterval = (callback: () => void, delay: number | null): void => {
 
   // Set up the interval
   useEffect(() => {
+    function tick() {
+      savedCallback.current?.();
+    }
+    
     if (delay !== null) {
-      const id = setInterval(() => savedCallback.current(), delay);
+      const id = setInterval(tick, delay);
       return () => clearInterval(id);
     }
   }, [delay]);
-};
+}
 
 export default useInterval;

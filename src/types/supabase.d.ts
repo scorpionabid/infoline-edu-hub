@@ -1,6 +1,6 @@
 
 import { Session } from '@supabase/supabase-js';
-import { User, UserRole } from './user';
+import { User, UserRole, NotificationSettings } from './user';
 
 export { User, UserRole } from './user';
 
@@ -24,6 +24,8 @@ export interface FullUserData extends User {
   updated_at?: string | Date;
   updatedAt?: string | Date;
   adminEntity?: AdminEntity;
+  name?: string;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface AdminEntity {
@@ -40,26 +42,33 @@ export interface Sector {
   id: string;
   name: string;
   region_id: string;
+  regionId?: string;
   region_name?: string;
+  regionName?: string;
   description?: string;
-  status?: string;
+  status: string;
   created_at: string | Date;
   updated_at?: string | Date;
   admin_id?: string;
   admin_email?: string;
   completion_rate?: number;
+  completionRate?: number;
 }
 
 export interface EnhancedSector extends Sector {
   school_count: number;
+  schoolCount?: number;
   completion_rate: number;
+  completionRate?: number;
+  region_name?: string;
+  regionName?: string;
 }
 
 export interface Region {
   id: string;
   name: string;
   description?: string;
-  status?: string;
+  status: string;
   admin_id?: string;
   admin_email?: string;
   created_at: string | Date;
@@ -80,7 +89,7 @@ export interface School {
   email?: string;
   student_count?: number;
   teacher_count?: number;
-  status?: string;
+  status: string;
   type?: string;
   language?: string;
   created_at: string | Date;
@@ -109,4 +118,8 @@ export interface SchoolFormProps {
   initialData?: School;
   onSubmit: (data: Partial<School>) => Promise<void>;
   isSubmitting?: boolean;
+  regions?: Region[];
+  sectors?: Sector[];
+  regionNames?: Record<string, string>;
+  sectorNames?: Record<string, string>;
 }
