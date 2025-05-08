@@ -1,8 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from './types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Use explicit string values for the Supabase URL and key
+const supabaseUrl = "https://olbfnauhzpdskqnxtwav.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4";
+
+// Ensure we have valid values before creating the client
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Supabase URL or Anon Key is missing');
+  throw new Error('Supabase configuration is incomplete');
+}
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -11,6 +18,32 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
   },
 });
+
+// Helper function to call Supabase Edge Functions
+export async function callEdgeFunction<T = any>(
+  functionName: string,
+  options?: {
+    body?: object;
+    headers?: Record<string, string>;
+  }
+): Promise<{ data: T | null; error: Error | null }> {
+  try {
+    const { data, error } = await supabase.functions.invoke<T>(functionName, {
+      body: options?.body,
+      headers: options?.headers,
+    });
+
+    if (error) {
+      console.error(`Error invoking ${functionName}:`, error);
+      return { data: null, error: error as Error };
+    }
+
+    return { data, error: null };
+  } catch (error: any) {
+    console.error(`Exception in ${functionName}:`, error);
+    return { data: null, error };
+  }
+}
 
 export const getProfile = async (userId: string) => {
   const { data, error } = await supabase
