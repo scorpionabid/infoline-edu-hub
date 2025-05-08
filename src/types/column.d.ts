@@ -54,7 +54,7 @@ export interface Column {
   validation?: ColumnValidation;
   status: 'active' | 'inactive';
   description?: string;
-  section?: string; // Added for CategoryForm.tsx
+  section?: string;
 }
 
 export interface ColumnFormValues {
@@ -70,7 +70,7 @@ export interface ColumnFormValues {
   validation?: ColumnValidation;
   status?: 'active' | 'inactive';
   description?: string;
-  section?: string; // Added for CategoryForm.tsx
+  section?: string;
 }
 
 export interface CategoryWithColumns {

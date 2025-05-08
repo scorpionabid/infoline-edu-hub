@@ -70,7 +70,7 @@ export interface DeadlineItem {
   categoryId?: string;
   categoryName?: string;
   dueDate: string;
-  status: "upcoming" | "overdue" | "completed" | "pending" | "draft"; // Added pending and draft
+  status: "upcoming" | "overdue" | "completed" | "pending" | "draft";
   completionRate: number;
 }
 
@@ -101,7 +101,7 @@ export interface SchoolStat {
 
 // Alias for SchoolStat
 export type SchoolCompletionItem = SchoolStat;
-// Alias for category stats
+// Alias for sector stats
 export type SectorCompletionItem = Sector & { completionRate: number };
 // Alias for CompletionData
 export type CompletionStats = CompletionData;

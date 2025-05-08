@@ -1,50 +1,57 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { UserRole, UserRoleData } from '@/types/supabase';
+import { UserRole } from '@/types/supabase';
 
-/**
- * Verilmiş sorğunun nəticəsini yoxlayır və hər hansı xəta varsa konsola yazır
- * @param queryPromise - Supabase sorğusu
- * @param errorMessage - Xəta mesajı
- * @returns Sorğunun nəticəsi və ya null
- */
-export const executeQuery = async <T>(
-  queryPromise: any,
-  errorMessage: string
-): Promise<T | null> => {
-  try {
-    // Sorğunu icra et (await əlavə edirik)
-    const { data, error } = await queryPromise;
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error(errorMessage, error);
-    return null;
-  }
+export const hasPermission = (userRole: UserRole | undefined | null, requiredRoles: UserRole[]): boolean => {
+  if (!userRole) return false;
+  return requiredRoles.includes(userRole);
 };
 
-/**
- * İstifadəçinin roluna görə müəyyən entity-də icazəsi olub-olmadığını yoxlayır
- * @param userId - İstifadəçi ID-si
- * @param role - İstifadəçi rolu
- * @returns İcazənin olub-olmadığı
- */
-export const checkUserPermissionByRole = async (
-  userId: string,
-  role: string
-): Promise<boolean> => {
-  if (!userId) return false;
-  
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', userId)
-    .single();
-  
-  if (error) {
-    console.error('İstifadəçi rolu yoxlanarkən xəta:', error);
-    return false;
-  }
-  
-  return data?.role === role;
+export const canViewUsers = (role: UserRole | undefined | null): boolean => {
+  if (!role) return false;
+  return ['superadmin', 'regionadmin', 'sectoradmin'].includes(role);
+};
+
+export const canManageUsers = (role: UserRole | undefined | null): boolean => {
+  if (!role) return false;
+  return ['superadmin', 'regionadmin'].includes(role);
+};
+
+export const canViewRegions = (role: UserRole | undefined | null): boolean => {
+  if (!role) return false;
+  return ['superadmin', 'regionadmin'].includes(role);
+};
+
+export const canManageRegions = (role: UserRole | undefined | null): boolean => {
+  if (!role) return false;
+  return role === 'superadmin';
+};
+
+export const canViewSectors = (role: UserRole | undefined | null): boolean => {
+  if (!role) return false;
+  return ['superadmin', 'regionadmin', 'sectoradmin'].includes(role);
+};
+
+export const canManageSectors = (role: UserRole | undefined | null): boolean => {
+  if (!role) return false;
+  return ['superadmin', 'regionadmin'].includes(role);
+};
+
+export const canViewSchools = (role: UserRole | undefined | null): boolean => {
+  if (!role) return false;
+  return ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(role);
+};
+
+export const canManageSchools = (role: UserRole | undefined | null): boolean => {
+  if (!role) return false;
+  return ['superadmin', 'regionadmin', 'sectoradmin'].includes(role);
+};
+
+export const canViewCategories = (role: UserRole | undefined | null): boolean => {
+  if (!role) return false;
+  return ['superadmin', 'regionadmin', 'sectoradmin'].includes(role);
+};
+
+export const canManageCategories = (role: UserRole | undefined | null): boolean => {
+  if (!role) return false;
+  return role === 'superadmin';
 };

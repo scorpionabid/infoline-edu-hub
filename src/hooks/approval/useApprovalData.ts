@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -67,25 +68,18 @@ export const useApprovalData = (): ApprovalData => {
         }
 
         const enrichedApprovals = approvals.map(approval => {
-          const school = schools.find(s => s.id === approval.school_id);
-          const category = approval.category;
-          const regions = regionsWithSectors?.filter(r => r.id === school?.region_id);
-          const regionName = regions?.length > 0 && regions[0]?.name ? regions[0].name : '';
-          const sectorName = sectors?.length > 0 && sectors[0]?.name ? sectors[0].name : '';
-          const sectorRegionName = regionsWithSectors?.length > 0 && regionsWithSectors[0]?.name 
-            ? regionsWithSectors[0].name 
-            : '';
-          const sectorSectors = regionsWithSectors?.length > 0 && regionsWithSectors[0]?.sectors 
-            ? regionsWithSectors[0].sectors 
-            : [];
-
+          const school = schools.find(s => s.id === approval.school_id) || {};
+          const category = approval.category || { name: 'Unknown Category' };
+          const regions = regionsWithSectors?.filter(r => r.id === school?.region_id) || [];
+          const sectorName = sectors?.find(s => s.id === school?.sector_id)?.name || 'Unknown Sector';
+          const regionName = regions.length > 0 ? regions[0].name || 'Unknown Region' : 'Unknown Region';
+          
           return {
             ...approval,
             schoolName: school?.name || 'Unknown School',
             categoryName: category?.name || 'Unknown Category',
-            regionName: regionName || 'Unknown Region',
-            sectorName: sectorName || 'Unknown Sector',
-            sectorRegionName: sectorRegionName || 'Unknown Region',
+            regionName: regionName,
+            sectorName: sectorName
           };
         });
 

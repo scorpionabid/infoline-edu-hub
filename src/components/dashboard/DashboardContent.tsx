@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/context/auth';
 import SuperAdminDashboard from './SuperAdminDashboard';
@@ -140,7 +141,8 @@ const mockSectorAdminData = () => ({
       status: "active",
       pendingForms: 2,
       formsCompleted: 7,
-      totalForms: 10
+      totalForms: 10,
+      principalName: "Principal Name 1"
     },
     {
       id: "s2",
@@ -150,7 +152,8 @@ const mockSectorAdminData = () => ({
       status: "active",
       pendingForms: 4,
       formsCompleted: 4,
-      totalForms: 10
+      totalForms: 10,
+      principalName: "Principal Name 2"
     }
   ] as SchoolStat[],
   upcomingDeadlines: [
@@ -222,17 +225,6 @@ const mockSchoolAdminData = () => {
       submittedAt: new Date(Date.now() - 86400000).toISOString()
     }
   ];
-  
-  const notifications: DashboardNotification[] = [
-    {
-      id: "n1",
-      title: "Form təsdiqləndi",
-      message: "Ümumi məlumatlar formu təsdiqləndi",
-      date: new Date(Date.now() - 86400000).toISOString(),
-      isRead: false,
-      type: "success"
-    }
-  ];
 
   return {
     completion: {
@@ -262,7 +254,7 @@ const mockSchoolAdminData = () => {
     categories,
     upcoming,
     pendingForms,
-    notifications
+    notifications: []
   };
 };
 

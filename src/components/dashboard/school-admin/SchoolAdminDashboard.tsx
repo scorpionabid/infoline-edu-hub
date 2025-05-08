@@ -6,7 +6,7 @@ import StatusCards from '../StatusCards';
 import NotificationsCard from '../common/NotificationsCard';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
-import { CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
+import { CategoryItem, DeadlineItem, FormItem, DashboardNotification } from '@/types/dashboard';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
 import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 import FormTabs from './FormTabs';
@@ -130,7 +130,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
             </TabsList>
 
             <FormTabs 
-              categories={dashboardData.categories}
+              categories={dashboardData.categories as CategoryItem[]}
               upcoming={dashboardData.upcoming || []}
               pendingForms={dashboardData.pendingForms || []}
             />

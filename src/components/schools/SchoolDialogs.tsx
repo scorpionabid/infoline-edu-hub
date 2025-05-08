@@ -48,6 +48,26 @@ export const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
     setAdminDialogOpen(true);
   };
 
+  // Update school handler
+  const handleUpdateSchool = async (schoolData: School) => {
+    try {
+      const { error } = await supabase
+        .from('schools')
+        .update(schoolData)
+        .eq('id', schoolData.id);
+        
+      if (error) throw error;
+      
+      toast.success(t('schoolUpdated'));
+      refreshSchools();
+    } catch (error: any) {
+      console.error('Error updating school:', error);
+      toast.error(t('errorUpdatingSchool'), {
+        description: error.message,
+      });
+    }
+  };
+
   // Reset admin password
   const handleResetPassword = async (newPassword: string) => {
     if (!selectedSchool?.admin_id) {
@@ -93,6 +113,7 @@ export const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
           isOpen={editOpen}
           onClose={() => setEditOpen(false)}
           school={selectedSchool}
+          onSubmit={handleUpdateSchool}
           onSuccess={refreshSchools}
         />
       )}

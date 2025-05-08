@@ -7,6 +7,11 @@ export interface User {
   name?: string;
   full_name?: string;
   role?: UserRole | string;
+  avatar?: string;
+  position?: string;
+  phone?: string;
+  language?: string;
+  status?: string;
 }
 
 export interface FullUserData {
@@ -34,6 +39,8 @@ export interface FullUserData {
     sms?: boolean;
     deadlineReminders?: boolean;
     system?: boolean;
+    push?: boolean;
+    deadline?: boolean;
   };
   // Əlavə alias adlar JavaScript konvensiyasına uyğun
   regionId?: string;
@@ -64,6 +71,8 @@ export interface UserFormData {
     sms: boolean;
     deadlineReminders: boolean;
     system?: boolean;
+    push?: boolean;
+    deadline?: boolean;
   };
   // Əlavə alias adlar
   name?: string; 
@@ -80,15 +89,19 @@ export interface AuthContextType {
   loading: boolean;
   error: string | null;
   logIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
-  logOut: () => Promise<void>;
-  logout: () => Promise<void>; // logOut üçün alias
-  signOut: () => Promise<void>; // logOut üçün alias
+  login: (email: string, password: string) => Promise<{ user: any; error: any }>;
+  logout: () => Promise<void>;
+  signOut: () => Promise<void>; // logout üçün alias
+  signup: (email: string, password: string, options?: any) => Promise<{ user: any; error: any }>;
   register: (userData: any) => Promise<any>;
   updateUser: (updates: Partial<FullUserData>) => Promise<boolean | void>;
   updateUserProfile?: (userData: Partial<FullUserData>) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<{ data: any; error: any }>;
+  updatePassword: (newPassword: string) => Promise<{ data: any; error: any }>;
+  updateProfile: (data: Partial<FullUserData>) => Promise<{ data: any; error: any }>;
   setError: (error: string | null) => void;
   clearError?: () => void;
+  refreshSession: () => Promise<void>;
   refreshProfile?: () => Promise<FullUserData | null>;
   createUser?: (userData: UserFormData) => Promise<{ data: any; error: any }>;
 }

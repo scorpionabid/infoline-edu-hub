@@ -1,4 +1,10 @@
-import { ColumnType } from '@/types/column';
+import { Column, ColumnOption } from '@/types/column';
+
+// Make sure ColumnOption has id fields
+const statusOptions: ColumnOption[] = [
+  { id: "1", label: "Active", value: "active" },
+  { id: "2", label: "Inactive", value: "inactive" }
+];
 
 export const mockCategories = [
   {

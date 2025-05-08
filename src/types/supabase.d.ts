@@ -1,5 +1,6 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+export type UserRoleData = UserRole;
 
 // Region model
 export interface Region {
@@ -26,6 +27,13 @@ export interface Sector {
   status: 'active' | 'inactive' | string;
   completion_rate?: number;
   region_name?: string; // Added for convenience in UI
+}
+
+// Enhanced sector with additional fields
+export interface EnhancedSector extends Sector {
+  region_name: string;
+  school_count: number;
+  completion_rate: number;
 }
 
 // School model
@@ -60,19 +68,10 @@ export interface SchoolStat extends School {
   formsCompleted: number;
   formsPending: number;
   lastUpdate: string;
-  pendingForms: number; 
+  pendingForms: number;
   completionRate?: number;
   principal?: string;
-  principalName?: string; 
-}
-
-// Enhanced Sector with additional stats
-export interface SectorSchool extends Sector {
-  completionRate?: number;
-  lastUpdate?: string;
-  pendingForms?: number;
-  formsCompleted?: number;
-  totalForms?: number;
+  principalName?: string;
 }
 
 // User related types
@@ -87,6 +86,7 @@ export interface UserReported {
   created_at: string;
 }
 
+// Full User Data for authentication and profile
 export interface FullUserData {
   id: string;
   email: string;
@@ -116,13 +116,9 @@ export interface FullUserData {
 export interface NotificationSettings {
   email: boolean;
   inApp: boolean;
-  sms: boolean;
+  push?: boolean;
+  sms?: boolean;
   system: boolean;
   deadline: boolean;
-}
-
-export interface EnhancedSector extends Sector {
-  region_name: string;
-  school_count: number;
-  completion_rate: number;
+  deadlineReminders?: boolean;
 }

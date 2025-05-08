@@ -16,9 +16,8 @@ export const useAuth = () => {
   return {
     ...context,
     authenticated: context.isAuthenticated,
+    login: context.logIn || context.login,
     logout: context.logout,
-    logIn: context.login,
-    logOut: context.logout,
     signOut: context.logout,
     loading: context.loading,
     setError: (error: string | null) => {

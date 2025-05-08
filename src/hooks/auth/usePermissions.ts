@@ -1,226 +1,72 @@
 
-import { useRole } from '@/context/auth/useRole';
+import { useEffect, useState, useMemo } from 'react';
+import { useAuth } from '@/context/auth';
+import {
+  canViewUsers,
+  canManageUsers,
+  canViewRegions,
+  canManageRegions,
+  canViewSectors,
+  canManageSectors,
+  canViewSchools,
+  canManageSchools,
+  canViewCategories,
+  canManageCategories
+} from './permissionUtils';
 import { UserRole } from '@/types/supabase';
-
-export interface UsePermissionsResult {
-  // Role çekleri
-  isSuperAdmin: boolean;
-  isRegionAdmin: boolean;
-  isSectorAdmin: boolean;
-  isSchoolAdmin: boolean;
-
-  // İstifadəçi məlumatları
-  userRole?: UserRole;
-  userId?: string;
-  regionId?: string | null;
-  sectorId?: string | null;
-  schoolId?: string | null;
-  
-  // İcazə funksiyaları
-  canManageUsers: boolean;
-  canViewUsers: boolean;
-  canManageCategories: boolean;
-  canViewCategories: boolean;
-  canManageSchools: boolean;
-  canViewSchools: boolean;
-  canManageRegions: boolean;
-  canViewRegions: boolean;
-  canManageSectors: boolean;
-  canViewSectors: boolean;
-  canApproveData: boolean;
-  canSubmitData: boolean;
-  canDeleteCategory: boolean;
-  canEditCategory: boolean;
-  canCreateCategory: boolean;
-  canDeleteColumn: boolean;
-  canEditColumn: boolean;
-  canCreateColumn: boolean;
-  
-  // Əlavə edilən funksiyalar
-  checkRegionAccess?: (regionId: string, level?: string) => Promise<boolean>;
-  checkSectorAccess?: (sectorId: string, level?: string) => Promise<boolean>;
-  checkSchoolAccess?: (schoolId: string, level?: string) => Promise<boolean>;
-  checkCategoryAccess?: (categoryId: string, level?: string) => Promise<boolean>;
-  checkColumnAccess?: (columnId: string, level?: string) => Promise<boolean>;
-  canViewSectorCategories?: boolean;
-}
+import { UsePermissionsResult } from './types';
 
 export const usePermissions = (): UsePermissionsResult => {
-  const { role, user } = useRole();
+  const { user, isAuthenticated } = useAuth();
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [regionId, setRegionId] = useState<string | null>(null);
+  const [sectorId, setSectorId] = useState<string | null>(null);
+  const [schoolId, setSchoolId] = useState<string | null>(null);
 
-  const isSuperAdmin = role === 'superadmin';
-  const isRegionAdmin = role === 'regionadmin';
-  const isSectorAdmin = role === 'sectoradmin';
-  const isSchoolAdmin = role === 'schooladmin';
+  useEffect(() => {
+    if (user) {
+      // Extract the role from the user object (ensuring it's a valid UserRole)
+      const role = user.role as UserRole;
+      setUserRole(role);
+      
+      // Extract IDs from the user object, checking both camelCase and snake_case properties
+      setRegionId(user.region_id || user.regionId || null);
+      setSectorId(user.sector_id || user.sectorId || null);
+      setSchoolId(user.school_id || user.schoolId || null);
+    } else {
+      setUserRole(null);
+      setRegionId(null);
+      setSectorId(null);
+      setSchoolId(null);
+    }
+  }, [user]);
 
-  const userId = user?.id;
-  const regionId = user?.region_id;
-  const sectorId = user?.sector_id;
-  const schoolId = user?.school_id;
-
-  // Superadmin hər şeyə icazəsi var
-  if (isSuperAdmin) {
+  const permissions = useMemo(() => {
     return {
-      isSuperAdmin: true,
-      isRegionAdmin: false,
-      isSectorAdmin: false,
-      isSchoolAdmin: false,
-      userRole: 'superadmin',
-      userId,
+      canViewUsers: canViewUsers(userRole),
+      canManageUsers: canManageUsers(userRole),
+      canViewRegions: canViewRegions(userRole),
+      canManageRegions: canManageRegions(userRole),
+      canViewSectors: canViewSectors(userRole),
+      canManageSectors: canManageSectors(userRole),
+      canViewSchools: canViewSchools(userRole),
+      canManageSchools: canManageSchools(userRole),
+      canViewCategories: canViewCategories(userRole),
+      canManageCategories: canManageCategories(userRole),
+      isAuthenticated,
+      isSuper: userRole === 'superadmin',
+      isRegionAdmin: userRole === 'regionadmin',
+      isSectorAdmin: userRole === 'sectoradmin',
+      isSchoolAdmin: userRole === 'schooladmin',
+      userRole,
       regionId,
       sectorId,
-      schoolId,
-      canManageUsers: true,
-      canViewUsers: true,
-      canManageCategories: true,
-      canViewCategories: true,
-      canManageSchools: true,
-      canViewSchools: true,
-      canManageRegions: true,
-      canViewRegions: true,
-      canManageSectors: true,
-      canViewSectors: true,
-      canApproveData: true,
-      canSubmitData: true,
-      canDeleteCategory: true,
-      canEditCategory: true,
-      canCreateCategory: true,
-      canDeleteColumn: true,
-      canEditColumn: true,
-      canCreateColumn: true,
-      canViewSectorCategories: true
+      schoolId
     };
-  }
+  }, [userRole, isAuthenticated, regionId, sectorId, schoolId]);
 
-  // RegionAdmin icazələri
-  if (isRegionAdmin) {
-    return {
-      isSuperAdmin: false,
-      isRegionAdmin: true,
-      isSectorAdmin: false,
-      isSchoolAdmin: false,
-      userRole: 'regionadmin',
-      userId,
-      regionId,
-      sectorId,
-      schoolId,
-      canManageUsers: true,
-      canViewUsers: true,
-      canManageCategories: true,
-      canViewCategories: true,
-      canManageSchools: true,
-      canViewSchools: true,
-      canManageRegions: false,
-      canViewRegions: true,
-      canManageSectors: true,
-      canViewSectors: true,
-      canApproveData: true,
-      canSubmitData: false,
-      canDeleteCategory: true,
-      canEditCategory: true,
-      canCreateCategory: true,
-      canDeleteColumn: true,
-      canEditColumn: true,
-      canCreateColumn: true,
-      canViewSectorCategories: true
-    };
-  }
-
-  // SectorAdmin icazələri
-  if (isSectorAdmin) {
-    return {
-      isSuperAdmin: false,
-      isRegionAdmin: false,
-      isSectorAdmin: true,
-      isSchoolAdmin: false,
-      userRole: 'sectoradmin',
-      userId,
-      regionId,
-      sectorId,
-      schoolId,
-      canManageUsers: false,
-      canViewUsers: true,
-      canManageCategories: false,
-      canViewCategories: true,
-      canManageSchools: true,
-      canViewSchools: true,
-      canManageRegions: false,
-      canViewRegions: true,
-      canManageSectors: false,
-      canViewSectors: true,
-      canApproveData: true,
-      canSubmitData: false,
-      canDeleteCategory: false,
-      canEditCategory: false,
-      canCreateCategory: false,
-      canDeleteColumn: false,
-      canEditColumn: false,
-      canCreateColumn: false,
-      canViewSectorCategories: true
-    };
-  }
-
-  // SchoolAdmin icazələri
-  if (isSchoolAdmin) {
-    return {
-      isSuperAdmin: false,
-      isRegionAdmin: false,
-      isSectorAdmin: false,
-      isSchoolAdmin: true,
-      userRole: 'schooladmin',
-      userId,
-      regionId,
-      sectorId,
-      schoolId,
-      canManageUsers: false,
-      canViewUsers: false,
-      canManageCategories: false,
-      canViewCategories: true,
-      canManageSchools: false,
-      canViewSchools: false,
-      canManageRegions: false,
-      canViewRegions: false,
-      canManageSectors: false,
-      canViewSectors: false,
-      canApproveData: false,
-      canSubmitData: true,
-      canDeleteCategory: false,
-      canEditCategory: false,
-      canCreateCategory: false,
-      canDeleteColumn: false,
-      canEditColumn: false,
-      canCreateColumn: false,
-      canViewSectorCategories: false
-    };
-  }
-
-  // Default olaraq heç bir icazə yoxdur
-  return {
-    isSuperAdmin: false,
-    isRegionAdmin: false,
-    isSectorAdmin: false,
-    isSchoolAdmin: false,
-    userId,
-    regionId,
-    sectorId,
-    schoolId,
-    canManageUsers: false,
-    canViewUsers: false,
-    canManageCategories: false,
-    canViewCategories: false,
-    canManageSchools: false,
-    canViewSchools: false,
-    canManageRegions: false,
-    canViewRegions: false,
-    canManageSectors: false,
-    canViewSectors: false,
-    canApproveData: false,
-    canSubmitData: false,
-    canDeleteCategory: false,
-    canEditCategory: false,
-    canCreateCategory: false,
-    canDeleteColumn: false,
-    canEditColumn: false,
-    canCreateColumn: false
-  };
+  return permissions;
 };
+
+export type { UsePermissionsResult };
+export default usePermissions;

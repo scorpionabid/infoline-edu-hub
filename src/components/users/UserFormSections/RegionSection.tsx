@@ -1,65 +1,50 @@
+
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserFormData } from '@/types/user';
-import { Region } from '@/types/supabase';
-import { Role } from '@/context/auth/types';
+import { useLanguage } from '@/context/LanguageContext';
+import { Region } from '@/types/region';
+import { Control } from 'react-hook-form';
 
 interface RegionSectionProps {
-  form: any;
-  data: UserFormData;
-  onFormChange: (fieldName: string, value: any) => void;
-  isSuperAdmin: boolean;
-  currentUserRole?: Role;
-  regions: { id: string; name: string }[];
-  hideSection?: boolean;
+  control: Control<any>;
+  regions: Region[];
+  disabled?: boolean;
 }
 
 const RegionSection: React.FC<RegionSectionProps> = ({
-  form,
-  data,
-  onFormChange,
-  isSuperAdmin,
-  currentUserRole,
+  control,
   regions,
-  hideSection = false,
+  disabled = false,
 }) => {
   const { t } = useLanguage();
 
-  if (hideSection || !(isSuperAdmin && (data.role === 'regionadmin' || data.role === 'sectoradmin' || data.role === 'schooladmin'))) {
-    return null;
-  }
-
   return (
     <FormField
-      control={form.control}
-      name="regionId"
+      control={control}
+      name="region_id"
       render={({ field }) => (
         <FormItem>
           <FormLabel>{t('region')}</FormLabel>
-          <Select
-            value={data.region_id || "none"}
-            onValueChange={(value) => {
-              field.onChange(value === "none" ? null : value);
-              onFormChange('region_id', value === "none" ? null : value);
-            }}
-            disabled={(!isSuperAdmin && currentUserRole !== 'regionadmin') || regions.length === 0}
-          >
-            <FormControl>
+          <FormControl>
+            <Select
+              value={field.value || ''}
+              onValueChange={field.onChange}
+              disabled={disabled}
+            >
               <SelectTrigger>
                 <SelectValue placeholder={t('selectRegion')} />
               </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectItem value="none">{t('selectRegion')}</SelectItem>
-              {regions.map((region) => (
-                <SelectItem key={region.id} value={region.id}>
-                  {region.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectContent>
+                <SelectItem value="">{t('selectRegion')}</SelectItem>
+                {regions.map((region) => (
+                  <SelectItem key={region.id} value={region.id}>
+                    {region.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormControl>
           <FormMessage />
         </FormItem>
       )}

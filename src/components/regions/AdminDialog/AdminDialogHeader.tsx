@@ -2,7 +2,7 @@
 import React from 'react';
 import { DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useLanguage } from '@/context/LanguageContext';
-import { Region } from '@/types/supabase';
+import { Region } from '@/types/region';
 
 interface AdminDialogHeaderProps {
   region: Region;
