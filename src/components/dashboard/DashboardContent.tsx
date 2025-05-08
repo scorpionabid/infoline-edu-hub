@@ -7,13 +7,12 @@ import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
 import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
 import { 
-  DashboardStats, 
+  DashboardStatus, 
   RegionAdminDashboardData, 
   SectorAdminDashboardData, 
   SchoolAdminDashboardData, 
   SuperAdminDashboardData,
-  CompletionData,
-  DashboardStatus
+  DashboardCompletion
 } from '@/types/dashboard';
 
 const DashboardContent: React.FC = () => {
@@ -47,7 +46,9 @@ const DashboardContent: React.FC = () => {
       approved: 0,
       rejected: 0,
       draft: 0,
-      total: 0
+      total: 0,
+      active: 0, 
+      inactive: 0
     },
     categories: [],
     sectors: [],
@@ -67,7 +68,9 @@ const DashboardContent: React.FC = () => {
       approved: 0,
       rejected: 0,
       draft: 0,
-      total: 0
+      total: 0,
+      active: 0,
+      inactive: 0
     },
     pendingApprovals: [],
     notifications: []
@@ -84,7 +87,9 @@ const DashboardContent: React.FC = () => {
       approved: 0,
       rejected: 0,
       draft: 0,
-      total: 0
+      total: 0,
+      active: 0,
+      inactive: 0
     },
     categories: [],
     upcoming: [],
@@ -94,9 +99,9 @@ const DashboardContent: React.FC = () => {
       rejected: 0,
       draft: 0,
       total: 0,
-      incomplete: 0,
       dueSoon: 0,
-      overdue: 0
+      overdue: 0,
+      incomplete: 0
     },
     pendingForms: [],
     completionRate: 0,
@@ -139,7 +144,9 @@ const DashboardContent: React.FC = () => {
           approved: 73,
           rejected: 8,
           draft: 7,
-          total: 100
+          total: 100,
+          active: 80,
+          inactive: 20
         },
         categories: [],
         sectors: [
@@ -164,7 +171,9 @@ const DashboardContent: React.FC = () => {
           approved: 42,
           rejected: 3,
           draft: 0,
-          total: 50
+          total: 50,
+          active: 45,
+          inactive: 5
         },
         pendingApprovals: [],
         notifications: []
@@ -182,7 +191,9 @@ const DashboardContent: React.FC = () => {
           approved: 8,
           rejected: 0,
           draft: 1,
-          total: 10
+          total: 10,
+          active: 9,
+          inactive: 1
         },
         categories: [],
         upcoming: [],
@@ -192,9 +203,9 @@ const DashboardContent: React.FC = () => {
           rejected: 0,
           draft: 1,
           total: 10,
-          incomplete: 2,
-          dueSoon: 1,
-          overdue: 0
+          dueSoon: 2,
+          overdue: 0,
+          incomplete: 2
         },
         pendingForms: [],
         completionRate: 80,

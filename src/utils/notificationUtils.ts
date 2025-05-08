@@ -1,53 +1,51 @@
 
-import { AppNotification, DashboardNotification } from "@/types/notification";
+import { AppNotification, DashboardNotification } from '@/types/notification';
 
-// DashboardNotification -> AppNotification adaptasiyası
-export const adaptDashboardToAppNotification = (notification: Partial<DashboardNotification>): AppNotification => {
+// DashboardNotification-ı AppNotification-a çevirmək üçün adaptasiya funksiyası
+export const adaptDashboardNotificationToApp = (
+  notification: DashboardNotification
+): AppNotification => {
   return {
-    id: notification.id || '',
-    title: notification.title || '',
-    message: notification.message || '',
-    createdAt: notification.createdAt || notification.date || new Date().toISOString(),
+    id: notification.id,
+    title: notification.title,
+    message: notification.message,
+    createdAt: notification.createdAt || notification.date || notification.timestamp || new Date().toISOString(),
     isRead: notification.isRead || notification.read || false,
     read: notification.read || notification.isRead || false,
-    type: notification.type || 'info',
+    type: notification.type,
+    priority: notification.priority,
     link: notification.link,
     category: notification.category,
-    priority: normalizePriority(notification.priority),
-    timestamp: notification.timestamp || notification.date || new Date().toISOString(),
-    date: notification.date || notification.createdAt || new Date().toISOString(),
+    timestamp: notification.timestamp || notification.createdAt || notification.date,
+    date: notification.date || notification.createdAt || notification.timestamp,
     entity: notification.entity
   };
 };
 
-// AppNotification -> DashboardNotification adaptasiyası
-export const adaptAppToDashboardNotification = (notification: Partial<AppNotification>): DashboardNotification => {
+// Birden çox bildirişi çevirmək üçün köməkçi funksiya
+export const adaptDashboardNotificationsToApp = (
+  notifications: DashboardNotification[]
+): AppNotification[] => {
+  return notifications.map(adaptDashboardNotificationToApp);
+};
+
+// AppNotification-ı DashboardNotification-a çevirmək üçün adaptasiya funksiyası
+export const adaptAppNotificationToDashboard = (
+  notification: AppNotification
+): DashboardNotification => {
   return {
-    id: notification.id || '',
-    title: notification.title || '',
-    message: notification.message || '',
+    id: notification.id,
+    title: notification.title,
+    message: notification.message,
     date: notification.date || notification.createdAt || notification.timestamp || new Date().toISOString(),
     isRead: notification.isRead || notification.read || false,
     read: notification.read || notification.isRead || false,
-    type: notification.type || 'info',
+    type: notification.type,
+    priority: notification.priority,
     link: notification.link,
     category: notification.category,
-    priority: normalizePriority(notification.priority),
     createdAt: notification.createdAt || notification.date || notification.timestamp,
-    timestamp: notification.timestamp || notification.date || notification.createdAt,
+    timestamp: notification.timestamp || notification.createdAt || notification.date,
     entity: notification.entity
   };
-};
-
-// Tiplərin normal işləməsi üçün priority xassəsinin validasiyası
-export const normalizePriority = (priority: any): 'normal' | 'high' | 'critical' | 'low' | 'medium' => {
-  if (priority === 'low' || priority === 'medium') {
-    return priority;
-  }
-  
-  if (priority === 'high' || priority === 'critical') {
-    return priority;
-  }
-  
-  return 'normal'; // default priority
 };

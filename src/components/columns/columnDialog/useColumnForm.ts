@@ -45,6 +45,10 @@ export const useColumnForm = ({
   const [isOptionsMode, setIsOptionsMode] = useState(
     column?.type === 'select' || column?.type === 'radio' || column?.type === 'checkbox'
   );
+  const [options, setOptions] = useState<{id: string; label: string; value: string}[]>([]);
+  const [newOption, setNewOption] = useState('');
+  const [selectedType, setSelectedType] = useState(column?.type || 'text');
+  const [isEditMode, setIsEditMode] = useState(Boolean(column));
 
   // Form yaratma
   const form = useForm<ColumnFormValues>({
@@ -67,6 +71,33 @@ export const useColumnForm = ({
           category_id: categoryId,
         },
   });
+
+  // Option əlavə etmək funksiyası
+  const addOption = () => {
+    if (!newOption.trim()) return;
+    
+    const option = {
+      id: crypto.randomUUID(),
+      label: newOption,
+      value: newOption.toLowerCase().replace(/\s+/g, '_')
+    };
+    
+    setOptions([...options, option]);
+    setNewOption('');
+    
+    // Form options dəyərini yeniləyək
+    const currentOptions = form.getValues('options') || [];
+    form.setValue('options', [...currentOptions, option]);
+  };
+
+  // Option silmək funksiyası
+  const removeOption = (id: string) => {
+    const updatedOptions = options.filter(opt => opt.id !== id);
+    setOptions(updatedOptions);
+    
+    // Form options dəyərini yeniləyək
+    form.setValue('options', updatedOptions);
+  };
 
   // Tip dəyişdikdə təsdiqlənmə qaydalarını yeniləmək
   const updateValidationByType = (type: string) => {
@@ -104,6 +135,7 @@ export const useColumnForm = ({
 
   // Tip dəyişdikdə optionsMode ayarla
   const onTypeChange = (type: string) => {
+    setSelectedType(type);
     const isOption = type === 'select' || type === 'radio' || type === 'checkbox';
     setIsOptionsMode(isOption);
     
@@ -113,13 +145,13 @@ export const useColumnForm = ({
     // Əgər options tipinə keçirsə və options mövcud deyilsə, 
     // varsayılan bir option əlavə et
     if (isOption && (!form.getValues('options') || form.getValues('options')?.length === 0)) {
-      form.setValue('options', [
-        {
-          id: crypto.randomUUID(),
-          label: 'Option 1',
-          value: 'option_1',
-        },
-      ]);
+      const defaultOption = {
+        id: crypto.randomUUID(),
+        label: 'Option 1',
+        value: 'option_1',
+      };
+      setOptions([defaultOption]);
+      form.setValue('options', [defaultOption]);
     }
   };
 
@@ -135,7 +167,7 @@ export const useColumnForm = ({
       if (isOptionsMode && (!submissionValues.options || submissionValues.options.length === 0)) {
         toast.error('Ən azı bir seçim əlavə edilməlidir');
         setIsLoading(false);
-        return;
+        return false;
       }
 
       // Validation obyekti üçün təsdiqləmə
@@ -152,17 +184,27 @@ export const useColumnForm = ({
         const result = await onSave(submissionValues);
         if (result && onSuccess) {
           onSuccess(result);
+          return true;
         }
       }
 
       toast.success(column ? 'Sütun yeniləndi' : 'Sütun yaradıldı');
+      return true;
     } catch (error) {
       console.error('Form təqdim edilərkən xəta:', error);
       toast.error('Sütun saxlanılarkən xəta baş verdi');
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Mevcut data varsa options'ları yükləmə
+  useEffect(() => {
+    if (column?.options) {
+      setOptions(column.options);
+    }
+  }, [column]);
 
   // Tip dəyişdikdə onTypeChange çağırın
   useEffect(() => {
@@ -179,8 +221,15 @@ export const useColumnForm = ({
     form,
     isLoading,
     isOptionsMode,
-    onSubmit: form.handleSubmit(onSubmit),
+    onSubmit,
     onTypeChange,
+    selectedType,
+    options,
+    addOption,
+    removeOption,
+    newOption,
+    setNewOption,
+    isEditMode
   };
 };
 

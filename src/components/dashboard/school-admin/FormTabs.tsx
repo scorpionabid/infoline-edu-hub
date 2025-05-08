@@ -60,11 +60,11 @@ const FormTabs: React.FC<FormTabsProps> = ({
               <Card 
                 key={item.id} 
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => handleFormClick(item.categoryId)}
+                onClick={() => handleFormClick(item.id)}
               >
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium">{item.categoryName || item.category}</h3>
+                    <h3 className="font-medium">{item.categoryName || item.name}</h3>
                     {getStatusBadge(item.status)}
                   </div>
                   <div className="text-sm text-muted-foreground flex gap-2 items-center mb-2">
@@ -104,11 +104,11 @@ const FormTabs: React.FC<FormTabsProps> = ({
               <Card 
                 key={form.id} 
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => handleFormClick(form.categoryId)}
+                onClick={() => handleFormClick(form.id)}
               >
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium">{form.title || form.categoryName || form.category}</h3>
+                    <h3 className="font-medium">{form.title || form.name || form.categoryName}</h3>
                     {getStatusBadge(form.status)}
                   </div>
                   {form.deadline && (
@@ -117,11 +117,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
                       <span>Son tarix: {formatDate(form.deadline)}</span>
                     </div>
                   )}
-                  {form.submittedAt && (
-                    <div className="text-sm text-muted-foreground mt-1">
-                      Təqdim edilib: {formatDate(form.submittedAt)}
-                    </div>
-                  )}
+                  {/* submittedAt xassəsi olmadığı üçün onu istifadə etmirik */}
                 </CardContent>
               </Card>
             ))}
@@ -154,16 +150,16 @@ const FormTabs: React.FC<FormTabsProps> = ({
                   {(category.deadline || category.dueDate) && (
                     <div className="text-sm text-muted-foreground flex gap-2 items-center mb-2">
                       <Calendar className="h-4 w-4" />
-                      <span>Son tarix: {formatDate(category.deadline || category.dueDate || '')}</span>
+                      <span>Son tarix: {formatDate(category.deadline || '')}</span>
                     </div>
                   )}
                   
                   <div className="mt-2">
                     <div className="flex justify-between text-sm mb-1">
                       <span>Tamamlama</span>
-                      <span>{category.completionRate || category.progress || 0}%</span>
+                      <span>{category.completionRate || 0}%</span>
                     </div>
-                    <Progress value={category.completionRate || category.progress || 0} className="h-2" />
+                    <Progress value={category.completionRate || 0} className="h-2" />
                   </div>
                 </CardContent>
               </Card>
