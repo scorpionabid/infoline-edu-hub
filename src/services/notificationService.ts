@@ -98,3 +98,6 @@ export const getUserNotifications = async (userId: string) => {
     throw error;
   }
 };
+
+// Alias for getUserNotifications for backward compatibility
+export const getNotifications = getUserNotifications;

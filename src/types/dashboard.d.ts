@@ -112,14 +112,24 @@ export interface CategoryStat {
   updatedAt: string;
 }
 
-export type ReportType = 'statistics' | 'completion' | 'comparison' | 'custom' | 'school' | 'category' | 'basic';
+export type ReportType = 'statistics' | 'completion' | 'comparison' | 'custom' | 'school' | 'category' | 'basic' | 'bar' | 'pie' | 'line' | 'table';
 
 export interface Report {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   type: ReportType;
-  createdAt: Date;
-  updatedAt: Date;
-  createdBy: string;
+  status?: 'draft' | 'published' | 'archived';
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  createdBy?: string;
+  category?: string;
+  sharedWith?: string[];
+  content?: any;
+  filters?: any;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  is_template?: boolean;
+  shared_with?: string[];
 }

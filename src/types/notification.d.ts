@@ -3,40 +3,28 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  createdAt: string;
-  read: boolean;
   type: NotificationType;
-  relatedEntityId?: string;
-  relatedEntityType?: string;
+  read: boolean;
+  date: string;
+  user_id: string;
+  created_at?: string;
+  related_entity_id?: string;
+  related_entity_type?: string;
 }
 
-export type NotificationType = 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval';
+export type NotificationType = 
+  | 'info' 
+  | 'warning' 
+  | 'error' 
+  | 'success'
+  | 'deadline'
+  | 'approval'
+  | 'rejection'
+  | 'system';
 
-export function adaptDashboardNotificationToApp(notification: any): Notification {
-  return {
-    id: notification.id,
-    title: notification.title || '',
-    message: notification.message || '',
-    createdAt: notification.date || notification.created_at || new Date().toISOString(),
-    read: notification.read || false,
-    type: notification.type || 'info',
-    relatedEntityId: notification.related_entity_id,
-    relatedEntityType: notification.related_entity_type
-  };
+export interface NotificationFilters {
+  read?: boolean;
+  type?: NotificationType | NotificationType[];
+  startDate?: string;
+  endDate?: string;
 }
-
-export function adaptAppNotificationToDashboard(notification: Notification): any {
-  return {
-    id: notification.id,
-    title: notification.title,
-    message: notification.message,
-    date: notification.createdAt,
-    read: notification.read,
-    type: notification.type,
-    related_entity_id: notification.relatedEntityId,
-    related_entity_type: notification.relatedEntityType
-  };
-}
-
-export const adaptDashboardToAppNotification = adaptDashboardNotificationToApp;
-export const adaptAppToDashboardNotification = adaptAppNotificationToDashboard;

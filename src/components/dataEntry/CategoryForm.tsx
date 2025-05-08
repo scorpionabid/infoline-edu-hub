@@ -30,7 +30,6 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId }) => {
           id: categoryId,
           name: 'Sample Category',
           description: 'This is a sample category for data entry',
-          completionRate: 0,
           status: 'active',
           columns: [
             {
@@ -51,7 +50,8 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId }) => {
               placeholder: 'Enter your age',
               status: 'active'
             }
-          ]
+          ],
+          completionRate: 0
         };
         
         setCategory(mockCategory);

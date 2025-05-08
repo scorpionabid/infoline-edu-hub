@@ -1,8 +1,9 @@
+
 import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from './useAuthStore';
-import { FullUserData } from '@/types/supabase';
+import { FullUserData } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
-import { UserRole } from '@/types/supabase';
+import { UserRole } from '@/types/user';
 
 const useOptimizedAuth = () => {
   const { 
@@ -109,7 +110,6 @@ const useOptimizedAuth = () => {
         id: userId,
         email: data.email,
         full_name: data.full_name,
-        name: data.full_name,
         phone: data.phone,
         role: role,
         region_id: region_id,
@@ -123,11 +123,8 @@ const useOptimizedAuth = () => {
         language: data.language || 'az',
         status: data.status || 'active',
         last_login: data.last_login,
-        lastLogin: data.last_login,
         created_at: data.created_at,
-        createdAt: data.created_at,
-        updated_at: data.updated_at,
-        updatedAt: data.updated_at
+        updated_at: data.updated_at
       };
 
       setUser(userData);
@@ -144,8 +141,6 @@ const useOptimizedAuth = () => {
       id: userData.id,
       email: userData.email,
       full_name: userData.full_name || userData.user_metadata?.full_name,
-      fullName: userData.full_name || userData.user_metadata?.full_name,
-      name: userData.full_name || userData.user_metadata?.full_name, // Support name property
       avatar: userData.avatar,
       role: userData.role,
       status: userData.status,
@@ -159,11 +154,8 @@ const useOptimizedAuth = () => {
       phone: userData.phone,
       position: userData.position,
       last_login: userData.last_login,
-      lastLogin: userData.last_login,
       created_at: userData.created_at,
-      createdAt: userData.created_at,
       updated_at: userData.updated_at,
-      updatedAt: userData.updated_at,
       notificationSettings: userData.notification_settings
     };
   };

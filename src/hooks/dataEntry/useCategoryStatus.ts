@@ -1,8 +1,8 @@
 
 import { useMemo } from 'react';
-import { CategoryWithEntries } from '@/types/column';
+import { CategoryWithColumns } from '@/types/column';
 
-export function useCategoryStatus(category: CategoryWithEntries | null) {
+export function useCategoryStatus(category: CategoryWithColumns | null) {
   const isComplete = useMemo(() => {
     if (!category) return false;
     return category.completionRate === 100;
@@ -10,7 +10,7 @@ export function useCategoryStatus(category: CategoryWithEntries | null) {
 
   const isPending = useMemo(() => {
     if (!category) return false;
-    return category.completionRate > 0 && category.completionRate < 100;
+    return category.completionRate && category.completionRate > 0 && category.completionRate < 100;
   }, [category]);
 
   const status = useMemo(() => {
