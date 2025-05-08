@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Report, ReportType } from '@/types/report';
 
@@ -88,7 +89,7 @@ export const useMockReports = () => {
     }
   ]);
 
-  const createReport = useCallback((reportData: Omit<Report, 'id' | 'createdAt' | 'updatedAt' | 'type'>>) => {
+  const createReport = useCallback((reportData: Omit<Report, 'id' | 'createdAt' | 'updatedAt' | 'type'>) => {
     const newReport: Report = {
       id: Math.random().toString(36).substring(2, 9),
       ...reportData,
