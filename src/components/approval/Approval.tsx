@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, RefreshCw, Info } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PendingApproval } from '@/types/dashboard';
@@ -18,7 +17,7 @@ const Approval: React.FC = () => {
   const { t } = useLanguageSafe();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { canApproveData, currentRole } = usePermissions();
+  const { canApproveData, userRole } = usePermissions(); // currentRole -> userRole
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
 

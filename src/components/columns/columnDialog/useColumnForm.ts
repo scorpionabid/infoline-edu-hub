@@ -158,6 +158,7 @@ export const useColumnForm = (
           email: values.validation.email,
           url: values.validation.url,
           tel: values.validation.tel,
+          required: values.is_required, // Added required field
           minDate: values.validation.minDate || undefined,
           maxDate: values.validation.maxDate || undefined,
         },

@@ -29,12 +29,12 @@ const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
     try {
       setIsSubmitting(true);
       
-      const result = await updateSchool({
+      const result = await updateSchool(school.id, {
         ...data,
         id: school.id
       });
       
-      if (result.error) {
+      if (result?.error) {
         toast.error(t('schoolUpdateError'), {
           description: result.error.message || t('unknownError')
         });

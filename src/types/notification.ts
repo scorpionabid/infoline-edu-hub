@@ -27,6 +27,7 @@ export interface DashboardNotification {
   message: string;
   date: string;
   read: boolean;
+  isRead?: boolean; // İki interfeys arasında uyğunluq təmin etmək üçün
   type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
   link?: string;
   category?: string;
@@ -54,7 +55,7 @@ export const adaptDashboardNotificationToApp = (notification: DashboardNotificat
     title: notification.title,
     message: notification.message,
     date: notification.date,
-    read: notification.read,
+    read: notification.read || notification.isRead || false,
     type: notification.type,
     link: notification.link,
     category: notification.category,
@@ -75,6 +76,7 @@ export const adaptAppNotificationToDashboard = (notification: AppNotification): 
     message: notification.message,
     date: notification.date,
     read: notification.read ?? notification.isRead ?? false,
+    isRead: notification.isRead ?? notification.read ?? false,
     type: notification.type,
     link: notification.link,
     category: notification.category,

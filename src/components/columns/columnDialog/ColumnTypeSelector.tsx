@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { FormControl } from '@/components/ui/form';
-import { ColumnType, columnTypes } from '@/types/column';
+import { ColumnType, columnTypeDefinitions } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -60,7 +60,7 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange
   const { t } = useLanguage();
 
   // Bütün mövcud tipləri əldə edirik və ikonları React komponentlərinə çeviririk
-  const availableColumnTypes = Object.entries(columnTypes).map(([type, definition]) => {
+  const availableColumnTypes = Object.entries(columnTypeDefinitions).map(([type, definition]) => {
     // İkon adını React komponentinə çeviririk
     const IconComponent = iconMap[definition.icon as keyof typeof iconMap] || Text;
     

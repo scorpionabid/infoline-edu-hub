@@ -39,28 +39,28 @@ const FormTabs: React.FC<FormTabsProps> = ({
               <Card key={item.id} className="overflow-hidden">
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="flex justify-between">
-                    <div>{item.title}</div>
-                    {getDaysRemainingBadge(item.daysRemaining)}
+                    <div>{item.title || item.categoryName}</div>
+                    {getDaysRemainingBadge(item.daysRemaining || 0)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 space-y-2">
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <div>{t('deadline')}: {formatDate(item.deadline)}</div>
-                    <div>{t('categoryId')}: {item.categoryId}</div>
+                    <div>{t('categoryId')}: {item.categoryId || item.id}</div>
                   </div>
                   <Progress
-                    value={item.completionRate}
+                    value={item.completionRate || 0}
                     className="h-2"
                   />
                   <div className="flex justify-end">
                     <div className="text-xs text-muted-foreground">
-                      {Math.round(item.completionRate)}% {t('completed')}
+                      {Math.round(item.completionRate || 0)}% {t('completed')}
                     </div>
                   </div>
                 </CardContent>
                 <CardFooter className="p-4 pt-0 flex justify-end">
                   <Button 
-                    onClick={() => handleNavigateToForm(item.categoryId)}
+                    onClick={() => handleNavigateToForm(item.categoryId || item.id)}
                   >
                     {t('goToForm')}
                   </Button>
@@ -100,8 +100,8 @@ const FormTabs: React.FC<FormTabsProps> = ({
                 {pendingForms.length > 0 ? (
                   pendingForms.map(form => (
                     <TableRow key={form.id}>
-                      <TableCell>{form.title}</TableCell>
-                      <TableCell>{form.category}</TableCell>
+                      <TableCell>{form.title || form.name || form.categoryName}</TableCell>
+                      <TableCell>{form.category || form.categoryName}</TableCell>
                       <TableCell>
                         <Badge 
                           variant="outline" 
@@ -114,7 +114,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleNavigateToForm(form.categoryId)}
+                          onClick={() => handleNavigateToForm(form.categoryId || form.id)}
                         >
                           {t('continue')}
                         </Button>
@@ -152,16 +152,16 @@ const FormTabs: React.FC<FormTabsProps> = ({
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
                     <Progress
-                      value={category.progress}
+                      value={category.progress || category.completionPercentage || 0}
                       className="h-2 my-2"
                     />
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">
-                        {Math.round(category.progress)}% {t('completed')}
+                        {Math.round(category.progress || category.completionPercentage || 0)}% {t('completed')}
                       </span>
-                      {category.dueDate && (
+                      {(category.dueDate || category.deadline) && (
                         <span className="text-muted-foreground">
-                          {t('due')}: {formatDate(category.dueDate)}
+                          {t('due')}: {formatDate(category.dueDate || category.deadline)}
                         </span>
                       )}
                     </div>

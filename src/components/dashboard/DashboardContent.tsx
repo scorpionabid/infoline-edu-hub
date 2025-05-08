@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useLanguage } from '@/context/LanguageContext';
@@ -135,9 +134,9 @@ const DashboardContent: React.FC = () => {
         },
         categories: [],
         sectors: [
-          { id: '1', name: 'Bakı şəhəri', completionRate: 75, schoolsCount: 150 },
-          { id: '2', name: 'Sumqayıt şəhəri', completionRate: 62, schoolsCount: 75 },
-          { id: '3', name: 'Gəncə şəhəri', completionRate: 48, schoolsCount: 52 }
+          { id: '1', name: 'Bakı şəhəri', completionRate: 75, schoolCount: 150, schoolsCount: 150 },
+          { id: '2', name: 'Sumqayıt şəhəri', completionRate: 62, schoolCount: 75, schoolsCount: 75 },
+          { id: '3', name: 'Gəncə şəhəri', completionRate: 48, schoolCount: 52, schoolsCount: 52 }
         ],
         notifications: [],
         pendingApprovals: []

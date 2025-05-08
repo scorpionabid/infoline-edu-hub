@@ -71,7 +71,7 @@ export interface PendingApproval {
   categoryName: string;
   submittedBy: string;
   submittedAt: string;
-  date?: string; // Added date property to fix errors
+  date: string; // Added date property to fix errors
   status: 'pending' | 'approved' | 'rejected';
   schoolId?: string;
   categoryId?: string;
@@ -104,19 +104,23 @@ export interface DashboardNotification {
   message: string;
   date: string;
   isRead: boolean;
+  read: boolean; // Added to accommodate all uses
   type: 'info' | 'warning' | 'error' | 'success';
   priority?: 'low' | 'medium' | 'high';
 }
 
 // Kateqoriyalar tipi
-export interface DashboardCategory {
+export interface CategoryItem {
   id: string;
   name: string;
   description?: string;
-  submissionCount: number;
-  completionPercentage: number;
+  submissionCount?: number;
+  completionPercentage?: number;
   deadline?: string;
+  dueDate?: string; // Əlavə edildi
   status: string;
+  progress: number; // Əlavə edildi
+  categoryId?: string; // Əlavə edildi
 }
 
 // Məktəb statistikası tipi
@@ -142,6 +146,10 @@ export interface PendingForm {
   categoryName: string;
   deadline?: string;
   status: string;
+  categoryId?: string; // Added for FormTabs
+  name?: string; // Added to make it compatible with FormItem
+  title?: string; // Added for FormTabs
+  category?: string; // Added for FormTabs
 }
 
 export interface UpcomingDeadline {
@@ -149,6 +157,17 @@ export interface UpcomingDeadline {
   categoryName: string;
   deadline: string;
   status: string;
+  title?: string; // Added for FormTabs
+  completionRate?: number; // Added for FormTabs
+  daysRemaining?: number; // Added for FormTabs
+  categoryId?: string; // Added for FormTabs
+}
+
+export interface DeadlineItem extends UpcomingDeadline {
+  title: string;
+  daysRemaining: number;
+  completionRate: number;
+  categoryId: string;
 }
 
 export interface FormItem {
@@ -157,23 +176,9 @@ export interface FormItem {
   deadline?: string;
   status: string;
   completionRate?: number;
-}
-
-export interface DeadlineItem {
-  id: string;
-  categoryName: string;
-  deadline: string;
-  status: string;
-}
-
-export interface CategoryItem {
-  id: string;
-  name: string;
-  description?: string;
-  status: string;
-  completionPercentage: number;
-  deadline?: string;
-  columnsCount?: number;
+  categoryId: string; // Added for FormTabs
+  title: string; // Added for FormTabs
+  category: string; // Added for FormTabs
 }
 
 // Dashboard verilənləri tiplər
@@ -183,8 +188,8 @@ export interface SchoolAdminDashboardData {
   formStats?: DashboardFormStats;
   forms?: DashboardFormStats;
   categories: CategoryItem[];
-  upcoming: UpcomingDeadline[];
-  pendingForms: PendingForm[];
+  upcoming: DeadlineItem[];
+  pendingForms: FormItem[];
   completionRate: number;
   notifications: DashboardNotification[];
 }

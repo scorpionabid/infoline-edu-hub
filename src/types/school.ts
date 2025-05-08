@@ -74,6 +74,8 @@ export interface SchoolStat {
 
 // SectorSchool tipini əlavə edək
 export interface SectorSchool extends School {
+  region_id: string;
+  sector_id: string;
   lastUpdate?: string;
   pendingForms?: number;
   formsCompleted?: number;
