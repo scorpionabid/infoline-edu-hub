@@ -1,77 +1,12 @@
 
-export interface Dashboard {
-  stats: DashboardStats;
-  pendingApprovals: PendingApproval[];
-  recentUpdates: RecentUpdate[];
-  notifications: DashboardNotification[];
-  chartData?: ChartData;
-}
-
-export interface DashboardStats {
-  forms: FormStats;
-  categories: CategoryStats;
-  schools: SchoolStats;
-  sectors: SectorStats;
-}
+import { Report, ReportType } from './report';
+import { Category } from './category';
 
 export interface FormStats {
-  total: number;
   completed: number;
-  incomplete: number;
   pending: number;
-  approved: number;
   rejected: number;
-}
-
-export interface CategoryStats {
   total: number;
-  active: number;
-  inactive: number;
-  completionRate: number;
-}
-
-export interface SchoolStats {
-  total: number;
-  active: number;
-  inactive: number;
-}
-
-export interface SectorStats {
-  total: number;
-  active: number;
-  inactive: number;
-}
-
-export interface ChartData {
-  labels: string[];
-  datasets: ChartDataset[];
-}
-
-export interface ChartDataset {
-  label: string;
-  data: number[];
-  backgroundColor?: string | string[];
-  borderColor?: string | string[];
-  borderWidth?: number;
-}
-
-export interface PendingApproval {
-  id: string;
-  schoolId?: string;
-  schoolName: string;
-  categoryId?: string;
-  categoryName: string;
-  submittedAt: string;
-  date?: string;
-  status: 'pending' | 'approved' | 'rejected';
-}
-
-export interface RecentUpdate {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  type: 'form' | 'category' | 'school' | 'sector' | 'user';
 }
 
 export interface DashboardNotification {
@@ -80,56 +15,39 @@ export interface DashboardNotification {
   message: string;
   date: string;
   read: boolean;
-  type: string;
+  type: 'info' | 'warning' | 'error' | 'success';
 }
 
-export interface DashboardStatus {
-  pending: number;
-  approved: number;
-  rejected: number;
-  draft?: number;
-  active: number;
-  inactive: number;
-  total: number;
-}
-
-export interface DashboardFormStats {
-  pending: number;
-  approved: number;
-  rejected: number;
-  draft?: number;
-  dueSoon: number;
-  overdue: number;
-  incomplete?: number;
-  total: number;
+export interface ChartData {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    backgroundColor?: string[] | string;
+    borderColor?: string[] | string;
+    borderWidth?: number;
+  }[];
 }
 
 export interface CategoryStat {
   id: string;
   name: string;
-  status: string;
   completionRate: number;
-  updatedAt: string;
+  overallRate?: number;
+  status: string;
+  deadline?: string;
 }
 
-export type ReportType = 'statistics' | 'completion' | 'comparison' | 'custom' | 'school' | 'category' | 'basic' | 'bar' | 'pie' | 'line' | 'table';
-
-export interface Report {
+export interface PendingApproval {
   id: string;
   title: string;
-  description?: string;
-  type: ReportType;
-  status?: 'draft' | 'published' | 'archived';
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  createdBy?: string;
-  category?: string;
-  sharedWith?: string[];
-  content?: any;
-  filters?: any;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: string;
-  is_template?: boolean;
-  shared_with?: string[];
+  status: 'pending';
+  date: string;
+  school: string;
+  schoolName: string;
+  categoryName: string;
+  submittedAt: string;
 }
+
+// Re-export Report and ReportType to avoid duplicate references
+export type { Report, ReportType };

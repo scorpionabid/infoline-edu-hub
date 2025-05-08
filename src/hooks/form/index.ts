@@ -4,12 +4,12 @@ import { DataEntryForm, EntryValue } from '@/types/dataEntry';
 
 export const useForm = (initialForm?: DataEntryForm) => {
   const [form, setForm] = useState<DataEntryForm>(initialForm || {
-    entries: [],
+    entries: [] as EntryValue[],
     status: 'draft',
     categoryId: '',
     schoolId: '',
     isModified: false
-  });
+  } as DataEntryForm);
 
   // Helper functions for the form
   const updateField = (field: string, value: string) => {
@@ -33,19 +33,19 @@ export const useForm = (initialForm?: DataEntryForm) => {
 
   const resetForm = () => {
     setForm({
-      entries: [],
+      entries: [] as EntryValue[],
       status: 'draft',
       categoryId: form.categoryId || '',
       schoolId: form.schoolId || '',
       isModified: false
-    });
+    } as DataEntryForm);
   };
 
   const setFormData = (data: DataEntryForm) => {
     setForm({
       ...data,
       isModified: false
-    });
+    } as DataEntryForm);
   };
 
   return {

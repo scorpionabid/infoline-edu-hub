@@ -2,6 +2,8 @@
 export interface EntryValue {
   columnId: string;
   value: string | number | boolean | null;
+  errorMessage?: string;
+  warningMessage?: string;
 }
 
 export interface DataEntryForm {
@@ -31,15 +33,18 @@ export enum DataEntrySaveStatus {
 
 export interface CategoryEntryData {
   id: string;
+  categoryId?: string;
   name: string;
   completionRate: number;
   status: string;
-  values: Array<{columnId: string; value: any}>;
+  values: Array<{columnId: string; value: any; errorMessage?: string; warningMessage?: string}>;
 }
 
 export interface ColumnValidationError {
   columnId: string;
-  columnName: string;
-  errorMessage: string;
-  severity: 'error' | 'warning';
+  columnName?: string;
+  message: string;
+  errorMessage?: string;
+  severity?: 'error' | 'warning';
+  categoryId?: string;
 }

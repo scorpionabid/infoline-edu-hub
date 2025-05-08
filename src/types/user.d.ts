@@ -51,6 +51,7 @@ export interface FullUserData extends User {
   schoolId?: string;
   school_name?: string;
   schoolName?: string;
+  name?: string;
   entityName?: {
     region?: string;
     sector?: string;
@@ -79,12 +80,15 @@ export interface UserFormData {
 }
 
 export interface UserFilter {
-  role?: UserRole;
+  role?: UserRole | UserRole[];
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
-  status?: UserStatus;
+  status?: UserStatus | UserStatus[];
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
 }

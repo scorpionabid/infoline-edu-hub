@@ -4,22 +4,22 @@ import { ColumnValidationError, CategoryEntryData } from '@/types/dataEntry';
 import { Column } from '@/types/column';
 
 /**
- * @description Formun validasiyası üçün hook
+ * @description Hook for validation of form data
  */
 export const useValidation = (categories: any[], entries: CategoryEntryData[]) => {
   const [validationErrors, setValidationErrors] = useState<ColumnValidationError[]>([]);
   
-  // Bir girişin validasiyası
+  // Validate a single entry
   const validateEntry = useCallback((entry: CategoryEntryData, columns: Record<string, Column>): boolean => {
     const errors: ColumnValidationError[] = [];
     
     // Get all columns for this category
-    const categoryColumns = categories.find(c => c.id === entry.categoryId)?.columns || [];
+    const categoryColumns = categories.find(c => c.id === entry.id)?.columns || [];
     
     // Check each required column
     categoryColumns.forEach(column => {
       if (column.is_required) {
-        const valueObj = entry.values.find(v => v.columnId === column.id);
+        const valueObj = entry.values?.find(v => v.columnId === column.id);
         const value = valueObj?.value;
         
         if (isEmptyValue(value)) {
@@ -41,17 +41,17 @@ export const useValidation = (categories: any[], entries: CategoryEntryData[]) =
     return errors.length === 0;
   }, [categories]);
   
-  // Bütün giriş qeydlərinin validasiyası
+  // Validate all entries
   const validateAllEntries = useCallback((entries: CategoryEntryData[], columns: Record<string, Column>): boolean => {
     let isValid = true;
     const allErrors: ColumnValidationError[] = [];
     
     entries.forEach(entry => {
-      const categoryColumns = categories.find(c => c.id === entry.categoryId)?.columns || [];
+      const categoryColumns = categories.find(c => c.id === entry.id)?.columns || [];
       
       categoryColumns.forEach(column => {
         if (column.is_required) {
-          const valueObj = entry.values.find(v => v.columnId === column.id);
+          const valueObj = entry.values?.find(v => v.columnId === column.id);
           const value = valueObj?.value;
           
           if (isEmptyValue(value)) {
@@ -70,13 +70,13 @@ export const useValidation = (categories: any[], entries: CategoryEntryData[]) =
     return isValid;
   }, [categories]);
   
-  // Sütun üçün xəta mesajını əldə et
+  // Get error message for column
   const getColumnErrorMessage = useCallback((columnId: string): string | undefined => {
     const error = validationErrors.find(err => err.columnId === columnId);
     return error?.message;
   }, [validationErrors]);
   
-  // Dəyərin boş olub olmadığını yoxla
+  // Check if value is empty
   const isEmptyValue = (value: any): boolean => {
     if (value === undefined || value === null) return true;
     if (typeof value === 'string' && value.trim() === '') return true;
@@ -92,7 +92,7 @@ export const useValidation = (categories: any[], entries: CategoryEntryData[]) =
     getValidationErrorsForCategory: useCallback((categoryId: string) => {
       return validationErrors.filter(err => {
         const column = categories.find(c => 
-          c.columns.some(col => col.id === err.columnId)
+          c.columns?.some(col => col.id === err.columnId)
         );
         return column?.id === categoryId;
       });

@@ -13,7 +13,6 @@ export interface Column {
   options?: any[] | Record<string, string>;
   validation?: ValidationRules;
   dependsOn?: DependsOnCondition;
-  completionRate?: number;
 }
 
 export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'email' | 'phone' | 'file' | 'image' | 'url';
