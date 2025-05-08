@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
@@ -78,7 +79,9 @@ export const useRealDashboardData = () => {
             approved: approvedCount,
             rejected: rejectedCount,
             total: totalCount,
-            draft: 0 // Adding the missing property
+            draft: 0,
+            dueSoon: 0,
+            overdue: 0
           },
           regionCompletion: regionCompletion,
           recentForms: recentForms

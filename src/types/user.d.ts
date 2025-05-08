@@ -62,5 +62,23 @@ export interface UserFormData {
 }
 
 export interface FullUserData extends User {
-  // Additional fields for full user data
+  name?: string;
+  avatar?: string;
+  region_id?: string;
+  regionId?: string;
+  region_name?: string;
+  regionName?: string;
+  sector_id?: string;
+  sectorId?: string;
+  sector_name?: string;
+  sectorName?: string;
+  school_id?: string;
+  schoolId?: string;
+  school_name?: string;
+  schoolName?: string;
+  entityName?: {
+    region?: string;
+    sector?: string;
+    school?: string;
+  };
 }

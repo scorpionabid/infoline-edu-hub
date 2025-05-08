@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
@@ -8,14 +7,14 @@ import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const [initialCheck, setInitialCheck] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   
   // Yalnız bir dəfə yüklənmə zamanı yoxlama
   useEffect(() => {
-    if (!isLoading) {
+    if (!loading) {
       setInitialCheck(false);
       
       // İstifadəçi autentifikasiya olmadıqda yönləndirmə
@@ -33,10 +32,10 @@ const Dashboard: React.FC = () => {
         });
       }
     }
-  }, [isAuthenticated, isLoading, user, navigate, location]);
+  }, [isAuthenticated, loading, user, navigate, location]);
   
   // Yüklənmə halında spinner göstəririk
-  if (isLoading || initialCheck) {
+  if (loading || initialCheck) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>

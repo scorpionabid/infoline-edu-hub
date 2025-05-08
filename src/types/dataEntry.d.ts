@@ -51,3 +51,14 @@ export interface ColumnValidationError {
   message: string;
   severity: 'error' | 'warning' | 'info';
 }
+
+export enum DataEntrySaveStatus {
+  IDLE = 'idle',
+  SAVING = 'saving',
+  SAVED = 'saved',
+  ERROR = 'error',
+  SUBMITTING = 'submitting',
+  SUBMITTED = 'submitted'
+}
+
+export type DataEntryStatus = 'pending' | 'approved' | 'rejected' | 'draft';

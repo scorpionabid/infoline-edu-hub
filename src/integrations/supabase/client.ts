@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase konfiqurasiyası
@@ -268,7 +267,7 @@ export function clearCache(key?: string, storage: CacheStorage = 'local'): void 
     if (key) {
       storageObj.removeItem(key);
     } else {
-      // Bütün info_line_ prefiksli keşləri təmizləyirik
+      // Bütün info_line_ prefiksli keşlər təmizləyirik
       Object.keys(storageObj).forEach(k => {
         if (k.startsWith('info_line_')) {
           storageObj.removeItem(k);

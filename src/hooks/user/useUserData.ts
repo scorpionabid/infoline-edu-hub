@@ -1,124 +1,107 @@
-
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { User, FullUserData } from '@/types/user';
+import { useAuth } from '@/context/auth';
 
-// Admin entity (region, sector, və ya school) məlumatlarını əldə etmək üçün köməkçi funksiya
-export async function fetchAdminEntityData(roleData: any) {
-  if (!roleData) return null;
-  
-  try {
-    // Region adminləri üçün
-    if (roleData.role === 'regionadmin' && roleData.region_id) {
-      const { data, error } = await supabase
-        .from('regions')
-        .select('name')
-        .eq('id', roleData.region_id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching region data:', error);
-        return null;
-      }
-      
-      return {
-        type: 'region',
-        id: roleData.region_id,
-        name: data?.name || 'Unknown Region'
-      };
-    }
-    
-    // Sektor adminləri üçün
-    if (roleData.role === 'sectoradmin' && roleData.sector_id) {
-      const { data, error } = await supabase
-        .from('sectors')
-        .select('name, region_id, regions(name)')
-        .eq('id', roleData.sector_id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching sector data:', error);
-        return null;
-      }
-      
-      return {
-        type: 'sector',
-        id: roleData.sector_id,
-        name: data?.name || 'Unknown Sector',
-        regionId: data?.region_id,
-        regionName: data?.regions?.name
-      };
-    }
-    
-    // Məktəb adminləri üçün
-    if (roleData.role === 'schooladmin' && roleData.school_id) {
-      const { data, error } = await supabase
-        .from('schools')
-        .select('name, region_id, sector_id, regions(name), sectors(name)')
-        .eq('id', roleData.school_id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching school data:', error);
-        return null;
-      }
-      
-      return {
-        type: 'school',
-        id: roleData.school_id,
-        name: data?.name || 'Unknown School',
-        regionId: data?.region_id,
-        regionName: data?.regions?.name,
-        sectorId: data?.sector_id,
-        sectorName: data?.sectors?.name
-      };
-    }
-    
-    // SuperAdmin-lər üçün null qaytarılır
-    return null;
-  } catch (error) {
-    console.error('Error fetching admin entity data:', error);
-    return null;
-  }
+interface UseUserDataResult {
+  user: FullUserData | null;
+  loading: boolean;
+  error: string | null;
+  fetchUserData: () => Promise<void>;
 }
 
-// İstifadəçi məlumatlarını formatlamaq üçün köməkçi funksiya
-export function formatUserData(userData: any, profileData: any, adminEntityData: any = null) {
-  if (!userData) return null;
-  
-  const profile = profileData || {};
-  const defaultStatus = 'active' as const;
-  
-  return {
-    id: userData.id,
-    email: userData.email || 'N/A',
-    full_name: profile.full_name || 'İsimsiz İstifadəçi',
-    role: userData.role || 'user',
-    region_id: userData.region_id,
-    sector_id: userData.sector_id,
-    school_id: userData.school_id,
-    phone: profile.phone,
-    position: profile.position,
-    language: profile.language || 'az',
-    avatar: profile.avatar,
-    status: profile.status || defaultStatus,
-    last_login: profile.last_login,
-    created_at: profile.created_at || '',
-    updated_at: profile.updated_at || '',
-    
-    // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-    name: profile.full_name || 'İsimsiz İstifadəçi',
-    regionId: userData.region_id,
-    sectorId: userData.sector_id,
-    schoolId: userData.school_id,
-    lastLogin: profile.last_login,
-    createdAt: profile.created_at || '',
-    updatedAt: profile.updated_at || '',
-    
-    adminEntity: adminEntityData,
-    
-    twoFactorEnabled: false,
-    notificationSettings: {
-      email: true,
-      system: true
+export const useUserData = (): UseUserDataResult => {
+  const [user, setUser] = useState<FullUserData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { session } = useAuth();
+
+  const fetchUserData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    if (!session?.user?.id) {
+      setLoading(false);
+      return;
     }
-  };
-}
+
+    try {
+      const { data, error: userError } = await supabase
+        .from('profiles')
+        .select(
+          `
+          id,
+          email,
+          full_name,
+          avatar_url,
+          updated_at,
+          phone,
+          position,
+          language,
+          status,
+          created_at,
+          region_id,
+          sector_id,
+          school_id,
+          last_login,
+          notification_settings,
+          regions ( name ),
+          sectors ( name ),
+          schools ( name )
+        `
+        )
+        .eq('id', session.user.id)
+        .single();
+
+      if (userError) {
+        setError(userError.message);
+        console.error('Error fetching user data:', userError);
+        return;
+      }
+
+      if (data) {
+        const regionName = data.regions && data.regions.length > 0 ? data.regions[0].name : '';
+        const sectorName = data.sectors && data.sectors.length > 0 ? data.sectors[0].name : '';
+        const schoolName = data.schools && data.schools.length > 0 ? data.schools[0].name : '';
+
+        const fullUserData: FullUserData = {
+          id: data.id,
+          email: data.email,
+          full_name: data.full_name,
+          avatar: data.avatar_url,
+          updated_at: data.updated_at,
+          phone: data.phone,
+          position: data.position,
+          language: data.language,
+          status: data.status,
+          created_at: data.created_at,
+          region_id: data.region_id,
+          sector_id: data.sector_id,
+          school_id: data.school_id,
+          last_login: data.last_login,
+          notificationSettings: data.notification_settings,
+          region_name: regionName,
+          sector_name: sectorName,
+          school_name: schoolName,
+          entityName: {
+            region: regionName,
+            sector: sectorName,
+            school: schoolName,
+          },
+        };
+        setUser(fullUserData);
+      }
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Unexpected error fetching user data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  return { user, loading, error, fetchUserData };
+};

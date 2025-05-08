@@ -1,534 +1,514 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useCookies } from 'react-cookie';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { AuthContextType, AuthErrorType, AuthState } from '../types';
-import { FullUserData } from '@/types/supabase';
+import { User, FullUserData } from '@/types/user';
+import { useToast } from '@/components/ui/use-toast';
+import { useLanguage } from '@/context/LanguageContext';
 
-const useAuthFetch = (): AuthContextType => {
-  const [searchParams] = useSearchParams();
+interface AuthFetchOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  headers?: Record<string, string>;
+  body?: BodyInit | null | object;
+  requireAuth?: boolean;
+  onSuccess?: (data: any) => void;
+  onError?: (error: any) => void;
+  skip?: boolean;
+  manual?: boolean;
+  url?: string;
+  contentType?: 'application/json' | 'multipart/form-data';
+}
+
+interface AuthFetchResult<T> {
+  data: T | null;
+  error: any;
+  loading: boolean;
+  fetchData: (overrideOptions?: Omit<AuthFetchOptions, 'manual'>) => Promise<void>;
+}
+
+interface UserResponse {
+  user: User | null;
+  session: any | null;
+  error: any | null;
+}
+
+export const useAuthFetch = <T = any>(
+  initialUrl: string,
+  initialOptions: AuthFetchOptions = {}
+): AuthFetchResult<T> => {
+  const [data, setData] = useState<T | null>(null);
+  const [error, setError] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [cookies, setCookie, removeCookie] = useCookies(['sb-access-token', 'sb-refresh-token']);
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    session: null,
-    isAuthenticated: false,
-    isLoading: true,
-    error: null,
-  });
+  const { toast } = useToast();
+  const { t } = useLanguage();
 
-  const setAuth = useCallback(
-    (
-      user: FullUserData | null,
-      session: any | null,
-      isAuthenticated: boolean,
-      isLoading: boolean,
-      error: AuthErrorType
-    ) => {
-      setState({ user, session, isAuthenticated, isLoading, error });
-    },
-    []
-  );
+  const {
+    method = 'GET',
+    headers: initialHeaders = {},
+    body: initialBody = null,
+    requireAuth = true,
+    onSuccess,
+    onError,
+    skip = false,
+    manual = false,
+    url: overrideUrl,
+    contentType = 'application/json',
+  } = initialOptions;
 
-  const clearError = useCallback(() => {
-    setState((prevState) => ({ ...prevState, error: null }));
-  }, []);
+  const fetchData = useCallback(
+    async (overrideOptions: Omit<AuthFetchOptions, 'manual'> = {}) => {
+      if (skip) return;
 
-  const setError = useCallback((error: string | null) => {
-    setState((prevState) => ({ ...prevState, error: error }));
-  }, []);
+      const url = overrideUrl || initialUrl;
+      const {
+        method: overrideMethod = method,
+        headers: overrideHeaders = initialHeaders,
+        body: overrideBody = initialBody,
+        requireAuth: overrideRequireAuth = requireAuth,
+        onSuccess: overrideOnSuccess = onSuccess,
+        onError: overrideOnError = onError,
+        contentType: overrideContentType = contentType,
+      } = overrideOptions;
 
-  const handleSession = useCallback(
-    async (session: any | null) => {
-      if (session) {
-        setCookie('sb-access-token', session.access_token, { path: '/', sameSite: 'strict' });
-        setCookie('sb-refresh-token', session.refresh_token, { path: '/', sameSite: 'strict' });
-        supabase.auth.setSession(session);
-      } else {
-        removeCookie('sb-access-token', { path: '/', sameSite: 'strict' });
-        removeCookie('sb-refresh-token', { path: '/', sameSite: 'strict' });
-        supabase.auth.setSession({ access_token: null, refresh_token: null });
-      }
-    },
-    [setCookie, removeCookie]
-  );
-
-  const getProfileData = useCallback(async (userId: string): Promise<FullUserData | null> => {
-    try {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        return null;
-      }
-
-      return profile as FullUserData;
-    } catch (error: any) {
-      console.error('Unexpected error fetching profile:', error);
-      return null;
-    }
-  }, []);
-
-  const getFullUserData = useCallback(async (userId: string): Promise<FullUserData | null> => {
-    try {
-      const { data, error } = await supabase.rpc('get_full_user_data', { user_id_param: userId });
-
-      if (error) {
-        console.error('Error fetching user data:', error);
-        return null;
-      }
-
-      if (!data || data.length === 0) {
-        console.warn('No user data found for ID:', userId);
-        return null;
-      }
-
-      return data[0] as FullUserData;
-    } catch (error: any) {
-      console.error('Unexpected error fetching full user data:', error);
-      return null;
-    }
-  }, []);
-
-  const formatUserData = (userData: any, session: any): FullUserData => {
-    return {
-      id: userData.id,
-      email: userData.email || session?.user?.email || '',
-      full_name: userData.full_name || userData.user_metadata?.full_name || '',
-      fullName: userData.full_name || userData.user_metadata?.full_name || '',
-      name: userData.full_name || userData.user_metadata?.full_name || '', // Support name property
-      avatar: userData.avatar || '',
-      role: userData.role,
-      region_id: userData.region_id,
-      regionId: userData.region_id,
-      sector_id: userData.sector_id,
-      sectorId: userData.sector_id,
-      school_id: userData.school_id,
-      schoolId: userData.school_id,
-      phone: userData.phone,
-      position: userData.position,
-      language: userData.language,
-      status: userData.status,
-      last_login: userData.last_login,
-      lastLogin: userData.last_login,
-      created_at: userData.created_at,
-      createdAt: userData.created_at,
-      updated_at: userData.updated_at,
-      updatedAt: userData.updated_at,
-      notificationSettings: userData.notification_settings
-    } as FullUserData;
-  };
-
-  const refreshProfile = useCallback(async (): Promise<FullUserData | null> => {
-    const user = supabase.auth.getUser();
-    if (!user?.data?.user?.id) {
-      console.warn('No user ID found, cannot refresh profile.');
-      return null;
-    }
-
-    try {
-      const userId = user.data.user.id;
-      const profileData = await getFullUserData(userId);
-
-      if (profileData) {
-        setState(prevState => ({
-          ...prevState,
-          user: profileData,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null
-        }));
-        return profileData;
-      } else {
-        console.warn('Profile data not found, user might not have a profile.');
-        setState(prevState => ({
-          ...prevState,
-          isAuthenticated: false,
-          isLoading: false,
-          error: 'Profile not found'
-        }));
-        return null;
-      }
-    } catch (error: any) {
-      console.error('Error refreshing profile:', error);
-      setState(prevState => ({
-        ...prevState,
-        isAuthenticated: false,
-        isLoading: false,
-        error: error.message || 'Failed to refresh profile'
-      }));
-      return null;
-    }
-  }, [getFullUserData]);
-
-  const refreshSession = useCallback(async () => {
-    try {
-      setAuth(null, null, false, true, null);
-
-      const { data: { session }, error } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error('Error refreshing session:', error);
-        setAuth(null, null, false, false, error.message);
-        return;
-      }
-
-      if (session) {
-        await handleSession(session);
-        const userId = session.user.id;
-        const profileData = await getFullUserData(userId);
-
-        if (profileData) {
-          setAuth(profileData, session, true, false, null);
-        } else {
-          setAuth(null, null, false, false, 'Profile data not found');
-        }
-      } else {
-        setAuth(null, null, false, false, 'No active session found');
-      }
-    } catch (error: any) {
-      console.error('Unexpected error refreshing session:', error);
-      setAuth(null, null, false, false, error.message || 'Unexpected error');
-    }
-  }, [setAuth, handleSession, getFullUserData]);
-
-  const logIn = useCallback(async (email: string, password: string) => {
-    try {
-      setState((prevState) => ({ ...prevState, isLoading: true, error: null }));
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) {
-        console.error('Login error:', error);
-        setState((prevState) => ({ ...prevState, isLoading: false, error: error.message }));
-        return { data: null, error: error.message };
-      }
-
-      await handleSession(data.session);
-      const userId = data.session.user.id;
-      const profileData = await getFullUserData(userId);
-
-      if (profileData) {
-        setState((prevState) => ({
-          ...prevState,
-          user: profileData,
-          session: data.session,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-        }));
-      } else {
-        setState((prevState) => ({ ...prevState, isLoading: false, error: 'Profile data not found' }));
-      }
-
-      return { data, error: null };
-    } catch (error: any) {
-      console.error('Login failed:', error);
-      setState((prevState) => ({ ...prevState, isLoading: false, error: error.message }));
-      return { data: null, error: error.message };
-    }
-  }, [handleSession, getFullUserData]);
-
-  const logOut = useCallback(async () => {
-    try {
-      setState((prevState) => ({ ...prevState, isLoading: true, error: null }));
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        console.error('Logout error:', error);
-        setState((prevState) => ({ ...prevState, isLoading: false, error: error.message }));
-      } else {
-        await handleSession(null);
-        setState({
-          user: null,
-          session: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: null,
-        });
-      }
-    } catch (error: any) {
-      console.error('Logout failed:', error);
-      setState((prevState) => ({ ...prevState, isLoading: false, error: error.message }));
-    }
-  }, [handleSession]);
-
-  const updateUser = useCallback(async (updates: Partial<FullUserData>): Promise<boolean | void> => {
-    if (!state.user) {
-      console.error('No user to update.');
-      return false;
-    }
-
-    try {
-      setState((prevState) => ({ ...prevState, isLoading: true, error: null }));
-
-      // First, update the 'profiles' table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: updates.full_name || state.user.full_name,
-          avatar: updates.avatar || state.user.avatar,
-          phone: updates.phone || state.user.phone,
-          position: updates.position || state.user.position,
-          language: updates.language || state.user.language,
-          status: updates.status || state.user.status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', state.user.id);
-
-      if (profileError) {
-        console.error('Error updating profile:', profileError);
-        setState((prevState) => ({ ...prevState, isLoading: false, error: profileError.message }));
-        return false;
-      }
-
-      // Construct the updated user object
-      const updatedUser: FullUserData = {
-        ...state.user,
-        ...updates,
-        full_name: updates.full_name || state.user.full_name,
-        avatar: updates.avatar || state.user.avatar,
-        phone: updates.phone || state.user.phone,
-        position: updates.position || state.user.position,
-        language: updates.language || state.user.language,
-        status: updates.status || state.user.status,
+      let headers = {
+        ...overrideHeaders,
       };
 
-      // Update the state with the new user data
-      setState((prevState) => ({
-        ...prevState,
-        user: updatedUser,
-        isLoading: false,
-        error: null,
-      }));
+      let body = overrideBody;
 
-      return true;
-    } catch (error: any) {
-      console.error('Error during user update:', error);
-      setState((prevState) => ({ ...prevState, isLoading: false, error: error.message }));
-      return false;
-    }
-  }, [state.user]);
-
-  const updatePassword = useCallback(async (newPassword: string) => {
-    try {
-      setState((prevState) => ({ ...prevState, isLoading: true, error: null }));
-      const { data, error } = await supabase.auth.updateUser({ password: newPassword });
-
-      if (error) {
-        console.error('Password update error:', error);
-        setState((prevState) => ({ ...prevState, isLoading: false, error: error.message }));
-        return { data: null, error: error.message };
+      if (overrideContentType === 'application/json' && typeof body === 'object') {
+        headers = {
+          ...headers,
+          'Content-Type': 'application/json',
+        };
+        body = JSON.stringify(body);
       }
 
-      setState((prevState) => ({ ...prevState, isLoading: false, error: null }));
-      return { data, error: null };
-    } catch (error: any) {
-      console.error('Password update failed:', error);
-      setState((prevState) => ({ ...prevState, isLoading: false, error: error.message }));
-      return { data: null, error: error.message };
-    }
-  }, []);
+      setLoading(true);
+      setError(null);
 
-  const updateProfile = useCallback(async (data: Partial<FullUserData>) => {
-    try {
-      setState((prevState) => ({ ...prevState, isLoading: true, error: null }));
-      const { data: authData, error: authError } = await supabase.auth.updateUser(data);
+      try {
+        if (overrideRequireAuth) {
+          const session = await supabase.auth.getSession();
+          if (!session?.data?.session?.access_token) {
+            navigate('/login');
+            toast({
+              title: t('notAuthenticated'),
+              description: t('pleaseLogin'),
+              variant: 'destructive',
+            });
+            return;
+          }
+          headers = {
+            ...headers,
+            Authorization: `Bearer ${session.data.session.access_token}`,
+          };
+        }
 
-      if (authError) {
-        console.error('Auth update error:', authError);
-        setState((prevState) => ({ ...prevState, isLoading: false, error: authError.message }));
-        return { data: null, error: authError.message };
+        const response = await fetch(url, {
+          method: overrideMethod,
+          headers: headers,
+          body: body as any,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || response.statusText);
+        }
+
+        const responseData = await response.json();
+        setData(responseData);
+        overrideOnSuccess?.(responseData);
+        onSuccess?.(responseData);
+      } catch (err: any) {
+        setError(err);
+        overrideOnError?.(err);
+        onError?.(err);
+        toast({
+          title: t('error'),
+          description: err.message,
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
       }
-
-      // Also update the 'profiles' table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: data.full_name,
-          avatar: data.avatar,
-          phone: data.phone,
-          position: data.position,
-          language: data.language,
-          status: data.status
-        })
-        .eq('id', state.user?.id);
-
-      if (profileError) {
-        console.error('Profile update error:', profileError);
-        setState((prevState) => ({ ...prevState, isLoading: false, error: profileError.message }));
-        return { data: null, error: profileError.message };
-      }
-
-      // Refresh the profile data
-      await refreshProfile();
-
-      setState((prevState) => ({ ...prevState, isLoading: false, error: null }));
-      return { data: authData, error: null };
-    } catch (error: any) {
-      console.error('Profile update failed:', error);
-      setState((prevState) => ({ ...prevState, isLoading: false, error: error.message }));
-      return { data: null, error: error.message };
-    }
-  }, [state.user, refreshProfile]);
-
-  const resetPassword = useCallback(async (email: string) => {
-    try {
-      setState((prevState) => ({ ...prevState, isLoading: true, error: null }));
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`,
-      });
-
-      if (error) {
-        console.error('Reset password error:', error);
-        setState((prevState) => ({ ...prevState, isLoading: false, error: error.message }));
-        return { data: null, error: error.message };
-      }
-
-      setState((prevState) => ({ ...prevState, isLoading: false, error: null }));
-      return { data, error: null };
-    } catch (error: any) {
-      console.error('Reset password failed:', error);
-      setState((prevState) => ({ ...prevState, isLoading: false, error: error.message }));
-      return { data: null, error: error.message };
-    }
-  }, []);
-
-  const register = useCallback(async (userData: any) => {
-    try {
-      setState((prevState) => ({ ...prevState, isLoading: true, error: null }));
-      const { data, error } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          data: {
-            full_name: userData.full_name,
-            role: userData.role,
-            region_id: userData.region_id,
-            sector_id: userData.sector_id,
-            school_id: userData.school_id,
-            phone: userData.phone,
-            position: userData.position,
-            language: userData.language,
-            avatar: userData.avatar,
-            status: userData.status
-          },
-        },
-      });
-
-      if (error) {
-        console.error('Registration error:', error);
-        setState((prevState) => ({ ...prevState, isLoading: false, error: error.message }));
-        return { data: null, error: error.message };
-      }
-
-      setState((prevState) => ({ ...prevState, isLoading: false, error: null }));
-      return { data, error: null };
-    } catch (error: any) {
-      console.error('Registration failed:', error);
-      setState((prevState) => ({ ...prevState, isLoading: false, error: error.message }));
-      return { data: null, error: error.message };
-    }
-  }, []);
+    },
+    [initialUrl, initialOptions, navigate, skip, t, method, initialHeaders, initialBody, requireAuth, onSuccess, onError, contentType, overrideUrl]
+  );
 
   useEffect(() => {
-    const checkAuth = async () => {
-      setState((prevState) => ({ ...prevState, isLoading: true }));
+    if (!manual && !skip) {
+      fetchData();
+    }
+  }, [fetchData, manual, skip]);
 
-      const accessToken = cookies['sb-access-token'];
-      const refreshToken = cookies['sb-refresh-token'];
-
-      if (accessToken && refreshToken) {
-        await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-      }
-
-      const { data: { session }, error } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error('Session check error:', error);
-        setAuth(null, null, false, false, error.message);
-      }
-
-      if (session) {
-        const userId = session.user.id;
-        const profileData = await getFullUserData(userId);
-
-        if (profileData) {
-          setAuth(profileData, session, true, false, null);
-        } else {
-          setAuth(null, null, false, false, 'Profile data not found');
-        }
-      } else {
-        setAuth(null, null, false, false, 'No active session found');
-      }
-
-      setState((prevState) => ({ ...prevState, isLoading: false }));
-    };
-
-    checkAuth();
-
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change event:', event);
-
-      if (session) {
-        await handleSession(session);
-        const userId = session.user.id;
-        const profileData = await getFullUserData(userId);
-
-        if (profileData) {
-          setAuth(profileData, session, true, false, null);
-        } else {
-          setAuth(null, null, false, false, 'Profile data not found');
-        }
-      } else {
-        await handleSession(null);
-        setAuth(null, null, false, false, 'No active session found');
-      }
-    });
-  }, [setAuth, handleSession, cookies, getFullUserData]);
-
-  const contextValue: AuthContextType = {
-    user: state.user,
-    session: state.session,
-    isAuthenticated: state.isAuthenticated,
-    authenticated: state.isAuthenticated,
-    loading: state.isLoading,
-    error: state.error,
-    logIn: async (email, password) => {
-      try {
-        const result = await logIn(email, password);
-        return { data: result, error: null };
-      } catch (error: any) {
-        return { data: null, error: error?.message || "Login failed" };
-      }
-    },
-    login: async (email, password) => {
-      try {
-        const result = await logIn(email, password);
-        return { user: result, error: null };
-      } catch (error: any) {
-        return { user: null, error: error?.message || "Login failed" };
-      }
-    },
-    logOut: logOut,
-    logout: logOut,
-    signOut: logOut,
-    updateUser: updateUser,
-    clearError: clearError,
-    refreshProfile: refreshProfile,
-    refreshSession: refreshSession,
-    updatePassword: updatePassword,
-    updateProfile: updateProfile,
-    resetPassword: resetPassword,
-    register: register,
-    setError: setError,
-    loading: state.isLoading
-  };
-
-  return contextValue;
+  return { data, error, loading, fetchData };
 };
 
-export default useAuthFetch;
+interface AuthHookResult {
+  session: any | null;
+  user: User | null;
+  loading: boolean;
+  error: any;
+  login: (email: string, password: string) => Promise<any>;
+  logout: () => Promise<void>;
+  signUp: (email: string, password: string, additionalData?: any) => Promise<any>;
+  updateUser: (updates: Partial<User>) => Promise<void>;
+  resetPassword: (email: string) => Promise<any>;
+  verifyOTP: (options: { email: string; type: 'email' | 'phone'; token: string }) => Promise<any>;
+  getSession: () => Promise<any>;
+  updateUserPassword: (newPassword: string) => Promise<any>;
+  updateUserEmail: (newEmail: string) => Promise<any>;
+  updateUserProfile: (userData: Partial<FullUserData>) => Promise<any>;
+  signOut: () => Promise<void>;
+}
+
+export const useAuthHook = (): AuthHookResult => {
+  const [session, setSession] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<any>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { t } = useLanguage();
+
+  useEffect(() => {
+    const getInitialSession = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          throw error;
+        }
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+      } catch (err: any) {
+        setError(err);
+        console.error('Error getting initial session:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getInitialSession();
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+  }, [navigate]);
+
+  const login = async (email: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+      if (error) {
+        throw error;
+      }
+      toast({
+        title: t('loginSuccess'),
+        description: t('loginSuccessDesc'),
+      });
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err);
+      toast({
+        title: t('loginFailed'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      toast({
+        title: t('logoutSuccess'),
+        description: t('logoutSuccessDesc'),
+      });
+      navigate('/login');
+    } catch (err: any) {
+      setError(err);
+      toast({
+        title: t('logoutFailed'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signUp = async (email: string, password: string, additionalData: any = {}) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: additionalData,
+        },
+      });
+      if (error) {
+        throw error;
+      }
+      toast({
+        title: t('signUpSuccess'),
+        description: t('signUpSuccessDesc'),
+      });
+      navigate('/verify-otp');
+      return data;
+    } catch (err: any) {
+      setError(err);
+      toast({
+        title: t('signUpFailed'),
+        description: err.message,
+        variant: 'destructive',
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUser = async (updates: Partial<User>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (!user?.id) {
+        throw new Error('User ID not found');
+      }
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setUser({ ...user, ...updates });
+      toast({
+        title: t('updateSuccess'),
+        description: t('updateSuccessDesc'),
+      });
+    } catch (err: any) {
+      setError(err);
+      toast({
+        title: t('updateFailed'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+      if (error) {
+        throw error;
+      }
+      toast({
+        title: t('resetPasswordSuccess'),
+        description: t('resetPasswordSuccessDesc'),
+      });
+    } catch (err: any) {
+      setError(err);
+      toast({
+        title: t('resetPasswordFailed'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOTP = async (options: { email: string; type: 'email' | 'phone'; token: string }) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.verifyOtp(options);
+      if (error) {
+        throw error;
+      }
+      toast({
+        title: t('verifyOTPSuccess'),
+        description: t('verifyOTPSuccessDesc'),
+      });
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err);
+      toast({
+        title: t('verifyOTPFailed'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSession = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await supabase.auth.getSession();
+      setSession(response.data.session);
+      return response.data.session;
+    } catch (err: any) {
+      setError(err);
+      toast({
+        title: t('getSessionFailed'),
+        description: err.message,
+        variant: 'destructive',
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUserPassword = async (newPassword: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        throw error;
+      }
+      toast({
+        title: t('updatePasswordSuccess'),
+        description: t('updatePasswordSuccessDesc'),
+      });
+    } catch (err: any) {
+      setError(err);
+      toast({
+        title: t('updatePasswordFailed'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUserEmail = async (newEmail: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      if (error) {
+        throw error;
+      }
+      toast({
+        title: t('updateEmailSuccess'),
+        description: t('updateEmailSuccessDesc'),
+      });
+    } catch (err: any) {
+      setError(err);
+      toast({
+        title: t('updateEmailFailed'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUserProfile = async (userData: Partial<FullUserData>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (!user?.id) {
+        throw new Error('User ID not found');
+      }
+      const { error } = await supabase
+        .from('profiles')
+        .update(userData)
+        .eq('id', user.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      setUser({ ...user, ...userData });
+      toast({
+        title: t('updateProfileSuccess'),
+        description: t('updateProfileSuccessDesc'),
+      });
+    } catch (err: any) {
+      setError(err);
+      toast({
+        title: t('updateProfileFailed'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      toast({
+        title: t('signOutSuccess'),
+        description: t('signOutSuccessDesc'),
+      });
+      navigate('/login');
+    } catch (err: any) {
+      setError(err);
+      toast({
+        title: t('signOutFailed'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    session,
+    user,
+    loading,
+    error,
+    login,
+    logout,
+    signUp,
+    updateUser,
+    resetPassword,
+    verifyOTP,
+    getSession,
+    updateUserPassword,
+    updateUserEmail,
+    updateUserProfile,
+    signOut,
+  };
+};

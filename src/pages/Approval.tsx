@@ -13,14 +13,6 @@ const Approval: React.FC = () => {
     fetchApprovalData();
   }, [fetchApprovalData]);
 
-  // Map to the props that the component expects
-  const mappedProps = {
-    data: approvalData,
-    loadData: fetchApprovalData,
-    approveItem: approveEntry,
-    rejectItem: rejectEntry
-  };
-  
   return (
     <div className="container mx-auto py-6">
       <PageHeader title="Approval Queue" description="Review and approve pending data entries" />

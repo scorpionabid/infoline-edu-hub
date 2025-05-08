@@ -1,49 +1,45 @@
 
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'file';
+
 export interface Column {
   id: string;
   name: string;
   type: ColumnType;
-  category_id: string;
-  description?: string;
+  category_id?: string;
   is_required?: boolean;
-  validation?: any;
-  options?: string[];
-  order?: number;
   order_index?: number;
   status?: string;
-  created_at?: string;
-  updated_at?: string;
   help_text?: string;
   placeholder?: string;
-  default_value?: string;
-  parent_column_id?: string;
+  validation?: {
+    min?: number;
+    max?: number;
+    pattern?: string;
+    minLength?: number;
+    maxLength?: number;
+  };
+  default_value?: any;
+  options?: string[] | {label: string; value: string}[];
+  created_at?: string;
+  updated_at?: string;
 }
 
-export type ColumnType = 
-  | 'text' 
-  | 'number' 
-  | 'select' 
-  | 'multiselect' 
-  | 'checkbox' 
-  | 'date' 
-  | 'file' 
-  | 'textarea';
-
-export interface CategoryWithColumns {
+export interface Category {
   id: string;
   name: string;
   description?: string;
-  assignment?: string;
-  deadline?: string;
   status?: string;
-  columns: Column[];
-  completionRate?: number;
-  overallRate?: number;
-  archived?: boolean;
+  deadline?: string;
+  priority?: number;
+  column_count?: number;
   created_at?: string;
   updated_at?: string;
-  column_count?: number;
-  priority?: number;
+  completionRate?: number;
+}
+
+export interface CategoryWithColumns extends Category {
+  columns?: Column[];
+  completionRate?: number;
 }
 
 export interface TabDefinition {
@@ -53,27 +49,23 @@ export interface TabDefinition {
 }
 
 export interface CategoryFilter {
-  name?: string;
-  status?: string[];
-  assignment?: string[];
-  deadlineBefore?: Date;
-  deadlineAfter?: Date;
+  status?: string;
+  deadline?: string;
+  search?: string;
+  date?: string | Date;
 }
 
 export interface ColumnFormData {
   id?: string;
   name: string;
-  type: string;
+  type: ColumnType;
   category_id: string;
-  description?: string;
-  is_required?: boolean;
-  validation?: any;
-  options?: string[];
-  order?: number;
+  is_required: boolean;
   order_index?: number;
   status?: string;
   help_text?: string;
   placeholder?: string;
-  default_value?: string;
-  parent_column_id?: string;
+  validation?: any;
+  default_value?: any;
+  options?: any[];
 }

@@ -50,8 +50,9 @@ const Categories: React.FC = () => {
 
   // Custom hooklarımızı istifadə edək
   const {
-    filter,
-    handleFilterChange,
+    filters,
+    updateFilter,
+    resetFilters,
     searchQuery,
     handleSearchChange,
     date,
@@ -72,12 +73,12 @@ const Categories: React.FC = () => {
     setError(null);
 
     try {
-      const data = await fetchCategories(searchQuery, filter);
+      const data = await fetchCategories(searchQuery, filters);
       setCategories(data);
     } finally {
       setIsLoading(false);
     }
-  }, [fetchCategories, filter, searchQuery, setError]);
+  }, [fetchCategories, filters, searchQuery, setError]);
 
   useEffect(() => {
     fetchData();
@@ -164,8 +165,8 @@ const Categories: React.FC = () => {
 
         <div className="flex space-x-4">
           <Select 
-            value={filter.type} 
-            onValueChange={(value) => handleFilterChange({ type: value as any })}
+            value={filters.type} 
+            onValueChange={(value) => updateFilter('type', value as any)}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('type')} />
@@ -177,8 +178,8 @@ const Categories: React.FC = () => {
           </Select>
 
           <Select 
-            value={filter.deadline} 
-            onValueChange={(value) => handleFilterChange({ deadline: value as any })}
+            value={filters.deadline} 
+            onValueChange={(value) => updateFilter('deadline', value as any)}
           >
             <SelectTrigger id="deadline">
               <SelectValue placeholder={t('all')} />
