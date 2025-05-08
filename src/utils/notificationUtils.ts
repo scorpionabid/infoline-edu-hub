@@ -1,38 +1,35 @@
 
-import { AppNotification } from '@/types/notification';
 import { DashboardNotification } from '@/types/dashboard';
+import { AppNotification } from '@/types/notification';
 
-/**
- * Converts a dashboard notification to app notification format
- */
-export const adaptDashboardNotificationToApp = (notification: DashboardNotification): AppNotification => {
+export function adaptDashboardNotificationToApp(notification: DashboardNotification): AppNotification {
   return {
     id: notification.id,
     title: notification.title,
     message: notification.message,
-    type: notification.type,
-    date: notification.date,
+    type: notification.type as 'info' | 'success' | 'warning' | 'error',
     isRead: notification.isRead,
-    priority: notification.type === 'error' ? 'high' : 'normal',
-    relatedEntityId: notification.id,
-    relatedEntityType: 'notification'
+    timestamp: notification.timestamp || notification.createdAt,
+    createdAt: notification.createdAt,
+    priority: notification.priority as 'low' | 'normal' | 'high' | undefined,
   };
-};
+}
 
-/**
- * Converts an app notification to dashboard notification format
- */
-export const adaptAppNotificationToDashboard = (notification: AppNotification): DashboardNotification => {
+// Add aliases for backward compatibility
+export const adaptDashboardToAppNotification = adaptDashboardNotificationToApp;
+
+export function adaptAppNotificationToDashboard(notification: AppNotification): DashboardNotification {
   return {
     id: notification.id,
     title: notification.title,
     message: notification.message,
     type: notification.type,
-    date: notification.date || new Date().toISOString(),
-    isRead: notification.isRead
+    isRead: notification.isRead,
+    timestamp: notification.timestamp,
+    createdAt: notification.createdAt,
+    priority: notification.priority,
   };
-};
+}
 
-// Aliases for compatibility
-export const adaptDashboardToAppNotification = adaptDashboardNotificationToApp;
+// Add alias for backward compatibility
 export const adaptAppToDashboardNotification = adaptAppNotificationToDashboard;

@@ -36,7 +36,7 @@ export interface SchoolStat {
   email?: string;
 }
 
-// Məktəb tipi
+// Məktəb tipi - updated to match with Supabase.School
 export interface School {
   id: string;
   name: string;
@@ -47,9 +47,9 @@ export interface School {
   phone?: string;
   principal_name?: string;
   principalName?: string;
-  status: string; // Make status required to match supabase.d.ts
-  created_at: string | Date; // Match created_at type with supabase.d.ts
-  updated_at?: string | Date;
+  status: string; 
+  created_at: string;
+  updated_at?: string;
   teacher_count?: number;
   student_count?: number;
   completion_rate?: number;
@@ -59,21 +59,23 @@ export interface School {
   admin_email?: string;
   region_name?: string;
   sector_name?: string;
+  regionName?: string;
+  sectorName?: string;
 }
 
-// Region tipi
+// Region tipi - updated to match with Supabase.Region
 export interface Region {
   id: string;
   name: string;
   description?: string;
   admin_id?: string;
   admin_email?: string;
-  created_at: string | Date; // Match created_at type with supabase.d.ts
-  updated_at?: string | Date;
-  status: string; // Make status required to match supabase.d.ts
+  created_at: string;
+  updated_at: string;
+  status: string;
 }
 
-// Sector tipi
+// Sector tipi - updated to match with Supabase.Sector
 export interface Sector {
   id: string;
   name: string;
@@ -81,10 +83,12 @@ export interface Sector {
   region_id: string;
   admin_id?: string;
   admin_email?: string;
-  created_at: string | Date; // Match created_at type with supabase.d.ts
-  updated_at?: string | Date;
-  status: string; // Make status required to match supabase.d.ts
+  created_at: string;
+  updated_at: string;
+  status: string;
   completion_rate?: number;
+  regionName?: string;
+  region_name?: string;
 }
 
 // SchoolForm props tipi

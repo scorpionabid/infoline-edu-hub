@@ -17,8 +17,8 @@ import { Loader2 } from 'lucide-react';
 interface DeleteSectorDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
-  sector: Sector | null;
+  onConfirm: () => void;
+  sector: Sector;
   isSubmitting?: boolean;
 }
 
@@ -45,13 +45,7 @@ const DeleteSectorDialog: React.FC<DeleteSectorDialogProps> = ({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={(e) => {
-              e.preventDefault();
-              onConfirm();
-            }} 
-            className="bg-destructive hover:bg-destructive/90"
-          >
+          <AlertDialogAction onClick={onConfirm} className="bg-destructive hover:bg-destructive/90">
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

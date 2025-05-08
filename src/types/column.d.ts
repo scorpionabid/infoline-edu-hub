@@ -2,36 +2,51 @@
 export interface Column {
   id: string;
   name: string;
-  type: string;
-  category_id?: string;
-  is_required?: boolean;
+  category_id: string;
+  type: ColumnType;
   order_index?: number;
-  options?: string[] | Record<string, string> | any;
-  validation?: any;
+  is_required?: boolean;
   placeholder?: string;
   help_text?: string;
   default_value?: string;
+  options?: ColumnOptions;
+  validation?: ColumnValidation;
+  status?: string;
   created_at?: string;
   updated_at?: string;
-  status?: string;
 }
 
-export interface CategoryWithColumns {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-  deadline?: string | Date;
-  created_at?: string | Date;
-  updated_at?: string | Date;
-  column_count?: number;
-  priority?: number;
-  assignment?: string;
-  archived?: boolean;
-  columns: Column[];
+export type ColumnType = 
+  | 'text' 
+  | 'textarea' 
+  | 'number' 
+  | 'select' 
+  | 'multiselect' 
+  | 'date' 
+  | 'checkbox' 
+  | 'radio' 
+  | 'file';
+
+export interface ColumnOptions {
+  choices?: string[];
+  min?: number;
+  max?: number;
+  step?: number;
+  precision?: number;
+}
+
+export interface ColumnValidation {
+  minValue?: number;
+  maxValue?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  required?: boolean;
 }
 
 export interface TabDefinition {
   id: string;
   label: string;
+  description?: string;
+  columns: Column[];
 }

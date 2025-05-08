@@ -23,7 +23,7 @@ export const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
   const regionName = 
     'regionName' in sector ? sector.regionName : 
     'region_name' in sector ? sector.region_name : 
-    null;
+    '';
 
   // Ensure we use schoolCount or school_count safely
   const schoolCount = 
@@ -46,7 +46,7 @@ export const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg font-semibold">{sector.name}</CardTitle>
           <Badge variant={sector.status === 'active' ? 'default' : 'outline'}>
-            {t(sector.status)}
+            {t(sector.status || 'active')}
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
@@ -61,12 +61,12 @@ export const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
           </div>
           <div className="flex items-center text-sm">
             <PieChartIcon className="mr-2 h-4 w-4 text-primary" />
-            <span>{t('completionRate')}: {Math.round(completionRate)}%</span>
+            <span>{t('completionRate')}: {Math.round(Number(completionRate))}%</span>
           </div>
         </div>
       </CardContent>
       <CardFooter className="pt-2 text-xs text-muted-foreground">
-        {t('updatedAt')}: {formatDate(sector.updated_at)}
+        {t('updatedAt')}: {formatDate(sector.updated_at || '')}
       </CardFooter>
     </Card>
   );
