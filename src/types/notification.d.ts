@@ -1,12 +1,15 @@
 
+export type NotificationType = 'info' | 'success' | 'warning' | 'error';
+export type NotificationPriority = 'low' | 'normal' | 'high';
+
 export interface AppNotification {
   id: string;
   title: string;
   message: string;
-  timestamp: string;
+  type: NotificationType;
+  date?: string;
   isRead: boolean;
-  type: 'info' | 'success' | 'warning' | 'error';
-  entityType?: string;
-  entityId?: string | null;
-  userId: string;
+  priority?: NotificationPriority;
+  relatedEntityId?: string;
+  relatedEntityType?: string;
 }

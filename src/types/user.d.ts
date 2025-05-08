@@ -62,6 +62,7 @@ export interface UserFormData {
   email: string;
   password?: string;
   full_name: string;
+  name?: string;
   role: string;
   region_id?: string | null;
   sector_id?: string | null;
@@ -71,6 +72,7 @@ export interface UserFormData {
   language?: string;
   avatar?: string | null;
   status?: string;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface Sector {
@@ -79,5 +81,9 @@ export interface Sector {
   region_id: string;
   description?: string;
   status?: string;
+  created_at: string;
+  updated_at?: string;
+  admin_id?: string;
+  admin_email?: string;
   completion_rate?: number;
 }

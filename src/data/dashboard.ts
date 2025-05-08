@@ -3,9 +3,7 @@ import {
   CompletionData,
   DashboardStatus, 
   FormStats,
-  SchoolCompletionData,
   CategoryItem,
-  CompletionData as CompletionStats,
   DashboardNotification
 } from '@/types/dashboard';
 import { Sector } from '@/types/supabase';

@@ -2,7 +2,7 @@
 export interface Column {
   id: string;
   name: string;
-  type: string;
+  type: ColumnType;
   category_id: string;
   order_index: number;
   is_required: boolean;
@@ -32,7 +32,7 @@ export interface ColumnValidation {
 export interface ColumnFormData {
   id?: string;
   name: string;
-  type: string;
+  type: ColumnType;
   category_id: string;
   order_index?: number;
   is_required?: boolean;
@@ -44,6 +44,7 @@ export interface ColumnFormData {
   status?: string;
   label?: string;
   section?: string;
+  parent_column_id?: string;
 }
 
 export interface CategoryFilter {
