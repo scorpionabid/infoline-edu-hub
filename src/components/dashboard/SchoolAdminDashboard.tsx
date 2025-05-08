@@ -7,11 +7,15 @@ import NotificationsCard from './common/NotificationsCard';
 import { SchoolAdminDashboardData, SchoolAdminDashboardProps } from '@/types/dashboard';
 import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
 import { AppNotification } from '@/types/notification';
-import { FormIcon, CheckCircleIcon, AlertTriangleIcon, ClockIcon } from 'lucide-react';
+import { WormIcon, CheckCircleIcon, AlertTriangleIcon, ClockIcon } from 'lucide-react';
 import FormTabs from './school-admin/FormTabs';
 import { Button } from '@/components/ui/button';
 
-const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ 
+interface ExtendedSchoolAdminDashboardProps extends SchoolAdminDashboardProps {
+  data: SchoolAdminDashboardData;
+}
+
+const SchoolAdminDashboard: React.FC<ExtendedSchoolAdminDashboardProps> = ({ 
   data, 
   isLoading, 
   error, 
@@ -104,7 +108,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         <StatsCard
           title="Toplam form"
           value={statusData.total}
-          icon={<FormIcon className="h-4 w-4 text-primary" />}
+          icon={<WormIcon className="h-4 w-4 text-primary" />}
           description="Ümumi form sayı"
         />
       </Grid>
@@ -123,10 +127,10 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       
       {data.upcoming && data.categories && data.pendingForms && (
         <FormTabs 
-          upcoming={data.upcoming} 
+          upcoming={data.upcoming}
           categories={data.categories}
           pendingForms={data.pendingForms}
-          onNewDataEntry={navigateToDataEntry}
+          navigateToDataEntry={navigateToDataEntry}
           handleFormClick={handleFormClick}
         />
       )}

@@ -11,8 +11,8 @@ import { ColumnOption } from '@/types/column';
 interface OptionsFieldProps {
   control: Control<any>;
   options: ColumnOption[];
-  newOption: string;
-  setNewOption: React.Dispatch<React.SetStateAction<string>>;
+  newOption: ColumnOption;
+  setNewOption: React.Dispatch<React.SetStateAction<ColumnOption>>;
   addOption: () => void;
   removeOption: (id: string) => void;
   updateOption: (oldOption: ColumnOption, newOption: ColumnOption) => boolean;
@@ -32,7 +32,7 @@ const OptionsField: React.FC<OptionsFieldProps> = ({
   const [editValue, setEditValue] = React.useState('');
 
   const handleAddOption = () => {
-    if (newOption.trim()) {
+    if (newOption.label.trim()) {
       addOption();
     }
   };
@@ -60,6 +60,14 @@ const OptionsField: React.FC<OptionsFieldProps> = ({
     cancelEditing();
   };
 
+  const handleNewOptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewOption({
+      ...newOption,
+      label: e.target.value,
+      value: e.target.value.toLowerCase().replace(/\s+/g, '_')
+    });
+  };
+
   return (
     <div className="space-y-4">
       <FormField
@@ -71,8 +79,8 @@ const OptionsField: React.FC<OptionsFieldProps> = ({
             <div className="flex space-x-2 mb-2">
               <FormControl>
                 <Input
-                  value={newOption}
-                  onChange={(e) => setNewOption(e.target.value)}
+                  value={newOption.label}
+                  onChange={handleNewOptionChange}
                   placeholder={t("enterNewOption")}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -86,7 +94,7 @@ const OptionsField: React.FC<OptionsFieldProps> = ({
                 type="button"
                 size="sm"
                 onClick={handleAddOption}
-                disabled={!newOption.trim()}
+                disabled={!newOption.label.trim()}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 {t("add")}

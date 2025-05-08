@@ -3,95 +3,77 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
-import { useLanguage } from '@/context/LanguageContext';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 
-interface SectorProps {
+interface SectorData {
   id: string;
   name: string;
+  region_name?: string;
+  completion_rate?: number;
   status?: string;
-  completionRate?: number;
-  schoolCount?: number;
-  region_id?: string;
 }
 
 interface SectorCompletionCardProps {
-  sectors: SectorProps[];
+  sectors: SectorData[];
 }
 
 const SectorCompletionCard: React.FC<SectorCompletionCardProps> = ({ sectors }) => {
-  const { t } = useLanguage();
-  const navigate = useNavigate();
-  
-  if (!sectors || sectors.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('sectors')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center">{t('noSectors')}</p>
-        </CardContent>
-      </Card>
-    );
-  }
-  
+  // Sort sectors by completion rate in descending order
+  const sortedSectors = [...sectors].sort((a, b) => 
+    (b.completion_rate || 0) - (a.completion_rate || 0)
+  );
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('sectors')}</CardTitle>
+        <CardTitle className="text-lg font-semibold">Sektor tamamlanma dərəcələri</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
+        {sectors.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Sektor məlumatları yoxdur</p>
+          </div>
+        ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t('name')}</TableHead>
-                <TableHead className="w-[100px] text-right">{t('schools')}</TableHead>
-                <TableHead className="w-[200px] text-right">{t('completion')}</TableHead>
-                <TableHead className="w-[100px]"></TableHead>
+                <TableHead>Sektor</TableHead>
+                <TableHead>Region</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Tamamlanma</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sectors.slice(0, 5).map((sector) => (
+              {sortedSectors.map((sector) => (
                 <TableRow key={sector.id}>
                   <TableCell className="font-medium">{sector.name}</TableCell>
-                  <TableCell className="text-right">{sector.schoolCount || 0}</TableCell>
+                  <TableCell>{sector.region_name || 'N/A'}</TableCell>
                   <TableCell>
-                    <div className="flex items-center justify-end gap-2">
-                      <Progress 
-                        value={sector.completionRate || 0} 
-                        className="h-2 w-[100px]"
-                        indicatorClassName={
-                          (sector.completionRate || 0) > 80 ? "bg-green-500" :
-                          (sector.completionRate || 0) > 50 ? "bg-blue-500" :
-                          (sector.completionRate || 0) > 30 ? "bg-yellow-500" : "bg-red-500"
-                        }
-                      />
-                      <span className="w-8 text-sm">{Math.round(sector.completionRate || 0)}%</span>
-                    </div>
+                    {sector.status === 'active' ? (
+                      <Badge variant="outline" className="bg-green-50 text-green-700">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Aktiv
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-gray-50 text-gray-700">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        Qeyri-aktiv
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => navigate(`/sectors/${sector.id}`)}
-                    >
-                      {t('view')}
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Progress value={sector.completion_rate || 0} className="h-2 w-full" />
+                      <span className="text-sm font-medium">
+                        {sector.completion_rate || 0}%
+                      </span>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </div>
-        {sectors.length > 5 && (
-          <div className="mt-2 flex justify-end">
-            <Button variant="link" onClick={() => navigate('/sectors')}>
-              {t('viewAll')} ({sectors.length})
-            </Button>
-          </div>
         )}
       </CardContent>
     </Card>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -22,7 +23,7 @@ interface BasicColumnFieldsProps {
   columns?: Column[];
   editColumn?: Column | null;
   selectedType: ColumnType;
-  onTypeChange: (type: string) => void;
+  onTypeChange: (type: ColumnType) => void;
   isEditMode: boolean;
 }
 
@@ -114,7 +115,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
             <FormLabel>{t("columnTypeLabel")}</FormLabel>
             <ColumnTypeSelector
               value={selectedType}
-              onChange={onTypeChange}
+              onChange={(value) => onTypeChange(value)}
               disabled={isEditMode}
             />
             <FormMessage />

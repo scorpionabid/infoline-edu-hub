@@ -65,8 +65,8 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
   };
 
   // Option silmək funksiyası
-  const removeOption = (index: number) => {
-    const updatedOptions = options.filter((_, i) => i !== index);
+  const removeOption = (id: string) => {
+    const updatedOptions = options.filter(option => option.id !== id);
     setOptions(updatedOptions);
     form.setValue('options', updatedOptions);
   };
@@ -74,6 +74,11 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
   // Form submit handler
   const onSubmit = async (data: ColumnFormValues) => {
     try {
+      // Ensure category_id is set
+      if (!data.category_id) {
+        data.category_id = categoryId || '';
+      }
+
       // Əgər sütun tipi seçimlərdən biridirsə, options sahəsini əlavə et
       if (['select', 'radio', 'checkbox'].includes(data.type)) {
         data.options = options;

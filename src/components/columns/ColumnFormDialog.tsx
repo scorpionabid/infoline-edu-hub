@@ -148,13 +148,13 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
                       removeOption={removeOption}
                       updateOption={(oldOption, newOption) => {
                         // Köhnə option-u tapıb yenisi ilə əvəz edirik
-                        const index = options.findIndex(opt => 
-                          opt.label === oldOption.label && opt.value === oldOption.value
-                        );
+                        const index = options.findIndex(opt => opt.id === oldOption.id);
                         
                         if (index !== -1) {
                           const updatedOptions = [...options];
                           updatedOptions[index] = newOption;
+                          setOptions(updatedOptions);
+                          form.setValue('options', updatedOptions);
                           return true;
                         }
                         return false;

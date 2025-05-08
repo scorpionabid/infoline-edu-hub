@@ -2,12 +2,13 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { CheckIcon } from 'lucide-react';
-import { ColumnType, columnTypeDefinitions } from '@/types/column';
+import { ColumnType } from '@/types/column';
 import { Icons } from '@/components/ui/icons';
 
 interface ColumnTypeSelectorProps {
   value: ColumnType;
   onChange: (value: ColumnType) => void;
+  disabled?: boolean;  // Added disabled prop
 }
 
 const typeGroups = [
@@ -37,7 +38,105 @@ const typeGroups = [
   }
 ];
 
-const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange }) => {
+// Create a columnTypeDefinitions object
+export const columnTypeDefinitions: Record<ColumnType, { label: string; description: string; icon: string }> = {
+  text: { 
+    label: 'Mətn', 
+    description: 'Qısa mətn daxiletməsi', 
+    icon: 'TextIcon' 
+  },
+  textarea: { 
+    label: 'Mətn sahəsi', 
+    description: 'Çoxsətirli mətn daxiletməsi', 
+    icon: 'AlignLeftIcon' 
+  },
+  richtext: { 
+    label: 'Zəngin mətn', 
+    description: 'Formatlaşdırılmış mətn redaktoru', 
+    icon: 'TypeIcon'
+  },
+  number: { 
+    label: 'Rəqəm', 
+    description: 'Rəqəm daxiletməsi', 
+    icon: 'HashIcon' 
+  },
+  range: { 
+    label: 'Aralıq', 
+    description: 'Min və max aralığında rəqəm', 
+    icon: 'BarChartIcon' 
+  },
+  select: { 
+    label: 'Açılan siyahı', 
+    description: 'Açılan siyahıdan seçim', 
+    icon: 'ListIcon' 
+  },
+  checkbox: { 
+    label: 'Bayraq', 
+    description: 'Bəli/xeyr seçimi', 
+    icon: 'CheckSquareIcon' 
+  },
+  radio: { 
+    label: 'Radio düymələri', 
+    description: 'Bir seçim variantı', 
+    icon: 'CircleIcon' 
+  },
+  date: { 
+    label: 'Tarix', 
+    description: 'Tarix seçimi', 
+    icon: 'CalendarIcon' 
+  },
+  time: { 
+    label: 'Vaxt', 
+    description: 'Vaxt seçimi', 
+    icon: 'ClockIcon' 
+  },
+  datetime: { 
+    label: 'Tarix və vaxt', 
+    description: 'Tarix və vaxt seçimi', 
+    icon: 'CalendarRangeIcon' 
+  },
+  email: { 
+    label: 'E-poçt', 
+    description: 'E-poçt ünvanı daxiletməsi', 
+    icon: 'MailIcon' 
+  },
+  url: { 
+    label: 'URL', 
+    description: 'Vebsayt ünvanı', 
+    icon: 'LinkIcon' 
+  },
+  phone: { 
+    label: 'Telefon', 
+    description: 'Telefon nömrəsi', 
+    icon: 'PhoneIcon' 
+  },
+  color: { 
+    label: 'Rəng', 
+    description: 'Rəng seçimi', 
+    icon: 'PaletteIcon' 
+  },
+  password: { 
+    label: 'Şifrə', 
+    description: 'Gizli şifrə daxiletməsi', 
+    icon: 'LockIcon' 
+  },
+  file: { 
+    label: 'Fayl', 
+    description: 'Fayl yükləməsi', 
+    icon: 'FileIcon' 
+  },
+  image: { 
+    label: 'Şəkil', 
+    description: 'Şəkil yükləməsi', 
+    icon: 'ImageIcon' 
+  }
+};
+
+const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ 
+  value, 
+  onChange,
+  disabled = false  // Default value
+}) => {
   const getIconComponent = (iconName: string) => {
     return (Icons as any)[iconName] || Icons.circle;
   };
@@ -56,12 +155,14 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange
               <button
                 key={type}
                 type="button"
-                onClick={() => onChange(type)}
+                onClick={() => !disabled && onChange(type)}
+                disabled={disabled}
                 className={cn(
                   "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm",
                   isActive 
                     ? "bg-primary text-primary-foreground" 
-                    : "hover:bg-muted"
+                    : "hover:bg-muted",
+                  disabled && "opacity-50 cursor-not-allowed"
                 )}
               >
                 <IconComponent className="h-4 w-4" />
