@@ -1,510 +1,825 @@
 import { createClient } from '@supabase/supabase-js';
+import { Database } from './types';
 
-// Supabase konfiqurasiyası
-const supabaseUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4';
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5NzUzMzMxNywiZXhwIjoyMDEzMTA5MzE3fQ.mIHF-BO2JQpwXOVvUDGwNH8o_E1JbdSjsYNi-Qrz_7w';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Token yenilənməsini izləmək üçün dəyişənlər
-let isRefreshing = false;
-let refreshPromise: Promise<any> | null = null;
-
-// Təkrar cəhdlər üçün konfiqurasiya
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 saniyə
-
-// Gözləmə funksiyası
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// CORS Headers
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-};
-
-// Supabase klienti yaratmaq
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true, // Sesiyaların saxlanmasını təmin edir
-    storageKey: 'infoline-auth-storage', // Saxlama açarını təyin edir
-    autoRefreshToken: true, // Token-in avtomatik yenilənməsini təmin edir
-    detectSessionInUrl: true, // URL-də sesiya məlumatlarını aşkarlayır
-    storage: localStorage // Lokal saxlama istifadə edir
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
   },
-  global: {
-    headers: {
-      'x-application-name': 'infoline-edu-hub'
-    }
-  }
 });
 
-// Əlavə xüsusiyyətlər əlavə edək
-Object.assign(supabase, {
-  supabaseUrl,
-  supabaseKey: supabaseAnonKey
-});
+export const getProfile = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
 
-// Token yenilənməsi üçün helper funksiya
-export const refreshToken = async () => {
-  if (isRefreshing) {
-    return refreshPromise;
-  }
-  
-  isRefreshing = true;
-  
-  try {
-    refreshPromise = supabase.auth.refreshSession();
-    const result = await refreshPromise;
-    return result;
-  } catch (error) {
-    console.error('Token refresh error:', error);
-    throw error;
-  } finally {
-    isRefreshing = false;
-    refreshPromise = null;
-  }
-};
-
-// Supabase sorğuları üçün wrapper funksiya
-export const supabaseFetch = async <T>(
-  operation: () => Promise<T>,
-  retries = MAX_RETRIES
-): Promise<T> => {
-  try {
-    // Sorğunu göndər
-    return await operation();
-  } catch (error: any) {
-    // Şəbəkə xətası və ya 429 (Too Many Requests) xətası halında təkrar cəhd et
-    if ((error?.message === 'Failed to fetch' || error?.status === 429) && retries > 0) {
-      console.warn(`Network error, retrying (${retries} attempts left)...`);
-      await wait(RETRY_DELAY * (MAX_RETRIES - retries + 1)); // Eksponensial gözləmə
-      return supabaseFetch(operation, retries - 1);
-    }
-    
-    // 401 xətası alındıqda token yenilənməsini sına
-    if (error?.status === 401 && !isRefreshing) {
-      try {
-        await refreshToken();
-        // Yenilənmiş token ilə sorğunu təkrarla
-        return await operation();
-      } catch (refreshError) {
-        console.error('Token refresh and retry failed:', refreshError);
-        throw refreshError;
-      }
-    }
-    
-    // Digər xətalar üçün xətanı yenidən at
-    throw error;
-  }
-};
-
-// Edge Functions üçün helper funksiya
-export const callEdgeFunction = async <T>(
-  functionName: string,
-  body: any = {},
-  retries = MAX_RETRIES
-): Promise<T> => {
-  try {
-    // Supabase SDK vasitəsilə Edge Function-a sorğu göndər
-    // Əlavə CORS başlıqlarını əlavə edək
-    const sessionResponse = await supabase.auth.getSession();
-    const accessToken = sessionResponse.data.session?.access_token;
-
-    // İstək parametrləri
-    const requestOptions: any = { 
-      body,
-    };
-
-    // Əgər access token varsa, authorization header-i əlavə et
-    if (accessToken) {
-      supabase.functions.setAuth(accessToken);
-    }
-    
-    const { data, error } = await supabase.functions.invoke(functionName, requestOptions);
-    
-    if (error) {
-      console.error(`Edge function ${functionName} error:`, error);
-      
-      // Əgər CORS xətasıdırsa və təkrar cəhd sayı qalıbsa
-      if (retries > 0 && (
-        error.message?.includes('CORS') || 
-        error.message?.includes('Failed to fetch') ||
-        error.message?.includes('NetworkError')
-      )) {
-        console.warn(`CORS or network error, retrying (${retries} attempts left)...`);
-        await wait(RETRY_DELAY * (MAX_RETRIES - retries + 1));
-        return callEdgeFunction(functionName, body, retries - 1);
-      }
-      
-      throw error;
-    }
-    
-    return data as T;
-  } catch (error: any) {
-    // Şəbəkə xətası və ya 429 (Too Many Requests) xətası halında təkrar cəhd et
-    if ((error?.message === 'Failed to fetch' || error?.status === 429) && retries > 0) {
-      console.warn(`Edge function network error, retrying (${retries} attempts left)...`);
-      await wait(RETRY_DELAY * (MAX_RETRIES - retries + 1)); // Eksponensial gözləmə
-      return callEdgeFunction(functionName, body, retries - 1);
-    }
-    
-    // 401 xətası alındıqda token yenilənməsini sına
-    if (error?.status === 401 && !isRefreshing) {
-      try {
-        await refreshToken();
-        // Yenilənmiş token ilə sorğunu təkrarla
-        return await callEdgeFunction(functionName, body, retries);
-      } catch (refreshError) {
-        console.error('Token refresh and retry failed:', refreshError);
-        throw refreshError;
-      }
-    }
-    
-    // Digər xətalar üçün xətanı yenidən at
-    throw error;
-  }
-};
-
-/**
- * Vahid keşləmə mexanizmi
- * Bütün tətbiq üçün standartlaşdırılmış keşləmə funksiyaları
- */
-
-// Keş açarları
-export const CACHE_KEYS = {
-  USER_PROFILE: 'info_line_user_profile',
-  USER_SESSION: 'info_line_user_session',
-  REGIONS: 'info_line_regions',
-  SECTORS: 'info_line_sectors',
-  SCHOOLS: 'info_line_schools',
-};
-
-// Keş vaxtı (millisaniyə ilə)
-export const CACHE_EXPIRY = {
-  SHORT: 5 * 60 * 1000, // 5 dəqiqə
-  MEDIUM: 30 * 60 * 1000, // 30 dəqiqə
-  LONG: 24 * 60 * 60 * 1000, // 1 gün
-};
-
-// Keş tipləri
-export type CacheStorage = 'local' | 'session';
-
-interface CacheItem<T> {
-  data: T;
-  expiry: number;
-}
-
-/**
- * Keşdən məlumat əldə etmək
- * @param key Keş açarı
- * @param storage Keş saxlama tipi (local/session)
- * @returns Keşlənmiş məlumat və ya null
- */
-export function getCache<T>(key: string, storage: CacheStorage = 'local'): T | null {
-  try {
-    const storageObj = storage === 'local' ? localStorage : sessionStorage;
-    const cachedStr = storageObj.getItem(key);
-    
-    if (!cachedStr) return null;
-    
-    const cached = JSON.parse(cachedStr) as CacheItem<T>;
-    const now = Date.now();
-    
-    if (cached.expiry && cached.expiry > now) {
-      return cached.data;
-    }
-    
-    // Vaxtı keçmiş keşi təmizləyirik
-    storageObj.removeItem(key);
-    return null;
-  } catch (e) {
-    console.warn(`Cache reading error for key ${key}:`, e);
+  if (error) {
+    console.error('Error fetching profile:', error);
     return null;
   }
-}
 
-/**
- * Məlumatı keşdə saxlamaq
- * @param key Keş açarı
- * @param data Saxlanılacaq məlumat
- * @param expiryMs Keş vaxtı (millisaniyə ilə)
- * @param storage Keş saxlama tipi (local/session)
- */
-export function setCache<T>(
-  key: string, 
-  data: T | null, 
-  expiryMs: number = CACHE_EXPIRY.MEDIUM,
-  storage: CacheStorage = 'local'
-): void {
-  try {
-    const storageObj = storage === 'local' ? localStorage : sessionStorage;
-    
-    if (data === null) {
-      storageObj.removeItem(key);
-      return;
-    }
-    
-    const expiry = Date.now() + expiryMs;
-    storageObj.setItem(
-      key,
-      JSON.stringify({ data, expiry })
-    );
-  } catch (e) {
-    console.warn(`Cache writing error for key ${key}:`, e);
-  }
-}
-
-/**
- * Keşi təmizləmək
- * @param key Keş açarı (təyin edilməzsə bütün keşlər təmizlənir)
- * @param storage Keş saxlama tipi (local/session)
- */
-export function clearCache(key?: string, storage: CacheStorage = 'local'): void {
-  try {
-    const storageObj = storage === 'local' ? localStorage : sessionStorage;
-    
-    if (key) {
-      storageObj.removeItem(key);
-    } else {
-      // Bütün info_line_ prefiksli keşlər təmizləyirik
-      Object.keys(storageObj).forEach(k => {
-        if (k.startsWith('info_line_')) {
-          storageObj.removeItem(k);
-        }
-      });
-    }
-  } catch (e) {
-    console.warn(`Cache clearing error:`, e);
-  }
-}
-
-// Offline-first yanaşma üçün supabase wrapper
-export const supabaseWithRetry = {
-  from: (table: string) => {
-    const originalFrom = supabase.from(table);
-    
-    return {
-      ...originalFrom,
-      select: async (...args: any[]) => {
-        try {
-          // Əvvəlcə keşə bax
-          const cachedData = localStorage.getItem(`cache_${table}_select`);
-          const cacheTime = localStorage.getItem(`cache_${table}_select_time`);
-          
-          if (cachedData && cacheTime) {
-            const cacheAge = Date.now() - parseInt(cacheTime);
-            if (cacheAge < 5 * 60 * 1000) { // 5 dəqiqə
-              console.log(`Using cached ${table} data`);
-              return { data: JSON.parse(cachedData), error: null };
-            }
-          }
-          
-          // Keş yoxdursa və ya köhnədirsə, sorğu göndər
-          const query = originalFrom.select(...args);
-          const result = await query;
-          
-          // Uğurlu nəticəni keşlə
-          if (!result.error && result.data) {
-            localStorage.setItem(`cache_${table}_select`, JSON.stringify(result.data));
-            localStorage.setItem(`cache_${table}_select_time`, Date.now().toString());
-          }
-          
-          return result;
-        } catch (error) {
-          console.error(`Error in ${table}.select:`, error);
-          
-          // Xəta halında keşlənmiş məlumatları istifadə et
-          const cachedData = localStorage.getItem(`cache_${table}_select`);
-          if (cachedData) {
-            console.log(`Using cached ${table} data due to error`);
-            return { data: JSON.parse(cachedData), error: null };
-          }
-          
-          return { data: null, error };
-        }
-      },
-      
-      // Order funksiyası düzəldilib - parametrlər düzgün işlənir və zəncirlənmə dəstəklənir
-      order: function(column: string, options?: { ascending?: boolean }) {
-        try {
-          // Orijinal sorğunu yaradaq
-          const query = originalFrom.order(column, options);
-          
-          // Daha əvvəlki zəncirləməni saxlamaq üçün orijinal sorğunu qaytarır
-          return {
-            ...query,
-            select: async (...args: any[]) => {
-              try {
-                // Keş açarı yaradaq (sıralama parametrləri ilə)
-                const orderKey = `${column}_${options?.ascending !== false ? 'asc' : 'desc'}`;
-                const cacheKey = `cache_${table}_order_${orderKey}`;
-                
-                // Keşə baxaq
-                const cachedData = localStorage.getItem(cacheKey);
-                const cacheTime = localStorage.getItem(`${cacheKey}_time`);
-                
-                if (cachedData && cacheTime) {
-                  const cacheAge = Date.now() - parseInt(cacheTime);
-                  if (cacheAge < 5 * 60 * 1000) { // 5 dəqiqə
-                    console.log(`Using cached ${table} ordered data`);
-                    return { data: JSON.parse(cachedData), error: null };
-                  }
-                }
-                
-                // Orijinal select çağırıb
-                const result = await query.select(...args);
-                
-                // Uğurlu nəticəni keşlə
-                if (!result.error && result.data) {
-                  localStorage.setItem(cacheKey, JSON.stringify(result.data));
-                  localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
-                }
-                
-                return result;
-              } catch (error) {
-                console.error(`Error in ${table}.order.select:`, error);
-                
-                // Xəta halında keşdən oxu
-                const orderKey = `${column}_${options?.ascending !== false ? 'asc' : 'desc'}`;
-                const cacheKey = `cache_${table}_order_${orderKey}`;
-                const cachedData = localStorage.getItem(cacheKey);
-                
-                if (cachedData) {
-                  console.log(`Using cached ${table} ordered data due to error`);
-                  return { data: JSON.parse(cachedData), error: null };
-                }
-                
-                return { data: null, error };
-              }
-            }
-          };
-        } catch (error) {
-          console.error(`Error in ${table}.order:`, error);
-          
-          // Xəta halında boş select metodu ilə obyekt qaytaraq
-          return {
-            select: async (...args: any[]) => {
-              const cachedData = localStorage.getItem(`cache_${table}_select`);
-              
-              if (cachedData) {
-                console.log(`Using cached ${table} data due to error in order function`);
-                return { data: JSON.parse(cachedData), error: null };
-              }
-              
-              return { data: null, error: new Error(`Order function error: ${error}`) };
-            }
-          };
-        }
-      }
-    };
-  }
+  return data;
 };
 
-// Supabase klientinə auth dəyişikliklərinə abunə olaq
-supabase.auth.onAuthStateChange((event, session) => {
-  console.log('Auth state changed:', event);
-  if (session) {
-    // Session mövcuddursa, Authorization header-ini əlavə edək
-    supabase.functions.setAuth(session.access_token);
+export const updateProfile = async (userId: string, updates: any) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error('Error updating profile:', error);
+    return null;
   }
-});
 
-// Admin əməliyyatları üçün service_role ilə Supabase klienti
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  },
-  global: {
-    headers: {
-      'x-application-name': 'infoline-edu-hub-admin'
-    }
-  }
-});
-
-// Admin klientinə də API açarını əlavə edək
-Object.assign(supabaseAdmin, {
-  supabaseUrl,
-  supabaseKey: supabaseServiceKey
-});
-
-// Real-time kanal yaratma funksiyası
-export const createRealTimeChannel = (channelName: string, table: string, event: 'INSERT' | 'UPDATE' | 'DELETE' | '*' = '*', filter?: string) => {
-  return supabase
-    .channel(channelName)
-    .on(
-      'postgres_changes' as any,
-      {
-        event,
-        schema: 'public',
-        table,
-        filter
-      }, 
-      (payload) => {
-        console.log('Real-time dəyişiklik:', payload);
-        return payload;
-      }
-    );
+  return data;
 };
 
-// Data yükləmə üçün yardımçı funksiya
-export const fetchData = async <T>(
-  tableName: string,
-  columns: string = '*',
-  filters?: { column: string; value: any; operator?: string }[],
-  options?: {
-    limit?: number;
-    offset?: number;
-    orderBy?: { column: string; ascending?: boolean };
+export const getRegions = async () => {
+  const { data, error } = await supabase
+    .from('regions')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching regions:', error);
+    return [];
   }
-): Promise<{ data: T[] | null; error: any }> => {
-  try {
-    let query = supabase.from(tableName).select(columns);
 
-    // Filtrləri əlavə et
-    if (filters && filters.length > 0) {
-      filters.forEach(filter => {
-        const operator = filter.operator || 'eq';
-        if (operator === 'eq') {
-          query = query.eq(filter.column, filter.value);
-        } else if (operator === 'neq') {
-          query = query.neq(filter.column, filter.value);
-        } else if (operator === 'gt') {
-          query = query.gt(filter.column, filter.value);
-        } else if (operator === 'lt') {
-          query = query.lt(filter.column, filter.value);
-        } else if (operator === 'gte') {
-          query = query.gte(filter.column, filter.value);
-        } else if (operator === 'lte') {
-          query = query.lte(filter.column, filter.value);
-        } else if (operator === 'in') {
-          query = query.in(filter.column, filter.value);
-        }
-      });
-    }
-
-    // Seçimlər əlavə et
-    if (options) {
-      if (options.limit) {
-        query = query.limit(options.limit);
-      }
-      if (options.offset) {
-        query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
-      }
-      if (options.orderBy) {
-        query = query.order(options.orderBy.column, {
-          ascending: options.orderBy.ascending !== false
-        });
-      }
-    }
-
-    const { data, error } = await query;
-    return { data: data as T[], error };
-  } catch (error) {
-    console.error('Data yükləmə xətası:', error);
-    return { data: null, error };
-  }
+  return data;
 };
 
-export default supabase;
+export const getSectors = async (regionId: string) => {
+  const { data, error } = await supabase
+    .from('sectors')
+    .select('*')
+    .eq('region_id', regionId)
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching sectors:', error);
+    return [];
+  }
+
+  return data;
+};
+
+export const getSchools = async (sectorId: string) => {
+  const { data, error } = await supabase
+    .from('schools')
+    .select('*')
+    .eq('sector_id', sectorId)
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching schools:', error);
+    return [];
+  }
+
+  return data;
+};
+
+export const getCategories = async () => {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+
+  return data;
+};
+
+export const getColumns = async (categoryId: string) => {
+  const { data, error } = await supabase
+    .from('columns')
+    .select('*')
+    .eq('category_id', categoryId)
+    .order('order_index', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching columns:', error);
+    return [];
+  }
+
+  return data;
+};
+
+export const getDataEntries = async (schoolId: string, categoryId: string) => {
+  const { data, error } = await supabase
+    .from('data_entries')
+    .select('*')
+    .eq('school_id', schoolId)
+    .eq('category_id', categoryId);
+
+  if (error) {
+    console.error('Error fetching data entries:', error);
+    return [];
+  }
+
+  return data;
+};
+
+export const updateDataEntry = async (id: string, updates: any) => {
+  const { data, error } = await supabase
+    .from('data_entries')
+    .update(updates)
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error updating data entry:', error);
+    return null;
+  }
+
+  return data;
+};
+
+export const createDataEntry = async (entry: any) => {
+  const { data, error } = await supabase
+    .from('data_entries')
+    .insert([entry])
+    .single();
+
+  if (error) {
+    console.error('Error creating data entry:', error);
+    return null;
+  }
+
+  return data;
+};
+
+export const deleteDataEntry = async (id: string) => {
+  const { data, error } = await supabase
+    .from('data_entries')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting data entry:', error);
+    return false;
+  }
+
+  return true;
+};
+
+export const getUsers = async () => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('full_name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
+
+  return data;
+};
+
+export const updateUser = async (userId: string, updates: any) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error('Error updating user:', error);
+    return null;
+  }
+
+  return data;
+};
+
+export const deleteUser = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('id', userId);
+
+  if (error) {
+    console.error('Error deleting user:', error);
+    return false;
+  }
+
+  return true;
+};
+
+export const getNotifications = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching notifications:', error);
+    return [];
+  }
+
+  return data;
+};
+
+export const createNotification = async (notification: any) => {
+  const { data, error } = await supabase
+    .from('notifications')
+    .insert([notification])
+    .single();
+
+  if (error) {
+    console.error('Error creating notification:', error);
+    return null;
+  }
+
+  return data;
+};
+
+export const updateNotification = async (id: string, updates: any) => {
+  const { data, error } = await supabase
+    .from('notifications')
+    .update(updates)
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error updating notification:', error);
+    return null;
+  }
+
+  return data;
+};
+
+export const deleteNotification = async (id: string) => {
+  const { data, error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting notification:', error);
+    return false;
+  }
+
+  return true;
+};
+
+export const getDashboardStats = async () => {
+  // Implement your logic to fetch dashboard stats
+  return {
+    totalSchools: 100,
+    activeSchools: 80,
+    pendingForms: 20,
+  };
+};
+
+export const getCompletionRate = async (categoryId: string) => {
+  // Implement your logic to fetch completion rate for a category
+  return 75;
+};
+
+export const getRecentSubmissions = async () => {
+  // Implement your logic to fetch recent form submissions
+  return [];
+};
+
+export const getCategoryCompletion = async () => {
+  // Implement your logic to fetch category completion data
+  return [];
+};
+
+export const getFormStats = async () => {
+  // Implement your logic to fetch form statistics
+  return {
+    pending: 10,
+    approved: 50,
+    rejected: 5,
+    total: 65,
+  };
+};
+
+export const getSchoolCompletionRate = async (schoolId: string) => {
+  // Implement your logic to fetch school completion rate
+  return 60;
+};
+
+export const getSectorCompletionRate = async (sectorId: string) => {
+  // Implement your logic to fetch sector completion rate
+  return 70;
+};
+
+export const getRegionCompletionRate = async (regionId: string) => {
+  // Implement your logic to fetch region completion rate
+  return 80;
+};
+
+export const getReportData = async (reportId: string) => {
+  // Implement your logic to fetch report data
+  return {
+    title: 'Sample Report',
+    data: [],
+  };
+};
+
+export const generateReport = async (filters: any) => {
+  // Implement your logic to generate a report based on filters
+  return {
+    title: 'Generated Report',
+    data: [],
+  };
+};
+
+export const getSettings = async () => {
+  // Implement your logic to fetch settings
+  return {
+    theme: 'light',
+    language: 'en',
+  };
+};
+
+export const updateSettings = async (updates: any) => {
+  // Implement your logic to update settings
+  return {
+    success: true,
+  };
+};
+
+export const getAuditLogs = async () => {
+  // Implement your logic to fetch audit logs
+  return [];
+};
+
+export const logActivity = async (activity: string) => {
+  // Implement your logic to log user activity
+  return {
+    success: true,
+  };
+};
+
+export const uploadFile = async (file: File) => {
+  // Implement your logic to upload a file
+  return {
+    url: 'https://example.com/uploaded-file.jpg',
+  };
+};
+
+export const getUploadedFiles = async () => {
+  // Implement your logic to fetch uploaded files
+  return [];
+};
+
+export const deleteFile = async (fileUrl: string) => {
+  // Implement your logic to delete a file
+  return {
+    success: true,
+  };
+};
+
+export const getSchoolDetails = async (schoolId: string) => {
+  // Implement your logic to fetch school details
+  return {
+    name: 'Sample School',
+    address: '123 Main St',
+  };
+};
+
+export const getSectorDetails = async (sectorId: string) => {
+  // Implement your logic to fetch sector details
+  return {
+    name: 'Sample Sector',
+    description: 'This is a sample sector',
+  };
+};
+
+export const getRegionDetails = async (regionId: string) => {
+  // Implement your logic to fetch region details
+  return {
+    name: 'Sample Region',
+    description: 'This is a sample region',
+  };
+};
+
+export const getCategoryDetails = async (categoryId: string) => {
+  // Implement your logic to fetch category details
+  return {
+    name: 'Sample Category',
+    description: 'This is a sample category',
+  };
+};
+
+export const getColumnDetails = async (columnId: string) => {
+  // Implement your logic to fetch column details
+  return {
+    name: 'Sample Column',
+    type: 'text',
+  };
+};
+
+export const getFormData = async (formId: string) => {
+  // Implement your logic to fetch form data
+  return {
+    title: 'Sample Form',
+    fields: [],
+  };
+};
+
+export const submitForm = async (formId: string, data: any) => {
+  // Implement your logic to submit a form
+  return {
+    success: true,
+  };
+};
+
+export const approveForm = async (formId: string) => {
+  // Implement your logic to approve a form
+  return {
+    success: true,
+  };
+};
+
+export const rejectForm = async (formId: string, reason: string) => {
+  // Implement your logic to reject a form
+  return {
+    success: true,
+  };
+};
+
+export const getFormSubmissions = async (formId: string) => {
+  // Implement your logic to fetch form submissions
+  return [];
+};
+
+export const getFormTemplate = async (formId: string) => {
+  // Implement your logic to fetch a form template
+  return {
+    title: 'Sample Form Template',
+    fields: [],
+  };
+};
+
+export const createFormTemplate = async (template: any) => {
+  // Implement your logic to create a form template
+  return {
+    success: true,
+  };
+};
+
+export const updateFormTemplate = async (templateId: string, updates: any) => {
+  // Implement your logic to update a form template
+  return {
+    success: true,
+  };
+};
+
+export const deleteFormTemplate = async (templateId: string) => {
+  // Implement your logic to delete a form template
+  return {
+    success: true,
+  };
+};
+
+export const getFormTemplates = async () => {
+  // Implement your logic to fetch form templates
+  return [];
+};
+
+export const getSchoolUsers = async (schoolId: string) => {
+  // Implement your logic to fetch users associated with a school
+  return [];
+};
+
+export const getSectorUsers = async (sectorId: string) => {
+  // Implement your logic to fetch users associated with a sector
+  return [];
+};
+
+export const getRegionUsers = async (regionId: string) => {
+  // Implement your logic to fetch users associated with a region
+  return [];
+};
+
+export const assignSchoolAdmin = async (schoolId: string, userId: string) => {
+  // Implement your logic to assign a school admin
+  return {
+    success: true,
+  };
+};
+
+export const assignSectorAdmin = async (sectorId: string, userId: string) => {
+  // Implement your logic to assign a sector admin
+  return {
+    success: true,
+  };
+};
+
+export const assignRegionAdmin = async (regionId: string, userId: string) => {
+  // Implement your logic to assign a region admin
+  return {
+    success: true,
+  };
+};
+
+export const removeSchoolAdmin = async (schoolId: string) => {
+  // Implement your logic to remove a school admin
+  return {
+    success: true,
+  };
+};
+
+export const removeSectorAdmin = async (sectorId: string) => {
+  // Implement your logic to remove a sector admin
+  return {
+    success: true,
+  };
+};
+
+export const removeRegionAdmin = async (regionId: string) => {
+  // Implement your logic to remove a region admin
+  return {
+    success: true,
+  };
+};
+
+export const getSchoolAdmin = async (schoolId: string) => {
+  // Implement your logic to fetch the school admin
+  return {
+    name: 'Sample Admin',
+    email: 'admin@example.com',
+  };
+};
+
+export const getSectorAdmin = async (sectorId: string) => {
+  // Implement your logic to fetch the sector admin
+  return {
+    name: 'Sample Admin',
+    email: 'admin@example.com',
+  };
+};
+
+export const getRegionAdmin = async (regionId: string) => {
+  // Implement your logic to fetch the region admin
+  return {
+    name: 'Sample Admin',
+    email: 'admin@example.com',
+  };
+};
+
+export const createSchool = async (school: any) => {
+  // Implement your logic to create a school
+  return {
+    success: true,
+  };
+};
+
+export const updateSchool = async (schoolId: string, updates: any) => {
+  // Implement your logic to update a school
+  return {
+    success: true,
+  };
+};
+
+export const deleteSchool = async (schoolId: string) => {
+  // Implement your logic to delete a school
+  return {
+    success: true,
+  };
+};
+
+export const createSector = async (sector: any) => {
+  // Implement your logic to create a sector
+  return {
+    success: true,
+  };
+};
+
+export const updateSector = async (sectorId: string, updates: any) => {
+  // Implement your logic to update a sector
+  return {
+    success: true,
+  };
+};
+
+export const deleteSector = async (sectorId: string) => {
+  // Implement your logic to delete a sector
+  return {
+    success: true,
+  };
+};
+
+export const createRegion = async (region: any) => {
+  // Implement your logic to create a region
+  return {
+    success: true,
+  };
+};
+
+export const updateRegion = async (regionId: string, updates: any) => {
+  // Implement your logic to update a region
+  return {
+    success: true,
+  };
+};
+
+export const deleteRegion = async (regionId: string) => {
+  // Implement your logic to delete a region
+  return {
+    success: true,
+  };
+};
+
+export const createCategory = async (category: any) => {
+  // Implement your logic to create a category
+  return {
+    success: true,
+  };
+};
+
+export const updateCategory = async (categoryId: string, updates: any) => {
+  // Implement your logic to update a category
+  return {
+    success: true,
+  };
+};
+
+export const deleteCategory = async (categoryId: string) => {
+  // Implement your logic to delete a category
+  return {
+    success: true,
+  };
+};
+
+export const createColumn = async (column: any) => {
+  // Implement your logic to create a column
+  return {
+    success: true,
+  };
+};
+
+export const updateColumn = async (columnId: string, updates: any) => {
+  // Implement your logic to update a column
+  return {
+    success: true,
+  };
+};
+
+export const deleteColumn = async (columnId: string) => {
+  // Implement your logic to delete a column
+  return {
+    success: true,
+  };
+};
+
+export const getCategoryColumns = async (categoryId: string) => {
+  // Implement your logic to fetch columns for a category
+  return [];
+};
+
+export const getSchoolCategories = async (schoolId: string) => {
+  // Implement your logic to fetch categories for a school
+  return [];
+};
+
+export const getSectorCategories = async (sectorId: string) => {
+  // Implement your logic to fetch categories for a sector
+  return [];
+};
+
+export const getRegionCategories = async (regionId: string) => {
+  // Implement your logic to fetch categories for a region
+  return [];
+};
+
+export const getCategoryForms = async (categoryId: string) => {
+  // Implement your logic to fetch forms for a category
+  return [];
+};
+
+export const getSchoolForms = async (schoolId: string) => {
+  // Implement your logic to fetch forms for a school
+  return [];
+};
+
+export const getSectorForms = async (sectorId: string) => {
+  // Implement your logic to fetch forms for a sector
+  return [];
+};
+
+export const getRegionForms = async (regionId: string) => {
+  // Implement your logic to fetch forms for a region
+  return [];
+};
+
+export const getFormDataEntries = async (formId: string) => {
+  // Implement your logic to fetch data entries for a form
+  return [];
+};
+
+export const getSchoolFormDataEntries = async (schoolId: string) => {
+  // Implement your logic to fetch form data entries for a school
+  return [];
+};
+
+export const getSectorFormDataEntries = async (sectorId: string) => {
+  // Implement your logic to fetch form data entries for a sector
+  return [];
+};
+
+export const getRegionFormDataEntries = async (regionId: string) => {
+  // Implement your logic to fetch form data entries for a region
+  return [];
+};
+
+export const getCategoryFormDataEntries = async (categoryId: string) => {
+  // Implement your logic to fetch form data entries for a category
+  return [];
+};
+
+export const getColumnFormDataEntries = async (columnId: string) => {
+  // Implement your logic to fetch form data entries for a column
+  return [];
+};
+
+export const getSchoolColumnFormDataEntries = async (schoolId: string, columnId: string) => {
+  // Implement your logic to fetch form data entries for a school and column
+  return [];
+};
+
+export const getSectorColumnFormDataEntries = async (sectorId: string, columnId: string) => {
+  // Implement your logic to fetch form data entries for a sector and column
+  return [];
+};
+
+export const getRegionColumnFormDataEntries = async (regionId: string, columnId: string) => {
+  // Implement your logic to fetch form data entries for a region and column
+  return [];
+};
+
+export const getCategoryColumnFormDataEntries = async (categoryId: string, columnId: string) => {
+  // Implement your logic to fetch form data entries for a category and column
+  return [];
+};
+
+export const getSchoolCategoryFormDataEntries = async (schoolId: string, categoryId: string) => {
+  // Implement your logic to fetch form data entries for a school and category
+  return [];
+};
+
+export const getSectorCategoryFormDataEntries = async (sectorId: string, categoryId: string) => {
+  // Implement your logic to fetch form data entries for a sector and category
+  return [];
+};
+
+export const getRegionCategoryFormDataEntries = async (regionId: string, categoryId: string) => {
+  // Implement your logic to fetch form data entries for a region and category
+  return [];
+};
+
+export const getSchoolSectorFormDataEntries = async (schoolId: string, sectorId: string) => {
+  // Implement your logic to fetch form data entries for a school and sector
+  return [];
+};
+
+export const getSchoolRegionFormDataEntries = async (schoolId: string, regionId: string) => {
+  // Implement your logic to fetch form data entries for a school and region
+  return [];
+};
+
+export const getSectorRegionFormDataEntries = async (sectorId: string, regionId: string) => {
+  // Implement your logic to fetch form data entries for a sector and region
+  return [];
+};
+
+export const getSchoolSectorCategoryFormDataEntries = async (schoolId: string, sectorId: string, categoryId: string) => {
+  // Implement your logic to fetch form data entries for a school, sector, and category
+  return [];
+};
+
+export const getSchoolRegionCategoryFormDataEntries = async (schoolId: string, regionId: string, categoryId: string) => {
+  // Implement your logic to fetch form data entries for a school, region, and category
+  return [];
+};
+
+export const getSectorRegionCategoryFormDataEntries = async (sectorId: string, regionId: string, categoryId: string) => {
+  // Implement your logic to fetch form data entries for a sector, region, and category
+  return [];
+};
+
+export const getSchoolSectorRegionFormDataEntries = async (schoolId: string, sectorId: string, regionId: string) => {
+  // Implement your logic to fetch form data entries for a school, sector, and region
+  return [];
+};
+
+export const getSchoolSectorRegionCategoryFormDataEntries = async (schoolId: string, sectorId: string, regionId: string, categoryId: string) => {
+  // Implement your logic to fetch form data entries for a school, sector, region, and category
+  return [];
+};

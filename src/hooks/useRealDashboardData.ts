@@ -1,108 +1,94 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
-import { ChartData, CategoryStat, DashboardFormStats, PendingApproval, SuperAdminDashboardData } from '@/types/dashboard';
-import { useLanguage } from '@/context/LanguageContext';
-import { toast } from 'sonner';
+import { ChartData, CategoryStat, SuperAdminDashboardData } from '@/types/dashboard';
 
 export const useRealDashboardData = () => {
-  const [superAdminDashboard, setSuperAdminDashboard] = useState<SuperAdminDashboardData | null>(null);
+  const [dashboardData, setDashboardData] = useState<SuperAdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { t } = useLanguage();
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
 
       try {
         // Fetch form statistics
-        const { data: formStatsData, error: formStatsError } = await supabase.from('data_entries')
-          .select('status')
-          .returns<{ status: string }[]>();
+        const { data: formStatsData, error: formStatsError } = await supabase
+          .from('data_entries')
+          .select('status, count', { count: 'exact' });
 
-        if (formStatsError) throw formStatsError;
+        if (formStatsError) {
+          throw new Error(`Error fetching form stats: ${formStatsError.message}`);
+        }
 
-        const pendingCount = formStatsData.filter(item => item.status === 'pending').length;
-        const approvedCount = formStatsData.filter(item => item.status === 'approved').length;
-        const rejectedCount = formStatsData.filter(item => item.status === 'rejected').length;
-        const totalCount = formStatsData.length;
+        // Process form statistics
+        const dataByStatus = formStatsData.reduce((acc: any, item: any) => {
+          acc[item.status] = item.count;
+          return acc;
+        }, {});
+
+        const totalForms = formStatsData.reduce((sum: number, item: any) => sum + item.count, 0);
 
         // Fetch region completion data
-        const { data: regionCompletionData, error: regionCompletionError } = await supabase.from('regions')
-          .select('name, id')
-          .returns<{ name: string; id: string }[]>();
+        const { data: regionCompletionData, error: regionCompletionError } = await supabase
+          .from('regions')
+          .select('name')
+          .order('name', { ascending: true });
 
-        if (regionCompletionError) throw regionCompletionError;
+        if (regionCompletionError) {
+          throw new Error(`Error fetching region completion data: ${regionCompletionError.message}`);
+        }
 
-        // Fetch recent forms
-        const { data: recentFormsData, error: recentFormsError } = await supabase.from('data_entries')
-          .select(`
-            id, status, created_at,
-            schools ( id, name ),
-            categories ( id, name )
-          `)
+        const regionData = regionCompletionData.map((region: any) => ({
+          name: region.name,
+          value: Math.floor(Math.random() * 100), // Mock completion rate
+        }));
+
+        // Fetch recent submissions
+        const { data: recentSubmissions, error: recentSubmissionsError } = await supabase
+          .from('data_entries')
+          .select('id, school_id, category_id, created_at, status')
           .limit(5)
-          .returns<
-            {
-              id: string;
-              status: string;
-              created_at: string;
-              schools: { id: string; name: string } | null;
-              categories: { id: string; name: string } | null;
-            }[]
-          >();
+          .order('created_at', { ascending: false });
 
-        if (recentFormsError) throw recentFormsError;
+        if (recentSubmissionsError) {
+          throw new Error(`Error fetching recent submissions: ${recentSubmissionsError.message}`);
+        }
 
-        const recentForms: PendingApproval[] = recentFormsData.map(item => ({
-          id: item.id,
-          schoolId: item.schools?.id,
-          schoolName: item.schools?.name || 'Unknown School',
-          categoryId: item.categories?.id,
-          categoryName: item.categories?.name || 'Unknown Category',
-          submittedAt: item.created_at,
-          status: item.status as 'pending' | 'approved' | 'rejected'
-        }));
-
-        const regionCompletion = regionCompletionData.map(region => ({
-          region: region.name,
-          completionRate: Math.floor(Math.random() * 100)
-        }));
-
-        const superAdminDashboard: SuperAdminDashboardData = {
+        // Make sure the returned object matches SuperAdminDashboardData type
+        return {
           formStats: {
-            pending: pendingCount,
-            approved: approvedCount,
-            rejected: rejectedCount,
-            total: totalCount,
-            draft: 0,
-            dueSoon: 0,
-            overdue: 0
+            pending: dataByStatus.pending || 0,
+            approved: dataByStatus.approved || 0,
+            rejected: dataByStatus.rejected || 0,
+            total: totalForms,
+            draft: dataByStatus.draft || 0,
+            dueSoon: 0, // Add the missing properties
+            overdue: 0  // Add the missing properties
           },
-          regionCompletion: regionCompletion,
-          recentForms: recentForms
+          regionCompletion: regionData,
+          recentForms: recentSubmissions
         };
-
-        setSuperAdminDashboard(superAdminDashboard);
       } catch (err: any) {
-        console.error('Failed to fetch dashboard data', err);
         setError(err.message);
-        toast.error(t('errorFetchingData'));
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDashboardData();
-  }, [user, t]);
+    fetchData().then(data => {
+      if (data) {
+        setDashboardData(data as SuperAdminDashboardData);
+      }
+    });
+  }, [user]);
 
   return {
-    superAdminDashboard,
+    dashboardData,
     loading,
-    error
+    error,
   };
 };

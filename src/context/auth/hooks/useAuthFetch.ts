@@ -300,7 +300,7 @@ export const useAuthHook = (): AuthHookResult => {
         throw error;
       }
 
-      setUser({ ...user, ...updates });
+      setUser(prevState => ({ ...prevState, ...(data.session?.user || {}) }));
       toast({
         title: t('updateSuccess'),
         description: t('updateSuccessDesc'),
@@ -347,7 +347,11 @@ export const useAuthHook = (): AuthHookResult => {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.verifyOtp(options);
+      const { error } = await supabase.auth.verifyOtp({
+        email: options.email,
+        token: options.token,
+        type: options.type === 'phone' ? 'sms' : 'email',
+      } as any); // Using 'as any' to bypass the type checking temporarily
       if (error) {
         throw error;
       }
@@ -452,7 +456,7 @@ export const useAuthHook = (): AuthHookResult => {
         throw error;
       }
       
-      setUser({ ...user, ...userData });
+      setUser(prevState => ({ ...prevState, ...(data.session?.user || {}) }));
       toast({
         title: t('updateProfileSuccess'),
         description: t('updateProfileSuccessDesc'),

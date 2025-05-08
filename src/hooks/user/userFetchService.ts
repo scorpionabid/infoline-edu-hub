@@ -1,7 +1,75 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData } from '@/types/supabase';
-import { fetchAdminEntityData, formatUserData } from './useUserData';
+import { FullUserData } from '@/types/user';
+
+// Add the missing functions
+export const fetchAdminEntityData = async (user: FullUserData) => {
+  if (!user) return {};
+
+  let entityData = {};
+
+  try {
+    // Fetch region, sector, or school data based on user role
+    if (user.role === 'regionadmin' && user.region_id) {
+      const { data } = await supabase
+        .from('regions')
+        .select('*')
+        .eq('id', user.region_id)
+        .single();
+      entityData = { region: data };
+    } 
+    else if (user.role === 'sectoradmin' && user.sector_id) {
+      const { data } = await supabase
+        .from('sectors')
+        .select('*, regions(*)')
+        .eq('id', user.sector_id)
+        .single();
+      entityData = { sector: data };
+    }
+    else if (user.role === 'schooladmin' && user.school_id) {
+      const { data } = await supabase
+        .from('schools')
+        .select('*, sectors(*), regions(*)')
+        .eq('id', user.school_id)
+        .single();
+      entityData = { school: data };
+    }
+
+    return entityData;
+  } catch (error) {
+    console.error('Error fetching admin entity data:', error);
+    return {};
+  }
+};
+
+export const formatUserData = (user: any, entityData: any): FullUserData => {
+  if (!user) return {} as FullUserData;
+
+  const formattedUser: FullUserData = {
+    ...user,
+    id: user.id,
+    email: user.email,
+    name: user.full_name || user.name,
+    full_name: user.full_name || user.name
+  };
+
+  // Add entity data if available
+  if (entityData?.region) {
+    formattedUser.regionName = entityData.region.name;
+  }
+  
+  if (entityData?.sector) {
+    formattedUser.sectorName = entityData.sector.name;
+    formattedUser.regionName = entityData.sector.regions?.name;
+  }
+  
+  if (entityData?.school) {
+    formattedUser.schoolName = entityData.school.name;
+    formattedUser.sectorName = entityData.school.sectors?.name;
+    formattedUser.regionName = entityData.school.regions?.name;
+  }
+
+  return formattedUser;
+};
 
 // Mövcud istifadəçiləri əldə etmək üçün servis
 export async function fetchAvailableUsersService() {

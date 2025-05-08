@@ -48,32 +48,32 @@ export const useUsers = ({ filter }: UseUsersProps = {}) => {
         }
       }
 
-      const { data, error, count } = await query;
+      const { data, error: queryError, count: resultCount } = await query;
 
-      if (error) {
-        setError(error.message);
-        console.error('Error fetching users:', error);
+      if (queryError) {
+        setError(queryError.message);
+        console.error('Error fetching users:', queryError);
       } else {
-        const usersList = data.map((data) => {
-          const user = {
-            email: data?.email || '',
-            full_name: data?.full_name || '',
-            name: data?.full_name || '',
-            phone: data?.phone || '',
-            position: data?.position || '',
-            language: data?.language || '',
-            status: data?.status || '',
-            created_at: data?.created_at || '',
-            updated_at: data?.updated_at || ''
-          };
-          return user;
+        const usersList = data.map((userData: any) => {
+          return {
+            id: userData?.id || '',
+            email: userData?.email || '',
+            full_name: userData?.full_name || '',
+            name: userData?.full_name || '',
+            phone: userData?.phone || '',
+            position: userData?.position || '',
+            language: userData?.language || '',
+            status: userData?.status || '',
+            created_at: userData?.created_at || '',
+            updated_at: userData?.updated_at || ''
+          } as User;
         });
         setUsers(usersList);
-        setCount(count || 0);
+        setCount(resultCount || 0);
       }
-    } catch (error: any) {
-      setError(error.message);
-      console.error('Unexpected error fetching users:', error);
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Unexpected error fetching users:', err);
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
 
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'file';
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'file' | 'email' | 'phone';
 
 export interface Column {
   id: string;
@@ -11,17 +11,12 @@ export interface Column {
   status?: string;
   help_text?: string;
   placeholder?: string;
-  validation?: {
-    min?: number;
-    max?: number;
-    pattern?: string;
-    minLength?: number;
-    maxLength?: number;
-  };
+  validation?: any;
   default_value?: any;
   options?: string[] | {label: string; value: string}[];
   created_at?: string;
   updated_at?: string;
+  dependsOn?: any;
 }
 
 export interface Category {
@@ -40,6 +35,7 @@ export interface Category {
 export interface CategoryWithColumns extends Category {
   columns?: Column[];
   completionRate?: number;
+  assignment?: string;
 }
 
 export interface TabDefinition {
@@ -68,4 +64,28 @@ export interface ColumnFormData {
   validation?: any;
   default_value?: any;
   options?: any[];
+}
+
+export interface ValidationRules {
+  minValue?: number;
+  maxValue?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  patternError?: string;
+  warningThreshold?: {
+    min?: number;
+    max?: number;
+  };
+  minDate?: string;
+  maxDate?: string;
+  required?: boolean;
+}
+
+export interface DependsOnCondition {
+  columnId: string;
+  condition: {
+    type: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan';
+    value: any;
+  };
 }

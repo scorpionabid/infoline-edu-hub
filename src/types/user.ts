@@ -20,11 +20,14 @@ export interface User {
   last_login?: string;
   lastLogin?: string;
   region_id?: string;
+  regionId?: string;
   sector_id?: string;
+  sectorId?: string;
   school_id?: string;
+  schoolId?: string;
   notificationSettings?: NotificationSettings;
   name?: string;
-  avatar?: string; // Added avatar property
+  avatar?: string;
 }
 
 export interface NotificationSettings {
@@ -51,11 +54,49 @@ export interface FullUserData extends User {
   schoolId?: string;
   school_name?: string;
   schoolName?: string;
+  name?: string;
   entityName?: {
     region?: string;
     sector?: string;
     school?: string;
   };
+}
+
+export interface UserFilter {
+  role?: UserRole[];
+  status?: string[];
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+}
+
+export interface UserFormData {
+  id?: string;
+  email: string;
+  password?: string;
+  full_name?: string;
+  fullName?: string;
+  name?: string;
+  role: string;
+  region_id?: string | null;
+  sector_id?: string | null;
+  school_id?: string | null;
+  phone?: string | null;
+  position?: string | null;
+  language?: string;
+  avatar?: string | null;
+  status?: string;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  notification_settings?: any;
+  notificationSettings?: any;
 }
 
 export interface Sector {

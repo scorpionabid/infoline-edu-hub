@@ -13,6 +13,8 @@ export interface DataEntryForm {
 export interface EntryValue {
   columnId: string;
   value: any;
+  errorMessage?: string;
+  warningMessage?: string;
 }
 
 export interface DataEntryRecord {
@@ -47,9 +49,10 @@ export interface DataEntryRecord {
 
 export interface ColumnValidationError {
   columnId: string;
-  columnName: string;
+  columnName?: string;
   message: string;
-  severity: 'error' | 'warning' | 'info';
+  severity?: 'error' | 'warning' | 'info';
+  categoryId?: string;
 }
 
 export enum DataEntrySaveStatus {

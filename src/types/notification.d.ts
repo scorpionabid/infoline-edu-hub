@@ -1,22 +1,22 @@
 
+export type NotificationType = 'info' | 'warning' | 'error' | 'success';
+
 export interface Notification {
   id: string;
-  userId: string;
   title: string;
   message: string;
   type: NotificationType;
-  read: boolean;
   createdAt: string;
-  readAt?: string;
+  isRead: boolean;
+  userId: string;
+  relatedEntityId?: string;
+  relatedEntityType?: string;
+  priority?: 'high' | 'normal' | 'low';
 }
 
-export type NotificationType = 'info' | 'warning' | 'error' | 'success' | 'system';
-
-export interface NotificationItem {
-  id: string;
-  title: string;
-  message: string;
-  type: NotificationType;
-  timestamp: string;
-  read: boolean;
+export interface NotificationFilter {
+  type?: NotificationType[];
+  isRead?: boolean;
+  fromDate?: string;
+  toDate?: string;
 }
