@@ -1,68 +1,58 @@
 
-import { ReactNode } from 'react';
-
-export interface StatsCardProps {
-  title: string;
-  value: number;
-  description?: string;
-  icon?: ReactNode;
-  trend?: number;
-  className?: string;
+export interface Dashboard {
+  stats: DashboardStats;
+  pendingApprovals: PendingApproval[];
+  recentUpdates: RecentUpdate[];
+  notifications: DashboardNotification[];
+  chartData?: ChartData;
 }
 
-export interface DashboardStatus {
+export interface DashboardStats {
+  forms: FormStats;
+  categories: CategoryStats;
+  schools: SchoolStats;
+  sectors: SectorStats;
+}
+
+export interface FormStats {
+  total: number;
+  completed: number;
+  incomplete: number;
   pending: number;
   approved: number;
   rejected: number;
-  draft?: number;
+}
+
+export interface CategoryStats {
+  total: number;
+  active: number;
+  inactive: number;
+  completionRate: number;
+}
+
+export interface SchoolStats {
   total: number;
   active: number;
   inactive: number;
 }
 
-export interface DashboardFormStats {
-  pending: number;
-  approved: number;
-  rejected: number;
-  draft?: number;
-  dueSoon: number;
-  overdue: number;
-  incomplete?: number;
+export interface SectorStats {
   total: number;
+  active: number;
+  inactive: number;
 }
 
-export type FormStats = DashboardFormStats;
-
-export interface CategoryItem {
-  id: string;
-  name: string;
-  description?: string;
-  deadline?: string;
-  completionRate: number;
-  status?: string;
+export interface ChartData {
+  labels: string[];
+  datasets: ChartDataset[];
 }
 
-export interface DeadlineItem {
-  id: string;
-  name?: string;
-  category?: string;
-  categoryId?: string;
-  categoryName?: string;
-  date?: string;
-  deadline?: string;
-  status?: string;
-  completionRate?: number;
-}
-
-export interface FormItem {
-  id: string;
-  name?: string;
-  category?: string;
-  categoryId?: string;
-  categoryName?: string;
-  date?: string;
-  deadline?: string;
-  status?: string;
+export interface ChartDataset {
+  label: string;
+  data: number[];
+  backgroundColor?: string | string[];
+  borderColor?: string | string[];
+  borderWidth?: number;
 }
 
 export interface PendingApproval {
@@ -76,60 +66,53 @@ export interface PendingApproval {
   status: 'pending' | 'approved' | 'rejected';
 }
 
-export interface ChartData {
-  name: string;
-  value: number;
-  color?: string;
-}
-
-export interface CategoryStat {
+export interface RecentUpdate {
   id: string;
-  name: string;
-  completionRate: number;
-  formsCount?: number;
-  completion?: {
-    total: number;
-    completed: number;
-    percentage: number;
-  };
+  title: string;
+  description: string;
+  date: string;
+  type: 'form' | 'category' | 'school' | 'sector' | 'user';
 }
 
 export interface DashboardNotification {
   id: string;
   title: string;
-  message?: string;
-  type: string;
+  message: string;
   date: string;
-  isRead: boolean;
-  priority?: string;
+  read: boolean;
+  type: string;
 }
 
-export interface SchoolAdminDashboardData {
-  status?: DashboardStatus;
-  formStats?: DashboardFormStats;
-  completion?: {
-    percentage: number;
-    total: number;
-    completed: number;
-  };
-  categories?: CategoryItem[];
-  upcoming?: DeadlineItem[];
-  pendingForms?: FormItem[];
-  completionRate?: number;
-  notifications?: DashboardNotification[];
+export interface DashboardStatus {
+  pending: number;
+  approved: number;
+  rejected: number;
+  draft?: number;
+  active: number;
+  inactive: number;
+  total: number;
 }
 
-export interface SchoolAdminDashboardProps {
-  schoolId?: string;
-  isLoading?: boolean;
-  error?: any;
-  onRefresh?: () => void;
-  navigateToDataEntry?: (categoryId: string) => void;
-  handleFormClick?: (form: FormItem) => void;
+export interface DashboardFormStats {
+  pending: number;
+  approved: number;
+  rejected: number;
+  draft?: number;
+  dueSoon: number;
+  overdue: number;
+  incomplete?: number;
+  total: number;
 }
 
-// Additional report types
-export type ReportType = 'basic' | 'statistics' | 'completion' | 'comparison' | 'custom' | 'school' | 'category';
+export interface CategoryStat {
+  id: string;
+  name: string;
+  status: string;
+  completionRate: number;
+  updatedAt: string;
+}
+
+export type ReportType = 'statistics' | 'completion' | 'comparison' | 'custom' | 'school' | 'category';
 
 export interface Report {
   id: string;

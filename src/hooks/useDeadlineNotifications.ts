@@ -1,89 +1,37 @@
 
-import { useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth';
+import { useLanguage } from '@/context/LanguageContext';
 import { createDeadlineNotification } from '@/services/notificationService';
-import { isDeadlineApproaching, isDeadlinePassed } from '@/utils/date';
 
-export const useDeadlineNotifications = (checkIntervalMinutes = 60) => {
+export const useDeadlineNotifications = () => {
   const { user } = useAuth();
-  
-  const checkDeadlines = useCallback(async () => {
-    if (!user) return;
-    
+  const { t } = useLanguage();
+  const [loading, setLoading] = useState(false);
+
+  const createNotification = async (categoryId: string, daysLeft: number) => {
+    if (!user) return false;
+
+    setLoading(true);
     try {
-      // Bütün kateqoriyaları əldə et
-      const { data: categories, error: categoriesError } = await supabase
-        .from('categories')
-        .select('id, name, deadline')
-        .not('deadline', 'is', null);
+      const title = t('deadlineNotificationTitle');
+      const message = t('deadlineNotificationBody', { days: daysLeft });
       
-      if (categoriesError) throw categoriesError;
+      await createDeadlineNotification(title, message, categoryId);
       
-      if (!categories || categories.length === 0) return;
-      
-      // Mövcud bildirişləri yoxla
-      const { data: existingNotifications, error: notificationsError } = await supabase
-        .from('notifications')
-        .select('related_entity_id, type')
-        .eq('user_id', user.id)
-        .eq('type', 'deadline')
-        .in('related_entity_id', categories.map(cat => cat.id));
-      
-      if (notificationsError) throw notificationsError;
-      
-      const existingNotificationMap = new Map();
-      
-      if (existingNotifications) {
-        existingNotifications.forEach(notification => {
-          existingNotificationMap.set(notification.related_entity_id, true);
-        });
-      }
-      
-      // Hər bir kateqoriya üçün son tarix bildirişini yoxla
-      for (const category of categories) {
-        if (!category.deadline) continue;
-        
-        const deadline = new Date(category.deadline);
-        
-        // Əgər son tarix yaxınlaşırsa və bildiriş hələ mövcud deyilsə
-        if (isDeadlineApproaching(deadline) && !existingNotificationMap.has(category.id)) {
-          await createDeadlineNotification(
-            user.id,
-            category.name,
-            category.deadline,
-            category.id,
-            true
-          );
-        }
-        
-        // Əgər son tarix keçibsə və bildiriş hələ mövcud deyilsə
-        if (isDeadlinePassed(deadline) && !existingNotificationMap.has(category.id)) {
-          await createDeadlineNotification(
-            user.id,
-            category.name,
-            category.deadline,
-            category.id,
-            false
-          );
-        }
-      }
+      return true;
     } catch (error) {
-      console.error('Son tarix bildirişləri yoxlanarkən xəta:', error);
+      console.error('Error creating deadline notification:', error);
+      return false;
+    } finally {
+      setLoading(false);
     }
-  }, [user]);
-  
-  useEffect(() => {
-    if (!user) return;
-    
-    // İlk dəfə yoxla
-    checkDeadlines();
-    
-    // Müəyyən intervalla yoxlamanı təkrarla
-    const intervalId = setInterval(checkDeadlines, checkIntervalMinutes * 60 * 1000);
-    
-    return () => clearInterval(intervalId);
-  }, [user, checkDeadlines, checkIntervalMinutes]);
-  
-  return { checkDeadlines };
+  };
+
+  return {
+    createNotification,
+    loading
+  };
 };
+
+export default useDeadlineNotifications;

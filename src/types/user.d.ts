@@ -6,6 +6,8 @@ export interface User {
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
+  name?: string; // For backward compatibility
+  fullName?: string; // For backward compatibility
 }
 
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';

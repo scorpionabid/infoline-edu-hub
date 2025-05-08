@@ -11,9 +11,11 @@ export const useForm = (initialCategories = []) => {
   
   // UseFormActions hook-a əsas məlumatları ötürürük
   const formActions = useFormActions({
+    entries: formData?.entries || {},
+    status: formData?.status || 'draft',
     schoolId: formData?.schoolId || '',
     categoryId: formData?.categoryId || '',
-    categories: initialCategories
+    isModified: false
   });
   
   // React Hook Form 

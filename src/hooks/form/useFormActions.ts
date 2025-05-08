@@ -6,6 +6,7 @@ export interface DataEntryForm {
   status: 'draft' | 'pending' | 'approved' | 'rejected';
   isModified?: boolean;
   schoolId?: string;
+  categoryId?: string;
 }
 
 export function useFormActions(initialForm: DataEntryForm) {
