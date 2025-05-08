@@ -8,7 +8,7 @@ import {
   CompletionData as CompletionStats,
   DashboardNotification
 } from '@/types/dashboard';
-import { Sector } from '@/types/user';
+import { Sector } from '@/types/supabase';
 
 type SectorCompletionItem = Sector & { completionRate: number };
 

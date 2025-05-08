@@ -76,3 +76,8 @@ export interface CategoryWithColumns {
   completionRate?: number;
   entries?: any[];
 }
+
+export interface ColumnOption {
+  label: string;
+  value?: string;
+}

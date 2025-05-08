@@ -26,7 +26,7 @@ export const useColumnsQuery = ({ categoryId }: UseColumnsQueryParams) => {
         throw new Error(error.message);
       }
 
-      return (data as Column[]).map(adaptDbColumnToFrontend);
+      return (data as Column[]).map((column) => adaptDbColumnToFrontend(column));
     },
     enabled: !!categoryId && !!permissions,
     initialData: [],

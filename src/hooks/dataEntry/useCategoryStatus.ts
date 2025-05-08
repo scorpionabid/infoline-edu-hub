@@ -1,63 +1,61 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 
-interface UseCategoryStatusResult {
-  status: 'loading' | 'not_started' | 'in_progress' | 'completed' | 'error';
+interface CategoryStatus {
+  status: 'not_started' | 'in_progress' | 'completed' | 'pending' | 'approved' | 'rejected';
   completionPercentage: number;
-  isCompleted: boolean;
-  isStarted: boolean;
-  error: Error | null;
 }
 
-export const useCategoryStatus = (category: CategoryWithColumns | null): UseCategoryStatusResult => {
-  const [status, setStatus] = useState<'loading' | 'not_started' | 'in_progress' | 'completed' | 'error'>('loading');
-  const [completionPercentage, setCompletionPercentage] = useState(0);
-  const [error, setError] = useState<Error | null>(null);
-
-  const calculateStatus = useCallback(() => {
-    if (!category) {
-      setStatus('loading');
-      setCompletionPercentage(0);
-      return;
-    }
-
-    try {
-      // Use the completionRate if it exists
-      let completion = category.completionRate || 0;
+export const useCategoryStatus = (categories: CategoryWithColumns[] = []) => {
+  const getStatus = useCallback((category: CategoryWithColumns): CategoryStatus => {
+    // Use the completion rate from the category or calculate it if not provided
+    const completionRate = category.completionRate || 0;
+    
+    // Check if entries exist in the category
+    const hasEntries = Array.isArray(category.entries) && category.entries.length > 0;
+    
+    // Check approved/rejected/pending status from entries if available
+    if (hasEntries) {
+      const pendingEntries = category.entries.filter(entry => entry.status === 'pending');
+      const rejectedEntries = category.entries.filter(entry => entry.status === 'rejected');
+      const approvedEntries = category.entries.filter(entry => entry.status === 'approved');
       
-      // If not defined but we have columns, calculate it from entries
-      if (completion === 0 && category.entries && category.columns) {
-        const totalColumns = category.columns.length;
-        const filledEntries = (category.entries || []).length;
-        completion = totalColumns > 0 ? (filledEntries / totalColumns) * 100 : 0;
+      if (pendingEntries.length > 0) {
+        return { status: 'pending', completionPercentage: completionRate };
       }
-
-      setCompletionPercentage(completion);
-
-      if (completion === 0) {
-        setStatus('not_started');
-      } else if (completion < 100) {
-        setStatus('in_progress');
-      } else {
-        setStatus('completed');
+      
+      if (rejectedEntries.length > 0) {
+        return { status: 'rejected', completionPercentage: completionRate };
       }
-    } catch (err) {
-      console.error('Error calculating category status:', err);
-      setStatus('error');
-      setError(err instanceof Error ? err : new Error('Unknown error calculating status'));
+      
+      if (approvedEntries.length > 0 && completionRate === 100) {
+        return { status: 'approved', completionPercentage: 100 };
+      }
     }
-  }, [category]);
-
-  useEffect(() => {
-    calculateStatus();
-  }, [calculateStatus]);
-
+    
+    // No entries or entries with other statuses - determine status based on completion rate
+    if (completionRate === 0) {
+      return { status: 'not_started', completionPercentage: 0 };
+    } else if (completionRate < 100) {
+      return { status: 'in_progress', completionPercentage: completionRate };
+    } else {
+      return { status: 'completed', completionPercentage: 100 };
+    }
+  }, []);
+  
+  const categoriesWithStatus = useMemo(() => {
+    return categories.map(category => ({
+      ...category,
+      status: getStatus(category).status,
+      completionPercentage: getStatus(category).completionPercentage
+    }));
+  }, [categories, getStatus]);
+  
   return {
-    status,
-    completionPercentage,
-    isCompleted: status === 'completed',
-    isStarted: status !== 'not_started' && status !== 'loading',
-    error
+    getStatus,
+    categoriesWithStatus
   };
 };
+
+export default useCategoryStatus;

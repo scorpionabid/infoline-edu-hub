@@ -24,7 +24,7 @@ export interface User {
   school_id?: string;
   notificationSettings?: NotificationSettings;
   name?: string;
-  avatar?: string; // Added avatar property
+  avatar?: string;
 }
 
 export interface NotificationSettings {
@@ -56,4 +56,28 @@ export interface FullUserData extends User {
     sector?: string;
     school?: string;
   };
+}
+
+export interface UserFormData {
+  email: string;
+  password?: string;
+  full_name: string;
+  role: string;
+  region_id?: string | null;
+  sector_id?: string | null;
+  school_id?: string | null;
+  phone?: string | null;
+  position?: string | null;
+  language?: string;
+  avatar?: string | null;
+  status?: string;
+}
+
+export interface Sector {
+  id: string;
+  name: string;
+  region_id: string;
+  description?: string;
+  status?: string;
+  completion_rate?: number;
 }

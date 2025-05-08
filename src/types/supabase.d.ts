@@ -2,7 +2,7 @@
 import { Session } from '@supabase/supabase-js';
 import { User, UserRole } from './user';
 
-export { User, UserRole, FullUserData } from './user';
+export { User, UserRole } from './user';
 
 export interface FullUserData extends User {
   full_name?: string;

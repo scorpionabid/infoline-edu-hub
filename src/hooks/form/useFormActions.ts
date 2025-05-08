@@ -1,166 +1,125 @@
 
 import { useState, useCallback } from 'react';
-import { DataEntry, DataEntryForm, DataEntrySaveStatus, EntryValue } from '@/types/dataEntry';
 import { supabase } from '@/integrations/supabase/client';
+import { DataEntry, DataEntryForm, EntryValue, DataEntryStatus } from '@/types/dataEntry';
 import { toast } from 'sonner';
 
 export interface UseFormActionsProps {
-  schoolId: string;
   categoryId: string;
-  initialEntries?: DataEntry[];
-  formData?: any;
-  setFormData?: any;
-  updateFormData?: any;
-  categories?: any[];
+  schoolId: string;
+  categories: any[];
 }
 
-export const useFormActions = ({ schoolId, categoryId, initialEntries = [] }: UseFormActionsProps) => {
+export const useFormActions = ({ categoryId, schoolId, categories }: UseFormActionsProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState<DataEntryForm>({
-    entries: initialEntries,
-    isModified: false,
-    saveStatus: DataEntrySaveStatus.IDLE,
-    error: null,
-    schoolId,
     categoryId,
-    status: 'draft'
-  } as any);
+    schoolId,
+    entries: [],
+    isModified: false,
+  });
 
-  const updateEntries = useCallback((entries: DataEntry[]) => {
-    const entriesWithMetadata = entries.map(entry => ({
-      ...entry,
-      category_id: entry.category_id || categoryId,
-      school_id: entry.school_id || schoolId
-    }));
+  const loadEntries = useCallback(async () => {
+    if (!categoryId || !schoolId) return;
 
-    setForm(prev => ({
-      ...prev,
-      entries: entriesWithMetadata,
-      isModified: true
-    }));
+    try {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId);
+
+      if (error) throw error;
+
+      // Convert from DB format to form format
+      const formattedEntries: EntryValue[] = (data || []).map(entry => ({
+        id: entry.id,
+        columnId: entry.column_id,
+        value: entry.value,
+        status: entry.status
+      }));
+
+      setForm(prev => ({
+        ...prev,
+        entries: formattedEntries,
+        isModified: false
+      }));
+
+    } catch (err) {
+      console.error('Error loading entries:', err);
+      toast.error('Məlumatlar yüklənərkən xəta baş verdi');
+    }
   }, [categoryId, schoolId]);
 
-  const saveEntries = useCallback(async () => {
-    if (!form.entries.length) return;
-
-    setForm(prev => ({
-      ...prev,
-      saveStatus: DataEntrySaveStatus.SAVING,
-      error: null
-    }));
-
-    try {
-      const { data, error } = await supabase.from('data_entries').upsert(
-        form.entries.map(entry => ({
-          id: entry.id,
-          column_id: entry.column_id,
-          category_id: entry.category_id,
-          school_id: entry.school_id,
-          value: entry.value,
-          status: 'pending'
-        })),
-        { onConflict: 'id' }
-      ).select();
-
-      if (error) throw error;
-
-      setForm(prev => ({
-        ...prev,
-        entries: data,
-        isModified: false,
-        saveStatus: DataEntrySaveStatus.SAVED,
-        error: null,
-        lastSaved: new Date().toISOString()
-      }));
-
-      toast.success('Məlumatlar uğurla saxlanıldı');
-      return true;
-    } catch (err: any) {
-      console.error('Error saving entries:', err);
-      setForm(prev => ({
-        ...prev,
-        saveStatus: DataEntrySaveStatus.ERROR,
-        error: err.message || 'Məlumatları saxlamaq mümkün olmadı'
-      }));
-      toast.error('Məlumatları saxlamaq mümkün olmadı');
-      return false;
-    }
-  }, [form.entries]);
-
-  const submitEntries = useCallback(async () => {
-    // Əvvəlcə məlumatları saxlayaq
-    const savedSuccessfully = await saveEntries();
-    if (!savedSuccessfully) return false;
-
-    setForm(prev => ({
-      ...prev,
-      saveStatus: DataEntrySaveStatus.SUBMITTING,
-      error: null,
-      submittedAt: new Date().toISOString()
-    }));
-
-    try {
-      // Statusu "submitted" olaraq yeniləyək
-      const { error } = await supabase.from('data_entries').update({
-        status: 'submitted'
-      }).in('id', form.entries.map(entry => entry.id));
-
-      if (error) throw error;
-
-      setForm(prev => ({
-        ...prev,
-        saveStatus: DataEntrySaveStatus.SUBMITTED,
-        status: 'pending',
-        isModified: false,
-        error: null
-      }));
-
-      toast.success('Məlumatlar uğurla təqdim edildi');
-      return true;
-    } catch (err: any) {
-      console.error('Error submitting entries:', err);
-      setForm(prev => ({
-        ...prev,
-        saveStatus: DataEntrySaveStatus.ERROR,
-        error: err.message || 'Məlumatları təqdim etmək mümkün olmadı'
-      }));
-      toast.error('Məlumatları təqdim etmək mümkün olmadı');
-      return false;
-    }
-  }, [saveEntries, form.entries]);
-
-  const exportToCsv = useCallback(() => {
-    // Məlumatları CSV formatına çeviririk
-    const entries = form.entries || [];
-    const schoolId = form.schoolId || '';
-    const categoryId = form.categoryId || '';
+  const saveEntries = useCallback(async (status: DataEntryStatus = 'draft') => {
+    if (!form.entries.length) return false;
     
-    // Burada interfeys uyğunlaşdırılması üçün EntryValue[] formatına çeviririk
-    // Bu interfeys uyğunlaşdırması və CSV yaratma prosesi
-    const entriesData: EntryValue[] = entries.map(entry => ({
-      [entry.column_id]: entry.value
-    }));
+    setIsSubmitting(true);
+    
+    try {
+      // Convert form entries to DB format
+      const dbEntries = form.entries.map(entry => ({
+        column_id: entry.columnId,
+        category_id: categoryId,
+        school_id: schoolId,
+        value: entry.value,
+        status,
+        id: entry.id // Include ID if exists for updates
+      }));
+      
+      // Use upsert to handle both inserts and updates
+      const { error } = await supabase
+        .from('data_entries')
+        .upsert(dbEntries, { onConflict: 'id' });
+      
+      if (error) throw error;
+      
+      setForm(prev => ({
+        ...prev,
+        isModified: false
+      }));
+      
+      toast.success(status === 'pending' ? 'Məlumatlar təsdiqə göndərildi' : 'Məlumatlar yadda saxlanıldı');
+      return true;
+    } catch (err) {
+      console.error('Error saving entries:', err);
+      toast.error('Məlumatlar yadda saxlanılmadı');
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [form.entries, categoryId, schoolId]);
 
-    // CSV başlıqları və məlumatları formatla
-    const csvContent = '';
-    // CSV'ni brauzer tərəfindən endirmək üçün kodu implement et
-
-    return true;
-  }, [form.entries, form.schoolId, form.categoryId]);
+  const updateEntry = useCallback((columnId: string, value: any) => {
+    setForm(prev => {
+      const entryIndex = prev.entries.findIndex(e => e.columnId === columnId);
+      
+      if (entryIndex >= 0) {
+        // Update existing entry
+        const updatedEntries = [...prev.entries];
+        updatedEntries[entryIndex] = { ...updatedEntries[entryIndex], value };
+        
+        return {
+          ...prev,
+          entries: updatedEntries,
+          isModified: true
+        };
+      } else {
+        // Add new entry
+        return {
+          ...prev,
+          entries: [...prev.entries, { columnId, value }],
+          isModified: true
+        };
+      }
+    });
+  }, []);
 
   return {
     form,
-    updateEntries,
+    isSubmitting,
+    loadEntries,
     saveEntries,
-    submitEntries,
-    exportToCsv,
-    resetForm: () => setForm({
-      entries: initialEntries,
-      isModified: false,
-      saveStatus: DataEntrySaveStatus.IDLE,
-      error: null,
-      schoolId,
-      categoryId,
-      status: 'draft'
-    } as any)
+    updateEntry
   };
 };

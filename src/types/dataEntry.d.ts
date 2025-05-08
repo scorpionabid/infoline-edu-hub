@@ -1,58 +1,42 @@
 
+export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
+
 export interface DataEntry {
-  id: string;
-  school_id: string;
-  category_id: string;
+  id?: string;
   column_id: string;
+  columnId?: string;
+  category_id: string;
+  categoryId?: string;
+  school_id: string;
+  schoolId?: string;
   value: any;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  approved_by: string;
-  approved_at: string;
-  rejected_by: string;
-  rejection_reason: string;
+  status?: DataEntryStatus;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
 }
 
-export interface ColumnValue {
+export interface EntryValue {
+  id?: string;
   columnId: string;
   value: any;
-  columnType: string;
-  isRequired: boolean;
-  isValid: boolean;
-  errorMessage?: string;
+  status?: DataEntryStatus;
 }
 
-export interface DataEntryTableData {
+export interface DataEntryForm {
+  id?: string;
+  categoryId: string;
+  schoolId: string;
+  entries: EntryValue[];
+  isModified: boolean;
+}
+
+export interface CategoryEntryData {
   id: string;
-  columnId: string;
-  columnName: string;
-  columnType: string;
-  value: any;
-  status: string;
-  required: boolean;
-  validation?: {
-    min?: number;
-    max?: number;
-    minLength?: number;
-    maxLength?: number;
-    pattern?: string;
-  };
-}
-
-export enum DataEntryStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  DRAFT = 'draft'
-}
-
-export enum DataEntrySaveStatus {
-  IDLE = 'idle',
-  SAVING = 'saving',
-  SAVED = 'saved',
-  ERROR = 'error',
-  SUBMITTING = 'submitting',
-  SUBMITTED = 'submitted'
+  name: string;
+  columns: any[];
+  entries?: DataEntry[];
+  status?: string;
+  completionRate?: number;
+  completionPercentage?: number;
 }

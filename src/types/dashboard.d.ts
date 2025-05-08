@@ -153,3 +153,102 @@ export interface CategoryWithColumns {
   completionRate?: number;
   entries?: any[];
 }
+
+export interface SchoolAdminDashboardProps {
+  data?: SchoolAdminDashboardData;
+  isLoading?: boolean;
+  error?: Error | string | null;
+  onRefresh?: () => void;
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (id: string) => void;
+  schoolId?: string;
+}
+
+export interface SuperAdminDashboardProps {
+  data: SuperAdminDashboardData;
+}
+
+export interface RegionAdminDashboardProps {
+  data: RegionAdminDashboardData;
+  regionId?: string;
+}
+
+export interface SectorAdminDashboardProps {
+  data: SectorAdminDashboardData;
+  sectorId?: string;
+}
+
+export interface SuperAdminDashboardData {
+  stats?: {
+    regions: number;
+    sectors: number;
+    schools: number;
+    users: number;
+  };
+  formStats?: DashboardFormStats;
+  status?: DashboardStatus;
+  completion?: CompletionData;
+  completionRate?: number;
+  pendingApprovals?: PendingApproval[];
+  regionStats?: RegionStat[] | any[];
+  sectorStats?: SectorStat[] | any[];
+  schoolStats?: SchoolStat[] | any[];
+  categories?: CategoryItem[];
+  notifications?: DashboardNotification[];
+}
+
+export interface RegionAdminDashboardData {
+  sectors?: { id: string; name: string; schoolCount: number; completionRate: number }[];
+  schoolStats?: SchoolStat[];
+  status?: DashboardStatus;
+  completion?: CompletionData;
+  completionRate?: number;
+  pendingApprovals?: PendingApproval[];
+  categories?: CategoryItem[];
+  formStats?: DashboardFormStats;
+  notifications?: DashboardNotification[];
+}
+
+export interface SectorAdminDashboardData {
+  schoolStats: any[];
+  status: DashboardStatus;
+  formStats?: DashboardFormStats;
+  completion: CompletionData;
+  completionRate?: number;
+  pendingApprovals: PendingApproval[];
+  categories?: CategoryItem[];
+  notifications?: DashboardNotification[];
+}
+
+export interface RegionStat {
+  id: string;
+  name: string;
+  schoolCount: number;
+  sectorCount: number;
+  completionRate: number;
+  status?: string;
+}
+
+export interface SectorStat {
+  id: string;
+  name: string;
+  schoolCount: number;
+  completionRate: number;
+  region_id?: string;
+  status?: string;
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  status?: string;
+  completionRate: number;
+  lastUpdate: string;
+  pendingForms: number;
+  formsCompleted: number;
+  totalForms: number;
+  principalName: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+}
