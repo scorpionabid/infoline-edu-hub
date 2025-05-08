@@ -43,6 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     isAuthenticated,
+    authenticated: isAuthenticated, // Add alias for authenticated
     loading: isLoading,
     error,
     logIn: async (email, password) => {
@@ -51,6 +52,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { data: result, error: null };
       } catch (error: any) {
         return { data: null, error: error?.message || "Login failed" };
+      }
+    },
+    login: async (email, password) => {
+      try {
+        const result = await login(email, password);
+        return { user: result, error: null };
+      } catch (error: any) {
+        return { user: null, error: error?.message || "Login failed" };
       }
     },
     logOut: logout,
@@ -95,9 +104,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshProfile: async () => {
       // Implementation for refreshProfile
       console.log("Refreshing user profile");
+      await refreshAuth();
       return user;
     },
-    signup: async () => ({ user: null, error: null })
+    signup: async (email, password, options) => {
+      try {
+        // Implementation
+        return { user: null, error: null };
+      } catch (error: any) {
+        return { user: null, error };
+      }
+    }
   };
 
   return (

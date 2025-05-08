@@ -6,3 +6,5 @@ export * from './usePermissions';
 export * from './useAuthStore';
 export * from './userDataService';
 export { useSupabaseAuth } from './useSupabaseAuth';
+
+// Add any missing exports if needed

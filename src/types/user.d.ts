@@ -24,7 +24,7 @@ export interface User {
   school_id?: string;
   notificationSettings?: NotificationSettings;
   name?: string;
-  avatar?: string; // Added the avatar property
+  avatar?: string;
 }
 
 export interface NotificationSettings {

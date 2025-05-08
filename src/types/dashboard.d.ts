@@ -10,6 +10,12 @@ export interface FormStats {
   completed: number;
   pending: number;
   totalForms: number;
+  approved?: number;
+  rejected?: number;
+  dueSoon?: number;
+  overdue?: number;
+  draft?: number;
+  total?: number;
 }
 
 export interface DashboardNotification {
@@ -34,4 +40,78 @@ export interface SchoolCompletionData {
   schoolId: string;
   schoolName: string;
   completionRate: number;
+}
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  deadline?: string | Date;
+  completionRate: number;
+  status: string;
+}
+
+export interface DeadlineItem {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  deadline: string | Date;
+  daysLeft: number;
+  status: string;
+}
+
+export interface FormItem {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  status: string;
+  submittedAt?: string | Date;
+  updatedAt?: string | Date;
+}
+
+export interface SchoolAdminDashboardData {
+  completion: {
+    percentage: number;
+    total: number;
+    completed: number;
+  };
+  status: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    draft: number;
+    total: number;
+    active: number;
+    inactive: number;
+  };
+  categories: CategoryItem[];
+  upcoming: DeadlineItem[];
+  formStats: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    dueSoon: number;
+    overdue: number;
+    draft: number;
+    total: number;
+  };
+  pendingForms: FormItem[];
+  completionRate: number;
+  notifications: DashboardNotification[];
+}
+
+export interface PendingApproval {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  categoryId: string;
+  categoryName: string;
+  sectorId?: string;
+  sectorName?: string;
+  regionId?: string;
+  regionName?: string;
+  entryCount: number;
+  status: string;
+  submittedBy?: string;
+  submittedAt?: string | Date;
 }

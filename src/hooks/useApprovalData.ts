@@ -58,9 +58,9 @@ export const useApprovalData = (): UseApprovalDataReturn => {
           category_id,
           column_id,
           school_id,
-          categories (name),
-          columns (name),
-          schools (name, sector_id, sectors:sectors (name, region_id))
+          categories (id, name),
+          columns (id, name),
+          schools (id, name, sector_id, sectors:sectors (id, name, region_id))
         `)
         .eq('status', status);
 
@@ -121,7 +121,7 @@ export const useApprovalData = (): UseApprovalDataReturn => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('data_entries')
         .update({ status: 'approved', approved_at: new Date().toISOString() })
         .eq('id', id);
@@ -153,7 +153,7 @@ export const useApprovalData = (): UseApprovalDataReturn => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('data_entries')
         .update({ 
           status: 'rejected', 

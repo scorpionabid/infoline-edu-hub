@@ -1,3 +1,4 @@
+
 import { FullUserData } from '@/types/supabase';
 
 export interface UsePermissionsResult {
@@ -15,7 +16,23 @@ export interface UsePermissionsResult {
   isSectorAdmin: boolean;
   isSchoolAdmin: boolean;
   canRegionAdminManageCategoriesColumns: boolean;
-  canViewSectorCategories: boolean; // Added the missing property
+  canViewSectorCategories: boolean;
+  // Add missing properties
+  canViewUsers: boolean;
+  canManageUsers: boolean;
+  canViewRegions: boolean;
+  canManageRegions: boolean;
+  canViewSectors: boolean;
+  canManageSectors: boolean;
+  canViewSchools: boolean;
+  canManageSchools: boolean;
+  canViewCategories: boolean;
+  canManageCategories: boolean;
+  canApproveData: boolean;
+  userId?: string;
+  checkRegionAccess: (regionId: string, level?: string) => Promise<boolean>;
+  checkSectorAccess: (sectorId: string, level?: string) => Promise<boolean>;
+  checkSchoolAccess: (schoolId: string, level?: string) => Promise<boolean>;
+  checkCategoryAccess: (categoryId: string, level?: string) => Promise<boolean>;
+  checkColumnAccess: (columnId: string, level?: string) => Promise<boolean>;
 }
-
-// Other type definitions as needed

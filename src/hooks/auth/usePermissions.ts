@@ -43,6 +43,10 @@ export const usePermissions = (): UsePermissionsResult => {
 
   const permissions = useMemo(() => {
     const isSuperAdmin = userRole === 'superadmin';
+    const isRegionAdmin = userRole === 'regionadmin';
+    const isSectorAdmin = userRole === 'sectoradmin';
+    const isSchoolAdmin = userRole === 'schooladmin';
+    
     return {
       canViewUsers: canViewUsers(userRole),
       canManageUsers: canManageUsers(userRole),
@@ -55,21 +59,49 @@ export const usePermissions = (): UsePermissionsResult => {
       canViewCategories: canViewCategories(userRole),
       canManageCategories: canManageCategories(userRole),
       isAuthenticated,
+      isAdmin: isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin,
       isSuper: isSuperAdmin,
-      isSuperAdmin, // Add alias for isSuper that components are using
-      isRegionAdmin: userRole === 'regionadmin',
-      isSectorAdmin: userRole === 'sectoradmin',
-      isSchoolAdmin: userRole === 'schooladmin',
+      isSuperAdmin,
+      isRegionAdmin,
+      isSectorAdmin,
+      isSchoolAdmin,
       userRole,
       regionId,
       sectorId,
       schoolId,
-      // Add missing properties that components are using
-      canApproveData: isSuperAdmin || userRole === 'regionadmin',
+      canApproveData: isSuperAdmin || isRegionAdmin || isSectorAdmin,
       canViewSectorCategories: true,
+      canRegionAdminManageCategoriesColumns: isRegionAdmin || isSuperAdmin,
+      hasRole: (roles: string | string[]) => {
+        if (!userRole) return false;
+        if (Array.isArray(roles)) {
+          return roles.includes(userRole);
+        }
+        return roles === userRole;
+      },
+      hasRegionAccess: (id: string) => {
+        if (isSuperAdmin) return true;
+        if (isRegionAdmin && regionId === id) return true;
+        return false;
+      },
+      hasSectorAccess: (id: string) => {
+        if (isSuperAdmin) return true;
+        if (isRegionAdmin && regionId) return true;
+        if (isSectorAdmin && sectorId === id) return true;
+        return false;
+      },
+      hasSchoolAccess: (id: string) => {
+        if (isSuperAdmin) return true;
+        if (isRegionAdmin && regionId) return true;
+        if (isSectorAdmin && sectorId) return true;
+        if (isSchoolAdmin && schoolId === id) return true;
+        return false;
+      },
       // Add stub implementations for required functions
-      checkRegionAccess: async () => isSuperAdmin || userRole === 'regionadmin',
-      checkSectorAccess: async () => isSuperAdmin || userRole === 'regionadmin' || userRole === 'sectoradmin',
+      checkRegionAccess: async (id: string) => 
+        isSuperAdmin || (isRegionAdmin && regionId === id),
+      checkSectorAccess: async (id: string) => 
+        isSuperAdmin || (isRegionAdmin) || (isSectorAdmin && sectorId === id),
       checkSchoolAccess: async () => true,
       checkCategoryAccess: async () => true,
       checkColumnAccess: async () => true,
