@@ -8,11 +8,11 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth';
 
 interface NavigationMenuProps {
-  onMenuClick: () => void;
-  isSidebarOpen: boolean;
+  onMenuClick?: () => void;
+  isSidebarOpen?: boolean;
 }
 
-export const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarOpen }) => {
+const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarOpen }) => {
   const { t } = useLanguage();
   const location = useLocation();
   const { user } = useAuth();
@@ -59,10 +59,12 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isS
         ))}
 
       <div className="md:hidden mt-4">
-        <Button variant="outline" size="sm" onClick={() => onMenuClick()}>
+        <Button variant="outline" size="sm" onClick={() => onMenuClick && onMenuClick()}>
           {isSidebarOpen ? t('closeSidebar') : t('openSidebar')}
         </Button>
       </div>
     </nav>
   );
 };
+
+export default NavigationMenu;

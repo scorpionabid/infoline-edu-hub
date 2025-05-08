@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export const LanguageSwitcher = () => {
+const LanguageSwitcher = () => {
   const { t, setLanguage, currentLanguage } = useLanguage();
   
   const handleLanguageChange = (value: string) => {
@@ -35,3 +35,4 @@ export const LanguageSwitcher = () => {
   );
 };
 
+export default LanguageSwitcher;

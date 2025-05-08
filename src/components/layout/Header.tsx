@@ -26,7 +26,7 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle menu</span>
           </Button>
-          <NavigationMenu />
+          <NavigationMenu isSidebarOpen={isSidebarOpen} onMenuClick={onSidebarToggle} />
         </div>
         
         <div className="flex items-center gap-3">
