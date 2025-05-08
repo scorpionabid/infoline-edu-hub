@@ -10,7 +10,7 @@ export interface DataEntryForm {
   id?: string;
   categoryId: string;
   schoolId: string;
-  status: DataEntryStatus;
+  status?: DataEntryStatus;
   entries: EntryValue[];
   isModified?: boolean;
 }
@@ -32,12 +32,12 @@ export enum DataEntrySaveStatus {
 }
 
 export interface CategoryEntryData {
-  id: string;
+  id?: string;
   categoryId?: string;
   name: string;
   completionRate: number;
   status: string;
-  values: Array<{columnId: string; value: any; errorMessage?: string; warningMessage?: string}>;
+  values?: Array<{columnId: string; value: any; errorMessage?: string; warningMessage?: string}>;
 }
 
 export interface ColumnValidationError {

@@ -1,140 +1,144 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { UserFilter } from '@/hooks/useUserList';
-import { FullUserData } from '@/types/user';
-import { getCache, setCache } from '@/utils/cacheUtils';
-import { useCachedQuery } from '@/hooks/useCachedQuery';
-import { useQueryClient } from '@tanstack/react-query';
+import { User, UserFilter } from '@/types/user';
 
-// Normal rol adlarını
-const normalizeRole = (role: string | null | undefined): string => {
-  if (!role) return '';
-  return role.toLowerCase().trim();
-};
-
-// Rol massivini normallaşdırmaq üçün funksiya
-const normalizeRoleArray = (roles: string[] | string | undefined): string[] => {
-  if (!roles) return [];
-  if (typeof roles === 'string') return [normalizeRole(roles)];
-  return roles.map(normalizeRole).filter(Boolean);
-};
-
-export const useOptimizedUserList = (initialFilter: UserFilter = {}) => {
-  const [filter, setFilter] = useState<UserFilter>(initialFilter);
+export const useOptimizedUserList = (initialFilters?: UserFilter) => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<UserFilter>(initialFilters || {});
+  const [totalUsers, setTotalUsers] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const { isSuperAdmin, isRegionAdmin, isSectorAdmin, regionId, sectorId } = usePermissions();
-  const queryClient = useQueryClient();
-  
-  // Cache key yaradılması
-  const createCacheKey = useCallback(() => {
-    const parts = [
-      'users',
-      filter.role ? (typeof filter.role === 'string' ? filter.role : filter.role.join(',')) : '',
-      filter.search || '',
-      filter.region || filter.regionId || '',
-      filter.sector || filter.sectorId || '',
-      filter.school || filter.schoolId || '',
-      filter.status || '',
-      currentPage
-    ];
-    return parts.join('-');
-  }, [filter, currentPage]);
-  
-  // Istifadəçi filtrinə əsasən opt. sorğu parametrləri
-  const queryParams = useMemo(() => {
-    return {
-      role: filter.role ? normalizeRoleArray(filter.role) : undefined,
-      search: filter.search,
-      regionId: (isRegionAdmin && regionId) ? regionId : (filter.regionId || filter.region),
-      sectorId: (isSectorAdmin && sectorId) ? sectorId : (filter.sectorId || filter.sector),
-      schoolId: filter.schoolId || filter.school,
-      status: filter.status,
-      page: currentPage,
-      pageSize: 10
-    };
-  }, [filter, currentPage, isRegionAdmin, isSectorAdmin, regionId, sectorId]);
+  const [pageSize, setPageSize] = useState(10);
 
-  // Edge funksiyası ilə sorğu
-  const fetchUsers = useCallback(async () => {
-    console.log('Fetching users with edge function...');
-    
+  const fetchUserCount = useCallback(async (filter: UserFilter) => {
     try {
-      const response = await supabase.functions.invoke('get-all-users-with-roles', {
-        body: { 
-          filter: queryParams 
-        }
-      });
-      
-      if (response.error) {
-        throw new Error(response.error.message);
+      let query = supabase.from('users').select('*', { count: 'exact', head: true });
+
+      // Apply filters
+      if (filter.role && Array.isArray(filter.role) && filter.role.length > 0) {
+        query = query.in('role', filter.role);
+      } else if (filter.role) {
+        query = query.eq('role', filter.role);
       }
       
-      return {
-        users: response.data.users || [],
-        totalCount: response.data.totalCount || 0
-      };
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      throw error;
-    }
-  }, [queryParams]);
+      if (filter.status && Array.isArray(filter.status) && filter.status.length > 0) {
+        query = query.in('status', filter.status);
+      } else if (filter.status) {
+        query = query.eq('status', filter.status);
+      }
 
-  // Keşlənmiş sorğu
-  const {
-    data,
-    isLoading,
-    error,
-    refetch
-  } = useCachedQuery({
-    queryKey: ['users', queryParams],
-    queryFn: fetchUsers,
-    cacheConfig: {
-      expiryInMinutes: 5
-    },
-    queryOptions: {
-      keepPreviousData: true,
-      refetchOnWindowFocus: false
+      if (filter.regionId) query = query.eq('region_id', filter.regionId);
+      if (filter.sectorId) query = query.eq('sector_id', filter.sectorId);
+      if (filter.schoolId) query = query.eq('school_id', filter.schoolId);
+      
+      if (filter.search) {
+        query = query.or(`full_name.ilike.%${filter.search}%,email.ilike.%${filter.search}%`);
+      }
+
+      const { count, error } = await query;
+
+      if (error) throw error;
+      if (count !== null) setTotalUsers(count);
+    } catch (err) {
+      console.error('Error fetching user count:', err);
     }
-  });
-  
-  // Filter deyisdikde
-  const updateFilter = useCallback((newFilter: UserFilter) => {
-    // Normallaşdır və səhifəni sıfırla
-    const normalizedFilter = { ...newFilter };
-    if (newFilter.role) {
-      normalizedFilter.role = typeof newFilter.role === 'string' 
-        ? normalizeRole(newFilter.role) 
-        : newFilter.role.map(normalizeRole);
-    }
+  }, []);
+
+  const fetchUsers = useCallback(async (page = 1, pageSize = 10, filter: UserFilter = filters) => {
+    setLoading(true);
+    setError(null);
     
-    setCurrentPage(1);
-    setFilter(normalizedFilter);
-  }, []);
+    try {
+      // Calculate offset for pagination
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
 
-  // Filter sıfırlama
-  const resetFilter = useCallback(() => {
-    setFilter({});
-    setCurrentPage(1);
-  }, []);
+      // Start building the query
+      let query = supabase
+        .from('users')
+        .select(`
+          *,
+          regions:region_id (id, name),
+          sectors:sector_id (id, name),
+          schools:school_id (id, name)
+        `)
+        .range(from, to);
 
-  // Extract data
-  const users = useMemo(() => data?.users || [], [data]);
-  const totalCount = useMemo(() => data?.totalCount || 0, [data]);
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(totalCount / 10)), [totalCount]);
+      // Apply filters
+      if (filter.role && Array.isArray(filter.role) && filter.role.length > 0) {
+        query = query.in('role', filter.role);
+      } else if (filter.role) {
+        query = query.eq('role', filter.role);
+      }
+
+      if (filter.status && Array.isArray(filter.status) && filter.status.length > 0) {
+        query = query.in('status', filter.status);
+      } else if (filter.status) {
+        query = query.eq('status', filter.status);
+      }
+
+      if (filter.regionId) query = query.eq('region_id', filter.regionId);
+      if (filter.sectorId) query = query.eq('sector_id', filter.sectorId);
+      if (filter.schoolId) query = query.eq('school_id', filter.schoolId);
+      
+      if (filter.search) {
+        query = query.or(`full_name.ilike.%${filter.search}%,email.ilike.%${filter.search}%`);
+      }
+
+      // Apply sorting
+      if (filter.sortBy) {
+        const sortOrder = filter.sortOrder || 'asc';
+        query = query.order(filter.sortBy, { ascending: sortOrder === 'asc' });
+      } else {
+        // Default sort by creation date
+        query = query.order('created_at', { ascending: false });
+      }
+
+      const { data, error: fetchError } = await query;
+
+      if (fetchError) throw fetchError;
+
+      // Format user data
+      const formattedUsers = data?.map(user => ({
+        ...user,
+        regionName: user.regions?.name,
+        sectorName: user.sectors?.name, 
+        schoolName: user.schools?.name
+      })) || [];
+
+      setUsers(formattedUsers);
+      setCurrentPage(page);
+
+      // Update total count
+      await fetchUserCount(filter);
+    } catch (err: any) {
+      console.error('Error fetching users:', err);
+      setError(err.message || 'Failed to fetch users');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, fetchUserCount]);
+
+  // Fetch users when filters change
+  useEffect(() => {
+    fetchUsers(currentPage, pageSize);
+  }, [currentPage, pageSize, fetchUsers]);
 
   return {
     users,
-    loading: isLoading,
+    loading,
     error,
-    filter,
-    updateFilter,
-    resetFilter,
-    totalCount,
-    totalPages,
+    totalUsers,
     currentPage,
+    pageSize,
+    setPageSize,
     setCurrentPage,
-    refetch
+    fetchUsers,
+    filters,
+    setFilters
   };
 };
+
+export default useOptimizedUserList;

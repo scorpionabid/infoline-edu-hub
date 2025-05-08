@@ -13,9 +13,10 @@ export interface Column {
   options?: any[] | Record<string, string>;
   validation?: ValidationRules;
   dependsOn?: DependsOnCondition;
+  description?: string;
 }
 
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'email' | 'phone' | 'file' | 'image' | 'url';
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'email' | 'phone' | 'file' | 'image' | 'url' | 'color' | 'password' | 'richtext' | 'range' | 'time' | 'datetime';
 
 export interface CategoryWithColumns {
   id: string;

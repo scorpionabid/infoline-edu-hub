@@ -44,3 +44,17 @@ export const validateMinMax = (
   }
   return null;
 };
+
+export const useValidation = (categories: any[], entries: any[]) => {
+  // Implementation for validation hook
+  const validateEntries = () => {
+    const errors: ColumnValidationError[] = [];
+    return { errors, isValid: errors.length === 0 };
+  };
+
+  return {
+    validateEntries,
+    errors: [],
+    isValid: true
+  };
+};

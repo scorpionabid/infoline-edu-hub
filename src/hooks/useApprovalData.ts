@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +22,43 @@ export interface ApprovalData {
   value: string;
 }
 
+interface SupabaseCategory {
+  id: string;
+  name: string;
+}
+
+interface SupabaseColumn {
+  id: string;
+  name: string;
+}
+
+interface SupabaseSector {
+  id: string;
+  name: string;
+  region_id: string;
+}
+
+interface SupabaseSchool {
+  id: string;
+  name: string;
+  sector_id: string;
+  sectors: SupabaseSector;
+}
+
+interface DataEntryRecord {
+  id: string;
+  value: any;
+  status: string;
+  created_at: string;
+  created_by: string;
+  category_id: string;
+  column_id: string;
+  school_id: string;
+  categories: SupabaseCategory;
+  columns: SupabaseColumn;
+  schools: SupabaseSchool;
+}
+
 export interface UseApprovalDataReturn {
   data: ApprovalData[];
   loading: boolean;
@@ -39,7 +75,7 @@ export const useApprovalData = (): UseApprovalDataReturn => {
   const { t } = useLanguage();
   const { isSuperAdmin, isRegionAdmin, isSectorAdmin, regionId, sectorId } = usePermissions();
 
-  // Təsdiqlənməli məlumatları çəkən funksiya
+  // Load the approval data
   const loadData = async (status: ApprovalStatus = 'pending') => {
     setLoading(true);
     setError(null);
@@ -64,18 +100,18 @@ export const useApprovalData = (): UseApprovalDataReturn => {
         `)
         .eq('status', status);
 
-      // RLS siyasətləri ilə uyğunlaşdırma
+      // Apply RLS policy-compatible filters
       if (isSuperAdmin) {
-        // SuperAdmin bütün məlumatları görə bilər
+        // SuperAdmin can see all data
       } else if (isRegionAdmin && regionId) {
-        // RegionAdmin öz regionundakı məlumatları görə bilər
+        // RegionAdmin can only see data from their region
         query = query.eq('schools.sectors.region_id', regionId);
       } else if (isSectorAdmin && sectorId) {
-        // SectorAdmin öz sektorundakı məlumatları görə bilər
+        // SectorAdmin can only see data from their sector
         query = query.eq('schools.sector_id', sectorId);
       } else {
-        // Digər istifadəçilər üçün
-        throw new Error('Təsdiq məlumatlarına icazəniz yoxdur');
+        // Other users don't have approval permissions
+        throw new Error('You do not have permission to access approval data');
       }
 
       const { data: entriesData, error: entriesError } = await query;
@@ -85,103 +121,98 @@ export const useApprovalData = (): UseApprovalDataReturn => {
         throw entriesError;
       }
 
-      const formattedData: ApprovalData[] = entriesData.map(entry => ({
+      const formattedData: ApprovalData[] = (entriesData as DataEntryRecord[]).map(entry => ({
         id: entry.id,
         categoryId: entry.category_id,
-        categoryName: entry.categories?.name || 'Unknown Category',
+        categoryName: entry.categories ? entry.categories.name : 'Unknown Category',
         columnId: entry.column_id,
-        columnName: entry.columns?.name || 'Unknown Column',
+        columnName: entry.columns ? entry.columns.name : 'Unknown Column',
         schoolId: entry.school_id,
-        schoolName: entry.schools?.name || 'Unknown School',
-        sectorId: entry.schools?.sector_id || undefined,
-        sectorName: entry.schools?.sectors?.name || 'Unknown Sector',
+        schoolName: entry.schools ? entry.schools.name : 'Unknown School',
+        sectorId: entry.schools?.sector_id,
+        sectorName: entry.schools?.sectors ? entry.schools.sectors.name : 'Unknown Sector',
         submittedBy: entry.created_by || 'Unknown',
         submittedDate: new Date(entry.created_at).toLocaleString(),
         status: entry.status as ApprovalStatus,
-        value: entry.value || ''
+        value: String(entry.value)
       }));
-      
+
       setData(formattedData);
-    } catch (err) {
-      console.error('Error loading approval data:', err);
-      setError(err as Error);
-      toast.error(t('errorLoadingData'));
+    } catch (err: any) {
+      console.error('Failed to load approval data:', err);
+      setError(err instanceof Error ? err : new Error(err.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
   };
 
-  // İlkin yükləmə
+  // Implement the approve item functionality
+  const approveItem = async (id: string): Promise<boolean> => {
+    try {
+      // Update the data entry status
+      const { error } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'approved',
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Show success notification
+      toast.success(t('approvalSuccess'), {
+        description: t('recordApprovedSuccessfully')
+      });
+
+      // Refresh data
+      await loadData();
+      return true;
+    } catch (err: any) {
+      console.error('Failed to approve item:', err);
+      toast.error(t('approvalError'), {
+        description: err.message || t('errorApprovingRecord')
+      });
+      return false;
+    }
+  };
+
+  // Implement the reject item functionality
+  const rejectItem = async (id: string, reason: string): Promise<boolean> => {
+    try {
+      // Update the data entry status
+      const { error } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'rejected',
+          rejection_reason: reason,
+          rejected_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Show success notification
+      toast.success(t('rejectionSuccess'), {
+        description: t('recordRejectedSuccessfully')
+      });
+
+      // Refresh data
+      await loadData();
+      return true;
+    } catch (err: any) {
+      console.error('Failed to reject item:', err);
+      toast.error(t('rejectionError'), {
+        description: err.message || t('errorRejectingRecord')
+      });
+      return false;
+    }
+  };
+
+  // Load data initially
   useEffect(() => {
     loadData();
   }, []);
-
-  // Məlumatı təsdiqləyən funksiya
-  const approveItem = async (id: string): Promise<boolean> => {
-    try {
-      setLoading(true);
-      
-      const { error } = await supabase
-        .from('data_entries')
-        .update({ status: 'approved', approved_at: new Date().toISOString() })
-        .eq('id', id);
-      
-      if (error) {
-        console.error('Error approving item:', error);
-        toast.error(t('approvalError'));
-        throw error;
-      }
-      
-      console.log(`Item with ID: ${id} approved successfully`);
-      toast.success(t('approvalSuccess'));
-      
-      // Məlumatları yenilə
-      await loadData('pending');
-      
-      return true;
-    } catch (err) {
-      console.error('Error approving item:', err);
-      setError(err as Error);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Məlumatı rədd edən funksiya
-  const rejectItem = async (id: string, reason: string): Promise<boolean> => {
-    try {
-      setLoading(true);
-      
-      const { error } = await supabase
-        .from('data_entries')
-        .update({ 
-          status: 'rejected', 
-          rejection_reason: reason 
-        })
-        .eq('id', id);
-      
-      if (error) {
-        console.error('Error rejecting item:', error);
-        toast.error(t('rejectionError'));
-        throw error;
-      }
-      
-      console.log(`Item with ID: ${id} rejected successfully`);
-      toast.success(t('rejectionSuccess'));
-      
-      // Məlumatları yenilə
-      await loadData('pending');
-      
-      return true;
-    } catch (err) {
-      console.error('Error rejecting item:', err);
-      setError(err as Error);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return {
     data,
@@ -192,3 +223,5 @@ export const useApprovalData = (): UseApprovalDataReturn => {
     rejectItem
   };
 };
+
+export default useApprovalData;

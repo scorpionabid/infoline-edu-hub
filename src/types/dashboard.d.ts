@@ -50,4 +50,4 @@ export interface PendingApproval {
 }
 
 // Re-export Report and ReportType to avoid duplicate references
-export type { Report, ReportType };
+export { Report, ReportType };

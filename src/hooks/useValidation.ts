@@ -1,102 +1,78 @@
 
-import { useState, useCallback } from 'react';
-import { ColumnValidationError, CategoryEntryData } from '@/types/dataEntry';
+import { useState, useMemo } from 'react';
 import { Column } from '@/types/column';
+import { ColumnValidationError, CategoryEntryData } from '@/types/dataEntry';
 
-/**
- * @description Hook for validation of form data
- */
-export const useValidation = (categories: any[], entries: CategoryEntryData[]) => {
-  const [validationErrors, setValidationErrors] = useState<ColumnValidationError[]>([]);
+export const useValidation = (columns: Column[], categoryData: CategoryEntryData[]) => {
+  const [errors, setErrors] = useState<ColumnValidationError[]>([]);
   
-  // Validate a single entry
-  const validateEntry = useCallback((entry: CategoryEntryData, columns: Record<string, Column>): boolean => {
-    const errors: ColumnValidationError[] = [];
+  const validateAll = useMemo(() => {
+    const allErrors: ColumnValidationError[] = [];
     
-    // Get all columns for this category
-    const categoryColumns = categories.find(c => c.id === entry.id)?.columns || [];
+    if (!categoryData || categoryData.length === 0 || !columns || columns.length === 0) {
+      return { errors: allErrors, isValid: true };
+    }
     
-    // Check each required column
-    categoryColumns.forEach(column => {
-      if (column.is_required) {
-        const valueObj = entry.values?.find(v => v.columnId === column.id);
-        const value = valueObj?.value;
+    categoryData.forEach(category => {
+      if (!category || !category.values) return;
+      
+      const categoryColumns = columns.filter(col => col.category_id === category.categoryId);
+      
+      categoryColumns.forEach(column => {
+        if (!column.is_required) return;
         
-        if (isEmptyValue(value)) {
-          errors.push({
+        const entry = category.values?.find(e => e.columnId === column.id);
+        
+        if (!entry || entry.value === undefined || entry.value === null || entry.value === '') {
+          allErrors.push({
             columnId: column.id,
+            columnName: column.name,
             message: `${column.name} is required`,
-            severity: 'error'
+            severity: 'error',
+            categoryId: category.categoryId
           });
         }
+      });
+    });
+    
+    setErrors(allErrors);
+    return { errors: allErrors, isValid: allErrors.length === 0 };
+  }, [columns, categoryData]);
+  
+  const validateCategory = (category: CategoryEntryData) => {
+    const categoryErrors: ColumnValidationError[] = [];
+    
+    if (!category || !category.values) {
+      return { errors: categoryErrors, isValid: true };
+    }
+    
+    const categoryColumns = columns.filter(col => col.category_id === category.categoryId);
+    
+    categoryColumns.forEach(column => {
+      if (!column.is_required) return;
+      
+      const entry = category.values?.find(e => e.columnId === column.id);
+      
+      if (!entry || entry.value === undefined || entry.value === null || entry.value === '') {
+        categoryErrors.push({
+          columnId: column.id,
+          columnName: column.name,
+          message: `${column.name} is required`,
+          severity: 'error',
+          categoryId: category.categoryId
+        });
       }
     });
     
-    // Add to global errors
-    setValidationErrors(prev => [
-      ...prev.filter(e => !categoryColumns.some(col => col.id === e.columnId)),
-      ...errors
-    ]);
-    
-    return errors.length === 0;
-  }, [categories]);
-  
-  // Validate all entries
-  const validateAllEntries = useCallback((entries: CategoryEntryData[], columns: Record<string, Column>): boolean => {
-    let isValid = true;
-    const allErrors: ColumnValidationError[] = [];
-    
-    entries.forEach(entry => {
-      const categoryColumns = categories.find(c => c.id === entry.id)?.columns || [];
-      
-      categoryColumns.forEach(column => {
-        if (column.is_required) {
-          const valueObj = entry.values?.find(v => v.columnId === column.id);
-          const value = valueObj?.value;
-          
-          if (isEmptyValue(value)) {
-            allErrors.push({
-              columnId: column.id,
-              message: `${column.name} is required`,
-              severity: 'error'
-            });
-            isValid = false;
-          }
-        }
-      });
-    });
-    
-    setValidationErrors(allErrors);
-    return isValid;
-  }, [categories]);
-  
-  // Get error message for column
-  const getColumnErrorMessage = useCallback((columnId: string): string | undefined => {
-    const error = validationErrors.find(err => err.columnId === columnId);
-    return error?.message;
-  }, [validationErrors]);
-  
-  // Check if value is empty
-  const isEmptyValue = (value: any): boolean => {
-    if (value === undefined || value === null) return true;
-    if (typeof value === 'string' && value.trim() === '') return true;
-    if (Array.isArray(value) && value.length === 0) return true;
-    return false;
+    return { errors: categoryErrors, isValid: categoryErrors.length === 0 };
   };
   
   return {
-    validationErrors,
-    validateAllEntries,
-    validateEntry,
-    getColumnErrorMessage,
-    getValidationErrorsForCategory: useCallback((categoryId: string) => {
-      return validationErrors.filter(err => {
-        const column = categories.find(c => 
-          c.columns?.some(col => col.id === err.columnId)
-        );
-        return column?.id === categoryId;
-      });
-    }, [validationErrors, categories]),
-    isEmptyValue
+    errors,
+    isValid: errors.length === 0,
+    validateAll,
+    validateCategory
   };
 };
+
+export default useValidation;
