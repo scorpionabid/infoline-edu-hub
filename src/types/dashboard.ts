@@ -1,54 +1,103 @@
 
-// Əgər bu fayl mövcud deyilsə, onu yaradaq
-import { AppNotification, DashboardNotification } from './notification';
+// Dashboard tipləri
 
-export interface CompletionData {
+export interface DashboardCompletion {
   percentage: number;
-  total: number;
   completed: number;
+  total: number;
 }
 
 export interface DashboardStatus {
-  total: number;
-  active: number;
-  inactive: number;
-  pending?: number;
-  approved?: number;
-  rejected?: number;
-  draft?: number;
-}
-
-export interface DashboardFormStats {
-  total: number;
   pending: number;
   approved: number;
   rejected: number;
-  dueSoon: number;
-  overdue: number;
   draft?: number;
-  incomplete?: number;
+  total: number;
+  active: number; // Əlavə edildi
+  inactive: number; // Əlavə edildi
 }
 
-export interface SchoolAdminDashboardData {
-  completion: CompletionData;
-  status: DashboardStatus;
-  categories: CategoryData[];
-  upcoming: DeadlineItem[];
-  notifications: DashboardNotification[];
+export interface DashboardFormStats {
+  pending: number;
+  approved: number;
+  rejected: number;
+  draft?: number;
+  dueSoon: number;
+  overdue: number;
+  incomplete?: number;
+  total: number;
+}
+
+export interface PendingApproval {
+  id: string;
+  title?: string;
+  school?: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  date?: string; // Əlavə edildi
+  createdAt?: string;
+  timestamp?: string;
+  entity?: any;
+}
+
+export interface DeadlineItem {
+  id: string;
+  name?: string;
+  title?: string; // Əlavə edildi
+  dueDate?: string;
+  completionRate?: number; // Əlavə edildi
+  progress?: number; // Əlavə edildi
+  status?: 'upcoming' | 'overdue' | 'completed';
+  category?: string;
+  timestamp?: string;
+  deadline?: string;
+}
+
+export interface FormItem {
+  id: string;
+  name?: string;
+  title?: string; // Əlavə edildi
+  status?: 'pending' | 'approved' | 'rejected' | 'draft';
+  deadline?: string; // Əlavə edildi
+  category?: string;
+  dueDate?: string;
+  completionRate?: number;
+}
+
+export interface CategoryItem {
+  id: string;
+  name: string;
   completionRate: number;
-  pendingForms: FormItem[];
-  formStats?: DashboardFormStats;
-  forms?: DashboardFormStats; // geriyə uyğunluq üçün
+  dueDate?: string; // Əlavə edildi
+  progress?: number; // Əlavə edildi
+  deadline?: string;
+  status?: 'active' | 'inactive' | 'archived';
+  description?: string;
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  status?: string;
+  completionRate: number;
+  lastUpdate: string;
+  pendingForms: number;
+  formsCompleted: number;
+  totalForms: number;
+  principalName: string; // principal əvəzinə principalName olmalıdır
+  address?: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface RegionStat {
+  id: string;
+  name: string;
+  schoolCount: number;
+  sectorCount: number;
+  completionRate: number;
 }
 
 export interface SuperAdminDashboardData {
-  completion?: CompletionData;
-  status?: DashboardStatus;
-  regions?: number;
-  sectors?: number;
-  schools?: number;
-  notifications?: DashboardNotification[];
-  formStats?: DashboardFormStats;
   stats?: {
     regions: number;
     sectors: number;
@@ -59,140 +108,60 @@ export interface SuperAdminDashboardData {
     pending: number;
     approved: number;
     rejected: number;
+    draft?: number;
     total: number;
   };
+  status?: DashboardStatus;
+  completion?: DashboardCompletion;
   completionRate?: number;
+  pendingApprovals?: PendingApproval[];
+  regions?: RegionStat[];
+  categories?: CategoryItem[];
+  notifications?: any[]; // DashboardNotification[] olmalıdır
 }
 
 export interface RegionAdminDashboardData {
-  completion: CompletionData;
-  status: DashboardStatus;
-  sectors: SectorData[];
-  schoolStats?: SchoolStats[];
-  notifications?: DashboardNotification[];
-  formStats?: DashboardFormStats;
-  categories?: CategoryData[];
+  sectors?: { id: string; name: string; schoolCount: number; completionRate: number }[];
+  schoolStats?: any[]; // SchoolStat[] olmalıdır
+  status?: DashboardStatus;
+  completion?: DashboardCompletion;
+  completionRate?: number;
   pendingApprovals?: PendingApproval[];
+  categories?: CategoryItem[];
+  notifications?: any[]; // DashboardNotification[] olmalıdır
 }
 
 export interface SectorAdminDashboardData {
-  completion: CompletionData;
+  schoolStats: any[]; // SchoolStat[] olmalıdır
   status: DashboardStatus;
-  schoolStats: SchoolStats[];
-  pendingApprovals: PendingApproval[];
-  notifications?: DashboardNotification[];
   formStats?: DashboardFormStats;
-}
-
-export interface SectorData {
-  id: string;
-  name: string;
-  schoolCount: number;
-  completionRate: number;
-}
-
-export interface SchoolStats {
-  id: string;
-  name: string;
-  completionRate: number;
-  status: string;
-  lastUpdate?: string;
-}
-
-// SchoolStat tipi əlavə edirik (SchoolStats ilə eyni)
-export interface SchoolStat {
-  id: string;
-  name: string;
-  completionRate: number;
-  status: string;
-  lastUpdate?: string;
-  pendingForms?: number;
-  formsCompleted?: number;
-  totalForms?: number;
-  principalName?: string;
-  principal?: string; // geriyə uyğunluq üçün
-  address?: string;
-  phone?: string;
-  email?: string;
-}
-
-export interface CategoryData {
-  id: string;
-  name: string;
-  completionRate: number;
-  deadline?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'draft';
-  columnCount?: number;
-}
-
-export interface DeadlineItem {
-  id: string;
-  categoryId: string;
-  category: string;
-  categoryName?: string;
-  deadline: string;
-  status: 'upcoming' | 'due' | 'overdue';
-  daysRemaining: number;
-  title?: string;
+  completion: DashboardCompletion;
   completionRate?: number;
+  pendingApprovals: PendingApproval[];
+  categories?: CategoryItem[];
+  notifications?: any[]; // DashboardNotification[] olmalıdır
 }
 
-export interface FormItem {
-  id: string;
-  categoryId: string;
-  category: string;
-  categoryName?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'draft';
-  submittedAt?: string;
-  updatedAt?: string;
-  title?: string;
-  deadline?: string;
-}
-
-export interface PendingApproval {
-  id: string;
-  schoolId: string;
-  schoolName: string;
-  categoryId: string;
-  categoryName: string;
-  submittedAt: string;
-  status: 'pending' | 'approved' | 'rejected';
-  date?: string;
-}
-
-export interface FormStats {
-  total: number;
-  pending: number;
-  approved: number;
-  rejected: number;
-  draft: number;
-}
-
-export interface CompletionStats {
-  percentage: number;
-  total: number;
-  completed: number;
-}
-
-// CategoryItem əlavə edək
-export interface CategoryItem {
-  id: string;
-  name: string;
-  deadline?: string;
-  dueDate?: string; // geriyə uyğunluq üçün
-  status: string;
-  completionRate: number;
-  progress?: number; // geriyə uyğunluq üçün
-}
-
-// StatusCardsProps interfeysini əlavə edək
-export interface StatusCardsProps {
-  completion?: CompletionData;
+export interface SchoolAdminDashboardData {
+  completion?: DashboardCompletion;
   status?: DashboardStatus;
   formStats?: DashboardFormStats;
+  categories?: CategoryItem[];
+  upcoming?: DeadlineItem[];
+  forms?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    dueSoon: number;
+    overdue: number;
+    total: number;
+  };
+  pendingForms?: FormItem[];
+  completionRate?: number;
+  notifications?: any[]; // DashboardNotification[] olmalıdır
 }
 
-// Props interfeysləri
+// Dashboard komponent propları
 export interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
 }
@@ -204,25 +173,29 @@ export interface RegionAdminDashboardProps {
 
 export interface SectorAdminDashboardProps {
   data: SectorAdminDashboardData;
+  sectorId?: string;
 }
 
 export interface SchoolAdminDashboardProps {
-  data?: SchoolAdminDashboardData;
+  data: SchoolAdminDashboardData;
   isLoading?: boolean;
-  error?: Error | string | any;
+  error?: Error | string | null;
   onRefresh?: () => void;
   navigateToDataEntry?: () => void;
-  handleFormClick?: (formId: string) => void;
+  handleFormClick?: (id: string) => void;
   schoolId?: string;
 }
 
-// DashboardStats interfeysi əlavə edək
-export interface DashboardStats {
-  total: number;
-  active: number;
-  inactive: number;
-  users?: number;
-  regions?: number;
-  sectors?: number;
-  schools?: number;
+export interface StatusCardsProps {
+  completion?: DashboardCompletion;
+  status?: DashboardStatus;
+  formStats?: DashboardFormStats;
+}
+
+export interface CategoryWithColumns {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  columns: any[]; // Column[] olmalıdır
 }

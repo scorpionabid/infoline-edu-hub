@@ -10,7 +10,7 @@ import NotificationsCard from '@/components/dashboard/common/NotificationsCard';
 import { SectorAdminDashboardData, SectorAdminDashboardProps } from '@/types/dashboard';
 import { SchoolStat, SectorSchool } from '@/types/school';
 import SchoolsTable from './SchoolsTable';
-import { adaptAppNotificationToDashboard } from '@/types/notification';
+import { adaptAppToDashboardNotification } from '@/utils/notificationUtils';
 
 const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
@@ -19,7 +19,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
   // Bildirişləri adaptasiya etmək
   const adaptedNotifications = useMemo(() => {
     if (notifications && notifications.length > 0) {
-      return notifications.map(n => adaptAppNotificationToDashboard(n));
+      return notifications.map(n => adaptAppToDashboardNotification(n));
     }
     return [];
   }, [notifications]);

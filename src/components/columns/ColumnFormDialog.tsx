@@ -44,7 +44,7 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
   const {
     form, 
     selectedType,
-    handleTypeChange,
+    onTypeChange: handleTypeChange,
     options,
     addOption,
     removeOption,
@@ -65,9 +65,9 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
     
     try {
       // onSubmit funksiyasını çağırırıq
-      const success = await onSubmit(values);
+      const result = await onSubmit(values);
       
-      if (success) {
+      if (result) {
         toast.success(isEditMode ? t("columnUpdated") : t("columnAdded"));
         onClose();
       } else {
