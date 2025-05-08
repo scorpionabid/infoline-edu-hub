@@ -1,132 +1,37 @@
 
-// This is a minimal implementation - add more fields as needed
-export interface DashboardNotification {
-  id: string;
-  title: string;
-  message?: string;
-  createdAt: string;
-  type?: string;
-  isRead?: boolean;
-  priority?: 'low' | 'medium' | 'high';
-  relatedEntityType?: string;
-  relatedEntityId?: string;
-}
-
-export interface CategoryItem {
-  id: string;
-  name: string;
-  description?: string;
-  deadline?: string;
+export interface DashboardStats {
+  totalSchools: number;
+  activeSchools: number;
+  pendingSchools: number;
   completionRate: number;
-  status?: string;
-}
-
-export interface SchoolStat {
-  id: string;
-  name: string;
-  completionRate: number;
-  formsTotal: number;
-  formsCompleted: number;
-  formsPending: number;
-  lastUpdate: string;
-  pendingForms?: number;
-  principal?: string;
-  principalName?: string;
-}
-
-// Additional types needed
-export type Category = {
-  id: string;
-  name: string;
-  description?: string;
-  deadline?: string;
-  completionRate?: number;
-  status?: string;
-};
-
-export interface DashboardStatus {
-  pending: number;
-  approved: number;
-  rejected: number;
-  draft?: number;
-  total: number;
-  active: number; 
-  inactive: number;
-}
-
-export interface CompletionData {
-  percentage: number;
-  total: number;
-  completed: number;
 }
 
 export interface FormStats {
+  completed: number;
   pending: number;
-  approved: number;
-  rejected: number;
-  draft?: number;
-  dueSoon: number;
-  overdue: number;
-  total: number;
+  totalForms: number;
 }
 
-export interface DeadlineItem {
+export interface DashboardNotification {
   id: string;
   title: string;
-  category?: string;
-  categoryName?: string;
-  deadline: string;
-  status?: string;
+  message: string;
+  date: string | Date;
+  read: boolean;
+  priority: 'low' | 'medium' | 'high';
+  type: 'info' | 'warning' | 'error' | 'success';
 }
 
-export interface FormItem {
+export interface CategoryStat {
   id: string;
-  title: string;
-  category?: string;
-  categoryName?: string;
+  name: string;
+  completionRate: number;
   status: string;
-  updatedAt: string;
+  dueDate?: string | Date;
 }
 
-export interface DashboardCategory extends Category {
-  columns?: number;
-  completionRate?: number;
-}
-
-export interface CategoryWithCompletion extends Category {
+export interface SchoolCompletionData {
+  schoolId: string;
+  schoolName: string;
   completionRate: number;
-}
-
-export interface SchoolCompletionItem {
-  id: string;
-  name: string;
-  completionRate: number;
-}
-
-export interface SectorCompletionItem {
-  id: string;
-  name: string;
-  completionRate: number;
-  schoolCount: number;
-}
-
-export interface SchoolAdminDashboardProps {
-  schoolId?: string;
-  data?: SchoolAdminDashboardData;
-  isLoading?: boolean;
-  error?: Error | null;
-  onRefresh?: () => void;
-  handleFormClick?: (formId: string) => void;
-  navigateToDataEntry?: () => void;
-}
-
-export interface SchoolAdminDashboardData {
-  completion: CompletionData;
-  status: DashboardStatus;
-  categories: CategoryItem[] | Category[];
-  upcoming: DeadlineItem[];
-  formStats?: FormStats;
-  pendingForms: FormItem[];
-  completionRate: number;
-  notifications: DashboardNotification[];
 }

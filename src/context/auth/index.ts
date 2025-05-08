@@ -1,6 +1,6 @@
 
 // Export all auth context components and hooks
-export * from './AuthProvider';
+export { AuthProvider } from './AuthProvider';
 export * from './context';
 export * from './useAuth';
 export * from './types';

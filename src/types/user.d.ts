@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   email: string;
@@ -7,7 +6,7 @@ export interface User {
   status?: 'active' | 'inactive' | 'pending';
   created_at?: string | Date;
   last_login?: string | Date;
-  avatar?: string; // Added to support mockUsers.ts
+  avatar?: string;
 }
 
 export interface UserListItem extends User {

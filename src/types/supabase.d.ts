@@ -1,108 +1,102 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+import { Session } from '@supabase/supabase-js';
+import { User, UserRole } from './user';
 
-// Region model
-export interface Region {
-  id: string;
-  name: string;
-  description?: string;
-  admin_id?: string;
-  admin_email?: string;
-  created_at: string;
-  updated_at: string;
-  status: 'active' | 'inactive' | string;
+export interface FullUserData extends User {
+  full_name?: string;
+  avatar?: string;
+  phone?: string;
+  position?: string;
+  region_id?: string;
+  regionId?: string;
+  sector_id?: string;
+  sectorId?: string;
+  school_id?: string;
+  schoolId?: string;
+  language?: string;
+  status?: string;
+  last_login?: string | Date;
+  lastLogin?: string | Date;
+  created_at?: string | Date;
+  createdAt?: string | Date;
+  updated_at?: string | Date;
+  updatedAt?: string | Date;
+  adminEntity?: AdminEntity;
 }
 
-// Sector model
+export interface AdminEntity {
+  type?: string;
+  name?: string;
+  status?: string;
+  schoolType?: string;
+  sectorName?: string;
+  regionName?: string;
+  schoolName?: string;
+}
+
 export interface Sector {
   id: string;
   name: string;
-  description?: string;
   region_id: string;
-  admin_id?: string;
-  admin_email?: string;
-  created_at: string;
-  updated_at: string;
-  status: 'active' | 'inactive' | string;
-  completion_rate?: number;
   region_name?: string;
+  description?: string;
+  status?: string;
+  created_at: string | Date;
+  updated_at?: string | Date;
 }
 
-// Enhanced sector with additional fields
 export interface EnhancedSector extends Sector {
-  region_name: string;
   school_count: number;
   completion_rate: number;
 }
 
-// School model
-export interface School {
+export interface Region {
   id: string;
   name: string;
   description?: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  region_id: string;
-  sector_id: string;
+  status?: string;
   admin_id?: string;
   admin_email?: string;
-  created_at: string;
-  updated_at: string;
-  status: 'active' | 'inactive' | string;
-  logo?: string;
-  principal_name?: string;
-  principalName?: string; // TypeScript camelCase alias
-  type?: string;
-  teacher_count?: number;
-  student_count?: number;
-  language?: string;
-  completion_rate?: number;
+  created_at: string | Date;
+  updated_at?: string | Date;
 }
 
-// Full User Data for authentication and profile
-export interface FullUserData {
+export interface School {
   id: string;
-  email: string;
-  full_name: string;
+  name: string;
+  principal_name?: string;
+  address?: string;
+  region_id: string;
+  region_name?: string;
+  sector_id: string;
+  sector_name?: string;
   phone?: string;
-  role: UserRole | string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
+  email?: string;
+  student_count?: number;
+  teacher_count?: number;
   status?: string;
-  last_login?: string;
-  created_at?: string;
-  updated_at?: string;
+  type?: string;
   language?: string;
-  avatar?: string;
-  position?: string;
-  entityName?: string;
-  name?: string; // Alias for full_name
-  regionId?: string; // Alias for region_id
-  sectorId?: string; // Alias for sector_id
-  schoolId?: string; // Alias for school_id
-  lastLogin?: string; // Alias for last_login
-  createdAt?: string; // Alias for created_at
-  updatedAt?: string; // Alias for updated_at
-  adminEntity?: {
-    type?: string;
-    name?: string;
-    schoolName?: string;
-    sectorName?: string;
-    regionName?: string;
-  };
+  created_at: string | Date;
+  updated_at?: string | Date;
+  completion_rate?: number;
+  logo?: string;
+  admin_email?: string;
+  admin_id?: string;
 }
 
-// Add SchoolStat type to avoid conflicting definitions
-export interface SchoolStat extends School {
-  completion_rate: number;
-  formsTotal: number;
-  formsCompleted: number;
-  formsPending: number;
-  lastUpdate: string;
-  pendingForms: number;
-  completionRate?: number;
-  principal?: string;
-  principalName?: string;
+export interface Profile {
+  id: string;
+  full_name: string;
+  avatar?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  last_login?: string | Date;
+  created_at: string | Date;
+  updated_at: string | Date;
+  status?: string;
+  email?: string;
 }
+
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';

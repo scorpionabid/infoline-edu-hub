@@ -8,7 +8,6 @@ import './i18n'; // i18n initialazisiya faylını import edirik
 import { LanguageProvider } from '@/context/LanguageContext';
 import { AuthProvider } from '@/context/auth/AuthProvider';
 import { ThemeProvider } from '@/context/ThemeContext';
-import { AppQueryProvider } from '@/context/QueryClientProvider';
 
 // Əsas render
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -16,11 +15,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <LanguageProvider>
       <AuthProvider>
         <ThemeProvider>
-          <AppQueryProvider>
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
-          </AppQueryProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
         </ThemeProvider>
       </AuthProvider>
     </LanguageProvider>
