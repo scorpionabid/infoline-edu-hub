@@ -87,3 +87,46 @@ export interface FormItem {
   status: string;
   updatedAt: string;
 }
+
+export interface DashboardCategory extends Category {
+  columns?: number;
+  completionRate?: number;
+}
+
+export interface CategoryWithCompletion extends Category {
+  completionRate: number;
+}
+
+export interface SchoolCompletionItem {
+  id: string;
+  name: string;
+  completionRate: number;
+}
+
+export interface SectorCompletionItem {
+  id: string;
+  name: string;
+  completionRate: number;
+  schoolCount: number;
+}
+
+export interface SchoolAdminDashboardProps {
+  schoolId?: string;
+  data?: SchoolAdminDashboardData;
+  isLoading?: boolean;
+  error?: Error | null;
+  onRefresh?: () => void;
+  handleFormClick?: (formId: string) => void;
+  navigateToDataEntry?: () => void;
+}
+
+export interface SchoolAdminDashboardData {
+  completion: CompletionData;
+  status: DashboardStatus;
+  categories: CategoryItem[] | Category[];
+  upcoming: DeadlineItem[];
+  formStats?: FormStats;
+  pendingForms: FormItem[];
+  completionRate: number;
+  notifications: DashboardNotification[];
+}

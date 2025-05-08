@@ -30,15 +30,12 @@ export const useAuth = () => {
     updatePassword: context.updatePassword || (async () => ({ data: null, error: null })),
     updateProfile: context.updateProfile || (async () => ({ data: null, error: null })),
     refreshSession: context.refreshSession || (async () => {}),
-    refreshProfile: async (): Promise<any> => {
-      if (context.refreshProfile) {
-        return context.refreshProfile();
-      }
+    refreshProfile: context.refreshProfile || (async () => {
       if (context.refreshSession) {
         await context.refreshSession();
       }
       return context.user;
-    }
+    })
   };
 };
 

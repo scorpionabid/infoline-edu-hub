@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { FullUserData } from '@/types/supabase';
@@ -18,13 +17,14 @@ type AuthState = {
   setError: (error: string | null) => void;
   clear: () => void;
   updateUser: (data: Partial<FullUserData>) => void;
+  resetAuth: () => void;  // Add this function
   // Add missing methods that components are using
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
   refreshAuth: () => Promise<void>;
   clearError: () => void;
   refreshSession: () => Promise<void>;
-  logIn: (email: string, password: string) => Promise<boolean>;
+  logIn: (email: string, password: string) => Promise<any>;
 };
 
 // Function that merges partial user data with existing user data
@@ -56,6 +56,14 @@ export const useAuthStore = create<AuthState>()(
       setIsLoading: (isLoading) => set({ isLoading, loading: isLoading }), // Set both for compatibility
       setError: (error) => set({ error }),
       clear: () => set({ isAuthenticated: false, user: null, session: null, error: null }),
+      resetAuth: () => set({ 
+        isAuthenticated: false, 
+        user: null, 
+        session: null, 
+        error: null, 
+        loading: false,
+        isLoading: false
+      }),
       updateUser: (data) => 
         set((state) => ({ 
           user: mergeUserData(state.user, data) 

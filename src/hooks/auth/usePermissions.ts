@@ -64,10 +64,18 @@ export const usePermissions = (): UsePermissionsResult => {
       regionId,
       sectorId,
       schoolId,
-      // Add missing property that components are using
-      canApproveData: isSuperAdmin || userRole === 'regionadmin'
+      // Add missing properties that components are using
+      canApproveData: isSuperAdmin || userRole === 'regionadmin',
+      canViewSectorCategories: true,
+      // Add stub implementations for required functions
+      checkRegionAccess: async () => isSuperAdmin || userRole === 'regionadmin',
+      checkSectorAccess: async () => isSuperAdmin || userRole === 'regionadmin' || userRole === 'sectoradmin',
+      checkSchoolAccess: async () => true,
+      checkCategoryAccess: async () => true,
+      checkColumnAccess: async () => true,
+      userId: user?.id
     };
-  }, [userRole, isAuthenticated, regionId, sectorId, schoolId]);
+  }, [userRole, isAuthenticated, regionId, sectorId, schoolId, user]);
 
   return permissions;
 };

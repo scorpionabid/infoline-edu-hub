@@ -1,70 +1,58 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 import { UserRole } from '@/types/supabase';
 
-export const fetchUserData = async (userId: string): Promise<FullUserData | null> => {
+export const getUserProfile = async (userId: string): Promise<FullUserData | null> => {
   try {
-    // Fetch user profile and roles
-    const { data, error } = await supabase
+    const defaultRole: UserRole = 'user';  // Using the correct type now
+
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select(`
-        *,
-        user_roles:user_roles(role, region_id, sector_id, school_id)
-      `)
+      .select('*')
       .eq('id', userId)
       .single();
-
-    if (error) throw error;
+      
+    if (profileError) throw profileError;
     
-    // Process role information
-    const defaultRole: UserRole = 'user';
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role, region_id, sector_id, school_id')
+      .eq('user_id', userId)
+      .single();
+      
+    if (roleError && roleError.code !== 'PGRST116') {
+      // PGRST116 is "no rows returned" - not a critical error, we'll use default role
+      console.warn('Error fetching user role:', roleError);
+    }
     
-    const role = Array.isArray(data?.user_roles) && data.user_roles.length > 0
-      ? data.user_roles[0]?.role as UserRole || defaultRole
-      : defaultRole;
-    
-    const regionId = Array.isArray(data?.user_roles) && data.user_roles.length > 0
-      ? data.user_roles[0]?.region_id 
-      : null;
-    
-    const sectorId = Array.isArray(data?.user_roles) && data.user_roles.length > 0
-      ? data.user_roles[0]?.sector_id 
-      : null;
-    
-    const schoolId = Array.isArray(data?.user_roles) && data.user_roles.length > 0
-      ? data.user_roles[0]?.school_id 
-      : null;
-
-    // Create full user data object
     const userData: FullUserData = {
       id: userId,
-      email: data?.email || '',
-      full_name: data?.full_name || '',
-      name: data?.full_name || '',
-      role: role,
-      region_id: regionId,
-      regionId: regionId,
-      sector_id: sectorId,
-      sectorId: sectorId, 
-      school_id: schoolId,
-      schoolId: schoolId,
-      phone: data?.phone,
-      position: data?.position,
-      language: data?.language || 'az',
-      avatar: data?.avatar,
-      status: data?.status || 'active',
-      last_login: data?.last_login,
-      lastLogin: data?.last_login,
-      created_at: data?.created_at,
-      createdAt: data?.created_at,
-      updated_at: data?.updated_at,
-      updatedAt: data?.updated_at
+      email: profile.email || '',
+      full_name: profile.full_name || '',
+      name: profile.full_name || '',
+      role: (roleData?.role as UserRole) || defaultRole,
+      region_id: roleData?.region_id || null,
+      regionId: roleData?.region_id || null,
+      sector_id: roleData?.sector_id || null,
+      sectorId: roleData?.sector_id || null,
+      school_id: roleData?.school_id || null,
+      schoolId: roleData?.school_id || null,
+      phone: profile.phone || null,
+      position: profile.position || null,
+      avatar: profile.avatar || null,
+      language: profile.language || 'az',
+      status: profile.status || 'active',
+      last_login: profile.last_login || null,
+      lastLogin: profile.last_login || null,
+      created_at: profile.created_at || null,
+      createdAt: profile.created_at || null,
+      updated_at: profile.updated_at || null,
+      updatedAt: profile.updated_at || null
     };
-
+    
     return userData;
   } catch (error) {
-    console.error('Error fetching user data:', error);
+    console.error('Error fetching user profile:', error);
     return null;
   }
 };

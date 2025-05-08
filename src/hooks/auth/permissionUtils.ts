@@ -1,57 +1,45 @@
 
 import { UserRole } from '@/types/supabase';
 
-export const hasPermission = (userRole: UserRole | undefined | null, requiredRoles: UserRole[]): boolean => {
-  if (!userRole) return false;
-  return requiredRoles.includes(userRole);
+// Basic permission checks for different resources
+// These can be expanded as needed with more specific logic
+
+export const canViewUsers = (role: UserRole | null): boolean => {
+  return !!role && ['superadmin', 'regionadmin', 'sectoradmin'].includes(role);
 };
 
-export const canViewUsers = (role: UserRole | undefined | null): boolean => {
-  if (!role) return false;
-  return ['superadmin', 'regionadmin', 'sectoradmin'].includes(role);
+export const canManageUsers = (role: UserRole | null): boolean => {
+  return !!role && ['superadmin', 'regionadmin'].includes(role);
 };
 
-export const canManageUsers = (role: UserRole | undefined | null): boolean => {
-  if (!role) return false;
-  return ['superadmin', 'regionadmin'].includes(role);
+export const canViewRegions = (role: UserRole | null): boolean => {
+  return !!role && ['superadmin', 'regionadmin'].includes(role);
 };
 
-export const canViewRegions = (role: UserRole | undefined | null): boolean => {
-  if (!role) return false;
-  return ['superadmin', 'regionadmin'].includes(role);
+export const canManageRegions = (role: UserRole | null): boolean => {
+  return !!role && ['superadmin'].includes(role);
 };
 
-export const canManageRegions = (role: UserRole | undefined | null): boolean => {
-  if (!role) return false;
-  return role === 'superadmin';
+export const canViewSectors = (role: UserRole | null): boolean => {
+  return !!role && ['superadmin', 'regionadmin', 'sectoradmin'].includes(role);
 };
 
-export const canViewSectors = (role: UserRole | undefined | null): boolean => {
-  if (!role) return false;
-  return ['superadmin', 'regionadmin', 'sectoradmin'].includes(role);
+export const canManageSectors = (role: UserRole | null): boolean => {
+  return !!role && ['superadmin', 'regionadmin'].includes(role);
 };
 
-export const canManageSectors = (role: UserRole | undefined | null): boolean => {
-  if (!role) return false;
-  return ['superadmin', 'regionadmin'].includes(role);
+export const canViewSchools = (role: UserRole | null): boolean => {
+  return !!role;
 };
 
-export const canViewSchools = (role: UserRole | undefined | null): boolean => {
-  if (!role) return false;
-  return ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(role);
+export const canManageSchools = (role: UserRole | null): boolean => {
+  return !!role && ['superadmin', 'regionadmin', 'sectoradmin'].includes(role);
 };
 
-export const canManageSchools = (role: UserRole | undefined | null): boolean => {
-  if (!role) return false;
-  return ['superadmin', 'regionadmin', 'sectoradmin'].includes(role);
+export const canViewCategories = (role: UserRole | null): boolean => {
+  return !!role;
 };
 
-export const canViewCategories = (role: UserRole | undefined | null): boolean => {
-  if (!role) return false;
-  return ['superadmin', 'regionadmin', 'sectoradmin'].includes(role);
-};
-
-export const canManageCategories = (role: UserRole | undefined | null): boolean => {
-  if (!role) return false;
-  return role === 'superadmin';
+export const canManageCategories = (role: UserRole | null): boolean => {
+  return !!role && ['superadmin'].includes(role);
 };

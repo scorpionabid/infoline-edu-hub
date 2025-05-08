@@ -36,20 +36,26 @@ export interface AuthContextType {
   user: FullUserData | null;
   session: Session | null;
   isAuthenticated: boolean;
+  authenticated?: boolean;
   loading: boolean;
   error: AuthErrorType;
   logIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
+  login?: (email: string, password: string) => Promise<any>;
   logOut: () => Promise<void>;
   logout: () => Promise<void>; // logOut üçün alias
   signOut: () => Promise<void>; // logOut üçün alias
   updateUser: (updates: Partial<FullUserData>) => Promise<boolean | void>;
   clearError: () => void;
   refreshProfile?: () => Promise<FullUserData | null>;
-  updateUserProfile?: (userData: Partial<FullUserData>) => Promise<void | boolean>;
-  resetPassword: (email: string) => Promise<void>;
+  refreshSession: () => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<{ data: any; error: any }>;
+  updateProfile: (data: Partial<FullUserData>) => Promise<{ data: any; error: any }>;
+  resetPassword: (email: string) => Promise<any>;
   register: (userData: any) => Promise<any>;
   setError: (error: string | null) => void;
   createUser?: (userData: UserFormData) => Promise<{ data: any; error: any }>;
+  signup?: (email: string, password: string, options?: any) => Promise<{ user: any; error: any }>;
+  updateUserProfile?: (userData: Partial<FullUserData>) => Promise<void | boolean>;
 }
 
 export interface AuthState {

@@ -25,7 +25,7 @@ export interface Sector {
   updated_at: string;
   status: 'active' | 'inactive' | string;
   completion_rate?: number;
-  region_name?: string; // Added for convenience in UI
+  region_name?: string;
 }
 
 // Enhanced sector with additional fields
@@ -85,16 +85,13 @@ export interface FullUserData {
   lastLogin?: string; // Alias for last_login
   createdAt?: string; // Alias for created_at
   updatedAt?: string; // Alias for updated_at
-}
-
-export interface NotificationSettings {
-  email: boolean;
-  inApp: boolean;
-  push?: boolean;
-  sms?: boolean;
-  system: boolean;
-  deadline: boolean;
-  deadlineReminders?: boolean;
+  adminEntity?: {
+    type?: string;
+    name?: string;
+    schoolName?: string;
+    sectorName?: string;
+    regionName?: string;
+  };
 }
 
 // Add SchoolStat type to avoid conflicting definitions
@@ -103,7 +100,7 @@ export interface SchoolStat extends School {
   formsTotal: number;
   formsCompleted: number;
   formsPending: number;
-  lastUpdate?: string; // Match with dashboard.d.ts definition
+  lastUpdate: string;
   pendingForms: number;
   completionRate?: number;
   principal?: string;
