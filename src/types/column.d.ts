@@ -11,13 +11,11 @@ export interface Column {
   order_index?: number;
   default_value?: string;
   options?: any[] | Record<string, string>;
-  validation?: {
-    min?: number;
-    max?: number;
-    pattern?: string;
-    message?: string;
-  };
+  validation?: ValidationRules;
+  dependsOn?: DependsOnCondition;
 }
+
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'email' | 'phone' | 'file' | 'image' | 'url';
 
 export interface CategoryWithColumns {
   id: string;
@@ -35,6 +33,7 @@ export interface CategoryWithEntries {
   status?: string;
   completionRate: number;
   entries?: Record<string, any>;
+  values?: Array<{columnId: string; value: any}>;
 }
 
 export interface TabDefinition {
@@ -62,20 +61,30 @@ export interface ColumnFormData {
   order_index?: number;
   default_value?: string;
   options?: any[] | Record<string, string>;
-  validation?: {
+  validation?: ValidationRules;
+}
+
+export interface ValidationRules {
+  min?: number;
+  max?: number;
+  minValue?: number;
+  maxValue?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  patternError?: string;
+  minDate?: string;
+  maxDate?: string;
+  warningThreshold?: {
     min?: number;
     max?: number;
-    pattern?: string;
-    message?: string;
   };
 }
 
-export interface CategoryEntryData {
-  id: string;
-  categoryId: string;
-  schoolId?: string;
-  values: Record<string, any>;
-  status?: string;
-  isModified?: boolean;
-  errors?: Record<string, string>;
+export interface DependsOnCondition {
+  columnId: string;
+  condition: {
+    type: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan';
+    value: any;
+  };
 }

@@ -1,58 +1,100 @@
 
-import { Notification } from '@/types/notification';
+import { supabase } from '@/integrations/supabase/client';
+import { NotificationType } from '@/types/notification';
 
-export const getUserNotifications = async (userId: string): Promise<Notification[]> => {
-  // Mock implementation
-  return [
-    {
-      id: '1',
-      title: 'New Category Available',
-      message: 'A new data entry category is now available',
-      createdAt: new Date().toISOString(),
-      read: false,
-      type: 'info'
-    },
-    {
-      id: '2',
-      title: 'Deadline Approaching',
-      message: 'You have a deadline approaching in 2 days',
-      createdAt: new Date().toISOString(),
-      read: false,
-      type: 'deadline'
-    }
-  ];
-};
+export const createNotification = async (
+  userId: string,
+  title: string,
+  message: string,
+  type: NotificationType = 'info',
+  relatedEntityId?: string,
+  relatedEntityType?: string
+) => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        title,
+        message,
+        type,
+        read: false,
+        related_entity_id: relatedEntityId,
+        related_entity_type: relatedEntityType
+      });
 
-export const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
-  // Mock implementation
-  return true;
-};
+    if (error) throw error;
 
-export const createNotification = async (notification: Partial<Notification>): Promise<Notification> => {
-  // Mock implementation
-  return {
-    id: Math.random().toString(36).substr(2, 9),
-    title: notification.title || '',
-    message: notification.message || '',
-    createdAt: new Date().toISOString(),
-    read: false,
-    type: notification.type || 'info',
-    relatedEntityId: notification.relatedEntityId,
-    relatedEntityType: notification.relatedEntityType
-  };
+    return data;
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    throw error;
+  }
 };
 
 export const createDeadlineNotification = async (
-  title: string, 
-  message: string, 
-  entityId?: string
-): Promise<Notification> => {
-  return createNotification({
-    title,
-    message,
-    type: 'deadline',
-    relatedEntityId: entityId
-  });
+  title: string,
+  message: string,
+  categoryId: string
+) => {
+  try {
+    return await createNotification(
+      'system', // This will be replaced with actual user ID later
+      title,
+      message,
+      'deadline',
+      categoryId,
+      'category'
+    );
+  } catch (error) {
+    console.error('Error creating deadline notification:', error);
+    throw error;
+  }
 };
 
-export const getNotifications = getUserNotifications;
+export const createApprovalNotification = async (
+  userId: string,
+  categoryName: string,
+  categoryId: string,
+  isApproved: boolean,
+  rejectionReason?: string
+) => {
+  try {
+    const title = isApproved 
+      ? `"${categoryName}" məlumatları təsdiqləndi`
+      : `"${categoryName}" məlumatları rədd edildi`;
+    
+    const message = isApproved
+      ? `"${categoryName}" kateqoriyası üçün təqdim etdiyiniz məlumatlar təsdiqləndi.`
+      : `"${categoryName}" kateqoriyası üçün təqdim etdiyiniz məlumatlar rədd edildi. Səbəb: ${rejectionReason || 'Səbəb qeyd edilməyib.'}`;
+    
+    return await createNotification(
+      userId,
+      title,
+      message,
+      'approval',
+      categoryId,
+      'category'
+    );
+  } catch (error) {
+    console.error('Error creating approval notification:', error);
+    throw error;
+  }
+};
+
+export const getUserNotifications = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    throw error;
+  }
+};

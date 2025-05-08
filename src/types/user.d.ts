@@ -8,6 +8,7 @@ export interface User {
   schoolId?: string;
   name?: string; // For backward compatibility
   fullName?: string; // For backward compatibility
+  full_name?: string; // Database field
 }
 
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';

@@ -112,7 +112,7 @@ export interface CategoryStat {
   updatedAt: string;
 }
 
-export type ReportType = 'statistics' | 'completion' | 'comparison' | 'custom' | 'school' | 'category';
+export type ReportType = 'statistics' | 'completion' | 'comparison' | 'custom' | 'school' | 'category' | 'basic';
 
 export interface Report {
   id: string;
