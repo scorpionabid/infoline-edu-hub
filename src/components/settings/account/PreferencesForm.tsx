@@ -1,123 +1,158 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { z } from 'zod';
 import { useForm } from 'react-hook-form';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
+import { useLanguage } from '@/context/LanguageContext';
 import { FullUserData } from '@/types/supabase';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { NotificationSettings } from '@/types/user';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+const formSchema = z.object({
+  email: z.boolean(),
+  inApp: z.boolean(),
+  push: z.boolean(),
+  system: z.boolean(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface PreferencesFormProps {
-  user?: FullUserData;
+  user: FullUserData;
   onSubmit: (data: Partial<FullUserData>) => Promise<void>;
 }
 
-const PreferencesForm: React.FC<PreferencesFormProps> = ({ user, onSubmit }) => {
-  const { t } = useLanguageSafe();
-  const [loading, setLoading] = useState(false);
-  
-  // Get default notification settings or provide fallbacks
-  const defaultNotifications = {
-    email: user?.notificationSettings?.email ?? true,
-    inApp: user?.notificationSettings?.inApp ?? true,
-    push: user?.notificationSettings?.push ?? true,
-    system: user?.notificationSettings?.system ?? true,
+export const PreferencesForm: React.FC<PreferencesFormProps> = ({ user, onSubmit }) => {
+  const { t } = useLanguage();
+
+  // Use default empty notification settings if not provided
+  const defaultSettings: NotificationSettings = {
+    email: true,
+    inApp: true,
+    push: false,
+    system: true,
   };
-  
-  const { register, handleSubmit, setValue, watch } = useForm({
-    defaultValues: defaultNotifications
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: user?.notificationSettings?.email ?? defaultSettings.email,
+      inApp: user?.notificationSettings?.inApp ?? defaultSettings.inApp,
+      push: user?.notificationSettings?.push ?? defaultSettings.push,
+      system: user?.notificationSettings?.system ?? defaultSettings.system,
+    },
   });
 
-  const handleFormSubmit = async (formData: any) => {
-    setLoading(true);
+  const handleSubmit = async (values: FormValues) => {
     try {
       await onSubmit({
-        notificationSettings: {
-          email: formData.email,
-          inApp: formData.inApp,
-          push: formData.push,
-          system: formData.system,
-          deadline: true,
-        }
-      } as Partial<FullUserData>);
-      toast.success(t('preferencesSaved'));
+        notificationSettings: values as NotificationSettings,
+      });
     } catch (error) {
-      toast.error(t('errorSavingPreferences'));
-      console.error('Error saving preferences:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error updating preferences:', error);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="email-notifications">{t('emailNotifications')}</Label>
-            <p className="text-sm text-muted-foreground">{t('emailNotificationsDesc')}</p>
-          </div>
-          <Switch
-            id="email-notifications"
-            {...register('email')}
-            checked={watch('email')}
-            onCheckedChange={(checked) => setValue('email', checked)}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="in-app-notifications">{t('inAppNotifications')}</Label>
-            <p className="text-sm text-muted-foreground">{t('inAppNotificationsDesc')}</p>
-          </div>
-          <Switch
-            id="in-app-notifications"
-            {...register('inApp')}
-            checked={watch('inApp')}
-            onCheckedChange={(checked) => setValue('inApp', checked)}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="push-notifications">{t('pushNotifications')}</Label>
-            <p className="text-sm text-muted-foreground">{t('pushNotificationsDesc')}</p>
-          </div>
-          <Switch
-            id="push-notifications"
-            {...register('push')}
-            checked={watch('push')}
-            onCheckedChange={(checked) => setValue('push', checked)}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="system-notifications">{t('systemNotifications')}</Label>
-            <p className="text-sm text-muted-foreground">{t('systemNotificationsDesc')}</p>
-          </div>
-          <Switch
-            id="system-notifications"
-            {...register('system')}
-            checked={watch('system')}
-            onCheckedChange={(checked) => setValue('system', checked)}
-          />
-        </div>
-      </div>
-
-      <Button type="submit" disabled={loading}>
-        {loading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {t('saving')}
-          </>
-        ) : (
-          t('savePreferences')
-        )}
-      </Button>
-    </form>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('notificationPreferences')}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>{t('emailNotifications')}</FormLabel>
+                    <FormDescription>
+                      {t('emailNotificationsDescription')}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="inApp"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>{t('inAppNotifications')}</FormLabel>
+                    <FormDescription>
+                      {t('inAppNotificationsDescription')}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="push"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>{t('pushNotifications')}</FormLabel>
+                    <FormDescription>
+                      {t('pushNotificationsDescription')}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="system"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>{t('systemNotifications')}</FormLabel>
+                    <FormDescription>
+                      {t('systemNotificationsDescription')}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <Button type="submit">{t('savePreferences')}</Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 

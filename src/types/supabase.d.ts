@@ -115,6 +115,8 @@ export interface Profile {
   created_at: string;
   updated_at: string;
   last_login?: string;
+  notification_settings?: NotificationSettings;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface SchoolFormProps {

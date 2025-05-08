@@ -59,6 +59,8 @@ export interface School {
   admin_email?: string;
   region_name?: string;
   sector_name?: string;
+  regionName?: string;
+  sectorName?: string;
 }
 
 // Region tipi - updated to make compatible with Supabase.Region
