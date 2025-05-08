@@ -1,6 +1,13 @@
+
 // Dashboard tipləri
 
 export interface DashboardCompletion {
+  percentage: number;
+  completed: number;
+  total: number;
+}
+
+export interface CompletionData {
   percentage: number;
   completed: number;
   total: number;
@@ -50,7 +57,7 @@ export interface DeadlineItem {
   dueDate?: string;
   completionRate?: number;
   progress?: number;
-  status?: 'upcoming' | 'overdue' | 'completed';
+  status?: 'upcoming' | 'overdue' | 'completed' | 'pending' | 'draft';
   category?: string;
   categoryName?: string;
   timestamp?: string;
@@ -83,6 +90,17 @@ export interface CategoryItem {
   description?: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  columns?: any[];
+  status?: string;
+  deadline?: string;
+  completionRate?: number;
+  assignment?: string;
+}
+
 export interface SchoolStat {
   id: string;
   name: string;
@@ -104,6 +122,16 @@ export interface RegionStat {
   schoolCount: number;
   sectorCount: number;
   completionRate: number;
+  status?: string;
+}
+
+export interface SectorStat {
+  id: string;
+  name: string;
+  schoolCount: number;
+  completionRate: number;
+  region_id?: string;
+  status?: string;
 }
 
 export interface SuperAdminDashboardData {
@@ -113,18 +141,14 @@ export interface SuperAdminDashboardData {
     schools: number;
     users: number;
   };
-  formsByStatus?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    draft?: number;
-    total: number;
-  };
+  formStats?: DashboardFormStats;
   status?: DashboardStatus;
   completion?: DashboardCompletion;
   completionRate?: number;
   pendingApprovals?: PendingApproval[];
-  regions?: RegionStat[];
+  regionStats?: RegionStat[] | any[];
+  sectorStats?: SectorStat[] | any[];
+  schoolStats?: SchoolStat[] | any[];
   categories?: CategoryItem[];
   notifications?: any[]; // DashboardNotification[] olmalıdır
 }
@@ -137,6 +161,7 @@ export interface RegionAdminDashboardData {
   completionRate?: number;
   pendingApprovals?: PendingApproval[];
   categories?: CategoryItem[];
+  formStats?: DashboardFormStats;
   notifications?: any[]; // DashboardNotification[] olmalıdır
 }
 
@@ -155,7 +180,7 @@ export interface SchoolAdminDashboardData {
   completion?: DashboardCompletion;
   status?: DashboardStatus;
   formStats?: DashboardFormStats;
-  categories?: CategoryItem[];
+  categories?: CategoryItem[] | Category[];
   upcoming?: DeadlineItem[];
   forms?: {
     pending: number;
@@ -186,7 +211,7 @@ export interface SectorAdminDashboardProps {
 }
 
 export interface SchoolAdminDashboardProps {
-  data: SchoolAdminDashboardData;
+  data?: SchoolAdminDashboardData;
   isLoading?: boolean;
   error?: Error | string | null;
   onRefresh?: () => void;

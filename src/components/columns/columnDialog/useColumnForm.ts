@@ -1,236 +1,133 @@
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Column, ColumnFormValues, ColumnType, ColumnOption, columnTypes } from '@/types/column';
-import { toast } from 'sonner';
-
-// Formun defolt dəyərləri
-const defaultValues: ColumnFormValues = {
-  name: '',
-  type: 'text',
-  is_required: false,
-  status: 'active',
-};
-
-// Schema validasiyası üçün
-const formSchema = z.object({
-  name: z.string().min(2, 'Ad ən azı 2 simvol olmalıdır'),
-  type: z.string(),
-  category_id: z.string().optional(),
-  is_required: z.boolean(),
-  order_index: z.number().optional(),
-  help_text: z.string().optional(),
-  placeholder: z.string().optional(),
-  default_value: z.union([z.string(), z.number(), z.boolean()]).optional(),
-  status: z.enum(['active', 'inactive', 'draft']),
-  description: z.string().optional(),
-});
+import { Column, ColumnFormValues, ColumnOption, ColumnType } from '@/types/column';
+import { v4 as uuidv4 } from 'uuid';
 
 interface UseColumnFormProps {
   column?: Column | null;
   categoryId?: string;
-  onSuccess?: (data: Column) => void;
-  onSave?: (data: ColumnFormValues) => Promise<Column>;
+  onSave: (columnData: Omit<Column, "id"> & { id?: string }) => Promise<boolean>;
 }
 
-export const useColumnForm = ({
-  column,
-  categoryId,
-  onSuccess,
-  onSave,
-}: UseColumnFormProps) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isOptionsMode, setIsOptionsMode] = useState(
-    column?.type === 'select' || column?.type === 'radio' || column?.type === 'checkbox'
-  );
-  const [options, setOptions] = useState<ColumnOption[]>([]);
-  const [newOption, setNewOption] = useState('');
+export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps) => {
+  const isEditMode = !!column;
   const [selectedType, setSelectedType] = useState<ColumnType>(column?.type || 'text');
-  const [isEditMode, setIsEditMode] = useState(Boolean(column));
+  const [options, setOptions] = useState<ColumnOption[]>(column?.options || []);
+  const [newOption, setNewOption] = useState<ColumnOption>({ id: uuidv4(), label: '', value: '' });
+  const [isOptionsMode, setIsOptionsMode] = useState(false);
 
-  // Form yaratma
   const form = useForm<ColumnFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: column
-      ? {
-          name: column.name,
-          type: column.type,
-          category_id: column.category_id,
-          is_required: column.is_required || false,
-          order_index: column.order_index || 0,
-          help_text: column.help_text,
-          placeholder: column.placeholder,
-          default_value: column.default_value,
-          status: column.status || 'active',
-          description: column.description,
-        }
-      : {
-          ...defaultValues,
-          category_id: categoryId,
-        },
+    defaultValues: {
+      name: column?.name || '',
+      type: column?.type || 'text',
+      category_id: column?.category_id || categoryId || '',
+      is_required: column?.is_required ?? true,
+      help_text: column?.help_text || '',
+      placeholder: column?.placeholder || '',
+      default_value: column?.default_value || '',
+      options: column?.options || [],
+      validation: column?.validation || {},
+      status: column?.status || 'active',
+      description: column?.description || '',
+      order_index: column?.order_index || 0,
+    },
   });
+
+  // Sütun növü dəyişdikdə, options və default_value sahələrini sıfırla
+  const onTypeChange = (type: ColumnType) => {
+    setSelectedType(type);
+    form.setValue('type', type);
+
+    // Reset options if changing from option-based type to non-option type
+    if (!['select', 'radio', 'checkbox'].includes(type) && options.length > 0) {
+      setOptions([]);
+      form.setValue('options', []);
+    }
+
+    // Reset default value
+    form.setValue('default_value', '');
+
+    // For certain types, reset validation
+    if (['select', 'radio', 'checkbox', 'file', 'image'].includes(type)) {
+      form.setValue('validation', {});
+    }
+  };
 
   // Option əlavə etmək funksiyası
   const addOption = () => {
-    if (!newOption.trim()) return;
-    
-    const option: ColumnOption = {
-      id: crypto.randomUUID(),
-      label: newOption,
-      value: newOption.toLowerCase().replace(/\s+/g, '_')
-    };
-    
-    setOptions([...options, option]);
-    setNewOption('');
-    
-    // Form options dəyərini yeniləyək
-    const currentOptions = form.getValues('options') || [];
-    form.setValue('options', [...currentOptions, option]);
+    if (newOption.label && newOption.value) {
+      const updatedOptions = [...options, { ...newOption }];
+      setOptions(updatedOptions);
+      form.setValue('options', updatedOptions);
+      setNewOption({ id: uuidv4(), label: '', value: '' });
+    }
   };
 
   // Option silmək funksiyası
-  const removeOption = (id: string) => {
-    const updatedOptions = options.filter(opt => opt.id !== id);
+  const removeOption = (index: number) => {
+    const updatedOptions = options.filter((_, i) => i !== index);
     setOptions(updatedOptions);
-    
-    // Form options dəyərini yeniləyək
     form.setValue('options', updatedOptions);
   };
 
-  // Tip dəyişdikdə təsdiqlənmə qaydalarını yeniləmək
-  const updateValidationByType = (type: ColumnType) => {
-    const validation = form.getValues('validation') || {};
-
-    switch (type) {
-      case 'number':
-        validation.min = validation.min !== undefined ? Number(validation.min) : undefined;
-        validation.max = validation.max !== undefined ? Number(validation.max) : undefined;
-        validation.minValue = validation.minValue !== undefined ? Number(validation.minValue) : undefined;
-        validation.maxValue = validation.maxValue !== undefined ? Number(validation.maxValue) : undefined;
-        break;
-      case 'text':
-      case 'textarea':
-        validation.minLength = validation.minLength !== undefined ? Number(validation.minLength) : undefined;
-        validation.maxLength = validation.maxLength !== undefined ? Number(validation.maxLength) : undefined;
-        break;
-      case 'phone':
-        validation.tel = true;
-        break;
-      case 'date':
-        validation.minDate = validation.minDate || undefined;
-        validation.maxDate = validation.maxDate || undefined;
-        break;
-      case 'email':
-        validation.email = true;
-        break;
-      case 'url':
-        validation.url = true;
-        break;
-    }
-
-    form.setValue('validation', validation);
-  };
-
-  // Tip dəyişdikdə optionsMode ayarla
-  const onTypeChange = (type: string) => {
-    setSelectedType(type as ColumnType);
-    const isOption = type === 'select' || type === 'radio' || type === 'checkbox';
-    setIsOptionsMode(isOption);
-    
-    // Təsdiqlənmə qaydalarını yenilə
-    updateValidationByType(type as ColumnType);
-
-    // Əgər options tipinə keçirsə və options mövcud deyilsə, 
-    // varsayılan bir option əlavə et
-    if (isOption && (!form.getValues('options') || form.getValues('options')?.length === 0)) {
-      const defaultOption: ColumnOption = {
-        id: crypto.randomUUID(),
-        label: 'Option 1',
-        value: 'option_1',
-      };
-      setOptions([defaultOption]);
-      form.setValue('options', [defaultOption]);
-    }
-  };
-
-  // Form təqdim edildikdə
-  const onSubmit = async (values: ColumnFormValues) => {
+  // Form submit handler
+  const onSubmit = async (data: ColumnFormValues) => {
     try {
-      setIsLoading(true);
-      
-      // Toxunduğumuzdan əmin olmaq üçün dəyərlərdən kopiya yaradaq
-      const submissionValues = { ...values };
-
-      // Select, radio və checkbox tipləri üçün options obyektlərini təmin edin
-      if (isOptionsMode && (!submissionValues.options || submissionValues.options.length === 0)) {
-        toast.error('Ən azı bir seçim əlavə edilməlidir');
-        setIsLoading(false);
-        return false;
+      // Əgər sütun tipi seçimlərdən biridirsə, options sahəsini əlavə et
+      if (['select', 'radio', 'checkbox'].includes(data.type)) {
+        data.options = options;
+      } else {
+        data.options = [];
       }
 
-      // Validation obyekti üçün təsdiqləmə
-      if (submissionValues.validation) {
-        Object.entries(submissionValues.validation).forEach(([key, value]) => {
-          if (value === '' || value === undefined) {
-            delete submissionValues.validation![key as keyof typeof submissionValues.validation];
-          }
-        });
-      }
-
-      // Əgər onSave təmin edilmişdirsə, onu çağırın
-      if (onSave) {
-        const result = await onSave(submissionValues);
-        if (result && onSuccess) {
-          onSuccess(result);
-          return true;
+      // Validation rule'ları düzəlt (boolean tipi string'ə çevrilməsin)
+      if (data.validation) {
+        const validation = data.validation;
+        
+        if (validation.required === true || validation.required === false) {
+          validation.required = validation.required;
+        }
+        
+        if (validation.email === true || validation.email === false) {
+          validation.email = validation.email;
+        }
+        
+        if (validation.url === true || validation.url === false) {
+          validation.url = validation.url;
+        }
+        
+        if (validation.tel === true || validation.tel === false) {
+          validation.tel = validation.tel;
         }
       }
 
-      toast.success(column ? 'Sütun yeniləndi' : 'Sütun yaradıldı');
-      return true;
+      const columnData = {
+        ...(column?.id ? { id: column.id } : {}),
+        ...data,
+      };
+
+      // Sütunu yaddaşa ver və nəticəni qaytarın
+      const success = await onSave(columnData);
+      return success;
     } catch (error) {
-      console.error('Form təqdim edilərkən xəta:', error);
-      toast.error('Sütun saxlanılarkən xəta baş verdi');
+      console.error('Error saving column:', error);
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Mevcut data varsa options'ları yükləmə
-  useEffect(() => {
-    if (column?.options) {
-      setOptions(column.options);
-    }
-  }, [column]);
-
-  // Tip dəyişdikdə onTypeChange çağırın
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (name === 'type') {
-        onTypeChange(value.type as string);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [form.watch]);
-
   return {
     form,
-    isLoading,
-    isOptionsMode,
-    onSubmit,
-    onTypeChange,
     selectedType,
+    onTypeChange,
     options,
     addOption,
     removeOption,
     newOption,
     setNewOption,
-    isEditMode
+    onSubmit,
+    isEditMode,
+    isOptionsMode,
+    setIsOptionsMode
   };
 };
-
-export default useColumnForm;

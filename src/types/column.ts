@@ -75,23 +75,63 @@ export interface ColumnFormValues {
   description?: string;
 }
 
-export const columnTypes: Record<ColumnType, string> = {
-  text: 'Mətn',
-  number: 'Rəqəm',
-  textarea: 'Mətn sahəsi',
-  select: 'Seçim',
-  checkbox: 'Çoxlu seçim',
-  radio: 'Tək seçim',
-  date: 'Tarix',
-  datetime: 'Tarix və saat',
-  time: 'Vaxt',
-  email: 'E-poçt',
-  url: 'URL',
-  phone: 'Telefon',
-  file: 'Fayl',
-  image: 'Şəkil',
-  color: 'Rəng',
-  password: 'Şifrə',
-  richtext: 'Zəngin mətn',
-  range: 'Aralıq'
+export interface ColumnTypeDefinition {
+  label: string;
+  description: string;
+  icon: string;
+}
+
+export const columnTypes: Record<ColumnType, string | { label: string; description: string; icon: string }> = {
+  text: { label: 'Mətn', description: 'Mətn sahəsi', icon: 'text' },
+  number: { label: 'Rəqəm', description: 'Rəqəm sahəsi', icon: 'hash' },
+  textarea: { label: 'Mətn sahəsi', description: 'Çoxsətirli mətn sahəsi', icon: 'textAlignLeft' },
+  select: { label: 'Seçim', description: 'Dropdown seçim sahəsi', icon: 'listBox' },
+  checkbox: { label: 'Çoxlu seçim', description: 'Birdən çox seçim etmək mümkündür', icon: 'check' },
+  radio: { label: 'Tək seçim', description: 'Yalnız bir seçim etmək mümkündür', icon: 'circle' },
+  date: { label: 'Tarix', description: 'Tarix seçimi', icon: 'calendar' },
+  datetime: { label: 'Tarix və saat', description: 'Tarix və saat seçimi', icon: 'calendarClock' },
+  time: { label: 'Vaxt', description: 'Vaxt seçimi', icon: 'clock' },
+  email: { label: 'E-poçt', description: 'E-poçt sahəsi', icon: 'mail' },
+  url: { label: 'URL', description: 'URL sahəsi', icon: 'link' },
+  phone: { label: 'Telefon', description: 'Telefon nömrəsi sahəsi', icon: 'phone' },
+  file: { label: 'Fayl', description: 'Fayl yükləmə sahəsi', icon: 'file' },
+  image: { label: 'Şəkil', description: 'Şəkil yükləmə sahəsi', icon: 'image' },
+  color: { label: 'Rəng', description: 'Rəng seçimi sahəsi', icon: 'palette' },
+  password: { label: 'Şifrə', description: 'Şifrə sahəsi', icon: 'lock' },
+  richtext: { label: 'Zəngin mətn', description: 'Formatlaşdırılmış mətn sahəsi', icon: 'formattingTwo' },
+  range: { label: 'Aralıq', description: 'Aralıq seçimi sahəsi', icon: 'sliders' }
 };
+
+export const columnTypeDefinitions: Record<ColumnType, ColumnTypeDefinition> = {
+  text: { label: 'Mətn', description: 'Mətn sahəsi', icon: 'text' },
+  number: { label: 'Rəqəm', description: 'Rəqəm sahəsi', icon: 'hash' },
+  textarea: { label: 'Mətn sahəsi', description: 'Çoxsətirli mətn sahəsi', icon: 'textAlignLeft' },
+  select: { label: 'Seçim', description: 'Dropdown seçim sahəsi', icon: 'listBox' },
+  checkbox: { label: 'Çoxlu seçim', description: 'Birdən çox seçim etmək mümkündür', icon: 'check' },
+  radio: { label: 'Tək seçim', description: 'Yalnız bir seçim etmək mümkündür', icon: 'circle' },
+  date: { label: 'Tarix', description: 'Tarix seçimi', icon: 'calendar' },
+  datetime: { label: 'Tarix və saat', description: 'Tarix və saat seçimi', icon: 'calendarClock' },
+  time: { label: 'Vaxt', description: 'Vaxt seçimi', icon: 'clock' },
+  email: { label: 'E-poçt', description: 'E-poçt sahəsi', icon: 'mail' },
+  url: { label: 'URL', description: 'URL sahəsi', icon: 'link' },
+  phone: { label: 'Telefon', description: 'Telefon nömrəsi sahəsi', icon: 'phone' },
+  file: { label: 'Fayl', description: 'Fayl yükləmə sahəsi', icon: 'file' },
+  image: { label: 'Şəkil', description: 'Şəkil yükləmə sahəsi', icon: 'image' },
+  color: { label: 'Rəng', description: 'Rəng seçimi sahəsi', icon: 'palette' },
+  password: { label: 'Şifrə', description: 'Şifrə sahəsi', icon: 'lock' },
+  richtext: { label: 'Zəngin mətn', description: 'Formatlaşdırılmış mətn sahəsi', icon: 'formattingTwo' },
+  range: { label: 'Aralıq', description: 'Aralıq seçimi sahəsi', icon: 'sliders' }
+};
+
+// CategoryWithColumns tipi əlavə edək
+export interface CategoryWithColumns {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  deadline?: string;
+  columns: Column[];
+  created_at?: string;
+  updated_at?: string;
+  assignment?: string;
+}

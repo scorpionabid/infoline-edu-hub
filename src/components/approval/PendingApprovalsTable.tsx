@@ -19,11 +19,13 @@ import { format, parseISO } from 'date-fns';
 interface PendingApprovalsTableProps {
   pendingApprovals: PendingApproval[];
   onReview?: (approvalId: string) => void;
+  onRefresh?: () => void;
 }
 
 const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({ 
   pendingApprovals,
-  onReview
+  onReview,
+  onRefresh
 }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();

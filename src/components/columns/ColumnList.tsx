@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Card,
@@ -105,6 +106,30 @@ const ColumnList: React.FC<ColumnListProps> = ({
     }
   };
 
+  // İkon komponenti əldə et
+  const getIconComponent = (iconName: string) => {
+    return iconComponents[iconName] || Edit;
+  };
+
+  // Column tipinə görə ətraflı məlumat əldə et
+  const getColumnTypeInfo = (type: string) => {
+    const typeInfo = columnTypes[type as keyof typeof columnTypes];
+    
+    if (typeof typeInfo === 'string') {
+      return {
+        label: typeInfo,
+        description: t('columnTypeDescription'),
+        icon: 'circle'
+      };
+    }
+    
+    return typeInfo || {
+      label: type,
+      description: t('unknownColumnType'),
+      icon: 'circle'
+    };
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -148,12 +173,8 @@ const ColumnList: React.FC<ColumnListProps> = ({
             </TableHeader>
             <TableBody>
               {columns.map((column) => {
-                const typeInfo = columnTypes[column.type] || { 
-                  label: column.type, 
-                  description: t('unknownColumnType'),
-                  icon: 'circle'
-                };
-                const IconComponent = iconComponents[typeInfo.icon] || Edit;
+                const typeInfo = getColumnTypeInfo(column.type);
+                const IconComponent = getIconComponent(typeInfo.icon);
                 
                 return (
                   <TableRow key={column.id}>
@@ -165,12 +186,12 @@ const ColumnList: React.FC<ColumnListProps> = ({
                             <div className="flex items-center space-x-2">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeBadgeColor(column.type)}`}>
                                 <IconComponent className="w-3 h-3 mr-1" />
-                                {typeInfo?.label || column.type}
+                                {typeInfo.label}
                               </span>
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>{typeInfo?.description || t('columnTypeDescription')}</p>
+                            <p>{typeInfo.description}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>

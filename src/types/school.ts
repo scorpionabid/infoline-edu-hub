@@ -25,7 +25,7 @@ export interface SchoolStat {
   id: string;
   name: string;
   completionRate: number;
-  status: string;
+  status?: string;
   lastUpdate?: string;
   pendingForms?: number;
   formsCompleted?: number;
@@ -90,4 +90,24 @@ export interface SchoolFormProps {
   onSubmit: (data: Partial<School>) => Promise<void>;
   isSubmitting: boolean;
   initialData?: School;
+  regions?: Region[];
+  sectors?: Sector[];
+  regionNames?: Record<string, string>;
+  sectorNames?: Record<string, string>;
+}
+
+// EditSchoolDialog props tipi
+export interface EditSchoolDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  school: School;
+  onSuccess?: () => void;
+}
+
+// EnhancedSchoolFormProps props tipi
+export interface EnhancedSchoolFormProps extends SchoolFormProps {
+  regions: Region[];
+  sectors: Sector[];
+  regionNames: Record<string, string>;
+  sectorNames: Record<string, string>;
 }

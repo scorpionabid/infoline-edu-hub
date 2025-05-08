@@ -1,160 +1,135 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import StatusCards from './StatusCards';
+import React from 'react';
+import { Grid } from '@/components/ui/grid';
+import { StatsCard } from './common/StatsCard';
+import { CompletionRateCard } from './common/CompletionRateCard';
 import NotificationsCard from './common/NotificationsCard';
-import { useLanguage } from '@/context/LanguageContext';
-import { useNotifications } from '@/hooks/useNotifications';
-import { AppNotification } from '@/types/notification';
-import { SchoolAdminDashboardData } from '@/types/dashboard';
-import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
-import FormTabs from './school-admin/FormTabs';
+import { SchoolAdminDashboardData, SchoolAdminDashboardProps } from '@/types/dashboard';
 import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
+import { AppNotification } from '@/types/notification';
+import { FormIcon, CheckCircleIcon, AlertTriangleIcon, ClockIcon } from 'lucide-react';
+import FormTabs from './school-admin/FormTabs';
+import { Button } from '@/components/ui/button';
 
-interface SchoolAdminDashboardProps {
-  schoolId?: string;
-  data?: SchoolAdminDashboardData;
-}
+const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ 
+  data, 
+  isLoading, 
+  error, 
+  onRefresh, 
+  navigateToDataEntry,
+  handleFormClick,
+  schoolId 
+}) => {
+  if (isLoading) {
+    return <div className="p-8 text-center">Yüklənir...</div>;
+  }
 
-const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, data: initialData }) => {
-  const { t } = useLanguage();
-  const { notifications, markAsRead } = useNotifications();
-  const { data: fetchedData, isLoading, error } = useSchoolAdminDashboard();
-  
-  const [dashboardData, setDashboardData] = useState<SchoolAdminDashboardData>({
-    completion: {
-      percentage: 0,
-      total: 0,
-      completed: 0,
-    },
-    status: {
-      pending: 0,
-      approved: 0,
-      rejected: 0,
-      draft: 0,
-      total: 0,
-      active: 0,
-      inactive: 0
-    },
-    categories: [],
-    upcoming: [],
-    formStats: {
-      pending: 0,
-      approved: 0,
-      rejected: 0,
-      dueSoon: 0,
-      overdue: 0,
-      total: 0,
-      draft: 0
-    },
-    pendingForms: [],
-    completionRate: 0,
-    notifications: [],
-  });
-
-  // Bildirişləri adaptasiya etmək
-  useEffect(() => {
-    const dashboardNotifications = notifications.map(notification => 
-      adaptDashboardNotificationToApp(notification)
-    );
-
-    setDashboardData(prev => ({
-      ...prev,
-      notifications: dashboardNotifications
-    }));
-  }, [notifications]);
-
-  // Real data və ya mock data yükləmək
-  useEffect(() => {
-    if (initialData) {
-      setDashboardData(prev => ({
-        ...prev,
-        ...initialData,
-      }));
-    } else if (!isLoading && fetchedData) {
-      setDashboardData(prev => ({
-        ...prev,
-        completion: fetchedData.completion || prev.completion,
-        status: {
-          ...prev.status,
-          ...fetchedData.status,
-          active: fetchedData.status?.active || 0,
-          inactive: fetchedData.status?.inactive || 0
-        },
-        categories: fetchedData.categories || prev.categories,
-        upcoming: fetchedData.upcoming || prev.upcoming,
-        pendingForms: fetchedData.pendingForms || prev.pendingForms,
-        completionRate: fetchedData.completionRate || prev.completionRate,
-        formStats: {
-          ...prev.formStats,
-          ...(fetchedData.formStats || {}),
-          dueSoon: fetchedData.formStats?.dueSoon || 0,
-          overdue: fetchedData.formStats?.overdue || 0
-        }
-      }));
-    }
-  }, [isLoading, fetchedData, initialData]);
-
-  // Loading state
-  if (isLoading && !fetchedData && !initialData) {
+  if (error || !data) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="p-8 text-center">
+        <p className="text-red-600 mb-4">Xəta baş verdi</p>
+        {onRefresh && (
+          <Button onClick={onRefresh} variant="outline">
+            Yenidən cəhd et
+          </Button>
+        )}
       </div>
     );
   }
 
+  // Bildirişləri adaptasiya et
+  const adaptedNotifications = Array.isArray(data.notifications)
+    ? data.notifications.map(notification => {
+        const notificationWithAllFields = {
+          ...notification,
+          isRead: notification.isRead || false
+        };
+        return adaptDashboardNotificationToApp(notificationWithAllFields);
+      })
+    : [];
+
+  // Status obyektini DashboardStatus tipinə uyğunlaşdır
+  const statusData = data.status ? {
+    ...data.status,
+    active: data.status.active || 0,
+    inactive: data.status.inactive || 0,
+  } : {
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    draft: 0,
+    total: 0,
+    active: 0,
+    inactive: 0
+  };
+
+  // Form stats obyektini DashboardFormStats tipinə uyğunlaşdır
+  const formStatsData = data.formStats ? {
+    ...data.formStats,
+    dueSoon: data.formStats.dueSoon || 0,
+    overdue: data.formStats.overdue || 0
+  } : {
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    draft: 0,
+    dueSoon: 0,
+    overdue: 0,
+    total: 0
+  };
+
   return (
     <div className="space-y-6">
-      <StatusCards
-        completion={dashboardData.completion}
-        status={dashboardData.status}
-        formStats={dashboardData.formStats}
-      />
+      <h2 className="text-2xl font-bold">Məktəb Dashboard</h2>
+      
+      <Grid columns={4} className="gap-4">
+        <StatsCard
+          title="Təsdiq gözləyən"
+          value={statusData.pending}
+          icon={<ClockIcon className="h-4 w-4 text-primary" />}
+          description="Təsdiq gözləyən formlar"
+        />
+        <StatsCard
+          title="Təsdiqlənmiş"
+          value={statusData.approved}
+          icon={<CheckCircleIcon className="h-4 w-4 text-primary" />}
+          description="Təsdiqlənmiş formlar"
+        />
+        <StatsCard
+          title="Son tarixə yaxın"
+          value={formStatsData.dueSoon || 0}
+          icon={<AlertTriangleIcon className="h-4 w-4 text-primary" />}
+          description="Tezliklə bitəcək formlar"
+        />
+        <StatsCard
+          title="Toplam form"
+          value={statusData.total}
+          icon={<FormIcon className="h-4 w-4 text-primary" />}
+          description="Ümumi form sayı"
+        />
+      </Grid>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="upcoming">
-            <TabsList className="mb-4">
-              <TabsTrigger value="upcoming">{t('upcomingDeadlines')}</TabsTrigger>
-              <TabsTrigger value="pending">{t('pendingForms')}</TabsTrigger>
-              <TabsTrigger value="categories">{t('allCategories')}</TabsTrigger>
-            </TabsList>
-
-            <FormTabs 
-              categories={dashboardData.categories}
-              upcoming={dashboardData.upcoming}
-              pendingForms={dashboardData.pendingForms}
-            />
-          </Tabs>
-        </div>
-
-        <div className="space-y-6">
-          <NotificationsCard 
-            notifications={dashboardData.notifications.map(n => adaptDashboardNotificationToApp(n))} 
-            onMarkAsRead={markAsRead} 
-          />
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('completionRate')}</CardTitle>
-              <CardDescription>{t('completionRateDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {Math.round(dashboardData.completionRate)}%
-              </div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                {t('completedFormsInfo', {
-                  completed: dashboardData.completion.completed,
-                  total: dashboardData.completion.total
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Grid columns={2} className="gap-6">
+        <CompletionRateCard
+          completionRate={data.completionRate || 0}
+          title="Tamamlanma dərəcəsi"
+        />
+        
+        <NotificationsCard
+          title="Bildirişlər"
+          notifications={adaptedNotifications as AppNotification[]}
+        />
+      </Grid>
+      
+      {data.upcoming && data.categories && data.pendingForms && (
+        <FormTabs 
+          upcoming={data.upcoming} 
+          categories={data.categories}
+          pendingForms={data.pendingForms}
+          onNewDataEntry={navigateToDataEntry}
+          handleFormClick={handleFormClick}
+        />
+      )}
     </div>
   );
 };
