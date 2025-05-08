@@ -172,9 +172,9 @@ export const useRealDashboardData = () => {
               schools: 634,
               users: 912
             },
-            formsByStatus: {
-              pending: 23,
-              approved: 156,
+            formStats: {
+              pending: 5,
+              approved: 10,
               rejected: 8,
               total: 187
             },

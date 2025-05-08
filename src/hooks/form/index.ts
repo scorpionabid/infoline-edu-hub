@@ -1,67 +1,103 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { DataEntryForm, EntryValue } from '@/types/dataEntry';
 
-export const useDataEntryForm = (initialForm?: DataEntryForm) => {
-  const [form, setForm] = useState<DataEntryForm>(initialForm || {
-    categoryId: '',
-    schoolId: '',
-    entries: [],
-    isModified: false
-  });
-
-  const updateEntry = (columnId: string, value: any) => {
-    setForm(prev => {
-      // Find the existing entry
-      const existingEntryIndex = prev.entries.findIndex(
-        entry => entry.columnId === columnId
-      );
-
-      let updatedEntries = [...prev.entries];
-
-      if (existingEntryIndex >= 0) {
-        // Update existing entry
-        updatedEntries[existingEntryIndex] = {
-          ...updatedEntries[existingEntryIndex],
-          value
-        };
-      } else {
-        // Add new entry
-        updatedEntries.push({
-          columnId,
-          value
-        });
-      }
-
-      return {
-        ...prev,
-        entries: updatedEntries,
-        isModified: true
-      };
-    });
-  };
-
-  const resetForm = () => {
-    setForm({
+export const useForm = (initialData?: DataEntryForm) => {
+  const [form, setForm] = useState<DataEntryForm>(
+    initialData || {
       categoryId: '',
       schoolId: '',
       entries: [],
       isModified: false
+    }
+  );
+  
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [warnings, setWarnings] = useState<Record<string, string>>({});
+  
+  const setValue = useCallback((columnId: string, value: any) => {
+    setForm(prev => {
+      const entryIndex = prev.entries.findIndex(e => e.columnId === columnId);
+      
+      if (entryIndex >= 0) {
+        // Update existing entry
+        const updatedEntries = [...prev.entries];
+        updatedEntries[entryIndex] = {
+          ...updatedEntries[entryIndex],
+          value
+        };
+        
+        return {
+          ...prev,
+          entries: updatedEntries,
+          isModified: true
+        };
+      } else {
+        // Add new entry
+        return {
+          ...prev,
+          entries: [
+            ...prev.entries,
+            {
+              columnId,
+              value
+            }
+          ],
+          isModified: true
+        };
+      }
     });
-  };
-
-  const markAsSaved = () => {
+    
+    // Clear error for this field if any
+    if (errors[columnId]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[columnId];
+        return newErrors;
+      });
+    }
+  }, [errors]);
+  
+  const getValue = useCallback((columnId: string) => {
+    const entry = form.entries.find(e => e.columnId === columnId);
+    return entry ? entry.value : null;
+  }, [form.entries]);
+  
+  const setEntries = useCallback((entries: EntryValue[]) => {
     setForm(prev => ({
       ...prev,
-      isModified: false
+      entries,
+      isModified: true
     }));
-  };
-
+  }, []);
+  
+  const reset = useCallback(() => {
+    if (initialData) {
+      setForm(initialData);
+    } else {
+      setForm({
+        categoryId: '',
+        schoolId: '',
+        entries: [],
+        isModified: false
+      });
+    }
+    setErrors({});
+    setWarnings({});
+  }, [initialData]);
+  
   return {
     form,
+    errors,
+    warnings,
+    setValue,
+    getValue,
+    setEntries,
+    reset,
     setForm,
-    updateEntry,
-    resetForm,
-    markAsSaved
+    setErrors,
+    setWarnings
   };
 };
+
+export default useForm;

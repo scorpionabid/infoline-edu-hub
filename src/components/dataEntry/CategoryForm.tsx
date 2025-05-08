@@ -39,7 +39,6 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId }) => {
               type: 'text',
               category_id: categoryId,
               is_required: true,
-              placeholder: 'Enter your full name',
               status: 'active'
             },
             {
@@ -48,7 +47,6 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId }) => {
               type: 'number',
               category_id: categoryId,
               is_required: true,
-              placeholder: 'Enter your age',
               status: 'active'
             }
           ]

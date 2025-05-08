@@ -12,7 +12,21 @@ export interface Column {
   status?: string;
   created_at?: string;
   updated_at?: string;
+  help_text?: string;
+  placeholder?: string;
+  order_index?: number;
+  default_value?: string;
 }
+
+export type ColumnType = 
+  | 'text' 
+  | 'number' 
+  | 'select' 
+  | 'multiselect' 
+  | 'checkbox' 
+  | 'date' 
+  | 'file' 
+  | 'textarea';
 
 export interface CategoryWithColumns {
   id: string;
@@ -27,6 +41,8 @@ export interface CategoryWithColumns {
   archived?: boolean;
   created_at?: string;
   updated_at?: string;
+  column_count?: number;
+  priority?: number;
 }
 
 export interface TabDefinition {
@@ -54,4 +70,6 @@ export interface ColumnFormData {
   options?: string[];
   order?: number;
   status?: string;
+  help_text?: string;
+  placeholder?: string;
 }

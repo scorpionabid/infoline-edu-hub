@@ -6,18 +6,32 @@ export type ReportType =
   | 'custom' 
   | 'school' 
   | 'category'
-  | 'basic';
+  | 'basic'
+  | 'bar'
+  | 'pie'
+  | 'line'
+  | 'table';
 
 export interface Report {
   id: string;
   title: string;
   description: string;
   type: ReportType;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
   createdBy: string;
   parameters?: ReportParameters;
   data?: any;
+  status?: 'draft' | 'published' | 'archived';
+  category?: string;
+  sharedWith?: string[];
+  content?: any;
+  filters?: any;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  is_template?: boolean;
+  shared_with?: string[];
 }
 
 export interface ReportParameters {

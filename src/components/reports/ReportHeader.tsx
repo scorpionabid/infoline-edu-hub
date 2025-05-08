@@ -11,11 +11,11 @@ import { toast } from 'sonner';
 export function ReportHeader() {
   const { t } = useLanguage();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const { addReport } = useReports();
+  const { createReport } = useReports();
 
   const handleCreateReport = async (data: { title: string; description: string; type: string }) => {
     try {
-      const result = await addReport({
+      const result = await createReport({
         title: data.title,
         description: data.description,
         type: data.type as any // Type conversion to match ReportType
@@ -38,30 +38,27 @@ export function ReportHeader() {
         subtitle={t('reportsDescription')}
       />
       
-      <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
-        <Button 
-          variant="outline" 
-          className="flex items-center gap-2"
-          onClick={() => {}} 
-        >
-          <Download size={16} />
-          {t('exportAllReports')}
+      <div className="flex items-center space-x-2 mt-4 md:mt-0">
+        <Button variant="outline" size="sm">
+          <FileText className="h-4 w-4 mr-2" />
+          {t('importTemplate')}
         </Button>
-        
         <Button 
-          className="flex items-center gap-2"
           onClick={() => setCreateDialogOpen(true)}
+          size="sm"
         >
-          <Plus size={16} />
-          {t('newReport')}
+          <Plus className="h-4 w-4 mr-2" />
+          {t('createReport')}
         </Button>
       </div>
 
-      <CreateReportDialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        onCreate={handleCreateReport}
-      />
+      {createDialogOpen && (
+        <CreateReportDialog
+          open={createDialogOpen}
+          onClose={() => setCreateDialogOpen(false)}
+          onSubmit={handleCreateReport}
+        />
+      )}
     </div>
   );
 }

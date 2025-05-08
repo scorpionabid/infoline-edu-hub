@@ -46,4 +46,11 @@ export interface UserFormData {
   avatar?: string | null;
   status?: string;
   notification_settings?: any;
+  // Additional compatibility properties
+  fullName?: string;
+  name?: string;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  notificationSettings?: any;
 }

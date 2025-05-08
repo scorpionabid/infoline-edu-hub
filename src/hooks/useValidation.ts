@@ -1,3 +1,4 @@
+
 // This is just a helper file to define types and utilities for validation
 import { ColumnValidationError } from '@/types/dataEntry';
 
@@ -57,3 +58,5 @@ export const useValidation = (categories: any[], entries: any[]) => {
     isValid: true
   };
 };
+
+export default useValidation;

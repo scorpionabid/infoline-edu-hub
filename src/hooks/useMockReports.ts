@@ -8,9 +8,9 @@ export const useMockReports = () => {
       id: '1',
       title: 'Ümumi Təhsil Statistikası',
       description: 'Bütün regionlar üzrə məktəblərin ümumi təhsil statistikası',
-      type: 'statistics' as ReportType,
-      createdAt: new Date(2023, 4, 15),
-      updatedAt: new Date(2023, 4, 15),
+      type: 'statistics',
+      createdAt: new Date(2023, 4, 15).toISOString(),
+      updatedAt: new Date(2023, 4, 15).toISOString(),
       createdBy: 'admin@example.com',
       parameters: {
         startDate: '2023-01-01',
@@ -22,9 +22,9 @@ export const useMockReports = () => {
       id: '2',
       title: 'Kateqoriya Tamamlanma Hesabatı',
       description: 'Bütün məktəblərdə kateqoriyaların tamamlanma statusu',
-      type: 'completion' as ReportType,
-      createdAt: new Date(2023, 4, 10),
-      updatedAt: new Date(2023, 4, 10),
+      type: 'completion',
+      createdAt: new Date(2023, 4, 10).toISOString(),
+      updatedAt: new Date(2023, 4, 10).toISOString(),
       createdBy: 'admin@example.com',
       parameters: {
         startDate: '2023-01-01',
@@ -35,9 +35,9 @@ export const useMockReports = () => {
       id: '3',
       title: 'Region Müqayisəsi',
       description: 'Regionlar arası məlumat tamamlanma müqayisəsi',
-      type: 'comparison' as ReportType,
-      createdAt: new Date(2023, 4, 5),
-      updatedAt: new Date(2023, 4, 7),
+      type: 'comparison',
+      createdAt: new Date(2023, 4, 5).toISOString(),
+      updatedAt: new Date(2023, 4, 7).toISOString(),
       createdBy: 'admin@example.com',
       parameters: {
         startDate: '2023-01-01',
@@ -49,9 +49,9 @@ export const useMockReports = () => {
       id: '4',
       title: 'Xüsusi Hesabat: Təhsil Materialları',
       description: 'Tədris materialları ilə bağlı xüsusi hesabat',
-      type: 'custom' as ReportType,
-      createdAt: new Date(2023, 3, 28),
-      updatedAt: new Date(2023, 3, 28),
+      type: 'custom',
+      createdAt: new Date(2023, 3, 28).toISOString(),
+      updatedAt: new Date(2023, 3, 28).toISOString(),
       createdBy: 'admin@example.com',
       parameters: {
         categoryId: '12345',
@@ -62,9 +62,9 @@ export const useMockReports = () => {
       id: '5',
       title: 'Bakı Məktəbləri Hesabatı',
       description: 'Bakı şəhərindəki məktəblər üzrə detallı hesabat',
-      type: 'school' as ReportType,
-      createdAt: new Date(2023, 3, 20),
-      updatedAt: new Date(2023, 4, 1),
+      type: 'school',
+      createdAt: new Date(2023, 3, 20).toISOString(),
+      updatedAt: new Date(2023, 4, 1).toISOString(),
       createdBy: 'admin@example.com',
       parameters: {
         regionId: 'baku-123',
@@ -76,9 +76,9 @@ export const useMockReports = () => {
       id: '6',
       title: 'İnfrastruktur Kateqoriyası Hesabatı',
       description: 'İnfrastruktur kateqoriyası üzrə detallı hesabat',
-      type: 'category' as ReportType,
-      createdAt: new Date(2023, 3, 15),
-      updatedAt: new Date(2023, 3, 15),
+      type: 'category',
+      createdAt: new Date(2023, 3, 15).toISOString(),
+      updatedAt: new Date(2023, 3, 15).toISOString(),
       createdBy: 'admin@example.com',
       parameters: {
         categoryId: 'infrastructure-123',
@@ -93,9 +93,9 @@ export const useMockReports = () => {
     const newReport: Report = {
       id: Math.random().toString(36).substring(2, 9),
       ...reportData,
-      type: 'basic', // Default type
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      type: 'basic',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       createdBy: 'current-user'
     };
     setReports(prev => [...prev, newReport]);
@@ -104,7 +104,11 @@ export const useMockReports = () => {
 
   const updateReport = useCallback((id: string, reportData: Partial<Report>) => {
     setReports(prev =>
-      prev.map(report => (report.id === id ? { ...report, ...reportData, updatedAt: new Date() } : report))
+      prev.map(report => (report.id === id ? { 
+        ...report, 
+        ...reportData, 
+        updatedAt: new Date().toISOString() 
+      } : report))
     );
   }, []);
 

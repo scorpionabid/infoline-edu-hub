@@ -1,4 +1,4 @@
-// Fix type assignments
+
 import { useState, useCallback } from 'react';
 import { Report, ReportType } from '@/types/report';
 
@@ -13,9 +13,28 @@ export const useReports = () => {
         id: Math.random().toString(36).substring(2, 9),
         ...reportData,
         type: reportData.type as ReportType,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         createdBy: reportData.createdBy || 'current-user'
+      };
+
+      setReports((prev) => [...prev, newReport]);
+      return newReport;
+    },
+    []
+  );
+  
+  // Add the addReport function that's expected in ReportHeader.tsx
+  const addReport = useCallback(
+    (reportData: { title: string; description: string; type: string }) => {
+      const newReport: Report = {
+        id: Math.random().toString(36).substring(2, 9),
+        title: reportData.title,
+        description: reportData.description,
+        type: reportData.type as ReportType,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdBy: 'current-user'
       };
 
       setReports((prev) => [...prev, newReport]);
@@ -30,8 +49,8 @@ export const useReports = () => {
         ...reports.find((r) => r.id === id)!,
         ...reportData,
         type: (reportData.type || reports.find((r) => r.id === id)?.type) as ReportType,
-        updatedAt: new Date(),
-        createdAt: reports.find((r) => r.id === id)?.createdAt || new Date(),
+        updatedAt: new Date().toISOString(),
+        createdAt: reports.find((r) => r.id === id)?.createdAt || new Date().toISOString(),
         createdBy: reports.find((r) => r.id === id)?.createdBy || 'current-user'
       };
 
@@ -54,8 +73,8 @@ export const useReports = () => {
           title: 'Sample Report',
           description: 'A sample report for testing',
           type: 'basic',
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           createdBy: 'system',
         },
       ];
@@ -79,7 +98,8 @@ export const useReports = () => {
     getReport: (id: string) => reports.find((r) => r.id === id) || null,
     createReport,
     updateReport,
-    deleteReport
+    deleteReport,
+    addReport
   };
 };
 
