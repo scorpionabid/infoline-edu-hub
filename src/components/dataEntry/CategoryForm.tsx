@@ -1,85 +1,176 @@
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CategoryWithColumns, TabDefinition } from '@/types/column';
 
-interface CategoryFormProps {
-  category: CategoryWithColumns;
-  onSave?: () => Promise<void>;
-  onSubmit?: () => Promise<void>;
-  isReadOnly?: boolean;
-  loading?: boolean;
-  submitting?: boolean;
-  tabs?: TabDefinition[];
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
+import { CategoryWithColumns, Column } from '@/types/column';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+interface TabDefinition {
+  id: string;
+  label: string;
+  columns: Column[];
 }
 
-const CategoryForm: React.FC<CategoryFormProps> = ({
-  category,
-  onSave,
-  onSubmit,
-  isReadOnly = false,
-  loading = false,
-  submitting = false,
-  tabs = []
-}) => {
-  const [currentTab, setCurrentTab] = useState(tabs.length > 0 ? tabs[0].id : 'default');
+interface CategoryFormProps {
+  categoryId?: string;
+}
 
-  // Əgər tabs verilməyibs��, kateqoriyanın adı ilə bir tab yaradaq
-  const effectiveTabs = tabs.length > 0
-    ? tabs
-    : [{ id: 'default', label: category?.name || 'Məlumatlar' }];
+const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId }) => {
+  const { t } = useLanguage();
+  const [category, setCategory] = useState<CategoryWithColumns | null>(null);
+  const [tabs, setTabs] = useState<TabDefinition[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [formValues, setFormValues] = useState<Record<string, any>>({});
+  
+  // useEffect to fetch category data
+  useEffect(() => {
+    // This would normally fetch data from an API
+    const fetchCategoryData = async () => {
+      if (!categoryId) return;
+      
+      setLoading(true);
+      try {
+        // Mock data for now
+        const mockCategory: CategoryWithColumns = {
+          id: categoryId,
+          name: 'Sample Category',
+          description: 'This is a sample category for data entry',
+          completionRate: 0,
+          status: 'active',
+          columns: [
+            {
+              id: 'col1',
+              name: 'Full Name',
+              type: 'text',
+              category_id: categoryId,
+              is_required: true,
+              placeholder: 'Enter your full name'
+            },
+            {
+              id: 'col2',
+              name: 'Age',
+              type: 'number',
+              category_id: categoryId,
+              is_required: true,
+              placeholder: 'Enter your age'
+            }
+          ]
+        };
+        
+        setCategory(mockCategory);
+        
+        // Generate tabs from columns
+        if (mockCategory.columns) {
+          const generatedTabs: TabDefinition[] = [
+            {
+              id: 'general',
+              label: t('general'),
+              columns: mockCategory.columns.filter(col => !col.order_index || col.order_index < 5)
+            }
+          ];
+          
+          setTabs(generatedTabs);
+          setActiveTab('general');
+        }
+      } catch (error) {
+        console.error('Error fetching category data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchCategoryData();
+  }, [categoryId, t]);
+  
+  // Handle input change
+  const handleChange = (columnId: string, value: any) => {
+    setFormValues(prev => ({
+      ...prev,
+      [columnId]: value
+    }));
+  };
+  
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      // This would submit data to an API
+      console.log('Form values to submit:', formValues);
+      // Mock API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      alert('Form submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    }
+  };
 
+  if (loading) {
+    return <div className="flex justify-center p-8">Loading...</div>;
+  }
+  
+  if (!category) {
+    return <div className="flex justify-center p-8">Category not found</div>;
+  }
+  
   return (
     <div className="space-y-6">
-      {effectiveTabs.length > 1 ? (
-        <Tabs defaultValue={currentTab} onValueChange={setCurrentTab}>
-          <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {effectiveTabs.map(tab => (
-              <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>
-            ))}
-          </TabsList>
-
-          {effectiveTabs.map(tab => (
-            <TabsContent key={tab.id} value={tab.id}>
-              <Card>
-                <CardContent className="pt-6">
-                  {/* Tab content would go here */}
-                  <p>Tab content for {tab.label}</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ))}
-        </Tabs>
-      ) : (
-        <Card>
-          <CardContent className="pt-6">
-            {/* Default content when there's only one tab */}
-            <p>Form content for {category?.name}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="flex justify-end gap-4">
-        {onSave && (
-          <Button
-            onClick={onSave}
-            variant="outline"
-            disabled={loading || isReadOnly}
-          >
-            {loading ? 'Saxlanır...' : 'Yadda saxla'}
-          </Button>
-        )}
-
-        {onSubmit && (
-          <Button
-            onClick={onSubmit}
-            disabled={submitting || isReadOnly}
-          >
-            {submitting ? 'Göndərilir...' : 'Təsdiqə göndər'}
-          </Button>
-        )}
+      <div>
+        <h1 className="text-2xl font-bold">{category.name}</h1>
+        <p className="text-gray-500">{category.description}</p>
       </div>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {tabs.length > 0 ? (
+          <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              {tabs.map(tab => (
+                <TabsTrigger key={tab.id} value={tab.id}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            
+            {tabs.map(tab => (
+              <TabsContent key={tab.id} value={tab.id} className="space-y-4">
+                {tab.columns.map(column => (
+                  <div key={column.id} className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      {column.name} {column.is_required && <span className="text-red-500">*</span>}
+                    </label>
+                    <input
+                      type={column.type === 'number' ? 'number' : 'text'}
+                      className="w-full p-2 border rounded"
+                      placeholder={column.placeholder}
+                      value={formValues[column.id] || ''}
+                      onChange={(e) => handleChange(column.id, e.target.value)}
+                      required={column.is_required}
+                    />
+                    {column.help_text && (
+                      <p className="text-xs text-gray-500">{column.help_text}</p>
+                    )}
+                  </div>
+                ))}
+              </TabsContent>
+            ))}
+          </Tabs>
+        ) : (
+          <div className="p-4 bg-yellow-50 rounded">
+            {t('noColumnsFound')}
+          </div>
+        )}
+        
+        <div className="flex justify-end space-x-3">
+          <Button type="button" variant="outline">
+            {t('cancel')}
+          </Button>
+          <Button type="submit">
+            {t('submit')}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };

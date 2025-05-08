@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -5,7 +6,7 @@ import StatusCards from '../StatusCards';
 import NotificationsCard from '../common/NotificationsCard';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
-import { CategoryItem, DeadlineItem, FormItem, SchoolAdminDashboardData, DashboardNotification } from '@/types/dashboard';
+import { CategoryItem, DeadlineItem, FormItem, SchoolAdminDashboardData } from '@/types/dashboard';
 import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 import FormTabs from './FormTabs';
 import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';

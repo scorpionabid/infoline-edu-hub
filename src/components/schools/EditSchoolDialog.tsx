@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useLanguage } from '@/context/LanguageContext';
-import { School, Region, Sector, adaptSchoolFromSupabase, adaptRegionFromSupabase, adaptSectorFromSupabase } from '@/types/school';
+import { School, Region, Sector } from '@/types/school';
 import SchoolForm from './SchoolForm';
 
 interface EditSchoolDialogProps {
@@ -31,11 +31,6 @@ const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
   sectorNames = {}
 }) => {
   const { t } = useLanguage();
-
-  // Adapt the types to ensure compatibility
-  const adaptedSchool = adaptSchoolFromSupabase(school);
-  const adaptedRegions = regions.map(adaptRegionFromSupabase);
-  const adaptedSectors = sectors.map(adaptSectorFromSupabase);
 
   const handleSubmit = async (data: Partial<School>) => {
     await onSubmit(data as School);

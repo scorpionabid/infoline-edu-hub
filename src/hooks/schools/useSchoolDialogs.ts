@@ -2,7 +2,6 @@
 import { useState, useCallback } from 'react';
 import { School } from '@/types/school';
 import { School as SupabaseSchool } from '@/types/supabase';
-import { adaptSchoolFromSupabase } from '@/types/school';
 
 interface UseSchoolDialogsReturn {
   isDeleteDialogOpen: boolean;
@@ -77,15 +76,15 @@ export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
   }, []);
 
   const handleEditDialogOpen = useCallback((school: SupabaseSchool) => {
-    openEditDialog(adaptSchoolFromSupabase(school));
+    openEditDialog(school as School);
   }, [openEditDialog]);
 
   const handleAdminDialogOpen = useCallback((school: SupabaseSchool) => {
-    openAdminDialog(adaptSchoolFromSupabase(school));
+    openAdminDialog(school as School);
   }, [openAdminDialog]);
 
   const handleDeleteDialogOpen = useCallback((school: SupabaseSchool) => {
-    openDeleteDialog(adaptSchoolFromSupabase(school));
+    openDeleteDialog(school as School);
   }, [openDeleteDialog]);
 
   return {

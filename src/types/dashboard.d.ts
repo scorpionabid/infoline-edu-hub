@@ -1,38 +1,37 @@
 
-export interface DashboardStats {
-  total: number;
+import { ReactNode } from 'react';
+
+export interface StatsCardProps {
+  title: string;
+  value: number;
+  description?: string;
+  icon?: ReactNode;
+  trend?: number;
+  className?: string;
+}
+
+export interface DashboardStatus {
   pending: number;
   approved: number;
   rejected: number;
+  draft?: number;
+  total: number;
+  active: number;
+  inactive: number;
 }
 
 export interface DashboardFormStats {
   pending: number;
   approved: number;
   rejected: number;
-  draft: number;
+  draft?: number;
   dueSoon: number;
   overdue: number;
+  incomplete?: number;
   total: number;
 }
 
-export interface FormStats extends DashboardFormStats {} // Adding FormStats for compatibility
-
-export interface DashboardStatus {
-  pending: number;
-  approved: number;
-  rejected: number;
-  draft: number;
-  total: number;
-  active: number;
-  inactive: number;
-}
-
-export interface DashboardCompletion {
-  percentage: number;
-  total: number;
-  completed: number;
-}
+export type FormStats = DashboardFormStats;
 
 export interface CategoryItem {
   id: string;
@@ -45,80 +44,81 @@ export interface CategoryItem {
 
 export interface DeadlineItem {
   id: string;
-  categoryId: string;
-  categoryName: string;
-  deadline: string;
-  completionRate: number;
+  name?: string;
+  category?: string;
+  categoryId?: string;
+  categoryName?: string;
+  date?: string;
+  deadline?: string;
   status?: string;
+  completionRate?: number;
 }
 
 export interface FormItem {
   id: string;
-  categoryId: string;
-  categoryName: string;
+  name?: string;
+  category?: string;
+  categoryId?: string;
+  categoryName?: string;
+  date?: string;
   deadline?: string;
+  status?: string;
+}
+
+export interface PendingApproval {
+  id: string;
+  schoolId?: string;
+  schoolName: string;
+  categoryId?: string;
+  categoryName: string;
+  submittedAt: string;
+  date?: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+export interface ChartData {
+  name: string;
+  value: number;
+  color?: string;
+}
+
+export interface CategoryStat {
+  id: string;
+  name: string;
   completionRate: number;
-  status: string;
-  lastUpdated?: string;
+  formsCount?: number;
 }
 
 export interface DashboardNotification {
   id: string;
   title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  message?: string;
+  type: string;
+  date: string;
   isRead: boolean;
-  timestamp?: string;
-  createdAt?: string;
-  priority?: 'low' | 'normal' | 'high';
-  relatedEntityId?: string;
-  relatedEntityType?: string;
+  priority?: string;
 }
 
 export interface SchoolAdminDashboardData {
-  completion?: DashboardCompletion;
   status?: DashboardStatus;
+  formStats?: DashboardFormStats;
+  completion?: {
+    percentage: number;
+    total: number;
+    completed: number;
+  };
   categories?: CategoryItem[];
   upcoming?: DeadlineItem[];
-  formStats?: DashboardFormStats;
   pendingForms?: FormItem[];
-  completionRate: number;
-  notifications: DashboardNotification[];
-  forms?: DashboardFormStats; // Added for backward compatibility
+  completionRate?: number;
+  notifications?: DashboardNotification[];
 }
 
 export interface SchoolAdminDashboardProps {
-  isLoading: boolean;
-  error: any;
+  schoolId?: string;
+  isLoading?: boolean;
+  error?: any;
   onRefresh?: () => void;
   navigateToDataEntry?: (categoryId: string) => void;
-  handleFormClick?: (formId: string) => void;
-  schoolId?: string;
-}
-
-export interface SectorAdminDashboardData {
-  completion?: DashboardCompletion;
-  status: DashboardStatus;
-  schoolStats?: SchoolStat[];
-  pendingApprovals?: any[];
-  formStats?: DashboardFormStats;
-}
-
-export interface SectorAdminDashboardProps {
-  data: SectorAdminDashboardData;
-}
-
-export interface SchoolStat {
-  id: string;
-  name: string;
-  completionRate: number;
-  status?: string;
-  lastUpdate?: string;
-  pendingForms?: number;
-  formsCompleted?: number;
-  totalForms?: number;
-  principalName?: string;
-  address?: string;
-  phone?: string;
-  email?: string;
+  handleFormClick?: (form: FormItem) => void;
 }

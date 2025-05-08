@@ -1,76 +1,92 @@
 
-export interface Column {
-  id: string;
-  name: string;
-  type: string;
-  category_id?: string;
-  order_index?: number;
-  is_required?: boolean;
-  placeholder?: string;
-  help_text?: string;
-  options?: any;
-  default_value?: string;
-  validation?: any;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
 export interface CategoryWithColumns {
   id: string;
   name: string;
   description?: string;
   status?: string;
-  priority?: number;
   deadline?: string;
-  created_at?: string;
-  updated_at?: string;
-  assignment?: string;
-  archived?: boolean;
-  column_count?: number;
-  columns: Column[];
-  completionRate?: number;
+  completionRate: number;
+  columns?: Column[];
 }
 
-export interface CategoryFilter {
+export interface CategoryWithEntries {
+  id: string;
+  name: string;
+  description?: string;
   status?: string;
-  assignment?: string;
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  deadline?: string;
+  completionRate: number;
+  entries?: CategoryEntryData[];
+}
+
+export interface CategoryEntryData {
+  id: string;
+  columnId: string;
+  value: string;
+  status: string;
+}
+
+export interface Column {
+  id: string;
+  name: string;
+  type: ColumnType;
+  category_id: string;
+  is_required: boolean;
+  order_index?: number;
+  placeholder?: string;
+  help_text?: string;
+  options?: ColumnOption[];
+  validation?: ColumnValidation;
+  default_value?: string;
+}
+
+export interface ColumnOption {
+  value: string;
+  label: string;
+}
+
+export interface ColumnValidation {
+  min?: number;
+  max?: number;
+  pattern?: string;
+  message?: string;
 }
 
 export interface TabDefinition {
   id: string;
   label: string;
+  columns: Column[];
+}
+
+export interface CategoryFilter {
+  id: string;
+  name: string;
+  value: string;
 }
 
 export interface ColumnFormData {
-  id?: string;
   name: string;
   type: string;
-  category_id?: string;
-  order_index?: number;
-  is_required?: boolean;
+  category_id: string;
+  is_required: boolean;
+  order_index: number;
   placeholder?: string;
   help_text?: string;
-  options?: any;
+  options?: ColumnOption[];
+  validation?: ColumnValidation;
   default_value?: string;
-  validation?: any;
-  status?: string;
 }
 
-export interface CategoryWithEntries extends CategoryWithColumns {
-  entries?: any[];
-  completionRate?: number;
-}
-
-export interface CategoryEntryData {
-  id?: string;
-  category_id: string;
-  column_id: string;
-  value: string;
-  status?: string;
-}
-
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'multiselect' | 'checkbox' | 'file' | 'textarea';
+export type ColumnType = 
+  | 'text'
+  | 'number'
+  | 'select'
+  | 'multiselect'
+  | 'date'
+  | 'textarea'
+  | 'checkbox'
+  | 'radio'
+  | 'file'
+  | 'email'
+  | 'phone'
+  | 'url';

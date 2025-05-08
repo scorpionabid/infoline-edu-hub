@@ -1,48 +1,39 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/context/auth';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/auth';
 
-export function useDashboardData(entityId?: string) {
+export function useDashboardData() {
   const { user } = useAuth();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchData = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      
-      let endpoint = 'get-dashboard-data';
-      let payload: any = { userId: user.id, role: user.role };
-      
-      if (entityId) {
-        payload.entityId = entityId;
-      }
-      
-      const { data: responseData, error: apiError } = await supabase.functions.invoke(endpoint, {
-        body: payload
-      });
-      
-      if (apiError) throw new Error(apiError.message);
-      
-      setData(responseData);
-    } catch (err) {
-      console.error('Error fetching dashboard data:', err);
-      setError(err as Error);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, entityId]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    async function fetchDashboardData() {
+      if (!user) return;
 
-  return { data, loading, error, refetch: fetchData };
+      try {
+        setLoading(true);
+        // Get dashboard data based on user role
+        const { data, error } = await supabase.functions.invoke('get-dashboard-data', {
+          body: { userId: user.id, role: user.role }
+        });
+
+        if (error) throw error;
+        setData(data);
+      } catch (err: any) {
+        console.error('Error fetching dashboard data:', err);
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDashboardData();
+  }, [user]);
+
+  return { data, loading, error };
 }
 
 export default useDashboardData;

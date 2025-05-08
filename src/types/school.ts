@@ -1,4 +1,3 @@
-
 // Sector məktəbləri üçün tip
 export interface SectorSchool {
   id: string;
@@ -47,7 +46,7 @@ export interface School {
   phone?: string;
   principal_name?: string;
   principalName?: string;
-  status: string; 
+  status: string; // Changed to required to match supabase interface
   created_at: string;
   updated_at: string; // Changed to required to match supabase interface
   teacher_count?: number;
@@ -116,4 +115,17 @@ export interface EnhancedSchoolFormProps extends SchoolFormProps {
   sectors: Sector[];
   regionNames: Record<string, string>;
   sectorNames: Record<string, string>;
+}
+
+// Helper functions for type adaptation
+export function adaptSchoolFromSupabase(school: any): School {
+  return school as School;
+}
+
+export function adaptRegionFromSupabase(region: any): Region {
+  return region as Region;
+}
+
+export function adaptSectorFromSupabase(sector: any): Sector {
+  return sector as Sector;
 }

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { School, adaptSchoolFromSupabase } from '@/types/school';
+import { School } from '@/types/school';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import CreateSchoolDialog from './CreateSchoolDialog';
