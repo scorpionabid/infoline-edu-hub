@@ -18,6 +18,7 @@ export interface User {
   last_login?: string;
   created_at?: string;
   updated_at?: string;
+  name?: string;
 }
 
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
@@ -29,13 +30,17 @@ export interface UserFilter {
   sectorId?: string;
   schoolId?: string;
   search?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface UserFormData {
   id?: string;
   email: string;
   password?: string;
-  full_name: string;
+  full_name?: string;
+  fullName?: string;
+  name?: string;
   role: string;
   region_id?: string | null;
   sector_id?: string | null;
@@ -45,12 +50,13 @@ export interface UserFormData {
   language?: string;
   avatar?: string | null;
   status?: string;
-  notification_settings?: any;
-  // Additional compatibility properties
-  fullName?: string;
-  name?: string;
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
+  notification_settings?: any;
   notificationSettings?: any;
+}
+
+export interface FullUserData extends User {
+  // Additional fields for full user data
 }

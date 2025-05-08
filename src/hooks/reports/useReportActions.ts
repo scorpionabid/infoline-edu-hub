@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Report } from '@/types/dashboard';
+import { Report } from '@/types/report';
 
 export function useReportActions() {
   const [loading, setLoading] = useState(false);

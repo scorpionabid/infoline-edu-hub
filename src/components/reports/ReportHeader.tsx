@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText, Download } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { useLanguage } from '@/context/LanguageContext';
 import CreateReportDialog from '@/components/reports/CreateReportDialog';
@@ -56,7 +56,7 @@ export function ReportHeader() {
         <CreateReportDialog
           open={createDialogOpen}
           onClose={() => setCreateDialogOpen(false)}
-          onSubmit={handleCreateReport}
+          onCreate={handleCreateReport}
         />
       )}
     </div>

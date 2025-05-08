@@ -5,7 +5,7 @@ import { CategoryFilter } from '@/types/column';
 export const useCategoryFilters = (initialFilters: CategoryFilter = {}) => {
   const [filters, setFilters] = useState<CategoryFilter>(initialFilters);
 
-  const updateFilter = useCallback((key: keyof CategoryFilter, value: string) => {
+  const updateFilter = useCallback((key: keyof CategoryFilter, value: any) => {
     setFilters(prev => ({
       ...prev,
       [key]: value
@@ -22,3 +22,5 @@ export const useCategoryFilters = (initialFilters: CategoryFilter = {}) => {
     resetFilters
   };
 };
+
+export default useCategoryFilters;

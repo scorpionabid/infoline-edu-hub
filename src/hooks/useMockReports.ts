@@ -8,7 +8,7 @@ export const useMockReports = () => {
       id: '1',
       title: 'Ümumi Təhsil Statistikası',
       description: 'Bütün regionlar üzrə məktəblərin ümumi təhsil statistikası',
-      type: 'statistics',
+      type: 'bar' as ReportType,
       createdAt: new Date(2023, 4, 15).toISOString(),
       updatedAt: new Date(2023, 4, 15).toISOString(),
       createdBy: 'admin@example.com',
@@ -22,7 +22,7 @@ export const useMockReports = () => {
       id: '2',
       title: 'Kateqoriya Tamamlanma Hesabatı',
       description: 'Bütün məktəblərdə kateqoriyaların tamamlanma statusu',
-      type: 'completion',
+      type: 'pie' as ReportType,
       createdAt: new Date(2023, 4, 10).toISOString(),
       updatedAt: new Date(2023, 4, 10).toISOString(),
       createdBy: 'admin@example.com',
@@ -35,7 +35,7 @@ export const useMockReports = () => {
       id: '3',
       title: 'Region Müqayisəsi',
       description: 'Regionlar arası məlumat tamamlanma müqayisəsi',
-      type: 'comparison',
+      type: 'line' as ReportType,
       createdAt: new Date(2023, 4, 5).toISOString(),
       updatedAt: new Date(2023, 4, 7).toISOString(),
       createdBy: 'admin@example.com',
@@ -49,7 +49,7 @@ export const useMockReports = () => {
       id: '4',
       title: 'Xüsusi Hesabat: Təhsil Materialları',
       description: 'Tədris materialları ilə bağlı xüsusi hesabat',
-      type: 'custom',
+      type: 'table' as ReportType,
       createdAt: new Date(2023, 3, 28).toISOString(),
       updatedAt: new Date(2023, 3, 28).toISOString(),
       createdBy: 'admin@example.com',
@@ -62,9 +62,9 @@ export const useMockReports = () => {
       id: '5',
       title: 'Bakı Məktəbləri Hesabatı',
       description: 'Bakı şəhərindəki məktəblər üzrə detallı hesabat',
-      type: 'school',
+      type: 'bar' as ReportType,
       createdAt: new Date(2023, 3, 20).toISOString(),
-      updatedAt: new Date(2023, 4, 1).toISOString(),
+      updatedAt: new Date(2023, 3, 20).toISOString(),
       createdBy: 'admin@example.com',
       parameters: {
         regionId: 'baku-123',
@@ -76,7 +76,7 @@ export const useMockReports = () => {
       id: '6',
       title: 'İnfrastruktur Kateqoriyası Hesabatı',
       description: 'İnfrastruktur kateqoriyası üzrə detallı hesabat',
-      type: 'category',
+      type: 'pie' as ReportType,
       createdAt: new Date(2023, 3, 15).toISOString(),
       updatedAt: new Date(2023, 3, 15).toISOString(),
       createdBy: 'admin@example.com',
@@ -89,11 +89,11 @@ export const useMockReports = () => {
     }
   ]);
 
-  const createReport = useCallback((reportData: Omit<Report, 'id' | 'createdAt' | 'updatedAt' | 'type'>) => {
+  const createReport = useCallback((reportData: Omit<Report, 'id' | 'createdAt' | 'updatedAt' | 'type'> & { type: string }) => {
     const newReport: Report = {
       id: Math.random().toString(36).substring(2, 9),
       ...reportData,
-      type: 'basic',
+      type: (reportData.type || 'bar') as ReportType,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       createdBy: 'current-user'
@@ -132,7 +132,8 @@ export const useMockReports = () => {
     getReport: (id: string) => reports.find(r => r.id === id) || null,
     createReport,
     updateReport,
-    deleteReport
+    deleteReport,
+    fetchReports
   };
 };
 

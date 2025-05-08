@@ -2,20 +2,21 @@
 export interface Column {
   id: string;
   name: string;
-  type: string;
+  type: ColumnType;
   category_id: string;
   description?: string;
   is_required?: boolean;
   validation?: any;
   options?: string[];
   order?: number;
+  order_index?: number;
   status?: string;
   created_at?: string;
   updated_at?: string;
   help_text?: string;
   placeholder?: string;
-  order_index?: number;
   default_value?: string;
+  parent_column_id?: string;
 }
 
 export type ColumnType = 
@@ -36,7 +37,7 @@ export interface CategoryWithColumns {
   deadline?: string;
   status?: string;
   columns: Column[];
-  completionRate: number;
+  completionRate?: number;
   overallRate?: number;
   archived?: boolean;
   created_at?: string;
@@ -69,7 +70,10 @@ export interface ColumnFormData {
   validation?: any;
   options?: string[];
   order?: number;
+  order_index?: number;
   status?: string;
   help_text?: string;
   placeholder?: string;
+  default_value?: string;
+  parent_column_id?: string;
 }

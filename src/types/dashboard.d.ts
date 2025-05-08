@@ -8,13 +8,23 @@ export interface DashboardNotification {
   type: 'info' | 'warning' | 'error' | 'success';
 }
 
-export type FormStats = {
+export interface DashboardFormStats {
   pending: number;
   approved: number;
   rejected: number;
   draft: number;
   total: number;
-};
+  dueSoon: number;
+  overdue: number;
+}
+
+export interface FormStats {
+  pending: number;
+  approved: number;
+  rejected: number;
+  draft: number;
+  total: number;
+}
 
 export interface ChartData {
   labels: string[];
