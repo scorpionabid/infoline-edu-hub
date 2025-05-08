@@ -26,8 +26,17 @@ export const useAuth = () => {
       }
     },
     clearError: context.clearError || (() => {}),
+    signup: context.signup || (async () => ({ user: null, error: new Error('Not implemented') })),
+    updatePassword: context.updatePassword || (async () => ({ data: null, error: null })),
+    updateProfile: context.updateProfile || (async () => ({ data: null, error: null })),
+    refreshSession: context.refreshSession || (async () => {}),
     refreshProfile: async (): Promise<any> => {
-      await context.refreshSession();
+      if (context.refreshProfile) {
+        return context.refreshProfile();
+      }
+      if (context.refreshSession) {
+        await context.refreshSession();
+      }
       return context.user;
     }
   };

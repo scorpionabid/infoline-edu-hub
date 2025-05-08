@@ -42,6 +42,7 @@ export const usePermissions = (): UsePermissionsResult => {
   }, [user]);
 
   const permissions = useMemo(() => {
+    const isSuperAdmin = userRole === 'superadmin';
     return {
       canViewUsers: canViewUsers(userRole),
       canManageUsers: canManageUsers(userRole),
@@ -54,14 +55,17 @@ export const usePermissions = (): UsePermissionsResult => {
       canViewCategories: canViewCategories(userRole),
       canManageCategories: canManageCategories(userRole),
       isAuthenticated,
-      isSuper: userRole === 'superadmin',
+      isSuper: isSuperAdmin,
+      isSuperAdmin, // Add alias for isSuper that components are using
       isRegionAdmin: userRole === 'regionadmin',
       isSectorAdmin: userRole === 'sectoradmin',
       isSchoolAdmin: userRole === 'schooladmin',
       userRole,
       regionId,
       sectorId,
-      schoolId
+      schoolId,
+      // Add missing property that components are using
+      canApproveData: isSuperAdmin || userRole === 'regionadmin'
     };
   }, [userRole, isAuthenticated, regionId, sectorId, schoolId]);
 

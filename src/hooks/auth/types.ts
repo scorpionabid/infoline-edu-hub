@@ -1,5 +1,8 @@
+import { UserRole } from "@/types/supabase";
 
-import { UserRole, FullUserData } from '@/types/supabase';
+export type PermissionLevel = 'read' | 'write' | 'admin';
+
+export type PermissionCheckResult = boolean | Promise<boolean>;
 
 export interface UsePermissionsResult {
   canViewUsers: boolean;
@@ -21,4 +24,7 @@ export interface UsePermissionsResult {
   regionId: string | null;
   sectorId: string | null;
   schoolId: string | null;
+  
+  isSuperAdmin: boolean; // Alias for isSuper for clarity
+  canApproveData: boolean; // New property for approval permissions
 }

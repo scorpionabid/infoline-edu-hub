@@ -1,6 +1,5 @@
 
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
-export type UserRoleData = UserRole;
 
 // Region model
 export interface Region {
@@ -61,31 +60,6 @@ export interface School {
   completion_rate?: number;
 }
 
-// Enhanced School with statistics
-export interface SchoolStat extends School {
-  completion_rate: number;
-  formsTotal: number;
-  formsCompleted: number;
-  formsPending: number;
-  lastUpdate: string;
-  pendingForms: number;
-  completionRate?: number;
-  principal?: string;
-  principalName?: string;
-}
-
-// User related types
-export interface UserReported {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  created_at: string;
-}
-
 // Full User Data for authentication and profile
 export interface FullUserData {
   id: string;
@@ -121,4 +95,17 @@ export interface NotificationSettings {
   system: boolean;
   deadline: boolean;
   deadlineReminders?: boolean;
+}
+
+// Add SchoolStat type to avoid conflicting definitions
+export interface SchoolStat extends School {
+  completion_rate: number;
+  formsTotal: number;
+  formsCompleted: number;
+  formsPending: number;
+  lastUpdate?: string; // Match with dashboard.d.ts definition
+  pendingForms: number;
+  completionRate?: number;
+  principal?: string;
+  principalName?: string;
 }

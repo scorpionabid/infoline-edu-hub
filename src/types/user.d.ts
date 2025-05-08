@@ -7,7 +7,7 @@ export interface User {
   name?: string;
   full_name?: string;
   role?: UserRole | string;
-  avatar?: string;
+  avatar?: string; // Add this property
   position?: string;
   phone?: string;
   language?: string;
