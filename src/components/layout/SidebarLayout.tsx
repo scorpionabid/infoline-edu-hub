@@ -1,67 +1,74 @@
 
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { cn } from '@/lib/utils';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Header from './Header';
-import SidebarNav from './SidebarNav';
+import Sidebar from './Sidebar';
+import { useAuth } from '@/context/auth';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 
-const SidebarLayout = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const isMobile = useMediaQuery('(max-width: 768px)');
-  const [isLoading, setIsLoading] = useState(false); // Navigation loading əvəzinə sadə state
+interface SidebarLayoutProps {
+  // Bu interface-i boş saxlayırıq, çünki komponentə xarici proplar ötürülmür
+}
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(prev => !prev);
-  };
+const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
+  const { isDesktop } = useBreakpoint('md');
 
-  const toggleCollapse = () => {
-    setIsCollapsed(prev => !prev);
-  };
-
-  // Mobil cihazlarda sidebar otomatik kapansın
   useEffect(() => {
-    if (isMobile) {
-      setIsCollapsed(true);
-      setIsSidebarOpen(false);
-    } else {
-      setIsSidebarOpen(true);
-      setIsCollapsed(false);
+    if (!loading && !isAuthenticated) {
+      navigate('/login');
     }
-  }, [isMobile]);
+  }, [isAuthenticated, loading, navigate]);
+
+  // Desktop-da sidebar avtomatik açılır
+  useEffect(() => {
+    if (isDesktop) {
+      setIsSidebarOpen(true);
+    } else {
+      setIsSidebarOpen(false);
+    }
+  }, [isDesktop]);
+
+  // Sidebar açıq/qapalı vəziyyətini idarə et
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen(prevState => !prevState);
+  };
+
+  // Sidebar menusuna klik edildikdə mobil görünüşdə avtomatik bağla
+  const handleMenuClick = () => {
+    if (!isDesktop) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <div 
-        className={cn(
-          "bg-background border-r border-border transition-all duration-300 ease-in-out",
-          isCollapsed ? "w-16" : "w-64",
-          isSidebarOpen ? "block" : "hidden md:block"
-        )}
-      >
-        <SidebarNav 
-          onItemClick={() => isMobile && setIsSidebarOpen(false)}
-          isSidebarOpen={isSidebarOpen}
-          isCollapsed={isCollapsed}
-        />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex min-h-screen bg-background">
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onToggle={handleToggleSidebar} 
+        onMenuClick={handleMenuClick}
+      />
+      
+      <div className="flex flex-col flex-1 w-full">
         <Header 
-          onMenuClick={toggleSidebar} 
-          isSidebarOpen={isSidebarOpen}
+          onSidebarToggle={handleToggleSidebar} 
+          isSidebarOpen={isSidebarOpen} 
         />
         
-        <main 
-          className={cn(
-            "flex-1 overflow-y-auto p-4 md:p-6",
-            isLoading && "opacity-70"
-          )}
-        >
-          <Outlet />
+        <main className="flex-1 p-4 overflow-y-auto">
+          <div className="container mx-auto py-4">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

@@ -27,7 +27,7 @@ export interface DashboardNotification {
   message: string;
   date: string;
   read: boolean;
-  isRead: boolean; // Bu əvvəllər optional idi, indi məcburi etdik
+  isRead: boolean; // Məcburi etdik
   type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
   link?: string;
   category?: string;

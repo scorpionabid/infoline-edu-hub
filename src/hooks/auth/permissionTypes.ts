@@ -29,4 +29,9 @@ export interface UsePermissionsResult {
   // Helper funksiyalar
   canViewSectorCategories: boolean;
   canManageCategories: boolean;
+  canManageSchools: boolean;
+  canManageUsers: boolean;
+  canManageRegions: boolean;
+  canManageSectors: boolean;
+  canApproveData: boolean;
 }

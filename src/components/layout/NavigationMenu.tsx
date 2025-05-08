@@ -1,57 +1,22 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  Home, 
-  BarChart2, 
-  FileText,
-  School, 
-  Book, 
-  ClipboardCheck, 
-  Settings,
-  LogOut,
-  User,
-  Users
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth';
 
-interface NavigationItemProps {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-  active?: boolean;
-  onClick?: () => void; 
+interface NavigationMenuProps {
+  onMenuClick: () => void;
+  isSidebarOpen: boolean;
 }
 
-const NavigationItem: React.FC<NavigationItemProps> = ({ 
-  href, 
-  label, 
-  icon, 
-  active = false,
-  onClick 
-}) => {
-  return (
-    <Link 
-      to={href}
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-accent",
-        active ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-      )}
-    >
-      {icon}
-      <span>{label}</span>
-    </Link>
-  );
-};
-
-export const NavigationMenu = () => {
+export const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarOpen }) => {
   const { t } = useLanguage();
   const location = useLocation();
-  const {
+  const { user } = useAuth();
+  const { 
     isSuperAdmin,
     isRegionAdmin,
     isSectorAdmin,
@@ -59,116 +24,45 @@ export const NavigationMenu = () => {
     canManageSchools,
     canManageCategories
   } = usePermissions();
-  const auth = useAuth();
 
-  const handleLogout = async () => {
-    if (auth.logout) {
-      await auth.logout();
-    }
-  };
+  const activeItem = location.pathname.split('/')[1] || 'dashboard';
 
-  const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
-  };
+  const navigationItems = [
+    { id: 'dashboard', label: t('dashboard'), path: '/dashboard', visible: true },
+    { id: 'regions', label: t('regions'), path: '/regions', visible: isSuperAdmin },
+    { id: 'sectors', label: t('sectors'), path: '/sectors', visible: isSuperAdmin || isRegionAdmin },
+    { id: 'schools', label: t('schools'), path: '/schools', visible: canManageSchools },
+    { id: 'categories', label: t('categories'), path: '/categories', visible: canManageCategories },
+    { id: 'columns', label: t('columns'), path: '/columns', visible: canManageCategories },
+    { id: 'users', label: t('users'), path: '/users', visible: isSuperAdmin || isRegionAdmin || isSectorAdmin },
+    { id: 'data-entry', label: t('dataEntry'), path: '/data-entry', visible: isSuperAdmin || isSchoolAdmin || isSectorAdmin },
+    { id: 'approvals', label: t('approvals'), path: '/approvals', visible: isSuperAdmin || isRegionAdmin || isSectorAdmin },
+    { id: 'reports', label: t('reports'), path: '/reports', visible: true },
+    { id: 'settings', label: t('settings'), path: '/settings', visible: true },
+  ];
 
   return (
-    <div className="flex flex-col gap-2 p-2">
-      <NavigationItem 
-        href="/" 
-        label={t('dashboard')} 
-        icon={<Home className="h-5 w-5" />}
-        active={isActive('/')}
-      />
-      
-      {/* İstifadəçi roluna görə səlahiyyətlər */}
-      {canManageCategories && (
-        <NavigationItem 
-          href="/categories" 
-          label={t('categories')} 
-          icon={<Book className="h-5 w-5" />}
-          active={isActive('/categories')}
-        />
-      )}
-      
-      {canManageSchools && (
-        <NavigationItem 
-          href="/schools" 
-          label={t('schools')} 
-          icon={<School className="h-5 w-5" />}
-          active={isActive('/schools')}
-        />
-      )}
+    <nav className="flex flex-col md:flex-row md:items-center gap-6 overflow-x-auto whitespace-nowrap w-full">
+      {navigationItems
+        .filter(item => item.visible)
+        .map(item => (
+          <Link 
+            key={item.id}
+            to={item.path}
+            className={cn(
+              "transition-colors text-muted-foreground hover:text-primary focus:text-primary",
+              activeItem === item.id && "text-primary font-medium"
+            )}
+          >
+            {item.label}
+          </Link>
+        ))}
 
-      {/* İstifadəçi roluna görə görüntülənən menyu elementləri */}
-      {(isSuperAdmin || isRegionAdmin) && (
-        <>
-          <NavigationItem 
-            href="/regions" 
-            label={t('regions')} 
-            icon={<BarChart2 className="h-5 w-5" />}
-            active={isActive('/regions')}
-          />
-          
-          <NavigationItem 
-            href="/sectors" 
-            label={t('sectors')} 
-            icon={<BarChart2 className="h-5 w-5" />}
-            active={isActive('/sectors')}
-          />
-          
-          <NavigationItem 
-            href="/users" 
-            label={t('users')} 
-            icon={<Users className="h-5 w-5" />}
-            active={isActive('/users')}
-          />
-        </>
-      )}
-      
-      {/* Sektor admin menü elementləri */}
-      {isSectorAdmin && (
-        <NavigationItem 
-          href="/approvals" 
-          label={t('approvals')} 
-          icon={<ClipboardCheck className="h-5 w-5" />}
-          active={isActive('/approvals')}
-        />
-      )}
-      
-      {/* Məktəb admin menü elementləri */}
-      {isSchoolAdmin && (
-        <NavigationItem 
-          href="/forms" 
-          label={t('forms')} 
-          icon={<FileText className="h-5 w-5" />}
-          active={isActive('/forms')}
-        />
-      )}
-      
-      {/* Ümumi menü elementləri */}
-      <NavigationItem 
-        href="/profile" 
-        label={t('profile')} 
-        icon={<User className="h-5 w-5" />}
-        active={isActive('/profile')}
-      />
-      
-      <NavigationItem 
-        href="/settings" 
-        label={t('settings')} 
-        icon={<Settings className="h-5 w-5" />}
-        active={isActive('/settings')}
-      />
-      
-      {/* Çıxış butonu */}
-      <NavigationItem 
-        href="#" 
-        label={t('logout')} 
-        icon={<LogOut className="h-5 w-5" />}
-        onClick={handleLogout}
-      />
-    </div>
+      <div className="md:hidden mt-4">
+        <Button variant="outline" size="sm" onClick={() => onMenuClick()}>
+          {isSidebarOpen ? t('closeSidebar') : t('openSidebar')}
+        </Button>
+      </div>
+    </nav>
   );
 };
-
-export default NavigationMenu;

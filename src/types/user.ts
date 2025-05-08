@@ -55,6 +55,7 @@ export interface FullUserData extends User {
     sector?: string;
     school?: string;
   };
+  name?: string;
 }
 
 export interface UserFormData {
@@ -101,4 +102,3 @@ export interface AuthContextType {
   updateUser?: (updates: Partial<FullUserData>) => Promise<boolean | void>;
   updateUserProfile?: (userData: Partial<FullUserData>) => Promise<void>;
 }
-

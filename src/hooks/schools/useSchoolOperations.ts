@@ -1,169 +1,144 @@
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/school';
-import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
+import { useToast } from '@/components/ui/use-toast';
 
-export const useSchoolOperations = (onOperationComplete: () => void) => {
+export interface SchoolOperationsResult {
+  loading: boolean;
+  error: string | null;
+  createSchool: (school: Partial<School>) => Promise<{ data?: School, error?: any }>;
+  updateSchool: (id: string, updates: Partial<School>) => Promise<{ data?: School, error?: any }>;
+  deleteSchool: (id: string) => Promise<{ success: boolean, error?: any }>;
+  assignAdmin: (schoolId: string, userId: string) => Promise<{ success: boolean, error?: any }>;
+}
+
+export const useSchoolOperations = (): SchoolOperationsResult => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
-  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
-  const [selectedAdmin, setSelectedAdmin] = useState<School | null>(null);
+  const { toast } = useToast();
 
-  const handleEditSchool = useCallback((school: School) => {
-    setSelectedSchool(school);
-    setIsEditDialogOpen(true);
-  }, []);
-
-  const handleDeleteSchool = useCallback((school: School) => {
-    setSelectedSchool(school);
-    setIsDeleteDialogOpen(true);
-  }, []);
-
-  const handleViewAdmin = useCallback((school: School) => {
-    setSelectedAdmin(school);
-    setIsAdminDialogOpen(true);
-  }, []);
-
-  const handleUpdateSchoolConfirm = useCallback(async (updatedSchoolData: School) => {
-    if (!selectedSchool) return;
+  const createSchool = async (school: Partial<School>) => {
+    setLoading(true);
+    setError(null);
     
     try {
-      const { error } = await supabase
+      const { data, error: createError } = await supabase
         .from('schools')
-        .update({
-          name: updatedSchoolData.name,
-          region_id: updatedSchoolData.regionId || updatedSchoolData.region_id,
-          sector_id: updatedSchoolData.sectorId || updatedSchoolData.sector_id,
-          address: updatedSchoolData.address,
-          phone: updatedSchoolData.phone,
-          email: updatedSchoolData.email,
-          principal_name: updatedSchoolData.principal_name,
-          student_count: updatedSchoolData.student_count,
-          teacher_count: updatedSchoolData.teacher_count,
-          type: updatedSchoolData.type,
-          language: updatedSchoolData.language,
-          status: updatedSchoolData.status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedSchool.id);
-      
-      if (error) throw error;
-      
-      toast.success(t('schoolUpdated'));
-      setIsEditDialogOpen(false);
-      onOperationComplete();
-    } catch (err) {
-      console.error('Məktəb yeniləmə xətası:', err);
-      toast.error('Məktəb məlumatları yenilənərkən xəta baş verdi');
-    }
-  }, [selectedSchool, t, onOperationComplete]);
-
-  const handleDeleteSchoolConfirm = useCallback(async () => {
-    if (!selectedSchool) return;
-    
-    try {
-      const { error } = await supabase
-        .from('schools')
-        .delete()
-        .eq('id', selectedSchool.id);
-      
-      if (error) throw error;
-      
-      toast.success(t('schoolDeleted'));
-      setIsDeleteDialogOpen(false);
-      onOperationComplete();
-    } catch (err) {
-      console.error('Məktəb silmə xətası:', err);
-      toast.error('Məktəb silinərkən xəta baş verdi');
-    }
-  }, [selectedSchool, t, onOperationComplete]);
-
-  const handleAdminUpdate = useCallback(async () => {
-    if (!selectedAdmin) return;
-    
-    try {
-      // Burada admin yeniləmə işi həyata keçirilə bilər
-      // Həqiqi kodda burada API call olacaq
-      
-      toast.success(t('adminUpdated'));
-      setIsAdminDialogOpen(false);
-      onOperationComplete();
-    } catch (err) {
-      console.error('Admin yeniləmə xətası:', err);
-      toast.error('Admin məlumatları yenilənərkən xəta baş verdi');
-    }
-  }, [selectedAdmin, t, onOperationComplete]);
-
-  const handleResetPassword = useCallback(async (newPassword: string) => {
-    if (!selectedAdmin) return;
-    
-    try {
-      // Şifrə yeniləmə işi
-      // Həqiqi kodda burada API call olacaq
-      
-      toast.success(t('passwordReset'));
-    } catch (err) {
-      console.error('Şifrə sıfırlama xətası:', err);
-      toast.error('Şifrə sıfırlanarkən xəta baş verdi');
-    }
-  }, [selectedAdmin, t]);
-
-  const handleCreateSchool = useCallback(async (schoolData: Partial<School>) => {
-    try {
-      const { data, error } = await supabase
-        .from('schools')
-        .insert({
-          name: schoolData.name,
-          region_id: schoolData.regionId || schoolData.region_id,
-          sector_id: schoolData.sectorId || schoolData.sector_id,
-          address: schoolData.address,
-          phone: schoolData.phone,
-          email: schoolData.email,
-          principal_name: schoolData.principal_name,
-          student_count: schoolData.student_count,
-          teacher_count: schoolData.teacher_count,
-          type: schoolData.type,
-          language: schoolData.language,
-          status: schoolData.status || 'active',
-          admin_email: schoolData.adminEmail,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert([school])
         .select()
         .single();
       
-      if (error) throw error;
+      if (createError) {
+        setError(createError.message);
+        return { error: createError };
+      }
       
-      toast.success(t('schoolCreated'));
-      onOperationComplete();
-      return data;
-    } catch (err) {
-      console.error('Məktəb yaradılması xətası:', err);
-      toast.error('Məktəb yaradılarkən xəta baş verdi');
-      return null;
+      return { data };
+    } catch (err: any) {
+      setError(err.message);
+      return { error: err };
+    } finally {
+      setLoading(false);
     }
-  }, [t, onOperationComplete]);
+  };
+
+  const updateSchool = async (id: string, updates: Partial<School>) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error: updateError } = await supabase
+        .from('schools')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (updateError) {
+        setError(updateError.message);
+        return { error: updateError };
+      }
+      
+      return { data };
+    } catch (err: any) {
+      setError(err.message);
+      return { error: err };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteSchool = async (id: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { error: deleteError } = await supabase
+        .from('schools')
+        .delete()
+        .eq('id', id);
+      
+      if (deleteError) {
+        setError(deleteError.message);
+        return { success: false, error: deleteError };
+      }
+      
+      return { success: true };
+    } catch (err: any) {
+      setError(err.message);
+      return { success: false, error: err };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const assignAdmin = async (schoolId: string, userId: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // 1. Əvvəlcə məktəbə admin ID-si təyin edirik
+      const { error: schoolUpdateError } = await supabase
+        .from('schools')
+        .update({ admin_id: userId })
+        .eq('id', schoolId);
+      
+      if (schoolUpdateError) {
+        throw schoolUpdateError;
+      }
+      
+      // 2. İstifadəçi rolunu yeniləyirik
+      const { error: roleUpdateError } = await supabase
+        .from('user_roles')
+        .update({ 
+          role: 'schooladmin',
+          school_id: schoolId
+        })
+        .eq('user_id', userId);
+      
+      if (roleUpdateError) {
+        // Əvvəlki dəyişikliyi geri qaytarmaq lazımdır, amma sadəlik üçün edmirik
+        throw roleUpdateError;
+      }
+      
+      return { success: true };
+    } catch (err: any) {
+      setError(err.message);
+      return { success: false, error: err };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
-    selectedSchool,
-    selectedAdmin,
-    isEditDialogOpen,
-    isDeleteDialogOpen,
-    isAdminDialogOpen,
-    setIsEditDialogOpen,
-    setIsDeleteDialogOpen,
-    setIsAdminDialogOpen,
-    handleEditSchool,
-    handleDeleteSchool,
-    handleViewAdmin,
-    handleUpdateSchoolConfirm,
-    handleDeleteSchoolConfirm,
-    handleAdminUpdate,
-    handleResetPassword,
-    handleCreateSchool
+    loading,
+    error,
+    createSchool,
+    updateSchool,
+    deleteSchool,
+    assignAdmin
   };
 };

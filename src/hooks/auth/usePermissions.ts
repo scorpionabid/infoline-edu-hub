@@ -23,6 +23,7 @@ export const usePermissions = (): UsePermissionsResult => {
   const canManageRegions = isSuperAdmin;
   const canManageSectors = isSuperAdmin || isRegionAdmin;
   const canViewSectorCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin;
+  const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   
   // İstifadəçinin rollarını yükləmək
   useEffect(() => {
@@ -163,5 +164,6 @@ export const usePermissions = (): UsePermissionsResult => {
     canManageRegions,
     canManageSectors,
     canViewSectorCategories,
+    canApproveData,
   };
 };

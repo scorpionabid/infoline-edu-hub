@@ -1,82 +1,34 @@
 
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { 
-  BarChart, Settings, Users, School, BookOpen, 
-  FileText, CheckSquare, Map, Building, LogOut,
-  ChevronRight, ChevronLeft, Bell, Home, Database, Columns
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/context/auth';
+import { Link, useLocation } from 'react-router-dom';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useLanguage } from '@/context/LanguageContext';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useState } from 'react';
-
-interface MenuItem {
-  icon: React.ReactNode;
-  href: string;
-  label: string;
-  badge?: number;
-}
-
-interface NavItemProps {
-  icon: React.ReactNode;
-  href: string;
-  label: string;
-  badge?: number;
-  isCollapsed?: boolean;
-}
-
-const NavItem: React.FC<NavItemProps> = ({ icon, href, label, badge, isCollapsed = false }) => {
-  const location = useLocation();
-  const isActive = location.pathname === href || location.pathname.startsWith(`${href}/`);
-
-  return (
-    <NavLink
-      to={href}
-      className={({ isActive }) =>
-        cn(
-          'flex items-center py-2 px-3 my-1 rounded-md text-sm transition-colors',
-          isActive
-            ? 'bg-primary text-primary-foreground'
-            : 'hover:bg-accent hover:text-accent-foreground'
-        )
-      }
-    >
-      {icon}
-      {!isCollapsed && (
-        <>
-          <span className="ml-3">{label}</span>
-          {typeof badge === 'number' && badge > 0 && (
-            <Badge className="ml-auto" variant="outline">
-              {badge}
-            </Badge>
-          )}
-        </>
-      )}
-    </NavLink>
-  );
-};
+import { cn } from '@/lib/utils';
+import {
+  BarChart2,
+  FileText,
+  Settings,
+  Users,
+  MapPin,
+  Network,
+  School,
+  Layout,
+  Columns,
+  CheckSquare,
+  ClipboardList
+} from 'lucide-react';
 
 interface SidebarNavProps {
-  onItemClick?: () => void;
-  isSidebarOpen?: boolean;
-  isCollapsed?: boolean;
+  onMenuClick: () => void;
 }
 
-export const SidebarNav: React.FC<SidebarNavProps> = ({ 
-  onItemClick,
-  isSidebarOpen,
-  isCollapsed = false
-}) => {
+const SidebarNav: React.FC<SidebarNavProps> = ({ onMenuClick }) => {
+  const location = useLocation();
   const { t } = useLanguage();
-  const { 
-    isSuperAdmin, 
-    isRegionAdmin, 
-    isSectorAdmin, 
+  const {
+    isSuperAdmin,
+    isRegionAdmin,
+    isSectorAdmin,
     isSchoolAdmin,
     canManageUsers,
     canManageRegions,
@@ -86,111 +38,109 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     canApproveData
   } = usePermissions();
 
-  // Menü elementlərini hazırlayaq
-  const menuItems: MenuItem[] = [
+  const navItems = [
     {
-      icon: <Home className="h-5 w-5" />,
+      id: 'dashboard',
       label: t('dashboard'),
-      href: '/dashboard',
+      icon: <Layout className="h-4 w-4 mr-2" />,
+      path: '/dashboard',
+      visible: true
     },
-    ...(canManageRegions ? [{
-      icon: <Map className="h-5 w-5" />,
+    {
+      id: 'regions',
       label: t('regions'),
-      href: '/regions',
-    }] : []),
-    ...(canManageSectors ? [{
-      icon: <Building className="h-5 w-5" />,
+      icon: <MapPin className="h-4 w-4 mr-2" />,
+      path: '/regions',
+      visible: canManageRegions
+    },
+    {
+      id: 'sectors',
       label: t('sectors'),
-      href: '/sectors',
-    }] : []),
-    ...(canManageSchools ? [{
-      icon: <School className="h-5 w-5" />,
+      icon: <Network className="h-4 w-4 mr-2" />,
+      path: '/sectors',
+      visible: canManageSectors
+    },
+    {
+      id: 'schools',
       label: t('schools'),
-      href: '/schools',
-    }] : []),
-    ...(canManageCategories ? [{
-      icon: <Database className="h-5 w-5" />,
+      icon: <School className="h-4 w-4 mr-2" />,
+      path: '/schools',
+      visible: canManageSchools
+    },
+    {
+      id: 'categories',
       label: t('categories'),
-      href: '/categories',
-    }] : []),
-    ...(canManageCategories ? [{
-      icon: <Columns className="h-5 w-5" />,
+      icon: <ClipboardList className="h-4 w-4 mr-2" />,
+      path: '/categories',
+      visible: canManageCategories
+    },
+    {
+      id: 'columns',
       label: t('columns'),
-      href: '/columns',
-    }] : []),
-    ...(isSchoolAdmin ? [{
-      icon: <BookOpen className="h-5 w-5" />,
+      icon: <Columns className="h-4 w-4 mr-2" />,
+      path: '/columns',
+      visible: canManageCategories
+    },
+    {
+      id: 'data-entry',
       label: t('dataEntry'),
-      href: '/data-entry',
-    }] : []),
-    ...(canManageUsers ? [{
-      icon: <Users className="h-5 w-5" />,
-      label: t('users'),
-      href: '/users',
-    }] : []),
-    ...(canApproveData ? [{
-      icon: <CheckSquare className="h-5 w-5" />,
+      icon: <FileText className="h-4 w-4 mr-2" />,
+      path: '/data-entry',
+      visible: true
+    },
+    {
+      id: 'approvals',
       label: t('approvals'),
-      href: '/approvals',
-    }] : []),
+      icon: <CheckSquare className="h-4 w-4 mr-2" />,
+      path: '/approvals',
+      visible: canApproveData
+    },
     {
-      icon: <FileText className="h-5 w-5" />,
+      id: 'reports',
       label: t('reports'),
-      href: '/reports',
+      icon: <BarChart2 className="h-4 w-4 mr-2" />,
+      path: '/reports',
+      visible: true
     },
     {
-      icon: <BarChart className="h-5 w-5" />,
-      label: t('analytics'),
-      href: '/analytics',
+      id: 'users',
+      label: t('users'),
+      icon: <Users className="h-4 w-4 mr-2" />,
+      path: '/users',
+      visible: canManageUsers
     },
     {
-      icon: <Bell className="h-5 w-5" />,
-      label: t('notifications'),
-      href: '/notifications',
-      badge: 0,  // Default badge
-    },
-    {
-      icon: <Settings className="h-5 w-5" />,
+      id: 'settings',
       label: t('settings'),
-      href: '/settings',
-    },
+      icon: <Settings className="h-4 w-4 mr-2" />,
+      path: '/settings',
+      visible: true
+    }
   ];
 
+  const activeItem = location.pathname.split('/')[1] || 'dashboard';
+
   return (
-    <div className={cn('py-2 h-full flex flex-col')}>
-      <div className="px-3 mb-2 flex items-center justify-between">
-        {!isCollapsed && <div className="text-lg font-semibold">InfoLine</div>}
-      </div>
-
-      <ScrollArea className="flex-1">
-        <div className={cn("flex flex-col px-2", isCollapsed && 'items-center')}>
-          {menuItems.map((item, index) => (
-            <NavItem
-              key={index}
-              icon={item.icon}
-              href={item.href}
-              label={item.label}
-              isCollapsed={isCollapsed}
-              badge={item.badge}
-            />
-          ))}
-        </div>
-      </ScrollArea>
-
-      <div className={cn("mt-auto px-2")}>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="w-full flex items-center justify-start px-3 py-2"
-          onClick={() => {
-            // Logout işlemini burada yapabilirsiniz
-          }}
-        >
-          <LogOut className="h-5 w-5" />
-          {!isCollapsed && <span className="ml-3">{t('logout')}</span>}
-        </Button>
-      </div>
-    </div>
+    <nav className="space-y-1 px-2">
+      {navItems
+        .filter(item => item.visible)
+        .map(item => (
+          <Link
+            key={item.id}
+            to={item.path}
+            onClick={onMenuClick}
+            className={cn(
+              'flex items-center px-3 py-2 text-sm rounded-md transition-colors',
+              activeItem === item.id
+                ? 'bg-secondary text-secondary-foreground font-medium'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </Link>
+        ))}
+    </nav>
   );
 };
 
