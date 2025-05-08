@@ -5,7 +5,8 @@ import { StatsCard } from '../common/StatsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
 import NotificationsCard from '../common/NotificationsCard';
 import { RegionAdminDashboardData } from '@/types/dashboard';
-import { adaptDashboardNotificationToApp, AppNotification } from '@/types/notification';
+import { adaptDashboardToAppNotification } from '@/utils/notificationUtils';
+import { AppNotification } from '@/types/notification';
 
 interface RegionAdminDashboardProps {
   data: RegionAdminDashboardData;
@@ -19,10 +20,9 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
     ? data.notifications.map(notification => {
         const notificationWithAllFields = {
           ...notification,
-          read: notification.read || notification.isRead || false,
-          isRead: notification.isRead || notification.read || false
+          isRead: notification.isRead || false
         };
-        return adaptDashboardNotificationToApp(notificationWithAllFields);
+        return adaptDashboardToAppNotification(notificationWithAllFields);
       })
     : [];
 

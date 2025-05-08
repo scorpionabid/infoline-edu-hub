@@ -46,12 +46,17 @@ export interface UsePermissionsResult {
 }
 
 export const usePermissions = (): UsePermissionsResult => {
-  const { role } = useRole();
+  const { role, user } = useRole();
 
   const isSuperAdmin = role === 'superadmin';
   const isRegionAdmin = role === 'regionadmin';
   const isSectorAdmin = role === 'sectoradmin';
   const isSchoolAdmin = role === 'schooladmin';
+
+  const userId = user?.id;
+  const regionId = user?.region_id;
+  const sectorId = user?.sector_id;
+  const schoolId = user?.school_id;
 
   // Superadmin hər şeyə icazəsi var
   if (isSuperAdmin) {
@@ -61,6 +66,10 @@ export const usePermissions = (): UsePermissionsResult => {
       isSectorAdmin: false,
       isSchoolAdmin: false,
       userRole: 'superadmin',
+      userId,
+      regionId,
+      sectorId,
+      schoolId,
       canManageUsers: true,
       canViewUsers: true,
       canManageCategories: true,
@@ -91,6 +100,10 @@ export const usePermissions = (): UsePermissionsResult => {
       isSectorAdmin: false,
       isSchoolAdmin: false,
       userRole: 'regionadmin',
+      userId,
+      regionId,
+      sectorId,
+      schoolId,
       canManageUsers: true,
       canViewUsers: true,
       canManageCategories: true,
@@ -121,6 +134,10 @@ export const usePermissions = (): UsePermissionsResult => {
       isSectorAdmin: true,
       isSchoolAdmin: false,
       userRole: 'sectoradmin',
+      userId,
+      regionId,
+      sectorId,
+      schoolId,
       canManageUsers: false,
       canViewUsers: true,
       canManageCategories: false,
@@ -151,6 +168,10 @@ export const usePermissions = (): UsePermissionsResult => {
       isSectorAdmin: false,
       isSchoolAdmin: true,
       userRole: 'schooladmin',
+      userId,
+      regionId,
+      sectorId,
+      schoolId,
       canManageUsers: false,
       canViewUsers: false,
       canManageCategories: false,
@@ -179,6 +200,10 @@ export const usePermissions = (): UsePermissionsResult => {
     isRegionAdmin: false,
     isSectorAdmin: false,
     isSchoolAdmin: false,
+    userId,
+    regionId,
+    sectorId,
+    schoolId,
     canManageUsers: false,
     canViewUsers: false,
     canManageCategories: false,

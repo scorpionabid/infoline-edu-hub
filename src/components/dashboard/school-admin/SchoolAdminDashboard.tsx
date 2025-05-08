@@ -6,7 +6,7 @@ import { CompletionRateCard } from '../common/CompletionRateCard';
 import NotificationsCard from '../common/NotificationsCard';
 import { SchoolAdminDashboardData, FormItem, SchoolAdminDashboardProps } from '@/types/dashboard';
 import { Loader2 } from 'lucide-react';
-import { adaptDashboardNotificationToApp } from '@/types/notification';
+import { adaptDashboardToAppNotification } from '@/utils/notificationUtils';
 import CompletionProgress from '../CompletionProgress';
 
 export function SchoolAdminDashboard({ 
@@ -62,19 +62,20 @@ export function SchoolAdminDashboard({
   // Bildirişləri adapterlə çevirək - tip problemini həll edirik
   const adaptedNotifications = Array.isArray(data.notifications) 
     ? data.notifications.map((notification) => {
-        return adaptDashboardNotificationToApp(notification); 
+        return adaptDashboardToAppNotification(notification); 
       })
     : [];
 
   // formStats obyekti üçün dəyərləri hazırlayırıq
   const formStatsValues = {
-    pending: data.formStats?.pending || data.forms?.pending || 0,
-    approved: data.formStats?.approved || data.forms?.approved || 0, 
-    rejected: data.formStats?.rejected || data.forms?.rejected || 0,
-    draft: data.formStats?.draft || 0,
-    dueSoon: data.formStats?.dueSoon || data.forms?.dueSoon || 0,
-    overdue: data.formStats?.overdue || data.forms?.overdue || 0,
+    pending: data.formStats?.pending || data.status?.pending || 0,
+    approved: data.formStats?.approved || data.status?.approved || 0, 
+    rejected: data.formStats?.rejected || data.status?.rejected || 0,
+    draft: data.formStats?.draft || data.status?.draft || 0,
+    dueSoon: data.formStats?.dueSoon || 0,
+    overdue: data.formStats?.overdue || 0,
     incomplete: data.formStats?.incomplete || 0,
+    total: data.formStats?.total || data.status?.total || 0
   };
   
   return (

@@ -4,9 +4,20 @@ import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import NotificationsCard from './common/NotificationsCard'; 
-import { SuperAdminDashboardData, SuperAdminDashboardProps } from '@/types/dashboard';
+import { SuperAdminDashboardData } from '@/types/dashboard';
+import { adaptDashboardToAppNotification } from '@/utils/notificationUtils';
+import { AppNotification } from '@/types/notification';
+
+interface SuperAdminDashboardProps {
+  data: SuperAdminDashboardData;
+}
 
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
+  // Bildirişləri adaptasiya edək
+  const adaptedNotifications = data.notifications 
+    ? data.notifications.map(notification => adaptDashboardToAppNotification(notification))
+    : [];
+  
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Super Admin Dashboard</h2>
@@ -73,7 +84,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
       <Grid columns={1} className="gap-6">
         <NotificationsCard
           title="Bildirişlər"
-          notifications={data.notifications || []}
+          notifications={adaptedNotifications}
         />
       </Grid>
     </div>

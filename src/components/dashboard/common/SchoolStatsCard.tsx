@@ -1,69 +1,102 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLanguage } from '@/context/LanguageContext';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { SchoolStat } from '@/types/dashboard';
-import { formatPercentage } from '@/utils/formatters';
+import { formatDate } from '@/utils/formatters';
+import { ExternalLink } from 'lucide-react';
 
 interface SchoolStatsCardProps {
-  schoolStats: SchoolStat[];
-  className?: string;
+  school: SchoolStat;
+  onViewDetails?: (schoolId: string) => void;
 }
 
-const SchoolStatsCard: React.FC<SchoolStatsCardProps> = ({ schoolStats, className }) => {
-  const { t } = useLanguage();
+export const SchoolStatsCard: React.FC<SchoolStatsCardProps> = ({ school, onViewDetails }) => {
+  const navigate = useNavigate();
 
-  if (!schoolStats || schoolStats.length === 0) {
-    return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle>{t('schoolPerformance')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">{t('noSchoolsData')}</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const getStatusBadge = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return <Badge className="bg-green-500">Aktiv</Badge>;
+      case 'inactive':
+        return <Badge variant="outline">Qeyri-aktiv</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
 
-  // Məktəbləri tamamlanma faizinə görə sıralayaq
-  const sortedSchools = [...schoolStats].sort((a, b) => (b.completionRate || 0) - (a.completionRate || 0));
-  
+  const getProgressColor = (completion: number) => {
+    if (completion >= 80) return 'bg-green-500';
+    if (completion >= 50) return 'bg-amber-500';
+    return 'bg-red-500';
+  };
+
+  const handleViewDetails = () => {
+    if (onViewDetails) {
+      onViewDetails(school.id);
+    } else {
+      navigate(`/schools/${school.id}`);
+    }
+  };
+
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>{t('schoolPerformance')}</CardTitle>
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-bold flex items-center justify-between">
+          <span className="truncate">{school.name}</span>
+          {getStatusBadge(school.status)}
+        </CardTitle>
+        <CardDescription>
+          {school.principalName && (
+            <span className="text-xs">Direktor: {school.principalName}</span>
+          )}
+        </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pb-2">
         <div className="space-y-4">
-          {sortedSchools.slice(0, 5).map((school) => (
-            <div key={school.id} className="flex flex-col space-y-1">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{school.name}</p>
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  (school.completionRate || 0) >= 75 ? 'bg-green-100 text-green-800' : 
-                  (school.completionRate || 0) >= 50 ? 'bg-amber-100 text-amber-800' : 
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {formatPercentage(school.completionRate)}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-1.5">
-                <div className={`h-1.5 rounded-full ${
-                  (school.completionRate || 0) >= 75 ? 'bg-green-500' : 
-                  (school.completionRate || 0) >= 50 ? 'bg-amber-500' : 
-                  'bg-red-500'
-                }`} style={{ width: `${school.completionRate || 0}%` }}></div>
-              </div>
-              <div className="text-xs text-muted-foreground flex justify-between">
-                <span>{school.formsCompleted || 0}/{school.totalForms || 0} {t('forms')}</span>
-                <span>{school.principal || school.principalName || ''}</span>
-              </div>
-              <div className="h-px bg-muted my-1"></div>
+          <div>
+            <div className="flex justify-between text-sm mb-1">
+              <span>Tamamlanma</span>
+              <span className="font-medium">{school.completionRate}%</span>
             </div>
-          ))}
+            <Progress 
+              value={school.completionRate} 
+              className={`h-2 ${getProgressColor(school.completionRate)}`} 
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-muted-foreground text-xs">Gözləmədə</p>
+              <p className="font-medium">{school.pendingForms || 0}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs">Tamamlanıb</p>
+              <p className="font-medium">{school.formsCompleted || 0} / {school.totalForms || 0}</p>
+            </div>
+          </div>
+
+          {school.lastUpdate && (
+            <div className="text-xs text-muted-foreground">
+              Son yeniləmə: {formatDate(school.lastUpdate)}
+            </div>
+          )}
         </div>
       </CardContent>
+      <CardFooter className="pt-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-full justify-center"
+          onClick={handleViewDetails}
+        >
+          <ExternalLink className="h-4 w-4 mr-1" />
+          Ətraflı
+        </Button>
+      </CardFooter>
     </Card>
   );
 };

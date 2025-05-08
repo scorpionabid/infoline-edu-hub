@@ -1,23 +1,23 @@
 
-// Əgər bu fayl mövcud deyilsə, onu yaradaq
+// Validasiya qaydaları üçün interfeys
 export interface ValidationRules {
   required?: boolean;
-  min?: number; // minimum dəyər
-  max?: number; // maksimum dəyər
-  minLength?: number; // minimum simvol sayı
-  maxLength?: number; // maksimum simvol sayı
-  pattern?: string; // regex paterni
-  email?: boolean; // email validasiyası
-  url?: boolean; // URL validasiyası
-  numeric?: boolean; // rəqəm validasiyası
-  integer?: boolean; // tam rəqəm validasiyası
-  date?: boolean; // tarix validasiyası
-  custom?: string; // xüsusi validasiya
-  minValue?: number; // minimum dəyər - əlavə edildi
-  maxValue?: number; // maksimum dəyər - əlavə edildi
-  tel?: boolean; // telefon validasiyası - əlavə edildi
-  minDate?: string; // minimum tarix - əlavə edildi
-  maxDate?: string; // maksimum tarix - əlavə edildi
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  email?: boolean;
+  url?: boolean;
+  numeric?: boolean;
+  integer?: boolean;
+  date?: boolean;
+  custom?: string;
+  minValue?: number;
+  maxValue?: number;
+  tel?: boolean;
+  minDate?: string;
+  maxDate?: string;
 }
 
 export interface ColumnOption {
@@ -62,7 +62,8 @@ export interface Column {
   status?: 'active' | 'inactive' | string;
   created_at?: string;
   updated_at?: string;
-  description?: string; // əlavə edildi
+  description?: string;
+  section?: string; // əlavə edildi
 }
 
 export interface ColumnFormValues {
@@ -77,7 +78,7 @@ export interface ColumnFormValues {
   default_value?: string | number | boolean;
   validation?: ValidationRules;
   status: 'active' | 'inactive' | 'draft';
-  description?: string; // əlavə edildi
+  description?: string;
 }
 
 export interface CategoryWithColumns {
@@ -186,5 +187,5 @@ export const columnTypeDefinitions = {
   }
 };
 
-// columnTypes əlavə edirik
+// columnTypes alacağı dəyərləri tənzimləyirik
 export const columnTypes = columnTypeDefinitions;

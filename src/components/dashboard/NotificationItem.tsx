@@ -21,14 +21,6 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
         return <span className="text-destructive">❌</span>;
       case 'success':
         return <span className="text-green-500">✓</span>;
-      case 'deadline':
-        return <span className="text-amber-500">⏰</span>;
-      case 'approval':
-        return <span className="text-blue-500">👍</span>;
-      case 'category':
-        return <span className="text-indigo-500">📋</span>;
-      case 'system':
-        return <span className="text-gray-500">🔧</span>;
       case 'info':
       default:
         return <span className="text-blue-500">ℹ️</span>;
@@ -43,14 +35,6 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
         return "border-l-4 border-l-destructive";
       case 'success':
         return "border-l-4 border-l-green-500";
-      case 'deadline':
-        return "border-l-4 border-l-amber-500";
-      case 'approval':
-        return "border-l-4 border-l-blue-500";
-      case 'category':
-        return "border-l-4 border-l-indigo-500";
-      case 'system':
-        return "border-l-4 border-l-gray-500";
       case 'info':
       default:
         return "border-l-4 border-l-blue-500";
@@ -62,7 +46,6 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
       case 'high':
         return "bg-orange-50 dark:bg-orange-900/20";
       case 'critical':
-        return "bg-red-50 dark:bg-red-900/20";
       case 'normal':
       default:
         return "";
@@ -77,14 +60,12 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
     }
   };
   
-  const isRead = notification.read || notification.isRead;
-  
   return (
     <Card className={cn(
       "mb-3 transition-all hover:shadow-md cursor-pointer",
       getTypeClass(),
       getPriorityClass(),
-      !isRead ? "bg-primary-foreground/50" : ""
+      !notification.isRead ? "bg-primary-foreground/50" : ""
     )}>
       <CardContent className="p-3">
         <div className="flex items-start gap-2">
@@ -94,12 +75,12 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
           <div className="flex-grow">
             <div className="text-sm font-medium">
               {notification.title}
-              {!isRead && <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-blue-600"></span>}
+              {!notification.isRead && <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-blue-600"></span>}
             </div>
             <p className="text-sm text-muted-foreground line-clamp-2">{notification.message}</p>
             <div className="flex items-center justify-between text-xs mt-2 text-muted-foreground">
-              <span>{formatDate(notification.date)}</span>
-              {!isRead && onMarkAsRead && (
+              <span>{formatDate(notification.createdAt || notification.date || '')}</span>
+              {!notification.isRead && onMarkAsRead && (
                 <Button 
                   size="sm" 
                   variant="ghost" 

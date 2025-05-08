@@ -21,11 +21,11 @@ interface SectorAdminDashboardData {
 }
 
 // Şəxsi adapter funksiyasını yazaq
-const adaptSchoolToSchoolStat = (school: SectorSchool): SchoolStat => {
+const adaptSchoolToSchoolStat = (school: any): SchoolStat => {
   return {
-    id: school.id,
-    name: school.name,
-    status: school.status,
+    id: school.id || '',
+    name: school.name || '',
+    status: school.status || 'active',
     completionRate: school.completionRate || school.completion_rate || 0,
     lastUpdate: school.lastUpdate || school.updated_at || '',
     pendingForms: school.pendingForms || 0,
@@ -62,7 +62,7 @@ export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> 
   } = useSectorAdminDashboard();
 
   const schoolStatsData: SchoolStat[] = useMemo(() => {
-    return (schools || []).map(adaptSchoolToSchoolStat);
+    return (schools || []).map(school => adaptSchoolToSchoolStat(school));
   }, [schools]);
 
   const handleViewDetails = async (approval: any) => {

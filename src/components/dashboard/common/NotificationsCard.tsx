@@ -27,7 +27,11 @@ export const NotificationsCard: React.FC<NotificationsCardProps> = ({
 
   // Bildirişləri tarix əsasında sıralayaq
   const sortedNotifications = [...notifications]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .sort((a, b) => {
+      const dateA = a.createdAt || a.timestamp || a.date || '';
+      const dateB = b.createdAt || b.timestamp || b.date || '';
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    })
     .slice(0, limit);
 
   return (
@@ -46,7 +50,7 @@ export const NotificationsCard: React.FC<NotificationsCardProps> = ({
             {sortedNotifications.map((notification) => (
               <div 
                 key={notification.id} 
-                className={`p-3 rounded-md border ${notification.read || notification.isRead ? 'bg-background' : 'bg-accent'}`}
+                className={`p-3 rounded-md border ${notification.isRead ? 'bg-background' : 'bg-accent'}`}
                 onClick={() => onMarkAsRead && onMarkAsRead(notification.id)}
               >
                 <div className="flex items-center gap-2">
@@ -54,14 +58,13 @@ export const NotificationsCard: React.FC<NotificationsCardProps> = ({
                     notification.type === 'success' ? 'bg-green-500' : 
                     notification.type === 'error' ? 'bg-red-500' : 
                     notification.type === 'warning' ? 'bg-amber-500' : 
-                    notification.type === 'deadline' ? 'bg-purple-500' :
                     'bg-blue-500'
                   }`} />
                   <h4 className="font-medium text-sm">{notification.title}</h4>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
                 <div className="text-xs text-muted-foreground mt-2">
-                  {formatDate(notification.timestamp || notification.createdAt || notification.date)}
+                  {formatDate(notification.createdAt || notification.timestamp || notification.date || '')}
                 </div>
               </div>
             ))}

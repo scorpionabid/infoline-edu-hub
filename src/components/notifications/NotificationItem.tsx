@@ -3,7 +3,7 @@ import React from 'react';
 import { AppNotification } from '@/types/notification';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Check, CheckCircle, AlertTriangle, Bell, Info, Clock, X } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Bell, Info, Clock, X, Check } from 'lucide-react';
 import { formatDistance } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -20,6 +20,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   
   // Format the notification time as a relative time
   const getRelativeTime = (timestamp: string) => {
+    if (!timestamp) return 'recently';
+    
     try {
       return formatDistance(new Date(timestamp), new Date(), { addSuffix: true });
     } catch (error) {
@@ -35,37 +37,24 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         return <AlertTriangle className="h-5 w-5 text-amber-500" />;
       case 'error':
         return <X className="h-5 w-5 text-red-500" />;
-      case 'deadline':
-        return <Clock className="h-5 w-5 text-blue-500" />;
-      case 'approval':
-        return <Check className="h-5 w-5 text-blue-500" />;
-      case 'category':
-        return <Info className="h-5 w-5 text-purple-500" />;
       case 'info':
-      case 'system':
       default:
         return <Bell className="h-5 w-5 text-gray-500" />;
     }
   };
   
   const getPriorityClass = () => {
-    switch (notification.priority) {
-      case 'critical':
-        return 'bg-red-100 hover:bg-red-200';
-      case 'high':
-        return 'bg-amber-50 hover:bg-amber-100';
-      default:
-        return '';
+    if (notification.priority === 'high') {
+      return 'bg-amber-50 hover:bg-amber-100';
     }
+    return '';
   };
-  
-  const isRead = notification.read || notification.isRead;
   
   return (
     <div
       className={cn(
         'flex p-3 border-b last:border-b-0 transition-colors',
-        isRead ? 'bg-background hover:bg-muted/40' : 'bg-muted/30 hover:bg-muted/40',
+        notification.isRead ? 'bg-background hover:bg-muted/40' : 'bg-muted/30 hover:bg-muted/40',
         getPriorityClass()
       )}
     >
@@ -73,7 +62,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       <div className="flex-1 min-w-0">
         <p className={cn(
           'text-sm font-medium text-foreground',
-          !isRead && 'font-semibold'
+          !notification.isRead && 'font-semibold'
         )}>
           {notification.title}
         </p>
@@ -81,10 +70,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           {notification.message}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          {getRelativeTime(notification.createdAt || notification.timestamp || notification.date)}
+          {getRelativeTime(notification.createdAt)}
         </p>
       </div>
-      {!isRead && (
+      {!notification.isRead && (
         <Button
           variant="ghost"
           size="sm"

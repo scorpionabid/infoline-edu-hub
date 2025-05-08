@@ -25,7 +25,7 @@ export interface DashboardFormStats {
   rejected: number;
   dueSoon: number;
   overdue: number;
-  draft?: number; // draft field əlavə etdik
+  draft?: number;
   incomplete?: number;
 }
 
@@ -38,6 +38,7 @@ export interface SchoolAdminDashboardData {
   completionRate: number;
   pendingForms: FormItem[];
   formStats?: DashboardFormStats;
+  forms?: DashboardFormStats; // geriyə uyğunluq üçün
 }
 
 export interface SuperAdminDashboardData {
@@ -109,6 +110,7 @@ export interface SchoolStat {
   formsCompleted?: number;
   totalForms?: number;
   principalName?: string;
+  principal?: string; // geriyə uyğunluq üçün
   address?: string;
   phone?: string;
   email?: string;
@@ -131,8 +133,8 @@ export interface DeadlineItem {
   deadline: string;
   status: 'upcoming' | 'due' | 'overdue';
   daysRemaining: number;
-  title?: string; // title field əlavə etdik
-  completionRate?: number; // completionRate field əlavə etdik
+  title?: string;
+  completionRate?: number;
 }
 
 export interface FormItem {
@@ -143,8 +145,8 @@ export interface FormItem {
   status: 'pending' | 'approved' | 'rejected' | 'draft';
   submittedAt?: string;
   updatedAt?: string;
-  title?: string; // title field əlavə etdik
-  deadline?: string; // deadline field əlavə etdik
+  title?: string;
+  deadline?: string;
 }
 
 export interface PendingApproval {
@@ -155,7 +157,7 @@ export interface PendingApproval {
   categoryName: string;
   submittedAt: string;
   status: 'pending' | 'approved' | 'rejected';
-  date?: string; // date field əlavə etdik
+  date?: string;
 }
 
 export interface FormStats {
@@ -177,8 +179,10 @@ export interface CategoryItem {
   id: string;
   name: string;
   deadline?: string;
+  dueDate?: string; // geriyə uyğunluq üçün
   status: string;
   completionRate: number;
+  progress?: number; // geriyə uyğunluq üçün
 }
 
 // StatusCardsProps interfeysini əlavə edək

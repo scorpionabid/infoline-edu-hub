@@ -1,108 +1,108 @@
 
-/**
- * Tarix formatına çevirən funksiya
- * @param dateString ISO tarix formatında string
- * @returns Formatlı tarix string-i
- */
-export const formatDate = (dateString: string): string => {
-  if (!dateString) return '-';
+import { format, formatDistance, isValid, parseISO } from 'date-fns';
+import { az } from 'date-fns/locale';
+
+// Tarix formatlanması üçün
+export const formatDate = (dateString: string, formatStr: string = 'dd.MM.yyyy'): string => {
+  if (!dateString) return 'Tarix yoxdur';
   
   try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '-';
+    const date = typeof dateString === 'string' ? parseISO(dateString) : new Date(dateString);
     
-    return new Intl.DateTimeFormat('az-AZ', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
+    if (!isValid(date)) {
+      return 'Düzgün tarix deyil';
+    }
+    
+    return format(date, formatStr, { locale: az });
   } catch (error) {
-    console.error('Tarix formatında xəta:', error);
-    return dateString;
+    console.error('Tarix formatlanması zamanı xəta:', error);
+    return 'Tarix xətası';
   }
 };
 
-/**
- * Statusu formatlayan funksiya
- * @param status Status string-i
- * @returns Formatlı status string-i
- */
-export const formatStatus = (status?: string): string => {
-  if (!status) return '-';
+// İnsan oxuya bilən zamana formatlanma
+export const formatRelativeTime = (dateString: string): string => {
+  if (!dateString) return '';
   
-  switch (status.toLowerCase()) {
-    case 'active':
-      return 'Aktiv';
-    case 'inactive':
-      return 'Deaktiv';
-    case 'pending':
-      return 'Gözləmə';
-    case 'approved':
-      return 'Təsdiqlənib';
-    case 'rejected':
-      return 'Rədd edilib';
-    case 'draft':
-      return 'Qaralama';
-    default:
-      return status;
+  try {
+    const date = typeof dateString === 'string' ? parseISO(dateString) : new Date(dateString);
+    
+    if (!isValid(date)) {
+      return '';
+    }
+    
+    return formatDistance(date, new Date(), { 
+      addSuffix: true, 
+      locale: az 
+    });
+  } catch (error) {
+    return '';
   }
 };
 
-/**
- * Valyutanı formatlayan funksiya
- * @param amount Məbləğ
- * @param currency Valyuta kodu
- * @returns Formatlı valyuta string-i
- */
-export const formatCurrency = (amount: number, currency: string = 'AZN'): string => {
+// Son tarixə qədər olan məsafə
+export const formatDistanceToDeadline = (deadlineString: string): string => {
+  if (!deadlineString) return '';
+  
+  try {
+    const deadline = typeof deadlineString === 'string' ? parseISO(deadlineString) : new Date(deadlineString);
+    
+    if (!isValid(deadline)) {
+      return '';
+    }
+    
+    const now = new Date();
+    
+    if (deadline < now) {
+      return 'Müddət bitib';
+    }
+    
+    return formatDistance(deadline, now, { 
+      locale: az 
+    }) + ' qalıb';
+  } catch (error) {
+    return '';
+  }
+};
+
+// Rəqəmlər üçün format
+export const formatNumber = (number: number): string => {
+  if (number === undefined || number === null) return '-';
+  
+  return new Intl.NumberFormat('az-AZ').format(number);
+};
+
+// Məbləğ formatı
+export const formatCurrency = (amount: number): string => {
+  if (amount === undefined || amount === null) return '-';
+  
   return new Intl.NumberFormat('az-AZ', {
     style: 'currency',
-    currency: currency,
+    currency: 'AZN',
     minimumFractionDigits: 2
   }).format(amount);
 };
 
-/**
- * Əlaqə məlumatlarını formatlayan funksiya
- * @param contact Telefon nömrəsi və ya email
- * @returns Formatlı əlaqə məlumatı
- */
-export const formatContact = (contact?: string): string => {
-  if (!contact) return '-';
+// Nöqtələrlə məhdudlama
+export const truncateText = (text: string, maxLength: number = 100): string => {
+  if (!text || text.length <= maxLength) return text;
   
-  // Email formatı
-  if (contact.includes('@')) {
-    return contact;
-  }
-  
-  // Telefon formatı (xxx-xxx-xx-xx)
-  return contact.replace(/(\d{3})(\d{3})(\d{2})(\d{2})/, '$1-$2-$3-$4');
+  return text.substring(0, maxLength) + '...';
 };
 
-/**
- * Tam adı formatlayan funksiya
- * @param firstName Ad
- * @param lastName Soyad
- * @returns Formatlı ad soyad
- */
-export const formatFullName = (firstName?: string, lastName?: string): string => {
-  if (!firstName && !lastName) return '-';
+// Faiz formatı
+export const formatPercentage = (value: number, fractionDigits: number = 1): string => {
+  if (value === undefined || value === null) return '-';
   
-  if (!firstName) return lastName || '-';
-  if (!lastName) return firstName || '-';
-  
-  return `${firstName} ${lastName}`;
+  return value.toFixed(fractionDigits) + '%';
 };
 
-/**
- * Faizi formatlayan funksiya
- * @param percentage Faiz dəyəri
- * @returns Formatlı faiz string-i
- */
-export const formatPercentage = (percentage?: number): string => {
-  if (percentage === undefined || percentage === null) return '-';
+// Filesize formatı
+export const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
   
-  return `${Math.round(percentage)}%`;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  
+  return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i];
 };
