@@ -1,78 +1,46 @@
+
 import { useState, useEffect } from 'react';
-import { DataEntry, DataEntryForm, DataEntrySaveStatus, EntryValue } from '@/types/dataEntry';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/auth';
+import { DataEntryForm, initializeForm } from '../form';
 
-interface UseFormInitializationProps {
-  schoolId: string;
-  categoryId: string;
-}
-
-export const useFormInitialization = ({ schoolId, categoryId }: UseFormInitializationProps) => {
-  const [form, setForm] = useState<DataEntryForm>({
-    entries: [],
-    isModified: false,
-    saveStatus: DataEntrySaveStatus.IDLE,
-    error: null,
-    schoolId,
-    categoryId,
-    status: 'draft'
-  });
+export function useFormInitialization(categoryId: string, initialData: any[] = []) {
+  const [form, setForm] = useState<DataEntryForm>(() => 
+    initializeForm(categoryId, initialData)
+  );
+  
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
-
+  
   useEffect(() => {
-    if (!schoolId || !categoryId) {
-      setIsLoading(false);
-      return;
-    }
-
-    const fetchEntries = async () => {
+    // This would normally fetch data from an API
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('data_entries')
-          .select('*')
-          .eq('school_id', schoolId)
-          .eq('category_id', categoryId);
-
-        if (error) throw error;
-
-        // Transform DB entries to form entries
-        const formEntries: EntryValue[] = data?.map(entry => ({
-          id: entry.id,
-          columnId: entry.column_id,
-          value: entry.value,
-          status: entry.status
-        })) || [];
-
-        setForm(prev => ({
-          ...prev,
-          entries: formEntries,
-          status: data?.length > 0 ? (data[0].status as any) : 'draft',
-          isModified: false,
-          saveStatus: DataEntrySaveStatus.IDLE,
-          error: null
-        }));
-      } catch (err: any) {
-        console.error('Error fetching form entries:', err);
-        setForm(prev => ({
-          ...prev,
-          error: err.message || 'Məlumatları yükləmək mümkün olmadı'
-        }));
+        // Mock API call delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        setForm({
+          categoryId,
+          entries: initialData.reduce((acc, item) => {
+            acc[item.columnId] = item.value;
+            return acc;
+          }, {}),
+          status: 'draft',
+          isModified: false
+        });
+      } catch (error) {
+        console.error('Error fetching form data:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchEntries();
-  }, [schoolId, categoryId]);
-
+    
+    fetchData();
+  }, [categoryId, initialData]);
+  
   return {
     form,
-    setForm,
-    isLoading
+    isLoading,
+    setForm
   };
-};
+}
 
 export default useFormInitialization;

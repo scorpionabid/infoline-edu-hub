@@ -35,6 +35,7 @@ export interface FullUserData extends User {
   updated_at?: string;
   name?: string;
   notificationSettings?: NotificationSettings;
+  fullName?: string; // Added for backward compatibility
 }
 
 export interface UserFormData {
@@ -50,4 +51,9 @@ export interface UserFormData {
   status?: string;
   language?: string;
   notificationSettings?: NotificationSettings;
+  full_name?: string; // Added for backward compatibility
+  name?: string; // Added for backward compatibility
+  region_id?: string; // Added for backward compatibility
+  sector_id?: string; // Added for backward compatibility
+  school_id?: string; // Added for backward compatibility
 }

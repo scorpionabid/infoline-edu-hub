@@ -122,3 +122,16 @@ export interface SchoolAdminDashboardProps {
   navigateToDataEntry?: (categoryId: string) => void;
   handleFormClick?: (form: FormItem) => void;
 }
+
+// Additional report types
+export type ReportType = 'basic' | 'statistics' | 'completion' | 'comparison' | 'custom' | 'school' | 'category';
+
+export interface Report {
+  id: string;
+  title: string;
+  description: string;
+  type: ReportType;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string;
+}

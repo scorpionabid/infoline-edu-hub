@@ -1,3 +1,3 @@
 
-export * from './useDashboard';
-export * from './useDashboardData';
+export { default as useDashboard } from './useDashboard';
+export { default as useDashboardData } from './useDashboardData';

@@ -38,6 +38,11 @@ export interface Column {
   options?: ColumnOption[];
   validation?: ColumnValidation;
   default_value?: string;
+  status: 'active' | 'inactive' | 'draft';
+  parent_column_id?: string;
+  version?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ColumnOption {
@@ -75,6 +80,7 @@ export interface ColumnFormData {
   options?: ColumnOption[];
   validation?: ColumnValidation;
   default_value?: string;
+  status: 'active' | 'inactive' | 'draft';
 }
 
 export type ColumnType = 
@@ -89,4 +95,11 @@ export type ColumnType =
   | 'file'
   | 'email'
   | 'phone'
-  | 'url';
+  | 'url'
+  | 'datetime'
+  | 'time'
+  | 'color'
+  | 'password'
+  | 'richtext'
+  | 'range'
+  | 'image';

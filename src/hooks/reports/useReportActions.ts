@@ -1,86 +1,52 @@
 
-import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useState } from 'react';
+import { Report } from '@/types/dashboard';
 
-export const useReportActions = () => {
+export function useReportActions() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const createReport = useCallback(async (reportData: any) => {
+  const generateReport = async (reportId: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('reports')
-        .insert(reportData)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      toast.success('Report created successfully');
-      return data;
-    } catch (err: any) {
-      console.error('Error creating report:', err);
-      toast.error('Failed to create report', { description: err.message });
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  
-  const updateReport = useCallback(async (id: string, reportData: any) => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('reports')
-        .update(reportData)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      toast.success('Report updated successfully');
-      return data;
-    } catch (err: any) {
-      console.error('Error updating report:', err);
-      toast.error('Failed to update report', { description: err.message });
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  
-  const deleteReport = useCallback(async (id: string) => {
-    try {
-      setLoading(true);
-      
-      const { error } = await supabase
-        .from('reports')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      toast.success('Report deleted successfully');
+      // Mock API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
       return true;
-    } catch (err: any) {
-      console.error('Error deleting report:', err);
-      toast.error('Failed to delete report', { description: err.message });
-      throw err;
+    } catch (err) {
+      console.error('Error generating report:', err);
+      setError('Failed to generate report');
+      return false;
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
+  
+  const downloadReport = async (reportId: string, format: 'pdf' | 'excel' = 'pdf'): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Mock API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log(`Downloading report ${reportId} in ${format} format`);
+      return true;
+    } catch (err) {
+      console.error('Error downloading report:', err);
+      setError('Failed to download report');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
   
   return {
     loading,
-    createReport,
-    updateReport,
-    deleteReport
+    error,
+    generateReport,
+    downloadReport
   };
-};
+}
 
 export default useReportActions;

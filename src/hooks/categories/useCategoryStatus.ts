@@ -1,26 +1,26 @@
 
-import { useCallback } from 'react';
+import { useMemo } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 
-interface UseCategoryStatusResult {
-  getCategoryStatus: (category: CategoryWithColumns) => 'not_started' | 'in_progress' | 'completed';
-}
+export function useCategoryStatus(categories: CategoryWithColumns[] = []) {
+  const pendingCount = useMemo(() => {
+    return categories.filter(category => category.status === 'pending').length;
+  }, [categories]);
 
-export const useCategoryStatus = (): UseCategoryStatusResult => {
-  // Inside the useCategoryStatus function, ensure completionRate is handled properly
-  const getCategoryStatus = useCallback((category: CategoryWithColumns) => {
-    // Add completionRate if it doesn't exist
-    const completionRate = category.completionRate ?? 0;
-    
-    // Get status based on completion rate
-    if (completionRate === 0) return 'not_started';
-    if (completionRate < 100) return 'in_progress';
-    return 'completed';
-  }, []);
+  const activeCount = useMemo(() => {
+    return categories.filter(category => category.status === 'active').length;
+  }, [categories]);
+
+  const completedCount = useMemo(() => {
+    return categories.filter(category => category.status === 'completed' || category.completionRate === 100).length;
+  }, [categories]);
 
   return {
-    getCategoryStatus,
+    pendingCount,
+    activeCount,
+    completedCount,
+    totalCount: categories.length
   };
-};
+}
 
 export default useCategoryStatus;

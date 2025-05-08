@@ -1,5 +1,3 @@
 
-import useReports from './useReports';
-import useReportActions from './useReportActions';
-
-export { useReports, useReportActions };
+export { default as useReports } from './useReports';
+export { default as useReportActions } from './useReportActions';

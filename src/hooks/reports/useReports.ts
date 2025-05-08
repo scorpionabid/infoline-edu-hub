@@ -1,37 +1,39 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
+import { Report, ReportType } from '@/types/dashboard';
 
-export const useReports = () => {
-  const [reports, setReports] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  
-  const fetchReports = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      setReports(data || []);
-    } catch (err) {
-      console.error('Error fetching reports:', err);
-      setError(err as Error);
-    } finally {
-      setLoading(false);
+export function useReports() {
+  const [reports, setReports] = useState<Report[]>([
+    {
+      id: '1',
+      title: 'School Performance Overview',
+      description: 'Overview of school performance metrics',
+      type: 'statistics' as ReportType,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: 'System'
+    },
+    {
+      id: '2',
+      title: 'Completion Rates by Region',
+      description: 'Comparison of completion rates across regions',
+      type: 'completion' as ReportType,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: 'System'
+    },
+    {
+      id: '3',
+      title: 'Quarterly Comparison',
+      description: 'Comparison of metrics across quarters',
+      type: 'comparison' as ReportType,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: 'System'
     }
-  }, []);
+  ]);
   
-  useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
-  
-  return { reports, loading, error, refetch: fetchReports };
-};
+  return { reports };
+}
 
 export default useReports;
