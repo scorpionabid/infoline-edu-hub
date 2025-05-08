@@ -1,299 +1,85 @@
 
-import React, { useState } from "react";
-import { useLanguage } from "@/context/LanguageContext";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useApprovalData } from "@/hooks/useApprovalData";
-import { DataTable } from "@/components/ui/data-table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Loader2, CheckCircle, XCircle } from "lucide-react";
-import { toast } from "sonner";
+import React, { useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import PageHeader from '@/components/layout/PageHeader';
+import { useApprovalData } from '@/hooks/useApprovalData';
+import { DataEntryRecord } from '@/types/dataEntry';
 
-export const Approval: React.FC = () => {
-  const { t } = useLanguage();
-  const { data, loading, error, loadData, approveItem, rejectItem } = useApprovalData();
+const Approval: React.FC = () => {
+  const { approvalData, loading, error, fetchApprovalData, approveEntry, rejectEntry } = useApprovalData();
   
-  const [activeTab, setActiveTab] = useState('pending');
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
-  const [processingAction, setProcessingAction] = useState(false);
+  useEffect(() => {
+    fetchApprovalData();
+  }, [fetchApprovalData]);
 
-  // Tab dəyişdikdə məlumatları yenilə
-  const handleTabChange = async (value: string) => {
-    setActiveTab(value);
-    try {
-      await loadData(value as 'pending' | 'approved' | 'rejected');
-    } catch (err) {
-      console.error('Error loading data for tab', value, err);
-      toast.error(t('errorLoadingTabData'));
-    }
+  // Map to the props that the component expects
+  const mappedProps = {
+    data: approvalData,
+    loadData: fetchApprovalData,
+    approveItem: approveEntry,
+    rejectItem: rejectEntry
   };
-
-  // Təsdiq etmək üçün
-  const handleApprove = async (id: string) => {
-    setSelectedItemId(id);
-    setProcessingAction(true);
-    try {
-      const success = await approveItem(id);
-      if (success) {
-        toast.success(t('itemApproved'));
-      }
-    } catch (err) {
-      console.error('Error approving item:', err);
-      toast.error(t('approvalError'));
-    } finally {
-      setProcessingAction(false);
-      setSelectedItemId(null);
-    }
-  };
-
-  // Rədd etməyi açmaq üçün
-  const handleOpenReject = (id: string) => {
-    setSelectedItemId(id);
-    setRejectReason('');
-    setRejectDialogOpen(true);
-  };
-
-  // Rədd etmək üçün
-  const handleReject = async () => {
-    if (!selectedItemId || !rejectReason.trim()) {
-      toast.error(t('rejectionReasonRequired'));
-      return;
-    }
-    
-    setProcessingAction(true);
-    try {
-      const success = await rejectItem(selectedItemId, rejectReason);
-      if (success) {
-        toast.success(t('itemRejected'));
-        setRejectDialogOpen(false);
-      }
-    } catch (err) {
-      console.error('Error rejecting item:', err);
-      toast.error(t('rejectionError'));
-    } finally {
-      setProcessingAction(false);
-    }
-  };
-
-  // Cədvəl sütunları
-  const columns = [
-    {
-      accessorKey: 'categoryName',
-      header: t('category')
-    },
-    {
-      accessorKey: 'columnName',
-      header: t('field')
-    },
-    {
-      accessorKey: 'schoolName',
-      header: t('school')
-    },
-    {
-      accessorKey: 'sectorName',
-      header: t('sector')
-    },
-    {
-      accessorKey: 'value',
-      header: t('value'),
-      cell: ({ row }) => <div className="max-w-[200px] truncate">{row.getValue('value')}</div>
-    },
-    {
-      accessorKey: 'submittedDate',
-      header: t('submittedDate')
-    },
-    {
-      accessorKey: 'status',
-      header: t('status'),
-      cell: ({ row }) => {
-        const status = row.getValue('status');
-        return (
-          <Badge className={
-            status === 'pending' ? 'bg-yellow-500' :
-            status === 'approved' ? 'bg-green-500' : 'bg-red-500'
-          }>
-            {status === 'pending' ? t('pending') : 
-             status === 'approved' ? t('approved') : t('rejected')}
-          </Badge>
-        );
-      }
-    },
-    {
-      id: 'actions',
-      header: t('actions'),
-      cell: ({ row }) => {
-        const id = row.original.id;
-        const isProcessing = processingAction && selectedItemId === id;
-        const status = row.getValue('status');
-        
-        // Yalnız 'pending' statusunda olan elementlər üçün düymələri göstər
-        if (activeTab !== 'pending') return null;
-        
-        return (
-          <div className="flex gap-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="text-green-600 border-green-600 hover:bg-green-50"
-              disabled={isProcessing}
-              onClick={() => handleApprove(id)}
-            >
-              {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-              {t('approve')}
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="text-red-600 border-red-600 hover:bg-red-50"
-              disabled={isProcessing}
-              onClick={() => handleOpenReject(id)}
-            >
-              {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
-              {t('reject')}
-            </Button>
-          </div>
-        );
-      }
-    }
-  ];
-
+  
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <PageHeader
-        heading={t("approvalPage")}
-        subheading={t("approvalPageDescription")}
-      />
-
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid grid-cols-3 max-w-md">
-          <TabsTrigger value="pending">{t("pendingApprovals")}</TabsTrigger>
-          <TabsTrigger value="approved">{t("approvedEntries")}</TabsTrigger>
-          <TabsTrigger value="rejected">{t("rejectedEntries")}</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="pending" className="mt-6">
+    <div className="container mx-auto py-6">
+      <PageHeader title="Approval Queue" description="Review and approve pending data entries" />
+      
+      <div className="grid grid-cols-1 gap-6 mt-6">
+        {loading ? (
           <Card>
-            <CardHeader>
-              <CardTitle>{t("pendingApprovals")}</CardTitle>
-              <CardDescription>{t("pendingApprovalsDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center p-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : error ? (
-                <div className="p-4 text-center text-red-500">
-                  {t("errorLoadingData")}
-                  <p className="text-sm">{error.message}</p>
-                </div>
-              ) : data && data.length > 0 ? (
-                <DataTable
-                  columns={columns}
-                  data={data}
-                />
-              ) : (
-                <div className="p-8 text-center text-muted-foreground">
-                  {t("noPendingApprovals")}
-                </div>
-              )}
+            <CardContent className="p-6">Loading approval data...</CardContent>
+          </Card>
+        ) : error ? (
+          <Card>
+            <CardContent className="p-6 text-red-500">
+              Error loading approval data: {error.message}
             </CardContent>
           </Card>
-        </TabsContent>
-        
-        <TabsContent value="approved" className="mt-6">
+        ) : approvalData.length === 0 ? (
           <Card>
-            <CardHeader>
-              <CardTitle>{t("approvedEntries")}</CardTitle>
-              <CardDescription>{t("approvedEntriesDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center p-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : error ? (
-                <div className="p-4 text-center text-red-500">
-                  {t("errorLoadingData")}
-                </div>
-              ) : data && data.length > 0 ? (
-                <DataTable
-                  columns={columns}
-                  data={data}
-                />
-              ) : (
-                <div className="p-8 text-center text-muted-foreground">
-                  {t("noApprovedEntries")}
-                </div>
-              )}
+            <CardContent className="p-6">
+              <p className="text-center">No pending approvals found.</p>
             </CardContent>
           </Card>
-        </TabsContent>
-        
-        <TabsContent value="rejected" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("rejectedEntries")}</CardTitle>
-              <CardDescription>{t("rejectedEntriesDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center p-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        ) : (
+          approvalData.map((item: DataEntryRecord) => (
+            <Card key={item.id}>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-medium">
+                      {item.categories?.name || 'Undefined Category'}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Column: {item.columns?.name || 'Unknown'} | 
+                      Value: {item.value?.toString() || 'N/A'}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      ID: {item.id} | Submitted: {new Date(item.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => rejectEntry(item.id)}
+                    >
+                      Reject
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={() => approveEntry(item.id)}
+                    >
+                      Approve
+                    </Button>
+                  </div>
                 </div>
-              ) : error ? (
-                <div className="p-4 text-center text-red-500">
-                  {t("errorLoadingData")}
-                </div>
-              ) : data && data.length > 0 ? (
-                <DataTable
-                  columns={columns}
-                  data={data}
-                />
-              ) : (
-                <div className="p-8 text-center text-muted-foreground">
-                  {t("noRejectedEntries")}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Rədd etmə dialoqu */}
-      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('rejectEntryTitle')}</DialogTitle>
-            <DialogDescription>{t('rejectEntryDescription')}</DialogDescription>
-          </DialogHeader>
-          <Textarea 
-            placeholder={t('rejectReasonPlaceholder')}
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            className="min-h-[100px]"
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)} disabled={processingAction}>
-              {t('cancel')}
-            </Button>
-            <Button variant="destructive" onClick={handleReject} disabled={processingAction || !rejectReason.trim()}>
-              {processingAction ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('rejecting')}
-                </>
-              ) : t('reject')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };

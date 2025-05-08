@@ -1,93 +1,106 @@
 
 import { useState, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { Report, ReportType } from '@/types/report';
 
 export const useReports = () => {
-  const [reports, setReports] = useState<Report[]>([]);
+  const [reports, setReports] = useState<Report[]>([
+    {
+      id: 'report-1',
+      title: 'School Performance Overview',
+      description: 'Annual performance metrics for all schools',
+      type: 'school' as ReportType,
+      status: 'published',
+      createdAt: '2023-04-15T10:30:00Z',
+      updatedAt: '2023-04-15T10:30:00Z',
+      createdBy: 'admin'
+    },
+    {
+      id: 'report-2',
+      title: 'Regional Comparison',
+      description: 'Comparing data across different regions',
+      type: 'comparison' as ReportType,
+      status: 'draft',
+      createdAt: '2023-04-10T14:20:00Z',
+      updatedAt: '2023-04-12T09:15:00Z',
+      createdBy: 'user1'
+    }
+  ]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const createReport = useCallback(
-    (reportData: Omit<Report, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const newReport: Report = {
-        id: Math.random().toString(36).substring(2, 9),
-        ...reportData,
-        type: reportData.type as ReportType,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: reportData.createdBy || 'current-user'
-      };
-
-      setReports((prev) => [...prev, newReport]);
-      return newReport;
-    },
-    []
-  );
-  
-  // Add the addReport function that's expected in ReportHeader.tsx
-  const addReport = useCallback(
-    (reportData: { title: string; description: string; type: string }) => {
-      const newReport: Report = {
-        id: Math.random().toString(36).substring(2, 9),
-        title: reportData.title,
-        description: reportData.description,
-        type: reportData.type as ReportType,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'current-user'
-      };
-
-      setReports((prev) => [...prev, newReport]);
-      return newReport;
-    },
-    []
-  );
-
-  const updateReport = useCallback(
-    (id: string, reportData: Partial<Report>) => {
-      const updatedReport: Report = {
-        ...reports.find((r) => r.id === id)!,
-        ...reportData,
-        type: (reportData.type || reports.find((r) => r.id === id)?.type) as ReportType,
-        updatedAt: new Date().toISOString(),
-        createdAt: reports.find((r) => r.id === id)?.createdAt || new Date().toISOString(),
-        createdBy: reports.find((r) => r.id === id)?.createdBy || 'current-user'
-      };
-
-      setReports((prev) =>
-        prev.map((report) => (report.id === id ? updatedReport : report))
-      );
-
-      return updatedReport;
-    },
-    [reports]
-  );
-  
   const fetchReports = useCallback(async () => {
+    // This would be an API call in a real application
     setLoading(true);
     try {
-      // Placeholder for fetching reports from an API
-      const mockReports: Report[] = [
-        {
-          id: '1',
-          title: 'Sample Report',
-          description: 'A sample report for testing',
-          type: 'basic',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          createdBy: 'system',
-        },
-      ];
-      setReports(mockReports);
+      // Simulating API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      // In a real app, we'd fetch from an API here
+      setLoading(false);
     } catch (err: any) {
       setError(err);
-    } finally {
       setLoading(false);
     }
   }, []);
 
-  const deleteReport = useCallback((id: string) => {
-    setReports((prev) => prev.filter((report) => report.id !== id));
+  const getReport = useCallback((id: string): Report => {
+    const report = reports.find(r => r.id === id);
+    if (!report) {
+      throw new Error(`Report with id ${id} not found`);
+    }
+    return report;
+  }, [reports]);
+
+  const createReport = useCallback((reportData: Omit<Report, 'id' | 'createdAt' | 'updatedAt'>): Report => {
+    const newReport: Report = {
+      id: uuidv4(),
+      ...reportData,
+      type: reportData.type || 'basic' as ReportType,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    setReports(prev => [...prev, newReport]);
+    return newReport;
+  }, []);
+
+  const updateReport = useCallback((id: string, reportData: Partial<Report>): Report => {
+    let updatedReport: Report;
+    
+    setReports(prev => {
+      const newReports = prev.map(report => {
+        if (report.id === id) {
+          updatedReport = {
+            ...report,
+            ...reportData,
+            updatedAt: new Date().toISOString()
+          };
+          return updatedReport;
+        }
+        return report;
+      });
+      
+      // If the report doesn't exist, throw an error
+      if (!newReports.some(report => report.id === id)) {
+        throw new Error(`Report with id ${id} not found`);
+      }
+      
+      return newReports;
+    });
+    
+    return getReport(id);
+  }, [getReport]);
+
+  const deleteReport = useCallback((id: string): void => {
+    setReports(prev => {
+      // Check if report exists
+      if (!prev.some(report => report.id === id)) {
+        throw new Error(`Report with id ${id} not found`);
+      }
+      
+      return prev.filter(report => report.id !== id);
+    });
   }, []);
 
   return {
@@ -95,12 +108,9 @@ export const useReports = () => {
     loading,
     error,
     fetchReports,
-    getReport: (id: string) => reports.find((r) => r.id === id) || null,
+    getReport,
     createReport,
     updateReport,
-    deleteReport,
-    addReport
+    deleteReport
   };
 };
-
-export default useReports;

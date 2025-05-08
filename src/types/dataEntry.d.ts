@@ -29,6 +29,20 @@ export interface DataEntryRecord {
   rejectedAt?: string;
   rejectedBy?: string;
   rejectionReason?: string;
+  categories?: {
+    id?: string;
+    name?: string;
+  };
+  columns?: {
+    id?: string;
+    name?: string;
+  };
+  schools?: any[];
+  created_at?: string;
+  created_by?: string;
+  category_id?: string;
+  column_id?: string;
+  school_id?: string;
 }
 
 export interface ColumnValidationError {

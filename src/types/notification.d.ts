@@ -1,19 +1,22 @@
 
 export interface Notification {
   id: string;
+  userId: string;
   title: string;
   message: string;
-  createdAt: string;
-  read: boolean;
   type: NotificationType;
-  priority?: 'low' | 'normal' | 'high';
-  entityId?: string;
-  entityType?: string;
-  is_read?: boolean;
-  created_at?: string;
-  related_entity_id?: string;
-  related_entity_type?: string;
-  user_id?: string;
+  read: boolean;
+  createdAt: string;
+  readAt?: string;
 }
 
-export type NotificationType = 'info' | 'warning' | 'error' | 'success';
+export type NotificationType = 'info' | 'warning' | 'error' | 'success' | 'system';
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  timestamp: string;
+  read: boolean;
+}

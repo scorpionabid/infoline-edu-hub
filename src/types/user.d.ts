@@ -3,6 +3,7 @@ export interface User {
   id: string;
   email: string;
   full_name?: string;
+  fullName?: string;
   role?: UserRole;
   region_id?: string;
   regionId?: string;
@@ -32,6 +33,9 @@ export interface UserFilter {
   search?: string;
   page?: number;
   limit?: number;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
 }
 
 export interface UserFormData {
