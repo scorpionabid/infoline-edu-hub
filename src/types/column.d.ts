@@ -23,13 +23,15 @@ export interface Category {
   id: string;
   name: string;
   description?: string;
-  status?: string;
-  deadline?: string;
+  status?: CategoryStatus;
+  deadline?: string | Date;
   priority?: number;
   column_count?: number;
   created_at?: string;
   updated_at?: string;
   completionRate?: number;
+  assignment?: CategoryAssignment;
+  archived?: boolean;
 }
 
 export interface CategoryWithColumns extends Category {
@@ -49,6 +51,7 @@ export interface CategoryFilter {
   deadline?: string;
   search?: string;
   date?: string | Date;
+  assignment?: string;
 }
 
 export interface ColumnFormData {
@@ -90,5 +93,5 @@ export interface DependsOnCondition {
   };
 }
 
-export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft';
+export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved';
 export type CategoryAssignment = 'all' | 'sectors';

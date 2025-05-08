@@ -1,117 +1,149 @@
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProfileForm from '@/components/settings/ProfileForm';
 import NotificationSettingsForm from '@/components/settings/NotificationSettingsForm';
 import LanguageSettingsForm from '@/components/settings/LanguageSettingsForm';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { AccountSettingsSchema, AccountSettingsFormValues } from '@/types/AccountSettingsSchema';
 import { toast } from 'sonner';
-import { Form } from '@/components/ui/form';
-import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { NotificationSettings } from '@/types/user';
 
 const AccountSettings = () => {
-  const { user, updateProfile } = useAuth();
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { t, currentLanguage, changeLanguage } = useLanguage();
+  const { user, updateUserProfile } = useAuth();
+  const [loading, setLoading] = useState(false);
 
-  const form = useForm<AccountSettingsFormValues>({
-    resolver: zodResolver(AccountSettingsSchema),
-    defaultValues: {
-      full_name: user?.full_name || '',
-      email: user?.email || '',
-      phone: user?.phone || '',
-      position: user?.position || '',
-      language: user?.language || 'az',
-      notification_settings: user?.notificationSettings || {
-        email: true,
-        inApp: true,
-        push: true,
-        system: true,
-        deadline: true
-      }
-    },
-  });
-
-  const onSubmit = async (data: AccountSettingsFormValues) => {
-    setIsSubmitting(true);
+  const handleProfileUpdate = async (data: any) => {
+    if (!user) return;
+    
+    setLoading(true);
     try {
-      await updateProfile(data);
-      toast.success('Profile updated successfully');
-    } catch (error) {
+      await updateUserProfile({
+        full_name: data.full_name,
+        phone: data.phone,
+        position: data.position
+      });
+      
+      toast.success(t('profileUpdated'));
+    } catch (error: any) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
+      toast.error(t('errorUpdatingProfile'));
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
+  const handleNotificationSettingsUpdate = async (settings: NotificationSettings) => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      await updateUserProfile({
+        notification_settings: settings
+      });
+      
+      toast.success(t('notificationSettingsUpdated'));
+    } catch (error: any) {
+      console.error('Error updating notification settings:', error);
+      toast.error(t('errorUpdatingNotificationSettings'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLanguageUpdate = async (language: string) => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      await updateUserProfile({
+        language
+      });
+      
+      // Update UI language
+      changeLanguage(language);
+      
+      toast.success(t('languageUpdated'));
+    } catch (error: any) {
+      console.error('Error updating language:', error);
+      toast.error(t('errorUpdatingLanguage'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!user) {
+    return null;
+  }
+
+  const notificationSettings = user.notificationSettings || {
+    email: true,
+    inApp: true,
+    push: true,
+    system: true,
+    deadline: true
+  };
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="space-y-6">
+    <div className="container mx-auto py-6 max-w-4xl">
+      <h1 className="text-3xl font-bold mb-6">{t('accountSettings')}</h1>
+      
+      <Tabs defaultValue="profile">
+        <TabsList className="mb-6">
+          <TabsTrigger value="profile">{t('profile')}</TabsTrigger>
+          <TabsTrigger value="notifications">{t('notifications')}</TabsTrigger>
+          <TabsTrigger value="language">{t('language')}</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="profile">
           <Card>
             <CardHeader>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>
-                Update your personal information and profile settings
-              </CardDescription>
+              <CardTitle>{t('profileInformation')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <ProfileForm form={form} />
+              <ProfileForm 
+                user={user} 
+                onSubmit={handleProfileUpdate} 
+                loading={loading}
+              />
             </CardContent>
           </Card>
-
+        </TabsContent>
+        
+        <TabsContent value="notifications">
           <Card>
             <CardHeader>
-              <CardTitle>Language Settings</CardTitle>
-              <CardDescription>
-                Choose your preferred language for the interface
-              </CardDescription>
+              <CardTitle>{t('notificationSettings')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <LanguageSettingsForm form={form} />
+              <NotificationSettingsForm 
+                settings={notificationSettings}
+                onSubmit={handleNotificationSettingsUpdate}
+                loading={loading}
+              />
             </CardContent>
           </Card>
-
+        </TabsContent>
+        
+        <TabsContent value="language">
           <Card>
             <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>
-                Manage how you receive notifications and alerts
-              </CardDescription>
+              <CardTitle>{t('languageSettings')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <NotificationSettingsForm form={form} />
+              <LanguageSettingsForm 
+                currentLanguage={currentLanguage}
+                onSubmit={handleLanguageUpdate}
+                loading={loading}
+              />
             </CardContent>
           </Card>
-
-          <Card>
-            <CardFooter className="flex justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => form.reset()}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-                  </>
-                ) : (
-                  'Save Changes'
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </form>
-    </Form>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

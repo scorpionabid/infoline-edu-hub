@@ -1,22 +1,23 @@
 
-export type NotificationType = 'info' | 'warning' | 'error' | 'success';
-
 export interface Notification {
   id: string;
   title: string;
   message: string;
   type: NotificationType;
-  createdAt: string;
-  isRead: boolean;
-  userId: string;
-  relatedEntityId?: string;
-  relatedEntityType?: string;
-  priority?: 'high' | 'normal' | 'low';
+  user_id: string;
+  created_at: string;
+  is_read: boolean;
+  priority?: string;
+  related_entity_type?: string;
+  related_entity_id?: string;
 }
 
+export type NotificationType = 'info' | 'success' | 'warning' | 'error';
+
 export interface NotificationFilter {
-  type?: NotificationType[];
+  type?: NotificationType;
   isRead?: boolean;
-  fromDate?: string;
-  toDate?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  search?: string;
 }

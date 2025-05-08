@@ -10,21 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Loader2, CheckCircle, XCircle, Search, RefreshCw, Info } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { DataEntryRecord } from '@/types/dataEntry';
 import PendingApprovalsTable from './PendingApprovalsTable';
 import { useToast } from '@/components/ui/use-toast';
-
-// Define a type for the approval data
-interface PendingApproval {
-  id: string;
-  schoolId: string;
-  schoolName: string;
-  categoryId: string;
-  categoryName: string;
-  status: string;
-  createdAt: string;
-  count: number;
-}
+import { PendingApproval } from '@/types/dashboard';
 
 const Approval: React.FC = () => {
   const { t } = useLanguageSafe();
@@ -46,14 +34,26 @@ const Approval: React.FC = () => {
     queryFn: async () => {
       try {
         // Call a stored function that returns grouped approvals
-        const { data, error } = await supabase
-          .rpc('get_pending_approvals_grouped', {
-            p_status: activeTab
-          });
+        const { data: rawData, error } = await supabase.rpc('get_pending_approvals_grouped', {
+          p_status: activeTab
+        });
 
         if (error) throw error;
         
-        return data as PendingApproval[] || [];
+        // Transform the data to match the PendingApproval interface
+        const transformedData: PendingApproval[] = (rawData || []).map((item: any) => ({
+          id: item.id || '',
+          schoolId: item.school_id || '',
+          schoolName: item.school_name || '',
+          categoryId: item.category_id || '',
+          categoryName: item.category_name || '',
+          status: item.status || '',
+          createdAt: item.created_at || '',
+          submittedAt: item.created_at || '', // Using created_at as submittedAt
+          count: item.count || 0
+        }));
+        
+        return transformedData;
       } catch (err) {
         console.error('Error fetching approval data:', err);
         throw err;

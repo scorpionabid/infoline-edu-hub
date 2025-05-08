@@ -102,3 +102,15 @@ export interface ChartData {
   value: number;
   color?: string;
 }
+
+export interface PendingApproval {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  categoryId: string;
+  categoryName: string;
+  status: string;
+  createdAt: string;
+  submittedAt: string;
+  count: number;
+}

@@ -61,11 +61,12 @@ export interface FullUserData extends User {
     school?: string;
   };
   notification_settings?: NotificationSettings;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface UserFilter {
   role?: UserRole[] | string[];
-  status?: string[];
+  status?: string[] | "" | UserStatus;
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
@@ -98,6 +99,7 @@ export interface UserFormData {
   schoolId?: string;
   notification_settings?: any;
   notificationSettings?: any;
+  entityTypes?: string[];
 }
 
 export interface Sector {

@@ -1,97 +1,146 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, UserFilter } from '@/types/user';
 
-interface UseUsersProps {
-  filter?: UserFilter;
-}
-
-export const useUsers = ({ filter }: UseUsersProps = {}) => {
+export const useUsers = (initialFilter: UserFilter = {}) => {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [count, setCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [filter, setFilter] = useState<UserFilter>(initialFilter);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
+  const fetchUsers = async (filter: UserFilter) => {
     try {
+      setLoading(true);
+      setError(null);
+
+      // Build query
       let query = supabase
-        .from('profiles')
-        .select('*, count:users(*)', { count: 'exact' })
-        .order('created_at', { ascending: false });
-
-      if (filter) {
-        if (filter.role && filter.role.length > 0) {
+        .from('user_roles')
+        .select(`
+          *,
+          profiles!user_id(email, full_name, phone, position, language, status, created_at, updated_at),
+          regions(name),
+          sectors(name),
+          schools(name)
+        `, { count: 'exact' });
+      
+      // Apply filters
+      if (filter.role && filter.role.length) {
+        if (Array.isArray(filter.role)) {
           query = query.in('role', filter.role);
-        }
-        if (filter.status && filter.status.length > 0) {
-          query = query.in('status', filter.status);
-        }
-        if (filter.region_id) {
-          query = query.eq('region_id', filter.region_id);
-        }
-        if (filter.sector_id) {
-          query = query.eq('sector_id', filter.sector_id);
-        }
-        if (filter.school_id) {
-          query = query.eq('school_id', filter.school_id);
-        }
-        if (filter.search) {
-          query = query.ilike('full_name', `%${filter.search}%`);
-        }
-        if (filter.page && filter.limit) {
-          const startIndex = (filter.page - 1) * filter.limit;
-          const endIndex = startIndex + filter.limit - 1;
-          query = query.range(startIndex, endIndex);
-        }
-      }
-
-      const { data, error: queryError, count: resultCount } = await query;
-
-      if (queryError) {
-        setError(queryError.message);
-        console.error('Error fetching users:', queryError);
-      } else {
-        if (data) {
-          const usersList = data.map((userData: any) => ({
-            id: userData?.id || '',
-            email: userData?.email || '',
-            full_name: userData?.full_name || '',
-            name: userData?.full_name || '',
-            phone: userData?.phone || '',
-            position: userData?.position || '',
-            language: userData?.language || '',
-            status: userData?.status || '',
-            created_at: userData?.created_at || '',
-            updated_at: userData?.updated_at || ''
-          }) as User);
-          
-          setUsers(usersList);
         } else {
-          setUsers([]);
+          query = query.eq('role', filter.role);
         }
-        setCount(resultCount || 0);
       }
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Unexpected error fetching users:', err);
+      
+      if (filter.status && filter.status.length && filter.status !== "") {
+        if (Array.isArray(filter.status)) {
+          query = query.in('profiles.status', filter.status);
+        } else {
+          query = query.eq('profiles.status', filter.status);
+        }
+      }
+      
+      if (filter.regionId) {
+        query = query.eq('region_id', filter.regionId);
+      }
+      
+      if (filter.sectorId) {
+        query = query.eq('sector_id', filter.sectorId);
+      }
+      
+      if (filter.schoolId) {
+        query = query.eq('school_id', filter.schoolId);
+      }
+      
+      if (filter.search) {
+        query = query.or(`or(profiles.email.ilike.%${filter.search}%,profiles.full_name.ilike.%${filter.search}%)`);
+      }
+      
+      // Pagination
+      const page = filter.page || 1;
+      const limit = filter.limit || 10;
+      const from = (page - 1) * limit;
+      const to = page * limit - 1;
+      
+      query = query.range(from, to);
+      query = query.order('profiles.created_at', { ascending: false });
+      
+      // Execute query
+      const { data, error, count } = await query;
+      
+      if (error) throw error;
+      
+      // Process data
+      const processedUsers = data?.map(item => {
+        const profile = item.profiles || {};
+        return {
+          id: item.user_id,
+          email: profile.email || '',
+          full_name: profile.full_name || '',
+          name: profile.full_name || '',
+          role: item.role,
+          region_id: item.region_id || '',
+          regionId: item.region_id || '',
+          sector_id: item.sector_id || '',
+          sectorId: item.sector_id || '',
+          school_id: item.school_id || '',
+          schoolId: item.school_id || '',
+          phone: profile.phone || '',
+          position: profile.position || '',
+          language: profile.language || '',
+          status: profile.status || '',
+          created_at: profile.created_at || '',
+          updated_at: profile.updated_at || '',
+          region_name: item.regions?.name || '',
+          sector_name: item.sectors?.name || '',
+          school_name: item.schools?.name || ''
+        };
+      });
+      
+      setUsers(processedUsers || []);
+      setTotalRecords(count || 0);
+      setTotalPages(Math.ceil((count || 0) / limit));
+      setCurrentPage(page);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError(err as Error);
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  };
+
+  const updateFilter = (newFilter: Partial<UserFilter>) => {
+    const updatedFilter = { ...filter, ...newFilter };
+    setFilter(updatedFilter);
+    fetchUsers(updatedFilter);
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    updateFilter({ page });
+  };
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    fetchUsers(filter);
+  }, []);
 
   return {
     users,
     loading,
     error,
-    count,
-    fetchUsers,
+    filter,
+    updateFilter,
+    totalPages,
+    currentPage,
+    totalRecords,
+    handlePageChange,
+    refetch: () => fetchUsers(filter)
   };
 };
+
+export default useUsers;

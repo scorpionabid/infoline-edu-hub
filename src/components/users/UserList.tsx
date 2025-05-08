@@ -1,14 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { FullUserData, UserRole } from '@/types/user';
+import { FullUserData, UserRole, UserStatus } from '@/types/user';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Eye, UserCog, PlusCircle, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { UserFilter } from '@/hooks/user/useOptimizedUserList';
+import { UserFilter } from '@/types/user';
 import EditUserDialog from './EditUserDialog';
 import AddUserDialog from './AddUserDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,14 +52,14 @@ const UserList: React.FC<UserListProps> = ({
           email: user.email,
           full_name: user.full_name || user.fullName || user.name || '',
           name: user.full_name || user.fullName || user.name || '',
-          role: user.role as UserRole,
+          role: (user.role as UserRole) || 'user',
+          status: (user.status as UserStatus) || 'active',
           region_id: user.region_id || user.regionId || '',
           regionId: user.region_id || user.regionId || '',
           sector_id: user.sector_id || user.sectorId || '',
           sectorId: user.sector_id || user.sectorId || '',
           school_id: user.school_id || user.schoolId || '',
           schoolId: user.school_id || user.schoolId || '',
-          status: user.status || '',
           phone: user.phone || '',
           position: user.position || '',
           language: user.language || '',
@@ -274,6 +274,7 @@ const UserList: React.FC<UserListProps> = ({
         isOpen={isAddDialogOpen}
         onClose={handleDialogClose}
         onComplete={handleDialogComplete}
+        entityTypes={['school', 'sector', 'region']}
       />
     </>
   );
