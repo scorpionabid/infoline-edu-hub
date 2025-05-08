@@ -83,8 +83,10 @@ export interface School {
   address?: string;
   region_id: string;
   region_name?: string;
+  regionName?: string;
   sector_id: string;
   sector_name?: string;
+  sectorName?: string;
   phone?: string;
   email?: string;
   student_count?: number;
@@ -95,6 +97,7 @@ export interface School {
   created_at: string | Date;
   updated_at?: string | Date;
   completion_rate?: number;
+  completionRate?: number;
   logo?: string;
   admin_email?: string;
   admin_id?: string;

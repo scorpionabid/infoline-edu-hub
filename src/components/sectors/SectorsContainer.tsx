@@ -38,15 +38,8 @@ import {
 import AddSectorDialog from './AddSectorDialog';
 import EditSectorDialog from './EditSectorDialog';
 import DeleteSectorDialog from './DeleteSectorDialog';
+import exportSectorsToExcel from '@/utils/exportSectorsToExcel';
 import { supabase } from '@/integrations/supabase/client';
-
-// Create a simple export function since we can't import directly
-const exportSectorsToExcel = (sectors: Sector[], options: any = {}) => {
-  // In a real app, this would export to Excel, here we'll just show a toast
-  console.log('Exporting sectors to Excel:', sectors, options);
-  toast.success('Export feature would save an Excel file here');
-  return true;
-};
 
 const SectorsContainer: React.FC = () => {
   const { t } = useLanguageSafe();

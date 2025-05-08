@@ -1,9 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { Region, Sector } from '@/types/supabase';
 import {
   Select,
   SelectContent,
@@ -11,17 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from '@/components/ui/textarea';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { Region, Sector } from '@/types/supabase';
-import { useForm } from 'react-hook-form';
 
 interface EditSectorDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (sectorData: Sector) => Promise<void>;
   sector: Sector;
-  regions?: Region[];
+  regions: Region[];
   isSubmitting?: boolean;
 }
 
@@ -30,42 +29,34 @@ const EditSectorDialog: React.FC<EditSectorDialogProps> = ({
   onClose,
   onSubmit,
   sector,
-  regions = [],
+  regions,
   isSubmitting = false
 }) => {
   const { t } = useLanguageSafe();
-  const [status, setStatus] = useState<string>(sector.status || 'active');
-  const [regionId, setRegionId] = useState<string>(sector.region_id || '');
+  const [name, setName] = useState(sector.name);
+  const [description, setDescription] = useState(sector.description || '');
+  const [regionId, setRegionId] = useState(sector.region_id);
+  const [status, setStatus] = useState(sector.status);
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
-    defaultValues: {
-      name: sector.name || '',
-      description: sector.description || '',
-    }
-  });
-
-  // Update form when sector changes
+  // Update local state if the sector prop changes
   useEffect(() => {
-    if (sector) {
-      setValue('name', sector.name || '');
-      setValue('description', sector.description || '');
-      setRegionId(sector.region_id || '');
-      setStatus(sector.status || 'active');
-    }
-  }, [sector, setValue]);
+    setName(sector.name);
+    setDescription(sector.description || '');
+    setRegionId(sector.region_id);
+    setStatus(sector.status);
+  }, [sector]);
 
-  const onFormSubmit = async (data: any) => {
-    const sectorData = {
-      ...sector,
-      name: data.name,
-      description: data.description,
-      region_id: regionId,
-      status: status
-    };
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      await onSubmit(sectorData);
-      onClose();
+      await onSubmit({
+        ...sector,
+        name,
+        description,
+        region_id: regionId,
+        status,
+        updated_at: new Date().toISOString()
+      });
     } catch (error) {
       console.error("Error updating sector:", error);
     }
@@ -76,64 +67,62 @@ const EditSectorDialog: React.FC<EditSectorDialogProps> = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{t('editSector')}</DialogTitle>
+          <DialogDescription>
+            {t('editSectorDescription')}
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">{t('sectorName')}</Label>
-              <Input
-                id="name"
-                {...register('name', { required: true })}
-                className={errors.name ? 'border-red-500' : ''}
-              />
-              {errors.name && (
-                <p className="text-red-500 text-sm">{t('sectorNameRequired')}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="region">{t('region')}</Label>
-              <Select value={regionId} onValueChange={setRegionId}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('selectRegion')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {regions.map((region) => (
-                    <SelectItem key={region.id} value={region.id}>
-                      {region.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {!regionId && (
-                <p className="text-red-500 text-sm">{t('regionRequired')}</p>
-              )}
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">{t('description')}</Label>
-              <Textarea
-                id="description"
-                {...register('description')}
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">{t('status')}</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('selectStatus')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">{t('active')}</SelectItem>
-                  <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">{t('sectorName')}<span className="text-destructive">*</span></Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
           </div>
 
-          <div className="flex justify-end space-x-2">
+          <div className="space-y-2">
+            <Label htmlFor="region">{t('region')}<span className="text-destructive">*</span></Label>
+            <Select value={regionId} onValueChange={setRegionId} required>
+              <SelectTrigger>
+                <SelectValue placeholder={t('selectRegion')} />
+              </SelectTrigger>
+              <SelectContent>
+                {regions.map(region => (
+                  <SelectItem key={region.id} value={region.id}>
+                    {region.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">{t('description')}</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">{t('status')}</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('selectStatus')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">{t('active')}</SelectItem>
+                <SelectItem value="inactive">{t('inactive')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
             <Button 
               type="button" 
               variant="outline" 
@@ -142,10 +131,10 @@ const EditSectorDialog: React.FC<EditSectorDialogProps> = ({
               {t('cancel')}
             </Button>
             <Button 
-              type="submit" 
-              disabled={isSubmitting || !regionId}
+              type="submit"
+              disabled={isSubmitting || !name || !regionId}
             >
-              {isSubmitting ? t('saving') : t('save')}
+              {isSubmitting ? t('updating') : t('update')}
             </Button>
           </div>
         </form>

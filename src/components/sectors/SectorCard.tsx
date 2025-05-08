@@ -23,7 +23,10 @@ const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
             <p className="font-medium">Region:</p>
-            <p className="text-muted-foreground">{sector.regionName || 'Unknown'}</p>
+            <p className="text-muted-foreground">
+              {/* Use proper property checking to avoid TypeScript errors */}
+              {sector.regionName || (sector as any).region_name || 'Unknown'}
+            </p>
           </div>
           <div>
             <p className="font-medium">Status:</p>
@@ -37,7 +40,7 @@ const SectorCard: React.FC<SectorCardProps> = ({ sector, onClick }) => {
             <>
               <div>
                 <p className="font-medium">Schools:</p>
-                <p>{(sector as EnhancedSector).schoolCount}</p>
+                <p>{(sector as EnhancedSector).schoolCount || (sector as any).school_count || 0}</p>
               </div>
               <div>
                 <p className="font-medium">Completion:</p>
