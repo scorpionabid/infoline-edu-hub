@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -48,6 +47,8 @@ export const useSchools = () => {
   }
   return context;
 };
+
+export const useSchoolsContext = () => useContext(SchoolsContext);
 
 export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [schools, setSchools] = useState<School[]>([]);

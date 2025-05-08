@@ -57,18 +57,25 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
 // Kateqoriya yenilə
 export const updateCategory = async (category: Partial<Category> & { id: string }): Promise<Category> => {
   // Convert deadline to string if it's a Date object
-  let updatedCategory: any = {
+  let deadlineStr: string | undefined = undefined;
+  if (category.deadline) {
+    deadlineStr = category.deadline instanceof Date 
+      ? category.deadline.toISOString() 
+      : category.deadline;
+  }
+  
+  const updatedData = {
     ...category,
+    deadline: deadlineStr,
     updated_at: new Date().toISOString()
   };
   
-  if (category.deadline instanceof Date) {
-    updatedCategory.deadline = category.deadline.toISOString();
-  }
-
+  // Remove fields that shouldn't be sent to Supabase
+  delete updatedData.completionRate;
+  
   const { data, error } = await supabase
     .from('categories')
-    .update(updatedCategory)
+    .update(updatedData)
     .eq('id', category.id)
     .select()
     .single();

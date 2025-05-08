@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from './useAuthStore';
 import { FullUserData } from '@/types/user';
@@ -121,7 +120,7 @@ const useOptimizedAuth = () => {
         position: data.position,
         avatar: data.avatar,
         language: data.language || 'az',
-        status: data.status || 'active',
+        status: (profileData?.status as UserStatus) || 'active',
         last_login: data.last_login,
         created_at: data.created_at,
         updated_at: data.updated_at

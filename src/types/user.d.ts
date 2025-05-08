@@ -25,6 +25,7 @@ export interface User {
   sectorId?: string;
   school_id?: string;
   schoolId?: string;
+  notification_settings?: NotificationSettings;
   notificationSettings?: NotificationSettings;
   name?: string;
   avatar?: string;
@@ -62,6 +63,7 @@ export interface FullUserData extends User {
   };
   notification_settings?: NotificationSettings;
   notificationSettings?: NotificationSettings;
+  entityTypes?: string[];
 }
 
 export interface UserFilter {

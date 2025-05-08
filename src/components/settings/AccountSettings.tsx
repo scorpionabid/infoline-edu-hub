@@ -42,7 +42,7 @@ const AccountSettings = () => {
     setLoading(true);
     try {
       await updateUserProfile({
-        notification_settings: settings
+        notificationSettings: settings
       });
       
       toast.success(t('notificationSettingsUpdated'));
@@ -79,6 +79,7 @@ const AccountSettings = () => {
     return null;
   }
 
+  // Use notificationSettings from the user object if available, otherwise use default values
   const notificationSettings = user.notificationSettings || {
     email: true,
     inApp: true,

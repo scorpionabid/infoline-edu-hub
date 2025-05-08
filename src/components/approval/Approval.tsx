@@ -1,169 +1,227 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Loader2, CheckCircle, XCircle, Search, RefreshCw, Info } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import PendingApprovalsTable from './PendingApprovalsTable';
-import { useToast } from '@/components/ui/use-toast';
+import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/auth';
 import { PendingApproval } from '@/types/dashboard';
+import { Loader2 } from 'lucide-react';
+import { DataEntryForm } from '@/types/dataEntry';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import ApprovalItem from '@/components/approval/ApprovalItem';
 
-const Approval: React.FC = () => {
-  const { t } = useLanguageSafe();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { canApproveData, userRole } = usePermissions();
-  const [searchTerm, setSearchTerm] = useState('');
+export const Approval = () => {
+  const { t } = useLanguage();
+  const { user } = useAuth();
+  const [approvalData, setApprovalData] = useState<PendingApproval[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
+  const [selectedItem, setSelectedItem] = useState<DataEntryForm | null>(null);
 
-  // Fetch pending approvals data
-  const {
-    data: pendingItems = [],
-    isLoading,
-    isError,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['approvals', activeTab],
-    queryFn: async () => {
-      try {
-        // Call a stored function that returns grouped approvals
-        const { data: rawData, error } = await supabase.rpc('get_pending_approvals_grouped', {
-          p_status: activeTab
-        });
+  useEffect(() => {
+    fetchPendingApprovals();
+  }, [user]);
 
-        if (error) throw error;
-        
-        // Transform the data to match the PendingApproval interface
-        const transformedData: PendingApproval[] = (rawData || []).map((item: any) => ({
-          id: item.id || '',
-          schoolId: item.school_id || '',
-          schoolName: item.school_name || '',
-          categoryId: item.category_id || '',
-          categoryName: item.category_name || '',
-          status: item.status || '',
-          createdAt: item.created_at || '',
-          submittedAt: item.created_at || '', // Using created_at as submittedAt
-          count: item.count || 0
+  const fetchPendingApprovals = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Using direct query instead of RPC
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select(`
+          id, 
+          status,
+          created_at,
+          school_id,
+          category_id,
+          schools(name),
+          categories(name)
+        `)
+        .eq('status', 'pending');
+      
+      if (error) throw error;
+      
+      // Transform the data to match PendingApproval type
+      if (data && Array.isArray(data)) {
+        const approvals: PendingApproval[] = data.map(item => ({
+          id: item.id,
+          schoolId: item.school_id,
+          schoolName: item.schools ? item.schools.name : 'Unknown School',
+          categoryId: item.category_id,
+          categoryName: item.categories ? item.categories.name : 'Unknown Category',
+          status: item.status,
+          createdAt: item.created_at,
+          submittedAt: item.created_at,
+          count: 1
         }));
         
-        return transformedData;
-      } catch (err) {
-        console.error('Error fetching approval data:', err);
-        throw err;
+        setApprovalData(approvals);
+      } else {
+        setApprovalData([]);
       }
-    },
-    enabled: canApproveData
+    } catch (err: any) {
+      console.error('Error fetching approval data:', err);
+      toast.error(t('errorFetchingApprovals'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('data_entries')
+        .update({ 
+          status: 'approved',
+          approved_by: user?.id,
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      toast.success(t('approvalSuccess'));
+      fetchPendingApprovals();
+    } catch (err: any) {
+      console.error('Error approving entry:', err);
+      toast.error(t('errorApprovingEntry'));
+    }
+  };
+  
+  const handleReject = async (id: string, reason: string) => {
+    try {
+      const { error } = await supabase
+        .from('data_entries')
+        .update({ 
+          status: 'rejected',
+          rejected_by: user?.id,
+          rejection_reason: reason
+        })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      toast.success(t('rejectionSuccess'));
+      fetchPendingApprovals();
+    } catch (err: any) {
+      console.error('Error rejecting entry:', err);
+      toast.error(t('errorRejectingEntry'));
+    }
+  };
+
+  const filteredData = approvalData.filter(item => {
+    if (activeTab === 'pending') return item.status === 'pending';
+    if (activeTab === 'approved') return item.status === 'approved';
+    if (activeTab === 'rejected') return item.status === 'rejected';
+    return true;
   });
 
-  // Yüklənmə zamanı istifadəçinin təsdiq səlahiyyətləri olub-olmadığını yoxlayırıq
-  useEffect(() => {
-    if (!canApproveData) {
-      toast({
-        title: t('noPermission'),
-        description: t('noApprovalPermissionDescription'),
-        variant: 'destructive',
-      });
-      navigate('/');
-    }
-  }, [canApproveData, navigate, toast, t]);
-
-  // Axtarış funksiyası
-  const filteredItems = Array.isArray(pendingItems) 
-    ? pendingItems.filter((item: PendingApproval) => 
-        item.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        item.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : [];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-60">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{t('approvals')}</h1>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => refetch()}
-          className="flex items-center gap-1"
-        >
-          <RefreshCw className="h-3 w-3" />
-          {t('refresh')}
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <CardTitle>{t('dataApprovals')}</CardTitle>
-            
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t('searchBySchoolOrCategory')}
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="pending" value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="pending">{t('pending')}</TabsTrigger>
-              <TabsTrigger value="approved">{t('approved')}</TabsTrigger>
-              <TabsTrigger value="rejected">{t('rejected')}</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="pending">
-              {isLoading ? (
-                <div className="text-center p-6">{t('loading')}</div>
-              ) : isError ? (
-                <div className="text-center p-6 text-red-600">{t('errorLoadingData')}</div>
-              ) : filteredItems.length === 0 ? (
-                <div className="text-center p-6 text-muted-foreground flex flex-col items-center">
-                  <Info className="h-8 w-8 mb-2" />
-                  <p>{searchTerm ? t('noResultsFound') : t('noPendingApprovals')}</p>
-                </div>
-              ) : (
-                <PendingApprovalsTable pendingApprovals={filteredItems} onRefresh={refetch} />
-              )}
-            </TabsContent>
-            
-            <TabsContent value="approved">
-              {isLoading ? (
-                <div className="text-center p-6">{t('loading')}</div>
-              ) : filteredItems.length === 0 ? (
-                <div className="text-center p-6 text-muted-foreground flex flex-col items-center">
-                  <Info className="h-8 w-8 mb-2" />
-                  <p>{searchTerm ? t('noResultsFound') : t('noApprovedData')}</p>
-                </div>
-              ) : (
-                <PendingApprovalsTable pendingApprovals={filteredItems} onRefresh={refetch} />
-              )}
-            </TabsContent>
-            
-            <TabsContent value="rejected">
-              {isLoading ? (
-                <div className="text-center p-6">{t('loading')}</div>
-              ) : filteredItems.length === 0 ? (
-                <div className="text-center p-6 text-muted-foreground flex flex-col items-center">
-                  <Info className="h-8 w-8 mb-2" />
-                  <p>{searchTerm ? t('noResultsFound') : t('noRejectedData')}</p>
-                </div>
-              ) : (
-                <PendingApprovalsTable pendingApprovals={filteredItems} onRefresh={refetch} />
-              )}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+    <div className="container py-6">
+      <h1 className="text-3xl font-bold mb-6">{t('approvals')}</h1>
+      
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="pending">
+            {t('pending')}
+            {approvalData.filter(a => a.status === 'pending').length > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs">
+                {approvalData.filter(a => a.status === 'pending').length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="approved">{t('approved')}</TabsTrigger>
+          <TabsTrigger value="rejected">{t('rejected')}</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="pending">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('pendingApprovals')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredData.length === 0 ? (
+                  <p className="text-center py-6 text-muted-foreground">
+                    {t('noPendingApprovals')}
+                  </p>
+                ) : (
+                  filteredData.map((item) => (
+                    <ApprovalItem 
+                      key={item.id}
+                      item={item}
+                      onApprove={handleApprove}
+                      onReject={handleReject}
+                    />
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="approved">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('approvedEntries')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredData.length === 0 ? (
+                  <p className="text-center py-6 text-muted-foreground">
+                    {t('noApprovedEntries')}
+                  </p>
+                ) : (
+                  filteredData.map((item) => (
+                    <ApprovalItem 
+                      key={item.id}
+                      item={item}
+                      viewOnly
+                    />
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="rejected">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('rejectedEntries')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredData.length === 0 ? (
+                  <p className="text-center py-6 text-muted-foreground">
+                    {t('noRejectedEntries')}
+                  </p>
+                ) : (
+                  filteredData.map((item) => (
+                    <ApprovalItem 
+                      key={item.id}
+                      item={item}
+                      viewOnly
+                    />
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

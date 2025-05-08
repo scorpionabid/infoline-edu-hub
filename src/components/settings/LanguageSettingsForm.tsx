@@ -34,7 +34,7 @@ const LanguageSettingsForm: React.FC<LanguageSettingsFormProps> = ({
             onValueChange={setSelectedLanguage}
             className="space-y-4"
           >
-            {languages?.map(lang => (
+            {languages && languages.map(lang => (
               <div key={lang.code} className="flex items-center space-x-2">
                 <RadioGroupItem value={lang.code} id={`lang-${lang.code}`} />
                 <Label htmlFor={`lang-${lang.code}`} className="flex items-center">

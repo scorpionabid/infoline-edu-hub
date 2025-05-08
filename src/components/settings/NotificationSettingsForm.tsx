@@ -1,100 +1,108 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { useLanguage } from '@/context/LanguageContext';
-import { Card, CardContent } from '@/components/ui/card';
 import { NotificationSettings } from '@/types/user';
 
 interface NotificationSettingsFormProps {
   settings: NotificationSettings;
-  onSubmit: (data: NotificationSettings) => void;
+  onSubmit: (settings: NotificationSettings) => void;
   loading?: boolean;
 }
 
-const NotificationSettingsForm: React.FC<NotificationSettingsFormProps> = ({ 
-  settings, 
+const NotificationSettingsForm: React.FC<NotificationSettingsFormProps> = ({
+  settings,
   onSubmit,
   loading
 }) => {
   const { t } = useLanguage();
-  const [formValues, setFormValues] = React.useState<NotificationSettings>(settings || {
-    email: true,
-    inApp: true,
-    push: true,
-    system: true,
-    deadline: true
-  });
+  const [formState, setFormState] = React.useState<NotificationSettings>(settings);
 
-  const handleChange = (field: keyof NotificationSettings, value: boolean) => {
-    setFormValues(prev => ({
+  const handleChange = (key: keyof NotificationSettings, value: boolean) => {
+    setFormState(prev => ({
       ...prev,
-      [field]: value
+      [key]: value
     }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formValues);
+    onSubmit(formState);
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="email-notifications" className="flex-1">{t('emailNotifications')}</Label>
-            <Switch 
-              id="email-notifications"
-              checked={formValues.email}
-              onCheckedChange={(checked) => handleChange('email', checked)}
-            />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label htmlFor="email-notifications" className="font-medium">
+              {t('emailNotifications')}
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              {t('emailNotificationsDesc')}
+            </p>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <Label htmlFor="inapp-notifications" className="flex-1">{t('inAppNotifications')}</Label>
-            <Switch 
-              id="inapp-notifications"
-              checked={formValues.inApp}
-              onCheckedChange={(checked) => handleChange('inApp', checked)}
-            />
+          <Switch
+            id="email-notifications"
+            checked={formState.email}
+            onCheckedChange={(checked) => handleChange('email', checked)}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <Label htmlFor="push-notifications" className="font-medium">
+              {t('pushNotifications')}
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              {t('pushNotificationsDesc')}
+            </p>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <Label htmlFor="push-notifications" className="flex-1">{t('pushNotifications')}</Label>
-            <Switch 
-              id="push-notifications"
-              checked={formValues.push}
-              onCheckedChange={(checked) => handleChange('push', checked)}
-            />
+          <Switch
+            id="push-notifications"
+            checked={formState.push}
+            onCheckedChange={(checked) => handleChange('push', checked)}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <Label htmlFor="system-notifications" className="font-medium">
+              {t('systemNotifications')}
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              {t('systemNotificationsDesc')}
+            </p>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <Label htmlFor="system-notifications" className="flex-1">{t('systemNotifications')}</Label>
-            <Switch 
-              id="system-notifications"
-              checked={formValues.system}
-              onCheckedChange={(checked) => handleChange('system', checked)}
-            />
+          <Switch
+            id="system-notifications"
+            checked={formState.system}
+            onCheckedChange={(checked) => handleChange('system', checked)}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <Label htmlFor="deadline-reminders" className="font-medium">
+              {t('deadlineReminders')}
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              {t('deadlineRemindersDesc')}
+            </p>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <Label htmlFor="deadline-notifications" className="flex-1">{t('deadlineReminders')}</Label>
-            <Switch 
-              id="deadline-notifications"
-              checked={formValues.deadline}
-              onCheckedChange={(checked) => handleChange('deadline', checked)}
-            />
-          </div>
-          
-          <div className="pt-4">
-            <Button type="submit" disabled={loading}>
-              {loading ? t('saving') : t('saveNotificationSettings')}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          <Switch
+            id="deadline-reminders"
+            checked={formState.deadline}
+            onCheckedChange={(checked) => handleChange('deadline', checked)}
+          />
+        </div>
+      </div>
+
+      <Button type="submit" disabled={loading}>
+        {loading ? t('saving') : t('saveNotificationSettings')}
+      </Button>
     </form>
   );
 };

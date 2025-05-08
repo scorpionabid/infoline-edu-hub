@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -37,6 +36,8 @@ export const useRegions = () => {
   }
   return context;
 };
+
+export const useRegionsContext = () => useContext(RegionsContext);
 
 export const RegionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [regions, setRegions] = useState<Region[]>([]);

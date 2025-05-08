@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { CategoryWithColumns, Column, TabDefinition } from '@/types/column';
+import { Category, CategoryWithColumns, TabDefinition } from '@/types/column';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface CategoryFormProps {
@@ -109,11 +108,17 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId }) => {
     return <div className="flex justify-center p-8">Category not found</div>;
   }
   
+  // Make sure to set completionRate as a property when needed
+  const categoryWithCompletionRate: CategoryWithColumns = {
+    ...category,
+    completionRate: category.completionRate || 0
+  };
+  
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">{category.name}</h1>
-        <p className="text-gray-500">{category.description}</p>
+        <h1 className="text-2xl font-bold">{categoryWithCompletionRate.name}</h1>
+        <p className="text-gray-500">{categoryWithCompletionRate.description}</p>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">

@@ -19,16 +19,48 @@ export const useAssignExistingUserAsAdmin = (props?: UseAssignExistingUserProps)
       setIsLoading(true);
       setError(null);
 
-      const { data, error: assignError } = await supabase
-        .rpc('assign_region_admin', {
-          user_id_param: userId,
-          region_id_param: regionId
-        });
-
-      if (assignError) throw assignError;
+      // Using a direct query instead of RPC for better type compatibility
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
       
-      if (!data?.success) {
-        throw new Error(data?.error || t('errorAssigningAdminUnknown'));
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+      
+      let result;
+      
+      if (!existingRole) {
+        // Insert new role if it doesn't exist
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role: 'regionadmin',
+            region_id: regionId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+        if (insertError) throw insertError;
+        result = { success: true };
+      } else {
+        // Update existing role
+        const { error: updateError } = await supabase
+          .from('user_roles')
+          .update({
+            role: 'regionadmin', 
+            region_id: regionId,
+            sector_id: null,
+            school_id: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+          
+        if (updateError) throw updateError;
+        result = { success: true };
       }
 
       toast.success(t('adminAssigned'), {
@@ -37,7 +69,7 @@ export const useAssignExistingUserAsAdmin = (props?: UseAssignExistingUserProps)
       
       if (onSuccess) onSuccess();
       
-      return data;
+      return result;
     } catch (err: any) {
       console.error('Error assigning region admin:', err);
       setError(err.message || t('errorAssigningAdmin'));
@@ -46,7 +78,7 @@ export const useAssignExistingUserAsAdmin = (props?: UseAssignExistingUserProps)
         description: err.message
       });
       
-      return null;
+      return { success: false, error: err.message };
     } finally {
       setIsLoading(false);
     }
@@ -57,16 +89,67 @@ export const useAssignExistingUserAsAdmin = (props?: UseAssignExistingUserProps)
       setIsLoading(true);
       setError(null);
 
-      const { data, error: assignError } = await supabase
-        .rpc('assign_sector_admin', {
-          user_id_param: userId,
-          sector_id_param: sectorId
-        });
-
-      if (assignError) throw assignError;
+      // Using a direct query instead of RPC
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
       
-      if (!data?.success) {
-        throw new Error(data?.error || t('errorAssigningAdminUnknown'));
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+      
+      let result;
+      
+      if (!existingRole) {
+        // Get region_id for this sector
+        const { data: sectorData, error: sectorError } = await supabase
+          .from('sectors')
+          .select('region_id')
+          .eq('id', sectorId)
+          .single();
+          
+        if (sectorError) throw sectorError;
+        
+        // Insert new role
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role: 'sectoradmin',
+            sector_id: sectorId,
+            region_id: sectorData.region_id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+        if (insertError) throw insertError;
+        result = { success: true };
+      } else {
+        // Get region_id for this sector
+        const { data: sectorData, error: sectorError } = await supabase
+          .from('sectors')
+          .select('region_id')
+          .eq('id', sectorId)
+          .single();
+          
+        if (sectorError) throw sectorError;
+        
+        // Update existing role
+        const { error: updateError } = await supabase
+          .from('user_roles')
+          .update({
+            role: 'sectoradmin', 
+            sector_id: sectorId,
+            region_id: sectorData.region_id,
+            school_id: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+          
+        if (updateError) throw updateError;
+        result = { success: true };
       }
 
       toast.success(t('adminAssigned'), {
@@ -75,7 +158,7 @@ export const useAssignExistingUserAsAdmin = (props?: UseAssignExistingUserProps)
       
       if (onSuccess) onSuccess();
       
-      return data;
+      return result;
     } catch (err: any) {
       console.error('Error assigning sector admin:', err);
       setError(err.message || t('errorAssigningAdmin'));
@@ -84,27 +167,70 @@ export const useAssignExistingUserAsAdmin = (props?: UseAssignExistingUserProps)
         description: err.message
       });
       
-      return null;
+      return { success: false, error: err.message };
     } finally {
       setIsLoading(false);
     }
   }, [t, onSuccess]);
 
-  const assignSchoolAdmin = useCallback(async (userId: string, schoolId: string, regionId: string, sectorId: string) => {
+  const assignSchoolAdmin = useCallback(async (userId: string, schoolId: string) => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const { data, error: assignError } = await supabase
-        .rpc('assign_school_admin', {
-          user_id_param: userId,
-          school_id_param: schoolId
-        });
-
-      if (assignError) throw assignError;
+      // Using a direct query instead of RPC
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
       
-      if (!data?.success) {
-        throw new Error(data?.error || t('errorAssigningAdminUnknown'));
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+      
+      // Get school data to get region_id and sector_id
+      const { data: schoolData, error: schoolError } = await supabase
+        .from('schools')
+        .select('region_id, sector_id')
+        .eq('id', schoolId)
+        .single();
+        
+      if (schoolError) throw schoolError;
+      
+      let result;
+      
+      if (!existingRole) {
+        // Insert new role
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role: 'schooladmin',
+            school_id: schoolId,
+            sector_id: schoolData.sector_id,
+            region_id: schoolData.region_id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+        if (insertError) throw insertError;
+        result = { success: true };
+      } else {
+        // Update existing role
+        const { error: updateError } = await supabase
+          .from('user_roles')
+          .update({
+            role: 'schooladmin', 
+            school_id: schoolId,
+            sector_id: schoolData.sector_id,
+            region_id: schoolData.region_id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+          
+        if (updateError) throw updateError;
+        result = { success: true };
       }
 
       toast.success(t('adminAssigned'), {
@@ -113,7 +239,7 @@ export const useAssignExistingUserAsAdmin = (props?: UseAssignExistingUserProps)
       
       if (onSuccess) onSuccess();
       
-      return data;
+      return result;
     } catch (err: any) {
       console.error('Error assigning school admin:', err);
       setError(err.message || t('errorAssigningAdmin'));
@@ -122,7 +248,7 @@ export const useAssignExistingUserAsAdmin = (props?: UseAssignExistingUserProps)
         description: err.message
       });
       
-      return null;
+      return { success: false, error: err.message };
     } finally {
       setIsLoading(false);
     }

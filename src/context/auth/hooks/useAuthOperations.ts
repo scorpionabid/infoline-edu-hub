@@ -187,7 +187,7 @@ export const useAuthOperations = (
         options: {
           data: {
             full_name: userData.full_name,
-            role: userData.role,
+            role: userData.role as "superadmin" | "regionadmin" | "sectoradmin" | "schooladmin",
           },
         },
       });
@@ -202,7 +202,7 @@ export const useAuthOperations = (
           id: data.user.id,
           email: userData.email,
           full_name: userData.full_name,
-          role: userData.role,
+          role: userData.role as "superadmin" | "regionadmin" | "sectoradmin" | "schooladmin",
           region_id: userData.region_id,
           sector_id: userData.sector_id,
           school_id: userData.school_id,
@@ -217,7 +217,7 @@ export const useAuthOperations = (
         // Rol tablosuna əlavə etmək
         const { error: roleError } = await supabase.from('user_roles').insert({
           user_id: data.user.id,
-          role: userData.role,
+          role: userData.role as "superadmin" | "regionadmin" | "sectoradmin" | "schooladmin",
           region_id: userData.region_id,
           sector_id: userData.sector_id,
           school_id: userData.school_id,

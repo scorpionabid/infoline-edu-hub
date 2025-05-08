@@ -31,7 +31,6 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ user, onSubmit, loading }) =>
         <Input 
           id="full_name" 
           {...register('full_name', { required: t('fullNameRequired') })}
-          error={errors.full_name?.message}
         />
         {errors.full_name && (
           <p className="text-sm text-red-500">{errors.full_name.message as string}</p>

@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/category';
+import { Category } from '@/types/column';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -16,14 +16,27 @@ export const useCategoryActions = () => {
     setError('');
 
     try {
+      // Convert deadline to string if it's a Date
+      const deadline = category.deadline instanceof Date 
+        ? category.deadline.toISOString() 
+        : category.deadline;
+        
+      // Prepare category data for Supabase
+      const categoryData = {
+        name: category.name,
+        description: category.description,
+        status: category.status,
+        deadline: deadline,
+        priority: category.priority,
+        assignment: category.assignment,
+        archived: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error: err } = await supabase
         .from('categories')
-        .insert({
-          ...category,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          archived: false
-        })
+        .insert(categoryData)
         .select();
 
       if (err) {
@@ -49,12 +62,25 @@ export const useCategoryActions = () => {
     setError('');
 
     try {
+      // Convert deadline to string if it's a Date
+      const deadline = category.deadline instanceof Date 
+        ? category.deadline.toISOString() 
+        : category.deadline;
+        
+      // Prepare category data for Supabase
+      const categoryData = {
+        name: category.name,
+        description: category.description,
+        status: category.status,
+        deadline: deadline,
+        priority: category.priority,
+        assignment: category.assignment,
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error: err } = await supabase
         .from('categories')
-        .update({
-          ...category,
-          updated_at: new Date().toISOString()
-        })
+        .update(categoryData)
         .eq('id', category.id)
         .select();
 

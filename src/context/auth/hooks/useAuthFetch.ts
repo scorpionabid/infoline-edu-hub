@@ -1,518 +1,487 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { User, FullUserData } from '@/types/user';
-import { useToast } from '@/components/ui/use-toast';
-import { useLanguage } from '@/context/LanguageContext';
+import { fetchUserData, updateUserProfile } from '@/services/userDataService';
+import { toast } from 'sonner';
+import { useRouter } from '@/hooks/useRouter';
+import { CACHE_KEYS, clearCache } from '@/lib/cache';
 
-interface AuthFetchOptions {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-  headers?: Record<string, string>;
-  body?: BodyInit | null | object;
-  requireAuth?: boolean;
-  onSuccess?: (data: any) => void;
-  onError?: (error: any) => void;
-  skip?: boolean;
-  manual?: boolean;
-  url?: string;
-  contentType?: 'application/json' | 'multipart/form-data';
-}
-
-interface AuthFetchResult<T> {
-  data: T | null;
-  error: any;
+interface UseAuthFetchResult {
+  user: FullUserData | null;
+  session: Session | null;
   loading: boolean;
-  fetchData: (overrideOptions?: Omit<AuthFetchOptions, 'manual'>) => Promise<void>;
-}
-
-interface UserResponse {
-  user: User | null;
-  session: any | null;
-  error: any | null;
-}
-
-export const useAuthFetch = <T = any>(
-  initialUrl: string,
-  initialOptions: AuthFetchOptions = {}
-): AuthFetchResult<T> => {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { t } = useLanguage();
-
-  const {
-    method = 'GET',
-    headers: initialHeaders = {},
-    body: initialBody = null,
-    requireAuth = true,
-    onSuccess,
-    onError,
-    skip = false,
-    manual = false,
-    url: overrideUrl,
-    contentType = 'application/json',
-  } = initialOptions;
-
-  const fetchData = useCallback(
-    async (overrideOptions: Omit<AuthFetchOptions, 'manual'> = {}) => {
-      if (skip) return;
-
-      const url = overrideUrl || initialUrl;
-      const {
-        method: overrideMethod = method,
-        headers: overrideHeaders = initialHeaders,
-        body: overrideBody = initialBody,
-        requireAuth: overrideRequireAuth = requireAuth,
-        onSuccess: overrideOnSuccess = onSuccess,
-        onError: overrideOnError = onError,
-        contentType: overrideContentType = contentType,
-      } = overrideOptions;
-
-      let headers = {
-        ...overrideHeaders,
-      };
-
-      let body = overrideBody;
-
-      if (overrideContentType === 'application/json' && typeof body === 'object') {
-        headers = {
-          ...headers,
-          'Content-Type': 'application/json',
-        };
-        body = JSON.stringify(body);
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        if (overrideRequireAuth) {
-          const session = await supabase.auth.getSession();
-          if (!session?.data?.session?.access_token) {
-            navigate('/login');
-            toast({
-              title: t('notAuthenticated'),
-              description: t('pleaseLogin'),
-              variant: 'destructive',
-            });
-            return;
-          }
-          headers = {
-            ...headers,
-            Authorization: `Bearer ${session.data.session.access_token}`,
-          };
-        }
-
-        const response = await fetch(url, {
-          method: overrideMethod,
-          headers: headers,
-          body: body as any,
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || response.statusText);
-        }
-
-        const responseData = await response.json();
-        setData(responseData);
-        overrideOnSuccess?.(responseData);
-        onSuccess?.(responseData);
-      } catch (err: any) {
-        setError(err);
-        overrideOnError?.(err);
-        onError?.(err);
-        toast({
-          title: t('error'),
-          description: err.message,
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    },
-    [initialUrl, initialOptions, navigate, skip, t, method, initialHeaders, initialBody, requireAuth, onSuccess, onError, contentType, overrideUrl]
-  );
-
-  useEffect(() => {
-    if (!manual && !skip) {
-      fetchData();
-    }
-  }, [fetchData, manual, skip]);
-
-  return { data, error, loading, fetchData };
-};
-
-interface AuthHookResult {
-  session: any | null;
-  user: User | null;
-  loading: boolean;
-  error: any;
-  login: (email: string, password: string) => Promise<any>;
-  logout: () => Promise<void>;
-  signUp: (email: string, password: string, additionalData?: any) => Promise<any>;
-  updateUser: (updates: Partial<User>) => Promise<void>;
-  resetPassword: (email: string) => Promise<any>;
-  verifyOTP: (options: { email: string; type: 'email' | 'phone'; token: string }) => Promise<any>;
-  getSession: () => Promise<any>;
-  updateUserPassword: (newPassword: string) => Promise<any>;
-  updateUserEmail: (newEmail: string) => Promise<any>;
-  updateUserProfile: (userData: Partial<FullUserData>) => Promise<any>;
+  error: Error | null;
+  isAuthenticated: boolean;
+  isInitialized: boolean;
+  updateUser: (updates: Partial<FullUserData>) => Promise<boolean>;
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
+  updateUserProfile: (updates: Partial<FullUserData>) => Promise<boolean>;
   signOut: () => Promise<void>;
+  refreshUserData: () => Promise<void>;
 }
 
-export const useAuthHook = (): AuthHookResult => {
-  const [session, setSession] = useState(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { t } = useLanguage();
+export const useAuthFetch = (): UseAuthFetchResult => {
+  const [user, setUser] = useState<FullUserData | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const router = useRouter();
 
+  // Fetch user data from Supabase
+  const fetchUser = useCallback(async (sessionData: Session) => {
+    try {
+      if (!sessionData?.user?.id) {
+        console.warn('No user ID in session');
+        setUser(null);
+        return;
+      }
+
+      const userData = await fetchUserData(sessionData.user.id, sessionData);
+      
+      if (userData) {
+        setUser(userData);
+      } else {
+        console.warn('No user data returned from fetchUserData');
+        setUser(null);
+      }
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch user data'));
+      setUser(null);
+    }
+  }, []);
+
+  // Initialize auth state
   useEffect(() => {
-    const getInitialSession = async () => {
-      setLoading(true);
+    const initializeAuth = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          throw error;
+        setLoading(true);
+        
+        // Get current session
+        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          throw sessionError;
         }
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
-      } catch (err: any) {
-        setError(err);
-        console.error('Error getting initial session:', err);
+        
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          await fetchUser(currentSession);
+        } else {
+          setUser(null);
+        }
+        
+        // Listen for auth changes
+        const { data: { subscription } } = await supabase.auth.onAuthStateChange(
+          async (event, newSession) => {
+            console.log('Auth state changed:', event);
+            setSession(newSession);
+            
+            if (event === 'SIGNED_IN' && newSession) {
+              await fetchUser(newSession);
+            } else if (event === 'SIGNED_OUT') {
+              setUser(null);
+              clearCache();
+            } else if (event === 'USER_UPDATED' && newSession) {
+              await fetchUser(newSession);
+            } else if (event === 'TOKEN_REFRESHED' && newSession) {
+              setSession(newSession);
+            }
+          }
+        );
+        
+        setIsInitialized(true);
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (err) {
+        console.error('Error initializing auth:', err);
+        setError(err instanceof Error ? err : new Error('Failed to initialize auth'));
+        setUser(null);
+        setSession(null);
       } finally {
         setLoading(false);
       }
     };
+    
+    initializeAuth();
+  }, [fetchUser]);
 
-    getInitialSession();
-
-    supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-    });
-  }, [navigate]);
-
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
-      if (error) {
-        throw error;
-      }
-      toast({
-        title: t('loginSuccess'),
-        description: t('loginSuccessDesc'),
-      });
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err);
-      toast({
-        title: t('loginFailed'),
-        description: err.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        throw error;
-      }
-      toast({
-        title: t('logoutSuccess'),
-        description: t('logoutSuccessDesc'),
-      });
-      navigate('/login');
-    } catch (err: any) {
-      setError(err);
-      toast({
-        title: t('logoutFailed'),
-        description: err.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signUp = async (email: string, password: string, additionalData: any = {}) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: additionalData,
-        },
-      });
-      if (error) {
-        throw error;
-      }
-      toast({
-        title: t('signUpSuccess'),
-        description: t('signUpSuccessDesc'),
-      });
-      navigate('/verify-otp');
-      return data;
-    } catch (err: any) {
-      setError(err);
-      toast({
-        title: t('signUpFailed'),
-        description: err.message,
-        variant: 'destructive',
-      });
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateUser = async (updates: Partial<User>) => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (!user?.id) {
-        throw new Error('User ID not found');
-      }
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
-
-      if (error) {
-        throw error;
-      }
-
-      setUser(prevState => ({ ...prevState, ...(data.session?.user || {}) }));
-      toast({
-        title: t('updateSuccess'),
-        description: t('updateSuccessDesc'),
-      });
-    } catch (err: any) {
-      setError(err);
-      toast({
-        title: t('updateFailed'),
-        description: err.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`,
-      });
-      if (error) {
-        throw error;
-      }
-      toast({
-        title: t('resetPasswordSuccess'),
-        description: t('resetPasswordSuccessDesc'),
-      });
-    } catch (err: any) {
-      setError(err);
-      toast({
-        title: t('resetPasswordFailed'),
-        description: err.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const verifyOTP = async (options: { email: string; type: 'email' | 'phone'; token: string }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        email: options.email,
-        token: options.token,
-        type: options.type === 'phone' ? 'sms' : 'email',
-      } as any); // Using 'as any' to bypass the type checking temporarily
-      if (error) {
-        throw error;
-      }
-      toast({
-        title: t('verifyOTPSuccess'),
-        description: t('verifyOTPSuccessDesc'),
-      });
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err);
-      toast({
-        title: t('verifyOTPFailed'),
-        description: err.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getSession = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await supabase.auth.getSession();
-      setSession(response.data.session);
-      return response.data.session;
-    } catch (err: any) {
-      setError(err);
-      toast({
-        title: t('getSessionFailed'),
-        description: err.message,
-        variant: 'destructive',
-      });
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateUserPassword = async (newPassword: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) {
-        throw error;
-      }
-      toast({
-        title: t('updatePasswordSuccess'),
-        description: t('updatePasswordSuccessDesc'),
-      });
-    } catch (err: any) {
-      setError(err);
-      toast({
-        title: t('updatePasswordFailed'),
-        description: err.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateUserEmail = async (newEmail: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.updateUser({ email: newEmail });
-      if (error) {
-        throw error;
-      }
-      toast({
-        title: t('updateEmailSuccess'),
-        description: t('updateEmailSuccessDesc'),
-      });
-    } catch (err: any) {
-      setError(err);
-      toast({
-        title: t('updateEmailFailed'),
-        description: err.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateUserProfile = async (userData: Partial<FullUserData>) => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (!user?.id) {
-        throw new Error('User ID not found');
-      }
-      const { error } = await supabase
-        .from('profiles')
-        .update(userData)
-        .eq('id', user.id);
-      
-      if (error) {
-        throw error;
-      }
-      
-      setUser(prevState => ({ ...prevState, ...(data.session?.user || {}) }));
-      toast({
-        title: t('updateProfileSuccess'),
-        description: t('updateProfileSuccessDesc'),
-      });
-    } catch (err: any) {
-      setError(err);
-      toast({
-        title: t('updateProfileFailed'),
-        description: err.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Sign out function
   const signOut = async () => {
-    setLoading(true);
-    setError(null);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        throw error;
+      setLoading(true);
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      clearCache();
+      router.push('/login');
+    } catch (err) {
+      console.error('Error signing out:', err);
+      setError(err instanceof Error ? err : new Error('Failed to sign out'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update user function
+  const updateUser = async (updates: Partial<FullUserData>): Promise<boolean> => {
+    if (!user || !user.id) {
+      console.error('Cannot update user: No user logged in');
+      return false;
+    }
+    
+    try {
+      setLoading(true);
+      const success = await updateUserProfile(user.id, updates);
+      
+      if (success) {
+        // Update local user state with new values
+        setUser(prevUser => {
+          if (!prevUser) return null;
+          return { ...prevUser, ...updates };
+        });
+        return true;
       }
-      toast({
-        title: t('signOutSuccess'),
-        description: t('signOutSuccessDesc'),
+      
+      return false;
+    } catch (err) {
+      console.error('Error updating user:', err);
+      setError(err instanceof Error ? err : new Error('Failed to update user'));
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update password function
+  const updatePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
+    if (!user || !user.email) {
+      console.error('Cannot update password: No user logged in or email missing');
+      return false;
+    }
+    
+    try {
+      setLoading(true);
+      
+      // First sign in with current password to verify it
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword
       });
-      navigate('/login');
-    } catch (err: any) {
-      setError(err);
-      toast({
-        title: t('signOutFailed'),
-        description: err.message,
-        variant: 'destructive',
+      
+      if (signInError) {
+        toast.error('Current password is incorrect');
+        return false;
+      }
+      
+      // Then update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
       });
+      
+      if (updateError) {
+        throw updateError;
+      }
+      
+      return true;
+    } catch (err) {
+      console.error('Error updating password:', err);
+      setError(err instanceof Error ? err : new Error('Failed to update password'));
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Refresh user data
+  const refreshUserData = async (): Promise<void> => {
+    if (!session) {
+      console.warn('Cannot refresh user data: No active session');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        throw userError;
+      }
+      
+      if (userData.user) {
+        await fetchUser(session);
+      }
+    } catch (err) {
+      console.error('Error refreshing user data:', err);
+      setError(err instanceof Error ? err : new Error('Failed to refresh user data'));
     } finally {
       setLoading(false);
     }
   };
 
   return {
-    session,
     user,
+    session,
     loading,
     error,
-    login,
-    logout,
-    signUp,
+    isAuthenticated: !!user && !!session,
+    isInitialized,
     updateUser,
-    resetPassword,
-    verifyOTP,
-    getSession,
-    updateUserPassword,
-    updateUserEmail,
-    updateUserProfile,
+    updatePassword,
+    updateUserProfile: updateUser, // Alias for updateUser
     signOut,
+    refreshUserData
   };
+};
+
+// Hook for getting current user
+export const useCurrentUser = (): FullUserData | null => {
+  const { user } = useAuthFetch();
+  return user;
+};
+
+// Hook for checking if user is authenticated
+export const useIsAuthenticated = (): boolean => {
+  const { isAuthenticated } = useAuthFetch();
+  return isAuthenticated;
+};
+
+// Hook for checking if auth is initialized
+export const useIsAuthInitialized = (): boolean => {
+  const { isInitialized } = useAuthFetch();
+  return isInitialized;
+};
+
+// Hook for getting current session
+export const useSession = (): Session | null => {
+  const { session } = useAuthFetch();
+  return session;
+};
+
+// Hook for signing out
+export const useSignOut = (): (() => Promise<void>) => {
+  const { signOut } = useAuthFetch();
+  return signOut;
+};
+
+// Hook for refreshing user data
+export const useRefreshUserData = (): (() => Promise<void>) => {
+  const { refreshUserData } = useAuthFetch();
+  return refreshUserData;
+};
+
+// Hook for updating user
+export const useUpdateUser = (): ((updates: Partial<FullUserData>) => Promise<boolean>) => {
+  const { updateUser } = useAuthFetch();
+  return updateUser;
+};
+
+// Hook for updating password
+export const useUpdatePassword = (): ((currentPassword: string, newPassword: string) => Promise<boolean>) => {
+  const { updatePassword } = useAuthFetch();
+  return updatePassword;
+};
+
+// Hook for checking if user is loading
+export const useIsAuthLoading = (): boolean => {
+  const { loading } = useAuthFetch();
+  return loading;
+};
+
+// Hook for getting auth error
+export const useAuthError = (): Error | null => {
+  const { error } = useAuthFetch();
+  return error;
+};
+
+// Hook for getting user ID
+export const useUserId = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.id;
+};
+
+// Hook for getting user role
+export const useUserRole = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.role;
+};
+
+// Hook for checking if user has a specific role
+export const useHasRole = (role: string | string[]): boolean => {
+  const { user } = useAuthFetch();
+  
+  if (!user || !user.role) {
+    return false;
+  }
+  
+  if (Array.isArray(role)) {
+    return role.includes(user.role);
+  }
+  
+  return user.role === role;
+};
+
+// Hook for checking if user is admin
+export const useIsAdmin = (): boolean => {
+  const { user } = useAuthFetch();
+  
+  if (!user || !user.role) {
+    return false;
+  }
+  
+  return ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(user.role);
+};
+
+// Hook for checking if user is super admin
+export const useIsSuperAdmin = (): boolean => {
+  const { user } = useAuthFetch();
+  return user?.role === 'superadmin';
+};
+
+// Hook for checking if user is region admin
+export const useIsRegionAdmin = (): boolean => {
+  const { user } = useAuthFetch();
+  return user?.role === 'regionadmin';
+};
+
+// Hook for checking if user is sector admin
+export const useIsSectorAdmin = (): boolean => {
+  const { user } = useAuthFetch();
+  return user?.role === 'sectoradmin';
+};
+
+// Hook for checking if user is school admin
+export const useIsSchoolAdmin = (): boolean => {
+  const { user } = useAuthFetch();
+  return user?.role === 'schooladmin';
+};
+
+// Hook for getting user region ID
+export const useUserRegionId = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.region_id || user?.regionId;
+};
+
+// Hook for getting user sector ID
+export const useUserSectorId = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.sector_id || user?.sectorId;
+};
+
+// Hook for getting user school ID
+export const useUserSchoolId = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.school_id || user?.schoolId;
+};
+
+// Hook for checking if auth is ready
+export const useIsAuthReady = (): boolean => {
+  const { isInitialized, loading } = useAuthFetch();
+  return isInitialized && !loading;
+};
+
+// Hook for getting user email
+export const useUserEmail = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.email;
+};
+
+// Hook for getting user name
+export const useUserName = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.full_name || user?.name;
+};
+
+// Hook for getting user avatar
+export const useUserAvatar = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.avatar;
+};
+
+// Hook for getting user language
+export const useUserLanguage = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.language;
+};
+
+// Hook for getting user notification settings
+export const useUserNotificationSettings = (): any => {
+  const { user } = useAuthFetch();
+  return user?.notificationSettings || user?.notification_settings;
+};
+
+// Hook for getting user status
+export const useUserStatus = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.status;
+};
+
+// Hook for getting user position
+export const useUserPosition = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.position;
+};
+
+// Hook for getting user phone
+export const useUserPhone = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.phone;
+};
+
+// Hook for getting user last login
+export const useUserLastLogin = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.last_login || user?.lastLogin;
+};
+
+// Hook for getting user created at
+export const useUserCreatedAt = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.created_at || user?.createdAt;
+};
+
+// Hook for getting user updated at
+export const useUserUpdatedAt = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.updated_at || user?.updatedAt;
+};
+
+// Hook for getting user entity name
+export const useUserEntityName = (): any => {
+  const { user } = useAuthFetch();
+  return user?.entityName;
+};
+
+// Hook for getting user entity types
+export const useUserEntityTypes = (): string[] | undefined => {
+  const { user } = useAuthFetch();
+  return user?.entityTypes;
+};
+
+// Hook for getting user admin entity
+export const useUserAdminEntity = (): any => {
+  const { user } = useAuthFetch();
+  return user?.adminEntity;
+};
+
+// Hook for getting user region name
+export const useUserRegionName = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.region_name || user?.regionName;
+};
+
+// Hook for getting user sector name
+export const useUserSectorName = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.sector_name || user?.sectorName;
+};
+
+// Hook for getting user school name
+export const useUserSchoolName = (): string | undefined => {
+  const { user } = useAuthFetch();
+  return user?.school_name || user?.schoolName;
 };

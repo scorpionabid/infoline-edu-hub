@@ -1,161 +1,117 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { CalendarIcon, CheckCircle, Clock, XCircle, Pencil, FileText } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { Category } from '@/types/column';
-import { format, isAfter, parseISO } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { cn } from '@/lib/utils';
+import { CalendarIcon, PenIcon, Trash2Icon, EyeIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
 
 interface CategoryCardProps {
   category: Category;
-  onUpdate?: () => void;
+  onEdit?: (category: Category) => void;
+  onDelete?: (categoryId: string) => void;
+  onView?: (categoryId: string) => void;
 }
 
-const formatDate = (dateInput: string | Date | null | undefined): string => {
-  if (!dateInput) return 'Təyin edilməyib';
-  
-  try {
-    if (typeof dateInput === 'string') {
-      return new Date(dateInput).toLocaleDateString();
-    } else {
-      return dateInput.toLocaleDateString();
-    }
-  } catch (e) {
-    return 'Keçərsiz tarix';
-  }
-};
-
-const CategoryCard: React.FC<CategoryCardProps> = ({ category, onUpdate }) => {
-  const navigate = useNavigate();
+const CategoryCard: React.FC<CategoryCardProps> = ({
+  category,
+  onEdit,
+  onDelete,
+  onView
+}) => {
   const { t } = useLanguage();
-  const { canApproveData } = usePermissions();
-
-  const getStatusDetails = () => {
-    if (category.status === 'active') {
-      return {
-        color: 'bg-green-100 text-green-800 border-green-200',
-        icon: <CheckCircle className="h-4 w-4" />,
-        label: t('active')
-      };
+  
+  const getBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'default';
+      case 'draft':
+        return 'secondary';
+      case 'inactive':
+        return 'outline';
+      case 'archived':
+        return 'destructive';
+      default:
+        return 'default';
     }
+  };
+  
+  const formatDeadline = (deadline: string | Date | undefined) => {
+    if (!deadline) return t('noDeadline');
     
-    if (category.status === 'approved') {
-      return {
-        color: 'bg-green-100 text-green-800 border-green-200',
-        icon: <CheckCircle className="h-4 w-4" />,
-        label: t('approved')
-      };
+    try {
+      const date = typeof deadline === 'string' ? new Date(deadline) : deadline;
+      return format(date, 'PPP');
+    } catch (error) {
+      return t('invalidDate');
     }
-    
-    if (category.status === 'draft') {
-      return {
-        color: 'bg-gray-100 text-gray-800 border-gray-200',
-        icon: <Pencil className="h-4 w-4" />,
-        label: t('draft')
-      };
-    }
-    
-    if (category.status === 'inactive' || category.status === 'archived') {
-      return {
-        color: 'bg-red-100 text-red-800 border-red-200',
-        icon: <XCircle className="h-4 w-4" />,
-        label: t(category.status)
-      };
-    }
-
-    return {
-      color: 'bg-gray-100 text-gray-800 border-gray-200',
-      icon: <FileText className="h-4 w-4" />,
-      label: category.status
-    };
   };
-
-  const isPastDeadline = () => {
-    if (!category.deadline) return false;
-    const deadlineDate = typeof category.deadline === 'string' ? parseISO(category.deadline) : category.deadline;
-    return isAfter(new Date(), deadlineDate);
-  };
-
-  const status = getStatusDetails();
-
-  const handleViewClick = () => {
-    navigate(`/data-entry/${category.id}`);
-  };
-
-  const handleEditClick = () => {
-    navigate(`/categories/${category.id}/edit`);
-  };
-
-  // Format date
-  const deadline = formatDate(category.deadline);
-
-  // Default completionRate
-  const completionRate = category.completionRate || 0;
+  
+  const completionRate = category.completionRate !== undefined ? category.completionRate : 0;
 
   return (
-    <Card className={cn(
-      'transition-all hover:shadow-md',
-      isPastDeadline() && category.deadline && 'border-red-300'
-    )}>
+    <Card className="overflow-hidden">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg">{category.name}</CardTitle>
-            <CardDescription className="line-clamp-2">{category.description}</CardDescription>
-          </div>
-          <Badge variant="outline" className={cn("flex gap-1 items-center whitespace-nowrap", status.color)}>
-            {status.icon}
-            {status.label}
+          <CardTitle className="truncate">{category.name}</CardTitle>
+          <Badge variant={getBadgeVariant(category.status || 'active')}>
+            {t(category.status || 'active')}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="pb-3">
-        {category.deadline && (
-          <div className="flex items-center text-sm mb-3 text-muted-foreground">
-            <CalendarIcon className="h-4 w-4 mr-1" />
-            <span>
-              {t('deadline')}: {deadline}
-              {isPastDeadline() && (
-                <Badge variant="destructive" className="ml-2 text-xs">
-                  {t('overdue')}
-                </Badge>
-              )}
-            </span>
-          </div>
+      <CardContent className="pb-2">
+        {category.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+            {category.description}
+          </p>
         )}
-
+        
+        <div className="flex items-center gap-1 text-muted-foreground text-xs mb-4">
+          <CalendarIcon className="h-3 w-3" />
+          <span>{t('deadline')}: {formatDeadline(category.deadline)}</span>
+        </div>
+        
         <div className="space-y-1">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{t('completion')}</span>
-            <span className="font-medium">{completionRate}%</span>
+          <div className="flex justify-between text-xs">
+            <span>{t('completion')}</span>
+            <span>{completionRate}%</span>
           </div>
-          <Progress value={completionRate} className="h-2" />
+          <Progress value={completionRate} />
         </div>
       </CardContent>
-      <CardFooter className="pt-1">
+      <CardFooter className="pt-2">
         <div className="flex justify-between w-full">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="ghost"
             size="sm"
-            onClick={handleViewClick}
+            onClick={() => onView && onView(category.id)}
           >
+            <EyeIcon className="h-4 w-4 mr-1" />
             {t('view')}
           </Button>
-          {canApproveData && (
-            <Button 
-              variant="outline" 
+          
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
               size="sm"
-              onClick={handleEditClick}
+              onClick={() => onEdit && onEdit(category)}
             >
-              {t('edit')}
+              <PenIcon className="h-4 w-4" />
+              <span className="sr-only">{t('edit')}</span>
             </Button>
-          )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete && onDelete(category.id)}
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2Icon className="h-4 w-4" />
+              <span className="sr-only">{t('delete')}</span>
+            </Button>
+          </div>
         </div>
       </CardFooter>
     </Card>
