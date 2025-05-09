@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,11 @@ import DeleteSectorDialog from './DeleteSectorDialog';
 import exportSectorsToExcel from '@/utils/exportSectorsToExcel';
 import { supabase } from '@/integrations/supabase/client';
 
-const SectorsContainer: React.FC = () => {
+interface SectorsContainerProps {
+  isLoading: boolean;
+}
+
+const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: externalIsLoading }) => {
   const { t } = useLanguageSafe();
   const { user } = useAuth();
   const { userRole, regionId } = usePermissions();
