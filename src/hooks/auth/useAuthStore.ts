@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Session, AuthChangeEvent, Provider } from '@supabase/supabase-js';
@@ -29,6 +28,7 @@ interface AuthState {
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
   refreshUserData: () => Promise<void>;
+  forceSessionReset: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -232,6 +232,34 @@ export const useAuthStore = create<AuthState>()(
             error: error.message || 'Failed to refresh user data',
             isLoading: false,
           });
+        }
+      },
+      
+      forceSessionReset: async () => {
+        console.warn("[useAuthStore] Forcing session reset due to invalid JWT");
+        
+        try {
+          // Clear Supabase session
+          await supabase.auth.signOut();
+          
+          // Clear local storage and session storage
+          localStorage.clear();
+          sessionStorage.clear();
+          
+          // Reset entire auth state
+          set({
+            session: null,
+            user: null,
+            isAuthenticated: false,
+            userRole: null,
+            regionId: null,
+            sectorId: null,
+            schoolId: null,
+            isLoading: false,
+            error: 'Session invalidated. Please log in again.'
+          });
+        } catch (error) {
+          console.error("Error during force session reset:", error);
         }
       },
     }),
