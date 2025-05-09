@@ -24,7 +24,7 @@ import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
 import Profile from "@/pages/Profile";
-import Approvals from "@/pages/Approvals";
+import Approvals from "@/pages/Approval";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
