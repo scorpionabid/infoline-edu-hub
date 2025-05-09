@@ -56,6 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshSession,
     updatePassword,
     updateProfile,
+    updateUserProfile: updateProfile, // Alias for backward compatibility
     resetPassword,
     register,
     setError,

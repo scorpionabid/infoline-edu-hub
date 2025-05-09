@@ -5,6 +5,9 @@ import { FullUserData } from '@/types/supabase';
 // Error type
 export type AuthErrorType = string | null;
 
+// Role type (for backward compatibility)
+export type Role = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+
 // Auth Context Type
 export interface AuthContextType {
   user: FullUserData | null;
@@ -23,6 +26,7 @@ export interface AuthContextType {
   
   // User data operations
   updateUser: (data: Partial<FullUserData>) => void;
+  updateUserProfile: (data: Partial<FullUserData>) => Promise<{ data: any; error: any }>;
   
   // Error handling
   clearError: () => void;
@@ -41,4 +45,29 @@ export interface AuthContextType {
   register: (userData: any) => Promise<any>;
   createUser: (userData: any) => Promise<any>;
   signup: (email: string, password: string, options?: any) => Promise<{ user: any; error: any }>;
+}
+
+// Add UserFormData type for backward compatibility
+export interface UserFormData {
+  id?: string;
+  email: string;
+  password?: string;
+  full_name?: string;
+  fullName?: string;
+  name?: string;
+  role: string;
+  region_id?: string | null;
+  sector_id?: string | null;
+  school_id?: string | null;
+  phone?: string | null;
+  position?: string | null;
+  language?: string;
+  avatar?: string | null;
+  status?: string;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  notification_settings?: any;
+  notificationSettings?: any;
+  entityTypes?: string[];
 }

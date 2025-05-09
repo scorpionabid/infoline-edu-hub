@@ -1,144 +1,83 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Session } from '@supabase/supabase-js';
-import { FullUserData } from '@/types/user';
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
-export const useSupabaseAuth = () => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<FullUserData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function useSupabaseAuth() {
+  const [loading, setLoading] = useState(false);
 
-  // Authentication functions
-  const loginWithEmail = async (email: string, password: string) => {
+  /**
+   * Sign up a new user with email and password
+   */
+  const signUp = async (email: string, password: string, userData: any = {}) => {
+    setLoading(true);
     try {
-      setLoading(true);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData
+        }
+      });
+
+      if (error) {
+        console.error('Signup error:', error);
+        toast.error(error.message);
+        return false;
+      }
+
+      if (data) {
+        toast.success('Qeydiyyat uğurla tamamlandı');
+        return true;
+      }
+      
+      return false;
+    } catch (error: any) {
+      console.error('Unexpected signup error:', error);
+      toast.error(error.message || 'Qeydiyyat zamanı xəta baş verdi');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Sign in an existing user with email and password
+   */
+  const signIn = async (email: string, password: string) => {
+    setLoading(true);
+    try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (error) throw error;
-      return data;
-    } catch (error: any) {
-      setError(error.message);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (error) {
+        console.error('Login error:', error);
+        toast.error(error.message);
+        return false;
+      }
 
-  const signOut = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      setUser(null);
-      setSession(null);
-    } catch (error: any) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email);
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error: any) {
-      setError(error.message);
-      return { data: null, error };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Get user profile from Supabase
-  const getUserProfile = async (userId: string): Promise<FullUserData | null> => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-      return data as FullUserData;
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      return null;
-    }
-  };
-
-  // Check and refresh session
-  const refreshSession = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { data } = await supabase.auth.getSession();
-      
       if (data.session) {
-        setSession(data.session);
-        
-        if (data.session.user) {
-          const profile = await getUserProfile(data.session.user.id);
-          if (profile) {
-            setUser({
-              ...profile,
-              email: data.session.user.email || profile.email,
-              id: data.session.user.id
-            });
-          }
-        }
+        toast.success('Uğurla daxil oldunuz');
+        return true;
       }
-    } catch (error) {
-      console.error('Session refresh error:', error);
+      
+      return false;
+    } catch (error: any) {
+      console.error('Unexpected login error:', error);
+      toast.error(error.message || 'Daxil olarkən xəta baş verdi');
+      return false;
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // Set up auth change listener
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        if (session?.user) {
-          const profile = await getUserProfile(session.user.id);
-          if (profile) {
-            setUser({
-              ...profile,
-              email: session.user.email || profile.email,
-              id: session.user.id
-            });
-          }
-        } else {
-          setUser(null);
-        }
-        setLoading(false);
-      }
-    );
-
-    // Initial session check
-    refreshSession();
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [refreshSession]);
+  };
 
   return {
-    user,
-    session,
     loading,
-    error,
-    loginWithEmail,
-    signOut,
-    resetPassword,
-    refreshSession,
-    setError
+    signUp,
+    signIn
   };
-};
+}
+
+export default useSupabaseAuth;
