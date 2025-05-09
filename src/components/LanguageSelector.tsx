@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +11,7 @@ import {
 import { Globe } from 'lucide-react';
 
 const LanguageSelector: React.FC = () => {
-  const { t, languages, currentLanguage, setLanguage, availableLanguages } = useLanguage();
+  const { t, languages, currentLanguage, setLanguage, availableLanguages } = useLanguageSafe();
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
@@ -26,7 +26,7 @@ const LanguageSelector: React.FC = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {availableLanguages.map((lang) => (
+        {availableLanguages && availableLanguages.map((lang) => (
           <DropdownMenuItem
             key={lang}
             onClick={() => handleLanguageChange(lang)}

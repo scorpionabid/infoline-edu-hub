@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
 import { ChevronDown, LayoutDashboard, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import {
 import { toast } from 'sonner';
 
 const DashboardHeader: React.FC = () => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   const { user } = useAuth();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { Globe } from 'lucide-react';
 import {
   Select,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 
 const LanguageSwitcher = () => {
-  const { t, setLanguage, currentLanguage } = useLanguage();
+  const { t, setLanguage, currentLanguage } = useLanguageSafe();
   
   const handleLanguageChange = (value: string) => {
     setLanguage(value);

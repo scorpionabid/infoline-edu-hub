@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,7 @@ interface NavigationMenuProps {
 }
 
 const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarOpen }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   const location = useLocation();
   const { user } = useAuth();
   const { 

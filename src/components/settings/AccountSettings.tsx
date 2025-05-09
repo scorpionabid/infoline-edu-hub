@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProfileForm from '@/components/settings/ProfileForm';
@@ -9,11 +9,19 @@ import NotificationSettingsForm from '@/components/settings/NotificationSettings
 import LanguageSettingsForm from '@/components/settings/LanguageSettingsForm';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { NotificationSettings } from '@/types/user';
+
+// Define the NotificationSettings type if it's missing
+interface NotificationSettings {
+  email: boolean;
+  inApp: boolean;
+  push: boolean;
+  system: boolean;
+  deadline: boolean;
+}
 
 const AccountSettings = () => {
-  const { t, currentLanguage, changeLanguage } = useLanguage();
-  const { user, updateUserProfile } = useAuth();
+  const { t, currentLanguage, changeLanguage } = useLanguageSafe();
+  const { user, updateUser } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleProfileUpdate = async (data: any) => {
@@ -21,7 +29,8 @@ const AccountSettings = () => {
     
     setLoading(true);
     try {
-      await updateUserProfile({
+      // Use updateUser instead of updateUserProfile
+      await updateUser({
         full_name: data.full_name,
         phone: data.phone,
         position: data.position
@@ -41,8 +50,14 @@ const AccountSettings = () => {
     
     setLoading(true);
     try {
-      await updateUserProfile({
-        notificationSettings: settings
+      // Use updateUser instead of updateUserProfile
+      await updateUser({
+        // Use a valid property instead of notificationSettings
+        // For example, this might be stored in a metadata field or a separate DB table
+        metadata: {
+          ...user.metadata,
+          notificationSettings: settings
+        }
       });
       
       toast.success(t('notificationSettingsUpdated'));
@@ -59,7 +74,7 @@ const AccountSettings = () => {
     
     setLoading(true);
     try {
-      await updateUserProfile({
+      await updateUser({
         language
       });
       
@@ -80,7 +95,7 @@ const AccountSettings = () => {
   }
 
   // Use notificationSettings from the user object if available, otherwise use default values
-  const notificationSettings = user.notificationSettings || {
+  const notificationSettings = user.metadata?.notificationSettings || {
     email: true,
     inApp: true,
     push: true,

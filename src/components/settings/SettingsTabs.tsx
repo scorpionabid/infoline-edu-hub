@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProfileSettings from '@/components/settings/ProfileSettings';
 import AccountSettings from '@/components/settings/AccountSettings';
@@ -8,7 +8,7 @@ import NotificationSettings from '@/components/settings/NotificationSettings';
 import AppearanceSettings from '@/components/settings/AppearanceSettings';
 
 const SettingsTabs: React.FC = () => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   
   return (
     <Tabs defaultValue="profile" className="w-full">

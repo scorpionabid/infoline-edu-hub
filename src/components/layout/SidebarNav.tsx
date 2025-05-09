@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
 import {
   BarChart2,
@@ -24,7 +24,7 @@ interface SidebarNavProps {
 
 const SidebarNav: React.FC<SidebarNavProps> = ({ onMenuClick }) => {
   const location = useLocation();
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   const {
     isSuperAdmin,
     isRegionAdmin,

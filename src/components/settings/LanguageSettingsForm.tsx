@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -17,7 +17,7 @@ const LanguageSettingsForm: React.FC<LanguageSettingsFormProps> = ({
   onSubmit,
   loading
 }) => {
-  const { t, languages } = useLanguage();
+  const { t, languages, supportedLanguages } = useLanguageSafe();
   const [selectedLanguage, setSelectedLanguage] = React.useState(currentLanguage);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -34,11 +34,13 @@ const LanguageSettingsForm: React.FC<LanguageSettingsFormProps> = ({
             onValueChange={setSelectedLanguage}
             className="space-y-4"
           >
-            {languages && languages.map(lang => (
+            {supportedLanguages && supportedLanguages.map(lang => (
               <div key={lang.code} className="flex items-center space-x-2">
                 <RadioGroupItem value={lang.code} id={`lang-${lang.code}`} />
                 <Label htmlFor={`lang-${lang.code}`} className="flex items-center">
-                  {lang.flag && <span className="mr-2">{lang.flag}</span>}
+                  {languages && languages[lang.code] && languages[lang.code].flag && (
+                    <span className="mr-2">{languages[lang.code].flag}</span>
+                  )}
                   {lang.name}
                 </Label>
               </div>
