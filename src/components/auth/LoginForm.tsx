@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { useAuthStore, selectIsAuthenticated, selectIsLoading } from '@/hooks/auth/useAuthStore';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,7 +31,11 @@ interface FormValues {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
-  const { login, isLoading, isAuthenticated } = useAuthStore();
+  // Use selectors for more efficient state access
+  const login = useAuthStore(state => state.login);
+  const isLoading = useAuthStore(selectIsLoading);
+  const isAuthenticated = useAuthStore(selectIsAuthenticated);
+  
   const { t } = useLanguageSafe();
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,29 +55,32 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
     }
   });
 
-  // Hər dəfə giriş formu göstərildikdə xəta mesajlarını təmizləyək
+  // Clear errors when component mounts
   useEffect(() => {
     if (error) {
       clearError();
     }
   }, [error, clearError]);
 
-  // İstifadəçi autentifikasiya olduqda dashboard-a yönləndiririk
+  // Handle successful authentication
+  const handleSuccessfulAuth = useCallback(() => {
+    const from = location.state?.from?.pathname || '/dashboard';
+    navigate(from, { replace: true });
+  }, [navigate, location.state?.from?.pathname]);
+
+  // Handle authenticated state changes
   useEffect(() => {
     if (isAuthenticated) {
-      // Əgər istifadəçi başqa səhifədən yönləndirilibsə, həmin səhifəyə qayıdırıq
-      const from = location.state?.from?.pathname || '/dashboard';
-      console.log('İstifadəçi autentifikasiya olundu, yönləndirilir:', from);
-      navigate(from, { replace: true });
+      handleSuccessfulAuth();
     }
-  }, [isAuthenticated, navigate, location]);
+  }, [isAuthenticated, handleSuccessfulAuth]);
 
   const onSubmit = async (data: FormValues) => {
     try {
-      // Form prosesi artıq gedirsə və ya istifadəçi artıq giriş edibsə, prosesi dayandırırıq
+      // Prevent multiple submissions
       if (formSubmitting || isAuthenticated) return;
       
-      clearError(); // Əvvəlki xətaları təmizləyək
+      clearError(); // Clear previous errors
       setFormSubmitting(true);
       
       console.log('Giriş cəhdi edilir...', data.email);
@@ -82,9 +90,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       if (success) {
         console.log('Giriş uğurlu oldu, autentifikasiya tamamlandı');
         toast.success(t('loginSuccess'));
-        reset(); // Form sahələrini təmizləyirik
+        reset(); // Clear form fields
         
-        // Yönləndirmə useEffect-də avtomatik olaraq ediləcək
+        // Navigation will happen in the useEffect when isAuthenticated changes
       } else {
         console.log('Giriş uğursuz oldu');
         toast.error(t('invalidCredentials'));
@@ -107,7 +115,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
-  // Button disabled vəziyyəti
+  // Button disabled state
   const isButtonDisabled = isLoading || formSubmitting || isAuthenticated;
 
   return (
@@ -222,4 +230,4 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
   );
 };
 
-export default LoginForm;
+export default React.memo(LoginForm);

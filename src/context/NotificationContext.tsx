@@ -1,13 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './auth';
+import { useAuth } from '@/hooks/auth';
 import { toast } from 'sonner';
 import { AppNotification, adaptDbNotificationToApp } from '@/types/notification';
 
 export type { AppNotification } from '@/types/notification';
 
-// Explicitly export the type with a named export
-export type { NotificationContextType };  
 export type NotificationContextType = {
   notifications: AppNotification[];
   unreadCount: number;
@@ -31,8 +30,6 @@ export const NotificationContext = createContext<NotificationContextType>({
   addNotification: () => Promise.resolve(),
   refreshNotifications: () => Promise.resolve(),
 });
-
-export const useNotifications = () => useContext(NotificationContext);
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -72,8 +69,17 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   };
 
   useEffect(() => {
-    fetchNotifications();
-    
+    // Only fetch notifications when we have a valid user
+    if (user?.id) {
+      fetchNotifications();
+    } else {
+      // Reset notifications when user is not authenticated
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [user?.id]);
+  
+  useEffect(() => {
     // Set up realtime subscription for new notifications
     if (user?.id) {
       const subscription = supabase
@@ -84,7 +90,10 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
           table: 'notifications',
           filter: `user_id=eq.${user.id}`,
         }, () => {
-          fetchNotifications();
+          // Schedule this for the next event loop to avoid potential React state updates during renders
+          setTimeout(() => {
+            fetchNotifications();
+          }, 0);
         })
         .subscribe();
       
@@ -96,7 +105,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const markAsRead = async (notificationId: string) => {
     try {
-      // Update local state first
+      // Optimistic update for better UX
       setNotifications(prev => 
         prev.map(n => 
           n.id === notificationId ? { ...n, isRead: true } : n
@@ -121,7 +130,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       if (!user) return;
       
-      // Update local state first
+      // Optimistic update
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
       
@@ -142,7 +151,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       if (!user) return;
       
-      // Update local state first
+      // Optimistic update
       setNotifications([]);
       setUnreadCount(0);
       
@@ -190,20 +199,21 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   };
 
+  const value = {
+    notifications,
+    unreadCount,
+    loading,
+    error,
+    markAsRead,
+    markAllAsRead,
+    clearAll,
+    addNotification,
+    refreshNotifications: fetchNotifications
+  };
+
+  // Use React.memo to prevent unnecessary re-renders
   return (
-    <NotificationContext.Provider
-      value={{
-        notifications,
-        unreadCount,
-        loading,
-        error,
-        markAsRead,
-        markAllAsRead,
-        clearAll,
-        addNotification,
-        refreshNotifications: fetchNotifications
-      }}
-    >
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   );

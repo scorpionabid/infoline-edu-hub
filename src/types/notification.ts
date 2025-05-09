@@ -1,54 +1,57 @@
 
-export type NotificationType = 'error' | 'deadline' | 'info' | 'warning' | 'success' | 'approval' | 'category' | 'system';
-export type NotificationPriority = 'high' | 'normal' | 'low';
+export type NotificationType = 'info' | 'success' | 'error' | 'warning' | 'deadline' | 'approval' | 'category' | 'system';
 
-export interface BaseNotification {
+export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical';
+
+export interface AppNotification {
   id: string;
   title: string;
   message: string;
   type: NotificationType;
-  date?: string;
-  createdAt?: string;
-  isRead?: boolean;
-}
-
-export interface AppNotification extends BaseNotification {
   isRead: boolean;
   createdAt: string;
-  priority?: NotificationPriority;
+  priority: NotificationPriority;
   relatedEntityId?: string;
   relatedEntityType?: string;
 }
 
-export interface DashboardNotification extends BaseNotification {
-  type: 'error' | 'info' | 'warning' | 'success';
-  timestamp?: string;
-}
-
-export interface DbNotification {
+export interface DashboardNotification {
   id: string;
-  user_id: string;
   title: string;
   message: string;
-  type: string;
-  is_read: boolean;
-  priority?: string;
-  created_at: string;
-  related_entity_id?: string;
-  related_entity_type?: string;
+  type: 'error' | 'info' | 'warning' | 'success';
+  date?: string;
+  createdAt?: string;
+  isRead?: boolean;
+  timestamp?: string;
+  priority?: NotificationPriority;
 }
 
-export function adaptDbNotificationToApp(dbNotification: DbNotification): AppNotification {
+export function adaptDbNotificationToApp(dbNotification: any): AppNotification {
   return {
-    id: dbNotification.id,
-    title: dbNotification.title,
-    message: dbNotification.message,
-    type: dbNotification.type as NotificationType,
-    isRead: dbNotification.is_read,
-    createdAt: dbNotification.created_at,
-    priority: dbNotification.priority as NotificationPriority,
+    id: dbNotification.id || Math.random().toString(),
+    title: dbNotification.title || '',
+    message: dbNotification.message || '',
+    type: (dbNotification.type || 'info') as NotificationType,
+    isRead: dbNotification.is_read ?? false,
+    createdAt: dbNotification.created_at || new Date().toISOString(),
+    priority: (dbNotification.priority || 'normal') as NotificationPriority,
     relatedEntityId: dbNotification.related_entity_id,
     relatedEntityType: dbNotification.related_entity_type
+  };
+}
+
+export function adaptDashboardNotificationToApp(dashboardNotification: any): AppNotification {
+  return {
+    id: dashboardNotification.id || Math.random().toString(),
+    title: dashboardNotification.title || '',
+    message: dashboardNotification.message || '',
+    type: (dashboardNotification.type || 'info') as NotificationType,
+    isRead: dashboardNotification.isRead ?? false,
+    createdAt: dashboardNotification.createdAt || dashboardNotification.date || dashboardNotification.timestamp || new Date().toISOString(),
+    priority: (dashboardNotification.priority || 'normal') as NotificationPriority,
+    relatedEntityId: dashboardNotification.relatedEntityId,
+    relatedEntityType: dashboardNotification.relatedEntityType
   };
 }
 
@@ -84,20 +87,7 @@ export function adaptAppNotificationToDashboard(appNotification: AppNotification
     date: appNotification.createdAt,
     createdAt: appNotification.createdAt,
     isRead: appNotification.isRead,
-    timestamp: appNotification.createdAt
-  };
-}
-
-export function adaptDashboardNotificationToApp(dashboardNotification: any): AppNotification {
-  return {
-    id: dashboardNotification.id || Math.random().toString(),
-    title: dashboardNotification.title || '',
-    message: dashboardNotification.message || '',
-    type: (dashboardNotification.type || 'info') as NotificationType,
-    isRead: dashboardNotification.isRead ?? false,
-    createdAt: dashboardNotification.createdAt || dashboardNotification.date || new Date().toISOString(),
-    priority: dashboardNotification.priority || 'normal',
-    relatedEntityId: dashboardNotification.relatedEntityId,
-    relatedEntityType: dashboardNotification.relatedEntityType
+    timestamp: appNotification.createdAt,
+    priority: appNotification.priority
   };
 }

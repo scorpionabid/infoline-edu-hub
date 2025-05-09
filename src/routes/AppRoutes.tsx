@@ -1,7 +1,7 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useAuthStore } from "@/hooks/auth/useAuthStore";
+import { useAuthStore, selectIsAuthenticated, selectIsLoading } from "@/hooks/auth/useAuthStore";
 import { usePermissions } from "@/hooks/auth/usePermissions";
 import AccessDenied from "@/components/AccessDenied";
 import SidebarLayout from "@/components/layout/SidebarLayout";
@@ -37,44 +37,33 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
   redirectUrl = "/login" 
 }) => {
-  const { isAuthenticated, isLoading, user } = useAuthStore();
-  const { userRole } = usePermissions();
+  // Use selectors for more efficient state access
+  const isAuthenticated = useAuthStore(selectIsAuthenticated);
+  const isLoading = useAuthStore(selectIsLoading);
+  const { hasRole } = usePermissions();
   const location = useLocation();
-  const [redirectAttempted, setRedirectAttempted] = useState(false);
   
-  // İlk yüklənmə zamanı və hər location dəyişdikdə 
-  // scrollu yuxarı qaytarırıq
+  // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
   
-  // Yüklənmə halında LoadingScreen göstəririk
+  // Show loading screen while auth state is being determined
   if (isLoading) {
     return <LoadingScreen message="Zəhmət olmasa gözləyin..." />;
   }
   
-  // İstifadəçi autentifikasiya olmayıbsa, login səhifəsinə yönləndiririk
+  // Not authenticated - redirect to login
   if (!isAuthenticated) {
-    // Redirect loop qarşısını almaq üçün kontrol
-    if (location.pathname === redirectUrl || redirectAttempted) {
-      return <>{children}</>;
-    }
-    
-    // Redirect-i qeyd edir və başlatırıq
-    setRedirectAttempted(true);
     return <Navigate to={redirectUrl} state={{ from: location }} replace />;
   }
   
-  // İstifadəçinin rolu yoxlanılan rollar arasında deyilsə, icazə yoxdur səhifəsini göstəririk
-  if (allowedRoles && userRole && !allowedRoles.includes(userRole)) {
+  // Check role-based access
+  if (allowedRoles && !hasRole(allowedRoles)) {
     return <AccessDenied />;
   }
   
-  // Redirect işarəsini təmizləyirik
-  if (redirectAttempted) {
-    setRedirectAttempted(false);
-  }
-  
+  // Authenticated and authorized
   return <>{children}</>;
 };
 
@@ -84,31 +73,28 @@ interface PublicRouteProps {
 }
 
 const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  // Use selectors for more efficient state access
+  const isAuthenticated = useAuthStore(selectIsAuthenticated);
+  const isLoading = useAuthStore(selectIsLoading);
   const location = useLocation();
-  const [redirecting, setRedirecting] = useState(false);
   
-  // İlk yüklənmə zamanı və hər location dəyişdikd�� 
-  // scrollu yuxarı qaytarırıq
+  // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
   
-  // Yüklənmə halında LoadingScreen göstəririk
+  // Show loading screen while auth state is being determined
   if (isLoading) {
     return <LoadingScreen message="Zəhmət olmasa gözləyin..." />;
   }
   
-  // İstifadəçi artıq autentifikasiya olunubsa və restricted route-dadırsa, dashboard-a yönləndiririk
-  if (isAuthenticated && restricted && !redirecting) {
-    // Yalnız bir dəfə redirect etmək üçün
-    setRedirecting(true);
-    
-    // Əvvəlki marşrut varsa, ona qayıdırıq, əks halda dashboard-a yönləndiririk
+  // If authenticated and trying to access a restricted route (like login), redirect to dashboard
+  if (isAuthenticated && restricted) {
     const from = location.state?.from?.pathname || "/dashboard";
     return <Navigate to={from} replace />;
   }
   
+  // Not restricted or not authenticated
   return <>{children}</>;
 };
 

@@ -70,7 +70,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       register,
       setError,
       createUser: register,
-      signup
+      signup,
+      updateUserData: async (data) => {
+        try {
+          const result = await updateProfile(data);
+          return result;
+        } catch (error) {
+          console.error('Error updating user data:', error);
+          return { data: null, error };
+        }
+      }
     };
   }, [
     user,

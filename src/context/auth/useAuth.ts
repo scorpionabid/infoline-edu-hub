@@ -55,7 +55,17 @@ export const useAuth = (): AuthContextType => {
     register: store.register,
     setError: store.setError,
     createUser: store.createUser,
-    signup: store.signup
+    signup: store.signup,
+    updateUserData: async (data) => {
+      try {
+        // Using updateProfile from store for consistency
+        const result = await store.updateProfile(data);
+        return result;
+      } catch (error) {
+        console.error('Error updating user data:', error);
+        return { data: null, error };
+      }
+    }
   };
 };
 

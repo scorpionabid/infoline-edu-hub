@@ -3,6 +3,16 @@ export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladm
 
 export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
 
+export interface NotificationSettings {
+  email: boolean;
+  inApp: boolean;
+  push: boolean;
+  system: boolean;
+  deadline: boolean;
+  sms?: boolean;
+  deadlineReminders?: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -30,16 +40,6 @@ export interface User {
   avatar?: string;
 }
 
-export interface NotificationSettings {
-  email: boolean;
-  inApp: boolean;
-  push: boolean;
-  system: boolean;
-  deadline: boolean;
-  sms?: boolean;
-  deadlineReminders?: boolean;
-}
-
 export interface FullUserData extends User {
   avatar?: string;
   region_id?: string;
@@ -60,6 +60,7 @@ export interface FullUserData extends User {
     sector?: string;
     school?: string;
   };
+  notificationSettings?: NotificationSettings;
 }
 
 export interface UserFilter {
@@ -95,8 +96,8 @@ export interface UserFormData {
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
-  notification_settings?: any;
-  notificationSettings?: any;
+  notification_settings?: NotificationSettings;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface Sector {

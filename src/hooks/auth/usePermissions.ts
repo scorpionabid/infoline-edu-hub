@@ -1,174 +1,135 @@
 
-import { useAuthStore } from './useAuthStore';
-import { UserRole } from '@/types/supabase';
-import {
-  canViewUsers,
-  canManageUsers,
-  canViewRegions,
-  canManageRegions,
-  canViewSectors,
-  canManageSectors,
-  canViewSchools,
-  canManageSchools,
-  canViewCategories,
-  canManageCategories
-} from './permissionUtils';
+import { useMemo } from 'react';
+import { useAuthStore, selectUser } from './useAuthStore';
+import { UserRole } from '@/types/user';
 
 export interface UsePermissionsResult {
-  userRole: UserRole | null;
-  regionId: string | null;
-  sectorId: string | null;
-  schoolId: string | null;
-  userId?: string;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-
-  hasRole: (role: UserRole | UserRole[]) => boolean;
+  userRole: UserRole | undefined;
+  hasRole: (role: string | string[]) => boolean;
+  hasRegionAccess: (regionId: string) => boolean;
+  hasSectorAccess: (sectorId: string) => boolean;
+  hasSchoolAccess: (schoolId: string) => boolean;
   isSuperAdmin: boolean;
   isRegionAdmin: boolean;
   isSectorAdmin: boolean;
   isSchoolAdmin: boolean;
-
-  hasRegionAccess: (targetRegionId: string) => boolean;
-  hasSectorAccess: (targetSectorId: string) => boolean;
-  hasSchoolAccess: (targetSchoolId: string) => boolean;
-
-  canViewUsers: boolean;
-  canManageUsers: boolean;
-  canViewRegions: boolean;
-  canManageRegions: boolean;
-  canViewSectors: boolean;
-  canManageSectors: boolean;
-  canViewSchools: boolean;
-  canManageSchools: boolean;
-  canViewCategories: boolean;
-  canManageCategories: boolean;
-  canViewSectorCategories: boolean;
-  canApproveData: boolean;
-  checkRegionAccess: (regionId: string, level?: string) => Promise<boolean>;
-  checkSectorAccess: (sectorId: string, level?: string) => Promise<boolean>;
-  checkSchoolAccess: (schoolId: string, level?: string) => Promise<boolean>;
-  checkCategoryAccess: (categoryId: string, level?: string) => Promise<boolean>;
-  checkColumnAccess: (columnId: string, level?: string) => Promise<boolean>;
+  userRegionId: string | undefined;
+  userSectorId: string | undefined;
+  userSchoolId: string | undefined;
 }
 
+/**
+ * Hook for checking user permissions
+ * Uses memoization to prevent unnecessary recalculations
+ */
 export const usePermissions = (): UsePermissionsResult => {
-  const { user, isAuthenticated, isLoading } = useAuthStore(state => ({ 
-    user: state.user, 
-    isAuthenticated: state.isAuthenticated, 
-    isLoading: state.isLoading 
-  }));
-
-  // Ensure we have a proper role
-  const userRole = (user?.role || null) as UserRole | null;
+  // Get user with selector for better performance
+  const user = useAuthStore(selectUser);
   
-  // Debug output to help diagnose role issues
-  console.log("[usePermissions] Current role:", userRole);
-  console.log("[usePermissions] User data:", user);
+  return useMemo(() => {
+    // Basic role information
+    const userRole = user?.role as UserRole | undefined;
+    const isSuperAdmin = userRole === 'superadmin';
+    const isRegionAdmin = userRole === 'regionadmin';
+    const isSectorAdmin = userRole === 'sectoradmin';
+    const isSchoolAdmin = userRole === 'schooladmin';
 
-  // Get region, sector, and school IDs from user object
-  const regionId = user?.region_id || null;
-  const sectorId = user?.sector_id || null;
-  const schoolId = user?.school_id || null;
-  const userId = user?.id;
+    // Entity IDs
+    const userRegionId = user?.region_id;
+    const userSectorId = user?.sector_id;
+    const userSchoolId = user?.school_id;
+    
+    /**
+     * Check if user has a specific role
+     * @param role The role or array of roles to check against
+     * @returns True if user has the role, false otherwise
+     */
+    const hasRole = (role: string | string[]): boolean => {
+      if (!user?.role) return false;
+      
+      if (Array.isArray(role)) {
+        return role.includes(user.role);
+      }
+      
+      return user.role === role;
+    };
 
-  // Helper boolean flags for role checks
-  const isSuperAdmin = userRole === 'superadmin';
-  const isRegionAdmin = userRole === 'regionadmin';
-  const isSectorAdmin = userRole === 'sectoradmin';
-  const isSchoolAdmin = userRole === 'schooladmin';
+    /**
+     * Check if user has access to a specific region
+     * @param regionId The region ID to check access against
+     * @returns True if user has access, false otherwise
+     */
+    const hasRegionAccess = (regionId: string): boolean => {
+      if (!user) return false;
+      
+      // Super admin has access to everything
+      if (isSuperAdmin) return true;
+      
+      // Region admins only have access to their region
+      if (isRegionAdmin) {
+        return user.region_id === regionId;
+      }
+      
+      return false;
+    };
 
-  const hasRole = (rolesToCheck: UserRole | UserRole[]): boolean => {
-    if (!userRole) return false;
-    if (Array.isArray(rolesToCheck)) {
-      return rolesToCheck.includes(userRole);
-    }
-    return userRole === rolesToCheck;
-  };
+    /**
+     * Check if user has access to a specific sector
+     * @param sectorId The sector ID to check access against
+     * @returns True if user has access, false otherwise
+     */
+    const hasSectorAccess = (sectorId: string): boolean => {
+      if (!user) return false;
+      
+      // Super admin and region admins have access to sectors in their region
+      if (isSuperAdmin) return true;
+      
+      if (isRegionAdmin) {
+        // For region admins, we would need to check if the sector belongs to their region
+        // This requires additional data, so this is a simplified check
+        return true;
+      }
+      
+      // Sector admins only have access to their sector
+      if (isSectorAdmin) {
+        return user.sector_id === sectorId;
+      }
+      
+      return false;
+    };
 
-  const hasRegionAccess = (targetRegionId: string): boolean => {
-    if (!user) return false;
-    if (isSuperAdmin) return true;
-    if (isRegionAdmin) return user.region_id === targetRegionId;
-    return false;
-  };
+    /**
+     * Check if user has access to a specific school
+     * @param schoolId The school ID to check access against
+     * @returns True if user has access, false otherwise
+     */
+    const hasSchoolAccess = (schoolId: string): boolean => {
+      if (!user) return false;
+      
+      // Super admin has access to everything
+      if (isSuperAdmin) return true;
+      
+      // School admins only have access to their school
+      if (isSchoolAdmin) {
+        return user.school_id === schoolId;
+      }
+      
+      return false;
+    };
 
-  const hasSectorAccess = (targetSectorId: string): boolean => {
-    if (!user) return false;
-    if (isSuperAdmin || isRegionAdmin) return true; 
-    if (isSectorAdmin) return user.sector_id === targetSectorId;
-    return false;
-  };
-
-  const hasSchoolAccess = (targetSchoolId: string): boolean => {
-    if (!user) return false;
-    if (isSuperAdmin || isRegionAdmin || isSectorAdmin) return true;
-    if (isSchoolAdmin) return user.school_id === targetSchoolId;
-    return false;
-  };
-  
-  const canViewSectorCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-
-  // Async checkers (these return promises)
-  const checkRegionAccess = async (targetRegionId: string, level?: string): Promise<boolean> => {
-    return hasRegionAccess(targetRegionId);
-  };
-
-  const checkSectorAccess = async (targetSectorId: string, level?: string): Promise<boolean> => {
-    return hasSectorAccess(targetSectorId);
-  };
-
-  const checkSchoolAccess = async (targetSchoolId: string, level?: string): Promise<boolean> => {
-    return hasSchoolAccess(targetSchoolId);
-  };
-
-  const checkCategoryAccess = async (categoryId: string, level?: string): Promise<boolean> => {
-    if (isSuperAdmin || isRegionAdmin) return true;
-    if (isSectorAdmin && level === 'read') return true; 
-    return false; 
-  };
-
-  const checkColumnAccess = async (columnId: string, level?: string): Promise<boolean> => {
-    if (isSuperAdmin || isRegionAdmin) return true;
-    if (isSectorAdmin && level === 'read') return true;
-    return false;
-  };
-
-  return {
-    userRole,
-    regionId,
-    sectorId,
-    schoolId,
-    userId,
-    isAuthenticated,
-    isLoading,
-    hasRole,
-    isSuperAdmin,
-    isRegionAdmin,
-    isSectorAdmin,
-    isSchoolAdmin,
-    hasRegionAccess,
-    hasSectorAccess,
-    hasSchoolAccess,
-    canViewUsers: userRole ? canViewUsers(userRole) : false,
-    canManageUsers: userRole ? canManageUsers(userRole) : false,
-    canViewRegions: userRole ? canViewRegions(userRole) : false,
-    canManageRegions: userRole ? canManageRegions(userRole) : false,
-    canViewSectors: userRole ? canViewSectors(userRole) : false,
-    canManageSectors: userRole ? canManageSectors(userRole) : false,
-    canViewSchools: userRole ? canViewSchools(userRole) : false,
-    canManageSchools: userRole ? canManageSchools(userRole) : false,
-    canViewCategories: userRole ? canViewCategories(userRole) : false,
-    canManageCategories: userRole ? canManageCategories(userRole) : false,
-    canViewSectorCategories,
-    canApproveData,
-    checkRegionAccess,
-    checkSectorAccess,
-    checkSchoolAccess,
-    checkCategoryAccess,
-    checkColumnAccess,
-  };
+    return {
+      userRole,
+      hasRole,
+      hasRegionAccess,
+      hasSectorAccess,
+      hasSchoolAccess,
+      isSuperAdmin,
+      isRegionAdmin,
+      isSectorAdmin,
+      isSchoolAdmin,
+      userRegionId,
+      userSectorId,
+      userSchoolId,
+    };
+  }, [user]);
 };
-
-export default usePermissions;
