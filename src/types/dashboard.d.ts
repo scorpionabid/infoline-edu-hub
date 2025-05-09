@@ -1,15 +1,44 @@
-// Dashboard types
 
-export interface DashboardCompletion {
-  percentage: number;
-  completed: number;
-  total: number;
+export interface ChartData {
+  name: string;
+  value: number;
+  color?: string;
 }
 
-export interface CompletionData {
-  percentage: number;
-  completed: number;
-  total: number;
+export type CategoryAssignment = 'all' | 'sectors' | 'schools';
+export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved' | 'pending' | 'completed';
+
+export interface TabDefinition {
+  id: string;
+  label: string;
+  status?: CategoryStatus | 'all';
+  count?: number;
+}
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  deadline?: string | Date | null;
+  completionRate: number;
+  status: string;
+}
+
+export interface DeadlineItem {
+  id: string;
+  name: string;
+  status: string;
+  dueDate: string;
+  progress: number;
+  categoryName?: string;
+}
+
+export interface FormItem {
+  id: string;
+  name: string;
+  status: string;
+  date?: string;
+  categoryName?: string;
 }
 
 export interface DashboardStatus {
@@ -33,127 +62,71 @@ export interface DashboardFormStats {
   total: number;
 }
 
-export interface PendingApproval {
-  id: string;
-  title?: string;
-  school?: string;
-  schoolName: string;
-  categoryName: string;
-  status?: 'pending' | 'approved' | 'rejected';
-  date?: string;
-  submittedAt: string;
-  createdAt?: string;
-  timestamp?: string;
-  entity?: any;
-  schoolId?: string;
-  categoryId?: string;
-  count?: number;
-}
-
-export interface DeadlineItem {
-  id: string;
-  name?: string;
-  title?: string;
-  dueDate?: string;
-  completionRate?: number;
-  progress?: number;
-  status?: 'upcoming' | 'overdue' | 'completed' | 'pending' | 'draft';
-  category?: string;
-  categoryName?: string;
-  timestamp?: string;
-  deadline?: string;
-  categoryId?: string;
-}
-
-export interface FormItem {
-  id: string;
-  name?: string;
-  title?: string;
-  status?: 'pending' | 'approved' | 'rejected' | 'draft';
-  deadline?: string;
-  category?: string;
-  categoryName?: string;
-  dueDate?: string;
-  completionRate?: number;
-  progress?: number;
-  categoryId?: string;
-  submittedAt?: string;
-}
-
-export interface CategoryItem {
-  id: string;
-  name: string;
-  completionRate: number;
-  dueDate?: string;
-  progress?: number;
-  deadline?: string;
-  status?: 'active' | 'inactive' | 'archived';
-  description?: string;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  columns?: any[];
-  status?: string;
-  deadline?: string;
-  completionRate?: number;
-  assignment?: string;
-}
-
-export interface ChartData {
-  name: string;
-  value: number;
-  color?: string;
-}
-
 export interface SchoolStat {
   id: string;
   name: string;
-  status?: string;
+  status: string;
   completionRate: number;
   lastUpdate: string;
   pendingForms: number;
-  formsCompleted: number;
-  totalForms: number;
-  principalName: string;
+  formsCompleted?: number;
+  totalForms?: number;
+  principalName?: string;
   address?: string;
   phone?: string;
   email?: string;
-  pendingCount?: number;
 }
 
-export interface CategoryStat {
+export interface PendingApproval {
   id: string;
-  name: string;
+  schoolId: string;
+  schoolName: string;
+  categoryId: string;
+  categoryName: string;
+  submittedAt: string;
+  status: string;
+}
+
+export interface DashboardCompletion {
+  percentage: number;
+  total: number;
+  completed: number;
+}
+
+export interface SchoolAdminDashboardData {
+  completion: DashboardCompletion;
+  status: DashboardStatus;
+  categories: CategoryItem[];
+  upcoming: DeadlineItem[];
+  formStats: DashboardFormStats;
+  pendingForms: FormItem[];
   completionRate: number;
-  pending: number;
-  approved: number;
-  rejected: number;
+  notifications: any[];
 }
 
-export interface RegionStat {
-  id: string;
-  name: string;
-  schoolCount: number;
-  sectorCount: number;
+export interface SectorAdminDashboardData {
+  completion: DashboardCompletion;
+  status: DashboardStatus;
+  formStats?: DashboardFormStats;
+  schoolStats: SchoolStat[];
+  pendingApprovals: PendingApproval[];
+}
+
+export interface SectorAdminDashboardProps {
+  data: SectorAdminDashboardData;
+}
+
+export interface RegionAdminDashboardData {
+  completion: DashboardCompletion;
+  status: DashboardStatus;
+  sectorStats: any[];
+  pendingApprovals: PendingApproval[];
+}
+
+export interface SuperAdminDashboardData {
+  regions: number;
+  sectors: number;
+  schools: number;
+  users: number;
   completionRate: number;
-  status?: string;
-}
-
-export interface SectorStat {
-  id: string;
-  name: string;
-  schoolCount: number;
-  completionRate: number;
-  region_id?: string;
-  status?: string;
-}
-
-export interface TabDefinition {
-  id: string;
-  label: string;
-  status?: string | 'all';
-  count?: number;
 }

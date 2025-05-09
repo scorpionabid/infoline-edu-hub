@@ -103,11 +103,21 @@ const useSchoolAdminDashboard = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  const handleFormClick = (schoolId: string) => {
+    navigate(`/school/${schoolId}`);
+  };
+
+  const navigateToDataEntry = () => {
+    navigate('/data-entry');
+  };
+
   return {
     data,
     isLoading,
     error,
-    refreshDashboard: fetchDashboardData
+    refreshDashboard: fetchDashboardData,
+    handleFormClick,
+    navigateToDataEntry
   };
 };
 

@@ -1,9 +1,8 @@
 
 import React from 'react';
-import { Pie } from 'recharts';
-import { PieChart, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 
-interface ChartData {
+export interface ChartData {
   name: string;
   value: number;
   color?: string;

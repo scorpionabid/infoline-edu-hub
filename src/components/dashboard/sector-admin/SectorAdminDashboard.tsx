@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotifications } from '@/context/NotificationContext';
 import StatusCards from '@/components/dashboard/StatusCards';
 import SchoolStatsCard from '@/components/dashboard/common/SchoolStatsCard';
 import PendingApprovals from '@/components/approval/PendingApprovals';

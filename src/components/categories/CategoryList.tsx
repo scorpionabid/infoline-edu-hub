@@ -8,6 +8,7 @@ import { useCategories } from '@/hooks/categories/useCategories';
 import useCategoryActions from '@/hooks/categories/useCategoryActions';
 import { useLanguage } from '@/context/LanguageContext';
 import { CategoryColumns } from './CategoryColumns';
+import { CategoryStatus } from '@/types/category';
 
 export const CategoryList = () => {
   const navigate = useNavigate();
@@ -39,9 +40,9 @@ export const CategoryList = () => {
     }
   };
 
-  const handleUpdateCategoryStatus = async (id: string, status: string) => {
+  const handleUpdateCategoryStatus = async (id: string, status: CategoryStatus) => {
     try {
-      await updateCategoryStatus(id, status);
+      await updateCategoryStatus(id, status as CategoryStatus);
       refetch();
     } catch (error) {
       console.error('Error updating category status:', error);

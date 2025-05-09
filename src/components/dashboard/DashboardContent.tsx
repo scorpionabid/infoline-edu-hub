@@ -1,13 +1,14 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CircleDollarSign, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 import { useAuth } from '@/context/auth';
-import { useSchoolAdminDashboard } from '@/hooks/useSchoolAdminDashboard';
-import { Skeleton } from "@/components/ui/skeleton"
+import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChartData } from '@/types/dashboard';
 import { DoughnutChart } from '@/components/charts/DoughnutChart';
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui/progress";
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';

@@ -15,7 +15,6 @@ export interface Category {
   deadline?: string | Date | null;
   column_count?: number;
   completionRate?: number;
-  columns?: ColumnData[];
 }
 
 export interface ColumnData {
