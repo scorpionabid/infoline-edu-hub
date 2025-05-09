@@ -9,7 +9,7 @@ import PendingApprovals from '@/components/approval/PendingApprovals';
 import NotificationsCard from '@/components/dashboard/common/NotificationsCard';
 import { SectorAdminDashboardData, SectorAdminDashboardProps } from '@/types/dashboard';
 import SchoolsTable from './SchoolsTable';
-import { adaptAppNotificationToDashboard } from '@/types/notification';
+import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
 import { SchoolStat } from '@/types/supabase';
 
 const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => {
@@ -19,7 +19,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
   // Adapt notifications
   const adaptedNotifications = useMemo(() => {
     if (notifications && notifications.length > 0) {
-      return notifications.map(n => adaptAppNotificationToDashboard(n));
+      return notifications.map(n => adaptDashboardNotificationToApp(n));
     }
     return [];
   }, [notifications]);
@@ -31,12 +31,12 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
         id: school.id || '',
         name: school.name || '',
         status: school.status || 'active',
-        completionRate: school.completionRate || school.completion_rate || 0,
-        lastUpdate: school.lastUpdate || school.updated_at || new Date().toISOString(),
+        completionRate: school.completionRate || 0,
+        lastUpdate: school.lastUpdate || new Date().toISOString(),
         pendingForms: school.pendingForms || 0,
         formsCompleted: school.formsCompleted || 0,
         totalForms: school.totalForms || 0,
-        principalName: school.principalName || school.principal_name || '',
+        principalName: school.principalName || '',
         address: school.address || '',
         phone: school.phone || '',
         email: school.email || ''
@@ -90,7 +90,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
           <NotificationsCard 
             title={t('notifications')}
             notifications={adaptedNotifications} 
-            onMarkAsRead={(id) => markAsRead(id)} 
+            onMarkAsRead={markAsRead} 
           />
           
           <SchoolStatsCard stats={enhancedSchools} />

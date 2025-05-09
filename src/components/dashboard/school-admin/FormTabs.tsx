@@ -1,222 +1,200 @@
+
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TabsContent } from '@/components/ui/tabs';
-import { useLanguage } from '@/context/LanguageContext';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, FilePlus, Calendar, PlusCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { CalendarIcon, ClockIcon, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface FormTabsProps {
-  upcoming: DeadlineItem[];
   categories: CategoryItem[];
+  upcoming: DeadlineItem[];
   pendingForms: FormItem[];
-  navigateToDataEntry?: () => void;
-  handleFormClick?: (id: string) => void;
 }
 
-const FormTabs: React.FC<FormTabsProps> = ({
-  upcoming,
-  categories,
-  pendingForms,
-  navigateToDataEntry,
-  handleFormClick
-}) => {
+const FormTabs: React.FC<FormTabsProps> = ({ categories, upcoming, pendingForms }) => {
   const { t } = useLanguage();
-
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString();
-    } catch (e) {
-      return dateString;
-    }
+  const navigate = useNavigate();
+  
+  const handleItemClick = (id: string) => {
+    navigate(`/data-entry/${id}`);
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">{t('approved')}</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">{t('rejected')}</Badge>;
+      case 'completed':
+        return <Badge className="bg-green-500">{t('completed')}</Badge>;
       case 'pending':
-        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">{t('pending')}</Badge>;
-      case 'draft':
-        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200">{t('draft')}</Badge>;
+        return <Badge className="bg-amber-500">{t('pending')}</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-500">{t('rejected')}</Badge>;
+      case 'not-started':
+        return <Badge variant="outline">{t('notStarted')}</Badge>;
+      case 'in-progress':
+        return <Badge className="bg-blue-500">{t('inProgress')}</Badge>;
       default:
-        if (status === 'upcoming') {
-          return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">{t('upcoming')}</Badge>;
-        }
-        return <Badge>{status}</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
+  };
+
+  const getDaysRemainingText = (daysRemaining: number) => {
+    if (daysRemaining < 0) {
+      return <span className="text-red-500">{t('overdue')}</span>;
+    }
+    if (daysRemaining === 0) {
+      return <span className="text-amber-500">{t('dueToday')}</span>;
+    }
+    if (daysRemaining <= 7) {
+      return <span className="text-amber-500">{t('daysRemaining', { count: daysRemaining })}</span>;
+    }
+    return <span>{t('daysRemaining', { count: daysRemaining })}</span>;
   };
 
   return (
     <>
-      <TabsContent value="upcoming" className="mt-0">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('upcomingDeadlines')}</CardTitle>
-            <CardDescription>{t('upcomingDeadlinesDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[300px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('form')}</TableHead>
-                    <TableHead>{t('category')}</TableHead>
-                    <TableHead>{t('deadline')}</TableHead>
-                    <TableHead>{t('progress')}</TableHead>
-                    <TableHead>{t('status')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {upcoming.length > 0 ? (
-                    upcoming.map((item) => (
-                      <TableRow key={item.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleFormClick?.(item.id)}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.categoryName || '-'}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                            {formatDate(item.dueDate)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Progress value={item.progress || 0} className="h-2 w-[80px]" />
-                            <span className="text-sm text-muted-foreground">
-                              {item.completionRate || 0}%
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(item.status)}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                        {t('noUpcomingDeadlines')}
-                      </TableCell>
-                    </TableRow>
+      <TabsContent value="upcoming">
+        <div className="grid gap-4">
+          {upcoming.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-center text-muted-foreground">{t('noUpcomingDeadlines')}</p>
+              </CardContent>
+            </Card>
+          ) : (
+            upcoming.map((item) => (
+              <Card key={item.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleItemClick(item.id)}>
+                <CardContent className="p-5">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-semibold text-lg">{item.title || item.name}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {item.category || item.categoryName}
+                      </p>
+                    </div>
+                    <div>{getStatusBadge(item.status)}</div>
+                  </div>
+                  
+                  <div className="flex items-center mt-4 text-sm">
+                    <CalendarIcon className="h-4 w-4 mr-1 text-muted-foreground" />
+                    <span className="mr-4">
+                      {item.deadline ? format(new Date(item.deadline), 'dd.MM.yyyy') : (item.dueDate ? format(new Date(item.dueDate), 'dd.MM.yyyy') : '-')}
+                    </span>
+                    <ClockIcon className="h-4 w-4 mr-1 text-muted-foreground" />
+                    <span>{getDaysRemainingText(item.daysRemaining)}</span>
+                  </div>
+                  
+                  {(item.progress !== undefined || item.completionRate !== undefined) && (
+                    <div className="mt-3 w-full bg-muted rounded-full h-2.5">
+                      <div 
+                        className="bg-primary h-2.5 rounded-full" 
+                        style={{ width: `${item.progress || item.completionRate || 0}%` }}
+                      ></div>
+                    </div>
                   )}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
       </TabsContent>
 
-      <TabsContent value="pending" className="mt-0">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('pendingForms')}</CardTitle>
-            <CardDescription>{t('pendingFormsDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[300px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('form')}</TableHead>
-                    <TableHead>{t('category')}</TableHead>
-                    <TableHead>{t('date')}</TableHead>
-                    <TableHead>{t('status')}</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingForms.length > 0 ? (
-                    pendingForms.map((item) => (
-                      <TableRow key={item.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleFormClick?.(item.id)}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.categoryName || '-'}</TableCell>
-                        <TableCell>{formatDate(item.date || '')}</TableCell>
-                        <TableCell>{getStatusBadge(item.status)}</TableCell>
-                        <TableCell className="w-[50px]">
-                          <Button variant="ghost" size="sm">
-                            <FilePlus className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                        {t('noPendingForms')}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+      <TabsContent value="pending">
+        <div className="grid gap-4">
+          {pendingForms.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-center text-muted-foreground">{t('noPendingForms')}</p>
+              </CardContent>
+            </Card>
+          ) : (
+            pendingForms.map((form) => (
+              <Card key={form.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleItemClick(form.id)}>
+                <CardContent className="p-5">
+                  <div className="flex justify-between">
+                    <div>
+                      <h4 className="font-semibold">{form.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {form.category || form.categoryId}
+                      </p>
+                    </div>
+                    <div>{getStatusBadge(form.status)}</div>
+                  </div>
+                  
+                  <div className="flex items-center mt-3 text-sm">
+                    <CalendarIcon className="h-4 w-4 mr-1 text-muted-foreground" />
+                    <span>
+                      {form.updatedAt ? format(new Date(form.updatedAt), 'dd.MM.yyyy') : 
+                       (form.date ? format(new Date(form.date), 'dd.MM.yyyy') : '-')}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
       </TabsContent>
 
-      <TabsContent value="categories" className="mt-0">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('allCategories')}</CardTitle>
-            <CardDescription>{t('allCategoriesDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[300px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('category')}</TableHead>
-                    <TableHead>{t('deadline')}</TableHead>
-                    <TableHead>{t('completion')}</TableHead>
-                    <TableHead>{t('status')}</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categories.length > 0 ? (
-                    categories.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                            {formatDate(item.deadline)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Progress value={item.completionRate} className="h-2 w-[80px]" />
-                            <span className="text-sm text-muted-foreground">
-                              {item.completionRate}%
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(item.status)}</TableCell>
-                        <TableCell className="w-[50px]">
-                          {navigateToDataEntry && (
-                            <Button variant="ghost" size="sm" onClick={navigateToDataEntry}>
-                              <PlusCircle className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                        {t('noCategories')}
-                      </TableCell>
-                    </TableRow>
+      <TabsContent value="categories">
+        <div className="grid gap-4">
+          {categories.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-center text-muted-foreground">{t('noCategories')}</p>
+              </CardContent>
+            </Card>
+          ) : (
+            categories.map((category) => (
+              <Card key={category.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleItemClick(category.id)}>
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between">
+                    <CardTitle className="text-lg">{category.name}</CardTitle>
+                    <div>
+                      {category.completionRate === 100 ? (
+                        <CheckCircle2 className="text-green-500 h-5 w-5" />
+                      ) : category.status === 'pending' ? (
+                        <AlertCircle className="text-amber-500 h-5 w-5" />
+                      ) : null}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {category.description || t('categoryDescription')}
+                  </p>
+                  
+                  <div className="flex justify-between items-center text-sm mb-2">
+                    <span>{t('completionRate')}</span>
+                    <span className="font-medium">{category.completionRate}%</span>
+                  </div>
+                  
+                  <div className="w-full bg-muted rounded-full h-2.5">
+                    <div 
+                      className={`h-2.5 rounded-full ${
+                        category.completionRate === 100
+                          ? 'bg-green-500'
+                          : category.completionRate > 0
+                          ? 'bg-blue-500'
+                          : 'bg-gray-300'
+                      }`}
+                      style={{ width: `${category.completionRate}%` }}
+                    ></div>
+                  </div>
+                  
+                  {category.deadline && (
+                    <div className="flex items-center mt-3 text-xs text-muted-foreground">
+                      <CalendarIcon className="h-3 w-3 mr-1" />
+                      <span>{format(new Date(category.deadline), 'dd.MM.yyyy')}</span>
+                    </div>
                   )}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
       </TabsContent>
     </>
   );

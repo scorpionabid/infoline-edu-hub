@@ -19,6 +19,7 @@ export interface SchoolFormData {
   phone?: string;
   email?: string;
   principal_name?: string;
+  principalName?: string; // Added for compatibility
   student_count?: number;
   teacher_count?: number;
   type?: string;
@@ -34,13 +35,40 @@ export interface SchoolFormProps {
   regions: Array<{id: string; name: string}>;
   sectors: Array<{id: string; name: string}>;
   isLoading?: boolean;
+  isSubmitting?: boolean; // Added for compatibility
   submitButtonText?: string;
 }
 
 export interface EnhancedSchoolFormProps extends Partial<SchoolFormProps> {
   initialData?: SchoolFormData;
   onSubmit: (data: SchoolFormData) => void;
+  isSubmitting?: boolean; // Added for compatibility
 }
 
-// Re-export supabase types to avoid circular dependencies
-export { SchoolStat };
+// Re-export from supabase types to avoid circular dependencies
+export { SchoolStat } from './supabase';
+
+// School interface for backwards compatibility
+export interface School extends SchoolFormData {
+  id: string;
+  created_at?: string;
+  updated_at?: string;
+  completion_rate?: number;
+  completionRate?: number;
+  region_name?: string;
+  sector_name?: string;
+}
+
+// Type declarations for compatibility with existing components
+export { Region, Sector } from './supabase';
+
+// Define SectorSchool for compatibility
+export interface SectorSchool {
+  id: string;
+  name: string;
+  status?: string;
+  completionRate: number;
+  principal_name?: string;
+  principalName?: string;
+}
+
