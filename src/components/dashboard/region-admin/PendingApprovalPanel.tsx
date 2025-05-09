@@ -1,28 +1,40 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLanguage } from '@/context/LanguageContext';
-import PendingApprovalsTable from '@/components/approval/PendingApprovalsTable';
-import { PendingApproval } from '@/types/dashboard';
+import { CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 
-interface PendingApprovalPanelProps {
-  pendingApprovals: PendingApproval[];
+interface PendingApproval {
+  id: string;
+  schoolName: string;
+  categoryName: string;
+  submittedAt: string;
 }
 
-const PendingApprovalPanel: React.FC<PendingApprovalPanelProps> = ({ 
-  pendingApprovals
-}) => {
-  const { t } = useLanguage();
+interface PendingApprovalPanelProps {
+  approvals: PendingApproval[];
+}
 
+const PendingApprovalPanel: React.FC<PendingApprovalPanelProps> = ({ approvals }) => {
   return (
-    <Card className="col-span-12 lg:col-span-8">
+    <div>
       <CardHeader>
-        <CardTitle>{t('pendingApprovals')}</CardTitle>
+        <CardTitle>Təsdiq Gözləyənlər</CardTitle>
       </CardHeader>
       <CardContent>
-        <PendingApprovalsTable pendingApprovals={pendingApprovals} />
+        {approvals.length === 0 ? (
+          <p className="text-center text-muted-foreground">Təsdiq gözləyən məlumat yoxdur</p>
+        ) : (
+          <div className="space-y-4">
+            {approvals.map(approval => (
+              <div key={approval.id} className="border-b pb-2 last:border-0">
+                <p className="font-medium">{approval.schoolName}</p>
+                <p className="text-sm text-muted-foreground">{approval.categoryName}</p>
+                <p className="text-xs text-muted-foreground">{approval.submittedAt}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
-    </Card>
+    </div>
   );
 };
 

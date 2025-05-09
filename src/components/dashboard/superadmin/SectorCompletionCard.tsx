@@ -1,54 +1,38 @@
 
 import React from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { SectorStat } from '@/types/dashboard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface SectorCompletionCardProps {
-  sectors: SectorStat[];
+  sectors: any[];
 }
 
-const SectorCompletionCard: React.FC<SectorCompletionCardProps> = ({ sectors }) => {
-  // Sort sectors by completion rate in descending order
-  const sortedSectors = [...sectors].sort((a, b) => b.completionRate - a.completionRate);
-  
-  // Show only top 5 sectors
-  const topSectors = sortedSectors.slice(0, 5);
-
+const SectorCompletionCard: React.FC<SectorCompletionCardProps> = ({ sectors = [] }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sektor Tamamlanma</CardTitle>
-        <CardDescription>
-          Top 5 sektor üzrə tamamlanma dərəcəsi
-        </CardDescription>
+        <CardTitle className="text-lg font-medium">Sector Completion</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {topSectors.map((sector) => (
-            <div key={sector.id} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{sector.name}</span>
-                <span className="text-sm text-muted-foreground">
-                  {Math.round(sector.completionRate)}%
-                </span>
+      <CardContent className="pt-2">
+        {sectors.length === 0 ? (
+          <div className="text-center p-4 text-muted-foreground">No sector data available</div>
+        ) : (
+          <div className="space-y-4">
+            {sectors.map(sector => (
+              <div key={sector.id} className="flex flex-col">
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm font-medium">{sector.name}</span>
+                  <span className="text-sm font-medium">{sector.completionRate || 0}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2.5">
+                  <div 
+                    className="bg-primary h-2.5 rounded-full" 
+                    style={{ width: `${sector.completionRate || 0}%` }} 
+                  />
+                </div>
               </div>
-              <Progress value={sector.completionRate} className="h-2" />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{sector.schoolCount} məktəb</span>
-                {sector.pendingApprovals !== undefined && (
-                  <span>{sector.pendingApprovals} gözləyən</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

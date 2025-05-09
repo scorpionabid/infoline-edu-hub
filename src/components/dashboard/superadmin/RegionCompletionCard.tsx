@@ -1,49 +1,38 @@
 
 import React from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { RegionStat } from '@/types/dashboard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface RegionCompletionCardProps {
-  regions: RegionStat[];
+  regions: any[];
 }
 
-const RegionCompletionCard: React.FC<RegionCompletionCardProps> = ({ regions }) => {
-  // Sort regions by completion rate in descending order
-  const sortedRegions = [...regions].sort((a, b) => b.completionRate - a.completionRate);
-
+const RegionCompletionCard: React.FC<RegionCompletionCardProps> = ({ regions = [] }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Region Tamamlanma</CardTitle>
-        <CardDescription>
-          Regionlar üzrə tamamlanma dərəcəsi
-        </CardDescription>
+        <CardTitle className="text-lg font-medium">Region Completion</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {sortedRegions.map((region) => (
-            <div key={region.id} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{region.name}</span>
-                <span className="text-sm text-muted-foreground">
-                  {Math.round(region.completionRate)}%
-                </span>
+      <CardContent className="pt-2">
+        {regions.length === 0 ? (
+          <div className="text-center p-4 text-muted-foreground">No region data available</div>
+        ) : (
+          <div className="space-y-4">
+            {regions.map(region => (
+              <div key={region.id} className="flex flex-col">
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm font-medium">{region.name}</span>
+                  <span className="text-sm font-medium">{region.completionRate || 0}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2.5">
+                  <div 
+                    className="bg-primary h-2.5 rounded-full" 
+                    style={{ width: `${region.completionRate || 0}%` }} 
+                  />
+                </div>
               </div>
-              <Progress value={region.completionRate} className="h-2" />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{region.sectorCount} sektor</span>
-                <span>{region.schoolCount} məktəb</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

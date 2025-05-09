@@ -1,75 +1,40 @@
 
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 
-export interface SectorCompletionItem {
+interface SectorStat {
   id: string;
   name: string;
-  completion: number;
-  schoolCount: number;
+  completion?: number;
+  schoolCount?: number;
 }
 
 interface SectorsListProps {
-  sectors: SectorCompletionItem[];
+  sectors: SectorStat[];
 }
 
-export const SectorsList: React.FC<SectorsListProps> = ({ sectors }) => {
-  const navigate = useNavigate();
-  
-  if (!sectors || sectors.length === 0) {
-    return (
-      <div className="text-center p-4 text-muted-foreground">
-        Göstəriləcək sektor yoxdur
-      </div>
-    );
-  }
-  
+const SectorsList: React.FC<SectorsListProps> = ({ sectors }) => {
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Sektor</TableHead>
-            <TableHead className="w-[100px] text-right">Məktəb sayı</TableHead>
-            <TableHead className="w-[200px] text-right">Tamamlanma</TableHead>
-            <TableHead className="w-[100px]"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sectors.map((sector) => (
-            <TableRow key={sector.id}>
-              <TableCell className="font-medium">{sector.name}</TableCell>
-              <TableCell className="text-right">{sector.schoolCount}</TableCell>
-              <TableCell>
-                <div className="flex items-center justify-end gap-2">
-                  <Progress 
-                    value={sector.completion} 
-                    className="h-2 w-[100px]"
-                    indicatorClassName={
-                      sector.completion > 80 ? "bg-green-500" :
-                      sector.completion > 50 ? "bg-blue-500" :
-                      sector.completion > 30 ? "bg-yellow-500" : "bg-red-500"
-                    }
-                  />
-                  <span className="w-8 text-sm">{Math.round(sector.completion)}%</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate(`/sectors/${sector.id}`)}
-                >
-                  İncələ
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div>
+      <CardHeader>
+        <CardTitle>Sektorlar</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {sectors.length === 0 ? (
+          <p className="text-center text-muted-foreground">Heç bir sektor tapılmadı</p>
+        ) : (
+          <div className="space-y-2">
+            {sectors.map(sector => (
+              <div key={sector.id} className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                <span>{sector.name}</span>
+                <span className="text-sm font-medium">{sector.schoolCount || 0} məktəb</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
     </div>
   );
 };
+
+export default SectorsList;

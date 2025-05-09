@@ -4,10 +4,10 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { AuthProvider } from '@/context/auth';
+import { CacheProvider } from '@/context/QueryClientProvider';
 import { Toaster } from '@/components/ui/toaster';
 import { AppRoutes } from './routes/AppRoutes';
 import { RegisterSW } from './lib/register-sw';
-import { CacheProvider } from '@/context/QueryClientProvider';
 
 /**
  * Main App component with properly ordered providers.

@@ -2,46 +2,29 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
+interface GridProps {
   children: React.ReactNode;
-  cols?: number | { default: number; sm?: number; md?: number; lg?: number };
-  columns?: number | { default: number; sm?: number; md?: number; lg?: number }; // Köhnə komponentlərlə uyğunluq üçün
-  gap?: string;
+  columns: number;
+  className?: string;
 }
 
-const Grid = React.forwardRef<HTMLDivElement, GridProps>(
-  ({ className, children, cols = 1, columns, gap = "gap-4", ...props }, ref) => {
-    // Həm cols həm də columns parametrlərini dəstəkləyək
-    const columnValue = cols || columns || 1;
-    
-    // Dinamik grid-cols klassları əlavə edək
-    const getColsClass = () => {
-      if (typeof columnValue === 'number') {
-        return `grid-cols-${columnValue}`;
-      }
+export const Grid: React.FC<GridProps> = ({ children, columns = 1, className }) => {
+  const getGridCols = () => {
+    switch (columns) {
+      case 2:
+        return 'grid-cols-1 md:grid-cols-2';
+      case 3:
+        return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+      case 4:
+        return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
+      default:
+        return 'grid-cols-1';
+    }
+  };
 
-      // Responsive kolonlar üçün dizayn
-      const { default: defaultCols, sm, md, lg } = columnValue;
-      return cn(
-        `grid-cols-${defaultCols}`,
-        sm && `sm:grid-cols-${sm}`,
-        md && `md:grid-cols-${md}`,
-        lg && `lg:grid-cols-${lg}`
-      );
-    };
-
-    return (
-      <div
-        className={cn("grid", gap, getColsClass(), className)}
-        ref={ref}
-        {...props}
-      >
-        {children}
-      </div>
-    );
-  }
-);
-
-Grid.displayName = "Grid";
-
-export { Grid };
+  return (
+    <div className={cn('grid gap-4', getGridCols(), className)}>
+      {children}
+    </div>
+  );
+};

@@ -19,10 +19,9 @@ const CacheContext = React.createContext<CacheContextType>(defaultCacheContext);
 // Custom hook
 export const useCache = () => React.useContext(CacheContext);
 
-// React Query Client Provider with cache management
+// Cache Provider Component
 export const CacheProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Use the queryClient from the parent QueryClientProvider
-  // This will work now because we've added QueryClientProvider in main.tsx
   const queryClient = useQueryClient();
 
   // Cache management functions
