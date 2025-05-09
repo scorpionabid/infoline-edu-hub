@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import BackgroundDecorations from './BackgroundDecorations';
 import ThemeToggle from '@/components/ThemeToggle';
-import LanguageSelector from '@/components/LanguageSelector';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 interface LoginContainerProps {
   children: ReactNode;
@@ -17,7 +17,7 @@ const LoginContainer: React.FC<LoginContainerProps> = ({ children }) => {
       {/* Theme and language toggles */}
       <div className="absolute top-4 right-4 flex space-x-2">
         <ThemeToggle />
-        <LanguageSelector />
+        <LanguageSwitcher />
       </div>
       
       <motion.div

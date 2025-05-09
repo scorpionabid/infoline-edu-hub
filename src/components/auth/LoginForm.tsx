@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -18,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import LanguageSelector from '@/components/LanguageSelector';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 interface LoginFormProps {
   error: string | null;
@@ -32,7 +31,7 @@ interface FormValues {
 
 const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
   const { login, isLoading, isAuthenticated } = useAuthStore();
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
@@ -116,7 +115,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       <CardHeader className="space-y-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-2xl font-bold">{t('loginTitle')}</CardTitle>
-          <LanguageSelector />
+          <LanguageSwitcher />
         </div>
         <CardDescription>{t('loginDescription')}</CardDescription>
       </CardHeader>
