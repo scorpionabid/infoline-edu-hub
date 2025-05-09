@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { AuthContext } from './context';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { AuthContextType } from './types';
 
 /**
  * AuthProvider - Provides auth state and operations via Context API
@@ -34,14 +35,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   } = useAuthStore();
   
   // Provider value with compatibility for all interfaces
-  const contextValue = {
+  const contextValue: AuthContextType = {
     user,
     session,
     isAuthenticated,
     authenticated: isAuthenticated, // Alias
     loading: isLoading, // Alias
     error,
-    logIn: login,
+    logIn: async (email, password) => {
+      const success = await login(email, password);
+      return { data: success ? user : null, error: success ? null : error };
+    },
     login, // Alias
     logOut: logout,
     logout, // Alias

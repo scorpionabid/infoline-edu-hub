@@ -6,9 +6,9 @@ import { UserRole } from '@/types/supabase';
  * useRole - Hook for getting the current user's role
  * Now uses the Zustand store directly
  */
-export const useRole = (): UserRole | 'user' => {
+export const useRole = (): UserRole | null => {
   const user = useAuthStore(state => state.user);
-  return (user?.role as UserRole) || 'user';
+  return user?.role as UserRole || null;
 };
 
 export default useRole;

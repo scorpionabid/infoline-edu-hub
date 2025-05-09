@@ -4,7 +4,10 @@ export { AuthProvider } from './AuthProvider';
 export { useAuth } from './useAuth';
 export { useRole } from './useRole';
 
-// Re-export from the Zustand store for convenience
+// Re-export types
+export type { AuthContextType, AuthErrorType } from './types';
+
+// Re-export from the Zustand store
 export { 
   useAuthStore,
   selectUser,
@@ -21,8 +24,5 @@ export {
   getRedirectPath
 } from '@/hooks/auth/useAuthStore';
 
-// Export types
-export * from './types';
-
 // Re-export from hooks
-export * from '@/hooks/auth/usePermissions';
+export { usePermissions } from '@/hooks/auth/usePermissions';

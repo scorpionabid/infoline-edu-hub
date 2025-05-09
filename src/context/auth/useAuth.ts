@@ -2,13 +2,14 @@
 import { useContext } from 'react';
 import { AuthContext } from './context';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { AuthContextType } from './types';
 
 /**
  * useAuth - Hook for accessing auth state and operations
  * This hook now primarily pulls from the Zustand store, with fallback to context
  * to maintain backward compatibility
  */
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   // Try to get context first for backward compatibility
   let context;
   try {
@@ -52,7 +53,10 @@ export const useAuth = () => {
     authenticated: isAuthenticated,
     loading,
     error,
-    logIn: login,
+    logIn: async (email, password) => {
+      const success = await login(email, password);
+      return { data: success ? user : null, error: success ? null : error };
+    },
     login,
     logOut: logout,
     logout,
@@ -67,7 +71,7 @@ export const useAuth = () => {
     register,
     setError,
     createUser: register,
-    signup: signup || (async () => ({ user: null, error: new Error('Not implemented') }))
+    signup
   };
 };
 
