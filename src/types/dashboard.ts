@@ -40,6 +40,7 @@ export interface FormItem {
   categoryName: string;
   submittedAt?: string;
   dueDate?: string;
+  date?: string;
 }
 
 export interface DeadlineItem {
@@ -48,6 +49,8 @@ export interface DeadlineItem {
   status: StatusType;
   dueDate: string;
   progress: number;
+  categoryName?: string;
+  completionRate?: number;
 }
 
 export interface CategoryItem {
@@ -67,6 +70,7 @@ export interface PendingApproval {
   status: StatusType;
   schoolId?: string;
   categoryId?: string;
+  date?: string;
 }
 
 export interface SchoolStat {
@@ -82,6 +86,9 @@ export interface SchoolStat {
   address?: string;
   phone?: string;
   email?: string;
+  completion_rate?: number;
+  updated_at?: string;
+  principal_name?: string;
 }
 
 export interface SectorStat {
@@ -90,6 +97,12 @@ export interface SectorStat {
   schoolCount: number;
   completionRate: number;
   pendingApprovals: number;
+}
+
+export interface StatusCardsProps {
+  completion: CompletionData;
+  status: StatusData;
+  formStats?: FormStats;
 }
 
 export interface SchoolAdminDashboardData {
@@ -108,7 +121,7 @@ export interface SectorAdminDashboardData {
   status: StatusData;
   schoolStats: SchoolStat[];
   pendingApprovals: PendingApproval[];
-  formStats: FormStats;
+  formStats?: FormStats;
 }
 
 export interface RegionAdminDashboardData {
@@ -116,6 +129,23 @@ export interface RegionAdminDashboardData {
   status: StatusData;
   sectorStats: SectorStat[];
   pendingApprovals: PendingApproval[];
+  schoolStats?: SchoolStat[];
+  sectors?: SectorStat[];
+  notifications?: any[];
+}
+
+export interface SuperAdminDashboardData {
+  completion?: CompletionData;
+  status?: StatusData;
+  regionStats?: any[];
+  sectorStats?: any[];
+  schoolStats?: any[];
+  regions?: number;
+  sectors?: number;
+  schools?: number;
+  users?: number;
+  completionRate?: number;
+  notifications?: any[];
 }
 
 export interface SectorAdminDashboardProps {

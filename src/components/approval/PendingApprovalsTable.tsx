@@ -73,7 +73,7 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
             <TableRow key={item.id}>
               <TableCell>{item.schoolName}</TableCell>
               <TableCell>{item.categoryName}</TableCell>
-              <TableCell>{formatDate(item.submittedAt || item.date || '')}</TableCell>
+              <TableCell>{formatDate(item.submittedAt)}</TableCell>
               <TableCell>
                 <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-100">
                   {t('pending')}

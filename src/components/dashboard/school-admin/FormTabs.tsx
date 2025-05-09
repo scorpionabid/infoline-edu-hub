@@ -1,33 +1,59 @@
-
 import React from 'react';
-import { TabsContent } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
-import { Calendar, ClipboardCheck, Clock, PlusCircle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TabsContent } from '@/components/ui/tabs';
 import { useLanguage } from '@/context/LanguageContext';
-import { format } from 'date-fns';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { Clock, FilePlus, Calendar, PlusCircle } from 'lucide-react';
+import { CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface FormTabsProps {
-  categories: CategoryItem[];
   upcoming: DeadlineItem[];
+  categories: CategoryItem[];
   pendingForms: FormItem[];
   navigateToDataEntry?: () => void;
   handleFormClick?: (id: string) => void;
 }
 
-const FormTabs: React.FC<FormTabsProps> = ({ categories, upcoming, pendingForms, navigateToDataEntry, handleFormClick }) => {
+const FormTabs: React.FC<FormTabsProps> = ({
+  upcoming,
+  categories,
+  pendingForms,
+  navigateToDataEntry,
+  handleFormClick
+}) => {
   const { t } = useLanguage();
-  
+
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'dd MMM yyyy');
-    } catch {
-      return dateString || 'N/A';
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    } catch (e) {
+      return dateString;
     }
   };
-  
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">{t('approved')}</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">{t('rejected')}</Badge>;
+      case 'pending':
+        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">{t('pending')}</Badge>;
+      case 'draft':
+        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200">{t('draft')}</Badge>;
+      default:
+        if (status === 'upcoming') {
+          return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">{t('upcoming')}</Badge>;
+        }
+        return <Badge>{status}</Badge>;
+    }
+  };
+
   return (
     <>
       <TabsContent value="upcoming" className="mt-0">
@@ -37,47 +63,54 @@ const FormTabs: React.FC<FormTabsProps> = ({ categories, upcoming, pendingForms,
             <CardDescription>{t('upcomingDeadlinesDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
-            {upcoming.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Clock className="mx-auto h-12 w-12 mb-2 opacity-50" />
-                <p>{t('noUpcomingDeadlines')}</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {upcoming.slice(0, 5).map((item) => (
-                  <div key={item.id} className="flex items-center justify-between space-x-4 border-b pb-4 last:border-0">
-                    <div className="flex items-center space-x-4">
-                      <div className={`rounded-full w-8 h-8 flex items-center justify-center 
-                        ${item.status === 'upcoming' ? 'bg-orange-100 text-orange-600' : 
-                          item.status === 'overdue' ? 'bg-red-100 text-red-600' : 
-                          'bg-gray-100 text-gray-600'}`}>
-                        <Calendar className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{item.categoryName}</h4>
-                        <div className="text-xs text-muted-foreground">{formatDate(item.dueDate)}</div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col space-y-1 items-end">
-                      <div className="text-sm font-medium">{`${item.completionRate}%`}</div>
-                      <Progress value={item.completionRate} className="h-2 w-24" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <ScrollArea className="h-[300px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('form')}</TableHead>
+                    <TableHead>{t('category')}</TableHead>
+                    <TableHead>{t('deadline')}</TableHead>
+                    <TableHead>{t('progress')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {upcoming.length > 0 ? (
+                    upcoming.map((item) => (
+                      <TableRow key={item.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleFormClick?.(item.id)}>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell>{item.categoryName || '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                            {formatDate(item.dueDate)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Progress value={item.progress || 0} className="h-2 w-[80px]" />
+                            <span className="text-sm text-muted-foreground">
+                              {item.completionRate || 0}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(item.status)}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                        {t('noUpcomingDeadlines')}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </ScrollArea>
           </CardContent>
-          {navigateToDataEntry && (
-            <CardFooter>
-              <Button onClick={navigateToDataEntry} className="ml-auto">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                {t('newDataEntry')}
-              </Button>
-            </CardFooter>
-          )}
         </Card>
       </TabsContent>
-      
+
       <TabsContent value="pending" className="mt-0">
         <Card>
           <CardHeader>
@@ -85,60 +118,46 @@ const FormTabs: React.FC<FormTabsProps> = ({ categories, upcoming, pendingForms,
             <CardDescription>{t('pendingFormsDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
-            {pendingForms.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <ClipboardCheck className="mx-auto h-12 w-12 mb-2 opacity-50" />
-                <p>{t('noPendingForms')}</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {pendingForms.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="flex items-center justify-between space-x-4 border-b pb-4 last:border-0 cursor-pointer hover:bg-gray-50 p-2 rounded"
-                    onClick={() => handleFormClick && handleFormClick(item.id)}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="rounded-full bg-amber-100 text-amber-600 w-8 h-8 flex items-center justify-center">
-                        <Clock className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{item.categoryName}</h4>
-                        {item.submittedAt && (
-                          <div className="text-xs text-muted-foreground">
-                            {`${t('submitted')}: ${formatDate(item.submittedAt)}`}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className={`text-sm rounded-full px-2 py-1 
-                        ${item.status === 'pending' ? 'bg-amber-100 text-amber-600' : 
-                          item.status === 'approved' ? 'bg-green-100 text-green-600' : 
-                          item.status === 'rejected' ? 'bg-red-100 text-red-600' : 
-                          'bg-gray-100 text-gray-600'}`}>
-                        {item.status === 'pending' ? t('pending') : 
-                         item.status === 'approved' ? t('approved') : 
-                         item.status === 'rejected' ? t('rejected') : 
-                         item.status}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <ScrollArea className="h-[300px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('form')}</TableHead>
+                    <TableHead>{t('category')}</TableHead>
+                    <TableHead>{t('date')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingForms.length > 0 ? (
+                    pendingForms.map((item) => (
+                      <TableRow key={item.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleFormClick?.(item.id)}>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell>{item.categoryName || '-'}</TableCell>
+                        <TableCell>{formatDate(item.date || '')}</TableCell>
+                        <TableCell>{getStatusBadge(item.status)}</TableCell>
+                        <TableCell className="w-[50px]">
+                          <Button variant="ghost" size="sm">
+                            <FilePlus className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                        {t('noPendingForms')}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </ScrollArea>
           </CardContent>
-          {navigateToDataEntry && (
-            <CardFooter>
-              <Button onClick={navigateToDataEntry} className="ml-auto">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                {t('newDataEntry')}
-              </Button>
-            </CardFooter>
-          )}
         </Card>
       </TabsContent>
-      
+
       <TabsContent value="categories" className="mt-0">
         <Card>
           <CardHeader>
@@ -146,48 +165,57 @@ const FormTabs: React.FC<FormTabsProps> = ({ categories, upcoming, pendingForms,
             <CardDescription>{t('allCategoriesDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
-            {categories.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <ClipboardCheck className="mx-auto h-12 w-12 mb-2 opacity-50" />
-                <p>{t('noCategories')}</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {categories.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="flex items-center justify-between space-x-4 border-b pb-4 last:border-0"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="rounded-full bg-blue-100 text-blue-600 w-8 h-8 flex items-center justify-center">
-                        <ClipboardCheck className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{item.name}</h4>
-                        {item.description && (
-                          <div className="text-xs text-muted-foreground line-clamp-1">
-                            {item.description}
+            <ScrollArea className="h-[300px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('category')}</TableHead>
+                    <TableHead>{t('deadline')}</TableHead>
+                    <TableHead>{t('completion')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {categories.length > 0 ? (
+                    categories.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                            {formatDate(item.deadline)}
                           </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-col space-y-1 items-end">
-                      <div className="text-sm font-medium">{`${item.completionRate}%`}</div>
-                      <Progress value={item.completionRate} className="h-2 w-24" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Progress value={item.completionRate} className="h-2 w-[80px]" />
+                            <span className="text-sm text-muted-foreground">
+                              {item.completionRate}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(item.status)}</TableCell>
+                        <TableCell className="w-[50px]">
+                          {navigateToDataEntry && (
+                            <Button variant="ghost" size="sm" onClick={navigateToDataEntry}>
+                              <PlusCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                        {t('noCategories')}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </ScrollArea>
           </CardContent>
-          {navigateToDataEntry && (
-            <CardFooter>
-              <Button onClick={navigateToDataEntry} className="ml-auto">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                {t('newDataEntry')}
-              </Button>
-            </CardFooter>
-          )}
         </Card>
       </TabsContent>
     </>

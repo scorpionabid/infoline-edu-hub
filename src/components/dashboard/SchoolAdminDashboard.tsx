@@ -5,7 +5,7 @@ import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import NotificationsCard from './common/NotificationsCard';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
-import { AppNotification, adaptDashboardNotificationToApp } from '@/types/notification';
+import { adaptDashboardNotificationToApp } from '@/types/notification';
 import { WormIcon, CheckCircleIcon, AlertTriangleIcon, ClockIcon } from 'lucide-react';
 import FormTabs from './school-admin/FormTabs';
 import { Button } from '@/components/ui/button';
@@ -47,7 +47,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   }
 
   // Adapt notifications to correct type
-  const adaptedNotifications: AppNotification[] = Array.isArray(data.notifications)
+  const adaptedNotifications = Array.isArray(data.notifications)
     ? data.notifications.map(notification => {
         // Ensure all required fields exist
         const notificationWithAllFields = {

@@ -7,7 +7,7 @@ import { AppNotification, adaptDbNotificationToApp } from '@/types/notification'
 
 export type { AppNotification } from '@/types/notification';
 
-interface NotificationContextType {
+export interface NotificationContextType {
   notifications: AppNotification[];
   unreadCount: number;
   loading: boolean;
@@ -19,7 +19,7 @@ interface NotificationContextType {
   refreshNotifications: () => Promise<void>;
 }
 
-const NotificationContext = createContext<NotificationContextType>({
+export const NotificationContext = createContext<NotificationContextType>({
   notifications: [],
   unreadCount: 0,
   loading: false,

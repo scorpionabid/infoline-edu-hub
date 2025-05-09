@@ -44,7 +44,7 @@ const PendingApprovals: React.FC<PendingApprovalsProps> = ({
             <div className="text-sm text-muted-foreground">{item.categoryName}</div>
             <div className="flex items-center text-xs mt-1 text-muted-foreground">
               <Clock className="h-3 w-3 mr-1" />
-              {item.submittedAt || item.date || ''}
+              {item.submittedAt || ''}
             </div>
           </div>
           <Button 

@@ -15,7 +15,7 @@ interface SuperAdminDashboardProps {
 }
 
 export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
-  // Bildirişləri uyğunlaşdır
+  // Convert notifications to AppNotification type
   const adaptedNotifications = Array.isArray(data.notifications) 
     ? data.notifications.map(notification => adaptDashboardNotificationToApp(notification)) 
     : [];
@@ -67,7 +67,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
                 
         <NotificationsCard
           title="Bildirişlər"
-          notifications={adaptedNotifications as AppNotification[]}
+          notifications={adaptedNotifications}
         />
       </Grid>
       
