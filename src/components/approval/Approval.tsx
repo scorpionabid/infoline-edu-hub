@@ -53,7 +53,7 @@ export const Approval = () => {
           schoolName: item.schools ? item.schools.name : 'Unknown School',
           categoryId: item.category_id,
           categoryName: item.categories ? item.categories.name : 'Unknown Category',
-          status: item.status,
+          status: item.status as 'pending' | 'approved' | 'rejected',
           createdAt: item.created_at,
           submittedAt: item.created_at,
           count: 1

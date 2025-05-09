@@ -10,3 +10,5 @@ export interface PermissionResult {
   message?: string;
   code?: string;
 }
+
+export type PermissionCheckResult = PermissionResult; // Added alias for backward compatibility

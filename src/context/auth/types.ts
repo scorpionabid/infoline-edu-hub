@@ -6,6 +6,18 @@ export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladm
 
 export type AuthErrorType = string | null;
 
+export interface UserFormData {
+  email: string;
+  password: string;
+  full_name: string;
+  phone?: string;
+  position?: string;
+  role?: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+}
+
 export interface AuthContextType {
   user: FullUserData | null;
   session: Session | null;

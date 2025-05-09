@@ -1,22 +1,22 @@
 
 import React, { useState } from 'react';
-import { useAuth } from '@/context/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { useAuth } from '@/hooks/auth';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
 
-const SecuritySettings: React.FC = () => {
-  const { t } = useLanguage();
-  const { user, updatePassword } = useAuth();
+const SecuritySettings = () => {
+  const { t } = useLanguageSafe();
+  const { updatePassword } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const handlePasswordChange = async (e: React.FormEvent) => {
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (newPassword !== confirmPassword) {
@@ -24,14 +24,15 @@ const SecuritySettings: React.FC = () => {
       return;
     }
     
-    if (newPassword.length < 8) {
-      toast.error(t('passwordTooShort'));
-      return;
-    }
-    
     setLoading(true);
+    
     try {
-      await updatePassword(currentPassword, newPassword);
+      // Update to use only one parameter
+      const { error } = await updatePassword(newPassword);
+      
+      if (error) {
+        throw error;
+      }
       
       toast.success(t('passwordUpdated'));
       setCurrentPassword('');
@@ -39,19 +40,19 @@ const SecuritySettings: React.FC = () => {
       setConfirmPassword('');
     } catch (error: any) {
       console.error('Error updating password:', error);
-      toast.error(error.message || t('errorUpdatingPassword'));
+      toast.error(t('errorUpdatingPassword'));
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('changePassword')}</CardTitle>
+        <CardTitle>{t('securitySettings')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handlePasswordChange} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="current-password">{t('currentPassword')}</Label>
             <Input
@@ -75,7 +76,7 @@ const SecuritySettings: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">{t('confirmPassword')}</Label>
+            <Label htmlFor="confirm-password">{t('confirmNewPassword')}</Label>
             <Input
               id="confirm-password"
               type="password"

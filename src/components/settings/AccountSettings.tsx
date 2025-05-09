@@ -8,7 +8,6 @@ import ProfileForm from '@/components/settings/ProfileForm';
 import NotificationSettingsForm from '@/components/settings/NotificationSettingsForm';
 import LanguageSettingsForm from '@/components/settings/LanguageSettingsForm';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 // Define the NotificationSettings type if it's missing
 interface NotificationSettings {
@@ -50,15 +49,16 @@ const AccountSettings = () => {
     
     setLoading(true);
     try {
-      // Use updateUser instead of updateUserProfile
-      await updateUser({
-        // Use a valid property instead of notificationSettings
-        // For example, this might be stored in a metadata field or a separate DB table
+      // Create a copy of the user object with updated notification settings
+      const updatedUser = {
+        ...user,
         metadata: {
-          ...user.metadata,
+          ...(user.metadata || {}),
           notificationSettings: settings
         }
-      });
+      };
+      
+      await updateUser(updatedUser);
       
       toast.success(t('notificationSettingsUpdated'));
     } catch (error: any) {
@@ -121,7 +121,7 @@ const AccountSettings = () => {
             </CardHeader>
             <CardContent>
               <ProfileForm 
-                user={user} 
+                user={user as any} 
                 onSubmit={handleProfileUpdate} 
                 loading={loading}
               />

@@ -1,16 +1,16 @@
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Role } from '@/context/auth/types';
+import { UserRole } from '@/types/supabase'; // Changed from Role to UserRole
 import { UserFormData } from '@/types/user';
 
 interface BasicInfoSectionProps {
   form: any;
   data: UserFormData;
   onFormChange: (fieldName: string, value: any) => void;
-  availableRoles: Role[];
+  availableRoles: UserRole[];
   isEdit: boolean;
   passwordRequired: boolean;
   hideRoleSelector?: boolean;
@@ -25,7 +25,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   passwordRequired,
   hideRoleSelector = false,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
 
   return (
     <div className="space-y-4">

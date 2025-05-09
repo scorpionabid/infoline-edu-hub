@@ -21,6 +21,7 @@ export interface SchoolStat {
   name: string;
   completionRate: number;
   pendingCount?: number;
+  lastUpdate?: string;
 }
 
 export interface CategoryStat {
@@ -34,7 +35,7 @@ export interface CategoryStat {
 export interface ChartData {
   name: string;
   value: number;
-  color: string;
+  color?: string;
 }
 
 export interface DashboardFormStats {
