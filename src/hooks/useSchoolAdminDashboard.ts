@@ -16,8 +16,8 @@ const useSchoolAdminDashboard = () => {
   const navigate = useNavigate();
 
   const fetchDashboardData = useCallback(async () => {
-    if (!user || !user.schoolId) {
-      console.warn('Məktəb ID-si tapılmadı, məlumatlar yüklənə bilməz.');
+    if (!user || !user.school_id) {
+      console.warn('School ID not found, cannot load data.');
       setIsLoading(false);
       setError(new Error(t('schoolIdNotFound')));
       return;
@@ -27,23 +27,22 @@ const useSchoolAdminDashboard = () => {
     setError(null);
 
     try {
-      console.log('Məktəb admin dashboard məlumatları yüklənir...', user.schoolId);
+      console.log('Loading school admin dashboard data...', user.school_id);
       
-      // Edge function vasitəsilə məlumatları əldə etməyə çalışaq
+      // Try to get data from edge function
       const { data: dashboardData, error: apiError } = await supabase.functions.invoke('get-dashboard-data', {
-        body: { schoolId: user.schoolId }
+        body: { schoolId: user.school_id }
       });
 
       if (apiError) {
-        console.error('Dashboard API xətası:', apiError);
+        console.error('Dashboard API error:', apiError);
         throw new Error(apiError.message || t('failedToLoadData'));
       }
 
       if (!dashboardData) {
-        // Əgər edge function işləmirsə və ya məlumat boşdursa, default məlumatlar istifadə edək
-        console.warn('Məlumatlar boşdur, default məlumatlar istifadə edilir');
+        console.warn('Data is empty, using default data');
         
-        // Default minimal məlumatlar
+        // Default minimal data
         const defaultData: SchoolAdminDashboardData = {
           completion: {
             percentage: 0,
@@ -75,13 +74,13 @@ const useSchoolAdminDashboard = () => {
         
         setData(defaultData);
       } else {
-        console.log('Dashboard məlumatları uğurla yükləndi:', dashboardData);
+        console.log('Dashboard data loaded successfully:', dashboardData);
         
         // Ensure status has active and inactive properties
         const enhancedData = {
           ...dashboardData,
           status: {
-            ...dashboardData.status,
+            ...(dashboardData.status || {}),
             active: dashboardData.status?.active || 0,
             inactive: dashboardData.status?.inactive || 0
           }
@@ -89,41 +88,12 @@ const useSchoolAdminDashboard = () => {
         
         setData(enhancedData);
       }
-    } catch (err: any) {
-      console.error('Dashboard məlumatlarını yükləyərkən xəta:', err);
-      setError(new Error(err.message || t('failedToLoadData')));
-      
+    } catch (error: any) {
+      console.error('Error loading dashboard data:', error);
+      setError(error);
       toast.error(t('errorLoadingDashboard'), {
-        description: err.message || t('unexpectedError'),
+        description: error.message
       });
-      
-      // Minimal default məlumatlar - xəta halında
-      const defaultData: SchoolAdminDashboardData = {
-        completion: { percentage: 0, total: 0, completed: 0 },
-        status: { 
-          pending: 0, 
-          approved: 0, 
-          rejected: 0, 
-          total: 0,
-          active: 0,
-          inactive: 0
-        },
-        categories: [],
-        upcoming: [],
-        formStats: { 
-          pending: 0, 
-          approved: 0, 
-          rejected: 0, 
-          dueSoon: 0, 
-          overdue: 0, 
-          total: 0 
-        },
-        pendingForms: [],
-        completionRate: 0,
-        notifications: []
-      };
-      
-      setData(defaultData);
     } finally {
       setIsLoading(false);
     }
@@ -133,23 +103,11 @@ const useSchoolAdminDashboard = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Form elementini açmaq üçün
-  const handleFormClick = useCallback((formId: string) => {
-    navigate(`/data-entry/${formId}`);
-  }, [navigate]);
-
-  // Yeni məlumat daxil etmə səhifəsinə keçid
-  const navigateToDataEntry = useCallback(() => {
-    navigate('/data-entry');
-  }, [navigate]);
-
   return {
     data,
     isLoading,
     error,
-    refetch: fetchDashboardData,
-    handleFormClick,
-    navigateToDataEntry
+    refreshDashboard: fetchDashboardData
   };
 };
 

@@ -1,327 +1,253 @@
-
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { CircleDollarSign, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 import { useAuth } from '@/context/auth';
-import SuperAdminDashboard from './SuperAdminDashboard';
-import RegionAdminDashboard from './region-admin/RegionAdminDashboard'; 
-import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
-import { useNavigate } from 'react-router-dom';
-import SchoolAdminDashboard from '@/components/dashboard/school-admin/SchoolAdminDashboard';
-import { SchoolStat, PendingApproval, CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
-import { ArrowRight } from 'lucide-react';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-
-const mockSuperAdminData = () => ({
-  completion: {
-    percentage: 62,
-    total: 120,
-    completed: 74
-  },
-  status: {
-    pending: 35,
-    approved: 74,
-    rejected: 11,
-    total: 120,
-    active: 85,
-    inactive: 35
-  },
-  formStats: {
-    pending: 35,
-    approved: 74,
-    rejected: 11,
-    dueSoon: 15,
-    overdue: 8,
-    total: 120
-  },
-  upcomingDeadlines: [
-    {
-      id: "1",
-      categoryId: "c1",
-      categoryName: "Ümumi məlumatlar",
-      dueDate: new Date(Date.now() + 86400000 * 3).toISOString(),
-      status: "upcoming",
-      completionRate: 65
-    },
-    {
-      id: "2",
-      categoryId: "c2",
-      categoryName: "Maliyyə hesabatları",
-      dueDate: new Date(Date.now() + 86400000 * 5).toISOString(),
-      status: "upcoming",
-      completionRate: 30
-    }
-  ]
-});
-
-const mockRegionAdminData = () => ({
-  completion: {
-    percentage: 58,
-    total: 85,
-    completed: 49
-  },
-  status: {
-    pending: 27,
-    approved: 49,
-    rejected: 9,
-    total: 85,
-    active: 65,
-    inactive: 20
-  },
-  formStats: {
-    pending: 27,
-    approved: 49,
-    rejected: 9,
-    dueSoon: 12,
-    overdue: 7,
-    total: 85
-  },
-  upcomingDeadlines: [
-    {
-      id: "1",
-      categoryId: "c1",
-      categoryName: "Ümumi məlumatlar",
-      dueDate: new Date(Date.now() + 86400000 * 2).toISOString(),
-      status: "upcoming",
-      completionRate: 62
-    },
-    {
-      id: "2",
-      categoryId: "c2",
-      categoryName: "Maliyyə hesabatları",
-      dueDate: new Date(Date.now() + 86400000 * 4).toISOString(),
-      status: "upcoming",
-      completionRate: 28
-    }
-  ]
-});
-
-const mockSectorAdminData = () => ({
-  completion: {
-    percentage: 65,
-    total: 45,
-    completed: 29
-  },
-  status: {
-    pending: 14,
-    approved: 29,
-    rejected: 2,
-    total: 45,
-    active: 38,
-    inactive: 7
-  },
-  formStats: {
-    pending: 14,
-    approved: 29,
-    rejected: 2,
-    dueSoon: 8,
-    overdue: 5,
-    total: 45
-  },
-  pendingApprovals: [
-    {
-      id: "pa1",
-      schoolName: "135 nömrəli məktəb",
-      categoryName: "Ümumi məlumatlar",
-      submittedAt: new Date(Date.now() - 86400000).toISOString(),
-      status: "pending"
-    },
-    {
-      id: "pa2",
-      schoolName: "67 nömrəli məktəb",
-      categoryName: "Müəllim statistikası",
-      submittedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-      status: "pending"
-    }
-  ] as PendingApproval[],
-  schoolStats: [
-    {
-      id: "s1",
-      name: "135 nömrəli məktəb",
-      completionRate: 78,
-      lastUpdate: new Date(Date.now() - 86400000).toISOString(),
-      status: "active",
-      pendingForms: 2,
-      formsCompleted: 7,
-      totalForms: 10,
-      principalName: "Principal Name 1"
-    },
-    {
-      id: "s2",
-      name: "67 nömrəli məktəb",
-      completionRate: 45,
-      lastUpdate: new Date(Date.now() - 86400000 * 3).toISOString(),
-      status: "active",
-      pendingForms: 4,
-      formsCompleted: 4,
-      totalForms: 10,
-      principalName: "Principal Name 2"
-    }
-  ] as SchoolStat[],
-  upcomingDeadlines: [
-    {
-      id: "1",
-      categoryId: "c1",
-      categoryName: "Ümumi məlumatlar",
-      dueDate: new Date(Date.now() + 86400000 * 2).toISOString(),
-      status: "upcoming",
-      completionRate: 70
-    }
-  ] as DeadlineItem[]
-});
-
-const mockSchoolAdminData = () => {
-  // Fix the categories to make sure they have completionRate
-  const categories: CategoryItem[] = [
-    {
-      id: "c1",
-      name: "Ümumi məlumatlar",
-      description: "Məktəbin ümumi məlumatları",
-      deadline: new Date(Date.now() + 86400000 * 3).toISOString(),
-      completionRate: 70
-    },
-    {
-      id: "c2",
-      name: "Müəllim statistikası",
-      description: "Müəllimlərlə bağlı statistik məlumatlar",
-      deadline: new Date(Date.now() + 86400000 * 5).toISOString(),
-      completionRate: 30
-    }
-  ];
-  
-  // Create upcoming deadlines
-  const upcoming: DeadlineItem[] = [
-    {
-      id: "d1",
-      categoryId: "c1",
-      categoryName: "Ümumi məlumatlar",
-      dueDate: new Date(Date.now() + 86400000 * 3).toISOString(),
-      status: "upcoming",
-      completionRate: 70
-    },
-    {
-      id: "d2",
-      categoryId: "c2",
-      categoryName: "Müəllim statistikası",
-      dueDate: new Date(Date.now() + 86400000 * 5).toISOString(),
-      status: "pending",
-      completionRate: 30
-    },
-    {
-      id: "d3",
-      categoryId: "c3",
-      categoryName: "Şagird statistikası",
-      dueDate: new Date(Date.now() - 86400000 * 2).toISOString(),
-      status: "draft",
-      completionRate: 0
-    }
-  ];
-  
-  const pendingForms: FormItem[] = [
-    {
-      id: "f1",
-      categoryId: "c1",
-      categoryName: "Ümumi məlumatlar",
-      status: "pending",
-      completionRate: 90,
-      submittedAt: new Date(Date.now() - 86400000).toISOString()
-    }
-  ];
-
-  return {
-    completion: {
-      percentage: 68,
-      total: 10,
-      completed: 7
-    },
-    completionRate: 68,
-    status: {
-      pending: 2,
-      approved: 7,
-      rejected: 1,
-      draft: 3,
-      total: 13,
-      active: 10,
-      inactive: 3
-    },
-    formStats: {
-      pending: 2,
-      approved: 7, 
-      rejected: 1,
-      draft: 3,
-      dueSoon: 2,
-      overdue: 1,
-      total: 13
-    },
-    categories,
-    upcoming,
-    pendingForms,
-    notifications: []
-  };
-};
+import { useSchoolAdminDashboard } from '@/hooks/useSchoolAdminDashboard';
+import { Skeleton } from "@/components/ui/skeleton"
+import { ChartData } from '@/types/dashboard';
+import { DoughnutChart } from '@/components/charts/DoughnutChart';
+import { Progress } from "@/components/ui/progress"
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const DashboardContent: React.FC = () => {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  
-  const navigateToDataEntry = () => {
-    navigate('/data-entry');
-  };
-  
-  const handleFormClick = (id: string) => {
-    navigate(`/data-entry/${id}`);
-  };
-  
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-  
-  if (!user) {
+  const { user } = useAuth();
+  const { data, isLoading, error, handleFormClick, navigateToDataEntry } = useSchoolAdminDashboard();
+  const { t } = useLanguage();
+
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <h2 className="text-2xl font-semibold mb-4">Səhifəyə giriş üçün login olmalısınız</h2>
-        <button 
-          onClick={() => navigate('/login')}
-          className="flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-md"
-        >
-          Login səhifəsinə keç <ArrowRight className="ml-2 h-4 w-4" />
-        </button>
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle><Skeleton className="h-6 w-40" /></CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-24 w-full" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle><Skeleton className="h-6 w-40" /></CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-24 w-full" />
+          </CardContent>
+        </Card>
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle><Skeleton className="h-6 w-40" /></CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-48 w-full" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle><Skeleton className="h-6 w-40" /></CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-32 w-full" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle><Skeleton className="h-6 w-40" /></CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-32 w-full" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle><Skeleton className="h-6 w-40" /></CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-32 w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
-  
-  switch (user.role) {
-    case 'superadmin':
-      return (
-        <SuperAdminDashboard data={mockSuperAdminData()} />
-      );
-    case 'regionadmin':
-      return (
-        <RegionAdminDashboard 
-          data={mockRegionAdminData()} 
-          regionId={user.region_id || ''}
-        />
-      );
-    case 'sectoradmin':
-      return (
-        <SectorAdminDashboard 
-          data={mockSectorAdminData()} 
-          sectorId={user.sector_id || ''}
-        />
-      );
-    case 'schooladmin':
-      return (
-        <SchoolAdminDashboard 
-          schoolId={user.school_id || ''}
-          data={mockSchoolAdminData()}
-        />
-      );
-    default:
-      return (
-        <div className="text-center py-10">
-          <h2 className="text-xl font-medium">Rolunuza uyğun dashboard tapılmadı</h2>
-          <p className="text-muted-foreground mt-2">Rol: {user.role}</p>
-        </div>
-      );
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          {error.message || t('errorLoadingDashboard')}
+        </AlertDescription>
+      </Alert>
+    );
   }
+
+  if (!data) {
+    return (
+      <Alert variant="info">
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          {t('noDashboardData')}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  const completionData: ChartData[] = [
+    { name: t('completed'), value: data.completion.completed, color: "#22c55e" },
+    { name: t('pending'), value: data.completion.total - data.completion.completed, color: "#f43f5e" },
+  ];
+
+  const statusData: ChartData[] = [
+    { name: t('pending'), value: data.status.pending, color: "#facc15" },
+    { name: t('approved'), value: data.status.approved, color: "#22c55e" },
+    { name: t('rejected'), value: data.status.rejected, color: "#f43f5e" },
+    { name: t('active'), value: data.status.active, color: "#3b82f6" },
+    { name: t('inactive'), value: data.status.inactive, color: "#9ca3af" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('completionRate')}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center">
+            <DoughnutChart data={completionData} />
+            <div className="text-center mt-2">
+              <p className="text-2xl font-semibold">{data.completion.percentage}%</p>
+              <p className="text-sm text-muted-foreground">
+                {t('completedForms')} {data.completion.completed} / {data.completion.total}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('formStatus')}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center">
+            <DoughnutChart data={statusData} />
+            <div className="text-center mt-2">
+              <p className="text-sm text-muted-foreground">
+                {t('totalForms')} {data.status.total}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>{t('upcomingDeadlines')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data.upcoming.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('formName')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('status')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('dueDate')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('progress')}</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {data.upcoming.map((item) => (
+                      <tr key={item.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.status}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.dueDate}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <Progress value={item.progress} />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Link to={`/data-entry/${item.id}`} className="text-primary-600 hover:text-primary-900">
+                            {t('fillOut')}
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p>{t('noUpcomingDeadlines')}</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('pendingForms')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data.pendingForms.length > 0 ? (
+              <ul className="list-none space-y-2">
+                {data.pendingForms.map((form) => (
+                  <li key={form.id} className="flex items-center justify-between">
+                    <span>{form.name}</span>
+                    <Badge variant="secondary">{form.status}</Badge>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>{t('noPendingForms')}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('notifications')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data.notifications.length > 0 ? (
+              <ul className="list-none space-y-2">
+                {data.notifications.map((notification) => (
+                  <li key={notification.id} className="flex items-start space-x-2">
+                    {notification.type === 'success' && <CheckCircle2 className="text-green-500" />}
+                    {notification.type === 'warning' && <AlertTriangle className="text-yellow-500" />}
+                    {notification.type === 'error' && <AlertTriangle className="text-red-500" />}
+                    {notification.type === 'info' && <Info className="text-blue-500" />}
+                    <div>
+                      <p className="text-sm font-medium">{notification.message}</p>
+                      <p className="text-xs text-muted-foreground">{notification.date}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>{t('noNotifications')}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('actions')}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col space-y-2">
+            <Button onClick={navigateToDataEntry}>
+              {t('addData')}
+            </Button>
+            {user?.role === 'schooladmin' && user?.school_id && (
+              <Button variant="secondary" onClick={() => handleFormClick(user.school_id as string)}>
+                {t('fillSchoolInfo')}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 };
 
 export default DashboardContent;

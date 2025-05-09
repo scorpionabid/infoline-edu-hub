@@ -6,3 +6,5 @@ export interface PermissionResult {
   message: string;
   code?: string;
 }
+
+export type PermissionChecker = (resource: string, action: string, level?: PermissionLevel) => PermissionResult;

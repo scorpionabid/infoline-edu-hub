@@ -1,5 +1,6 @@
 
 export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived' | 'pending' | 'completed' | 'approved';
+export type CategoryAssignment = 'all' | 'region' | 'sector' | 'school';
 
 export interface Category {
   id: string;

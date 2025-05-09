@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Category, CategoryWithColumns, TabDefinition } from '@/types/category';
+import { Category, CategoryStatus, TabDefinition } from '@/types/category';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   Tabs,
@@ -13,7 +12,7 @@ import {
 import { Card } from '@/components/ui/card';
 
 interface CategoryFormProps {
-  category: CategoryWithColumns;
+  category: Category;
   isSubmitting?: boolean;
   isApproving?: boolean;
   onSubmit: () => void;
