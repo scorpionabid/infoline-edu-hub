@@ -19,60 +19,43 @@ export const useAuth = (): AuthContextType => {
     context = null;
   }
   
-  // If context is available, use it; otherwise, use the Zustand store directly
-  if (context) {
+  // If context is available and valid, use it
+  if (context && context.user !== undefined) {
     return context;
   }
   
   // Fall back to direct Zustand store usage
-  const {
-    user,
-    session,
-    isAuthenticated,
-    isLoading: loading,
-    error,
-    login,
-    logout,
-    clearError,
-    refreshProfile,
-    refreshSession,
-    updatePassword,
-    updateProfile,
-    resetPassword,
-    register,
-    signup,
-    updateUser,
-    setError
-  } = useAuthStore();
+  const store = useAuthStore();
   
-  // Return an object that matches the AuthContextType interface
+  // Return an object that matches the AuthContextType interface without causing 
+  // infinite updates by avoiding direct destructuring of the store
   return {
-    user,
-    session,
-    isAuthenticated,
-    authenticated: isAuthenticated,
-    loading,
-    error,
+    user: store.user,
+    session: store.session,
+    isAuthenticated: store.isAuthenticated,
+    authenticated: store.isAuthenticated, // Alias for isAuthenticated
+    loading: store.isLoading,
+    error: store.error,
     logIn: async (email, password) => {
-      const success = await login(email, password);
-      return { data: success ? user : null, error: success ? null : error };
+      const success = await store.login(email, password);
+      return { data: success ? store.user : null, error: success ? null : store.error };
     },
-    login,
-    logOut: logout,
-    logout,
-    signOut: logout,
-    updateUser,
-    clearError,
-    refreshProfile,
-    refreshSession,
-    updatePassword,
-    updateProfile,
-    updateUserProfile: updateProfile, // Add this alias for backward compatibility
-    resetPassword,
-    register,
-    setError,
-    createUser: register,
-    signup
+    login: store.login,
+    logOut: store.logout,
+    logout: store.logout,
+    signOut: store.logout,
+    updateUser: store.updateUser,
+    clearError: store.clearError,
+    refreshProfile: store.refreshProfile,
+    refreshSession: store.refreshSession,
+    updatePassword: store.updatePassword,
+    updateProfile: store.updateProfile,
+    updateUserProfile: store.updateProfile, // Add this alias for backward compatibility
+    resetPassword: store.resetPassword,
+    register: store.register,
+    setError: store.setError,
+    createUser: store.createUser,
+    signup: store.signup
   };
 };
 

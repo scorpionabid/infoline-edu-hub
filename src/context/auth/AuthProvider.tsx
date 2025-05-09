@@ -1,74 +1,98 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { AuthContext } from './context';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { AuthContextType } from './types';
 
-/**
- * AuthProvider - Provides auth state and operations via Context API
- * Acts as an adapter to the Zustand store, maintaining backward compatibility
- */
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Get all state and functions from the Zustand store
-  const { 
+type AuthProviderProps = {
+  children: React.ReactNode;
+};
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const {
     user,
     session,
     isAuthenticated,
-    isLoading,
+    isLoading: loading,
     error,
     login,
     logout,
-    refreshAuth,
     clearError,
-    setUser,
-    setSession,
-    setError,
-    resetAuth,
-    updateUser,
+    refreshProfile,
+    refreshSession,
     updatePassword,
     updateProfile,
     resetPassword,
     register,
-    refreshProfile,
-    refreshSession,
-    signup
+    signup,
+    updateUser,
+    setError
   } = useAuthStore();
-  
-  // Provider value with compatibility for all interfaces
-  const contextValue: AuthContextType = {
+
+  // This effect only runs once during initialization
+  useEffect(() => {
+    // Attempt to refresh the session when the component mounts
+    const initializeAuth = async () => {
+      await refreshSession();
+    };
+    
+    initializeAuth();
+    // We intentionally omit refreshSession from the deps array to avoid
+    // re-running this effect when the function reference changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Create the context value with memoization to avoid unnecessary re-renders
+  const contextValue = useMemo<AuthContextType>(() => {
+    return {
+      user,
+      session,
+      isAuthenticated,
+      authenticated: isAuthenticated,
+      loading,
+      error,
+      logIn: async (email, password) => {
+        const success = await login(email, password);
+        return { data: success ? user : null, error: success ? null : error };
+      },
+      login,
+      logOut: logout,
+      logout,
+      signOut: logout,
+      updateUser,
+      clearError,
+      refreshProfile,
+      refreshSession,
+      updatePassword,
+      updateProfile,
+      updateUserProfile: updateProfile,
+      resetPassword,
+      register,
+      setError,
+      createUser: register,
+      signup
+    };
+  }, [
     user,
     session,
     isAuthenticated,
-    authenticated: isAuthenticated, // Alias
-    loading: isLoading, // Alias
+    loading,
     error,
-    logIn: async (email, password) => {
-      const success = await login(email, password);
-      return { data: success ? user : null, error: success ? null : error };
-    },
-    login, // Alias
-    logOut: logout,
-    logout, // Alias
-    signOut: logout, // Alias
+    login,
+    logout,
     updateUser,
     clearError,
     refreshProfile,
     refreshSession,
     updatePassword,
     updateProfile,
-    updateUserProfile: updateProfile, // Alias for backward compatibility
     resetPassword,
     register,
-    setError,
-    createUser: register,
-    signup
-  };
+    signup,
+    setError
+  ]);
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
 export default AuthProvider;

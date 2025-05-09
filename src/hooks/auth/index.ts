@@ -19,7 +19,7 @@ export {
   getRedirectPath
 } from './useAuthStore';
 
-// Export the new useSupabaseAuth hook
+// Export the useSupabaseAuth hook
 export { useSupabaseAuth } from './useSupabaseAuth';
 
 // Re-export from context for convenience
