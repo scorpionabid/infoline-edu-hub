@@ -1,33 +1,47 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user' | 'guest';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'teacher' | 'student' | 'parent';
+export type UserStatus = 'active' | 'inactive' | 'pending';
 
-export interface User {
+export interface FullUserData {
   id: string;
   email: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar?: string;
+  };
   full_name?: string;
+  phone?: string;
   role?: UserRole;
-  school_id?: string;
-  sector_id?: string;
   region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  status?: UserStatus;
+  position?: string;
+  language?: string;
   avatar?: string;
   created_at?: string;
-  phone?: string;
-  position?: string;
-  status?: string;
-}
-
-export interface FullUserData extends User {
-  permissions?: string[];
-  settings?: {
-    language?: string;
-    theme?: string;
-    notifications?: boolean;
+  updated_at?: string;
+  last_login?: string;
+  notificationSettings?: {
+    email: boolean;
+    push: boolean;
+    app: boolean;
   };
 }
 
-export interface AuthState {
+export interface UserWithPermissions extends FullUserData {
+  permissions: string[];
+}
+
+export interface AuthContextType {
+  user: FullUserData | null;
   isAuthenticated: boolean;
-  user: User | null;
   loading: boolean;
-  error: Error | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
+  updateUserData: (data: Partial<FullUserData>) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }

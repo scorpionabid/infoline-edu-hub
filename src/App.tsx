@@ -1,40 +1,40 @@
 
 import React from 'react';
-import { Toaster } from '@/components/ui/toaster';
-import { AppRoutes } from '@/routes/AppRoutes';
-import { AuthProvider } from '@/context/auth/AuthProvider';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { ThemeProvider } from '@/components/ui/theme-provider';
+import { ThemeProvider } from '@/components/theme-provider';
 import { NotificationProvider } from '@/context/NotificationContext';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { LanguageProvider } from '@/context/LanguageContext';
+import { AuthProvider } from '@/context/auth';
+import { Toaster } from '@/components/ui/toaster';
+import { useEffect } from 'react';
+import { AppRoutes } from './routes/AppRoutes';
+import { RegisterSW } from './lib/register-sw';
 
-// Create a client with proper configuration
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-    },
-  },
-});
+function App() {
+  useEffect(() => {
+    const registerServiceWorker = async () => {
+      try {
+        // Register service worker if available
+        RegisterSW();
+      } catch (error) {
+        console.error('Service Worker registration failed:', error);
+      }
+    };
 
-const App = () => {
+    registerServiceWorker();
+  }, []);
+
   return (
-    <ThemeProvider defaultTheme="system" storageKey="infoline-ui-theme">
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <LanguageProvider>
-            <NotificationProvider>
-              <AppRoutes />
-              <Toaster />
-            </NotificationProvider>
-          </LanguageProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+      <AuthProvider>
+        <LanguageProvider>
+          <NotificationProvider>
+            <AppRoutes />
+            <Toaster />
+          </NotificationProvider>
+        </LanguageProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
-};
+}
 
 export default App;

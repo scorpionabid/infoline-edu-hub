@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useCategoryActions } from '@/hooks/categories/useCategoryActions';
+import useCategoryActions from '@/hooks/categories/useCategoryActions';
 import { Category, CategoryAssignment, CategoryStatus } from '@/types/category';
 import {
   Select,

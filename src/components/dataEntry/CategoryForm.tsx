@@ -35,8 +35,7 @@ const CategoryForm = ({
   const tabs: TabDefinition[] = [
     {
       id: "general",
-      label: t('general'),
-      columns: []
+      label: t('general')
     }
   ];
   

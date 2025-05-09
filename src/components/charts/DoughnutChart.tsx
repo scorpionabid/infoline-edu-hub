@@ -1,7 +1,13 @@
 
 import React from 'react';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
-import { ChartData } from '@/types/dashboard';
+
+// Define ChartData directly in component
+interface ChartData {
+  name: string;
+  value: number;
+  color?: string;
+}
 
 interface DoughnutChartProps {
   data: ChartData[];

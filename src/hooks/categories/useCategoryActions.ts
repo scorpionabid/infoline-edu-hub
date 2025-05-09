@@ -23,7 +23,7 @@ const useCategoryActions = () => {
       if (error) throw error;
 
       toast.success(t('categoryCreated'));
-      return data;
+      return { success: true, data };
     } catch (error: any) {
       console.error('Error creating category:', error);
       toast.error(t('errorCreatingCategory'), {
@@ -48,7 +48,7 @@ const useCategoryActions = () => {
       if (error) throw error;
 
       toast.success(t('categoryUpdated'));
-      return data;
+      return { success: true, data };
     } catch (error: any) {
       console.error('Error updating category:', error);
       toast.error(t('errorUpdatingCategory'), {
@@ -71,6 +71,7 @@ const useCategoryActions = () => {
       if (error) throw error;
 
       toast.success(t('categoryDeleted'));
+      return { success: true };
     } catch (error: any) {
       console.error('Error deleting category:', error);
       toast.error(t('errorDeletingCategory'), {
@@ -95,7 +96,7 @@ const useCategoryActions = () => {
       if (error) throw error;
 
       toast.success(t('statusUpdated'));
-      return data;
+      return { success: true, data };
     } catch (error: any) {
       console.error('Error updating category status:', error);
       toast.error(t('errorUpdatingStatus'), {

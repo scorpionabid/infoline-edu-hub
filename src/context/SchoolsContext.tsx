@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { School } from '@/types/school';
 import { FullUserData } from '@/types/auth';
 import { useAuth } from '@/context/auth';
@@ -19,6 +18,14 @@ interface SchoolsContextProps {
 }
 
 const SchoolsContext = createContext<SchoolsContextProps | undefined>(undefined);
+
+export const useSchoolsContext = () => {
+  const context = useContext(SchoolsContext);
+  if (!context) {
+    throw new Error('useSchoolsContext must be used within a SchoolsProvider');
+  }
+  return context;
+};
 
 export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [schools, setSchools] = useState<School[]>([]);
@@ -255,10 +262,4 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return <SchoolsContext.Provider value={value}>{children}</SchoolsContext.Provider>;
 };
 
-export const useSchools = () => {
-  const context = useContext(SchoolsContext);
-  if (!context) {
-    throw new Error('useSchools must be used within a SchoolsProvider');
-  }
-  return context;
-};
+export default SchoolsContext;

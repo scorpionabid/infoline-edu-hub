@@ -18,11 +18,12 @@ const queryClient = new QueryClient({
   },
 });
 
-// Remove nested QueryClientProvider since we already have it in App.tsx
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

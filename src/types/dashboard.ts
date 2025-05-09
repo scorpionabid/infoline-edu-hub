@@ -1,5 +1,10 @@
+// Dashboard types
 
-// Dashboard tipləri
+export interface ChartData {
+  name: string;
+  value: number;
+  color?: string;
+}
 
 export interface DashboardCompletion {
   percentage: number;
@@ -192,7 +197,7 @@ export interface SchoolAdminDashboardData {
   };
   pendingForms?: FormItem[];
   completionRate?: number;
-  notifications?: any[]; // DashboardNotification[] olmalıdır
+  notifications?: any[]; 
 }
 
 // Dashboard komponent propları

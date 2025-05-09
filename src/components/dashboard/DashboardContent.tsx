@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,12 +9,20 @@ import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import { Info } from 'lucide-react';
-import { ChartData } from '@/types/dashboard';
 import DoughnutChart from '@/components/charts/DoughnutChart';
 import { useLanguage } from '@/context/LanguageContext';
+import { 
+  DeadlineItem, 
+  FormItem, 
+  PendingApproval, 
+  CategoryItem,
+  SchoolAdminDashboardData,
+  SectorAdminDashboardData,
+  RegionAdminDashboardData
+} from '@/types/dashboard';
 
 // Mock data for dashboards
-const mockSchoolData = {
+const mockSchoolData: SchoolAdminDashboardData = {
   completion: {
     percentage: 65,
     total: 20,
@@ -47,23 +54,23 @@ const mockSchoolData = {
       completionRate: 50,
       deadline: "2025-06-15"
     }
-  ],
+  ] as CategoryItem[],
   upcoming: [
     {
       id: '1',
       name: 'İnfrastruktur',
-      status: 'active',
+      status: 'upcoming',
       dueDate: '2025-06-15',
       progress: 50
     },
     {
       id: '2',
       name: 'Təhsil prosesi',
-      status: 'active',
+      status: 'upcoming',
       dueDate: '2025-06-30',
       progress: 75
     }
-  ],
+  ] as DeadlineItem[],
   formStats: {
     pending: 5,
     approved: 13,
@@ -88,12 +95,12 @@ const mockSchoolData = {
       date: '2025-05-18',
       categoryName: 'Kadr resursları'
     }
-  ],
+  ] as FormItem[],
   completionRate: 65,
   notifications: []
 };
 
-const mockSectorData = {
+const mockSectorData: SectorAdminDashboardData = {
   completion: {
     percentage: 72,
     total: 156,
@@ -141,7 +148,7 @@ const mockSectorData = {
       submittedAt: '2025-05-05T11:20:00Z',
       status: 'pending'
     }
-  ],
+  ] as PendingApproval[],
   formStats: {
     pending: 24,
     approved: 112,
@@ -152,7 +159,7 @@ const mockSectorData = {
   },
 };
 
-const mockRegionData = {
+const mockRegionData: RegionAdminDashboardData = {
   completion: {
     percentage: 68,
     total: 450,
@@ -198,7 +205,7 @@ const mockRegionData = {
       submittedAt: '2025-05-05T11:20:00Z',
       status: 'pending'
     }
-  ]
+  ] as PendingApproval[]
 };
 
 const mockSuperAdminData = {

@@ -1,36 +1,52 @@
 
-import { AppNotification } from '@/context/NotificationContext';
+import { AppNotification, DashboardNotification, NotificationType } from "@/types/notification";
 
-export interface DashboardNotification {
-  id: string;
-  type: 'success' | 'warning' | 'error' | 'info';
-  message: string;
-  date: string;
+export function adaptDashboardNotificationToApp(dashboardNotification: any): AppNotification {
+  return {
+    id: dashboardNotification.id || Math.random().toString(),
+    title: dashboardNotification.title || '',
+    message: dashboardNotification.message || '',
+    type: (dashboardNotification.type || 'info') as NotificationType,
+    isRead: dashboardNotification.isRead ?? false,
+    createdAt: dashboardNotification.createdAt || dashboardNotification.date || new Date().toISOString(),
+    priority: dashboardNotification.priority || 'normal',
+    relatedEntityId: dashboardNotification.relatedEntityId,
+    relatedEntityType: dashboardNotification.relatedEntityType
+  };
 }
 
-// Convert dashboard notification format to app notification format
-export const adaptDashboardNotificationToApp = (notification: DashboardNotification): AppNotification => {
-  return {
-    id: notification.id,
-    user_id: '', // This will be set by the backend
-    title: notification.message.split(' ').slice(0, 3).join(' ') + '...', 
-    message: notification.message,
-    type: notification.type,
-    is_read: false,
-    created_at: notification.date,
-  };
-};
+export function adaptAppNotificationToDashboard(appNotification: AppNotification): DashboardNotification {
+  // Convert AppNotification types to DashboardNotification types
+  let dashboardType: 'error' | 'info' | 'warning' | 'success' = 'info';
+  
+  switch(appNotification.type) {
+    case 'error':
+      dashboardType = 'error';
+      break;
+    case 'warning':
+      dashboardType = 'warning';
+      break;
+    case 'success':
+      dashboardType = 'success';
+      break;
+    case 'deadline':
+    case 'approval':
+    case 'category':
+    case 'system':
+    case 'info':
+    default:
+      dashboardType = 'info';
+      break;
+  }
 
-// Convert app notification format to dashboard notification format
-export const adaptAppNotificationToDashboard = (notification: AppNotification): DashboardNotification => {
   return {
-    id: notification.id,
-    type: notification.type,
-    message: notification.message,
-    date: notification.created_at,
+    id: appNotification.id,
+    title: appNotification.title,
+    message: appNotification.message,
+    type: dashboardType,
+    date: appNotification.createdAt,
+    createdAt: appNotification.createdAt,
+    isRead: appNotification.isRead,
+    timestamp: appNotification.createdAt
   };
-};
-
-// Aliases for backward compatibility
-export const adaptDashboardToAppNotification = adaptDashboardNotificationToApp;
-export const adaptAppToDashboardNotification = adaptAppNotificationToDashboard;
+}

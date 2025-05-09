@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { az } from 'date-fns/locale';
@@ -15,10 +14,19 @@ import { Separator } from '@/components/ui/separator';
 import { NotificationItem } from './NotificationItem'; 
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
+import { AppNotification } from '@/types/notification';
 
 export const NotificationComponent: React.FC = () => {
   const { t } = useLanguage();
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, clearAll } = useNotifications();
+  const { 
+    notifications = [], 
+    unreadCount = 0, 
+    loading = false, 
+    markAsRead = () => {},
+    markAllAsRead = () => {}, 
+    clearAll = () => {} 
+  } = useNotifications() || {};
+
   const [open, setOpen] = useState(false);
 
   const handleOpenChange = (newOpen: boolean) => {

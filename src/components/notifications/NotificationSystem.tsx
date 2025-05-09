@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Bell, BellOff, Check } from 'lucide-react';
 import { 
@@ -12,17 +11,17 @@ import { Badge } from '@/components/ui/badge';
 import { NotificationItem } from './NotificationItem';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/LanguageContext';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotifications } from '@/context/NotificationContext';
 
 const NotificationSystem = () => {
   const { t } = useLanguage();
   const { 
-    notifications, 
-    unreadCount, 
-    markAsRead, 
-    markAllAsRead, 
-    clearAll 
-  } = useNotifications();
+    notifications = [], 
+    unreadCount = 0, 
+    markAsRead = () => {}, 
+    markAllAsRead = () => {}, 
+    clearAll = () => {} 
+  } = useNotifications() || {};
   
   return (
     <Popover>

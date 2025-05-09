@@ -1,7 +1,9 @@
-import React, { createContext, useContext } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Keş idarəsi üçün kontekst yaradaq
+import React from 'react';
+// We don't want to recreate QueryClient - it's already defined in main.tsx
+import { useQueryClient } from '@tanstack/react-query';
+
+// Cache context for management
 interface CacheContextType {
   invalidateCache: (queryKey: string[]) => void;
   clearAllCaches: () => void;
@@ -12,24 +14,16 @@ const defaultCacheContext: CacheContextType = {
   clearAllCaches: () => {},
 };
 
-const CacheContext = createContext<CacheContextType>(defaultCacheContext);
+const CacheContext = React.createContext<CacheContextType>(defaultCacheContext);
 
 // Custom hook
-export const useCache = () => useContext(CacheContext);
+export const useCache = () => React.useContext(CacheContext);
 
-// React Query Client Provider-i ilə birlikdə keş idarəsini təmin edən komponent
-export const CustomQueryClientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnWindowFocus: false,
-        staleTime: 5 * 60 * 1000, // 5 dəqiqə
-        retry: 1,
-      },
-    },
-  });
+// React Query Client Provider with cache management
+export const CacheProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = useQueryClient();
 
-  // Keş idarəsi üçün funksiyalar
+  // Cache management functions
   const invalidateCache = (queryKey: string[]) => {
     queryClient.invalidateQueries({ queryKey });
   };
@@ -39,13 +33,11 @@ export const CustomQueryClientProvider: React.FC<{ children: React.ReactNode }> 
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <CacheContext.Provider value={{ invalidateCache, clearAllCaches }}>
-        {children}
-      </CacheContext.Provider>
-    </QueryClientProvider>
+    <CacheContext.Provider value={{ invalidateCache, clearAllCaches }}>
+      {children}
+    </CacheContext.Provider>
   );
 };
 
-// AppQueryProvider adını CustomQueryClientProvider üçün alias kimi export edirik
-export const AppQueryProvider = CustomQueryClientProvider;
+// Re-export for compatibility
+export const AppQueryProvider = CacheProvider;
