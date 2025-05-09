@@ -1,61 +1,46 @@
 
-export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'approved' | 'archived' | 'pending' | 'completed';
-export type CategoryAssignment = 'all' | 'sectors' | 'schools';
+export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived' | 'pending' | 'completed' | 'approved';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  assignment: CategoryAssignment;
-  deadline?: string | Date;
+  assignment?: string;
+  deadline?: string;
   status: CategoryStatus;
   priority?: number;
+  column_count?: number;
+  archived?: boolean;
   created_at?: string;
   updated_at?: string;
-  archived?: boolean;
-  column_count?: number;
-  completionRate?: number;
 }
 
 export interface CategoryWithColumns extends Category {
-  columns?: any[];
-}
-
-export interface FormItem {
-  id: string;
-  name: string;
-  title: string;
-  status: string;
-  categoryName: string;
-  dueDate: string;
-  createdAt: string;
-  completionRate: number;
+  columns: any[];
 }
 
 export interface CategoryFilter {
-  status?: string;
-  deadline?: string;
+  status: string[];
+  priority: string[];
+  assignment: string[];
   search?: string;
-  date?: string | Date;
-  assignment?: string;
-}
-
-export interface ColumnData {
-  id: string;
-  name: string;
-  type: string;
-  is_required: boolean;
-  options?: any;
-  validation?: any;
-  help_text?: string;
-  placeholder?: string;
-  category_id: string;
-  order_index?: number;
-  status?: string;
 }
 
 export interface TabDefinition {
   id: string;
   label: string;
-  columns: any[];
+  status?: CategoryStatus | 'all';
+  count?: number;
+}
+
+export interface CategoryContext {
+  categories: Category[];
+  loading: boolean;
+  error: Error | null;
+  fetchCategories: () => Promise<void>;
+  createCategory: (categoryData: Partial<Category>) => Promise<Category>;
+  updateCategory: (id: string, categoryData: Partial<Category>) => Promise<Category>;
+  deleteCategory: (id: string) => Promise<void>;
+  updateCategoryStatus: (id: string, status: CategoryStatus) => Promise<void>;
+  isLoading: boolean;
 }

@@ -1,14 +1,8 @@
 
-export type PermissionLevel = 'read' | 'write' | 'delete' | 'admin';
-
-export interface PermissionChecker {
-  (userId: string, entityId: string, level?: PermissionLevel): Promise<boolean>;
-}
+export type PermissionLevel = 'read' | 'write' | 'admin';
 
 export interface PermissionResult {
   granted: boolean;
-  message?: string;
+  message: string;
   code?: string;
 }
-
-export type PermissionCheckResult = PermissionResult; // Added alias for backward compatibility

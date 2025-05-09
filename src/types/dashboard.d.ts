@@ -76,3 +76,56 @@ export interface PendingApproval {
   submittedAt: string;
   count?: number;
 }
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  deadline?: string;
+  completionRate: number;
+  status?: string;
+}
+
+export interface DeadlineItem {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  dueDate: string;
+  status: string;
+  completionRate: number;
+}
+
+export interface FormItem {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  status: string;
+  completionRate: number;
+  submittedAt: string;
+}
+
+// Add missing interfaces for different dashboard types
+export interface SectorAdminDashboardProps {
+  data: SectorAdminDashboardData;
+  sectorId: string;
+}
+
+export interface SectorAdminDashboardData {
+  completion: {
+    percentage: number;
+    total: number;
+    completed: number;
+  };
+  status: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    total: number;
+    active: number;
+    inactive: number;
+  };
+  formStats: DashboardFormStats;
+  pendingApprovals: PendingApproval[];
+  schoolStats: SchoolStat[];
+  upcomingDeadlines?: DeadlineItem[];
+}

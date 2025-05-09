@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { CategoryStatus } from '@/types/category';
 
-export const useCategoryStatus = (status: CategoryStatus) => {
+export const useCategoryStatus = (status: string) => {
   const [statusInfo, setStatusInfo] = useState({
     color: '',
     text: '',

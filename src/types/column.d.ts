@@ -1,5 +1,5 @@
 
-export type ColumnType = 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multiselect' | 'textarea' | 'file' | 'email' | 'url' | 'tel' | 'password' | 'checkbox' | 'radio' | 'range' | 'color';
+export type ColumnType = 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multiselect' | 'textarea' | 'file' | 'email' | 'url' | 'tel' | 'password' | 'checkbox' | 'radio' | 'range' | 'color' | 'richtext';
 
 export interface ValidationRules {
   required?: boolean;
@@ -14,10 +14,14 @@ export interface ValidationRules {
   integer?: boolean;
   date?: boolean;
   custom?: string;
+  minDate?: string;
+  maxDate?: string;
+  tel?: boolean;
+  [key: string]: any;
 }
 
 export interface ColumnOption {
-  id?: string;
+  id: string;
   label: string;
   value: string;
   color?: string;
@@ -34,23 +38,28 @@ export interface Column {
   help_text?: string;
   order_index?: number;
   status: string;
-  validation?: ValidationRules | any;
+  validation?: ValidationRules;
   default_value?: string;
-  options?: ColumnOption[] | any;
+  options?: ColumnOption[];
   created_at?: string;
   updated_at?: string;
+  description?: string;
 }
 
-export interface ColumnFormData {
+export interface ColumnFormValues {
   name: string;
   type: ColumnType;
+  category_id: string;
   is_required: boolean;
   placeholder?: string;
   help_text?: string;
-  validation?: ValidationRules | any;
-  options?: ColumnOption[] | any;
   default_value?: string;
+  options?: ColumnOption[];
+  validation?: ValidationRules;
+  status?: string;
+  description?: string;
+  order_index?: number;
 }
 
-// Add Category for compatibility with useCategoryActions
-export { Category } from '@/types/category';
+// Re-export Category from category.d.ts for compatibility
+export { type Category } from '@/types/category';
