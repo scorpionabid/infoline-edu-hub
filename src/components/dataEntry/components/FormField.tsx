@@ -53,11 +53,22 @@ const FormField: React.FC<FormFieldProps> = ({
   // Seçim növləri üçün seçim variantlarını standardlaşdırmaq
   // options dəyişəninin array olub-olmadığını yoxlayırıq
   const normalizedOptions = Array.isArray(options) 
-    ? options.map(option => 
-        typeof option === 'string' 
-          ? { label: option, value: option } 
-          : option
-      ) 
+    ? options.map((option, index) => {
+        if (typeof option === 'string') {
+          return { 
+            label: option, 
+            value: option || `option-${index}` 
+          };
+        }
+        // Ensure there's always a non-empty value
+        if (!option.value || option.value === '') {
+          return {
+            ...option,
+            value: `option-${option.label || index}`
+          };
+        }
+        return option;
+      }) 
     : [];
 
   // Müxtəlif sütun tipləri üçün inputları render etmək
@@ -115,14 +126,19 @@ const FormField: React.FC<FormFieldProps> = ({
                   {t('noOptionsAvailable') || 'Seçim variantları mövcud deyil'}
                 </div>
               ) : (
-                Array.isArray(normalizedOptions) && normalizedOptions.map((option) => (
-                  <SelectItem 
-                    key={option.value || `option-${Math.random().toString(36).substr(2, 9)}`} 
-                    value={option.value || `default-${Math.random().toString(36).substr(2, 9)}`}
-                  >
-                    {option.label || 'Seçim'}
-                  </SelectItem>
-                ))
+                Array.isArray(normalizedOptions) && normalizedOptions.map((option, index) => {
+                  // Ensure option value is never an empty string
+                  const optionValue = option.value || `option-${index}`;
+                  
+                  return (
+                    <SelectItem 
+                      key={`${id}-${index}`} 
+                      value={optionValue}
+                    >
+                      {option.label || optionValue}
+                    </SelectItem>
+                  );
+                })
               )}
             </SelectContent>
           </Select>

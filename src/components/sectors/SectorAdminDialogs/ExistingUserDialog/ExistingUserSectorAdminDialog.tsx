@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -73,16 +72,23 @@ const ExistingUserSectorAdminDialog = ({ isOpen, onClose, sectorId, sectorName, 
           <Label htmlFor="userId" className="text-right">
             {t('selectUser') || 'İstifadəçi seçin'}
           </Label>
-          <Select onValueChange={setUserId} defaultValue={userId || undefined}>
+          <Select onValueChange={setUserId} defaultValue={userId}>
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectUser')} />
             </SelectTrigger>
             <SelectContent>
-              {users.map((user) => (
-                <SelectItem key={user.id} value={user.id || `user-${user.email || Math.random()}`}>
+              {users.length > 0 ? users.map((user) => (
+                <SelectItem 
+                  key={user.id} 
+                  value={user.id || `user-${user.email || Math.random().toString(36).slice(2)}`}
+                >
                   {user.full_name} ({user.email})
                 </SelectItem>
-              ))}
+              )) : (
+                <SelectItem value="no-users" disabled>
+                  {t('noUsersFound') || 'İstifadəçi tapılmadı'}
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>

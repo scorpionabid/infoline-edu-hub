@@ -40,11 +40,16 @@ export const SelectInput = <T extends Record<string, any>>({
           <SelectValue placeholder={column.placeholder || 'Seçin'} />
         </SelectTrigger>
         <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value || `option-${option.label}`}>
-              {option.label}
-            </SelectItem>
-          ))}
+          {options.map((option, index) => {
+            // Ensure option value is never an empty string
+            const optionValue = option.value || `option-${option.label || index}`;
+            
+            return (
+              <SelectItem key={optionValue} value={optionValue}>
+                {option.label}
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
       

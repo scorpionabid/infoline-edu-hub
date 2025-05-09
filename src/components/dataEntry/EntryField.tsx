@@ -54,7 +54,7 @@ const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error,
     const commonProps = {
       id: column.id,
       disabled: readOnly,
-      'aria-invalid': error ? true : false, // String əvəzinə boolean istifadə edirik
+      'aria-invalid': error ? true : false,
       className: cn(error && "border-red-500 focus:ring-red-300")
     };
     
@@ -97,7 +97,9 @@ const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error,
             <Checkbox
               id={column.id}
               checked={value === 'true' || value === true}
-              onCheckedChange={(checked) => onChange(checked)}
+              onCheckedChange={(checked) => {
+                onChange(checked);
+              }}
               disabled={readOnly}
             />
             <Label htmlFor={column.id} className="text-sm">
@@ -123,12 +125,17 @@ const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error,
                 const optionValue = typeof option === 'object' 
                   ? (option.value || `option-${index}`)
                   : (option || `option-${index}`);
+                  
+                // Ensure optionValue is never an empty string
+                const safeOptionValue = optionValue === '' ? `option-${index}` : optionValue;
+                  
                 const optionLabel = typeof option === 'object' 
                   ? (option.label || optionValue) 
                   : option;
+                  
                 return (
-                  <SelectItem key={index} value={optionValue || `option-${index}`}>
-                    {optionLabel}
+                  <SelectItem key={index} value={safeOptionValue}>
+                    {optionLabel || safeOptionValue}
                   </SelectItem>
                 );
               })}

@@ -53,16 +53,19 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
           <SelectContent>
             <SelectItem value="none">{t('selectUser') || 'İstifadəçi seçin'}</SelectItem>
             {users.length > 0 ? (
-              users.map((user) => (
-                <SelectItem key={user.id} value={user.id || "default-user-id"}>
+              users.map((user, index) => (
+                <SelectItem 
+                  key={user.id || `user-${index}`} 
+                  value={user.id || `user-${index}-${Math.random().toString(36).slice(2)}`}
+                >
                   {user.full_name || user.email} 
                   {user.email && ` (${user.email})`}
                 </SelectItem>
               ))
             ) : (
-              <div className="text-center py-2 text-muted-foreground">
+              <SelectItem value="no-users" disabled>
                 {t('noUsersFound') || 'İstifadəçi tapılmadı'}
-              </div>
+              </SelectItem>
             )}
           </SelectContent>
         </Select>

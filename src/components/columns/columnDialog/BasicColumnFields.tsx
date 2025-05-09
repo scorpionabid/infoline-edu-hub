@@ -60,11 +60,16 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id || `category-${Math.random()}`}>
-                    {category.name}
-                  </SelectItem>
-                ))}
+                {categories.map((category, index) => {
+                  // Ensure category.id is never an empty string
+                  const categoryId = category.id || `category-${index}-${Math.random().toString(36).slice(2)}`;
+                  
+                  return (
+                    <SelectItem key={categoryId} value={categoryId}>
+                      {category.name || `Category ${index + 1}`}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
             <FormMessage />

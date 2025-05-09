@@ -107,7 +107,7 @@ export const SectorAdminUserSelector: React.FC<SectorAdminUserSelectorProps> = (
             </div>
           ) : (
             <Select
-              value={selectedUserId || "default-select-value"}
+              value={selectedUserId || undefined}
               onValueChange={onUserSelect}
             >
               <SelectTrigger id="user-select" className="w-full">
@@ -115,19 +115,24 @@ export const SectorAdminUserSelector: React.FC<SectorAdminUserSelectorProps> = (
               </SelectTrigger>
               <SelectContent>
                 <ScrollArea className="h-72">
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id || `user-${Math.random()}`} className="py-2">
-                      <div className="flex flex-col">
-                        <div className="flex items-center">
-                          <UserPlus className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span className="font-medium">{user.full_name || 'İsimsiz İstifadəçi'}</span>
+                  {users.map((user, index) => {
+                    // Ensure user.id is never empty
+                    const userId = user.id || `user-${index}-${Math.random().toString(36).slice(2)}`;
+                    
+                    return (
+                      <SelectItem key={userId} value={userId} className="py-2">
+                        <div className="flex flex-col">
+                          <div className="flex items-center">
+                            <UserPlus className="h-4 w-4 mr-2 text-muted-foreground" />
+                            <span className="font-medium">{user.full_name || 'İsimsiz İstifadəçi'}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground ml-6">
+                            {formatUserDetails(user)}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground ml-6">
-                          {formatUserDetails(user)}
-                        </div>
-                      </div>
-                    </SelectItem>
-                  ))}
+                      </SelectItem>
+                    );
+                  })}
                 </ScrollArea>
               </SelectContent>
             </Select>
