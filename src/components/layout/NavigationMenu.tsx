@@ -2,10 +2,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { usePermissions } from '@/hooks/auth/usePermissions';
+import { usePermissions } from '@/hooks/auth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/auth';
+import { useAuthStore } from '@/hooks/auth';
 
 interface NavigationMenuProps {
   onMenuClick?: () => void;
@@ -15,28 +15,25 @@ interface NavigationMenuProps {
 const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarOpen }) => {
   const { t } = useLanguageSafe();
   const location = useLocation();
-  const { user } = useAuth();
-  const { 
-    isSuperAdmin,
-    isRegionAdmin,
-    isSectorAdmin,
-    isSchoolAdmin,
-    canManageSchools,
-    canManageCategories
-  } = usePermissions();
+  const { user } = useAuthStore();
+  const { userRole } = usePermissions();
+  
+  console.log("NavigationMenu rendering with user role:", userRole);
+  console.log("Current user data:", user);
 
   const activeItem = location.pathname.split('/')[1] || 'dashboard';
 
+  // Define navigation items with proper visibility checks
   const navigationItems = [
     { id: 'dashboard', label: t('dashboard'), path: '/dashboard', visible: true },
-    { id: 'regions', label: t('regions'), path: '/regions', visible: isSuperAdmin },
-    { id: 'sectors', label: t('sectors'), path: '/sectors', visible: isSuperAdmin || isRegionAdmin },
-    { id: 'schools', label: t('schools'), path: '/schools', visible: canManageSchools },
-    { id: 'categories', label: t('categories'), path: '/categories', visible: canManageCategories },
-    { id: 'columns', label: t('columns'), path: '/columns', visible: canManageCategories },
-    { id: 'users', label: t('users'), path: '/users', visible: isSuperAdmin || isRegionAdmin || isSectorAdmin },
-    { id: 'data-entry', label: t('dataEntry'), path: '/data-entry', visible: isSuperAdmin || isSchoolAdmin || isSectorAdmin },
-    { id: 'approvals', label: t('approvals'), path: '/approvals', visible: isSuperAdmin || isRegionAdmin || isSectorAdmin },
+    { id: 'regions', label: t('regions'), path: '/regions', visible: userRole === 'superadmin' },
+    { id: 'sectors', label: t('sectors'), path: '/sectors', visible: userRole === 'superadmin' || userRole === 'regionadmin' },
+    { id: 'schools', label: t('schools'), path: '/schools', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
+    { id: 'categories', label: t('categories'), path: '/categories', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
+    { id: 'columns', label: t('columns'), path: '/columns', visible: ['superadmin', 'regionadmin'].includes(userRole as string) },
+    { id: 'users', label: t('users'), path: '/users', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
+    { id: 'data-entry', label: t('dataEntry'), path: '/data-entry', visible: ['superadmin', 'sectoradmin', 'schooladmin'].includes(userRole as string) },
+    { id: 'approvals', label: t('approvals'), path: '/approvals', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
     { id: 'reports', label: t('reports'), path: '/reports', visible: true },
     { id: 'settings', label: t('settings'), path: '/settings', visible: true },
   ];

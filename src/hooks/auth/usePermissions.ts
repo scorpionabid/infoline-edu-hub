@@ -1,5 +1,6 @@
+
 import { useAuthStore } from './useAuthStore';
-import { UserRole, FullUserData } from '@/types/supabase';
+import { UserRole } from '@/types/supabase';
 import {
   canViewUsers,
   canManageUsers,
@@ -58,12 +59,20 @@ export const usePermissions = (): UsePermissionsResult => {
     isLoading: state.isLoading 
   }));
 
+  // Ensure we have a proper role
   const userRole = (user?.role || null) as UserRole | null;
+  
+  // Debug output to help diagnose role issues
+  console.log("[usePermissions] Current role:", userRole);
+  console.log("[usePermissions] User data:", user);
+
+  // Get region, sector, and school IDs from user object
   const regionId = user?.region_id || null;
   const sectorId = user?.sector_id || null;
   const schoolId = user?.school_id || null;
   const userId = user?.id;
 
+  // Helper boolean flags for role checks
   const isSuperAdmin = userRole === 'superadmin';
   const isRegionAdmin = userRole === 'regionadmin';
   const isSectorAdmin = userRole === 'sectoradmin';
@@ -101,6 +110,7 @@ export const usePermissions = (): UsePermissionsResult => {
   const canViewSectorCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
 
+  // Async checkers (these return promises)
   const checkRegionAccess = async (targetRegionId: string, level?: string): Promise<boolean> => {
     return hasRegionAccess(targetRegionId);
   };

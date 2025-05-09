@@ -67,6 +67,7 @@ export const useAuth = (): AuthContextType => {
     refreshSession,
     updatePassword,
     updateProfile,
+    updateUserProfile: updateProfile, // Add this alias for backward compatibility
     resetPassword,
     register,
     setError,

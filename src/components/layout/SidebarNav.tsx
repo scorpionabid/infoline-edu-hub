@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { usePermissions } from '@/hooks/auth/usePermissions';
+import { usePermissions } from '@/hooks/auth';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/hooks/auth';
 import {
   BarChart2,
   FileText,
@@ -25,19 +26,15 @@ interface SidebarNavProps {
 const SidebarNav: React.FC<SidebarNavProps> = ({ onMenuClick }) => {
   const location = useLocation();
   const { t } = useLanguageSafe();
-  const {
-    isSuperAdmin,
-    isRegionAdmin,
-    isSectorAdmin,
-    isSchoolAdmin,
-    canManageUsers,
-    canManageRegions,
-    canManageSectors,
-    canManageSchools,
-    canManageCategories,
-    canApproveData
-  } = usePermissions();
+  const { userRole } = usePermissions();
+  const { user } = useAuthStore();
+  
+  console.log("SidebarNav rendering with user role:", userRole);
+  console.log("Current user object:", user);
 
+  const activeItem = location.pathname.split('/')[1] || 'dashboard';
+
+  // Define navigation items with proper checks
   const navItems = [
     {
       id: 'dashboard',
@@ -51,49 +48,49 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onMenuClick }) => {
       label: t('regions'),
       icon: <MapPin className="h-4 w-4 mr-2" />,
       path: '/regions',
-      visible: canManageRegions
+      visible: userRole === 'superadmin'
     },
     {
       id: 'sectors',
       label: t('sectors'),
       icon: <Network className="h-4 w-4 mr-2" />,
       path: '/sectors',
-      visible: canManageSectors
+      visible: userRole === 'superadmin' || userRole === 'regionadmin'
     },
     {
       id: 'schools',
       label: t('schools'),
       icon: <School className="h-4 w-4 mr-2" />,
       path: '/schools',
-      visible: canManageSchools
+      visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string)
     },
     {
       id: 'categories',
       label: t('categories'),
       icon: <ClipboardList className="h-4 w-4 mr-2" />,
       path: '/categories',
-      visible: canManageCategories
+      visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string)
     },
     {
       id: 'columns',
       label: t('columns'),
       icon: <Columns className="h-4 w-4 mr-2" />,
       path: '/columns',
-      visible: canManageCategories
+      visible: ['superadmin', 'regionadmin'].includes(userRole as string)
     },
     {
       id: 'data-entry',
       label: t('dataEntry'),
       icon: <FileText className="h-4 w-4 mr-2" />,
       path: '/data-entry',
-      visible: true
+      visible: ['superadmin', 'sectoradmin', 'schooladmin'].includes(userRole as string)
     },
     {
       id: 'approvals',
       label: t('approvals'),
       icon: <CheckSquare className="h-4 w-4 mr-2" />,
       path: '/approvals',
-      visible: canApproveData
+      visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string)
     },
     {
       id: 'reports',
@@ -107,7 +104,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onMenuClick }) => {
       label: t('users'),
       icon: <Users className="h-4 w-4 mr-2" />,
       path: '/users',
-      visible: canManageUsers
+      visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string)
     },
     {
       id: 'settings',
@@ -117,8 +114,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onMenuClick }) => {
       visible: true
     }
   ];
-
-  const activeItem = location.pathname.split('/')[1] || 'dashboard';
 
   return (
     <nav className="space-y-1 px-2">

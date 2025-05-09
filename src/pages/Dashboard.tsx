@@ -1,3 +1,4 @@
+
 // Dashboard.tsx - Add diagnostic logs
 
 import React, { useState, useEffect } from 'react';
@@ -7,17 +8,26 @@ import DashboardContent from '@/components/dashboard/DashboardContent';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { usePermissions } from '@/hooks/auth';
 
 const Dashboard: React.FC = () => {
   const { user, isAuthenticated, loading } = useAuth();
+  const { userRole } = usePermissions();
   const [initialCheck, setInitialCheck] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
-  console.log('[Dashboard.tsx] Component rendering. State:', { loading, initialCheck, isAuthenticated, user });
+  console.log('[Dashboard.tsx] Component rendering. State:', { 
+    loading, 
+    initialCheck, 
+    isAuthenticated, 
+    user,
+    userRole,
+    role: user?.role 
+  });
 
   useEffect(() => {
-    console.log('[Dashboard.tsx] useEffect triggered. Deps:', { isAuthenticated, loading, user });
+    console.log('[Dashboard.tsx] useEffect triggered. Deps:', { isAuthenticated, loading, user, userRole });
     if (!loading) {
       console.log('[Dashboard.tsx] useEffect: Auth loading is false. Setting initialCheck to false.');
       setInitialCheck(false);
@@ -39,7 +49,7 @@ const Dashboard: React.FC = () => {
     } else {
       console.log('[Dashboard.tsx] useEffect: Auth loading is true. Waiting.');
     }
-  }, [isAuthenticated, loading, user, navigate, location]);
+  }, [isAuthenticated, loading, user, navigate, location, userRole]);
 
   if (loading || initialCheck) {
     console.log('[Dashboard.tsx] Render: Showing loading spinner because loading or initialCheck is true.', { loading, initialCheck });
@@ -55,9 +65,25 @@ const Dashboard: React.FC = () => {
     console.log('[Dashboard.tsx] Render: Not authenticated or no user, returning null. This might indicate a problem if redirection was expected.', { isAuthenticated, user });
     return null;
   }
-  console.log('[Dashboard.tsx] Render: Authenticated and user exists. Proceeding to render content.', { user });
+  console.log('[Dashboard.tsx] Render: Authenticated and user exists. Proceeding to render content.', { user, userRole });
 
   const isSchoolAdmin = user.role === 'schooladmin';
+
+  // If no appropriate dashboard is found, show a helpful message
+  if (!userRole) {
+    return (
+      <div className="flex items-center justify-center h-screen flex-col space-y-4">
+        <h2 className="text-2xl font-semibold">Rolunuza uyğun dashboard tapılmadı</h2>
+        <p>Rol: {user.role || 'Təyin olunmayıb'}</p>
+        <button 
+          className="px-4 py-2 bg-primary text-primary-foreground rounded"
+          onClick={() => navigate('/settings')}
+        >
+          Tənzimləmələr
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
