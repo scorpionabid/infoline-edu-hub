@@ -1,53 +1,43 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { Category, CategoryStatus } from '@/types/category';
-import { toast } from '@/components/ui/use-toast';
+import { useLanguage } from '@/context/LanguageContext'; 
 
-export const useCategoryActions = () => {
+const useCategoryActions = () => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const createCategory = async (categoryData: Partial<Category>) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      setError(null);
-
       const { data, error } = await supabase
         .from('categories')
-        .insert([categoryData])
+        .insert(categoryData)
         .select()
         .single();
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: 'Category created successfully',
+      toast.success(t('categoryCreated'));
+      return data;
+    } catch (error: any) {
+      console.error('Error creating category:', error);
+      toast.error(t('errorCreatingCategory'), {
+        description: error.message
       });
-      
-      return { ...data, success: true };
-    } catch (err: any) {
-      console.error('Error creating category:', err);
-      setError(err.message || 'Failed to create category');
-      
-      toast({
-        title: 'Error',
-        description: err.message || 'Failed to create category',
-        variant: 'destructive',
-      });
-      
-      return { success: false };
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
   const updateCategory = async (id: string, categoryData: Partial<Category>) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      setError(null);
-
       const { data, error } = await supabase
         .from('categories')
         .update(categoryData)
@@ -57,33 +47,22 @@ export const useCategoryActions = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: 'Category updated successfully',
+      toast.success(t('categoryUpdated'));
+      return data;
+    } catch (error: any) {
+      console.error('Error updating category:', error);
+      toast.error(t('errorUpdatingCategory'), {
+        description: error.message
       });
-      
-      return { ...data, success: true };
-    } catch (err: any) {
-      console.error('Error updating category:', err);
-      setError(err.message || 'Failed to update category');
-      
-      toast({
-        title: 'Error',
-        description: err.message || 'Failed to update category',
-        variant: 'destructive',
-      });
-      
-      return { success: false };
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
   const deleteCategory = async (id: string) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      setError(null);
-
       const { error } = await supabase
         .from('categories')
         .delete()
@@ -91,30 +70,41 @@ export const useCategoryActions = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: 'Category deleted successfully',
+      toast.success(t('categoryDeleted'));
+    } catch (error: any) {
+      console.error('Error deleting category:', error);
+      toast.error(t('errorDeletingCategory'), {
+        description: error.message
       });
-      
-      return true;
-    } catch (err: any) {
-      console.error('Error deleting category:', err);
-      setError(err.message || 'Failed to delete category');
-      
-      toast({
-        title: 'Error',
-        description: err.message || 'Failed to delete category',
-        variant: 'destructive',
-      });
-      
-      return false;
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
   const updateCategoryStatus = async (id: string, status: CategoryStatus) => {
-    return updateCategory(id, { status });
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .update({ status })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success(t('statusUpdated'));
+      return data;
+    } catch (error: any) {
+      console.error('Error updating category status:', error);
+      toast.error(t('errorUpdatingStatus'), {
+        description: error.message
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return {
@@ -122,8 +112,7 @@ export const useCategoryActions = () => {
     updateCategory,
     deleteCategory,
     updateCategoryStatus,
-    isLoading,
-    error
+    isLoading
   };
 };
 

@@ -79,11 +79,12 @@ export interface SchoolStat {
 
 export interface PendingApproval {
   id: string;
-  schoolId: string;
+  schoolId?: string;
   schoolName: string;
-  categoryId: string;
+  categoryId?: string;
   categoryName: string;
   submittedAt: string;
+  date?: string;
   status: string;
 }
 

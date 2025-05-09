@@ -1,12 +1,7 @@
 
 import React from 'react';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
-
-export interface ChartData {
-  name: string;
-  value: number;
-  color?: string;
-}
+import { ChartData } from '@/types/dashboard';
 
 interface DoughnutChartProps {
   data: ChartData[];

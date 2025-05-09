@@ -1,9 +1,7 @@
 
 import React, { useState } from 'react';
-import { useNotifications } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { az } from 'date-fns/locale';
-import { useLanguage } from '@/context/LanguageContext';
 import { Bell, Check, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,7 +13,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { NotificationItem } from './NotificationItem'; 
-import { AppNotification } from '@/types/notification';
+import { useLanguage } from '@/context/LanguageContext';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export const NotificationComponent: React.FC = () => {
   const { t } = useLanguage();
@@ -52,7 +51,7 @@ export const NotificationComponent: React.FC = () => {
     return (
       <ScrollArea className="h-[300px]">
         <div className="space-y-2 p-2">
-          {notifications.map((notification: AppNotification) => (
+          {notifications.map((notification) => (
             <NotificationItem 
               key={notification.id} 
               notification={notification}

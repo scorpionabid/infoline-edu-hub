@@ -4,18 +4,23 @@ import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import NotificationsCard from './common/NotificationsCard';
-import { SchoolAdminDashboardData, SchoolAdminDashboardProps } from '@/types/dashboard';
-import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
-import { AppNotification } from '@/types/notification';
+import { SchoolAdminDashboardData } from '@/types/dashboard';
+import { AppNotification, adaptDashboardNotificationToApp } from '@/types/notification';
 import { WormIcon, CheckCircleIcon, AlertTriangleIcon, ClockIcon } from 'lucide-react';
 import FormTabs from './school-admin/FormTabs';
 import { Button } from '@/components/ui/button';
 
-interface ExtendedSchoolAdminDashboardProps extends SchoolAdminDashboardProps {
+interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
+  isLoading?: boolean;
+  error?: Error | null;
+  onRefresh?: () => void;
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (id: string) => void;
+  schoolId?: string;
 }
 
-const SchoolAdminDashboard: React.FC<ExtendedSchoolAdminDashboardProps> = ({ 
+const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ 
   data, 
   isLoading, 
   error, 
@@ -41,18 +46,21 @@ const SchoolAdminDashboard: React.FC<ExtendedSchoolAdminDashboardProps> = ({
     );
   }
 
-  // Bildirişləri adaptasiya et
-  const adaptedNotifications = Array.isArray(data.notifications)
+  // Adapt notifications to correct type
+  const adaptedNotifications: AppNotification[] = Array.isArray(data.notifications)
     ? data.notifications.map(notification => {
+        // Ensure all required fields exist
         const notificationWithAllFields = {
           ...notification,
-          isRead: notification.isRead || false
+          isRead: notification.isRead ?? false,
+          date: notification.date ?? new Date().toISOString(),
+          createdAt: notification.createdAt ?? notification.date ?? new Date().toISOString()
         };
         return adaptDashboardNotificationToApp(notificationWithAllFields);
       })
     : [];
 
-  // Status obyektini DashboardStatus tipinə uyğunlaşdır
+  // Status object for DashboardStatus type
   const statusData = data.status ? {
     ...data.status,
     active: data.status.active || 0,
@@ -67,7 +75,7 @@ const SchoolAdminDashboard: React.FC<ExtendedSchoolAdminDashboardProps> = ({
     inactive: 0
   };
 
-  // Form stats obyektini DashboardFormStats tipinə uyğunlaşdır
+  // Form stats object for DashboardFormStats type
   const formStatsData = data.formStats ? {
     ...data.formStats,
     dueSoon: data.formStats.dueSoon || 0,
@@ -127,7 +135,7 @@ const SchoolAdminDashboard: React.FC<ExtendedSchoolAdminDashboardProps> = ({
         
         <NotificationsCard
           title="Bildirişlər"
-          notifications={adaptedNotifications as AppNotification[]}
+          notifications={adaptedNotifications}
         />
       </Grid>
       

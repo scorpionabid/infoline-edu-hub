@@ -1,13 +1,12 @@
 
-// Bildiriş tipləri
-
+// Notification types
 export interface AppNotification {
   id: string;
   title: string;
   message: string;
   createdAt: string;
   isRead: boolean;
-  read?: boolean; // geriyə uyğunluq üçün
+  read?: boolean; // for backwards compatibility
   type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
   priority?: 'low' | 'medium' | 'high' | 'normal' | 'critical';
   relatedEntityId?: string;
@@ -15,7 +14,7 @@ export interface AppNotification {
   link?: string;
   category?: string;
   timestamp?: string;
-  date?: string; // geriyə uyğunluq üçün
+  date?: string; // for backwards compatibility
   entity?: any;
 }
 
@@ -25,7 +24,7 @@ export interface DashboardNotification {
   message: string;
   date: string;
   isRead: boolean;
-  read?: boolean; // geriyə uyğunluq üçün
+  read?: boolean; // for backwards compatibility
   type: 'info' | 'warning' | 'error' | 'success' | 'deadline' | 'approval' | 'category' | 'system';
   priority?: 'low' | 'medium' | 'high' | 'normal' | 'critical';
   link?: string;
@@ -35,7 +34,7 @@ export interface DashboardNotification {
   entity?: any;
 }
 
-// AppNotification-ı DashboardNotification-a çevirmək üçün adaptasiya funksiyası
+// Function to convert AppNotification to DashboardNotification
 export const adaptAppNotificationToDashboard = (
   notification: AppNotification
 ): DashboardNotification => {
@@ -56,7 +55,7 @@ export const adaptAppNotificationToDashboard = (
   };
 };
 
-// DashboardNotification-ı AppNotification-a çevirmək üçün adaptasiya funksiyası
+// Function to convert DashboardNotification to AppNotification
 export const adaptDashboardNotificationToApp = (
   notification: DashboardNotification
 ): AppNotification => {
@@ -77,7 +76,7 @@ export const adaptDashboardNotificationToApp = (
   };
 };
 
-// DB-dən gələn bildirişi AppNotification-a çevirmək üçün adaptasiya funksiyası
+// Function to convert DB notification to AppNotification
 export const adaptDbNotificationToApp = (dbNotification: any): AppNotification => {
   return {
     id: dbNotification.id,
@@ -95,5 +94,9 @@ export const adaptDbNotificationToApp = (dbNotification: any): AppNotification =
   };
 };
 
-// Geriyə uyğunluq üçün bir abstraction layer
+// Aliases for backward compatibility
+export const adaptDashboardToAppNotification = adaptDashboardNotificationToApp;
+export const adaptAppToDashboardNotification = adaptAppNotificationToDashboard;
+
+// For backward compatibility
 export type Notification = AppNotification;
