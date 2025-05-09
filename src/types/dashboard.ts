@@ -137,6 +137,7 @@ export interface PendingApproval {
   formName?: string;
   status?: string;
   createdAt?: string;
+  submittedAt?: string;
   columnName?: string;
   value?: string;
 }

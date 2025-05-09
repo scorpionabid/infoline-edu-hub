@@ -73,3 +73,36 @@ export interface SchoolStat {
 
 // Define UserRole type
 export type UserRole = "superadmin" | "regionadmin" | "sectoradmin" | "schooladmin";
+
+// Define NotificationSettings type
+export interface NotificationSettings {
+  email: boolean;
+  inApp: boolean;
+  push: boolean;
+  system: boolean;
+  deadline: boolean;
+}
+
+// Define FullUserData type
+export interface FullUserData {
+  id: string;
+  email: string;
+  full_name?: string;
+  phone?: string;
+  role?: UserRole;
+  status?: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  last_login?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar?: string;
+  };
+  notificationSettings?: NotificationSettings;
+  created_at?: string;
+  updated_at?: string;
+}

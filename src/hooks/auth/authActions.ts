@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { UserRole } from '@/types/supabase';
+import { UserRole, FullUserData } from '@/types/supabase';
 
 export interface FullUserData {
   id: string;
@@ -157,7 +156,7 @@ export const createUser = async (
   }
 };
 
-// Function to update a user's profile data
+// Function to update a user's profile data - export this function for AccountSettings.tsx
 export const updateUserProfile = async (userData: Partial<FullUserData>): Promise<{ success: boolean; message: string }> => {
   try {
     const { id, ...profileData } = userData;
@@ -219,3 +218,6 @@ export const updateUserProfile = async (userData: Partial<FullUserData>): Promis
     };
   }
 };
+
+// Add alias for updateUserProfile to fix the import in AccountSettings.tsx
+export const updateUser = updateUserProfile;

@@ -1,60 +1,94 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { Card, CardContent } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import React, { useEffect } from 'react';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { toast } from "sonner";
+import { RadioGroup, RadioItem, RadioIndicator } from "@/components/ui/radio";
+import { useLanguage } from '@/context/LanguageContext';
 
-interface LanguageSettingsFormProps {
-  currentLanguage: string;
-  onSubmit: (language: string) => void;
-  loading?: boolean;
-}
+const languageFormSchema = z.object({
+  language: z.string({
+    required_error: "Please select a language.",
+  }),
+});
 
-const LanguageSettingsForm: React.FC<LanguageSettingsFormProps> = ({ 
-  currentLanguage, 
-  onSubmit,
-  loading
-}) => {
-  const { t, languages, supportedLanguages } = useLanguageSafe();
-  const [selectedLanguage, setSelectedLanguage] = React.useState(currentLanguage);
+type LanguageFormValues = z.infer<typeof languageFormSchema>;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(selectedLanguage);
-  };
+const LanguageSettingsForm = () => {
+  const { t, language, setLanguage, availableLanguages } = useLanguage();
+  
+  const form = useForm<LanguageFormValues>({
+    resolver: zodResolver(languageFormSchema),
+    defaultValues: {
+      language: language
+    },
+  });
+
+  // Update form when language changes
+  useEffect(() => {
+    form.setValue('language', language);
+  }, [language, form]);
+
+  function onSubmit(data: LanguageFormValues) {
+    setLanguage(data.language);
+    toast.success(t('languageUpdated'));
+  }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card>
-        <CardContent className="pt-6">
-          <RadioGroup 
-            value={selectedLanguage}
-            onValueChange={setSelectedLanguage}
-            className="space-y-4"
-          >
-            {supportedLanguages && supportedLanguages.map(lang => (
-              <div key={lang.code} className="flex items-center space-x-2">
-                <RadioGroupItem value={lang.code} id={`lang-${lang.code}`} />
-                <Label htmlFor={`lang-${lang.code}`} className="flex items-center">
-                  {languages && languages[lang.code] && (
-                    <span className="mr-2">{languages[lang.code].flag}</span>
-                  )}
-                  {lang.name}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-          
-          <div className="pt-4">
-            <Button type="submit" disabled={loading || selectedLanguage === currentLanguage}>
-              {loading ? t('saving') : t('saveLanguageSettings')}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </form>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="language"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>{t('language')}</FormLabel>
+              <FormDescription>
+                {t('languageDescription')}
+              </FormDescription>
+              <FormControl>
+                <RadioGroup
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  className="flex flex-col space-y-1"
+                >
+                  {availableLanguages.map(langCode => (
+                    <div key={langCode} className="flex items-center space-x-2 rounded-md border p-3">
+                      <RadioItem value={langCode} id={`language-${langCode}`}>
+                        <RadioIndicator />
+                      </RadioItem>
+                      <label
+                        htmlFor={`language-${langCode}`}
+                        className="flex-1 cursor-pointer text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {langCode === 'az' && 'Azərbaycan'}
+                        {langCode === 'en' && 'English'}
+                        {langCode === 'ru' && 'Русский'}
+                      </label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit">
+          {t('saveChanges')}
+        </Button>
+      </form>
+    </Form>
   );
 };
 

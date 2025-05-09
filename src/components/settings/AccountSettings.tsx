@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
@@ -18,7 +19,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { FullUserData, NotificationSettings } from '@/types/supabase';
-import { updateUser } from '@/hooks/auth/authActions';
+import { updateUserProfile } from '@/hooks/auth/authActions';
 
 const profileFormSchema = z.object({
   full_name: z.string().min(2, {
@@ -77,7 +78,7 @@ export const AccountSettings = () => {
     }
   }, [user, profileForm]);
 
-  const updateUserProfile = async (data: Partial<FullUserData>) => {
+  const handleUpdateUserProfile = async (data: Partial<FullUserData>) => {
     try {
       setIsSubmitting(true);
     
@@ -92,10 +93,11 @@ export const AccountSettings = () => {
 
       const userUpdateData: Partial<FullUserData> = {
         ...data,
+        id: user?.id,
         notificationSettings
       };
 
-      await updateUser(userUpdateData);
+      await updateUserProfile(userUpdateData);
       toast.success(t('profileUpdated'));
       refreshUserData();
     } catch (error) {
@@ -108,7 +110,7 @@ export const AccountSettings = () => {
 
   return (
     <Form {...profileForm}>
-      <form onSubmit={profileForm.handleSubmit(updateUserProfile)} className="space-y-8">
+      <form onSubmit={profileForm.handleSubmit(handleUpdateUserProfile)} className="space-y-8">
         <div className="grid gap-4">
           <FormField
             control={profileForm.control}
@@ -264,3 +266,5 @@ export const AccountSettings = () => {
     </Form>
   );
 };
+
+export default AccountSettings;

@@ -1,5 +1,5 @@
 
-import { SchoolStat } from './supabase';
+import { SchoolStat, Region, Sector } from './supabase';
 
 export interface SchoolFilter {
   regionId?: string;
@@ -34,27 +34,20 @@ export interface SchoolFormData {
 export interface SchoolFormProps {
   initialData?: SchoolFormData;
   onSubmit: (data: SchoolFormData) => void;
-  regions?: Array<{id: string; name: string}>;
+  regions: Array<{id: string; name: string}>;
   sectors?: Array<{id: string; name: string}>;
   isLoading?: boolean;
   isSubmitting?: boolean;
   submitButtonText?: string;
 }
 
-export interface EnhancedSchoolFormProps {
-  initialData?: SchoolFormData;
-  onSubmit: (data: SchoolFormData) => void;
-  regions?: Array<{id: string; name: string}>;
-  sectors?: Array<{id: string; name: string}>;
-  isLoading?: boolean;
-  isSubmitting?: boolean;
-  submitButtonText?: string;
+export interface EnhancedSchoolFormProps extends SchoolFormProps {
   regionNames?: Record<string, string>;
   sectorNames?: Record<string, string>;
 }
 
 // Re-export from supabase types to avoid circular dependencies
-export { SchoolStat } from './supabase';
+export { SchoolStat, Region, Sector } from './supabase';
 
 // School interface for backwards compatibility
 export interface School extends SchoolFormData {
@@ -66,9 +59,6 @@ export interface School extends SchoolFormData {
   region_name?: string;
   sector_name?: string;
 }
-
-// Type declarations for compatibility with existing components
-export { Region, Sector } from './supabase';
 
 // Define SectorSchool for compatibility
 export interface SectorSchool {

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { useAuthStore, selectIsAuthenticated, selectIsLoading } from '@/hooks/auth/useAuthStore';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { UserRole } from '@/types/supabase';
 import LoadingScreen from './LoadingScreen';
@@ -17,7 +17,8 @@ const RequireRole: React.FC<RequireRoleProps> = ({
   roles,
   fallback = <Navigate to="/login" replace />
 }) => {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const isAuthenticated = useAuthStore(selectIsAuthenticated);
+  const isLoading = useAuthStore(selectIsLoading);
   const { hasRole } = usePermissions();
   
   // Yüklənmə zamanı yükləmə ekranı göstəririk

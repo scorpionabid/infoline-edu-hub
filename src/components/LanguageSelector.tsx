@@ -26,7 +26,7 @@ const LanguageSelector: React.FC = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {availableLanguages && availableLanguages.map((lang) => (
+        {availableLanguages.map((lang) => (
           <DropdownMenuItem
             key={lang}
             onClick={() => handleLanguageChange(lang)}

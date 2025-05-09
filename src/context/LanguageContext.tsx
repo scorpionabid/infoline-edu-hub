@@ -10,17 +10,23 @@ interface LanguageContextProps {
   language: string;
   setLanguage: (lang: string) => void;
   t: (key: string, options?: any) => string;
-  i18n: i18next.i18n;
+  i18n: typeof i18next;
   isRtl: boolean;
-  availableLanguages: { code: string; name: string }[];
-  currentLanguage: { code: string; name: string };
+  availableLanguages: string[];
+  currentLanguage: string;
+  languages: Record<string, { nativeName: string; flag?: string }>;
+  supportedLanguages: string[];
 }
 
-const availableLanguages = [
-  { code: 'az', name: 'Azərbaycan' },
-  { code: 'en', name: 'English' },
-  { code: 'ru', name: 'Русский' }
-];
+const languages: Record<string, { nativeName: string; flag: string }> = {
+  az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
+  en: { nativeName: 'English', flag: '🇬🇧' },
+  ru: { nativeName: 'Русский', flag: '🇷🇺' },
+  tr: { nativeName: 'Türkçe', flag: '🇹🇷' }
+};
+
+const availableLanguages = ['az', 'en', 'ru', 'tr'];
+const supportedLanguages = ['az', 'en', 'ru'];
 
 const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
 
@@ -58,10 +64,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const isRtl = useMemo(() => i18n.dir() === 'rtl', [i18n]);
 
-  const currentLanguage = useMemo(() => {
-    return availableLanguages.find(lang => lang.code === language) || availableLanguages[0];
-  }, [language]);
-
   const value: LanguageContextProps = {
     language,
     setLanguage: changeLanguage,
@@ -69,7 +71,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     i18n,
     isRtl,
     availableLanguages,
-    currentLanguage
+    currentLanguage: language,
+    languages,
+    supportedLanguages
   };
 
   return (
@@ -97,14 +101,17 @@ export function useLanguageSafe() {
       language: 'az',
       setLanguage: () => {},
       t: (key: string) => key,
-      i18n: i18next.createInstance(),
+      i18n: i18next,
       isRtl: false,
-      availableLanguages: [
-        { code: 'az', name: 'Azərbaycan' },
-        { code: 'en', name: 'English' },
-        { code: 'ru', name: 'Русский' }
-      ],
-      currentLanguage: { code: 'az', name: 'Azərbaycan' }
+      availableLanguages: ['az', 'en', 'ru', 'tr'],
+      currentLanguage: 'az',
+      languages: {
+        az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
+        en: { nativeName: 'English', flag: '🇬🇧' },
+        ru: { nativeName: 'Русский', flag: '🇷🇺' },
+        tr: { nativeName: 'Türkçe', flag: '🇹🇷' }
+      },
+      supportedLanguages: ['az', 'en', 'ru']
     };
   }
 }

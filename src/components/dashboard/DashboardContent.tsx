@@ -7,35 +7,57 @@ import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
 import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
 import { UserRole } from '@/types/supabase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DashboardStatus, DashboardFormStats } from '@/types/dashboard';
 
 // Mock data for temporary usage
 const mockSuperAdminData = { 
-  status: { total: 0, approved: 0, pending: 0, rejected: 0, active: 0, inactive: 0 }, 
+  status: { total: 0, approved: 0, pending: 0, rejected: 0, draft: 0, active: 0, inactive: 0 } as DashboardStatus, 
   completion: { total: 0, completed: 0, percentage: 0 },
   regionStats: [],
   sectorStats: []
 };
 
 const mockRegionAdminData = { 
-  status: { total: 0, approved: 0, pending: 0, rejected: 0, active: 0, inactive: 0 }, 
+  status: { total: 0, approved: 0, pending: 0, rejected: 0, draft: 0, active: 0, inactive: 0 } as DashboardStatus, 
   completion: { total: 0, completed: 0, percentage: 0 }, 
   sectorStats: [], 
   pendingApprovals: [] 
 };
 
 const mockSectorAdminData = { 
-  status: { total: 0, approved: 0, pending: 0, rejected: 0, active: 0, inactive: 0 }, 
+  status: { total: 0, approved: 0, pending: 0, rejected: 0, draft: 0, active: 0, inactive: 0 } as DashboardStatus, 
   completion: { total: 0, completed: 0, percentage: 0 }, 
-  schoolStats: [], 
-  pendingApprovals: [] 
+  schoolStats: [],
+  pendingApprovals: [],
+  categories: [],
+  upcoming: [],
+  pendingForms: [],
+  formStats: {
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    draft: 0,
+    dueSoon: 0,
+    overdue: 0,
+    total: 0
+  } as DashboardFormStats
 };
 
 const mockSchoolAdminData = { 
-  status: { total: 0, approved: 0, pending: 0, rejected: 0, active: 0, inactive: 0 }, 
+  status: { total: 0, approved: 0, pending: 0, rejected: 0, draft: 0, active: 0, inactive: 0 } as DashboardStatus, 
   completion: { total: 0, completed: 0, percentage: 0 }, 
   categories: [], 
   upcoming: [], 
-  pendingForms: [] 
+  pendingForms: [],
+  formStats: {
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    draft: 0,
+    dueSoon: 0,
+    overdue: 0,
+    total: 0
+  } as DashboardFormStats
 };
 
 const DashboardContent: React.FC = () => {
