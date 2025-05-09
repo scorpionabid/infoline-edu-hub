@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Grid } from '@/components/ui/grid';
@@ -10,12 +11,14 @@ interface RegionAdminDashboardProps {
   data: any;
 }
 
-const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
+export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
   return (
     <div className="space-y-6">
       {/* Stats Overview */}
       <Grid columns={4} className="gap-4">
-        {/* Stats will be implemented here */}
+        <div>
+          {/* Stats will be implemented here */}
+        </div>
       </Grid>
       
       {/* Main Content */}
@@ -42,5 +45,3 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
     </div>
   );
 };
-
-export default RegionAdminDashboard;

@@ -1,48 +1,73 @@
 
-import React, { useEffect, memo } from 'react';
-import { ThemeProvider } from '@/components/theme-provider';
-import { NotificationProvider } from '@/context/NotificationContext';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { AuthProvider } from '@/context/auth';
-import { CacheProvider } from '@/context/QueryClientProvider';
-import { Toaster } from '@/components/ui/toaster';
-import { AppRoutes } from './routes/AppRoutes';
-import { RegisterSW } from './lib/register-sw';
+import React, { useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import { useAuthStore, shouldAuthenticate } from '@/hooks/auth/useAuthStore';
+import SidebarLayout from '@/components/layout/SidebarLayout';
+import LoginPage from '@/pages/Login';
+import Dashboard from '@/pages/Dashboard';
+import Regions from '@/pages/Regions';
+import Sectors from '@/pages/Sectors';
+import Schools from '@/pages/Schools';
+import Users from '@/pages/Users';
+import Settings from '@/pages/Settings';
+import NotFound from '@/pages/NotFound';
 
-/**
- * Main App component with properly ordered providers.
- * Provider order is important for authentication and state management:
- * ThemeProvider -> AuthProvider -> LanguageProvider -> NotificationProvider -> CacheProvider
- */
-const App: React.FC = () => {
+function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { refreshSession } = useAuthStore();
+  
+  // Run once on app startup
   useEffect(() => {
-    // Register service worker only once on mount
-    const registerServiceWorker = async () => {
-      try {
-        RegisterSW();
-      } catch (error) {
-        console.error('Service Worker registration failed:', error);
-      }
+    const initializeAuth = async () => {
+      console.log('[App] Initializing authentication...');
+      await refreshSession();
     };
+    
+    initializeAuth();
+  }, [refreshSession]);
 
-    registerServiceWorker();
-  }, []);
+  // Handle route protection
+  useEffect(() => {
+    const currentPath = location.pathname;
+    
+    // Define protected routes
+    const protectedRoutes = ['/dashboard', '/regions', '/sectors', '/schools', '/users', '/settings', '/profile'];
+    
+    // Check if the current route is protected
+    const isProtected = protectedRoutes.some(route => currentPath.startsWith(route));
+    
+    if (isProtected && shouldAuthenticate()) {
+      console.log('[App] Protected route detected, redirecting to login');
+      navigate('/login', { state: { from: location } });
+    }
+  }, [location, navigate]);
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <AuthProvider>
-        <LanguageProvider>
-          <NotificationProvider>
-            <CacheProvider>
-              <AppRoutes />
-              <Toaster />
-            </CacheProvider>
-          </NotificationProvider>
-        </LanguageProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <>
+      <Toaster position="top-right" />
+      <Routes>
+        {/* Authentication Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        
+        {/* Protected Routes with Sidebar Layout */}
+        <Route element={<SidebarLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/regions" element={<Regions />} />
+          <Route path="/sectors" element={<Sectors />} />
+          <Route path="/schools" element={<Schools />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/settings" element={<Settings />} />
+          {/* Default route */}
+          <Route path="/" element={<Dashboard />} />
+        </Route>
+        
+        {/* 404 page */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
-};
+}
 
-// Memoize App component to prevent unnecessary re-renders
-export default memo(App);
+export default App;

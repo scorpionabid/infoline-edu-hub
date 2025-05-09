@@ -1,24 +1,17 @@
 
-import { AppNotification } from './notification';
+import { ReactNode } from 'react';
 
-export interface DashboardStatus {
-  pending: number;
-  approved: number;
-  rejected: number;
-  draft?: number;
-  total: number;
-  active: number;
-  inactive: number;
+export interface DashboardProps {
+  data?: any;
 }
 
-export interface DashboardFormStats {
-  pending: number;
-  approved: number;
-  rejected: number;
-  draft?: number;
-  dueSoon: number;
-  overdue: number;
+export interface StatusCount {
   total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+  active: number;
+  inactive: number;
 }
 
 export interface CompletionStats {
@@ -27,63 +20,101 @@ export interface CompletionStats {
   percentage: number;
 }
 
-export interface CategoryItem {
+export interface SchoolStat {
   id: string;
   name: string;
-  description?: string;
-  deadline?: string;
-  completionRate: number;
+  completionRate?: number;
   status?: string;
+  pendingCount?: number;
 }
 
-export interface DeadlineItem {
+export interface SectorStat {
   id: string;
-  name?: string;
-  title?: string;
-  categoryId?: string;
-  daysLeft?: number;
-  daysRemaining?: number;
-  status?: string;
-  categoryName?: string;
+  name: string;
+  schoolCount?: number;
+  completion?: number;
+}
+
+export interface PendingApproval {
+  id: string;
+  schoolName: string;
+  categoryName: string;
+  submittedAt: string;
 }
 
 export interface FormItem {
   id: string;
-  name?: string;
-  title?: string;
-  status?: string;
-  categoryId?: string;
-  categoryName?: string;
+  name: string;
+  category: string;
+  dueDate: string;
+  status: string;
+  completionRate?: number;
+}
+
+export interface CategoryStats {
+  id: string;
+  name: string;
+  completionRate: number;
+  status: string;
+}
+
+export interface DashboardFormStats {
+  pending: number;
+  approved: number;
+  rejected: number;
+  dueSoon: number;
+  overdue: number;
+  total: number;
 }
 
 export interface SchoolAdminDashboardData {
+  status: StatusCount;
   completion: CompletionStats;
-  status: DashboardStatus;
-  categories: CategoryItem[];
-  upcoming: DeadlineItem[];
-  formStats?: DashboardFormStats;
+  categories: CategoryStats[];
+  upcoming: FormItem[];
   pendingForms: FormItem[];
-  completionRate: number;
-  notifications: any[];
+  formStats?: DashboardFormStats;
+  completionRate?: number;
+  notifications?: any[];
 }
 
-export interface SuperAdminDashboardProps {
-  data: {
-    completion: CompletionStats;
-    regionStats?: any[];
-    sectorStats?: any[];
-    schoolStats?: any[];
-    status?: DashboardStatus;
-    totalRegions?: number;
-    totalSectors?: number;
-    totalSchools?: number;
-  };
+export interface SectorAdminDashboardData {
+  status: StatusCount;
+  completion: CompletionStats;
+  schoolStats: SchoolStat[];
+  pendingApprovals: PendingApproval[];
+}
+
+export interface RegionAdminDashboardData {
+  status: StatusCount;
+  completion: CompletionStats;
+  sectorStats: SectorStat[];
+  pendingApprovals: PendingApproval[];
+}
+
+export interface SuperAdminDashboardData {
+  status: StatusCount;
+  completion: CompletionStats;
+  regionStats: any[];
+  sectorStats: any[];
 }
 
 export interface FormTabsProps {
-  categories: CategoryItem[];
-  upcoming: DeadlineItem[];
-  pendingForms: FormItem[];
-  navigateToDataEntry?: () => void;
-  handleFormClick?: (id: string) => void;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  categories?: any[];
+}
+
+export interface StatsCardProps {
+  title: string;
+  value: number | string;
+  icon?: ReactNode;
+  description?: string;
+  trend?: number;
+  trendDescription?: string;
+  className?: string;
+  isLoading?: boolean;
 }

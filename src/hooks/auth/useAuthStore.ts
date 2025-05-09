@@ -56,6 +56,69 @@ interface AuthState {
   hasSchoolAccess: (schoolId: string) => boolean;
 }
 
+// Helper to fetch user data from Supabase
+const fetchUserData = async (userId: string): Promise<FullUserData | null> => {
+  try {
+    console.log('[useAuthStore] Fetching user data for:', userId);
+    
+    // First try to get user role data from user_roles table
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role, region_id, sector_id, school_id')
+      .eq('user_id', userId)
+      .single();
+    
+    if (roleError) {
+      console.error('[useAuthStore] Error fetching role data:', roleError);
+      // Don't throw error here, continue with profile data
+    }
+    
+    // Fetch basic profile data
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (profileError) {
+      console.error('[useAuthStore] Error fetching profile:', profileError);
+      return null;
+    }
+    
+    // Get user email from auth.users if available
+    const { data: authUserData } = await supabase.auth.getUser(userId);
+    const userEmail = authUserData?.user?.email || profile?.email;
+    
+    // Combine data into FullUserData
+    let userData: FullUserData = {
+      id: userId,
+      email: userEmail || '',
+      role: (roleData?.role as UserRole) || profile?.role as UserRole || 'user',
+      region_id: roleData?.region_id || profile?.region_id || null,
+      sector_id: roleData?.sector_id || profile?.sector_id || null,
+      school_id: roleData?.school_id || profile?.school_id || null,
+      full_name: profile?.full_name || '',
+      phone: profile?.phone || '',
+      position: profile?.position || '',
+      language: profile?.language || 'az',
+      status: profile?.status || 'active',
+      avatar: profile?.avatar || '',
+      created_at: profile?.created_at || new Date().toISOString(),
+      updated_at: profile?.updated_at || new Date().toISOString(),
+      last_login: profile?.last_login || null,
+      regionId: roleData?.region_id || profile?.region_id || null,
+      sectorId: roleData?.sector_id || profile?.sector_id || null,
+      schoolId: roleData?.school_id || profile?.school_id || null,
+    };
+    
+    console.log('[useAuthStore] User data fetched successfully:', userData);
+    return userData;
+  } catch (error) {
+    console.error('[useAuthStore] Error in fetchUserData:', error);
+    return null;
+  }
+};
+
 // Function that merges partial user data with existing user data
 const mergeUserData = (
   existingUser: FullUserData | null, 
@@ -66,66 +129,6 @@ const mergeUserData = (
     ...existingUser,
     ...newData,
   };
-};
-
-// Helper to fetch user data from Supabase
-const fetchUserData = async (userId: string): Promise<FullUserData | null> => {
-  try {
-    // Fetch basic profile data
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-      
-    if (error) throw error;
-    if (!profile) return null;
-    
-    // Get entity names if necessary
-    let userData: FullUserData = {...profile} as FullUserData;
-    
-    // If user has a region, sector or school ID, fetch their names
-    if (userData.region_id) {
-      const { data: region } = await supabase
-        .from('regions')
-        .select('name')
-        .eq('id', userData.region_id)
-        .single();
-      
-      if (region) {
-        userData.region_name = region.name;
-      }
-    }
-    
-    if (userData.sector_id) {
-      const { data: sector } = await supabase
-        .from('sectors')
-        .select('name')
-        .eq('id', userData.sector_id)
-        .single();
-      
-      if (sector) {
-        userData.sector_name = sector.name;
-      }
-    }
-    
-    if (userData.school_id) {
-      const { data: school } = await supabase
-        .from('schools')
-        .select('name')
-        .eq('id', userData.school_id)
-        .single();
-      
-      if (school) {
-        userData.school_name = school.name;
-      }
-    }
-    
-    return userData;
-  } catch (error) {
-    console.error('Error fetching user data:', error);
-    return null;
-  }
 };
 
 // Create the enhanced auth store with persistence
@@ -167,7 +170,7 @@ export const useAuthStore = create<AuthState>()(
         const { session } = get();
         
         if (!session?.user?.id) {
-          console.warn('Cannot refresh user data without a session');
+          console.warn('[useAuthStore] Cannot refresh user data without a session');
           return null;
         }
         
@@ -188,7 +191,7 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: false });
           return null;
         } catch (error) {
-          console.error('Error refreshing user data:', error);
+          console.error('[useAuthStore] Error refreshing user data:', error);
           set({ isLoading: false });
           return null;
         }
@@ -214,7 +217,7 @@ export const useAuthStore = create<AuthState>()(
           });
           
           if (error) {
-            console.error('Login error:', error);
+            console.error('[useAuthStore] Login error:', error);
             
             // User-friendly error messages
             if (error.message?.includes('Invalid login credentials')) {
@@ -240,12 +243,14 @@ export const useAuthStore = create<AuthState>()(
               const userData = await fetchUserData(data.session.user.id);
               
               if (userData) {
+                console.log('[useAuthStore] Login successful, setting user data:', userData);
                 set({
                   user: userData,
                   isAuthenticated: true,
                   isLoading: false
                 });
               } else {
+                console.error('[useAuthStore] Login successful but failed to get user data');
                 set({ isLoading: false });
               }
             } else {
@@ -258,7 +263,7 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: false });
           return false;
         } catch (error: any) {
-          console.error('Unexpected login error:', error);
+          console.error('[useAuthStore] Unexpected login error:', error);
           set({ 
             error: error.message || 'Gözlənilməz xəta baş verdi', 
             isLoading: false
@@ -287,9 +292,9 @@ export const useAuthStore = create<AuthState>()(
             session: null,
             isLoading: false
           });
-          console.log('Logout successful');
+          console.log('[useAuthStore] Logout successful');
         } catch (error: any) {
-          console.error('Logout error:', error);
+          console.error('[useAuthStore] Logout error:', error);
           set({ 
             error: error.message || 'Çıxış zamanı xəta baş verdi', 
             isLoading: false
@@ -318,15 +323,42 @@ export const useAuthStore = create<AuthState>()(
       },
       
       refreshSession: async () => {
+        set({ isLoading: true });
         try {
-          const { data } = await supabase.auth.getSession();
+          console.log('[useAuthStore] Refreshing session...');
+          const { data, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error('[useAuthStore] Session refresh error:', error);
+            set({ isLoading: false });
+            return;
+          }
+          
           set({ session: data.session });
           
           if (data.session?.user) {
-            await get().refreshUserData();
+            console.log('[useAuthStore] Session found, refreshing user data...');
+            // We found a session, now fetch the user data
+            const userData = await fetchUserData(data.session.user.id);
+            
+            if (userData) {
+              console.log('[useAuthStore] User data refreshed successfully:', userData);
+              set({
+                user: userData,
+                isAuthenticated: true,
+                isLoading: false
+              });
+            } else {
+              console.warn('[useAuthStore] No user data found after session refresh');
+              set({ isLoading: false });
+            }
+          } else {
+            console.log('[useAuthStore] No session found during refresh');
+            set({ isLoading: false });
           }
         } catch (error) {
-          console.error('Session refresh error:', error);
+          console.error('[useAuthStore] Session refresh exception:', error);
+          set({ isLoading: false });
         }
       },
       
@@ -376,10 +408,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true, error: null });
           
-          // Extract fields from userData
           const { email, password, full_name, ...metadata } = userData;
           
-          // Sign up the user
           const { data, error } = await supabase.auth.signUp({
             email,
             password,
@@ -407,11 +437,7 @@ export const useAuthStore = create<AuthState>()(
       createUser: async (userData) => {
         try {
           set({ isLoading: true, error: null });
-          
-          // Implementation depends on specific app needs
-          // This is just a placeholder
           const result = await get().register(userData);
-          
           set({ isLoading: false });
           return { data: result.data, error: result.error };
         } catch (error: any) {
@@ -558,105 +584,44 @@ export const useAuthStore = create<AuthState>()(
 
 // Initialize auth session when the module loads
 const initializeAuth = async () => {
-  const { setSession, setLoading, refreshUserData } = useAuthStore.getState();
-  
-  try {
-    // Get current session
-    const { data } = await supabase.auth.getSession();
-    
-    // Set session
-    if (data.session) {
-      setSession(data.session);
-      
-      // Fetch user data
-      await refreshUserData();
-    }
-  } catch (error) {
-    console.error('Error initializing auth:', error);
-  } finally {
-    setLoading(false);
-  }
-  
-  // Set up auth listener
-  supabase.auth.onAuthStateChange((event, session) => {
-    console.log('Auth state changed:', event);
-    
-    // Update session
-    setSession(session);
-    
-    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-      // We'll fetch user data on next tick to avoid potential deadlocks
-      setTimeout(() => {
-        refreshUserData();
-      }, 0);
-    } else if (event === 'SIGNED_OUT') {
-      useAuthStore.getState().resetAuth();
-    }
-  });
+  console.log('[useAuthStore] Initializing auth store');
+  const { refreshSession } = useAuthStore.getState();
+  await refreshSession();
 };
 
-// Initialize auth
-initializeAuth();
+// Call initialization immediately
+initializeAuth().catch(error => {
+  console.error('[useAuthStore] Error during initialization:', error);
+});
 
-// Helpers for specific state selections to improve render performance
+// Create selectors for commonly used values
 export const selectUser = (state: AuthState) => state.user;
 export const selectIsAuthenticated = (state: AuthState) => state.isAuthenticated;
 export const selectIsLoading = (state: AuthState) => state.isLoading;
 export const selectError = (state: AuthState) => state.error;
 export const selectSession = (state: AuthState) => state.session;
-export const selectUserRole = (state: AuthState) => state.user?.role;
-export const selectRegionId = (state: AuthState) => {
-  const user = state.user;
-  if (!user) return null;
-  return user.region_id || null;
-};
-export const selectSectorId = (state: AuthState) => {
-  const user = state.user;
-  if (!user) return null;
-  return user.sector_id || null;
-};
-export const selectSchoolId = (state: AuthState) => {
-  const user = state.user;
-  if (!user) return null;
-  return user.school_id || null;
+export const selectUserRole = (state: AuthState) => state.user?.role as UserRole | null;
+export const selectRegionId = (state: AuthState) => state.user?.region_id;
+export const selectSectorId = (state: AuthState) => state.user?.sector_id;
+export const selectSchoolId = (state: AuthState) => state.user?.school_id;
+
+// Helper functions
+export const shouldAuthenticate = () => {
+  const isAuthenticated = useAuthStore.getState().isAuthenticated;
+  const isLoading = useAuthStore.getState().isLoading;
+  return !isAuthenticated && !isLoading;
 };
 
-// Helper to determine if user needs to authenticate
-export const shouldAuthenticate = (currentPath = '', isLoading = false, isAuthenticated = false): boolean => {
-  // If still loading, don't redirect
-  if (isLoading) return false;
+export const isProtectedRoute = (pathname: string) => {
+  // Define protected routes
+  const protectedRoutes = ['/dashboard', '/regions', '/sectors', '/schools', '/users', '/settings', '/profile'];
   
-  // Already authenticated, don't need to redirect to login
-  if (isAuthenticated) return false;
-  
-  // Public paths that don't require authentication
-  const publicPaths = ['/login', '/register', '/reset-password', '/auth'];
-  const isPublicPath = publicPaths.some(path => currentPath.startsWith(path));
-  
-  // Return true if we're not on a public path and not authenticated
-  return !isPublicPath;
+  // Check if the current path is protected
+  return protectedRoutes.some(route => pathname.startsWith(route));
 };
 
-// Helper to check if path is a protected route
-export const isProtectedRoute = (path: string): boolean => {
-  const publicPaths = ['/login', '/register', '/reset-password', '/auth'];
-  return !publicPaths.some(publicPath => path.startsWith(publicPath));
-};
-
-// Helper to get the redirect path after login
-export const getRedirectPath = (role: string = 'user'): string => {
-  switch (role) {
-    case 'superadmin':
-      return '/dashboard';
-    case 'regionadmin':
-      return '/dashboard';
-    case 'sectoradmin':
-      return '/dashboard';
-    case 'schooladmin':
-      return '/dashboard';
-    default:
-      return '/';
-  }
+export const getRedirectPath = (pathname: string) => {
+  return isProtectedRoute(pathname) ? '/login' : pathname;
 };
 
 export default useAuthStore;

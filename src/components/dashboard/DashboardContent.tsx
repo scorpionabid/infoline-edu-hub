@@ -4,8 +4,9 @@ import { useAuthStore, selectUserRole } from '@/hooks/auth/useAuthStore';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
-import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
+import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
 import { UserRole } from '@/types/supabase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Mock data for temporary usage
 const mockSuperAdminData = { 
@@ -38,40 +39,51 @@ const mockSchoolAdminData = {
 };
 
 const DashboardContent: React.FC = () => {
-  // Zustand'dan istifadəçi rolunu əldə et
+  // Get user role directly from the store using selector
   const userRole = useAuthStore(selectUserRole);
-  const [role, setRole] = useState<UserRole | null>(null);
+  const user = useAuthStore(state => state.user);
+  const [roleLoaded, setRoleLoaded] = useState(false);
   
-  // Rolun dəyərini dəyişən roldan asılı olaraq təyin et
+  // Log for debugging
+  console.log('[DashboardContent] Current role from selector:', userRole);
+  console.log('[DashboardContent] Current user:', user);
+  
   useEffect(() => {
-    console.log('[DashboardContent] Setting role from userRole:', userRole);
-    if (userRole) {
-      setRole(userRole);
-    } else {
-      // Əgər userRole null-dursa, user obyektdən birbaşa rol almağa çalışırıq
-      const user = useAuthStore.getState().user;
-      console.log('[DashboardContent] User from store:', user);
-      
-      if (user?.role) {
-        console.log('[DashboardContent] Setting role from user object:', user.role);
-        setRole(user.role as UserRole);
-      }
+    // We use this to ensure that we've attempted to load the role
+    // and can show a proper fallback UI instead of infinite loading
+    if (userRole !== undefined) {
+      setRoleLoaded(true);
     }
   }, [userRole]);
 
-  console.log('[DashboardContent] Current role:', role);
-  
-  // Əgər rol hələ təyin olunmayıbsa, yükləmə göstər
-  if (!role) {
+  // Show loading state if we haven't determined if there's a role yet
+  if (!roleLoaded) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+        </div>
+        <Skeleton className="h-60 w-full" />
+      </div>
+    );
+  }
+  
+  // If role is null or undefined after loading, show an error message
+  if (!userRole) {
+    return (
+      <div className="p-6 text-center">
+        <h2 className="text-2xl font-semibold mb-4">İstifadəçi rolu müəyyən edilmədi</h2>
+        <p className="text-gray-500">Yenidən daxil olmağı sınayın və ya administratorla əlaqə saxlayın.</p>
+        <p className="mt-4 text-xs text-gray-400">Debug info: User role is null/undefined</p>
       </div>
     );
   }
   
   // Roldan asılı olaraq müvafiq dashboard komponentini göstər
-  switch (role) {
+  switch (userRole) {
     case 'superadmin':
       return <SuperAdminDashboard data={mockSuperAdminData} />;
     
@@ -88,7 +100,7 @@ const DashboardContent: React.FC = () => {
       return (
         <div className="p-6 text-center">
           <h2 className="text-2xl font-semibold mb-4">Dashboard məlumatları hazırlanır</h2>
-          <p>Rol: {role}</p>
+          <p>Rol: {userRole}</p>
         </div>
       );
   }
