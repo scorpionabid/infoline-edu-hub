@@ -86,7 +86,7 @@ const DashboardContent: React.FC = () => {
 
   if (!data) {
     return (
-      <Alert variant="info">
+      <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
           {t('noDashboardData')}

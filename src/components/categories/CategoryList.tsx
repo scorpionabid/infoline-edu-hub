@@ -1,10 +1,11 @@
 
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/components/ui/data-table';
 import { PlusCircle } from 'lucide-react';
 import { useCategories } from '@/hooks/categories/useCategories';
-import { useCategoryActions } from '@/hooks/categories/useCategoryActions';
+import useCategoryActions from '@/hooks/categories/useCategoryActions';
 import { useLanguage } from '@/context/LanguageContext';
 import { CategoryColumns } from './CategoryColumns';
 
@@ -15,7 +16,7 @@ export const CategoryList = () => {
   const {
     categories,
     filteredCategories,
-    isLoading,
+    isLoading: categoriesLoading,
     searchQuery,
     setSearchQuery,
     refetch
@@ -24,8 +25,10 @@ export const CategoryList = () => {
   const {
     deleteCategory,
     updateCategoryStatus,
-    isLoading: isActionLoading
+    isLoading: actionsLoading
   } = useCategoryActions();
+  
+  const isLoading = categoriesLoading || actionsLoading;
 
   const handleDeleteCategory = async (id: string) => {
     try {
@@ -55,11 +58,11 @@ export const CategoryList = () => {
         columns={CategoryColumns({
           onDelete: handleDeleteCategory,
           onUpdateStatus: handleUpdateCategoryStatus,
-          isLoading: isActionLoading,
-          refetch: refetch
+          isLoading,
+          refetch
         })}
         data={filteredCategories || categories}
-        isLoading={isLoading || isActionLoading}
+        isLoading={isLoading}
         onSearch={setSearchQuery}
         searchValue={searchQuery}
       />

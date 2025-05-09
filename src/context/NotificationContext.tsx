@@ -1,6 +1,7 @@
 
-import React, { createContext, useContext, useState } from 'react';
-import { toast } from 'sonner';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { toast } from '@/components/ui/use-toast';
+import { AppNotification } from '@/types/notification';
 
 type NotificationType = 'info' | 'success' | 'warning' | 'error';
 
@@ -9,60 +10,98 @@ interface Notification {
   type: NotificationType;
   message: string;
   description?: string;
+  isRead: boolean;
 }
 
 interface NotificationContextType {
-  notifications: Notification[];
+  notifications: AppNotification[];
+  unreadCount: number;
+  loading: boolean;
   addNotification: (type: NotificationType, message: string, description?: string) => void;
   removeNotification: (id: string) => void;
   clearNotifications: () => void;
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  clearAll: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const addNotification = (type: NotificationType, message: string, description?: string) => {
+  // Add notification
+  const addNotification = useCallback((type: NotificationType, message: string, description?: string) => {
     const id = Date.now().toString();
-    const newNotification = { id, type, message, description };
+    const newNotification: AppNotification = { 
+      id, 
+      type, 
+      message, 
+      title: message,
+      description, 
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    };
     
     setNotifications((prev) => [...prev, newNotification]);
     
-    // Also show a toast for immediate feedback
-    switch (type) {
-      case 'success':
-        toast.success(message, { description });
-        break;
-      case 'error':
-        toast.error(message, { description });
-        break;
-      case 'warning':
-        toast.warning(message, { description });
-        break;
-      case 'info':
-      default:
-        toast.info(message, { description });
-    }
+    toast({
+      title: message,
+      description: description,
+      variant: type === 'error' ? 'destructive' : 'default'
+    });
     
     return id;
-  };
+  }, []);
 
-  const removeNotification = (id: string) => {
+  // Remove notification
+  const removeNotification = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((notification) => notification.id !== id));
-  };
+  }, []);
 
-  const clearNotifications = () => {
+  // Clear all notifications
+  const clearNotifications = useCallback(() => {
     setNotifications([]);
-  };
+  }, []);
+
+  // Mark notification as read
+  const markAsRead = useCallback((id: string) => {
+    setNotifications((prev) => 
+      prev.map(notification => 
+        notification.id === id 
+          ? { ...notification, isRead: true } 
+          : notification
+      )
+    );
+  }, []);
+
+  // Mark all notifications as read
+  const markAllAsRead = useCallback(() => {
+    setNotifications((prev) => 
+      prev.map(notification => ({ ...notification, isRead: true }))
+    );
+  }, []);
+
+  // Clear all notifications
+  const clearAll = useCallback(() => {
+    setNotifications([]);
+  }, []);
 
   return (
     <NotificationContext.Provider
       value={{
         notifications,
+        unreadCount,
+        loading,
         addNotification,
         removeNotification,
         clearNotifications,
+        markAsRead,
+        markAllAsRead,
+        clearAll
       }}
     >
       {children}
@@ -77,3 +116,5 @@ export const useNotifications = () => {
   }
   return context;
 };
+
+export default NotificationContext;

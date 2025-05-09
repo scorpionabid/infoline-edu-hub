@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   Dialog,
@@ -14,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCategoryActions } from '@/hooks/categories/useCategoryActions';
-import { Category, CategoryAssignment, CategoryStatus } from '@/types/category.d';
+import { Category, CategoryAssignment, CategoryStatus } from '@/types/category';
 import {
   Select,
   SelectContent,
@@ -49,11 +48,10 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
     if (category) {
       setName(category.name || '');
       setDescription(category.description || '');
-      setAssignment(category.assignment || 'all');
-      setStatus(category.status || 'active');
+      setAssignment((category.assignment || 'all') as CategoryAssignment);
+      setStatus((category.status || 'active') as CategoryStatus);
       setPriority(category.priority || 0);
       
-      // Deadline tarixi string kimi gəlirsə, onu Date obyektinə çeviririk
       if (category.deadline) {
         setDeadline(new Date(category.deadline));
       } else {
@@ -76,43 +74,42 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
   const handleSubmit = async () => {
     const now = new Date().toISOString();
     
-    if (category?.id) {
-      // Update - status tipini düzəltmək üçün "as CategoryStatus" əlavə etdik
-      const result = await updateCategory({
-        id: category.id,
-        name,
-        description,
-        assignment,
-        status: status as CategoryStatus,
-        priority,
-        deadline: deadline ? deadline.toISOString() : null,
-        created_at: category.created_at || now,
-        updated_at: now,
-        archived: category.archived || false
-      });
-      
-      if (result.success) {
-        onSave && onSave();
-        onClose();
+    try {
+      if (category?.id) {
+        const result = await updateCategory(category.id, {
+          name,
+          description,
+          assignment,
+          status,
+          priority,
+          deadline: deadline ? deadline.toISOString() : null,
+          updated_at: now,
+        });
+        
+        if (result.success) {
+          onSave && onSave();
+          onClose();
+        }
+      } else {
+        const result = await createCategory({
+          name,
+          description,
+          assignment,
+          status,
+          priority,
+          deadline: deadline ? deadline.toISOString() : null,
+          created_at: now,
+          updated_at: now,
+          archived: false
+        });
+        
+        if (result.success) {
+          onSave && onSave();
+          onClose();
+        }
       }
-    } else {
-      // Create - status tipini düzəltmək üçün "as CategoryStatus" əlavə etdik
-      const result = await createCategory({
-        name,
-        description,
-        assignment,
-        status: status as CategoryStatus,
-        priority,
-        deadline: deadline ? deadline.toISOString() : null,
-        created_at: now,
-        updated_at: now,
-        archived: false
-      });
-      
-      if (result.success) {
-        onSave && onSave();
-        onClose();
-      }
+    } catch (error) {
+      console.error('Error saving category:', error);
     }
   };
 
@@ -150,7 +147,10 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="assignment">Təyinat</Label>
-              <Select value={assignment} onValueChange={(value) => setAssignment(value as CategoryAssignment)}>
+              <Select 
+                value={assignment}
+                onValueChange={(value) => setAssignment(value as CategoryAssignment)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Təyinat seçin" />
                 </SelectTrigger>
@@ -164,7 +164,10 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
             
             <div className="grid gap-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={(value) => setStatus(value as CategoryStatus)}>
+              <Select 
+                value={status}
+                onValueChange={(value) => setStatus(value as CategoryStatus)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Status seçin" />
                 </SelectTrigger>
@@ -196,7 +199,6 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
               <DatePicker
                 value={deadline}
                 onChange={setDeadline}
-                disabled={false}
               />
             </div>
           </div>
@@ -214,3 +216,5 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
     </Dialog>
   );
 };
+
+export default EditCategoryDialog;

@@ -1,16 +1,16 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/category';
-import { toast } from 'sonner';
+import { Category, CategoryStatus } from '@/types/category';
+import { toast } from '@/components/ui/use-toast';
 
 export const useCategoryActions = () => {
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const createCategory = async (categoryData: Partial<Category>) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       setError(null);
 
       const { data, error } = await supabase
@@ -21,21 +21,31 @@ export const useCategoryActions = () => {
 
       if (error) throw error;
 
-      toast.success('Kateqoriya uğurla yaradıldı');
-      return data;
+      toast({
+        title: 'Success',
+        description: 'Category created successfully',
+      });
+      
+      return { ...data, success: true };
     } catch (err: any) {
       console.error('Error creating category:', err);
-      setError(err.message || 'Kateqoriya yaratmaq mümkün olmadı');
-      toast.error(err.message || 'Kateqoriya yaratmaq mümkün olmadı');
-      return null;
+      setError(err.message || 'Failed to create category');
+      
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to create category',
+        variant: 'destructive',
+      });
+      
+      return { success: false };
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const updateCategory = async (id: string, categoryData: Partial<Category>) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       setError(null);
 
       const { data, error } = await supabase
@@ -47,21 +57,31 @@ export const useCategoryActions = () => {
 
       if (error) throw error;
 
-      toast.success('Kateqoriya uğurla yeniləndi');
-      return data;
+      toast({
+        title: 'Success',
+        description: 'Category updated successfully',
+      });
+      
+      return { ...data, success: true };
     } catch (err: any) {
       console.error('Error updating category:', err);
-      setError(err.message || 'Kateqoriya yeniləmək mümkün olmadı');
-      toast.error(err.message || 'Kateqoriya yeniləmək mümkün olmadı');
-      return null;
+      setError(err.message || 'Failed to update category');
+      
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to update category',
+        variant: 'destructive',
+      });
+      
+      return { success: false };
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const deleteCategory = async (id: string) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       setError(null);
 
       const { error } = await supabase
@@ -71,23 +91,40 @@ export const useCategoryActions = () => {
 
       if (error) throw error;
 
-      toast.success('Kateqoriya uğurla silindi');
+      toast({
+        title: 'Success',
+        description: 'Category deleted successfully',
+      });
+      
       return true;
     } catch (err: any) {
       console.error('Error deleting category:', err);
-      setError(err.message || 'Kateqoriya silmək mümkün olmadı');
-      toast.error(err.message || 'Kateqoriya silmək mümkün olmadı');
+      setError(err.message || 'Failed to delete category');
+      
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to delete category',
+        variant: 'destructive',
+      });
+      
       return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
+  };
+
+  const updateCategoryStatus = async (id: string, status: CategoryStatus) => {
+    return updateCategory(id, { status });
   };
 
   return {
     createCategory,
     updateCategory,
     deleteCategory,
-    loading,
+    updateCategoryStatus,
+    isLoading,
     error
   };
 };
+
+export default useCategoryActions;
