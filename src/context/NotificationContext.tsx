@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './auth';
@@ -7,7 +6,9 @@ import { AppNotification, adaptDbNotificationToApp } from '@/types/notification'
 
 export type { AppNotification } from '@/types/notification';
 
-export interface NotificationContextType {
+// Explicitly export the type with a named export
+export type { NotificationContextType };  
+export type NotificationContextType = {
   notifications: AppNotification[];
   unreadCount: number;
   loading: boolean;
@@ -17,7 +18,7 @@ export interface NotificationContextType {
   clearAll: () => Promise<void>;
   addNotification: (notification: Partial<AppNotification>) => Promise<void>;
   refreshNotifications: () => Promise<void>;
-}
+};
 
 export const NotificationContext = createContext<NotificationContextType>({
   notifications: [],
