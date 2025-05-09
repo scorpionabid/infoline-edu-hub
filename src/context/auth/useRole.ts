@@ -1,10 +1,14 @@
 
-import { useAuth } from './useAuth';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { UserRole } from '@/types/supabase';
 
 /**
- * İstifadəçinin rolunu əldə etmək üçün hook
+ * useRole - Hook for getting the current user's role
+ * Now uses the Zustand store directly
  */
-export const useRole = () => {
-  const { user } = useAuth();
-  return user?.role || 'user';
+export const useRole = (): UserRole | 'user' => {
+  const user = useAuthStore(state => state.user);
+  return (user?.role as UserRole) || 'user';
 };
+
+export default useRole;

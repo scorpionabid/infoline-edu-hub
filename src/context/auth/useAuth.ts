@@ -1,38 +1,73 @@
 
 import { useContext } from 'react';
 import { AuthContext } from './context';
-import { AuthContextType } from './types';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
+/**
+ * useAuth - Hook for accessing auth state and operations
+ * This hook now primarily pulls from the Zustand store, with fallback to context
+ * to maintain backward compatibility
+ */
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  // Try to get context first for backward compatibility
+  let context;
+  try {
+    context = useContext(AuthContext);
+  } catch (error) {
+    console.warn('AuthContext not available, falling back to Zustand store');
+    context = null;
   }
   
-  // Make sure we provide all properties required by AuthContextType
+  // If context is available, use it; otherwise, use the Zustand store directly
+  if (context) {
+    return context;
+  }
+  
+  // Fall back to direct Zustand store usage
+  const {
+    user,
+    session,
+    isAuthenticated,
+    isLoading: loading,
+    error,
+    login,
+    logout,
+    clearError,
+    refreshProfile,
+    refreshSession,
+    updatePassword,
+    updateProfile,
+    resetPassword,
+    register,
+    signup,
+    updateUser,
+    setError
+  } = useAuthStore();
+  
+  // Return an object that matches the AuthContextType interface
   return {
-    ...context,
-    authenticated: context.isAuthenticated,
-    login: context.logIn || context.login,
-    logout: context.logout,
-    signOut: context.logout,
-    loading: context.loading,
-    setError: (error: string | null) => {
-      if (context.clearError && typeof error === 'string') {
-        context.clearError();
-      }
-    },
-    clearError: context.clearError || (() => {}),
-    signup: context.signup || (async () => ({ user: null, error: new Error('Not implemented') })),
-    updatePassword: context.updatePassword || (async () => ({ data: null, error: null })),
-    updateProfile: context.updateProfile || (async () => ({ data: null, error: null })),
-    refreshSession: context.refreshSession || (async () => {}),
-    refreshProfile: context.refreshProfile || (async () => {
-      if (context.refreshSession) {
-        await context.refreshSession();
-      }
-      return context.user;
-    })
+    user,
+    session,
+    isAuthenticated,
+    authenticated: isAuthenticated,
+    loading,
+    error,
+    logIn: login,
+    login,
+    logOut: logout,
+    logout,
+    signOut: logout,
+    updateUser,
+    clearError,
+    refreshProfile,
+    refreshSession,
+    updatePassword,
+    updateProfile,
+    resetPassword,
+    register,
+    setError,
+    createUser: register,
+    signup: signup || (async () => ({ user: null, error: new Error('Not implemented') }))
   };
 };
 
