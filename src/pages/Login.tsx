@@ -19,16 +19,21 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
+
+  // Daha effektiv yoxlama üçün göstəricilər
+  const [redirectInProgress, setRedirectInProgress] = useState(false);
   
-  // Authentication state effect
+  // Authentication state effect - sonsuz dövrləri aradan qaldırılmış versiya
   useEffect(() => {
-    console.log("[Login.tsx] Auth state:", { isAuthenticated, isLoading, user });
-    
-    if (!isLoading && isAuthenticated && user?.id) {
+    // Əgər istifadəçi artıq yönləndirilmirsə və autentifikasiya olunubsa
+    if (!redirectInProgress && !isLoading && isAuthenticated && user?.id) {
       console.log('[Login.tsx] İstifadəçi giriş edib, yönləndiriliyor:', from);
+      
+      // Yönləndirməni başladıb göstəricini təyin edirik
+      setRedirectInProgress(true);
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, isLoading, user, from, navigate]);
+  }, [isAuthenticated, isLoading, user, from, navigate, redirectInProgress]);
 
   // Show loading state when auth is being checked
   if (isLoading) {

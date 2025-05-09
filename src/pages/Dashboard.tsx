@@ -1,21 +1,19 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, selectIsAuthenticated, selectIsLoading, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
-import { useStableCallback } from '@/utils/memoizationUtils';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
 import { toast } from 'sonner';
-import { usePermissions } from '@/hooks/auth';
 import LoadingScreen from '@/components/auth/LoadingScreen';
+import { UserRole } from '@/types/supabase';
 
 const Dashboard: React.FC = () => {
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const isLoading = useAuthStore(selectIsLoading);
   const user = useAuthStore(selectUser);
-  const userRole = useAuthStore(selectUserRole);
-  const { userRole: permissionRole } = usePermissions();
+  const userRole = useAuthStore(selectUserRole) as UserRole | null;
   
   const [initialCheck, setInitialCheck] = useState(true);
   const navigate = useNavigate();
@@ -27,7 +25,6 @@ const Dashboard: React.FC = () => {
     isAuthenticated, 
     user,
     userRole,
-    permissionRole,
     role: user?.role 
   });
 
@@ -35,26 +32,30 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     console.log('[Dashboard.tsx] useEffect triggered. Deps:', { isAuthenticated, isLoading, user, userRole });
     
+    // Yalnız yüklənmə tamamlandıqda işləsin
     if (!isLoading) {
       console.log('[Dashboard.tsx] useEffect: Auth loading is false. Setting initialCheck to false.');
       setInitialCheck(false);
 
+      // Autentifikasiya olmayıbsa login səhifəsinə yönləndir
       if (!isAuthenticated) {
         console.log("[Dashboard.tsx] useEffect: Not authenticated, redirecting to login.");
         navigate('/login', { state: { from: location } });
         return;
       }
 
+      // İstifadəçi data yoxlama
       if (isAuthenticated && !user) {
         console.error("[Dashboard.tsx] useEffect: Authenticated but no user data. This is problematic.");
         toast.error('İstifadəçi məlumatları yüklənərkən xəta baş verdi', {
           description: 'Zəhmət olmasa, yenidən daxil olun',
         });
-      } else if (isAuthenticated && user) {
-        console.log("[Dashboard.tsx] useEffect: Authenticated with user data.", user);
+        
+        // İstifadəçi məlumatları yoxdursa, sessiyanı çıxış etdir
+        useAuthStore.getState().logout();
       }
     }
-  }, [isAuthenticated, isLoading, user, navigate, location, userRole]);
+  }, [isAuthenticated, isLoading, user, navigate, location]);
 
   // Show loading state during initial check or authentication loading
   if (isLoading || initialCheck) {
@@ -64,30 +65,15 @@ const Dashboard: React.FC = () => {
 
   // Not authenticated, will be redirected in useEffect
   if (!isAuthenticated || !user) {
-    console.log('[Dashboard.tsx] Render: Not authenticated or no user, returning null. This might indicate a problem if redirection was expected.', { isAuthenticated, user });
+    console.log('[Dashboard.tsx] Render: Not authenticated or no user, returning null.', { isAuthenticated, user });
     return null;
   }
   
   console.log('[Dashboard.tsx] Render: Authenticated and user exists. Proceeding to render content.', { user, userRole });
 
+  // Tip xətalarını aradan qaldırmaq üçün etibarlı bir rol təyin edirik
   const roleForDisplay = userRole || user?.role || 'unknown';
   const isSchoolAdmin = roleForDisplay === 'schooladmin';
-
-  // If no appropriate dashboard is found, show a helpful message
-  if (!roleForDisplay || roleForDisplay === 'unknown') {
-    return (
-      <div className="flex items-center justify-center h-screen flex-col space-y-4">
-        <h2 className="text-2xl font-semibold">Rolunuza uyğun dashboard tapılmadı</h2>
-        <p>Rol: {roleForDisplay || 'Təyin olunmayıb'}</p>
-        <button 
-          className="px-4 py-2 bg-primary text-primary-foreground rounded"
-          onClick={() => navigate('/settings')}
-        >
-          Tənzimləmələr
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-3">

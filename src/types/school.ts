@@ -1,57 +1,46 @@
 
-import { UserRole } from './user';
+import { SchoolStat } from './supabase';
 
-export type SchoolStatus = 'active' | 'inactive' | 'pending' | 'archived';
+export interface SchoolFilter {
+  regionId?: string;
+  sectorId?: string;
+  status?: string[];
+  search?: string;
+  page?: number;
+  limit?: number;
+}
 
-export interface School {
-  id: string;
+export interface SchoolFormData {
+  id?: string;
   name: string;
   region_id: string;
   sector_id: string;
-  address?: string | null;
-  phone?: string | null;
-  email?: string | null;
-  type?: string | null;
-  language?: string | null;
-  student_count?: number | null;
-  teacher_count?: number | null;
-  principal_name?: string | null;
-  admin_id?: string | null;
-  admin_email?: string | null;
-  logo?: string | null;
-  status?: SchoolStatus;
-  completion_rate?: number | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface SchoolStat {
-  id: string;
-  name: string;
-  status: string;
-  completionRate: number;
-  lastUpdate: string;
-  pendingForms: number;
-  formsCompleted: number;
-  totalForms: number;
-  principalName?: string;
   address?: string;
   phone?: string;
   email?: string;
-}
-
-export interface SectorSchool extends School {
-  pendingForms: number;
+  principal_name?: string;
+  student_count?: number;
+  teacher_count?: number;
+  type?: string;
+  status?: string;
+  admin_id?: string;
+  admin_email?: string;
+  language?: string;
 }
 
 export interface SchoolFormProps {
-  initialData?: Partial<School>;
-  onSubmit: (data: Partial<School>) => Promise<void>;
-  isSubmitting: boolean;
-  regions: any[];
-  sectors: any[];
-  regionNames: Record<string, string>;
-  sectorNames: Record<string, string>;
+  initialData?: SchoolFormData;
+  onSubmit: (data: SchoolFormData) => void;
+  regions: Array<{id: string; name: string}>;
+  sectors: Array<{id: string; name: string}>;
+  isLoading?: boolean;
+  submitButtonText?: string;
 }
 
-export type EnhancedSchoolFormProps = SchoolFormProps;
+export interface EnhancedSchoolFormProps extends Partial<SchoolFormProps> {
+  initialData?: SchoolFormData;
+  onSubmit: (data: SchoolFormData) => void;
+}
+
+// Re-export supabase types to avoid circular dependencies
+export { SchoolStat };

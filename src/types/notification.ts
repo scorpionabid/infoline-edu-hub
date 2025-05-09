@@ -1,5 +1,6 @@
 
 export type NotificationType = 'info' | 'warning' | 'error' | 'success' | 'system' | 'approval' | 'deadline';
+export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical';
 
 export interface AppNotification {
   id: string;
@@ -9,7 +10,7 @@ export interface AppNotification {
   isRead: boolean;
   createdAt: string;
   date?: string;
-  priority?: 'low' | 'normal' | 'high';
+  priority?: NotificationPriority;
   relatedEntityId?: string;
   relatedEntityType?: string;
 }
@@ -26,7 +27,7 @@ export interface DashboardNotification {
 }
 
 export interface NotificationsCardProps {
-  title: string;
+  title?: string;
   notifications: AppNotification[];
   onMarkAsRead?: (id: string) => void;
 }
@@ -41,6 +42,41 @@ export const adaptDashboardNotificationToApp = (notification: DashboardNotificat
     isRead: notification.isRead ?? false,
     createdAt: notification.createdAt || notification.date || new Date().toISOString(),
     date: notification.date,
-    priority: notification.priority as 'low' | 'normal' | 'high' | undefined,
+    priority: notification.priority as NotificationPriority | undefined,
+  };
+};
+
+// Helper function to adapt app notifications to dashboard notifications
+export const adaptAppNotificationToDashboard = (appNotification: AppNotification): DashboardNotification => {
+  // Convert AppNotification types to DashboardNotification types
+  let dashboardType: 'error' | 'info' | 'warning' | 'success' = 'info';
+  
+  switch(appNotification.type) {
+    case 'error':
+      dashboardType = 'error';
+      break;
+    case 'warning':
+      dashboardType = 'warning';
+      break;
+    case 'success':
+      dashboardType = 'success';
+      break;
+    case 'deadline':
+    case 'approval':
+    case 'system':
+    case 'info':
+    default:
+      dashboardType = 'info';
+      break;
+  }
+
+  return {
+    id: appNotification.id,
+    title: appNotification.title,
+    message: appNotification.message,
+    type: dashboardType,
+    date: appNotification.createdAt,
+    createdAt: appNotification.createdAt,
+    isRead: appNotification.isRead,
   };
 };

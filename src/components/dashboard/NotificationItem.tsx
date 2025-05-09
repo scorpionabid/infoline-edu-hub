@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, AlertCircle, Info, Bell, CalendarClock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { AppNotification, NotificationPriority } from '@/types/notification';
+import { AppNotification, NotificationType, NotificationPriority } from '@/types/notification';
 
 interface NotificationItemProps {
   notification: AppNotification;

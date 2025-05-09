@@ -7,10 +7,10 @@ import StatusCards from '@/components/dashboard/StatusCards';
 import SchoolStatsCard from '@/components/dashboard/common/SchoolStatsCard';
 import PendingApprovals from '@/components/approval/PendingApprovals';
 import NotificationsCard from '@/components/dashboard/common/NotificationsCard';
-import { SectorAdminDashboardData, SectorAdminDashboardProps, SchoolStat } from '@/types/dashboard';
+import { SectorAdminDashboardData, SectorAdminDashboardProps } from '@/types/dashboard';
 import SchoolsTable from './SchoolsTable';
-import { adaptAppNotificationToDashboard } from '@/utils/notificationUtils'; 
-import { AppNotification } from '@/types/notification';
+import { adaptAppNotificationToDashboard } from '@/types/notification';
+import { SchoolStat } from '@/types/supabase';
 
 const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
@@ -88,6 +88,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
 
         <div className="space-y-6">
           <NotificationsCard 
+            title={t('notifications')}
             notifications={adaptedNotifications} 
             onMarkAsRead={(id) => markAsRead(id)} 
           />
