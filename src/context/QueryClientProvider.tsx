@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useQueryClient, QueryClient } from '@tanstack/react-query';
+import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { queryClient as defaultQueryClient } from '@/lib/query-client';
 
 // Cache context for management

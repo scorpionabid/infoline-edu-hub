@@ -34,9 +34,9 @@ const FormTabs: React.FC<FormTabsProps> = ({
                         <CalendarIcon className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <h4 className="font-medium">{item.title}</h4>
+                        <h4 className="font-medium">{item.title || item.name}</h4>
                         <p className="text-sm text-muted-foreground">
-                          {t('daysLeft', { count: item.daysLeft })}
+                          {t('daysLeft', { count: item.daysLeft || item.daysRemaining || 0 })}
                         </p>
                       </div>
                     </div>
@@ -80,7 +80,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
                         <ClockIcon className="h-4 w-4 text-amber-600" />
                       </div>
                       <div>
-                        <h4 className="font-medium">{form.title}</h4>
+                        <h4 className="font-medium">{form.title || form.name}</h4>
                         <p className="text-sm text-muted-foreground">
                           {form.categoryName || t('pending')}
                         </p>

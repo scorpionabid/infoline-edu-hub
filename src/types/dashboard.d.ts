@@ -64,8 +64,8 @@ export interface SchoolStat {
 export interface BaseDashboardData {
   completion: DashboardCompletion;
   status: DashboardStatus;
-  completionRate: number;
-  formStats: DashboardFormStats;
+  completionRate?: number;
+  formStats?: DashboardFormStats;
   notifications?: AppNotification[];
 }
 
@@ -117,7 +117,8 @@ export interface CategoryItem {
 // Form item for dashboard
 export interface FormItem {
   id: string;
-  title: string;
+  title?: string;
+  name?: string;
   deadline?: string;
   status: string;
   category?: string;
@@ -129,10 +130,16 @@ export interface FormItem {
 // Deadline item for dashboard
 export interface DeadlineItem {
   id: string;
-  title: string;
+  title?: string;
+  name?: string;
   deadline: string;
-  daysLeft: number;
+  daysLeft?: number;
+  daysRemaining?: number;
+  status?: string;
   categoryId?: string;
+  dueDate?: string;
+  progress?: number;
+  completionRate?: number;
 }
 
 // Pending approval for dashboard
@@ -143,9 +150,10 @@ export interface PendingApproval {
   categoryId: string;
   categoryName: string;
   status: string;
-  createdAt: string;
+  createdAt?: string;
   submittedAt: string;
-  count: number;
+  count?: number;
+  entries?: any[];
 }
 
 // Chart data
@@ -168,3 +176,6 @@ export interface FormTabsProps {
   navigateToDataEntry?: () => void;
   handleFormClick?: (id: string) => void;
 }
+
+// Re-export SchoolStat for component usage
+export { SchoolStat };

@@ -1,5 +1,5 @@
 
-import { AppNotification } from '@/types/notification';
+import { AppNotification, DashboardNotification } from '@/types/notification';
 
 /**
  * Adapts a dashboard notification to an AppNotification format
@@ -15,7 +15,7 @@ export const adaptDashboardNotificationToApp = (notification: any): AppNotificat
     message: notification.message || '',
     type: notification.type || 'info',
     isRead: notification.isRead || false,
-    date: notification.createdAt || notification.timestamp || new Date().toISOString(),
+    date: notification.createdAt || notification.timestamp || notification.date || new Date().toISOString(),
     createdAt: notification.createdAt || notification.timestamp || new Date().toISOString(),
     relatedEntityId: notification.relatedEntityId || notification.entityId || '',
     relatedEntityType: notification.relatedEntityType || notification.entityType || '',

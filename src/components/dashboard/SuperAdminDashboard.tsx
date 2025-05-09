@@ -68,8 +68,8 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
       </Grid>
       
       <Grid columns={2} className="gap-6">
-        <RegionCompletionCard regions={data.regionStats || []} />
-        <SectorCompletionCard sectors={data.sectorStats || []} />
+        {data.regionStats && <RegionCompletionCard regions={data.regionStats} />}
+        {data.sectorStats && <SectorCompletionCard sectors={data.sectorStats} />}
       </Grid>
     </div>
   );

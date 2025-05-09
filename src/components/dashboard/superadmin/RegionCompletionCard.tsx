@@ -1,77 +1,49 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertCircle } from 'lucide-react';
-
-interface RegionData {
-  id: string;
-  name: string;
-  completion_rate?: number;
-  status?: string;
-}
+import { RegionStat } from '@/types/dashboard';
 
 interface RegionCompletionCardProps {
-  regions: RegionData[];
+  regions: RegionStat[];
 }
 
 const RegionCompletionCard: React.FC<RegionCompletionCardProps> = ({ regions }) => {
   // Sort regions by completion rate in descending order
-  const sortedRegions = [...regions].sort((a, b) => 
-    (b.completion_rate || 0) - (a.completion_rate || 0)
-  );
+  const sortedRegions = [...regions].sort((a, b) => b.completionRate - a.completionRate);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">Region tamamlanma dərəcələri</CardTitle>
+        <CardTitle>Region Tamamlanma</CardTitle>
+        <CardDescription>
+          Regionlar üzrə tamamlanma dərəcəsi
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        {regions.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>Region məlumatları yoxdur</p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Region</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Tamamlanma</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedRegions.map((region) => (
-                <TableRow key={region.id}>
-                  <TableCell className="font-medium">{region.name}</TableCell>
-                  <TableCell>
-                    {region.status === 'active' ? (
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Aktiv
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-gray-50 text-gray-700">
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        Qeyri-aktiv
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Progress value={region.completion_rate || 0} className="h-2 w-full" />
-                      <span className="text-sm font-medium">
-                        {region.completion_rate || 0}%
-                      </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+        <div className="space-y-4">
+          {sortedRegions.map((region) => (
+            <div key={region.id} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{region.name}</span>
+                <span className="text-sm text-muted-foreground">
+                  {Math.round(region.completionRate)}%
+                </span>
+              </div>
+              <Progress value={region.completionRate} className="h-2" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{region.sectorCount} sektor</span>
+                <span>{region.schoolCount} məktəb</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

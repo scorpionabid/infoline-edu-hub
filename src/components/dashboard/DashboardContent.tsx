@@ -1,24 +1,41 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuthStore, selectUserRole } from '@/hooks/auth/useAuthStore';
+import SuperAdminDashboard from './SuperAdminDashboard';
 import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
-import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
+import RegionAdminDashboard from './RegionAdminDashboard';
 import { UserRole } from '@/types/supabase';
 
-// Temporary empty component for SuperAdmin until we implement it
-const SuperAdminDashboard = ({ data }: { data: any }) => (
-  <div className="p-6">
-    <h2 className="text-2xl font-semibold">Super Admin Dashboard</h2>
-    <p>This dashboard is still under development.</p>
-  </div>
-);
-
 // Mock data for temporary usage
-const mockSuperAdminData = { status: { total: 0, approved: 0, pending: 0, rejected: 0 }, completion: { total: 0, completed: 0, percentage: 0 } };
-const mockRegionAdminData = { status: { total: 0, approved: 0, pending: 0, rejected: 0 }, completion: { total: 0, completed: 0, percentage: 0 }, sectorStats: [], pendingApprovals: [] };
-const mockSectorAdminData = { status: { total: 0, approved: 0, pending: 0, rejected: 0 }, completion: { total: 0, completed: 0, percentage: 0 }, schoolStats: [], pendingApprovals: [] };
-const mockSchoolAdminData = { status: { total: 0, approved: 0, pending: 0, rejected: 0, active: 0, inactive: 0 }, completion: { total: 0, completed: 0, percentage: 0 }, categories: [], upcoming: [], pendingForms: [] };
+const mockSuperAdminData = { 
+  status: { total: 0, approved: 0, pending: 0, rejected: 0, active: 0, inactive: 0 }, 
+  completion: { total: 0, completed: 0, percentage: 0 },
+  regionStats: [],
+  sectorStats: []
+};
+
+const mockRegionAdminData = { 
+  status: { total: 0, approved: 0, pending: 0, rejected: 0, active: 0, inactive: 0 }, 
+  completion: { total: 0, completed: 0, percentage: 0 }, 
+  sectorStats: [], 
+  pendingApprovals: [] 
+};
+
+const mockSectorAdminData = { 
+  status: { total: 0, approved: 0, pending: 0, rejected: 0, active: 0, inactive: 0 }, 
+  completion: { total: 0, completed: 0, percentage: 0 }, 
+  schoolStats: [], 
+  pendingApprovals: [] 
+};
+
+const mockSchoolAdminData = { 
+  status: { total: 0, approved: 0, pending: 0, rejected: 0, active: 0, inactive: 0 }, 
+  completion: { total: 0, completed: 0, percentage: 0 }, 
+  categories: [], 
+  upcoming: [], 
+  pendingForms: [] 
+};
 
 const DashboardContent: React.FC = () => {
   // Zustand'dan istifadəçi rolunu əldə et
@@ -78,4 +95,3 @@ const DashboardContent: React.FC = () => {
 };
 
 export default DashboardContent;
-

@@ -1,4 +1,12 @@
 
+export interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  inApp: boolean;
+  system: boolean;
+  deadline: boolean;
+}
+
 export interface AppNotification {
   id: string;
   title: string;
