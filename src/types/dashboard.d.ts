@@ -87,6 +87,7 @@ export interface RegionAdminDashboardData extends BaseDashboardData {
   totalSchools?: number;
   regionCompletionRate?: number;
   sectorStats?: SectorStat[];
+  pendingApprovals?: PendingApproval[];
 }
 
 // Sector admin dashboard data
@@ -95,6 +96,7 @@ export interface SectorAdminDashboardData extends BaseDashboardData {
   sectorCompletionRate?: number;
   schoolStats?: SchoolStat[];
   categories?: CategoryItem[];
+  pendingApprovals?: PendingApproval[];
 }
 
 // School admin dashboard data
@@ -163,12 +165,25 @@ export interface ChartData {
   color?: string;
 }
 
-// Props for SuperAdminDashboard component
+// Props interfaces
 export interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
 }
 
-// Props for FormTabs component
+export interface RegionAdminDashboardProps {
+  data: RegionAdminDashboardData;
+}
+
+export interface SectorAdminDashboardProps {
+  data: SectorAdminDashboardData;
+}
+
+export interface SchoolAdminDashboardProps {
+  data?: SchoolAdminDashboardData;
+  schoolId?: string;
+}
+
+// FormTabs props
 export interface FormTabsProps {
   categories: CategoryItem[];
   upcoming: DeadlineItem[];
@@ -179,3 +194,4 @@ export interface FormTabsProps {
 
 // Re-export SchoolStat for component usage
 export { SchoolStat };
+

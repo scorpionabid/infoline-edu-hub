@@ -42,6 +42,7 @@ export interface FormItem {
   name: string;
   category?: string;
   categoryId?: string;
+  categoryName?: string;
   deadline?: string;
   status: string;
   submittedAt?: string;
@@ -53,16 +54,16 @@ export interface FormItem {
 export interface DeadlineItem {
   id: string;
   title: string;
-  name?: string; // Added for compatibility
+  name?: string;
   category?: string;
   categoryId?: string;
-  categoryName?: string; // Added for compatibility
+  categoryName?: string;
   deadline: string;
   daysRemaining: number;
   status: string;
-  dueDate?: string; // Added for FormTabs.tsx compatibility
-  progress?: number; // Added for FormTabs.tsx compatibility
-  completionRate?: number; // Added for FormTabs.tsx compatibility
+  dueDate?: string;
+  progress?: number;
+  completionRate?: number;
 }
 
 export interface PendingApprovalItem {
@@ -117,6 +118,20 @@ export interface SuperAdminDashboardData extends DashboardData {
     sectorCount: number;
     schoolCount: number;
   }[];
+  sectorStats?: {
+    id: string;
+    name: string;
+    completionRate: number;
+    schoolCount: number;
+    pendingApprovals?: number;
+  }[];
+  schoolStats?: {
+    id: string;
+    name: string;
+    completionRate: number;
+    pendingCount: number;
+    status?: string;
+  }[];
   pendingApprovals?: PendingApprovalItem[];
   totalUsers?: number;
   totalSchools?: number;
@@ -147,6 +162,25 @@ export interface StatusCardsProps {
   formStats?: FormStats;
 }
 
-// Re-export SchoolStat for component usage
+// Re-export these types from dashboard.d.ts for backward compatibility
+export interface RegionStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  sectorCount: number;
+  schoolCount: number;
+  status?: string;
+}
+
+export interface SectorStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  schoolCount: number;
+  pendingApprovals?: number;
+  status?: string;
+}
+
+// Re-export the SchoolStat for component usage
 export { SchoolStat };
 

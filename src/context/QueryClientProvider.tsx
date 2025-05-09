@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { QueryClientProvider as TanstackQueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { queryClient as defaultQueryClient } from '@/lib/query-client';
 
 // Cache context for management
@@ -41,5 +41,14 @@ export const CacheProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 };
 
-// Re-export for compatibility
-export const AppQueryProvider = CacheProvider;
+// Wrapper component to provide both query client and cache management
+export const AppQueryProvider: React.FC<{ children: React.ReactNode; queryClient?: typeof defaultQueryClient }> = ({ 
+  children,
+  queryClient = defaultQueryClient 
+}) => {
+  return (
+    <TanstackQueryClientProvider client={queryClient}>
+      <CacheProvider>{children}</CacheProvider>
+    </TanstackQueryClientProvider>
+  );
+};

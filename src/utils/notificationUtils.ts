@@ -22,3 +22,25 @@ export const adaptDashboardNotificationToApp = (notification: any): AppNotificat
     priority: notification.priority || 'normal',
   };
 };
+
+/**
+ * Adapts an AppNotification to a dashboard notification format
+ * @param notification The app notification to adapt
+ * @returns The adapted dashboard notification
+ */
+export const adaptAppNotificationToDashboard = (notification: AppNotification): DashboardNotification => {
+  return {
+    id: notification.id,
+    title: notification.title,
+    message: notification.message,
+    type: notification.type,
+    isRead: notification.isRead,
+    timestamp: notification.createdAt || notification.date,
+    entityId: notification.relatedEntityId,
+    entityType: notification.relatedEntityType
+  };
+};
+
+// Alias functions for backward compatibility
+export const adaptDashboardToAppNotification = adaptDashboardNotificationToApp;
+export const adaptAppToDashboardNotification = adaptAppNotificationToDashboard;

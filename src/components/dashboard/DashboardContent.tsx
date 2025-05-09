@@ -4,7 +4,7 @@ import { useAuthStore, selectUserRole } from '@/hooks/auth/useAuthStore';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
-import RegionAdminDashboard from './RegionAdminDashboard';
+import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
 import { UserRole } from '@/types/supabase';
 
 // Mock data for temporary usage

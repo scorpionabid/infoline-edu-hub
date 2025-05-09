@@ -10,7 +10,7 @@ import NotificationsCard from '../common/NotificationsCard';
 import PendingApprovals from '@/components/approval/PendingApprovals';
 import SectorStatsTable from './SectorStatsTable';
 
-const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
+export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
   const { notifications, markAsRead } = useNotifications();
   
@@ -98,5 +98,3 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
     </div>
   );
 };
-
-export default RegionAdminDashboard;
