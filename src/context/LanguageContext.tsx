@@ -25,14 +25,14 @@ export const useLanguage = (): LanguageContextType => {
   return context;
 };
 
-// useLanguageSafe əlavə edildi - xətaları qabaqlamaq üçün
+// useLanguageSafe provides a fallback when context is not available
 export const useLanguageSafe = (): LanguageContextType => {
   const context = useContext(LanguageContext);
   if (context === undefined) {
-    // Default tərcümə funksiyası təqdim edirik
+    // Default translation function and values as fallback
     return {
-      changeLanguage: (lng: string) => console.warn('LanguageProvider initialized olmayıb'),
-      t: (key: string) => key, // sadəcə açarı qaytarırıq
+      changeLanguage: (lng: string) => console.warn('LanguageProvider not initialized'),
+      t: (key: string) => key, // simply return the key
       language: 'az',
       currentLanguage: 'az',
       supportedLanguages: [
@@ -41,7 +41,7 @@ export const useLanguageSafe = (): LanguageContextType => {
         { code: 'ru', name: 'Русский' },
         { code: 'tr', name: 'Türkçe' }
       ],
-      setLanguage: (lng: string) => console.warn('LanguageProvider initialized olmayıb'),
+      setLanguage: (lng: string) => console.warn('LanguageProvider not initialized'),
       languages: {
         az: { nativeName: 'Azərbaycan dili', flag: '🇦🇿' },
         en: { nativeName: 'English', flag: '🇬🇧' },
@@ -68,7 +68,7 @@ const languagesInfo: Record<string, LanguageInfo> = {
 const availableLanguageCodes = ['az', 'en', 'ru', 'tr'];
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-  // Tərcümə hook-unu burada çağırırıq
+  // Use the translation hook
   const { t } = useTranslation();
   const [currentLanguage, setCurrentLanguage] = useState(i18n.language || 'az');
 
@@ -79,13 +79,13 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     { code: 'tr', name: 'Türkçe' }
   ];
 
-  // Başlanğıcda dil seçilməmişsə və ya dəstəklənmirsə default dil təyin et
+  // If no language is selected or not supported, set default language
   useEffect(() => {
     const currentLng = i18n.language;
     const isSupported = supportedLanguages.some(lng => lng.code === currentLng);
     
     if (!currentLng || !isSupported) {
-      // Default azərbaycan dili
+      // Default to Azerbaijani
       i18n.changeLanguage('az');
       setCurrentLanguage('az');
     } else {
@@ -96,11 +96,11 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
     setCurrentLanguage(lng);
-    // Dilin seçimini local storage-də saxlayırıq ki, səhifə yenilənəndə qalsın
+    // Save the language selection to local storage to persist through refreshes
     localStorage.setItem('language', lng);
   };
 
-  // setLanguage alias əlavə edirik ki, komponentlər uyğunlaşdırılsın
+  // Add setLanguage alias to maintain compatibility with components
   const setLanguage = (lng: string) => {
     changeLanguage(lng);
   };

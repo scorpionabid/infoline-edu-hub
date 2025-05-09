@@ -38,7 +38,7 @@ const LanguageSettingsForm: React.FC<LanguageSettingsFormProps> = ({
               <div key={lang.code} className="flex items-center space-x-2">
                 <RadioGroupItem value={lang.code} id={`lang-${lang.code}`} />
                 <Label htmlFor={`lang-${lang.code}`} className="flex items-center">
-                  {languages && languages[lang.code] && languages[lang.code].flag && (
+                  {languages && languages[lang.code] && (
                     <span className="mr-2">{languages[lang.code].flag}</span>
                   )}
                   {lang.name}
