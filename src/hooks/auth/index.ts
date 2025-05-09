@@ -22,4 +22,3 @@ export {
 // Re-export from context for convenience
 export { useAuth } from '@/context/auth/useAuth';
 export { useRole } from '@/context/auth/useRole';
-export { useSupabaseAuth } from './useSupabaseAuth';
