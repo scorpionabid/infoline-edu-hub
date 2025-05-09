@@ -1,5 +1,5 @@
 
-import { CategoryItem, DeadlineItem, FormItem, SchoolStat } from '@/types/dashboard';
+import { CategoryItem, DeadlineItem, FormItem, SchoolStat, DashboardFormStats } from '@/types/dashboard';
 
 export const generateMockDashboardData = () => {
   return {

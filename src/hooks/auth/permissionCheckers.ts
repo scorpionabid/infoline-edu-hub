@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { PermissionLevel, PermissionResult } from './permissionTypes';
 
@@ -9,9 +10,9 @@ export const checkRegionPermission = async (
 ): Promise<PermissionResult> => {
   try {
     const { data, error } = await supabase.rpc('has_region_access', {
-      p_user_id: userId,
-      p_region_id: regionId,
-      p_level: level
+      user_id_param: userId,
+      region_id_param: regionId,
+      level_param: level
     });
     
     if (error) throw error;
@@ -38,9 +39,9 @@ export const checkSectorPermission = async (
 ): Promise<PermissionResult> => {
   try {
     const { data, error } = await supabase.rpc('has_sector_access', {
-      p_user_id: userId,
-      p_sector_id: sectorId,
-      p_level: level
+      user_id_param: userId,
+      sector_id_param: sectorId,
+      level_param: level
     });
     
     if (error) throw error;
@@ -129,3 +130,6 @@ export const canManageSector = async (sectorId: string): Promise<boolean> => {
     return false;
   }
 };
+
+// Add the missing import for useAuthStore
+import { useAuthStore } from './useAuthStore';

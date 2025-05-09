@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
@@ -11,7 +12,15 @@ interface LanguageContextProps {
   t: (key: string, options?: any) => string;
   i18n: i18next.i18n;
   isRtl: boolean;
+  availableLanguages: { code: string; name: string }[];
+  currentLanguage: { code: string; name: string };
 }
+
+const availableLanguages = [
+  { code: 'az', name: 'Azərbaycan' },
+  { code: 'en', name: 'English' },
+  { code: 'ru', name: 'Русский' }
+];
 
 const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
 
@@ -43,9 +52,15 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('i18nextLng', lang);
   }, [i18n]);
 
-  const t = useCallback((key: string, options?: any) => i18n.t(key, options), [i18n]);
+  const t = useCallback((key: string, options?: any) => {
+    return i18n.t(key, options) || key;
+  }, [i18n]);
 
   const isRtl = useMemo(() => i18n.dir() === 'rtl', [i18n]);
+
+  const currentLanguage = useMemo(() => {
+    return availableLanguages.find(lang => lang.code === language) || availableLanguages[0];
+  }, [language]);
 
   const value: LanguageContextProps = {
     language,
@@ -53,6 +68,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     t,
     i18n,
     isRtl,
+    availableLanguages,
+    currentLanguage
   };
 
   return (
@@ -80,8 +97,14 @@ export function useLanguageSafe() {
       language: 'az',
       setLanguage: () => {},
       t: (key: string) => key,
-      i18n: i18next.i18n.createInstance(),
-      isRtl: false
+      i18n: i18next.createInstance(),
+      isRtl: false,
+      availableLanguages: [
+        { code: 'az', name: 'Azərbaycan' },
+        { code: 'en', name: 'English' },
+        { code: 'ru', name: 'Русский' }
+      ],
+      currentLanguage: { code: 'az', name: 'Azərbaycan' }
     };
   }
 }

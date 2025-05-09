@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -169,10 +170,9 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: external
       
       const enhancedSector: EnhancedSector = {
         ...sector,
-        schoolCount: numberOfSchools,
+        school_count: numberOfSchools,
         completion_rate: completionRate,
-        completionRate: completionRate,
-        regionName: regionName
+        region_name: regionName
       };
       return enhancedSector;
     }).filter(sector => {
@@ -307,7 +307,7 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: external
             {filteredSectors.map(sector => (
               <TableRow key={sector.id}>
                 <TableCell>{sector.name}</TableCell>
-                <TableCell>{sector.regionName || 'Unknown'}</TableCell>
+                <TableCell>{sector.region_name || 'Unknown'}</TableCell>
                 <TableCell>{sector.description}</TableCell>
                 <TableCell>{sector.status}</TableCell>
                 <TableCell className="text-right">

@@ -69,6 +69,29 @@ export interface SchoolAdminDashboardData {
   notifications?: any[];
 }
 
+export interface SectorAdminDashboardData {
+  status: DashboardStatus;
+  completion: DashboardCompletion;
+  completionRate?: number;
+  categories: CategoryItem[];
+  upcoming: DeadlineItem[];
+  pendingForms: FormItem[];
+  formStats?: DashboardFormStats;
+  notifications?: any[];
+  pendingApprovals?: PendingApproval[];
+  schoolStats?: SchoolStat[];
+}
+
+export interface SectorAdminDashboardProps {
+  data: SectorAdminDashboardData;
+}
+
+export interface SuperAdminDashboardProps {
+  data: any;
+  regions?: any[];
+  sectors?: any[];
+}
+
 export interface DashboardFormStats {
   pending: number;
   approved: number;
@@ -92,4 +115,34 @@ export interface SchoolStat {
   address?: string;
   phone?: string;
   email?: string;
+}
+
+export interface SectorStat {
+  id: string;
+  name: string;
+  status?: string;
+  completionRate?: number;
+  schoolCount?: number;
+  region?: string;
+  regionId?: string;
+  description?: string;
+}
+
+export interface PendingApproval {
+  id: string;
+  schoolId?: string;
+  schoolName?: string;
+  categoryId?: string;
+  categoryName?: string;
+  formName?: string;
+  status?: string;
+  createdAt?: string;
+  columnName?: string;
+  value?: string;
+}
+
+export interface StatusCardsProps {
+  status: DashboardStatus;
+  completion: DashboardCompletion;
+  formStats?: DashboardFormStats;
 }

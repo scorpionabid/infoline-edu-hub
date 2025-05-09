@@ -1,227 +1,221 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserRole, UserFormData } from '@/types/supabase';
+import { UserRole } from '@/types/supabase';
 
-// Get user profile data
-export const getUserProfile = async (userId: string): Promise<FullUserData | null> => {
-  try {
-    const { data, error } = await supabase.rpc('get_full_user_data', {
-      p_user_id: userId
-    });
-    
-    if (error) throw error;
-    return data as FullUserData;
-  } catch (error) {
-    console.error('Error getting user profile:', error);
-    return null;
-  }
-};
+export interface FullUserData {
+  id: string;
+  email: string;
+  full_name?: string;
+  phone?: string;
+  role?: UserRole;
+  status?: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  last_login?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar?: string;
+  };
+  notificationSettings?: {
+    inApp: boolean;
+    email: boolean;
+    push: boolean;
+    system: boolean;
+    deadline: boolean;
+  };
+  created_at?: string;
+  updated_at?: string;
+}
 
-// Update user profile data
-export const updateUserProfile = async (
-  userId: string, 
-  profileData: Partial<FullUserData>
-): Promise<FullUserData | null> => {
+export const fetchUserData = async (userId: string): Promise<FullUserData | null> => {
   try {
-    const { data, error } = await supabase
+    // Fetch user profile
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .update(profileData)
+      .select('*')
       .eq('id', userId)
-      .select()
       .single();
     
-    if (error) throw error;
-    return data as FullUserData;
+    if (profileError) {
+      console.error('Error fetching user profile:', profileError);
+      return null;
+    }
+    
+    // Fetch user role
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role, region_id, sector_id, school_id')
+      .eq('user_id', userId)
+      .single();
+    
+    if (roleError) {
+      console.error('Error fetching user role:', roleError);
+    }
+    
+    // Build complete user data
+    const userData: FullUserData = {
+      id: userId,
+      email: profileData?.email || '',
+      full_name: profileData?.full_name,
+      phone: profileData?.phone,
+      position: profileData?.position,
+      language: profileData?.language,
+      avatar: profileData?.avatar,
+      last_login: profileData?.last_login,
+      role: roleData?.role as UserRole,
+      region_id: roleData?.region_id,
+      sector_id: roleData?.sector_id,
+      school_id: roleData?.school_id,
+      status: profileData?.status,
+      created_at: profileData?.created_at,
+      updated_at: profileData?.updated_at,
+      notificationSettings: {
+        inApp: true,
+        email: false,
+        push: false,
+        system: true,
+        deadline: true
+      }
+    };
+    
+    return userData;
   } catch (error) {
-    console.error('Error updating user profile:', error);
+    console.error('Error in fetchUserData:', error);
     return null;
   }
 };
 
-// Sign in user
-export const signInUser = async (email: string, password: string) => {
+// Function to create a new user
+export const createUser = async (
+  email: string,
+  password: string,
+  fullName: string,
+  role: UserRole,
+  regionId?: string,
+  sectorId?: string,
+  schoolId?: string
+): Promise<{ success: boolean; message: string; userId?: string }> => {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // Create auth user
+    const { data, error } = await supabase.auth.admin.createUser({
       email,
-      password
-    });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error signing in:', error);
-    throw error;
-  }
-};
-
-// Sign out user
-export const signOutUser = async () => {
-  try {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error signing out:', error);
-    throw error;
-  }
-};
-
-// Update user password
-export const updateUserPassword = async (password: string) => {
-  try {
-    const { data, error } = await supabase.auth.updateUser({
-      password
-    });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error updating password:', error);
-    throw error;
-  }
-};
-
-// Request password reset
-export const requestPasswordReset = async (email: string) => {
-  try {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
-    });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error requesting password reset:', error);
-    throw error;
-  }
-};
-
-// Create a new user
-export const createUser = async (userData: {
-  email: string;
-  password: string;
-  full_name: string;
-  role: string;
-  region_id?: string | null;
-  sector_id?: string | null;
-  school_id?: string | null;
-}) => {
-  try {
-    // First create the user in auth
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: userData.email,
-      password: userData.password,
+      password,
       email_confirm: true,
-      user_metadata: {
-        full_name: userData.full_name
-      }
+      user_metadata: { full_name: fullName }
     });
     
-    if (authError) throw authError;
-    
-    if (!authData.user) {
-      throw new Error('User creation failed');
+    if (error) {
+      throw error;
     }
     
-    // Then create the user role
+    const userId = data.user.id;
+    
+    // Create profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: userId,
+        email,
+        full_name: fullName,
+        status: 'active'
+      });
+    
+    if (profileError) {
+      throw profileError;
+    }
+    
+    // Assign role
     const { error: roleError } = await supabase
       .from('user_roles')
       .insert({
-        user_id: authData.user.id,
-        role: userData.role,
-        region_id: userData.region_id || null,
-        sector_id: userData.sector_id || null,
-        school_id: userData.school_id || null
+        user_id: userId,
+        role,
+        region_id: regionId || null,
+        sector_id: sectorId || null,
+        school_id: schoolId || null
       });
     
-    if (roleError) throw roleError;
-    
-    return authData.user;
-  } catch (error) {
-    console.error('Error creating user:', error);
-    throw error;
-  }
-};
-
-// Get user details
-export const getUserDetails = async (userId: string): Promise<FullUserData | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-      
-    if (error) throw error;
-    
-    // Get user roles
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-      
-    if (roleError && roleError.code !== 'PGRST116') { // PGRST116 is "No rows returned"
+    if (roleError) {
       throw roleError;
     }
     
-    const result: FullUserData = {
-      ...(data as FullUserData),
-      role: roleData?.role as UserRole || 'user',
-      region_id: roleData?.region_id || null,
-      sector_id: roleData?.sector_id || null,
-      school_id: roleData?.school_id || null
+    return {
+      success: true,
+      message: 'User created successfully',
+      userId
     };
-    
-    return result;
-  } catch (error) {
-    console.error('Error fetching user details:', error);
-    return null;
+  } catch (error: any) {
+    console.error('Error creating user:', error);
+    return {
+      success: false,
+      message: error.message || 'Error creating user'
+    };
   }
 };
 
-// Create a new user with role
-export const createUserWithRole = async (userData: UserFormData) => {
+// Function to update a user's profile data
+export const updateUserProfile = async (userData: Partial<FullUserData>): Promise<{ success: boolean; message: string }> => {
   try {
-    // First create the user in auth
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: userData.email,
-      password: userData.password,
-      email_confirm: true,
-      user_metadata: {
-        full_name: userData.full_name
-      }
-    });
+    const { id, ...profileData } = userData;
     
-    if (authError) throw authError;
-    
-    if (!authData.user) {
-      throw new Error('User creation failed');
+    if (!id) {
+      return {
+        success: false,
+        message: 'User ID is required'
+      };
     }
     
-    // Then create user role
-    if (userData.role) {
-      const userRole: UserRole = userData.role as UserRole;
-      
-      const roleData = {
-        user_id: authData.user.id,
-        role: userRole,
-        region_id: userData.region_id || null,
-        sector_id: userData.sector_id || null,
-        school_id: userData.school_id || null
+    // Prepare profile update data
+    const profileUpdateData: any = {
+      full_name: profileData.full_name,
+      phone: profileData.phone,
+      position: profileData.position,
+      language: profileData.language,
+      status: profileData.status
+    };
+    
+    // Update profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update(profileUpdateData)
+      .eq('id', id);
+    
+    if (profileError) {
+      throw profileError;
+    }
+    
+    // Update role if provided
+    if (profileData.role) {
+      const roleUpdateData: any = {
+        role: profileData.role,
+        region_id: profileData.region_id || null,
+        sector_id: profileData.sector_id || null,
+        school_id: profileData.school_id || null
       };
       
-      // Create user role
       const { error: roleError } = await supabase
         .from('user_roles')
-        .insert([roleData]);
+        .update(roleUpdateData)
+        .eq('user_id', id);
       
       if (roleError) {
-        throw new Error(`Failed to create user role: ${roleError.message}`);
+        throw roleError;
       }
     }
     
-    return authData.user;
-  } catch (error) {
-    console.error('Error creating user with role:', error);
-    throw error;
+    return {
+      success: true,
+      message: 'User profile updated successfully'
+    };
+  } catch (error: any) {
+    console.error('Error updating user profile:', error);
+    return {
+      success: false,
+      message: error.message || 'Error updating user profile'
+    };
   }
 };

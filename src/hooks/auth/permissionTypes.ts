@@ -1,5 +1,7 @@
 
-export type PermissionLevel = 'read' | 'write' | 'admin';
+import { UserRole } from '@/types/supabase';
+
+export type PermissionLevel = 'read' | 'write' | 'delete' | 'admin';
 
 export interface PermissionResult {
   granted: boolean;
@@ -7,4 +9,13 @@ export interface PermissionResult {
   code?: string;
 }
 
-export type PermissionChecker = (resource: string, action: string, level?: PermissionLevel) => PermissionResult;
+export type PermissionChecker = (userId: string, entityId: string, level?: PermissionLevel) => Promise<PermissionResult>;
+
+export interface UserWithRole {
+  id: string;
+  email?: string;
+  role?: UserRole | 'user';
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+}

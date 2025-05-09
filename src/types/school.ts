@@ -34,8 +34,8 @@ export interface SchoolFormData {
 export interface SchoolFormProps {
   initialData?: SchoolFormData;
   onSubmit: (data: SchoolFormData) => void;
-  regions: Array<{id: string; name: string}>;
-  sectors: Array<{id: string; name: string}>;
+  regions?: Array<{id: string; name: string}>;
+  sectors?: Array<{id: string; name: string}>;
   isLoading?: boolean;
   isSubmitting?: boolean;
   submitButtonText?: string;
@@ -59,8 +59,8 @@ export { SchoolStat } from './supabase';
 // School interface for backwards compatibility
 export interface School extends SchoolFormData {
   id: string;
-  created_at: string; // Changed to required to match supabase.School
-  updated_at: string; // Changed to required to match supabase.School
+  created_at: string; 
+  updated_at: string; 
   completion_rate?: number;
   completionRate?: number;
   region_name?: string;
