@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -16,7 +15,7 @@ import NotFound from '@/pages/NotFound';
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { refreshSession } = useAuthStore();
+  const { refreshSession, isAuthenticated, isLoading } = useAuthStore();
   
   // Run once on app startup
   useEffect(() => {
@@ -38,11 +37,11 @@ function App() {
     // Check if the current route is protected
     const isProtected = protectedRoutes.some(route => currentPath.startsWith(route));
     
-    if (isProtected && shouldAuthenticate()) {
+    if (isProtected && shouldAuthenticate(isAuthenticated, isLoading)) {
       console.log('[App] Protected route detected, redirecting to login');
       navigate('/login', { state: { from: location } });
     }
-  }, [location, navigate]);
+  }, [location, navigate, isAuthenticated, isLoading]);
 
   return (
     <>
