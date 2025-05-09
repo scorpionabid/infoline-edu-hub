@@ -9,6 +9,11 @@ import { AppRoutes } from './routes/AppRoutes';
 import { RegisterSW } from './lib/register-sw';
 import { CacheProvider } from '@/context/QueryClientProvider';
 
+/**
+ * Main App component with properly ordered providers.
+ * Provider order is important: ThemeProvider -> AuthProvider -> LanguageProvider -> 
+ * NotificationProvider -> CacheProvider -> AppRoutes
+ */
 const App: React.FC = () => {
   useEffect(() => {
     // Register service worker only once on mount

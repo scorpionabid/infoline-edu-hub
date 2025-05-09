@@ -1,66 +1,91 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AppNotification } from '@/types/notification';
-import NotificationItem from '../NotificationItem';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Check, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '@/context/LanguageContext';
+import { AppNotification, NotificationsCardProps } from '@/types/notification';
 
-interface NotificationsCardProps {
-  title: string;
-  notifications: AppNotification[];
-  showViewAllButton?: boolean;
-  maxItems?: number;
+const NotificationItem: React.FC<{
+  notification: AppNotification;
   onMarkAsRead?: (id: string) => void;
-}
+}> = ({ notification, onMarkAsRead }) => {
+  const typeToIcon = {
+    info: <Bell className="h-4 w-4 text-blue-500" />,
+    warning: <Bell className="h-4 w-4 text-yellow-500" />,
+    error: <Bell className="h-4 w-4 text-red-500" />,
+    success: <Bell className="h-4 w-4 text-green-500" />,
+    system: <Bell className="h-4 w-4 text-purple-500" />,
+    approval: <Bell className="h-4 w-4 text-amber-500" />,
+    deadline: <Bell className="h-4 w-4 text-rose-500" />
+  };
+  
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    } catch (e) {
+      return 'Unknown date';
+    }
+  };
 
-const NotificationsCard: React.FC<NotificationsCardProps> = ({
-  title,
-  notifications,
-  showViewAllButton = true,
-  maxItems = 3,
-  onMarkAsRead
+  return (
+    <div className={`mb-3 p-3 rounded-md ${notification.isRead ? 'bg-muted/50' : 'bg-muted'}`}>
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-2">
+          <div className="mt-0.5">{typeToIcon[notification.type] || <Bell className="h-4 w-4" />}</div>
+          <div>
+            <h4 className="text-sm font-medium">{notification.title}</h4>
+            <p className="text-xs text-muted-foreground">{notification.message}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formatDate(notification.createdAt)}
+            </p>
+          </div>
+        </div>
+        
+        {!notification.isRead && onMarkAsRead && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0" 
+            onClick={() => onMarkAsRead(notification.id)}
+          >
+            <Check className="h-4 w-4" />
+            <span className="sr-only">Mark as read</span>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
+  title, 
+  notifications, 
+  onMarkAsRead 
 }) => {
-  const navigate = useNavigate();
-  const { t } = useLanguage();
-  
-  const displayedNotifications = notifications.slice(0, maxItems);
-  
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {displayedNotifications.length > 0 ? (
-            <>
-              {displayedNotifications.map((notification) => (
-                <NotificationItem 
-                  key={notification.id} 
-                  notification={notification}
-                  onMarkAsRead={onMarkAsRead}
-                />
-              ))}
-              
-              {showViewAllButton && notifications.length > maxItems && (
-                <Button 
-                  variant="outline" 
-                  className="w-full" 
-                  size="sm"
-                  onClick={() => navigate('/notifications')}
-                >
-                  {t('viewAllNotifications')} ({notifications.length - maxItems} {t('more')})
-                </Button>
-              )}
-            </>
+        <ScrollArea className="h-[300px] pr-4">
+          {notifications.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Bell className="mx-auto h-8 w-8 mb-2 opacity-50" />
+              <p>No notifications</p>
+            </div>
           ) : (
-            <p className="text-muted-foreground text-center py-4">
-              {t('noNotifications')}
-            </p>
+            notifications.map((notification) => (
+              <NotificationItem 
+                key={notification.id} 
+                notification={notification} 
+                onMarkAsRead={onMarkAsRead}
+              />
+            ))
           )}
-        </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );

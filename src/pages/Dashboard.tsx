@@ -1,34 +1,39 @@
 
-// Dashboard.tsx - Add diagnostic logs
-
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectIsAuthenticated, selectIsLoading, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePermissions } from '@/hooks/auth';
+import LoadingScreen from '@/components/auth/LoadingScreen';
 
 const Dashboard: React.FC = () => {
-  const { user, isAuthenticated, loading } = useAuth();
-  const { userRole } = usePermissions();
+  const isAuthenticated = useAuthStore(selectIsAuthenticated);
+  const isLoading = useAuthStore(selectIsLoading);
+  const user = useAuthStore(selectUser);
+  const userRole = useAuthStore(selectUserRole);
+  const { userRole: permissionRole } = usePermissions();
+  
   const [initialCheck, setInitialCheck] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
   console.log('[Dashboard.tsx] Component rendering. State:', { 
-    loading, 
+    loading: isLoading, 
     initialCheck, 
     isAuthenticated, 
     user,
     userRole,
+    permissionRole,
     role: user?.role 
   });
 
   useEffect(() => {
-    console.log('[Dashboard.tsx] useEffect triggered. Deps:', { isAuthenticated, loading, user, userRole });
-    if (!loading) {
+    console.log('[Dashboard.tsx] useEffect triggered. Deps:', { isAuthenticated, isLoading, user, userRole });
+    
+    if (!isLoading) {
       console.log('[Dashboard.tsx] useEffect: Auth loading is false. Setting initialCheck to false.');
       setInitialCheck(false);
 
@@ -49,32 +54,31 @@ const Dashboard: React.FC = () => {
     } else {
       console.log('[Dashboard.tsx] useEffect: Auth loading is true. Waiting.');
     }
-  }, [isAuthenticated, loading, user, navigate, location, userRole]);
+  }, [isAuthenticated, isLoading, user, navigate, location, userRole]);
 
-  if (loading || initialCheck) {
-    console.log('[Dashboard.tsx] Render: Showing loading spinner because loading or initialCheck is true.', { loading, initialCheck });
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+  // Show loading state during initial check or authentication loading
+  if (isLoading || initialCheck) {
+    console.log('[Dashboard.tsx] Render: Showing loading spinner because loading or initialCheck is true.', { isLoading, initialCheck });
+    return <LoadingScreen message="Yüklənir, zəhmət olmasa gözləyin..." />;
   }
-  console.log('[Dashboard.tsx] Render: Passed loading/initialCheck guard.');
 
+  // Not authenticated, will be redirected in useEffect
   if (!isAuthenticated || !user) {
     console.log('[Dashboard.tsx] Render: Not authenticated or no user, returning null. This might indicate a problem if redirection was expected.', { isAuthenticated, user });
     return null;
   }
+  
   console.log('[Dashboard.tsx] Render: Authenticated and user exists. Proceeding to render content.', { user, userRole });
 
-  const isSchoolAdmin = user.role === 'schooladmin';
+  const roleForDisplay = userRole || user?.role || 'unknown';
+  const isSchoolAdmin = roleForDisplay === 'schooladmin';
 
   // If no appropriate dashboard is found, show a helpful message
-  if (!userRole) {
+  if (!roleForDisplay || roleForDisplay === 'unknown') {
     return (
       <div className="flex items-center justify-center h-screen flex-col space-y-4">
         <h2 className="text-2xl font-semibold">Rolunuza uyğun dashboard tapılmadı</h2>
-        <p>Rol: {user.role || 'Təyin olunmayıb'}</p>
+        <p>Rol: {roleForDisplay || 'Təyin olunmayıb'}</p>
         <button 
           className="px-4 py-2 bg-primary text-primary-foreground rounded"
           onClick={() => navigate('/settings')}

@@ -1,14 +1,18 @@
 
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { useAuthStore, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
 import { UserRole } from '@/types/supabase';
 
 /**
  * useRole - Hook for getting the current user's role
- * Now uses the Zustand store directly
+ * Directly uses the Zustand store with a selector for better performance
  */
 export const useRole = (): UserRole | null => {
-  const user = useAuthStore(state => state.user);
-  return user?.role as UserRole || null;
+  const userRole = useAuthStore(selectUserRole);
+  
+  // Log for debugging role resolution
+  console.log("[useRole] Current user role:", userRole);
+  
+  return userRole as UserRole || null;
 };
 
 export default useRole;

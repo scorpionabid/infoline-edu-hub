@@ -29,21 +29,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError
   } = useAuthStore();
 
-  // This effect only runs once during initialization
+  // Initialize auth on mount
   useEffect(() => {
-    // Attempt to refresh the session when the component mounts
+    console.log("[AuthProvider] Initializing authentication");
     const initializeAuth = async () => {
+      console.log("[AuthProvider] Refreshing session...");
       await refreshSession();
+      console.log("[AuthProvider] Session refreshed, authenticated:", isAuthenticated);
     };
     
     initializeAuth();
-    // We intentionally omit refreshSession from the deps array to avoid
-    // re-running this effect when the function reference changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Create the context value with memoization to avoid unnecessary re-renders
+  // Create memoized context value to avoid unnecessary re-renders
   const contextValue = useMemo<AuthContextType>(() => {
+    console.log("[AuthProvider] Creating context value, user role:", user?.role);
     return {
       user,
       session,

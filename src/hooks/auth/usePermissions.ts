@@ -1,135 +1,98 @@
 
 import { useMemo } from 'react';
-import { useAuthStore, selectUser } from './useAuthStore';
+import { useAuthStore, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore'; 
 import { UserRole } from '@/types/user';
 
 export interface UsePermissionsResult {
-  userRole: UserRole | undefined;
-  hasRole: (role: string | string[]) => boolean;
-  hasRegionAccess: (regionId: string) => boolean;
-  hasSectorAccess: (sectorId: string) => boolean;
-  hasSchoolAccess: (schoolId: string) => boolean;
-  isSuperAdmin: boolean;
-  isRegionAdmin: boolean;
-  isSectorAdmin: boolean;
-  isSchoolAdmin: boolean;
-  userRegionId: string | undefined;
-  userSectorId: string | undefined;
-  userSchoolId: string | undefined;
+  userRole: UserRole | null;
+  hasRole: (role: UserRole | UserRole[]) => boolean;
+  canViewRegion: (regionId?: string) => boolean;
+  canViewSector: (sectorId?: string) => boolean;
+  canViewSchool: (schoolId?: string) => boolean;
+  canManageUsers: boolean;
+  canManageRegions: boolean;
+  canManageSectors: boolean;
+  canManageSchools: boolean;
+  canManageCategories: boolean;
+  canApproveData: boolean;
+  canEnterData: boolean;
+  regionId: string | null;
+  sectorId: string | null;
+  schoolId: string | null;
 }
 
 /**
- * Hook for checking user permissions
- * Uses memoization to prevent unnecessary recalculations
+ * Custom hook to check user permissions based on role and entity IDs
  */
 export const usePermissions = (): UsePermissionsResult => {
-  // Get user with selector for better performance
   const user = useAuthStore(selectUser);
+  const userRole = useAuthStore(selectUserRole) as UserRole | null;
   
   return useMemo(() => {
-    // Basic role information
-    const userRole = user?.role as UserRole | undefined;
-    const isSuperAdmin = userRole === 'superadmin';
-    const isRegionAdmin = userRole === 'regionadmin';
-    const isSectorAdmin = userRole === 'sectoradmin';
-    const isSchoolAdmin = userRole === 'schooladmin';
-
-    // Entity IDs
-    const userRegionId = user?.region_id;
-    const userSectorId = user?.sector_id;
-    const userSchoolId = user?.school_id;
+    console.log("[usePermissions] Evaluating permissions for role:", userRole);
+    console.log("[usePermissions] User data:", user);
     
-    /**
-     * Check if user has a specific role
-     * @param role The role or array of roles to check against
-     * @returns True if user has the role, false otherwise
-     */
-    const hasRole = (role: string | string[]): boolean => {
-      if (!user?.role) return false;
+    const hasRole = (role: UserRole | UserRole[]): boolean => {
+      if (!user || !userRole) return false;
       
       if (Array.isArray(role)) {
-        return role.includes(user.role);
+        return role.includes(userRole);
       }
       
-      return user.role === role;
+      return userRole === role;
     };
 
-    /**
-     * Check if user has access to a specific region
-     * @param regionId The region ID to check access against
-     * @returns True if user has access, false otherwise
-     */
-    const hasRegionAccess = (regionId: string): boolean => {
-      if (!user) return false;
-      
-      // Super admin has access to everything
-      if (isSuperAdmin) return true;
-      
-      // Region admins only have access to their region
-      if (isRegionAdmin) {
-        return user.region_id === regionId;
-      }
-      
+    const canViewRegion = (regionId?: string): boolean => {
+      if (!user || !userRole) return false;
+      if (userRole === 'superadmin') return true;
+      if (userRole === 'regionadmin' && user.region_id && (!regionId || user.region_id === regionId)) return true;
       return false;
     };
 
-    /**
-     * Check if user has access to a specific sector
-     * @param sectorId The sector ID to check access against
-     * @returns True if user has access, false otherwise
-     */
-    const hasSectorAccess = (sectorId: string): boolean => {
-      if (!user) return false;
-      
-      // Super admin and region admins have access to sectors in their region
-      if (isSuperAdmin) return true;
-      
-      if (isRegionAdmin) {
-        // For region admins, we would need to check if the sector belongs to their region
-        // This requires additional data, so this is a simplified check
-        return true;
-      }
-      
-      // Sector admins only have access to their sector
-      if (isSectorAdmin) {
-        return user.sector_id === sectorId;
-      }
-      
+    const canViewSector = (sectorId?: string): boolean => {
+      if (!user || !userRole) return false;
+      if (userRole === 'superadmin' || userRole === 'regionadmin') return true;
+      if (userRole === 'sectoradmin' && user.sector_id && (!sectorId || user.sector_id === sectorId)) return true;
       return false;
     };
 
-    /**
-     * Check if user has access to a specific school
-     * @param schoolId The school ID to check access against
-     * @returns True if user has access, false otherwise
-     */
-    const hasSchoolAccess = (schoolId: string): boolean => {
-      if (!user) return false;
-      
-      // Super admin has access to everything
-      if (isSuperAdmin) return true;
-      
-      // School admins only have access to their school
-      if (isSchoolAdmin) {
-        return user.school_id === schoolId;
-      }
-      
+    const canViewSchool = (schoolId?: string): boolean => {
+      if (!user || !userRole) return false;
+      if (['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole)) return true;
+      if (userRole === 'schooladmin' && user.school_id && (!schoolId || user.school_id === schoolId)) return true;
       return false;
     };
+
+    // Define permissions based on roles
+    const canManageUsers = hasRole(['superadmin', 'regionadmin', 'sectoradmin']);
+    const canManageRegions = hasRole('superadmin');
+    const canManageSectors = hasRole(['superadmin', 'regionadmin']);
+    const canManageSchools = hasRole(['superadmin', 'regionadmin', 'sectoradmin']);
+    const canManageCategories = hasRole(['superadmin', 'regionadmin', 'sectoradmin']);
+    const canApproveData = hasRole(['superadmin', 'regionadmin', 'sectoradmin']);
+    const canEnterData = hasRole(['superadmin', 'sectoradmin', 'schooladmin']);
+
+    // User entity IDs for scoped access
+    const regionId = user?.region_id || null;
+    const sectorId = user?.sector_id || null;
+    const schoolId = user?.school_id || null;
 
     return {
       userRole,
       hasRole,
-      hasRegionAccess,
-      hasSectorAccess,
-      hasSchoolAccess,
-      isSuperAdmin,
-      isRegionAdmin,
-      isSectorAdmin,
-      isSchoolAdmin,
-      userRegionId,
-      userSectorId,
-      userSchoolId,
+      canViewRegion,
+      canViewSector,
+      canViewSchool,
+      canManageUsers,
+      canManageRegions,
+      canManageSectors,
+      canManageSchools,
+      canManageCategories,
+      canApproveData,
+      canEnterData,
+      regionId,
+      sectorId,
+      schoolId
     };
-  }, [user]);
+  }, [user, userRole]);
 };
