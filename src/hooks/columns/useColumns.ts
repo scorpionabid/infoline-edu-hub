@@ -1,181 +1,123 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnFormData, ColumnType } from '@/types/column';
+import { Column } from '@/types/column';
 import { toast } from 'sonner';
 
-export const useColumns = (categoryId?: string) => {
-  const [columns, setColumns] = useState<Column[]>([]);
-  const [loading, setLoading] = useState(true);
+export interface ColumnFormData {
+  name: string;
+  type: string;
+  is_required: boolean;
+  placeholder?: string;
+  help_text?: string;
+  validation?: any;
+  options?: any;
+  default_value?: string;
+}
+
+export const useColumns = () => {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchColumns = useCallback(async () => {
+  const createColumn = async (categoryId: string, columnData: ColumnFormData) => {
     try {
       setLoading(true);
       setError(null);
 
-      let query = supabase.from('columns').select('*');
-      
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
-      
-      query = query.order('order_index', { ascending: true });
-
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      const formattedColumns = data.map((column: any) => ({
-        id: column.id,
-        category_id: column.category_id,
-        name: column.name,
-        type: column.type as ColumnType,
-        is_required: column.is_required,
-        placeholder: column.placeholder,
-        help_text: column.help_text,
-        order_index: column.order_index,
-        options: column.options ? JSON.parse(JSON.stringify(column.options)) : [],
-        validation: column.validation ? JSON.parse(JSON.stringify(column.validation)) : {},
-        default_value: column.default_value,
-        status: column.status || 'active',
-        created_at: column.created_at,
-        updated_at: column.updated_at,
-        parent_column_id: column.parent_column_id
-      }));
-
-      setColumns(formattedColumns);
-    } catch (err: any) {
-      console.error('Error fetching columns:', err);
-      setError(err.message || 'Sütunları əldə edərkən xəta baş verdi');
-      toast.error('Sütunları yükləmək mümkün olmadı');
-    } finally {
-      setLoading(false);
-    }
-  }, [categoryId]);
-
-  useEffect(() => {
-    fetchColumns();
-  }, [fetchColumns]);
-
-  const createColumn = async (columnData: ColumnFormData, categoryId: string) => {
-    try {
-      setError(null);
-      
-      const { data, error: insertError } = await supabase
+      // Get the highest order_index for this category
+      const { data: existingColumns, error: fetchError } = await supabase
         .from('columns')
-        .insert({
+        .select('order_index')
+        .eq('category_id', categoryId)
+        .order('order_index', { ascending: false })
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      const orderIndex = existingColumns && existingColumns.length > 0 
+        ? (existingColumns[0].order_index || 0) + 1 
+        : 0;
+
+      const { data, error } = await supabase
+        .from('columns')
+        .insert([{
+          ...columnData,
           category_id: categoryId,
-          name: columnData.name,
-          type: columnData.type,
-          is_required: columnData.is_required,
-          placeholder: columnData.placeholder,
-          help_text: columnData.help_text,
-          order_index: columnData.order_index,
-          options: columnData.options || [],
-          validation: columnData.validation || {},
-          default_value: columnData.default_value,
-          status: columnData.status,
-          parent_column_id: columnData.parent_column_id
-        })
+          status: 'active',
+          order_index: orderIndex
+        }])
         .select()
         .single();
 
-      if (insertError) {
-        throw insertError;
-      }
+      if (error) throw error;
 
-      toast.success('Sütun uğurla əlavə edildi');
-      
-      // Yeni sütunu daxil et və siyahını yenilə
-      await fetchColumns();
-      
+      toast.success('Column created successfully');
       return data;
     } catch (err: any) {
       console.error('Error creating column:', err);
-      setError(err.message || 'Sütun yaradarkən xəta baş verdi');
-      toast.error('Sütun yaratmaq mümkün olmadı');
+      setError(err.message || 'Error creating column');
+      toast.error(err.message || 'Error creating column');
       return null;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const updateColumn = async (id: string, columnData: Partial<ColumnFormData>) => {
+  const updateColumn = async (columnId: string, columnData: Partial<Column>) => {
     try {
+      setLoading(true);
       setError(null);
-      
-      const { data, error: updateError } = await supabase
+
+      const { data, error } = await supabase
         .from('columns')
-        .update({
-          name: columnData.name,
-          type: columnData.type,
-          is_required: columnData.is_required,
-          placeholder: columnData.placeholder,
-          help_text: columnData.help_text,
-          order_index: columnData.order_index,
-          options: columnData.options,
-          validation: columnData.validation,
-          default_value: columnData.default_value,
-          status: columnData.status,
-          parent_column_id: columnData.parent_column_id
-        })
-        .eq('id', id)
+        .update(columnData)
+        .eq('id', columnId)
         .select()
         .single();
 
-      if (updateError) {
-        throw updateError;
-      }
+      if (error) throw error;
 
-      toast.success('Sütun uğurla yeniləndi');
-      
-      // Siyahını yenilə
-      await fetchColumns();
-      
+      toast.success('Column updated successfully');
       return data;
     } catch (err: any) {
       console.error('Error updating column:', err);
-      setError(err.message || 'Sütunu yeniləyərkən xəta baş verdi');
-      toast.error('Sütunu yeniləmək mümkün olmadı');
+      setError(err.message || 'Error updating column');
+      toast.error(err.message || 'Error updating column');
       return null;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const deleteColumn = async (id: string) => {
+  const deleteColumn = async (columnId: string) => {
     try {
+      setLoading(true);
       setError(null);
-      
-      const { error: deleteError } = await supabase
+
+      const { error } = await supabase
         .from('columns')
         .delete()
-        .eq('id', id);
+        .eq('id', columnId);
 
-      if (deleteError) {
-        throw deleteError;
-      }
+      if (error) throw error;
 
-      toast.success('Sütun uğurla silindi');
-      
-      // Sütunu sil və siyahını yenilə
-      await fetchColumns();
-      
+      toast.success('Column deleted successfully');
       return true;
     } catch (err: any) {
       console.error('Error deleting column:', err);
-      setError(err.message || 'Sütunu silmək mümkün olmadı');
-      toast.error('Sütunu silmək mümkün olmadı');
+      setError(err.message || 'Error deleting column');
+      toast.error(err.message || 'Error deleting column');
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
   return {
-    columns,
-    loading,
-    error,
-    fetchColumns,
     createColumn,
     updateColumn,
-    deleteColumn
+    deleteColumn,
+    loading,
+    error
   };
 };

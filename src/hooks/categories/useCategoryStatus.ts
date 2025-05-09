@@ -9,7 +9,7 @@ export const useCategoryStatus = (status: CategoryStatus) => {
   });
 
   useEffect(() => {
-    if (status === 'pending' as CategoryStatus) {
+    if (status === 'pending') {
       setStatusInfo({
         color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
         text: 'Pending'
@@ -19,7 +19,7 @@ export const useCategoryStatus = (status: CategoryStatus) => {
         color: 'bg-green-100 text-green-800 border-green-200',
         text: 'Active'
       });
-    } else if (status === 'completed' as CategoryStatus) {
+    } else if (status === 'completed') {
       setStatusInfo({
         color: 'bg-blue-100 text-blue-800 border-blue-200',
         text: 'Completed'

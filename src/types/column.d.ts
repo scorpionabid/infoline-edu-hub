@@ -16,6 +16,14 @@ export interface ValidationRules {
   custom?: string;
 }
 
+export interface ColumnOption {
+  id?: string;
+  label: string;
+  value: string;
+  color?: string;
+  disabled?: boolean;
+}
+
 export interface Column {
   id: string;
   category_id: string;
@@ -25,20 +33,12 @@ export interface Column {
   placeholder?: string;
   help_text?: string;
   order_index?: number;
-  status: 'active' | 'inactive';
-  validation?: ValidationRules;
+  status: string;
+  validation?: ValidationRules | any;
   default_value?: string;
-  options?: ColumnOption[];
+  options?: ColumnOption[] | any;
   created_at?: string;
   updated_at?: string;
-}
-
-export interface ColumnOption {
-  id?: string;
-  label: string;
-  value: string;
-  color?: string;
-  disabled?: boolean;
 }
 
 export interface ColumnFormData {
@@ -47,7 +47,10 @@ export interface ColumnFormData {
   is_required: boolean;
   placeholder?: string;
   help_text?: string;
-  validation?: ValidationRules;
-  options?: ColumnOption[];
+  validation?: ValidationRules | any;
+  options?: ColumnOption[] | any;
   default_value?: string;
 }
+
+// Add Category for compatibility with useCategoryActions
+export { Category } from '@/types/category';

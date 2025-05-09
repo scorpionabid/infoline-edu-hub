@@ -13,13 +13,22 @@ export interface FullUserData {
   avatar?: string;
   role?: UserRole;
   region_id?: string;
+  regionId?: string;  // Alias for region_id
   sector_id?: string;
+  sectorId?: string;  // Alias for sector_id
   school_id?: string;
+  schoolId?: string;  // Alias for school_id
   language?: string;
   status?: 'active' | 'inactive' | 'pending';
   created_at?: string;
   updated_at?: string;
   last_login?: string;
+  region_name?: string;
+  regionName?: string;
+  sector_name?: string;
+  sectorName?: string;
+  school_name?: string;
+  schoolName?: string;
   metadata?: {
     notificationSettings?: {
       email: boolean;
@@ -38,7 +47,7 @@ export interface Region {
   description?: string;
   admin_id?: string;
   admin_email?: string;
-  status?: 'active' | 'inactive';
+  status?: string;  // Changed from 'active' | 'inactive' to string for compatibility
   created_at?: string;
   updated_at?: string;
 }
@@ -51,7 +60,7 @@ export interface Sector {
   admin_id?: string;
   admin_email?: string;
   completion_rate?: number;
-  status?: 'active' | 'inactive';
+  status?: string;  // Changed from 'active' | 'inactive' to string for compatibility
   created_at?: string;
   updated_at?: string;
 }
@@ -72,7 +81,7 @@ export interface School {
   type?: string;
   language?: string;
   logo?: string;
-  status?: 'active' | 'inactive';
+  status?: string;  // Changed from 'active' | 'inactive' to string for compatibility
   completion_rate?: number;
   created_at?: string;
   updated_at?: string;
@@ -83,4 +92,26 @@ export interface Column {
   name: string;
   type: string;
   is_required: boolean;
+  options?: any;
+  validation?: any;
+}
+
+export interface Profile {
+  id: string;
+  email?: string;
+  full_name?: string;
+  avatar?: string;
+  position?: string;
+  phone?: string;
+  language?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  last_login?: string;
+}
+
+export interface EnhancedSector extends Sector {
+  regionName?: string;
+  schoolCount?: number;
+  completionRate?: number;
 }

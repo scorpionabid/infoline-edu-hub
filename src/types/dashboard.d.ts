@@ -22,6 +22,14 @@ export interface SchoolStat {
   completionRate: number;
   pendingCount?: number;
   lastUpdate?: string;
+  status?: string;
+  pendingForms?: number;
+  formsCompleted?: number;
+  totalForms?: number;
+  principalName?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface CategoryStat {

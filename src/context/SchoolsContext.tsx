@@ -1,61 +1,26 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+
+import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { School } from '@/types/supabase';
 import { toast } from 'sonner';
-import { useAuth } from './auth';
-import { useLanguageSafe } from './LanguageContext';
 
-interface School {
-  id: string;
-  name: string;
-  region_id: string;
-  sector_id: string;
-  address?: string;
-  email?: string;
-  phone?: string;
-  principal_name?: string;
-  status?: string;
-  logo?: string;
-  language?: string;
-  completion_rate?: number;
-  admin_id?: string;
-  admin_email?: string;
-  region_name?: string;
-  sector_name?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-interface SchoolsContextType {
+export interface SchoolsContextType {
   schools: School[];
   loading: boolean;
-  error: Error | null;
-  addSchool: (school: Omit<School, 'id'>) => Promise<School>;
-  updateSchool: (id: string, school: Partial<School>) => Promise<School>;
-  deleteSchool: (id: string) => Promise<void>;
-  getSchool: (id: string) => School | undefined;
-  refetchSchools: () => Promise<void>;
-  getSchoolsByRegion: (regionId: string) => School[];
-  getSchoolsBySector: (sectorId: string) => School[];
+  error: string | null;
+  fetchSchools: () => Promise<void>;
+  handleCreateSchool: (schoolData: Partial<School>) => Promise<void>;
+  handleUpdateSchool: (school: School) => Promise<void>;
+  handleDeleteSchool: (schoolId: string) => Promise<void>;
+  handleAssignAdmin: (schoolId: string, userId: string) => Promise<void>;
 }
 
 const SchoolsContext = createContext<SchoolsContextType | undefined>(undefined);
 
-export const useSchools = () => {
-  const context = useContext(SchoolsContext);
-  if (!context) {
-    throw new Error('useSchools must be used within a SchoolsProvider');
-  }
-  return context;
-};
-
-export const useSchoolsContext = () => useContext(SchoolsContext);
-
-export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SchoolsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [schools, setSchools] = useState<School[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const { user } = useAuth();
-  const { t } = useLanguageSafe();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchSchools = async () => {
     try {
@@ -64,167 +29,143 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       const { data, error } = await supabase
         .from('schools')
-        .select(`
-          *,
-          regions (name),
-          sectors (name)
-        `)
-        .eq('status', 'active')
+        .select('*')
         .order('name');
-        
+      
       if (error) throw error;
       
-      const processedData = data?.map(school => ({
-        ...school,
-        region_name: school.regions?.name,
-        sector_name: school.sectors?.name
-      }));
-      
-      setSchools(processedData || []);
-    } catch (err) {
+      setSchools(data || []);
+    } catch (err: any) {
       console.error('Error fetching schools:', err);
-      setError(err as Error);
-      toast.error(t('errorFetchingSchools'));
+      setError(err.message || 'Error fetching schools');
+      toast.error(err.message || 'Error fetching schools');
     } finally {
       setLoading(false);
     }
   };
 
-  const addSchool = async (school: Omit<School, 'id'>): Promise<School> => {
+  const handleCreateSchool = async (schoolData: Partial<School>) => {
     try {
       setLoading(true);
       setError(null);
       
-      const newSchool = {
-        name: school.name, // Required property
-        region_id: school.region_id, // Required property
-        sector_id: school.sector_id, // Required property
-        address: school.address || '',
-        email: school.email || '',
-        phone: school.phone || '',
-        principal_name: school.principal_name || '',
-        status: school.status || 'active',
-        logo: school.logo || '',
-        language: school.language || '',
-        admin_id: school.admin_id || null,
-        admin_email: school.admin_email || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
       const { data, error } = await supabase
         .from('schools')
-        .insert(newSchool)
+        .insert([schoolData])
         .select()
         .single();
-        
+      
       if (error) throw error;
       
       setSchools(prev => [...prev, data]);
-      toast.success(t('schoolAdded'));
-      
-      return data;
-    } catch (err) {
-      console.error('Error adding school:', err);
-      setError(err as Error);
-      toast.error(t('errorAddingSchool'));
+      toast.success('School created successfully');
+    } catch (err: any) {
+      console.error('Error creating school:', err);
+      setError(err.message || 'Error creating school');
+      toast.error(err.message || 'Error creating school');
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const updateSchool = async (id: string, school: Partial<School>): Promise<School> => {
+  const handleUpdateSchool = async (school: School) => {
     try {
       setLoading(true);
       setError(null);
       
-      const updatedSchool = {
-        ...school,
-        updated_at: new Date().toISOString()
-      };
-      
       const { data, error } = await supabase
         .from('schools')
-        .update(updatedSchool)
-        .eq('id', id)
+        .update(school)
+        .eq('id', school.id)
         .select()
         .single();
-        
+      
       if (error) throw error;
       
-      setSchools(prev => prev.map(s => s.id === id ? { ...s, ...data } : s));
-      toast.success(t('schoolUpdated'));
-      
-      return data;
-    } catch (err) {
+      setSchools(prev => prev.map(s => s.id === school.id ? data : s));
+      toast.success('School updated successfully');
+    } catch (err: any) {
       console.error('Error updating school:', err);
-      setError(err as Error);
-      toast.error(t('errorUpdatingSchool'));
+      setError(err.message || 'Error updating school');
+      toast.error(err.message || 'Error updating school');
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteSchool = async (id: string): Promise<void> => {
+  const handleDeleteSchool = async (schoolId: string) => {
     try {
       setLoading(true);
       setError(null);
       
       const { error } = await supabase
         .from('schools')
-        .update({ status: 'inactive', updated_at: new Date().toISOString() })
-        .eq('id', id);
-        
+        .delete()
+        .eq('id', schoolId);
+      
       if (error) throw error;
       
-      setSchools(prev => prev.filter(s => s.id !== id));
-      toast.success(t('schoolDeleted'));
-    } catch (err) {
+      setSchools(prev => prev.filter(s => s.id !== schoolId));
+      toast.success('School deleted successfully');
+    } catch (err: any) {
       console.error('Error deleting school:', err);
-      setError(err as Error);
-      toast.error(t('errorDeletingSchool'));
+      setError(err.message || 'Error deleting school');
+      toast.error(err.message || 'Error deleting school');
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const getSchool = (id: string): School | undefined => {
-    return schools.find(s => s.id === id);
-  };
-
-  const getSchoolsByRegion = (regionId: string): School[] => {
-    return schools.filter(s => s.region_id === regionId);
-  };
-
-  const getSchoolsBySector = (sectorId: string): School[] => {
-    return schools.filter(s => s.sector_id === sectorId);
-  };
-
-  const refetchSchools = async (): Promise<void> => {
-    await fetchSchools();
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchSchools();
+  const handleAssignAdmin = async (schoolId: string, userId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { error } = await supabase.rpc('assign_school_admin', {
+        user_id_param: userId,
+        school_id_param: schoolId
+      });
+      
+      if (error) throw error;
+      
+      // Update the school list with the new admin
+      await fetchSchools();
+      toast.success('Admin assigned successfully');
+    } catch (err: any) {
+      console.error('Error assigning school admin:', err);
+      setError(err.message || 'Error assigning school admin');
+      toast.error(err.message || 'Error assigning school admin');
+      throw err;
+    } finally {
+      setLoading(false);
     }
-  }, [user]);
+  };
 
-  const value: SchoolsContextType = {
+  const contextValue = useMemo(() => ({
     schools,
     loading,
     error,
-    addSchool,
-    updateSchool,
-    deleteSchool,
-    getSchool,
-    refetchSchools,
-    getSchoolsByRegion,
-    getSchoolsBySector
-  };
+    fetchSchools,
+    handleCreateSchool,
+    handleUpdateSchool,
+    handleDeleteSchool,
+    handleAssignAdmin
+  }), [schools, loading, error]);
 
-  return <SchoolsContext.Provider value={value}>{children}</SchoolsContext.Provider>;
+  return (
+    <SchoolsContext.Provider value={contextValue}>
+      {children}
+    </SchoolsContext.Provider>
+  );
+};
+
+export const useSchoolsContext = () => {
+  const context = useContext(SchoolsContext);
+  if (context === undefined) {
+    throw new Error('useSchoolsContext must be used within a SchoolsProvider');
+  }
+  return context;
 };

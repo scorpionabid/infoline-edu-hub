@@ -2,38 +2,41 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Column } from '@/types/column';
-import { usePermissions } from '../auth';
-import { adaptDbColumnToFrontend } from './useColumnAdapters';
 
-interface UseColumnsQueryParams {
-  categoryId: string;
+interface UseColumnQueryOptions {
+  columnId?: string;
+  enabled?: boolean;
 }
 
-export const useColumnsQuery = ({ categoryId }: UseColumnsQueryParams) => {
-  const permissions = usePermissions();
+export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptions) => {
+  const fetchColumn = async (): Promise<Column | null> => {
+    if (!columnId) return null;
 
-  const fetchColumns = useQuery({
-    queryKey: ['columns', categoryId, permissions],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('columns')
-        .select('*')
-        .eq('category_id', categoryId)
-        .order('order_index', { ascending: true });
+    const { data, error } = await supabase
+      .from('columns')
+      .select('*')
+      .eq('id', columnId)
+      .single();
 
-      if (error) {
-        console.error('Error fetching columns:', error);
-        throw new Error(error.message);
-      }
-
-      return (data as Column[]).map((column) => adaptDbColumnToFrontend(column));
-    },
-    enabled: !!categoryId && !!permissions,
-    initialData: [],
-    meta: {
-      errorMessage: 'Failed to load columns'
+    if (error) throw error;
+    
+    // Transform the data to match the Column interface
+    if (data) {
+      return {
+        ...data,
+        options: data.options ? (typeof data.options === 'string' ? JSON.parse(data.options) : data.options) : undefined,
+        validation: data.validation ? (typeof data.validation === 'string' ? JSON.parse(data.validation) : data.validation) : undefined
+      } as Column;
     }
-  });
+    
+    return null;
+  };
 
-  return fetchColumns;
+  return useQuery({
+    queryKey: ['column', columnId],
+    queryFn: fetchColumn,
+    enabled: Boolean(columnId) && enabled
+  });
 };
+
+export default useColumnQuery;

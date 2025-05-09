@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Session } from '@supabase/supabase-js';
@@ -606,9 +605,21 @@ export const selectIsLoading = (state: AuthState) => state.isLoading;
 export const selectError = (state: AuthState) => state.error;
 export const selectSession = (state: AuthState) => state.session;
 export const selectUserRole = (state: AuthState) => state.user?.role;
-export const selectRegionId = (state: AuthState) => state.user?.region_id;
-export const selectSectorId = (state: AuthState) => state.user?.sector_id;
-export const selectSchoolId = (state: AuthState) => state.user?.school_id;
+export const selectRegionId = (state: AuthState) => {
+  const user = state.user;
+  if (!user) return null;
+  return user.region_id || null;
+};
+export const selectSectorId = (state: AuthState) => {
+  const user = state.user;
+  if (!user) return null;
+  return user.sector_id || null;
+};
+export const selectSchoolId = (state: AuthState) => {
+  const user = state.user;
+  if (!user) return null;
+  return user.school_id || null;
+};
 
 // Helper to determine if user needs to authenticate
 export const shouldAuthenticate = (currentPath = '', isLoading = false, isAuthenticated = false): boolean => {

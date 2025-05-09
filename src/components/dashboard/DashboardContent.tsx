@@ -297,20 +297,20 @@ const DashboardContent: React.FC = () => {
       return (
         <RegionAdminDashboard 
           data={mockRegionAdminData()} 
-          regionId={user.region_id || user.regionId || ''}
+          regionId={user.region_id || ''}
         />
       );
     case 'sectoradmin':
       return (
         <SectorAdminDashboard 
           data={mockSectorAdminData()} 
-          sectorId={user.sector_id || user.sectorId || ''}
+          sectorId={user.sector_id || ''}
         />
       );
     case 'schooladmin':
       return (
         <SchoolAdminDashboard 
-          schoolId={user.school_id || user.schoolId || ''}
+          schoolId={user.school_id || ''}
           data={mockSchoolAdminData()}
         />
       );

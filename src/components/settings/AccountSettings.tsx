@@ -49,13 +49,10 @@ const AccountSettings = () => {
     
     setLoading(true);
     try {
-      // Create a copy of the user object with updated notification settings
+      // Create updated user data without using metadata directly
       const updatedUser = {
         ...user,
-        metadata: {
-          ...(user.metadata || {}),
-          notificationSettings: settings
-        }
+        notificationSettings: settings
       };
       
       await updateUser(updatedUser);
@@ -94,8 +91,8 @@ const AccountSettings = () => {
     return null;
   }
 
-  // Use notificationSettings from the user object if available, otherwise use default values
-  const notificationSettings = user.metadata?.notificationSettings || {
+  // Get notification settings from user directly or default values
+  const notificationSettings = user.notificationSettings || {
     email: true,
     inApp: true,
     push: true,
@@ -121,7 +118,7 @@ const AccountSettings = () => {
             </CardHeader>
             <CardContent>
               <ProfileForm 
-                user={user as any} 
+                user={user} 
                 onSubmit={handleProfileUpdate} 
                 loading={loading}
               />

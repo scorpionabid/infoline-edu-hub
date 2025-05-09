@@ -1,122 +1,98 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useLanguageSafe } from '@/context/LanguageContext';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 
 export const useAssignUserAsAdmin = () => {
-  const { t } = useLanguageSafe();
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
-  const assignSchoolAdmin = async (userId: string, schoolId: string) => {
-    if (!userId || !schoolId) {
-      setError(t('missingRequiredFields'));
-      return false;
-    }
-
-    setLoading(true);
-    setError(null);
-
+  // Assign school admin
+  const assignSchoolAdmin = async (schoolId: string, userId: string) => {
     try {
-      // Call the assign_school_admin RPC function
-      const { error: rpcError } = await supabase.rpc('assign_school_admin', {
-        p_user_id: userId,
-        p_school_id: schoolId
+      setIsLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase.rpc('assign_school_admin', {
+        user_id_param: userId,
+        school_id_param: schoolId
       });
-
-      if (rpcError) throw rpcError;
-
-      setSuccess(true);
-      toast.success(t('schoolAdminAssignmentSuccess'));
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success('İstifadəçi məktəb admini olaraq təyin edildi');
       return true;
     } catch (err: any) {
       console.error('Error assigning school admin:', err);
-      setError(err.message);
-      toast.error(t('schoolAdminAssignmentError'));
+      setError(err.message || 'Məktəb admini təyin etmə xətası');
+      toast.error(err.message || 'Məktəb admini təyin etmə xətası');
       return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const assignSectorAdmin = async (userId: string, sectorId: string) => {
-    if (!userId || !sectorId) {
-      setError(t('missingRequiredFields'));
-      return false;
-    }
-
-    setLoading(true);
-    setError(null);
-
+  // Assign region admin
+  const assignRegionAdmin = async (regionId: string, userId: string) => {
     try {
-      // Call the assign_sector_admin RPC function
-      const { error: rpcError } = await supabase.rpc('assign_sector_admin', {
-        p_user_id: userId,
-        p_sector_id: sectorId
+      setIsLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase.rpc('assign_region_admin', {
+        user_id_param: userId,
+        region_id_param: regionId
       });
-
-      if (rpcError) throw rpcError;
-
-      setSuccess(true);
-      toast.success(t('sectorAdminAssignmentSuccess'));
-      return true;
-    } catch (err: any) {
-      console.error('Error assigning sector admin:', err);
-      setError(err.message);
-      toast.error(t('sectorAdminAssignmentError'));
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const assignRegionAdmin = async (userId: string, regionId: string) => {
-    if (!userId || !regionId) {
-      setError(t('missingRequiredFields'));
-      return false;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Call the assign_region_admin RPC function with correct parameter type
-      const { error: rpcError } = await supabase.rpc('assign_region_admin' as any, {
-        p_user_id: userId,
-        p_region_id: regionId
-      });
-
-      if (rpcError) throw rpcError;
-
-      setSuccess(true);
-      toast.success(t('regionAdminAssignmentSuccess'));
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success('İstifadəçi region admini olaraq təyin edildi');
       return true;
     } catch (err: any) {
       console.error('Error assigning region admin:', err);
-      setError(err.message);
-      toast.error(t('regionAdminAssignmentError'));
+      setError(err.message || 'Region admini təyin etmə xətası');
+      toast.error(err.message || 'Region admini təyin etmə xətası');
       return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const resetState = () => {
-    setSuccess(false);
-    setError(null);
+  // Assign sector admin
+  const assignSectorAdmin = async (sectorId: string, userId: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase.rpc('assign_sector_admin', {
+        user_id_param: userId,
+        sector_id_param: sectorId
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success('İstifadəçi sektor admini olaraq təyin edildi');
+      return true;
+    } catch (err: any) {
+      console.error('Error assigning sector admin:', err);
+      setError(err.message || 'Sektor admini təyin etmə xətası');
+      toast.error(err.message || 'Sektor admini təyin etmə xətası');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return {
     assignSchoolAdmin,
-    assignSectorAdmin,
     assignRegionAdmin,
-    loading,
-    success,
-    error,
-    resetState
+    assignSectorAdmin,
+    isLoading,
+    error
   };
 };

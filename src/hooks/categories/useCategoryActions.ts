@@ -1,167 +1,85 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/column';
+import { Category } from '@/types/category';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
 
 export const useCategoryActions = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const { t } = useLanguage();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Kateqoriya yaratmaq
-  const createCategory = async (category: Omit<Category, 'id'>) => {
-    setIsLoading(true);
-    setError('');
-
+  const createCategory = async (categoryData: Partial<Category>) => {
     try {
-      // Convert deadline to string if it's a Date
-      const deadline = category.deadline instanceof Date 
-        ? category.deadline.toISOString() 
-        : category.deadline;
-        
-      // Prepare category data for Supabase
-      const categoryData = {
-        name: category.name,
-        description: category.description,
-        status: category.status,
-        deadline: deadline,
-        priority: category.priority,
-        assignment: category.assignment,
-        archived: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      setLoading(true);
+      setError(null);
 
-      const { data, error: err } = await supabase
+      const { data, error } = await supabase
         .from('categories')
-        .insert(categoryData)
-        .select();
+        .insert([categoryData])
+        .select()
+        .single();
 
-      if (err) {
-        setError(err.message);
-        toast.error(t('errorCreatingCategory'));
-        return { success: false, error: err.message };
-      }
+      if (error) throw error;
 
-      toast.success(t('categoryCreated'));
-      return { success: true, data };
+      toast.success('Kateqoriya uğurla yaradıldı');
+      return data;
     } catch (err: any) {
-      setError(err.message);
-      toast.error(t('errorCreatingCategory'));
-      return { success: false, error: err.message };
+      console.error('Error creating category:', err);
+      setError(err.message || 'Kateqoriya yaratmaq mümkün olmadı');
+      toast.error(err.message || 'Kateqoriya yaratmaq mümkün olmadı');
+      return null;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  // Kateqoriya yeniləmək
-  const updateCategory = async (category: Omit<Category, 'id'> & { id: string }) => {
-    setIsLoading(true);
-    setError('');
-
+  const updateCategory = async (id: string, categoryData: Partial<Category>) => {
     try {
-      // Convert deadline to string if it's a Date
-      const deadline = category.deadline instanceof Date 
-        ? category.deadline.toISOString() 
-        : category.deadline;
-        
-      // Prepare category data for Supabase
-      const categoryData = {
-        name: category.name,
-        description: category.description,
-        status: category.status,
-        deadline: deadline,
-        priority: category.priority,
-        assignment: category.assignment,
-        updated_at: new Date().toISOString()
-      };
+      setLoading(true);
+      setError(null);
 
-      const { data, error: err } = await supabase
+      const { data, error } = await supabase
         .from('categories')
         .update(categoryData)
-        .eq('id', category.id)
-        .select();
+        .eq('id', id)
+        .select()
+        .single();
 
-      if (err) {
-        setError(err.message);
-        toast.error(t('errorUpdatingCategory'));
-        return { success: false, error: err.message };
-      }
+      if (error) throw error;
 
-      toast.success(t('categoryUpdated'));
-      return { success: true, data };
+      toast.success('Kateqoriya uğurla yeniləndi');
+      return data;
     } catch (err: any) {
-      setError(err.message);
-      toast.error(t('errorUpdatingCategory'));
-      return { success: false, error: err.message };
+      console.error('Error updating category:', err);
+      setError(err.message || 'Kateqoriya yeniləmək mümkün olmadı');
+      toast.error(err.message || 'Kateqoriya yeniləmək mümkün olmadı');
+      return null;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  // Kateqoriya silmək (arxivləmək)
-  const deleteCategory = async (categoryId: string) => {
-    setIsLoading(true);
-    setError('');
-
+  const deleteCategory = async (id: string) => {
     try {
-      const { error: err } = await supabase
+      setLoading(true);
+      setError(null);
+
+      const { error } = await supabase
         .from('categories')
-        .update({
-          archived: true,
-          status: 'inactive',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', categoryId);
+        .delete()
+        .eq('id', id);
 
-      if (err) {
-        setError(err.message);
-        toast.error(t('errorDeletingCategory'));
-        return { success: false, error: err.message };
-      }
+      if (error) throw error;
 
-      toast.success(t('categoryDeleted'));
-      return { success: true };
+      toast.success('Kateqoriya uğurla silindi');
+      return true;
     } catch (err: any) {
-      setError(err.message);
-      toast.error(t('errorDeletingCategory'));
-      return { success: false, error: err.message };
+      console.error('Error deleting category:', err);
+      setError(err.message || 'Kateqoriya silmək mümkün olmadı');
+      toast.error(err.message || 'Kateqoriya silmək mümkün olmadı');
+      return false;
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Kateqoriyanın statusunu dəyişdirmək
-  const updateCategoryStatus = async (categoryId: string, status: string) => {
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const { data, error: err } = await supabase
-        .from('categories')
-        .update({
-          status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', categoryId)
-        .select();
-
-      if (err) {
-        setError(err.message);
-        toast.error(t('errorUpdatingCategoryStatus'));
-        return { success: false, error: err.message };
-      }
-
-      toast.success(t('categoryStatusUpdated'));
-      return { success: true, data };
-    } catch (err: any) {
-      setError(err.message);
-      toast.error(t('errorUpdatingCategoryStatus'));
-      return { success: false, error: err.message };
-    } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -169,8 +87,7 @@ export const useCategoryActions = () => {
     createCategory,
     updateCategory,
     deleteCategory,
-    updateCategoryStatus,
-    isLoading,
+    loading,
     error
   };
 };
