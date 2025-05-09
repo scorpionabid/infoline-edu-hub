@@ -5,16 +5,11 @@ import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import RegionCompletionCard from './superadmin/RegionCompletionCard';
 import SectorCompletionCard from './superadmin/SectorCompletionCard';
-import NotificationsCard from './common/NotificationsCard'; 
-import { SuperAdminDashboardData } from '@/types/dashboard';
+import NotificationsCard from './common/NotificationsCard';
+import { SuperAdminDashboardProps } from '@/types/dashboard';
 import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
-import { AppNotification } from '@/types/notification';
 
-interface SuperAdminDashboardProps {
-  data: SuperAdminDashboardData;
-}
-
-export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
+const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   // Convert notifications to AppNotification type
   const adaptedNotifications = Array.isArray(data.notifications) 
     ? data.notifications.map(notification => adaptDashboardNotificationToApp(notification)) 
@@ -27,26 +22,26 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
       <Grid columns={4} className="gap-6">
         <StatsCard
           title="Regionlar"
-          value={data.regionStats?.length || 0}
+          value={data.totalRegions || 0}
           icon="R"
           description="Toplam region sayı"
-          trend={`${data.regionStats?.filter(r => r.status === 'active').length || 0} aktiv`}
+          trend={`${data.regionStats?.filter(r => r.status === 'active')?.length || 0} aktiv`}
           trendDirection="up"
         />
         <StatsCard
           title="Sektorlar"
-          value={data.sectorStats?.length || 0}
+          value={data.totalSectors || 0}
           icon="S"
           description="Toplam sektor sayı"
-          trend={`${data.sectorStats?.filter(s => s.status === 'active').length || 0} aktiv`}
+          trend={`${data.sectorStats?.filter(s => s.status === 'active')?.length || 0} aktiv`}
           trendDirection="up"
         />
         <StatsCard
           title="Məktəblər"
-          value={data.schoolStats?.length || 0}
+          value={data.totalSchools || 0}
           icon="M"
           description="Toplam məktəb sayı"
-          trend={`${data.schoolStats?.filter(s => s.status === 'active').length || 0} aktiv`}
+          trend={`${data.schoolStats?.filter(s => s.status === 'active')?.length || 0} aktiv`}
           trendDirection="up"
         />
         <StatsCard
@@ -68,6 +63,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }
         <NotificationsCard
           title="Bildirişlər"
           notifications={adaptedNotifications}
+          onMarkAsRead={() => {}}
         />
       </Grid>
       
