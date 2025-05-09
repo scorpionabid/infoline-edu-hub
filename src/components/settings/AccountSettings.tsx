@@ -11,12 +11,21 @@ import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { FullUserData } from '@/types/auth';
+
+interface AccountFormData extends Partial<FullUserData> {
+  notificationSettings: {
+    email: boolean;
+    push: boolean;
+    app: boolean;
+  };
+}
 
 const AccountSettings = () => {
-  const { user, updateUserData } = useAuth();
+  const { user, updateProfile } = useAuth();
   const { t, changeLanguage, currentLanguage } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<AccountFormData>({
     full_name: '',
     phone: '',
     position: '',
@@ -77,10 +86,10 @@ const AccountSettings = () => {
     setIsLoading(true);
     
     try {
-      // Type cast user object to ensure compatibility
-      await updateUserData({
-        ...formData,
-      } as any);
+      // Update user profile using the auth context
+      await updateProfile({
+        ...formData
+      });
       
       toast.success(t('profileUpdated'));
     } catch (error: any) {

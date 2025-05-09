@@ -1,60 +1,62 @@
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
+import { Region } from '@/types/supabase';
+import { Loader2 } from 'lucide-react';
 
-interface Region {
-  id: string;
-  name: string;
-}
-
-interface DeleteRegionDialogProps {
+export interface DeleteRegionDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onDeleteRegion: (id: string) => void;
-  region: Region | null;
-  isLoading: boolean;
+  region: Region;
+  onConfirm: () => Promise<void>;
+  isSubmitting: boolean;
 }
 
 const DeleteRegionDialog: React.FC<DeleteRegionDialogProps> = ({
   isOpen,
   onClose,
-  onDeleteRegion,
   region,
-  isLoading,
+  onConfirm,
+  isSubmitting
 }) => {
-  const handleDelete = () => {
-    if (region?.id) {
-      onDeleteRegion(region.id);
-    }
-  };
+  const { t } = useLanguage();
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete Region</DialogTitle>
+          <DialogTitle>{t('deleteRegion')}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete the region: {region?.name}?
-            This action cannot be undone.
+            {t('deleteRegionConfirmation', { name: region.name })}
           </DialogDescription>
         </DialogHeader>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
-            {isLoading ? 'Deleting...' : 'Delete Region'}
-          </Button>
-        </DialogFooter>
+        <div className="space-y-4">
+          <div className="text-destructive">
+            {t('deleteRegionWarning')}
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+              {t('cancel')}
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={onConfirm} 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('deleting')}
+                </>
+              ) : (
+                t('delete')
+              )}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

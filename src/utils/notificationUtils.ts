@@ -1,17 +1,17 @@
 
-import { AppNotification, DashboardNotification, NotificationType } from "@/types/notification";
+import { AppNotification, DashboardNotification, NotificationType, NotificationPriority } from "@/types/notification";
 
-export function adaptDashboardNotificationToApp(dashboardNotification: any): AppNotification {
+export function adaptDashboardNotificationToApp(dashboardNotification: DashboardNotification): AppNotification {
   return {
     id: dashboardNotification.id || Math.random().toString(),
     title: dashboardNotification.title || '',
     message: dashboardNotification.message || '',
     type: (dashboardNotification.type || 'info') as NotificationType,
     isRead: dashboardNotification.isRead ?? false,
-    createdAt: dashboardNotification.createdAt || dashboardNotification.date || new Date().toISOString(),
-    priority: dashboardNotification.priority || 'normal',
-    relatedEntityId: dashboardNotification.relatedEntityId,
-    relatedEntityType: dashboardNotification.relatedEntityType
+    createdAt: dashboardNotification.createdAt || dashboardNotification.date || dashboardNotification.timestamp || new Date().toISOString(),
+    priority: 'normal',
+    relatedEntityId: undefined,
+    relatedEntityType: undefined
   };
 }
 

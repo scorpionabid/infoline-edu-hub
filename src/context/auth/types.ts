@@ -31,6 +31,7 @@ export interface AuthContextType {
   logout: () => Promise<void>; // Alias for logOut
   signOut: () => Promise<void>; // Alias for logOut
   updateUser: (data: Partial<FullUserData>) => void;
+  updateUserData: (data: Partial<FullUserData>) => Promise<void>;
   clearError: () => void;
   refreshProfile: () => Promise<FullUserData | null>;
   refreshSession: () => Promise<void>;

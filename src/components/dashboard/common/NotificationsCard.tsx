@@ -1,74 +1,105 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { formatDistanceToNow } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
-import { AppNotification } from '@/types/notification';
-import { formatDate } from '@/utils/formatters';
+import { Bell, Info, AlertTriangle, CheckCircle, X } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { DashboardNotification } from '@/types/notification';
 
-export interface NotificationsCardProps {
-  title?: string;
-  notifications: AppNotification[];
-  emptyMessage?: string;
-  onMarkAsRead?: (id: string) => void;
-  limit?: number;
-  className?: string;
+interface NotificationsCardProps {
+  notifications: DashboardNotification[];
+  onMarkAsRead: (id: string) => void;
 }
 
-export const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
-  title = 'Bildirişlər',
-  notifications = [], 
-  emptyMessage = 'Bildiriş yoxdur',
+const NotificationsCard: React.FC<NotificationsCardProps> = ({
+  notifications,
   onMarkAsRead,
-  limit = 5,
-  className
 }) => {
   const { t } = useLanguage();
 
-  // Bildirişləri tarix əsasında sıralayaq
-  const sortedNotifications = [...notifications]
-    .sort((a, b) => {
-      const dateA = a.createdAt || a.timestamp || a.date || '';
-      const dateB = b.createdAt || b.timestamp || b.date || '';
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
-    })
-    .slice(0, limit);
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'info':
+        return <Info className="h-4 w-4 text-blue-500" />;
+      case 'warning':
+        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case 'error':
+        return <X className="h-4 w-4 text-red-500" />;
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      default:
+        return <Bell className="h-4 w-4 text-slate-500" />;
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+    } catch (e) {
+      return dateStr;
+    }
+  };
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>{title || t('notifications')}</CardTitle>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium flex justify-between items-center">
+          <span>{t('notifications')}</span>
+          {notifications.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => {}}>
+              {t('viewAll')}
+            </Button>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        {sortedNotifications.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground flex flex-col items-center justify-center">
-            <Bell className="h-8 w-8 mb-2 opacity-25" />
-            <p>{emptyMessage || t('noNotifications')}</p>
+        {notifications.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Bell className="mx-auto h-8 w-8 mb-2 opacity-50" />
+            <p>{t('noNotifications')}</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {sortedNotifications.map((notification) => (
-              <div 
-                key={notification.id} 
-                className={`p-3 rounded-md border ${notification.isRead ? 'bg-background' : 'bg-accent'}`}
-                onClick={() => onMarkAsRead && onMarkAsRead(notification.id)}
-              >
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    notification.type === 'success' ? 'bg-green-500' : 
-                    notification.type === 'error' ? 'bg-red-500' : 
-                    notification.type === 'warning' ? 'bg-amber-500' : 
-                    'bg-blue-500'
-                  }`} />
-                  <h4 className="font-medium text-sm">{notification.title}</h4>
+          <ScrollArea className="h-[240px]">
+            <div className="space-y-4">
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`p-3 rounded-lg border ${
+                    notification.isRead ? 'bg-background' : 'bg-accent'
+                  }`}
+                >
+                  <div className="flex items-start">
+                    <div className="mr-2 mt-0.5">
+                      {getNotificationIcon(notification.type)}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium">{notification.title}</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {notification.message}
+                      </p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(notification.createdAt)}
+                        </span>
+                        {!notification.isRead && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => onMarkAsRead(notification.id)}
+                          >
+                            {t('markAsRead')}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                <div className="text-xs text-muted-foreground mt-2">
-                  {formatDate(notification.createdAt || notification.timestamp || notification.date || '')}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         )}
       </CardContent>
     </Card>

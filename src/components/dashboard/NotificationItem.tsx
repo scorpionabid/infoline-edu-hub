@@ -1,100 +1,87 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { formatDate } from "@/utils/formatters";
-import { AppNotification } from '@/types/notification';
-import { Eye, BellRing } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Check, AlertCircle, Info, Bell, CalendarClock } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { AppNotification, NotificationPriority } from '@/types/notification';
 
 interface NotificationItemProps {
   notification: AppNotification;
   onMarkAsRead?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMarkAsRead }) => {
-  const getTypeIcon = () => {
-    switch (notification.type) {
-      case 'warning':
-        return <span className="text-amber-500">⚠️</span>;
+const NotificationItem: React.FC<NotificationItemProps> = ({ 
+  notification, 
+  onMarkAsRead,
+  onDelete
+}) => {
+  const getIcon = () => {
+    switch(notification.type) {
       case 'error':
-        return <span className="text-destructive">❌</span>;
+        return <AlertCircle className="text-destructive" />;
       case 'success':
-        return <span className="text-green-500">✓</span>;
-      case 'info':
+        return <Check className="text-success" />;
+      case 'warning':
+        return <AlertCircle className="text-warning" />;
+      case 'deadline':
+        return <CalendarClock className="text-primary" />;
       default:
-        return <span className="text-blue-500">ℹ️</span>;
+        return <Info className="text-info" />;
     }
   };
-  
-  const getTypeClass = () => {
-    switch (notification.type) {
-      case 'warning':
-        return "border-l-4 border-l-amber-500";
-      case 'error':
-        return "border-l-4 border-l-destructive";
-      case 'success':
-        return "border-l-4 border-l-green-500";
-      case 'info':
-      default:
-        return "border-l-4 border-l-blue-500";
-    }
-  };
-  
-  const getPriorityClass = () => {
-    switch (notification.priority) {
+
+  const getPriorityClass = (priority: NotificationPriority | undefined) => {
+    switch(priority) {
       case 'high':
-        return "bg-orange-50 dark:bg-orange-900/20";
+        return 'border-l-4 border-orange-500';
       case 'critical':
-      case 'normal':
+        return 'border-l-4 border-red-500';
+      case 'low':
+        return 'border-l-4 border-blue-300';
       default:
-        return "";
+        return '';
     }
   };
-  
-  const handleMarkAsRead = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (onMarkAsRead) {
+
+  const handleMarkAsRead = () => {
+    if (onMarkAsRead && !notification.isRead) {
       onMarkAsRead(notification.id);
     }
   };
-  
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(notification.id);
+    }
+  };
+
+  const timeAgo = formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true });
+
   return (
-    <Card className={cn(
-      "mb-3 transition-all hover:shadow-md cursor-pointer",
-      getTypeClass(),
-      getPriorityClass(),
-      !notification.isRead ? "bg-primary-foreground/50" : ""
-    )}>
-      <CardContent className="p-3">
-        <div className="flex items-start gap-2">
-          <div className="flex-shrink-0 mt-1">
-            {getTypeIcon()}
-          </div>
-          <div className="flex-grow">
-            <div className="text-sm font-medium">
-              {notification.title}
-              {!notification.isRead && <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-blue-600"></span>}
-            </div>
-            <p className="text-sm text-muted-foreground line-clamp-2">{notification.message}</p>
-            <div className="flex items-center justify-between text-xs mt-2 text-muted-foreground">
-              <span>{formatDate(notification.createdAt || notification.date || '')}</span>
-              {!notification.isRead && onMarkAsRead && (
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  onClick={handleMarkAsRead}
-                  className="h-6 px-2 text-xs"
-                >
-                  <Eye className="h-3 w-3 mr-1" />
-                  Oxundu
-                </Button>
-              )}
-            </div>
+    <Card 
+      className={`cursor-pointer transition-all hover:bg-accent p-3 ${!notification.isRead ? 'bg-accent/50' : ''} ${getPriorityClass(notification.priority)}`}
+      onClick={handleMarkAsRead}
+    >
+      <div className="flex items-start gap-3">
+        <div className="mt-1">
+          {getIcon()}
+        </div>
+        <div className="flex-1">
+          <h4 className="font-medium">{notification.title}</h4>
+          <p className="text-sm text-muted-foreground">{notification.message}</p>
+          <div className="flex justify-between items-center mt-2">
+            <p className="text-xs text-muted-foreground">{timeAgo}</p>
+            {onDelete && (
+              <Button variant="ghost" size="sm" onClick={handleDelete}>
+                <Bell className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 };

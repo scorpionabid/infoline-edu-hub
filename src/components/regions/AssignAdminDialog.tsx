@@ -1,123 +1,138 @@
 
 import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { useLanguage } from '@/context/LanguageContext';
+import { Region } from '@/types/supabase';
+import { Loader2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/components/ui/use-toast';
+} from "@/components/ui/select";
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-}
-
-interface Region {
-  id: string;
-  name: string;
-}
-
-interface AssignAdminDialogProps {
+export interface AssignAdminDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAssignAdmin: (regionId: string, userId: string) => void;
-  region: Region | null;
-  users: User[];
-  isLoading: boolean;
+  region: Region;
+  onSubmit: (userId: string) => Promise<void>;
+  isSubmitting: boolean;
 }
 
 const AssignAdminDialog: React.FC<AssignAdminDialogProps> = ({
   isOpen,
   onClose,
-  onAssignAdmin,
   region,
-  users,
-  isLoading,
+  onSubmit,
+  isSubmitting
 }) => {
+  const { t } = useLanguage();
+  const [users, setUsers] = useState<any[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    const fetchUsers = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .order('full_name');
+
+        if (error) throw error;
+        setUsers(data || []);
+      } catch (error: any) {
+        console.error('Error fetching users:', error);
+        toast.error(t('errorFetchingUsers'), {
+          description: error.message
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     if (isOpen) {
-      setSelectedUserId('');
+      fetchUsers();
+      setSelectedUserId(region.admin_id || '');
     }
-  }, [isOpen]);
+  }, [isOpen, region.admin_id, t]);
 
-  const handleAssign = () => {
-    if (!region?.id) {
-      toast({
-        title: 'Error',
-        description: 'No region selected',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+  const handleSubmit = async () => {
     if (!selectedUserId) {
-      toast({
-        title: 'Error',
-        description: 'No user selected',
-        variant: 'destructive',
-      });
+      toast.error(t('selectUser'));
       return;
     }
-
-    onAssignAdmin(region.id, selectedUserId);
+    
+    await onSubmit(selectedUserId);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Assign Region Admin</DialogTitle>
-          <DialogDescription>
-            Assign an admin for the region: {region?.name}
-          </DialogDescription>
+          <DialogTitle>{t('assignRegionAdmin')}</DialogTitle>
         </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="user">Select User</Label>
-            <Select
-              value={selectedUserId}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              {t('region')}
+            </label>
+            <div className="p-2 border rounded bg-muted/50">{region.name}</div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              {t('selectUser')}
+            </label>
+            <Select 
+              value={selectedUserId} 
               onValueChange={setSelectedUserId}
+              disabled={isLoading}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select a user" />
+                <SelectValue placeholder={t('selectAdmin')} />
               </SelectTrigger>
               <SelectContent>
-                {users.map((user) => (
+                <SelectItem value="">
+                  {t('noAdminSelected')}
+                </SelectItem>
+                {users.map(user => (
                   <SelectItem key={user.id} value={user.id}>
-                    {user.name || user.email}
+                    {user.full_name || user.email}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+          <div className="flex justify-end space-x-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose} 
+              disabled={isSubmitting || isLoading}
+            >
+              {t('cancel')}
+            </Button>
+            <Button 
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting || isLoading || !selectedUserId}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('saving')}
+                </>
+              ) : (
+                t('assign')
+              )}
+            </Button>
+          </div>
         </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleAssign} disabled={isLoading || !selectedUserId}>
-            {isLoading ? 'Assigning...' : 'Assign Admin'}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

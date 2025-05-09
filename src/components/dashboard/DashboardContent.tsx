@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,7 +10,6 @@ import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import { Info } from 'lucide-react';
-import DoughnutChart from '@/components/charts/DoughnutChart';
 import { useLanguage } from '@/context/LanguageContext';
 import { 
   DeadlineItem, 
@@ -18,7 +18,9 @@ import {
   CategoryItem,
   SchoolAdminDashboardData,
   SectorAdminDashboardData,
-  RegionAdminDashboardData
+  RegionAdminDashboardData,
+  SectorStat,
+  SchoolStat
 } from '@/types/dashboard';
 
 // Mock data for dashboards
@@ -54,23 +56,23 @@ const mockSchoolData: SchoolAdminDashboardData = {
       completionRate: 50,
       deadline: "2025-06-15"
     }
-  ] as CategoryItem[],
+  ],
   upcoming: [
     {
       id: '1',
       name: 'İnfrastruktur',
-      status: 'upcoming',
+      status: 'upcoming' as any,
       dueDate: '2025-06-15',
       progress: 50
     },
     {
       id: '2',
       name: 'Təhsil prosesi',
-      status: 'upcoming',
+      status: 'upcoming' as any,
       dueDate: '2025-06-30',
       progress: 75
     }
-  ] as DeadlineItem[],
+  ],
   formStats: {
     pending: 5,
     approved: 13,
@@ -85,17 +87,17 @@ const mockSchoolData: SchoolAdminDashboardData = {
       id: '1',
       name: 'Tədris planı',
       status: 'pending',
-      date: '2025-05-20',
-      categoryName: 'Təhsil prosesi'
+      categoryName: 'Təhsil prosesi',
+      submittedAt: '2025-05-20'
     },
     {
       id: '2',
       name: 'Müəllim heyəti',
       status: 'pending',
-      date: '2025-05-18',
-      categoryName: 'Kadr resursları'
+      categoryName: 'Kadr resursları',
+      submittedAt: '2025-05-18'
     }
-  ] as FormItem[],
+  ],
   completionRate: 65,
   notifications: []
 };
@@ -122,7 +124,9 @@ const mockSectorData: SectorAdminDashboardData = {
       status: 'active',
       completionRate: 85,
       lastUpdate: '2025-05-05T10:30:00Z',
-      pendingForms: 2
+      pendingForms: 2,
+      formsCompleted: 0,
+      totalForms: 0
     },
     {
       id: '2',
@@ -130,7 +134,9 @@ const mockSectorData: SectorAdminDashboardData = {
       status: 'active',
       completionRate: 60,
       lastUpdate: '2025-05-06T14:15:00Z',
-      pendingForms: 5
+      pendingForms: 5,
+      formsCompleted: 0,
+      totalForms: 0
     }
   ],
   pendingApprovals: [
@@ -148,7 +154,7 @@ const mockSectorData: SectorAdminDashboardData = {
       submittedAt: '2025-05-05T11:20:00Z',
       status: 'pending'
     }
-  ] as PendingApproval[],
+  ],
   formStats: {
     pending: 24,
     approved: 112,
@@ -205,7 +211,7 @@ const mockRegionData: RegionAdminDashboardData = {
       submittedAt: '2025-05-05T11:20:00Z',
       status: 'pending'
     }
-  ] as PendingApproval[]
+  ]
 };
 
 const mockSuperAdminData = {

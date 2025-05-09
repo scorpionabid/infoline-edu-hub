@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -31,7 +32,6 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [schools, setSchools] = useState<School[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
   const { user } = useAuth();
 
   const fetchSchools = async (regionId?: string, sectorId?: string) => {
@@ -57,10 +57,8 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (err: any) {
       console.error('Error fetching schools:', err);
       setError(err.message);
-      toast({
-        title: 'Error',
-        description: `Failed to load schools: ${err.message}`,
-        variant: 'destructive',
+      toast.error('Error', {
+        description: `Failed to load schools: ${err.message}`
       });
     } finally {
       setIsLoading(false);
@@ -82,17 +80,14 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       setSchools((prev) => [...prev, data as School]);
       
-      toast({
-        title: 'Success',
-        description: 'School created successfully',
+      toast.success('Success', {
+        description: 'School created successfully'
       });
     } catch (err: any) {
       console.error('Error creating school:', err);
       setError(err.message);
-      toast({
-        title: 'Error',
-        description: `Failed to create school: ${err.message}`,
-        variant: 'destructive',
+      toast.error('Error', {
+        description: `Failed to create school: ${err.message}`
       });
     } finally {
       setIsLoading(false);
@@ -117,17 +112,14 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         prev.map((school) => (school.id === schoolId ? { ...school, ...data } : school))
       );
       
-      toast({
-        title: 'Success',
-        description: 'School updated successfully',
+      toast.success('Success', {
+        description: 'School updated successfully'
       });
     } catch (err: any) {
       console.error('Error updating school:', err);
       setError(err.message);
-      toast({
-        title: 'Error',
-        description: `Failed to update school: ${err.message}`,
-        variant: 'destructive',
+      toast.error('Error', {
+        description: `Failed to update school: ${err.message}`
       });
     } finally {
       setIsLoading(false);
@@ -148,17 +140,14 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       setSchools((prev) => prev.filter((school) => school.id !== schoolId));
       
-      toast({
-        title: 'Success',
-        description: 'School deleted successfully',
+      toast.success('Success', {
+        description: 'School deleted successfully'
       });
     } catch (err: any) {
       console.error('Error deleting school:', err);
       setError(err.message);
-      toast({
-        title: 'Error',
-        description: `Failed to delete school: ${err.message}`,
-        variant: 'destructive',
+      toast.error('Error', {
+        description: `Failed to delete school: ${err.message}`
       });
     } finally {
       setIsLoading(false);
@@ -172,8 +161,8 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       // First, update the user_roles table
       const { error: rolesError } = await supabase.rpc('assign_school_admin', {
-        p_user_id: userId,
-        p_school_id: schoolId
+        user_id: userId,
+        school_id: schoolId
       });
       
       if (rolesError) throw rolesError;
@@ -186,19 +175,16 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       if (schoolError) throw schoolError;
       
-      toast({
-        title: 'Success',
-        description: 'School admin assigned successfully',
+      toast.success('Success', {
+        description: 'School admin assigned successfully'
       });
       
       await fetchSchools();
     } catch (err: any) {
       console.error('Error assigning school admin:', err);
       setError(err.message);
-      toast({
-        title: 'Error',
-        description: `Failed to assign school admin: ${err.message}`,
-        variant: 'destructive',
+      toast.error('Error', {
+        description: `Failed to assign school admin: ${err.message}`
       });
     } finally {
       setIsLoading(false);
@@ -228,19 +214,16 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (error) throw error;
       }
       
-      toast({
-        title: 'Success',
-        description: `${validSchoolsData.length} schools created successfully`,
+      toast.success('Success', {
+        description: `${validSchoolsData.length} schools created successfully`
       });
       
       await fetchSchools();
     } catch (err: any) {
       console.error('Error creating schools in bulk:', err);
       setError(err.message);
-      toast({
-        title: 'Error',
-        description: `Failed to create schools: ${err.message}`,
-        variant: 'destructive',
+      toast.error('Error', {
+        description: `Failed to create schools: ${err.message}`
       });
     } finally {
       setIsLoading(false);

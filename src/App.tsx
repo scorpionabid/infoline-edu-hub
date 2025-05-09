@@ -8,6 +8,9 @@ import { Toaster } from '@/components/ui/toaster';
 import { useEffect } from 'react';
 import { AppRoutes } from './routes/AppRoutes';
 import { RegisterSW } from './lib/register-sw';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/query-client';
+import { CacheProvider } from '@/context/QueryClientProvider';
 
 function App() {
   useEffect(() => {
@@ -24,16 +27,20 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <AuthProvider>
-        <LanguageProvider>
-          <NotificationProvider>
-            <AppRoutes />
-            <Toaster />
-          </NotificationProvider>
-        </LanguageProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <AuthProvider>
+          <LanguageProvider>
+            <NotificationProvider>
+              <CacheProvider>
+                <AppRoutes />
+                <Toaster />
+              </CacheProvider>
+            </NotificationProvider>
+          </LanguageProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

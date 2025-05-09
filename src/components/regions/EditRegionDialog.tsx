@@ -1,94 +1,79 @@
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useForm } from 'react-hook-form';
+import { useLanguage } from '@/context/LanguageContext';
+import { Region } from '@/types/supabase';
+import { Loader2 } from 'lucide-react';
 
-interface Region {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-}
-
-interface EditRegionDialogProps {
+export interface EditRegionDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onEditRegion: (id: string, name: string, description: string) => void;
-  region: Region | null;
-  isLoading: boolean;
+  region: Region;
+  onSubmit: (region: Region) => Promise<void>;
+  isSubmitting: boolean;
 }
 
 const EditRegionDialog: React.FC<EditRegionDialogProps> = ({
   isOpen,
   onClose,
-  onEditRegion,
   region,
-  isLoading,
+  onSubmit,
+  isSubmitting
 }) => {
-  const [name, setName] = React.useState('');
-  const [description, setDescription] = React.useState('');
-
-  React.useEffect(() => {
-    if (region) {
-      setName(region.name || '');
-      setDescription(region.description || '');
-    }
-  }, [region]);
-
-  const handleSubmit = () => {
-    if (region?.id) {
-      onEditRegion(region.id, name, description);
-    }
-  };
+  const { t } = useLanguage();
+  const { register, handleSubmit, formState: { errors } } = useForm<Region>({
+    defaultValues: region
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Region</DialogTitle>
-          <DialogDescription>
-            Update the region details.
-          </DialogDescription>
+          <DialogTitle>{t('editRegion')}</DialogTitle>
         </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Region name"
-            />
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">{t('regionName')}</Label>
+              <Input
+                id="name"
+                {...register('name', { required: true })}
+                placeholder={t('enterRegionName')}
+                className={errors.name ? 'border-red-500' : ''}
+              />
+              {errors.name && (
+                <p className="text-red-500 text-sm">{t('nameRequired')}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="description">{t('description')}</Label>
+              <Input
+                id="description"
+                {...register('description')}
+                placeholder={t('enterDescription')}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+                {t('cancel')}
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('saving')}
+                  </>
+                ) : (
+                  t('save')
+                )}
+              </Button>
+            </div>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Region description"
-            />
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isLoading || !name.trim()}>
-            {isLoading ? 'Updating...' : 'Update Region'}
-          </Button>
-        </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -1,6 +1,5 @@
+
 import React, { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { az } from 'date-fns/locale';
 import { Bell, Check, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,19 +12,19 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { NotificationItem } from './NotificationItem'; 
 import { useLanguage } from '@/context/LanguageContext';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotifications, NotificationContextType } from '@/hooks/useNotifications';
 import { AppNotification } from '@/types/notification';
 
 export const NotificationComponent: React.FC = () => {
   const { t } = useLanguage();
   const { 
-    notifications = [], 
-    unreadCount = 0, 
-    loading = false, 
-    markAsRead = () => {},
-    markAllAsRead = () => {}, 
-    clearAll = () => {} 
-  } = useNotifications() || {};
+    notifications, 
+    unreadCount, 
+    loading, 
+    markAsRead,
+    markAllAsRead, 
+    clearAll 
+  } = useNotifications();
 
   const [open, setOpen] = useState(false);
 

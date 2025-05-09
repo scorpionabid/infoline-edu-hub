@@ -24,7 +24,7 @@ const NotificationControl: React.FC<NotificationControlProps> = ({
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   
-  const unreadCount = notifications.filter(notification => !notification.isRead && !notification.read).length;
+  const unreadCount = notifications.filter(notification => !notification.isRead).length;
   
   return (
     <Popover open={open} onOpenChange={setOpen}>

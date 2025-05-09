@@ -1,117 +1,209 @@
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
+
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useSchoolsContext } from '@/context/SchoolsContext';
+import { useForm } from 'react-hook-form';
+import { useLanguage } from '@/context/LanguageContext';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { School } from '@/types/school';
+import { Loader2 } from 'lucide-react';
 
 interface CreateSchoolDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  regionId?: string;
-  sectorId?: string;
+  onSubmit: (school: Omit<School, 'id'>) => Promise<void>;
+  regions: { id: string; name: string }[];
+  sectors: { id: string; name: string }[];
+  isSubmitting: boolean;
 }
 
-const CreateSchoolDialog: React.FC<CreateSchoolDialogProps> = ({ isOpen, onClose, regionId, sectorId }) => {
-  const { createSchool, isLoading } = useSchoolsContext();
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [principalName, setPrincipalName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-
-  const handleSubmit = async () => {
-    if (!name || !regionId || !sectorId) {
-      alert('Name, Region and Sector are required.');
-      return;
-    }
-
-    const newSchool: Omit<School, 'id'> = {
-      name,
-      address,
-      principalName,
-      phone,
-      email,
-      region_id: regionId,
-      sector_id: sectorId,
+const CreateSchoolDialog: React.FC<CreateSchoolDialogProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  regions,
+  sectors,
+  isSubmitting
+}) => {
+  const { t } = useLanguage();
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<Partial<School>>({
+    defaultValues: {
       status: 'active',
-      admin_id: null,
+      admin_id: null
+    }
+  });
+
+  const selectedRegionId = watch('region_id');
+
+  const filteredSectors = sectors.filter(sector => 
+    !selectedRegionId || sector.id === selectedRegionId
+  );
+
+  const handleFormSubmit = async (data: Partial<School>) => {
+    // Add default values for created_at and updated_at
+    const now = new Date().toISOString();
+    const schoolData: any = {
+      ...data,
+      created_at: now,
+      updated_at: now
     };
 
-    try {
-      await createSchool(newSchool);
-      onClose();
-    } catch (error) {
-      console.error('Error creating school:', error);
-      alert('Failed to create school.');
-    }
+    await onSubmit(schoolData as Omit<School, 'id'>);
+    reset();
+  };
+
+  const onRegionChange = (value: string) => {
+    setValue('region_id', value);
+    setValue('sector_id', ''); // Reset sector when region changes
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Create School</DialogTitle>
-          <DialogDescription>
-            Add a new school to the system. Make sure to fill all the fields.
-          </DialogDescription>
+          <DialogTitle>{t('addSchool')}</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Name
-            </Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
+        <form onSubmit={handleSubmit(handleFormSubmit)}>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">{t('schoolName')}</Label>
+              <Input
+                id="name"
+                {...register('name', { required: true })}
+                placeholder={t('enterSchoolName')}
+                className={errors.name ? 'border-red-500' : ''}
+              />
+              {errors.name && (
+                <p className="text-red-500 text-xs">{t('nameRequired')}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="region_id">{t('region')}</Label>
+                <Select 
+                  onValueChange={onRegionChange} 
+                  defaultValue={watch('region_id')}
+                >
+                  <SelectTrigger id="region_id" className={errors.region_id ? 'border-red-500' : ''}>
+                    <SelectValue placeholder={t('selectRegion')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {regions.map(region => (
+                      <SelectItem key={region.id} value={region.id}>
+                        {region.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.region_id && (
+                  <p className="text-red-500 text-xs">{t('regionRequired')}</p>
+                )}
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="sector_id">{t('sector')}</Label>
+                <Select 
+                  onValueChange={(value) => setValue('sector_id', value)} 
+                  defaultValue={watch('sector_id')}
+                  disabled={!selectedRegionId}
+                >
+                  <SelectTrigger id="sector_id" className={errors.sector_id ? 'border-red-500' : ''}>
+                    <SelectValue placeholder={t('selectSector')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredSectors.map(sector => (
+                      <SelectItem key={sector.id} value={sector.id}>
+                        {sector.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.sector_id && (
+                  <p className="text-red-500 text-xs">{t('sectorRequired')}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="principal_name">{t('principalName')}</Label>
+              <Input
+                id="principal_name"
+                {...register('principal_name')}
+                placeholder={t('enterPrincipalName')}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="phone">{t('phone')}</Label>
+                <Input
+                  id="phone"
+                  {...register('phone')}
+                  placeholder={t('enterPhoneNumber')}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">{t('email')}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register('email')}
+                  placeholder={t('enterEmail')}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="address">{t('address')}</Label>
+              <Input
+                id="address"
+                {...register('address')}
+                placeholder={t('enterAddress')}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="status">{t('status')}</Label>
+              <Select 
+                onValueChange={(value) => setValue('status', value as any)} 
+                defaultValue={watch('status')}
+              >
+                <SelectTrigger id="status">
+                  <SelectValue placeholder={t('selectStatus')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">{t('active')}</SelectItem>
+                  <SelectItem value="inactive">{t('inactive')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-2">
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+                {t('cancel')}
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('saving')}
+                  </>
+                ) : (
+                  t('save')
+                )}
+              </Button>
+            </div>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="address" className="text-right">
-              Address
-            </Label>
-            <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="principalName" className="text-right">
-              Principal Name
-            </Label>
-            <Input
-              id="principalName"
-              value={principalName}
-              onChange={(e) => setPrincipalName(e.target.value)}
-              className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="phone" className="text-right">
-              Phone
-            </Label>
-            <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="email" className="text-right">
-              Email
-            </Label>
-            <Input id="email" value={email} onChange={(e) => setEmail(e.target.value)} className="col-span-3" />
-          </div>
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="secondary">
-              Cancel
-            </Button>
-          </DialogClose>
-          <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? 'Creating...' : 'Create School'}
-          </Button>
-        </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
