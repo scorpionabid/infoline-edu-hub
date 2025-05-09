@@ -1,52 +1,56 @@
 
-import { AppNotification, DashboardNotification, NotificationType, NotificationPriority } from "@/types/notification";
+import { AppNotification, DashboardNotification, NotificationType } from '@/types/notification';
 
-export function adaptDashboardNotificationToApp(dashboardNotification: any): AppNotification {
+/**
+ * Helper function to adapt dashboard notifications to app notifications
+ */
+export const adaptDashboardNotificationToApp = (notification: DashboardNotification): AppNotification => {
   return {
-    id: dashboardNotification.id || Math.random().toString(),
-    title: dashboardNotification.title || '',
-    message: dashboardNotification.message || '',
-    type: (dashboardNotification.type || 'info') as NotificationType,
-    isRead: dashboardNotification.isRead ?? false,
-    createdAt: dashboardNotification.createdAt || dashboardNotification.date || dashboardNotification.timestamp || new Date().toISOString(),
-    priority: dashboardNotification.priority || 'normal',
-    relatedEntityId: dashboardNotification.relatedEntityId,
-    relatedEntityType: dashboardNotification.relatedEntityType
+    id: notification.id,
+    title: notification.title,
+    message: notification.message,
+    type: notification.type as NotificationType,
+    isRead: notification.isRead ?? false,
+    createdAt: notification.createdAt || notification.date || new Date().toISOString(),
+    date: notification.date,
+    priority: notification.priority as 'low' | 'normal' | 'high' | undefined,
   };
-}
+};
 
-export function adaptAppNotificationToDashboard(appNotification: AppNotification): DashboardNotification {
-  // Convert AppNotification types to DashboardNotification types
-  let dashboardType: 'error' | 'info' | 'warning' | 'success' = 'info';
-  
-  switch(appNotification.type) {
+/**
+ * Get color class based on notification type
+ */
+export const getNotificationColorClass = (type: NotificationType): string => {
+  switch (type) {
     case 'error':
-      dashboardType = 'error';
-      break;
+      return 'bg-destructive text-destructive-foreground';
     case 'warning':
-      dashboardType = 'warning';
-      break;
+      return 'bg-amber-500 text-white';
     case 'success':
-      dashboardType = 'success';
-      break;
-    case 'deadline':
-    case 'approval':
-    case 'category':
-    case 'system':
+      return 'bg-emerald-500 text-white';
     case 'info':
+      return 'bg-blue-500 text-white';
+    case 'system':
+      return 'bg-purple-500 text-white';
+    case 'approval':
+      return 'bg-indigo-500 text-white';
+    case 'deadline':
+      return 'bg-rose-500 text-white';
     default:
-      dashboardType = 'info';
-      break;
+      return 'bg-muted text-muted-foreground';
   }
+};
 
-  return {
-    id: appNotification.id,
-    title: appNotification.title,
-    message: appNotification.message,
-    type: dashboardType,
-    date: appNotification.createdAt,
-    createdAt: appNotification.createdAt,
-    isRead: appNotification.isRead,
-    timestamp: appNotification.createdAt
-  };
-}
+/**
+ * Format date for notification display
+ */
+export const formatNotificationDate = (dateString?: string): string => {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString);
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};

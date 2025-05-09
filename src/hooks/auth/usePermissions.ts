@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react';
 import { useAuthStore, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore'; 
-import { UserRole } from '@/types/user';
+import { UserRole } from '@/types/supabase';
 
 export interface UsePermissionsResult {
   userRole: UserRole | null;
@@ -19,6 +19,11 @@ export interface UsePermissionsResult {
   regionId: string | null;
   sectorId: string | null;
   schoolId: string | null;
+  // For backwards compatibility
+  isSuperAdmin: boolean;
+  isRegionAdmin: boolean;
+  isSectorAdmin: boolean;
+  isSchoolAdmin: boolean;
 }
 
 /**
@@ -77,6 +82,12 @@ export const usePermissions = (): UsePermissionsResult => {
     const sectorId = user?.sector_id || null;
     const schoolId = user?.school_id || null;
 
+    // For backwards compatibility
+    const isSuperAdmin = hasRole('superadmin');
+    const isRegionAdmin = hasRole('regionadmin');
+    const isSectorAdmin = hasRole('sectoradmin');
+    const isSchoolAdmin = hasRole('schooladmin');
+
     return {
       userRole,
       hasRole,
@@ -92,7 +103,11 @@ export const usePermissions = (): UsePermissionsResult => {
       canEnterData,
       regionId,
       sectorId,
-      schoolId
+      schoolId,
+      isSuperAdmin,
+      isRegionAdmin,
+      isSectorAdmin,
+      isSchoolAdmin
     };
   }, [user, userRole]);
 };

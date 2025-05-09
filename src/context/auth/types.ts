@@ -1,8 +1,6 @@
 
-import { User, Session } from '@supabase/supabase-js';
-import { FullUserData } from '@/types/supabase';
-
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+import { Session } from '@supabase/supabase-js';
+import { UserRole, FullUserData } from '@/types/supabase';
 
 export type AuthErrorType = string | null;
 

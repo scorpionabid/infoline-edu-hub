@@ -29,22 +29,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError
   } = useAuthStore();
 
-  // Initialize auth on mount
+  // Initialize auth on mount - only refresh session once
   useEffect(() => {
     console.log("[AuthProvider] Initializing authentication");
-    const initializeAuth = async () => {
-      console.log("[AuthProvider] Refreshing session...");
-      await refreshSession();
-      console.log("[AuthProvider] Session refreshed, authenticated:", isAuthenticated);
-    };
-    
-    initializeAuth();
+    refreshSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Create memoized context value to avoid unnecessary re-renders
   const contextValue = useMemo<AuthContextType>(() => {
-    console.log("[AuthProvider] Creating context value, user role:", user?.role);
+    console.log("[AuthProvider] Creating context value, user:", user?.email, "role:", user?.role);
     return {
       user,
       session,

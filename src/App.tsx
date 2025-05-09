@@ -11,8 +11,8 @@ import { CacheProvider } from '@/context/QueryClientProvider';
 
 /**
  * Main App component with properly ordered providers.
- * Provider order is important: ThemeProvider -> AuthProvider -> LanguageProvider -> 
- * NotificationProvider -> CacheProvider -> AppRoutes
+ * Provider order is important for authentication and state management:
+ * ThemeProvider -> AuthProvider -> LanguageProvider -> NotificationProvider -> CacheProvider
  */
 const App: React.FC = () => {
   useEffect(() => {

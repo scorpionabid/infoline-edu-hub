@@ -1,5 +1,5 @@
 
-import { useContext, useEffect, useState } from 'react';
+import { useContext } from 'react';
 import { AuthContext } from './context';
 import { useAuthStore, selectUser, selectIsAuthenticated, selectIsLoading } from '@/hooks/auth/useAuthStore';
 import { AuthContextType } from './types';
@@ -7,7 +7,7 @@ import { AuthContextType } from './types';
 /**
  * useAuth - Hook for accessing auth state and operations
  * This hook now primarily pulls from the Zustand store, with fallback to context
- * to maintain backward compatibility and ensure consistent state
+ * to maintain backward compatibility
  */
 export const useAuth = (): AuthContextType => {
   // Get data from Zustand store
@@ -17,16 +17,12 @@ export const useAuth = (): AuthContextType => {
   const store = useAuthStore();
   
   // Try to get context for backward compatibility
-  let context;
-  try {
-    context = useContext(AuthContext);
-  } catch (error) {
-    console.warn('AuthContext not available, falling back to Zustand store');
-    context = null;
-  }
+  const context = useContext(AuthContext);
   
   // If context is completely missing, rely on Zustand store
   if (!context) {
+    console.log("[useAuth] Using Zustand store directly, user role:", user?.role);
+    
     // Return an object that matches the AuthContextType interface
     return {
       user,

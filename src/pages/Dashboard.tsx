@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, selectIsAuthenticated, selectIsLoading, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
+import { useStableCallback } from '@/utils/memoizationUtils';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
 import { toast } from 'sonner';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { usePermissions } from '@/hooks/auth';
 import LoadingScreen from '@/components/auth/LoadingScreen';
 
@@ -30,6 +31,7 @@ const Dashboard: React.FC = () => {
     role: user?.role 
   });
 
+  // Redirect to login if not authenticated after loading completes
   useEffect(() => {
     console.log('[Dashboard.tsx] useEffect triggered. Deps:', { isAuthenticated, isLoading, user, userRole });
     
@@ -51,8 +53,6 @@ const Dashboard: React.FC = () => {
       } else if (isAuthenticated && user) {
         console.log("[Dashboard.tsx] useEffect: Authenticated with user data.", user);
       }
-    } else {
-      console.log('[Dashboard.tsx] useEffect: Auth loading is true. Waiting.');
     }
   }, [isAuthenticated, isLoading, user, navigate, location, userRole]);
 

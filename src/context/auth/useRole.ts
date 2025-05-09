@@ -1,5 +1,5 @@
 
-import { useAuthStore, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
+import { useAuthStore, selectUserRole } from '@/hooks/auth/useAuthStore';
 import { UserRole } from '@/types/supabase';
 
 /**

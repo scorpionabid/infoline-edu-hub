@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -63,17 +63,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
   }, [error, clearError]);
 
   // Handle successful authentication
-  const handleSuccessfulAuth = useCallback(() => {
-    const from = location.state?.from?.pathname || '/dashboard';
-    navigate(from, { replace: true });
-  }, [navigate, location.state?.from?.pathname]);
-
-  // Handle authenticated state changes
   useEffect(() => {
-    if (isAuthenticated) {
-      handleSuccessfulAuth();
+    if (isAuthenticated && !isLoading && !formSubmitting) {
+      console.log("[LoginForm] Detected authenticated state, navigating");
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, handleSuccessfulAuth]);
+  }, [isAuthenticated, isLoading, formSubmitting, navigate, location.state?.from?.pathname]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -116,7 +112,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   // Button disabled state
-  const isButtonDisabled = isLoading || formSubmitting || isAuthenticated;
+  const isButtonDisabled = isLoading || formSubmitting;
 
   return (
     <Card className="w-full max-w-md mx-auto shadow-lg">
