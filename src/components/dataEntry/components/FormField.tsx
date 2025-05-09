@@ -57,14 +57,14 @@ const FormField: React.FC<FormFieldProps> = ({
         if (typeof option === 'string') {
           return { 
             label: option, 
-            value: option || `option-${index}` 
+            value: option || `option-${index}-${Math.random().toString(36).substring(7)}` 
           };
         }
         // Ensure there's always a non-empty value
         if (!option.value || option.value === '') {
           return {
             ...option,
-            value: `option-${option.label || index}`
+            value: `option-${option.label || index}-${Math.random().toString(36).substring(7)}`
           };
         }
         return option;
@@ -122,23 +122,18 @@ const FormField: React.FC<FormFieldProps> = ({
             </SelectTrigger>
             <SelectContent>
               {Array.isArray(normalizedOptions) && normalizedOptions.length === 0 ? (
-                <div className="p-2 text-center text-muted-foreground">
+                <SelectItem value="no-options-available">
                   {t('noOptionsAvailable') || 'Seçim variantları mövcud deyil'}
-                </div>
+                </SelectItem>
               ) : (
-                Array.isArray(normalizedOptions) && normalizedOptions.map((option, index) => {
-                  // Ensure option value is never an empty string
-                  const optionValue = option.value || `option-${index}`;
-                  
-                  return (
-                    <SelectItem 
-                      key={`${id}-${index}`} 
-                      value={optionValue}
-                    >
-                      {option.label || optionValue}
-                    </SelectItem>
-                  );
-                })
+                Array.isArray(normalizedOptions) && normalizedOptions.map((option, index) => (
+                  <SelectItem 
+                    key={`${id}-${index}`} 
+                    value={option.value}
+                  >
+                    {option.label || option.value}
+                  </SelectItem>
+                ))
               )}
             </SelectContent>
           </Select>
@@ -329,6 +324,7 @@ const FormField: React.FC<FormFieldProps> = ({
                 selected={value ? new Date(value) : undefined}
                 onSelect={(date) => onChange(date ? date.toISOString() : null)}
                 initialFocus
+                className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
           </Popover>
@@ -337,13 +333,13 @@ const FormField: React.FC<FormFieldProps> = ({
       case 'checkbox':
         return (
           <div className="space-y-2">
-            {Array.isArray(normalizedOptions) && normalizedOptions.map((option) => {
+            {Array.isArray(normalizedOptions) && normalizedOptions.map((option, index) => {
               const isChecked = Array.isArray(value) ? value.includes(option.value) : false;
               
               return (
-                <div key={option.value} className="flex items-center space-x-2">
+                <div key={option.value || `option-${index}`} className="flex items-center space-x-2">
                   <Checkbox
-                    id={`${id}-${option.value}`}
+                    id={`${id}-${option.value || index}`}
                     checked={isChecked}
                     onCheckedChange={(checked) => {
                       if (checked) {
@@ -358,7 +354,7 @@ const FormField: React.FC<FormFieldProps> = ({
                     }}
                   />
                   <label
-                    htmlFor={`${id}-${option.value}`}
+                    htmlFor={`${id}-${option.value || index}`}
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     {option.label}
@@ -375,11 +371,11 @@ const FormField: React.FC<FormFieldProps> = ({
             value={value || ''}
             onValueChange={onChange}
           >
-            {Array.isArray(normalizedOptions) && normalizedOptions.map((option) => (
-              <div key={option.value} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.value} id={`${id}-${option.value}`} />
+            {Array.isArray(normalizedOptions) && normalizedOptions.map((option, index) => (
+              <div key={option.value || `option-${index}`} className="flex items-center space-x-2">
+                <RadioGroupItem value={option.value} id={`${id}-${option.value || index}`} />
                 <label
-                  htmlFor={`${id}-${option.value}`}
+                  htmlFor={`${id}-${option.value || index}`}
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   {option.label}

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -48,14 +49,14 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
             <SelectContent>
               <SelectItem value="none">{t('selectSchool')}</SelectItem>
               {filteredSchools.map((school) => (
-                <SelectItem key={school.id} value={school.id}>
+                <SelectItem key={school.id} value={school.id || `school-${school.name || Math.random().toString(36).substring(7)}`}>
                   {school.name}
                 </SelectItem>
               ))}
               {filteredSchools.length === 0 && (
-                <div className="p-2 text-center text-sm text-muted-foreground">
+                <SelectItem value="no-schools-found" disabled>
                   {t('noSchoolsFound') || 'Məktəb tapılmadı'}
-                </div>
+                </SelectItem>
               )}
             </SelectContent>
           </Select>

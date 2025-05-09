@@ -91,7 +91,7 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
           </SelectTrigger>
           <SelectContent>
             {regions.map((region) => (
-              <SelectItem key={region.id} value={region.id}>
+              <SelectItem key={region.id} value={region.id || `region-${region.name || Math.random().toString(36).substring(7)}`}>
                 {region.name}
               </SelectItem>
             ))}
@@ -110,8 +110,8 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
             <SelectValue placeholder={loading ? t("loading") : t("selectSector")} />
           </SelectTrigger>
           <SelectContent>
-            {sectors.map((sector) => (
-              <SelectItem key={sector.id} value={sector.id}>
+            {sectors.map((sector, index) => (
+              <SelectItem key={sector.id || `sector-${index}`} value={sector.id || `sector-${sector.name || index}-${Math.random().toString(36).substring(7)}`}>
                 {sector.name}
               </SelectItem>
             ))}

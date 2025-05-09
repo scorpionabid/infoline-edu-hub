@@ -123,19 +123,16 @@ const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error,
             <SelectContent>
               {options.map((option, index) => {
                 const optionValue = typeof option === 'object' 
-                  ? (option.value || `option-${index}`)
-                  : (option || `option-${index}`);
-                  
-                // Ensure optionValue is never an empty string
-                const safeOptionValue = optionValue === '' ? `option-${index}` : optionValue;
+                  ? (option.value || `option-${index}-${Math.random().toString(36).substring(7)}`)
+                  : (option || `option-${index}-${Math.random().toString(36).substring(7)}`);
                   
                 const optionLabel = typeof option === 'object' 
                   ? (option.label || optionValue) 
                   : option;
                   
                 return (
-                  <SelectItem key={index} value={safeOptionValue}>
-                    {optionLabel || safeOptionValue}
+                  <SelectItem key={index} value={optionValue}>
+                    {optionLabel || optionValue}
                   </SelectItem>
                 );
               })}
@@ -167,6 +164,7 @@ const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange, error,
                 selected={value ? new Date(value) : undefined}
                 onSelect={(date) => onChange(date ? date.toISOString() : null)}
                 initialFocus
+                className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
           </Popover>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -79,13 +80,13 @@ const ExistingUserSectorAdminDialog = ({ isOpen, onClose, sectorId, sectorName, 
             <SelectContent>
               {users.length > 0 ? users.map((user) => (
                 <SelectItem 
-                  key={user.id} 
+                  key={user.id || `user-${Math.random().toString(36).slice(2)}`} 
                   value={user.id || `user-${user.email || Math.random().toString(36).slice(2)}`}
                 >
                   {user.full_name} ({user.email})
                 </SelectItem>
               )) : (
-                <SelectItem value="no-users" disabled>
+                <SelectItem value="no-users-found" disabled>
                   {t('noUsersFound') || 'İstifadəçi tapılmadı'}
                 </SelectItem>
               )}

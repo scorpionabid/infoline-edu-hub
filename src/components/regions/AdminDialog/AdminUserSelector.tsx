@@ -63,7 +63,7 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
                 </SelectItem>
               ))
             ) : (
-              <SelectItem value="no-users" disabled>
+              <SelectItem value="no-users-found" disabled>
                 {t('noUsersFound') || 'İstifadəçi tapılmadı'}
               </SelectItem>
             )}

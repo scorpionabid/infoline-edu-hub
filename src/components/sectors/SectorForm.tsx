@@ -93,7 +93,7 @@ const SectorForm: React.FC<SectorFormProps> = ({
                 </FormControl>
                 <SelectContent>
                   {regions.map((region) => (
-                    <SelectItem key={region.id} value={region.id}>
+                    <SelectItem key={region.id} value={region.id || `region-${region.name || Math.random().toString(36).substring(7)}`}>
                       {region.name}
                     </SelectItem>
                   ))}

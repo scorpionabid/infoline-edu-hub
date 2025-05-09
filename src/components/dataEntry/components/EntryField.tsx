@@ -109,11 +109,16 @@ export const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange,
               <SelectValue placeholder={column.placeholder || "Seçin"} />
             </SelectTrigger>
             <SelectContent>
-              {column.options?.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
+              {(column.options || []).map((option, index) => {
+                // Ensure option.value is never empty
+                const safeValue = option.value ? option.value : `option-${index}-${Math.random().toString(36).substring(7)}`;
+                
+                return (
+                  <SelectItem key={safeValue} value={safeValue}>
+                    {option.label || safeValue}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
           {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
@@ -149,12 +154,17 @@ export const EntryField: React.FC<EntryFieldProps> = ({ column, value, onChange,
             onValueChange={onChange}
             disabled={readOnly}
           >
-            {column.options?.map((option) => (
-              <div key={option.value} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.value} id={`${column.id}-${option.value}`} />
-                <Label htmlFor={`${column.id}-${option.value}`}>{option.label}</Label>
-              </div>
-            ))}
+            {(column.options || []).map((option, index) => {
+              // Ensure option.value is never empty
+              const safeValue = option.value ? option.value : `option-${index}-${Math.random().toString(36).substring(7)}`;
+              
+              return (
+                <div key={safeValue} className="flex items-center space-x-2">
+                  <RadioGroupItem value={safeValue} id={`${column.id}-${safeValue}`} />
+                  <Label htmlFor={`${column.id}-${safeValue}`}>{option.label || safeValue}</Label>
+                </div>
+              );
+            })}
           </RadioGroup>
           {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
           {error && <p className="text-xs text-red-500">{error}</p>}

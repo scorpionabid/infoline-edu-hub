@@ -41,8 +41,8 @@ export const SelectInput = <T extends Record<string, any>>({
         </SelectTrigger>
         <SelectContent>
           {options.map((option, index) => {
-            // Ensure option value is never an empty string
-            const optionValue = option.value || `option-${option.label || index}`;
+            // Always generate a valid value, never empty string
+            const optionValue = option.value ? option.value : `option-${index}-${option.label || Math.random().toString(36).substring(7)}`;
             
             return (
               <SelectItem key={optionValue} value={optionValue}>
