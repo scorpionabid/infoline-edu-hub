@@ -32,7 +32,7 @@ const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ stats }) => {
                   <TableRow key={sector.id}>
                     <TableCell>{sector.name}</TableCell>
                     <TableCell className="text-right">{sector.schoolCount || 0}</TableCell>
-                    <TableCell className="text-right">{sector.completion ? `${Math.round(sector.completion)}%` : '0%'}</TableCell>
+                    <TableCell className="text-right">{sector.schoolCount ? `${Math.round(sector.schoolCount)}%` : '0%'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
