@@ -1,7 +1,7 @@
 
 import React from 'react';
-// We don't want to recreate QueryClient - it's already defined in main.tsx
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, QueryClient } from '@tanstack/react-query';
+import { queryClient as defaultQueryClient } from '@/lib/query-client';
 
 // Cache context for management
 interface CacheContextType {
@@ -21,6 +21,8 @@ export const useCache = () => React.useContext(CacheContext);
 
 // React Query Client Provider with cache management
 export const CacheProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Use the queryClient from the parent QueryClientProvider
+  // This will work now because we've added QueryClientProvider in main.tsx
   const queryClient = useQueryClient();
 
   // Cache management functions
