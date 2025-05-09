@@ -600,7 +600,15 @@ export const selectIsAuthenticated = (state: AuthState) => state.isAuthenticated
 export const selectIsLoading = (state: AuthState) => state.isLoading;
 export const selectError = (state: AuthState) => state.error;
 export const selectSession = (state: AuthState) => state.session;
-export const selectUserRole = (state: AuthState) => state.user?.role as UserRole | null;
+export const selectUserRole = (state: AuthState): UserRole | null => {
+  if (!state.user) return null;
+  // Ensure role is a valid UserRole type
+  const role = state.user.role as UserRole;
+  if (['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin', 'teacher', 'student', 'parent'].includes(role)) {
+    return role;
+  }
+  return null;
+};
 export const selectRegionId = (state: AuthState) => state.user?.region_id;
 export const selectSectorId = (state: AuthState) => state.user?.sector_id;
 export const selectSchoolId = (state: AuthState) => state.user?.school_id;

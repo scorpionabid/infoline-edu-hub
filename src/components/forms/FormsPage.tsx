@@ -82,28 +82,28 @@ export const FormsPage: React.FC<FormsPageProps> = ({ categories = [], onAddCate
           <TabsTrigger value="archived">{t('archived')}</TabsTrigger>
         </TabsList>
         <TabsContent value="active">
-          <Grid>
+          <Grid columns={3}>
             {filteredCategories?.filter(category => category.status === 'active').map(category => (
               <CategoryCard key={category.id} category={category} />
             ))}
           </Grid>
         </TabsContent>
         <TabsContent value="approved">
-          <Grid>
+          <Grid columns={3}>
             {filteredCategories?.filter(category => category.status === 'approved').map(category => (
               <CategoryCard key={category.id} category={category} />
             ))}
           </Grid>
         </TabsContent>
         <TabsContent value="draft">
-          <Grid>
+          <Grid columns={3}>
             {filteredCategories?.filter(category => category.status === 'draft').map(category => (
               <CategoryCard key={category.id} category={category} />
             ))}
           </Grid>
         </TabsContent>
         <TabsContent value="archived">
-          <Grid>
+          <Grid columns={3}>
             {filteredCategories?.filter(category => 
               category.status === 'archived' || category.status === 'inactive'
             ).map(category => (

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -159,21 +158,36 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setIsLoading(true);
       setError(null);
 
+      // Get school data to get region_id and sector_id
+      const { data: schoolData, error: schoolError } = await supabase
+        .from('schools')
+        .select('region_id, sector_id')
+        .eq('id', schoolId)
+        .single();
+    
+      if (schoolError) throw schoolError;
+      
+      if (!schoolData || !schoolData.region_id || !schoolData.sector_id) {
+        throw new Error('School data missing required fields');
+      }
+
       // First, update the user_roles table
       const { error: rolesError } = await supabase.rpc('assign_school_admin', {
         user_id: userId,
-        school_id: schoolId
+        school_id: schoolId,
+        region_id: schoolData.region_id,
+        sector_id: schoolData.sector_id
       });
       
       if (rolesError) throw rolesError;
 
       // Then update the schools table
-      const { error: schoolError } = await supabase
+      const { error: schoolError2 } = await supabase
         .from('schools')
         .update({ admin_id: userId })
         .eq('id', schoolId);
       
-      if (schoolError) throw schoolError;
+      if (schoolError2) throw schoolError2;
       
       toast.success('Success', {
         description: 'School admin assigned successfully'
@@ -207,11 +221,27 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Insert schools one by one to avoid type errors
       for (const schoolData of validSchoolsData) {
-        const { error } = await supabase
-          .from('schools')
-          .insert(schoolData);
+        // Ensure we have the name field
+        if (schoolData.name) {
+          const { error } = await supabase
+            .from('schools')
+            .insert({
+              name: schoolData.name,
+              region_id: schoolData.region_id,
+              sector_id: schoolData.sector_id,
+              address: schoolData.address,
+              phone: schoolData.phone,
+              email: schoolData.email,
+              principal_name: schoolData.principal_name,
+              student_count: schoolData.student_count,
+              teacher_count: schoolData.teacher_count,
+              type: schoolData.type,
+              status: schoolData.status || 'active',
+              language: schoolData.language
+            });
           
-        if (error) throw error;
+          if (error) throw error;
+        }
       }
       
       toast.success('Success', {

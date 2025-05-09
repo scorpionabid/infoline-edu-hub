@@ -1,49 +1,53 @@
 
-import { ChartData } from 'recharts';
-import { 
-  RegionStat, 
-  SectorStat, 
-  SchoolStat,
-  DashboardFormStats
-} from '@/types/dashboard';
+import { CategoryItem, DeadlineItem, FormItem, SchoolStat } from '@/types/dashboard';
 
-// Mock data for charts
-export const schoolPerformanceData: ChartData[] = [
-  { name: 'Tamamlanmış', value: 65, color: '#22c55e' },
-  { name: 'Prosesdə', value: 25, color: '#f59e0b' },
-  { name: 'Başlanmayıb', value: 10, color: '#a3a3a3' },
-];
-
-// Sample region stats
-export const regionStats: RegionStat[] = [
-  { id: '1', name: 'Bakı', completionRate: 85, sectorCount: 8, schoolCount: 120, status: 'active' },
-  { id: '2', name: 'Sumqayıt', completionRate: 75, sectorCount: 5, schoolCount: 42, status: 'active' },
-  { id: '3', name: 'Gəncə', completionRate: 68, sectorCount: 6, schoolCount: 38, status: 'active' },
-  { id: '4', name: 'Mingəçevir', completionRate: 50, sectorCount: 2, schoolCount: 16, status: 'active' },
-];
-
-// Sample sector stats
-export const sectorStats: SectorStat[] = [
-  { id: '1', name: 'Binəqədi', completionRate: 90, schoolCount: 25, pendingApprovals: 2, status: 'active' },
-  { id: '2', name: 'Sabunçu', completionRate: 75, schoolCount: 22, pendingApprovals: 8, status: 'active' },
-  { id: '3', name: 'Yasamal', completionRate: 65, schoolCount: 18, pendingApprovals: 12, status: 'active' },
-  { id: '4', name: 'Xətai', completionRate: 60, schoolCount: 15, pendingApprovals: 5, status: 'active' },
-];
-
-// Sample school stats
-export const schoolStats: SchoolStat[] = [
-  { id: '1', name: 'Məktəb #1', completionRate: 100, pendingCount: 0, status: 'active' },
-  { id: '2', name: 'Məktəb #2', completionRate: 85, pendingCount: 2, status: 'active' },
-  { id: '3', name: 'Məktəb #3', completionRate: 65, pendingCount: 5, status: 'active' },
-  { id: '4', name: 'Məktəb #4', completionRate: 30, pendingCount: 12, status: 'active' },
-];
-
-// Sample form stats
-export const formStats: DashboardFormStats = {
-  total: 120,
-  pending: 25,
-  approved: 85,
-  rejected: 10,
-  dueSoon: 15,
-  overdue: 5
+export const generateMockDashboardData = () => {
+  return {
+    status: {
+      pending: 12,
+      approved: 45,
+      rejected: 3,
+      draft: 8,
+      total: 68,
+      active: 57,
+      inactive: 11
+    },
+    formStats: {
+      pending: 12,
+      approved: 45,
+      rejected: 3,
+      draft: 8,
+      dueSoon: 5,
+      overdue: 2,
+      total: 68
+    },
+    completion: {
+      total: 68,
+      completed: 45,
+      percentage: 66
+    },
+    completionRate: 66,
+    schools: [
+      { id: '1', name: 'School 1', completionRate: 75, status: 'active', pendingForms: 3, formsCompleted: 18, totalForms: 24 },
+      { id: '2', name: 'School 2', completionRate: 50, status: 'active', pendingForms: 12, formsCompleted: 12, totalForms: 24 },
+      { id: '3', name: 'School 3', completionRate: 25, status: 'inactive', pendingForms: 6, formsCompleted: 6, totalForms: 24 },
+      { id: '4', name: 'School 4', completionRate: 100, status: 'active', pendingForms: 0, formsCompleted: 24, totalForms: 24 }
+    ] as SchoolStat[],
+    categories: [
+      { id: '1', name: 'Category 1', completionRate: 75, status: 'active' },
+      { id: '2', name: 'Category 2', completionRate: 50, status: 'active' },
+      { id: '3', name: 'Category 3', completionRate: 25, status: 'draft' },
+      { id: '4', name: 'Category 4', completionRate: 100, status: 'approved' }
+    ] as CategoryItem[],
+    upcoming: [
+      { id: '1', title: 'Deadline 1', deadline: '2023-12-31', daysLeft: 10, categoryId: '1' },
+      { id: '2', title: 'Deadline 2', deadline: '2023-12-25', daysLeft: 5, categoryId: '2' },
+      { id: '3', title: 'Deadline 3', deadline: '2023-12-20', daysLeft: 2, categoryId: '3' }
+    ] as DeadlineItem[],
+    pendingForms: [
+      { id: '1', title: 'Form 1', categoryName: 'Category 1', status: 'pending' },
+      { id: '2', title: 'Form 2', categoryName: 'Category 2', status: 'pending' },
+      { id: '3', title: 'Form 3', categoryName: 'Category 3', status: 'pending' }
+    ] as FormItem[]
+  };
 };

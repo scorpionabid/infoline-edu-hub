@@ -1,124 +1,87 @@
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import i18next from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import en from '@/locales/en.json';
+import az from '@/locales/az.json';
+import ru from '@/locales/ru.json';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import i18n from '@/i18n';
-import { Language, LanguageInfo } from '@/types/language';
-
-export interface LanguageContextType {
-  changeLanguage: (lng: string) => void;
-  t: (key: string, options?: any) => string;
+interface LanguageContextProps {
   language: string;
-  currentLanguage: string;
-  supportedLanguages: { code: string; name: string }[];
   setLanguage: (lang: string) => void;
-  languages: Record<string, LanguageInfo>;
-  availableLanguages: string[];
+  t: (key: string, options?: any) => string;
+  i18n: i18next.i18n;
+  isRtl: boolean;
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
 
-export const useLanguage = (): LanguageContextType => {
+export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [language, setLanguage] = useState(localStorage.getItem('i18nextLng') || 'az');
+
+  const i18n = useMemo(() => {
+    const instance = i18next.createInstance();
+    instance
+      .use(initReactI18next)
+      .init({
+        resources: {
+          en: { translation: en },
+          az: { translation: az },
+          ru: { translation: ru },
+        },
+        lng: language,
+        fallbackLng: 'az',
+        interpolation: {
+          escapeValue: false,
+        },
+      });
+    return instance;
+  }, [language]);
+
+  const changeLanguage = useCallback((lang: string) => {
+    i18n.changeLanguage(lang);
+    setLanguage(lang);
+    localStorage.setItem('i18nextLng', lang);
+  }, [i18n]);
+
+  const t = useCallback((key: string, options?: any) => i18n.t(key, options), [i18n]);
+
+  const isRtl = useMemo(() => i18n.dir() === 'rtl', [i18n]);
+
+  const value: LanguageContextProps = {
+    language,
+    setLanguage: changeLanguage,
+    t,
+    i18n,
+    isRtl,
+  };
+
+  return (
+    <LanguageContext.Provider value={value}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+export const useLanguage = () => {
   const context = useContext(LanguageContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useLanguage must be used within a LanguageProvider');
   }
   return context;
 };
 
-// useLanguageSafe provides a fallback when context is not available
-export const useLanguageSafe = (): LanguageContextType => {
-  const context = useContext(LanguageContext);
-  if (context === undefined) {
-    // Default translation function and values as fallback
+export function useLanguageSafe() {
+  try {
+    // Try to use the language context
+    return useLanguage();
+  } catch (error) {
+    // Fallback if used outside a provider
     return {
-      changeLanguage: (lng: string) => console.warn('LanguageProvider not initialized'),
-      t: (key: string) => key, // simply return the key
       language: 'az',
-      currentLanguage: 'az',
-      supportedLanguages: [
-        { code: 'az', name: 'Azərbaycan dili' },
-        { code: 'en', name: 'English' },
-        { code: 'ru', name: 'Русский' },
-        { code: 'tr', name: 'Türkçe' }
-      ],
-      setLanguage: (lng: string) => console.warn('LanguageProvider not initialized'),
-      languages: {
-        az: { nativeName: 'Azərbaycan dili', flag: '🇦🇿' },
-        en: { nativeName: 'English', flag: '🇬🇧' },
-        ru: { nativeName: 'Русский', flag: '🇷🇺' },
-        tr: { nativeName: 'Türkçe', flag: '🇹🇷' }
-      },
-      availableLanguages: ['az', 'en', 'ru', 'tr']
+      setLanguage: () => {},
+      t: (key: string) => key,
+      i18n: i18next.i18n.createInstance(),
+      isRtl: false
     };
   }
-  return context;
-};
-
-interface LanguageProviderProps {
-  children: ReactNode;
 }
-
-const languagesInfo: Record<string, LanguageInfo> = {
-  az: { nativeName: 'Azərbaycan dili', flag: '🇦🇿' },
-  en: { nativeName: 'English', flag: '🇬🇧' },
-  ru: { nativeName: 'Русский', flag: '🇷🇺' },
-  tr: { nativeName: 'Türkçe', flag: '🇹🇷' }
-};
-
-const availableLanguageCodes = ['az', 'en', 'ru', 'tr'];
-
-export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-  // Use the translation hook
-  const { t } = useTranslation();
-  const [currentLanguage, setCurrentLanguage] = useState(i18n.language || 'az');
-
-  const supportedLanguages = [
-    { code: 'az', name: 'Azərbaycan dili' },
-    { code: 'en', name: 'English' },
-    { code: 'ru', name: 'Русский' },
-    { code: 'tr', name: 'Türkçe' }
-  ];
-
-  // If no language is selected or not supported, set default language
-  useEffect(() => {
-    const currentLng = i18n.language;
-    const isSupported = supportedLanguages.some(lng => lng.code === currentLng);
-    
-    if (!currentLng || !isSupported) {
-      // Default to Azerbaijani
-      i18n.changeLanguage('az');
-      setCurrentLanguage('az');
-    } else {
-      setCurrentLanguage(currentLng);
-    }
-  }, []);
-
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-    setCurrentLanguage(lng);
-    // Save the language selection to local storage to persist through refreshes
-    localStorage.setItem('language', lng);
-  };
-
-  // Add setLanguage alias to maintain compatibility with components
-  const setLanguage = (lng: string) => {
-    changeLanguage(lng);
-  };
-
-  return (
-    <LanguageContext.Provider 
-      value={{ 
-        changeLanguage, 
-        t, 
-        currentLanguage,
-        language: currentLanguage,
-        supportedLanguages,
-        setLanguage,
-        languages: languagesInfo,
-        availableLanguages: availableLanguageCodes
-      }}
-    >
-      {children}
-    </LanguageContext.Provider>
-  );
-};

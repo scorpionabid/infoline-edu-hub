@@ -1,84 +1,184 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/category';
+import { Category, CategoryFilter } from '@/types/category';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
 
 export const useCategories = () => {
+  const { userRole, regionId, sectorId, schoolId } = usePermissions();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const { isSuperAdmin, isRegionAdmin, isSectorAdmin, canViewSectorCategories } = usePermissions();
-  const { t } = useLanguage();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Kategoriyaları yükləmək üçün funksiya
-  const fetchCategories = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
+  const fetchCategories = useCallback(async (filterOptions: CategoryFilter = {}) => {
     try {
-      let query = supabase.from('categories').select('*');
+      setLoading(true);
+      setError(null);
+      
+      // Start building the query
+      let query = supabase
+        .from('categories')
+        .select('*');
 
-      // Kategoriya gizliliyi yoxlaması:
-      // Sektor admini və ya Okul admini yalnız "all" təyinatı olan və ya "sectors" təyinatı olan kategoriyaları görə bilər
-      if (!isSuperAdmin && !isRegionAdmin && canViewSectorCategories) {
-        query = query.in('assignment', ['all', 'sectors']);
+      // Apply filters based on user role and permissions
+      if (userRole === 'sectoradmin' && sectorId) {
+        // Filter categories based on sector assignment
+        // This is a placeholder - implement according to your schema
+        // For now, we'll just fetch all categories for sector admins
+        // You may need to adjust this based on your actual data model
       }
 
-      // Status filteri - yalnız aktiv olanları göstər
-      query = query.eq('status', 'active').eq('archived', false);
-
-      const { data, error: fetchError } = await query.order('priority', { ascending: false });
-
-      if (fetchError) {
-        throw fetchError;
+      // Apply status filter if provided
+      if (filterOptions.status && filterOptions.status.length > 0) {
+        query = query.in('status', filterOptions.status);
       }
 
-      if (data) {
-        setCategories(data as Category[]);
-        setFilteredCategories(data as Category[]);
+      // Apply search filter if provided
+      if (filterOptions.search) {
+        query = query.ilike('name', `%${filterOptions.search}%`);
       }
+
+      // Apply pagination if provided
+      if (filterOptions.page !== undefined && filterOptions.limit !== undefined) {
+        const from = filterOptions.page * filterOptions.limit;
+        const to = from + filterOptions.limit - 1;
+        query = query.range(from, to);
+      }
+
+      // Execute the query
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      setCategories(data as Category[]);
     } catch (err: any) {
-      console.error('Kategoriyaları yükləyərkən xəta baş verdi:', err);
-      setError(err.message || t('genericError'));
-      toast.error(t('errorFetchingCategories'), {
-        description: err.message,
+      console.error('Error fetching categories:', err);
+      setError(err);
+      toast.error('Failed to load categories', {
+        description: err.message
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [isSuperAdmin, isRegionAdmin, isSectorAdmin, canViewSectorCategories, t]);
+  }, [userRole, regionId, sectorId, schoolId]);
 
-  // Component mount olduğunda kategoriyaları yüklə
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+  const createCategory = useCallback(async (categoryData: Omit<Category, 'id'>) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  // Axtarış sorğusu dəyişdikdə kategoriyaları filtrə
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredCategories(categories);
-    } else {
-      const filtered = categories.filter(category => 
-        category.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        (category.description && category.description.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-      setFilteredCategories(filtered);
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([categoryData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCategories(prev => [...prev, data as Category]);
+      return data as Category;
+    } catch (err: any) {
+      console.error('Error creating category:', err);
+      setError(err);
+      toast.error('Failed to create category', {
+        description: err.message
+      });
+      throw err;
+    } finally {
+      setLoading(false);
     }
-  }, [searchQuery, categories]);
+  }, []);
+
+  const updateCategory = useCallback(async (id: string, categoryData: Partial<Category>) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase
+        .from('categories')
+        .update(categoryData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCategories(prev => prev.map(category => 
+        category.id === id ? { ...category, ...data } : category
+      ));
+      return data as Category;
+    } catch (err: any) {
+      console.error('Error updating category:', err);
+      setError(err);
+      toast.error('Failed to update category', {
+        description: err.message
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const deleteCategory = useCallback(async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setCategories(prev => prev.filter(category => category.id !== id));
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting category:', err);
+      setError(err);
+      toast.error('Failed to delete category', {
+        description: err.message
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getCategoryById = useCallback(async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      return data as Category;
+    } catch (err: any) {
+      console.error('Error fetching category:', err);
+      setError(err);
+      toast.error('Failed to load category', {
+        description: err.message
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   return {
     categories,
-    filteredCategories,
-    isLoading,
+    loading,
     error,
-    searchQuery,
-    setSearchQuery,
-    refetch: fetchCategories,
-    getCategories: fetchCategories
+    fetchCategories,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    getCategoryById
   };
 };

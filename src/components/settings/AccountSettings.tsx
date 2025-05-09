@@ -1,232 +1,266 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { useAuth } from '@/context/auth';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { toast } from 'sonner';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
-import { FullUserData } from '@/types/auth';
+import { FullUserData, NotificationSettings } from '@/types/supabase';
+import { updateUser } from '@/hooks/auth/authActions';
 
-interface AccountFormData extends Partial<FullUserData> {
-  notificationSettings: {
-    email: boolean;
-    push: boolean;
-    app: boolean;
-  };
-}
+const profileFormSchema = z.object({
+  full_name: z.string().min(2, {
+    message: "Ad və soyad ən azı 2 simvol olmalıdır.",
+  }).max(50, {
+    message: "Ad və soyad 50 simvolu keçməməlidir.",
+  }).optional(),
+  phone: z.string().optional(),
+  language: z.string().optional(),
+  notificationSettings: z.object({
+    email: z.boolean().default(false),
+    inApp: z.boolean().default(false),
+    push: z.boolean().default(false),
+    system: z.boolean().default(false),
+    deadline: z.boolean().default(false)
+  }).optional()
+});
 
-const AccountSettings = () => {
-  const { user, updateProfile } = useAuth();
-  const { t, changeLanguage, currentLanguage } = useLanguage();
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<AccountFormData>({
-    full_name: '',
-    phone: '',
-    position: '',
-    language: '',
-    avatar: '',
-    notificationSettings: {
-      email: true,
-      push: true,
-      app: true
-    }
+export const AccountSettings = () => {
+  const { t } = useLanguage();
+  const user = useAuthStore(selectUser);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const refreshUserData = useAuthStore((state) => state.refreshUserData);
+
+  const profileForm = useForm<z.infer<typeof profileFormSchema>>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: {
+      full_name: user?.full_name || "",
+      phone: user?.phone || "",
+      language: user?.language || "az",
+      notificationSettings: user?.notificationSettings || {
+        email: false,
+        inApp: false,
+        push: false,
+        system: false,
+        deadline: false
+      }
+    },
+    mode: "onChange",
   });
 
   useEffect(() => {
     if (user) {
-      setFormData({
-        full_name: user.full_name || '',
-        phone: user.phone || '',
-        position: user.position || '',
-        language: user.language || currentLanguage,
-        avatar: user.avatar || '',
-        notificationSettings: {
-          email: user.notificationSettings?.email ?? true,
-          push: user.notificationSettings?.push ?? true,
-          app: user.notificationSettings?.app ?? true
+      profileForm.reset({
+        full_name: user.full_name || "",
+        phone: user.phone || "",
+        language: user.language || "az",
+        notificationSettings: user.notificationSettings || {
+          email: false,
+          inApp: false,
+          push: false,
+          system: false,
+          deadline: false
         }
       });
     }
-  }, [user, currentLanguage]);
+  }, [user, profileForm]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleLanguageChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      language: value
-    }));
-    changeLanguage(value);
-  };
-
-  const handleNotificationChange = (setting: keyof typeof formData.notificationSettings, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      notificationSettings: {
-        ...prev.notificationSettings,
-        [setting]: checked
-      }
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
+  const updateUserProfile = async (data: Partial<FullUserData>) => {
     try {
-      // Update user profile using the auth context
-      await updateProfile({
-        ...formData
-      });
-      
+      setIsSubmitting(true);
+    
+      // Properly format the notification settings to match the expected structure
+      const notificationSettings: NotificationSettings = {
+        email: data.notificationSettings?.email || false,
+        inApp: data.notificationSettings?.inApp || false,
+        push: data.notificationSettings?.push || false,
+        system: data.notificationSettings?.system || false,
+        deadline: data.notificationSettings?.deadline || false
+      };
+
+      const userUpdateData: Partial<FullUserData> = {
+        ...data,
+        notificationSettings
+      };
+
+      await updateUser(userUpdateData);
       toast.success(t('profileUpdated'));
-    } catch (error: any) {
-      toast.error(t('updateFailed'), {
-        description: error.message
-      });
+      refreshUserData();
+    } catch (error) {
+      toast.error(t('profileUpdateFailed'));
+      console.error('Profile update error:', error);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('accountSettings')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-6">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={formData.avatar || user?.avatar} />
-                <AvatarFallback>{user?.full_name?.substring(0, 2) || 'U'}</AvatarFallback>
-              </Avatar>
-              <div>
-                <Input
-                  type="text"
-                  name="avatar"
-                  placeholder={t('avatarUrl')}
-                  value={formData.avatar}
-                  onChange={handleInputChange}
-                  className="max-w-xs"
-                />
-                <p className="text-sm text-muted-foreground mt-1">{t('avatarHelp')}</p>
-              </div>
-            </div>
+    <Form {...profileForm}>
+      <form onSubmit={profileForm.handleSubmit(updateUserProfile)} className="space-y-8">
+        <div className="grid gap-4">
+          <FormField
+            control={profileForm.control}
+            name="full_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('fullName')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('enterFullName')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="full_name">{t('fullName')}</Label>
-                <Input
-                  id="full_name"
-                  name="full_name"
-                  value={formData.full_name}
-                  onChange={handleInputChange}
-                  placeholder={t('enterFullName')}
-                />
-              </div>
+          <FormField
+            control={profileForm.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('phone')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('enterPhone')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">{t('phoneNumber')}</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder={t('enterPhoneNumber')}
-                />
-              </div>
+          <FormField
+            control={profileForm.control}
+            name="language"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('language')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('enterLanguage')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <div className="space-y-2">
-                <Label htmlFor="position">{t('position')}</Label>
-                <Input
-                  id="position"
-                  name="position"
-                  value={formData.position}
-                  onChange={handleInputChange}
-                  placeholder={t('enterPosition')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="language">{t('preferredLanguage')}</Label>
-                <Select 
-                  value={formData.language} 
-                  onValueChange={handleLanguageChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectLanguage')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="az">Azərbaycan dili</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="ru">Русский</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="font-medium text-lg">{t('notificationPreferences')}</h3>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="email-notifications">{t('emailNotifications')}</Label>
-                  <Switch
-                    id="email-notifications"
-                    checked={formData.notificationSettings.email}
-                    onCheckedChange={(checked) => handleNotificationChange('email', checked)}
-                  />
+          <FormField
+            control={profileForm.control}
+            name="notificationSettings.email"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>{t('emailNotifications')}</FormLabel>
+                  <FormDescription>
+                    {t('emailNotificationsDescription')}
+                  </FormDescription>
                 </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="push-notifications">{t('pushNotifications')}</Label>
+                <FormControl>
                   <Switch
-                    id="push-notifications"
-                    checked={formData.notificationSettings.push}
-                    onCheckedChange={(checked) => handleNotificationChange('push', checked)}
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
                   />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="app-notifications">{t('appNotifications')}</Label>
-                  <Switch
-                    id="app-notifications"
-                    checked={formData.notificationSettings.app}
-                    onCheckedChange={(checked) => handleNotificationChange('app', checked)}
-                  />
-                </div>
-              </div>
-            </div>
+                </FormControl>
+              </FormItem>
+            )}
+          />
 
-            <Button type="submit" className="w-full md:w-auto" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('saving')}
-                </>
-              ) : (
-                t('saveChanges')
-              )}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+          <FormField
+            control={profileForm.control}
+            name="notificationSettings.inApp"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>{t('inAppNotifications')}</FormLabel>
+                  <FormDescription>
+                    {t('inAppNotificationsDescription')}
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={profileForm.control}
+            name="notificationSettings.push"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>{t('pushNotifications')}</FormLabel>
+                  <FormDescription>
+                    {t('pushNotificationsDescription')}
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={profileForm.control}
+            name="notificationSettings.system"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>{t('systemNotifications')}</FormLabel>
+                  <FormDescription>
+                    {t('systemNotificationsDescription')}
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={profileForm.control}
+            name="notificationSettings.deadline"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>{t('deadlineReminders')}</FormLabel>
+                  <FormDescription>
+                    {t('deadlineRemindersDescription')}
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? t('updating') : t('updateProfile')}
+        </Button>
+      </form>
+    </Form>
   );
 };
-
-export default AccountSettings;

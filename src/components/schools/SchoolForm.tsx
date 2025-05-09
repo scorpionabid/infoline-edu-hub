@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { School, Region, Sector, SchoolFormProps } from '@/types/school';
+import { School, SchoolFormData, EnhancedSchoolFormProps } from '@/types/school';
 import { useLanguage } from '@/context/LanguageContext';
 
 // Xüsusi SchoolFormProps interfeysi əlavə edək
@@ -50,34 +49,42 @@ const SchoolForm: React.FC<EnhancedSchoolFormProps> = ({
     type: z.string().optional(),
     language: z.string().optional(),
   });
+  
+  // Ensure initialData has all required fields
+  const defaultValues: Partial<SchoolFormData> = {
+    name: '',
+    status: 'active',
+    region_id: '',
+    sector_id: '',
+    ...initialData
+  };
 
   // Form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: initialData?.name || '',
-      status: initialData?.status || 'active',
-      address: initialData?.address || '',
-      phone: initialData?.phone || '',
-      email: initialData?.email || '',
-      region_id: initialData?.region_id || '',
-      sector_id: initialData?.sector_id || '',
-      principal_name: initialData?.principal_name || initialData?.principalName || '',
-      student_count: initialData?.student_count || 0,
-      teacher_count: initialData?.teacher_count || 0,
-      type: initialData?.type || '',
-      language: initialData?.language || '',
-    },
+    defaultValues: defaultValues
   });
 
-  // Form təqdim etmə işləyicisi
-  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    await onSubmit(values as Partial<School>);
+  // Submit handler
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    // Make sure we have all required fields for SchoolFormData
+    const formData: SchoolFormData = {
+      ...values,
+      name: values.name,
+      region_id: values.region_id,
+      sector_id: values.sector_id
+    };
+    
+    if (initialData?.id) {
+      formData.id = initialData.id;
+    }
+    
+    onSubmit(formData);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="name"
