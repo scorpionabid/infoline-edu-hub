@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -63,7 +62,7 @@ const AssignAdminDialog: React.FC<AssignAdminDialogProps> = ({
   }, [isOpen, region.admin_id, t]);
 
   const handleSubmit = async () => {
-    if (!selectedUserId) {
+    if (!selectedUserId || selectedUserId === 'NONE') {
       toast.error(t('selectUser'));
       return;
     }
@@ -89,15 +88,15 @@ const AssignAdminDialog: React.FC<AssignAdminDialogProps> = ({
               {t('selectUser')}
             </label>
             <Select 
-              value={selectedUserId} 
-              onValueChange={setSelectedUserId}
+              value={selectedUserId || 'NONE'} 
+              onValueChange={(value) => setSelectedUserId(value === 'NONE' ? '' : value)}
               disabled={isLoading}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t('selectAdmin')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">
+                <SelectItem value="NONE">
                   {t('noAdminSelected')}
                 </SelectItem>
                 {users.map(user => (
@@ -120,7 +119,7 @@ const AssignAdminDialog: React.FC<AssignAdminDialogProps> = ({
             <Button 
               type="button"
               onClick={handleSubmit}
-              disabled={isSubmitting || isLoading || !selectedUserId}
+              disabled={isSubmitting || isLoading || !selectedUserId || selectedUserId === 'NONE'}
             >
               {isSubmitting ? (
                 <>

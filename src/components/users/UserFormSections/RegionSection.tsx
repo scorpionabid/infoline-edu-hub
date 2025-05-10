@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,15 +27,15 @@ const RegionSection: React.FC<RegionSectionProps> = ({
           <FormLabel>{t('region')}</FormLabel>
           <FormControl>
             <Select
-              value={field.value || ''}
-              onValueChange={field.onChange}
+              value={field.value || 'NONE'}
+              onValueChange={(value) => field.onChange(value === 'NONE' ? '' : value)}
               disabled={disabled}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t('selectRegion')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t('selectRegion')}</SelectItem>
+                <SelectItem value="NONE">{t('selectRegion')}</SelectItem>
                 {regions.map((region) => (
                   <SelectItem key={region.id} value={region.id}>
                     {region.name}

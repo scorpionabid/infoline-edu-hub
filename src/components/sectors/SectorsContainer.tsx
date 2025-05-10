@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -265,12 +264,15 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: external
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
-          <Select value={regionFilter} onValueChange={setRegionFilter}>
+          <Select 
+            value={regionFilter || 'ALL'} 
+            onValueChange={(value) => setRegionFilter(value === 'ALL' ? '' : value)}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t('filterByRegion')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t('allRegions')}</SelectItem>
+              <SelectItem value="ALL">{t('allRegions')}</SelectItem>
               {regions?.map(region => (
                 <SelectItem key={region.id} value={region.id}>
                   {region.name}
@@ -278,12 +280,15 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: external
               ))}
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select 
+            value={statusFilter || 'ALL'} 
+            onValueChange={(value) => setStatusFilter(value === 'ALL' ? '' : value)}
+          >
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder={t('filterByStatus')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t('allStatuses')}</SelectItem>
+              <SelectItem value="ALL">{t('allStatuses')}</SelectItem>
               <SelectItem value="active">{t('active')}</SelectItem>
               <SelectItem value="inactive">{t('inactive')}</SelectItem>
             </SelectContent>
