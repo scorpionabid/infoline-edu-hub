@@ -34,8 +34,8 @@ export interface SchoolFormData {
 export interface SchoolFormProps {
   initialData?: SchoolFormData;
   onSubmit: (data: SchoolFormData) => void;
-  regions: Array<{id: string; name: string}>;
-  sectors?: Array<{id: string; name: string}>;
+  regions: Array<Region>;
+  sectors?: Array<Sector>;
   isLoading?: boolean;
   isSubmitting?: boolean;
   submitButtonText?: string;

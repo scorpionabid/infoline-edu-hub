@@ -4,360 +4,218 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { SchoolFormData, EnhancedSchoolFormProps, SchoolFormProps } from '@/types/school';
-import { Loader2 } from 'lucide-react';
+import { RadioGroup, RadioItem } from '@/components/ui/radio';
 import { useLanguage } from '@/context/LanguageContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Radio, RadioGroup, RadioIndicator, RadioItem } from '@/components/ui/radio';
+import { SchoolFormData, EnhancedSchoolFormProps } from '@/types/school';
+import { Region, Sector } from '@/types/supabase';
 
-const SchoolForm = ({
-  initialData,
+const SchoolForm: React.FC<EnhancedSchoolFormProps> = ({ 
+  initialData, 
   onSubmit,
-  regions = [],
-  sectors = [],
-  isLoading = false,
-  isSubmitting = false,
-  submitButtonText = 'Save',
-  regionNames = {},
-  sectorNames = {}
-}: EnhancedSchoolFormProps) => {
+  isSubmitting,
+  regions,
+  sectors,
+  regionNames,
+  sectorNames
+}) => {
   const { t } = useLanguage();
-  
+
+  // Define form schema
   const formSchema = z.object({
-    name: z.string().min(2, {
-      message: "Name must be at least 2 characters.",
-    }),
-    region_id: z.string().min(1, {
-      message: "Please select a region.",
-    }),
-    sector_id: z.string().min(1, {
-      message: "Please select a sector.",
-    }),
-    principal_name: z.string().optional(),
+    name: z.string().min(1, { message: t('required') }),
+    region_id: z.string().min(1, { message: t('required') }),
+    sector_id: z.string().min(1, { message: t('required') }),
     address: z.string().optional(),
     phone: z.string().optional(),
-    email: z.string().email().optional().or(z.literal('')),
-    student_count: z.coerce.number().int().optional(),
-    teacher_count: z.coerce.number().int().optional(),
+    email: z.string().email({ message: t('invalidEmail') }).optional().or(z.literal('')),
+    principal_name: z.string().optional(),
+    student_count: z.number().optional(),
+    teacher_count: z.number().optional(),
     type: z.string().optional(),
-    status: z.string().optional(),
-    language: z.string().optional(),
+    status: z.string().default('active'),
+    language: z.string().optional()
   });
-  
-  const form = useForm<z.infer<typeof formSchema>>({
+
+  // Create form with default values
+  const form = useForm<SchoolFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialData?.name || '',
       region_id: initialData?.region_id || '',
       sector_id: initialData?.sector_id || '',
-      principal_name: initialData?.principal_name || '',
       address: initialData?.address || '',
       phone: initialData?.phone || '',
       email: initialData?.email || '',
-      student_count: initialData?.student_count || undefined,
-      teacher_count: initialData?.teacher_count || undefined,
-      type: initialData?.type || 'public',
+      principal_name: initialData?.principal_name || initialData?.principalName || '',
+      student_count: initialData?.student_count || 0,
+      teacher_count: initialData?.teacher_count || 0,
+      type: initialData?.type || '',
       status: initialData?.status || 'active',
-      language: initialData?.language || 'az',
+      language: initialData?.language || ''
     }
   });
 
-  const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
-    const schoolData: SchoolFormData = {
-      name: values.name,
-      region_id: values.region_id,
-      sector_id: values.sector_id,
-      principal_name: values.principal_name,
-      address: values.address,
-      phone: values.phone,
-      email: values.email,
-      student_count: values.student_count,
-      teacher_count: values.teacher_count,
-      type: values.type,
-      status: values.status,
-      language: values.language,
-    };
-    
-    onSubmit(schoolData);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-6">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        {t('loading')}
-      </div>
-    );
-  }
+  // Get values and state from form
+  const { register, handleSubmit, formState: { errors }, watch } = form;
+  const selectedRegionId = watch('region_id');
+  
+  // Filter sectors based on selected region
+  const filteredSectors = sectors?.filter(sector => sector.region_id === selectedRegionId) || [];
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('schoolName')}</FormLabel>
-                <FormControl>
-                  <Input placeholder={t('enterSchoolName')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label htmlFor="name" className="text-sm font-medium">
+            {t('schoolName')} <span className="text-red-500">*</span>
+          </label>
+          <Input
+            id="name"
+            {...register('name')}
+            placeholder={t('enterSchoolName')}
+            className={errors.name ? 'border-red-500' : ''}
           />
-          
-          <FormField
-            control={form.control}
-            name="region_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('region')}</FormLabel>
-                <Select 
-                  disabled={isLoading} 
-                  onValueChange={field.onChange} 
-                  value={field.value} 
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('selectRegion')} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {regions.map((region) => (
-                      <SelectItem key={region.id} value={region.id}>
-                        {region.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="sector_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('sector')}</FormLabel>
-                <Select 
-                  disabled={isLoading} 
-                  onValueChange={field.onChange} 
-                  value={field.value} 
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('selectSector')} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {sectors.map((sector) => (
-                      <SelectItem key={sector.id} value={sector.id}>
-                        {sector.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {errors.name && (
+            <p className="text-red-500 text-xs">{errors.name.message}</p>
+          )}
+        </div>
 
-          <FormField
-            control={form.control}
-            name="principal_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('principalName')}</FormLabel>
-                <FormControl>
-                  <Input placeholder={t('enterPrincipalName')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('address')}</FormLabel>
-                <FormControl>
-                  <Input placeholder={t('enterAddress')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="space-y-2">
+          <label htmlFor="region_id" className="text-sm font-medium">
+            {t('region')} <span className="text-red-500">*</span>
+          </label>
+          <select
+            id="region_id"
+            {...register('region_id')}
+            className={`w-full p-2 border rounded-md ${errors.region_id ? 'border-red-500' : ''}`}
+          >
+            <option value="">{t('selectRegion')}</option>
+            {regions?.map((region) => (
+              <option key={region.id} value={region.id}>
+                {region.name}
+              </option>
+            ))}
+          </select>
+          {errors.region_id && (
+            <p className="text-red-500 text-xs">{errors.region_id.message}</p>
+          )}
+        </div>
 
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('phone')}</FormLabel>
-                <FormControl>
-                  <Input placeholder={t('enterPhone')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="space-y-2">
+          <label htmlFor="sector_id" className="text-sm font-medium">
+            {t('sector')} <span className="text-red-500">*</span>
+          </label>
+          <select
+            id="sector_id"
+            {...register('sector_id')}
+            className={`w-full p-2 border rounded-md ${errors.sector_id ? 'border-red-500' : ''}`}
+          >
+            <option value="">{t('selectSector')}</option>
+            {filteredSectors.map((sector) => (
+              <option key={sector.id} value={sector.id}>
+                {sector.name}
+              </option>
+            ))}
+          </select>
+          {errors.sector_id && (
+            <p className="text-red-500 text-xs">{errors.sector_id.message}</p>
+          )}
+        </div>
 
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('email')}</FormLabel>
-                <FormControl>
-                  <Input type="email" placeholder={t('enterEmail')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="student_count"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('studentCount')}</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder={t('enterStudentCount')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="teacher_count"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('teacherCount')}</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder={t('enterTeacherCount')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="language"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('language')}</FormLabel>
-                <Select 
-                  disabled={isLoading} 
-                  onValueChange={field.onChange} 
-                  value={field.value} 
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('selectLanguage')} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="az">Azərbaycan</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="ru">Русский</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('schoolType')}</FormLabel>
-                <Select 
-                  disabled={isLoading} 
-                  onValueChange={field.onChange} 
-                  value={field.value} 
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('selectSchoolType')} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="public">{t('public')}</SelectItem>
-                    <SelectItem value="private">{t('private')}</SelectItem>
-                    <SelectItem value="mixed">{t('mixed')}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>{t('status')}</FormLabel>
-                <FormControl>
-                  <RadioGroup 
-                    value={field.value} 
-                    onValueChange={field.onChange}
-                    className="flex space-x-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioItem value="active" id="active">
-                        <RadioIndicator />
-                      </RadioItem>
-                      <label htmlFor="active" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        {t('active')}
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioItem value="inactive" id="inactive">
-                        <RadioIndicator />
-                      </RadioItem>
-                      <label htmlFor="inactive" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        {t('inactive')}
-                      </label>
-                    </div>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+        <div className="space-y-2">
+          <label htmlFor="address" className="text-sm font-medium">
+            {t('address')}
+          </label>
+          <Input
+            id="address"
+            {...register('address')}
+            placeholder={t('enterAddress')}
           />
         </div>
 
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {t('saving')}
-            </>
-          ) : (
-            submitButtonText
+        <div className="space-y-2">
+          <label htmlFor="phone" className="text-sm font-medium">
+            {t('phone')}
+          </label>
+          <Input
+            id="phone"
+            {...register('phone')}
+            placeholder={t('enterPhone')}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-sm font-medium">
+            {t('email')}
+          </label>
+          <Input
+            id="email"
+            {...register('email')}
+            placeholder={t('enterEmail')}
+            className={errors.email ? 'border-red-500' : ''}
+          />
+          {errors.email && (
+            <p className="text-red-500 text-xs">{errors.email.message}</p>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="principal_name" className="text-sm font-medium">
+            {t('principalName')}
+          </label>
+          <Input
+            id="principal_name"
+            {...register('principal_name')}
+            placeholder={t('enterPrincipalName')}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="student_count" className="text-sm font-medium">
+            {t('studentCount')}
+          </label>
+          <Input
+            id="student_count"
+            type="number"
+            {...register('student_count', { valueAsNumber: true })}
+            placeholder={t('enterStudentCount')}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="teacher_count" className="text-sm font-medium">
+            {t('teacherCount')}
+          </label>
+          <Input
+            id="teacher_count"
+            type="number"
+            {...register('teacher_count', { valueAsNumber: true })}
+            placeholder={t('enterTeacherCount')}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">{t('status')}</label>
+          <RadioGroup value={form.watch('status')} onValueChange={(value) => form.setValue('status', value)}>
+            <div className="flex items-center space-x-2">
+              <RadioItem value="active" id="status-active" />
+              <label htmlFor="status-active">{t('active')}</label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioItem value="inactive" id="status-inactive" />
+              <label htmlFor="status-inactive">{t('inactive')}</label>
+            </div>
+          </RadioGroup>
+        </div>
+      </div>
+
+      <div className="flex justify-end space-x-2">
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? t('saving') : t('save')}
         </Button>
-      </form>
-    </Form>
+      </div>
+    </form>
   );
 };
 

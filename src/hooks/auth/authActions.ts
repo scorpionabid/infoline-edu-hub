@@ -1,34 +1,10 @@
-import { supabase } from '@/integrations/supabase/client';
-import { UserRole, FullUserData } from '@/types/supabase';
 
-export interface FullUserData {
-  id: string;
-  email: string;
-  full_name?: string;
-  phone?: string;
-  role?: UserRole;
-  status?: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  position?: string;
-  language?: string;
-  avatar?: string;
-  last_login?: string;
-  user_metadata?: {
-    full_name?: string;
-    avatar?: string;
-  };
-  notificationSettings?: {
-    inApp: boolean;
-    email: boolean;
-    push: boolean;
-    system: boolean;
-    deadline: boolean;
-  };
-  created_at?: string;
-  updated_at?: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { UserRole } from '@/types/supabase';
+
+// Using FullUserData from supabase.ts to avoid duplication
+import { FullUserData } from '@/types/supabase';
+export { FullUserData };
 
 export const fetchUserData = async (userId: string): Promise<FullUserData | null> => {
   try {
@@ -156,7 +132,7 @@ export const createUser = async (
   }
 };
 
-// Function to update a user's profile data - export this function for AccountSettings.tsx
+// Function to update a user's profile data
 export const updateUserProfile = async (userData: Partial<FullUserData>): Promise<{ success: boolean; message: string }> => {
   try {
     const { id, ...profileData } = userData;
@@ -219,5 +195,5 @@ export const updateUserProfile = async (userData: Partial<FullUserData>): Promis
   }
 };
 
-// Add alias for updateUserProfile to fix the import in AccountSettings.tsx
+// Export updateUserProfile as updateUser for compatibility
 export const updateUser = updateUserProfile;

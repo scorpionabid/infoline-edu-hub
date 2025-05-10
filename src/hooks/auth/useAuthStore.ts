@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Session, AuthChangeEvent, Provider } from '@supabase/supabase-js';
@@ -29,6 +30,16 @@ interface AuthState {
   refreshSession: () => Promise<void>;
   refreshUserData: () => Promise<void>;
   forceSessionReset: () => Promise<void>;
+  
+  // Additional methods for compatibility
+  clearError: () => void;
+  refreshProfile: () => Promise<void>;
+  updatePassword: (password: string) => Promise<any>;
+  updateProfile: (data: Partial<FullUserData>) => Promise<any>;
+  resetPassword: (email: string) => Promise<any>;
+  register: (email: string, password: string, metadata?: any) => Promise<any>;
+  signup: (email: string, password: string, metadata?: any) => Promise<any>;
+  updateUser: (data: Partial<FullUserData>) => Promise<any>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -262,6 +273,112 @@ export const useAuthStore = create<AuthState>()(
           console.error("Error during force session reset:", error);
         }
       },
+
+      // Additional methods for compatibility
+      clearError: () => set({ error: null }),
+      
+      refreshProfile: async () => {
+        await get().refreshUserData();
+      },
+      
+      updatePassword: async (password) => {
+        try {
+          set({ isLoading: true });
+          const { data, error } = await supabase.auth.updateUser({
+            password
+          });
+          
+          if (error) throw error;
+          
+          set({ isLoading: false });
+          return { data, error: null };
+        } catch (error: any) {
+          set({ isLoading: false, error: error.message });
+          return { data: null, error };
+        }
+      },
+      
+      updateProfile: async (userData) => {
+        try {
+          set({ isLoading: true });
+          // Update auth user metadata
+          if (userData.full_name) {
+            await supabase.auth.updateUser({
+              data: { full_name: userData.full_name }
+            });
+          }
+          
+          // Update profile in database
+          const { data, error } = await supabase
+            .from('profiles')
+            .update({
+              full_name: userData.full_name,
+              phone: userData.phone,
+              position: userData.position,
+              language: userData.language,
+              status: userData.status,
+            })
+            .eq('id', userData.id || get().user?.id || '')
+            .select();
+          
+          if (error) throw error;
+          
+          // Refresh user data to get updated profile
+          await get().refreshUserData();
+          
+          set({ isLoading: false });
+          return { data, error: null };
+        } catch (error: any) {
+          set({ isLoading: false, error: error.message });
+          return { data: null, error };
+        }
+      },
+      
+      resetPassword: async (email) => {
+        try {
+          set({ isLoading: true });
+          const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+          
+          if (error) throw error;
+          
+          set({ isLoading: false });
+          return { data, error: null };
+        } catch (error: any) {
+          set({ isLoading: false, error: error.message });
+          return { data: null, error };
+        }
+      },
+      
+      register: async (email, password, metadata = {}) => {
+        try {
+          set({ isLoading: true });
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: metadata
+            }
+          });
+          
+          if (error) throw error;
+          
+          set({ isLoading: false });
+          return { data, error: null };
+        } catch (error: any) {
+          set({ isLoading: false, error: error.message });
+          return { data: null, error };
+        }
+      },
+      
+      // Alias for register
+      signup: async (email, password, metadata = {}) => {
+        return get().register(email, password, metadata);
+      },
+      
+      // Alias for updateProfile
+      updateUser: async (userData) => {
+        return get().updateProfile(userData);
+      }
     }),
     {
       name: 'auth-storage',
