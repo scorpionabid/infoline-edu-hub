@@ -2,240 +2,201 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Category, CategoryFilter, CategoryStatus, CategoryAssignment } from '@/types/category';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
+
+// Enhanced fetch utility to prevent request loops and handle authentication
+async function fetchWithControlledRetry<T>(
+  url: string, 
+  options: RequestInit = {}, 
+  maxRetries = 3
+): Promise<T | null> {
+  const authStore = useAuthStore.getState();
+  const session = authStore.session;
+
+  const defaultHeaders: Record<string, string> = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Accept-Profile': 'public',
+  };
+
+  // Add authentication headers if session exists
+  if (session?.access_token) {
+    defaultHeaders['Authorization'] = `Bearer ${session.access_token}`;
+    defaultHeaders['apikey'] = supabase.rest.apiKey;
+  }
+
+  const fetchOptions: RequestInit = {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers,
+    },
+    mode: 'cors',
+    credentials: 'include',
+  };
+
+  let retries = 0;
+  const baseDelay = 1000; // 1 second base delay
+
+  while (retries < maxRetries) {
+    try {
+      // Check if session is valid before making the request
+      if (!session) {
+        console.warn('No active session, skipping fetch');
+        return null;
+      }
+
+      const response = await fetch(url, fetchOptions);
+
+      if (!response.ok) {
+        // Handle specific authentication-related errors
+        if (response.status === 401) {
+          console.warn('Unauthorized access, attempting to refresh session');
+          await authStore.refreshSession();
+          return null;
+        }
+
+        console.warn(`Fetch error (attempt ${retries + 1}):`, {
+          status: response.status,
+          statusText: response.statusText,
+          url
+        });
+
+        // Specific handling for different status codes
+        if (response.status === 429) {
+          // Too Many Requests - use longer backoff
+          await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, retries)));
+        } else if (response.status >= 500) {
+          // Server errors - retry with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, retries)));
+        } else {
+          // For other errors, break the retry loop
+          break;
+        }
+
+        retries++;
+        continue;
+      }
+
+      const data = await response.json();
+      return data as T;
+    } catch (error) {
+      console.error(`Network error (attempt ${retries + 1}):`, error);
+      
+      // Network errors or parsing errors
+      await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, retries)));
+      retries++;
+    }
+  }
+
+  toast.error('Failed to fetch data after multiple attempts');
+  return null;
+}
 
 export const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Add pagination state
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
-  
-  // Fetch categories with filters
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const { session, user } = useAuthStore();
+
   const fetchCategories = useCallback(async (filter: CategoryFilter = {}) => {
-    console.log('Fetching categories with filter:', filter);
+    // Only fetch if authenticated
+    if (!session || !user) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    
-    try {
-      let query = supabase.from('categories').select('*', { count: 'exact' });
-      
-      // Apply filters
-      if (filter.status) {
-        // Handle status as string or string[]
-        if (Array.isArray(filter.status)) {
-          if (filter.status.length > 0) {
-            query = query.in('status', filter.status);
-          }
-        } else if (filter.status) {
-          query = query.eq('status', filter.status);
-        }
-      }
-      
-      if (filter.search) {
-        query = query.ilike('name', `%${filter.search}%`);
-      }
-      
-      // Only add archived filter if it exists in the filter object
-      if (filter.archived !== undefined) {
-        query = query.eq('archived', filter.archived);
-      } else {
-        // Default to non-archived categories
-        query = query.eq('archived', false);
-      }
 
-      // Add pagination
-      const pageNumber = filter.page || currentPage;
-      const limit = filter.limit || pageSize;
-      const startIndex = (pageNumber - 1) * limit;
-      
-      query = query.range(startIndex, startIndex + limit - 1);
-      
-      console.log('Supabase query:', query);
-      
-      const { data, count, error } = await query;
-      
-      console.log('Query result:', { data, count, error });
-      
-      if (error) {
-        console.error('Supabase query error:', error);
-        throw error;
-      }
-      
-      if (count !== null) {
-        setTotalCount(count);
-      }
-      
+    try {
+      // Construct Supabase REST API URL with filters
+      const baseUrl = `${supabase.rest.url}/rest/v1/categories`;
+      const queryParams = new URLSearchParams({
+        select: '*',
+        order: 'name.asc',
+        ...(filter.status ? { status: Array.isArray(filter.status) ? filter.status.join(',') : filter.status } : {}),
+        ...(filter.search ? { name: `ilike.%${filter.search}%` } : {}),
+        offset: String((currentPage - 1) * pageSize),
+        limit: String(pageSize)
+      });
+
+      const url = `${baseUrl}?${queryParams}`;
+
+      const data = await fetchWithControlledRetry<Category[]>(url);
+
       if (data) {
-        // Transform data to match Category type
-        const transformedData: Category[] = data.map(item => {
-          console.log('Raw category item:', item);
-          return {
-            id: item.id,
-            name: item.name,
-            description: item.description || '',
-            deadline: item.deadline || '',
-            status: (item.status || 'active') as CategoryStatus,
-            priority: item.priority || 0,
-            assignment: (item.assignment || 'all') as CategoryAssignment,
-            column_count: item.column_count || 0,
-            archived: item.archived || false,
-            created_at: item.created_at,
-            updated_at: item.updated_at,
-            completionRate: 0
-          };
-        });
-        
-        console.log('Transformed categories:', transformedData);
-        
-        setCategories(transformedData);
-      } else {
-        console.warn('No category data returned');
-        setCategories([]);
+        setCategories(data);
+        setTotalCount(data.length);
       }
     } catch (error: any) {
-      console.error('Full error in fetchCategories:', error);
       setError(error.message);
       toast.error('Kateqoriyalar yüklənərkən xəta baş verdi');
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize]);
-  
-  // Create a new category
-  const createCategory = async (categoryData: Omit<Category, 'id'>) => {
+  }, [currentPage, pageSize, session, user]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  const createCategory = async (category: {
+    name: string;
+    description: string;
+    deadline: string;  
+    status: CategoryStatus;
+    priority: number;
+    assignment: string;
+    archived: boolean;
+  }) => {
+    // Only create if authenticated
+    if (!session || !user) {
+      toast.error('Autentifikasiya tələb olunur');
+      return null;
+    }
+
     try {
-      // Prepare data for insertion
-      const insertData = {
-        name: categoryData.name,
-        description: categoryData.description,
-        deadline: categoryData.deadline,
-        status: categoryData.status,
-        priority: categoryData.priority,
-        assignment: categoryData.assignment,
-        archived: categoryData.archived
+      const url = `${supabase.rest.url}/rest/v1/categories`;
+      
+      const processedCategory = {
+        ...category,
+        deadline: category.deadline instanceof Date 
+          ? category.deadline.toISOString().split('T')[0] 
+          : category.deadline
       };
-      
-      const { data, error } = await supabase
-        .from('categories')
-        .insert([insertData])
-        .select();
-        
-      if (error) {
-        throw error;
-      }
-      
-      if (data && data[0]) {
-        // Add the new category to state
-        const newCategory: Category = {
-          id: data[0].id,
-          name: data[0].name,
-          description: data[0].description || '',
-          deadline: data[0].deadline || '',
-          status: (data[0].status || 'active') as CategoryStatus,
-          priority: data[0].priority || 0,
-          assignment: data[0].assignment || 'all',
-          column_count: data[0].column_count || 0,
-          archived: data[0].archived || false,
-          created_at: data[0].created_at,
-          updated_at: data[0].updated_at,
-          completionRate: 0
-        };
-        
+
+      const data = await fetchWithControlledRetry<Category[]>(url, {
+        method: 'POST',
+        body: JSON.stringify(processedCategory)
+      });
+
+      if (data && data.length > 0) {
+        const newCategory = data[0];
         setCategories(prev => [...prev, newCategory]);
         toast.success('Kateqoriya uğurla yaradıldı');
         return newCategory;
       }
       return null;
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Unexpected error creating category:', error);
       toast.error('Kateqoriya yaradılarkən xəta baş verdi');
-      console.error('Error creating category:', error);
       return null;
     }
   };
-  
-  // Update a category
-  const updateCategory = async (id: string, categoryData: Partial<Category>) => {
-    try {
-      // Prepare data for update, removing any properties not in the database schema
-      const updateData = {
-        name: categoryData.name,
-        description: categoryData.description,
-        deadline: categoryData.deadline instanceof Date 
-          ? categoryData.deadline.toISOString() 
-          : categoryData.deadline,
-        status: categoryData.status,
-        priority: categoryData.priority,
-        assignment: categoryData.assignment,
-        archived: categoryData.archived
-      };
-      
-      const { error } = await supabase
-        .from('categories')
-        .update(updateData)
-        .eq('id', id);
-        
-      if (error) {
-        throw error;
-      }
-      
-      // Update the category in state
-      setCategories(prev => prev.map(cat => 
-        cat.id === id ? { ...cat, ...categoryData } : cat
-      ));
-      
-      toast.success('Kateqoriya uğurla yeniləndi');
-      return true;
-    } catch (error: any) {
-      toast.error('Kateqoriya yenilənərkən xəta baş verdi');
-      console.error('Error updating category:', error);
-      return false;
-    }
-  };
-  
-  // Delete a category
-  const deleteCategory = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
-        
-      if (error) {
-        throw error;
-      }
-      
-      // Remove the category from state
-      setCategories(prev => prev.filter(cat => cat.id !== id));
-      
-      toast.success('Kateqoriya uğurla silindi');
-      return true;
-    } catch (error: any) {
-      toast.error('Kateqoriya silinərkən xəta baş verdi');
-      console.error('Error deleting category:', error);
-      return false;
-    }
-  };
-  
-  // Fetch categories on mount
-  useEffect(() => {
-    fetchCategories({ archived: false });
-  }, [fetchCategories]);
-  
+
   return {
     categories,
     loading,
     error,
-    totalCount,
-    currentPage,
-    pageSize,
-    setCurrentPage,
-    setPageSize,
     fetchCategories,
     createCategory,
-    updateCategory,
-    deleteCategory
+    currentPage,
+    setCurrentPage,
+    totalCount
   };
 };
