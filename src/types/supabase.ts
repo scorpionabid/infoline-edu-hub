@@ -1,4 +1,3 @@
-
 // Define the EnhancedSector type
 export interface EnhancedSector extends Sector {
   region_name?: string;
@@ -72,7 +71,7 @@ export interface SchoolStat {
 }
 
 // Define UserRole type
-export type UserRole = "superadmin" | "regionadmin" | "sectoradmin" | "schooladmin";
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'teacher' | 'student' | 'parent';
 
 // Define NotificationSettings type
 export interface NotificationSettings {

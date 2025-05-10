@@ -1,4 +1,3 @@
-
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'teacher' | 'student' | 'parent';
 export type UserStatus = 'active' | 'inactive' | 'pending';
 
@@ -24,8 +23,10 @@ export interface FullUserData {
   last_login?: string;
   notificationSettings?: {
     email: boolean;
+    inApp: boolean;
     push: boolean;
-    app: boolean;
+    system: boolean;
+    deadline: boolean;
   };
 }
 

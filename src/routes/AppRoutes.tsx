@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuthStore, selectIsAuthenticated, selectIsLoading } from "@/hooks/auth/useAuthStore";
@@ -26,9 +25,11 @@ import DataEntry from "@/pages/DataEntry";
 import Profile from "@/pages/Profile";
 import Approvals from "@/pages/Approval";
 
+import { UserRole } from "@/types/supabase";
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: string[];
+  allowedRoles?: UserRole[];
   redirectUrl?: string;
 }
 

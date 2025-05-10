@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, selectIsAuthenticated, selectIsLoading, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
@@ -77,19 +76,15 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-3">
-      {console.log('[Dashboard.tsx] Render: Rendering DashboardHeader.')}
       <DashboardHeader />
       
       {isSchoolAdmin && (
         <>
-          {console.log('[Dashboard.tsx] Render: User is schooladmin, rendering SchoolAdminSetupCheck.')}
           <SchoolAdminSetupCheck />
         </>
       )}
       
-      {console.log('[Dashboard.tsx] Render: Rendering DashboardContent.')}
       <DashboardContent />
-      {console.log('[Dashboard.tsx] Render: Finished rendering content.')}
     </div>
   );
 };
