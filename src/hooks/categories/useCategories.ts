@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Category, CategoryFilter, CategoryStatus, CategoryAssignment } from '@/types/category';
+import { Category, CategoryFilter, CategoryStatus } from '@/types/category';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
 // Enhanced fetch utility to prevent request loops and handle authentication
@@ -13,16 +13,21 @@ async function fetchWithControlledRetry<T>(
   const authStore = useAuthStore.getState();
   const session = authStore.session;
 
+  // Get Supabase API key safely
+  const supabaseApiKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || 
+    process.env.VITE_SUPABASE_ANON_KEY || 
+    '';
+
   const defaultHeaders: Record<string, string> = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
     'Accept-Profile': 'public',
+    'apikey': supabaseApiKey
   };
 
   // Add authentication headers if session exists
   if (session?.access_token) {
     defaultHeaders['Authorization'] = `Bearer ${session.access_token}`;
-    defaultHeaders['apikey'] = supabase.rest.apiKey;
   }
 
   const fetchOptions: RequestInit = {
@@ -103,6 +108,12 @@ export const useCategories = () => {
 
   const { session, user } = useAuthStore();
 
+  // Safely get Supabase URL
+  const supabaseUrl = supabase.supabaseUrl || 
+    import.meta.env?.VITE_SUPABASE_URL || 
+    process.env.VITE_SUPABASE_URL || 
+    '';
+
   const fetchCategories = useCallback(async (filter: CategoryFilter = {}) => {
     // Only fetch if authenticated
     if (!session || !user) {
@@ -115,7 +126,7 @@ export const useCategories = () => {
 
     try {
       // Construct Supabase REST API URL with filters
-      const baseUrl = `${supabase.rest.url}/rest/v1/categories`;
+      const baseUrl = `${supabaseUrl}/rest/v1/categories`;
       const queryParams = new URLSearchParams({
         select: '*',
         order: 'name.asc',
@@ -139,7 +150,7 @@ export const useCategories = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, session, user]);
+  }, [currentPage, pageSize, session, user, supabaseUrl]);
 
   useEffect(() => {
     fetchCategories();
@@ -148,7 +159,7 @@ export const useCategories = () => {
   const createCategory = async (category: {
     name: string;
     description: string;
-    deadline: string;  
+    deadline: string | Date;  
     status: CategoryStatus;
     priority: number;
     assignment: string;
@@ -161,16 +172,16 @@ export const useCategories = () => {
     }
 
     try {
-      const url = `${supabase.rest.url}/rest/v1/categories`;
+      const baseUrl = `${supabaseUrl}/rest/v1/categories`;
       
       const processedCategory = {
         ...category,
-        deadline: category.deadline instanceof Date 
+        deadline: typeof category.deadline === 'object' && category.deadline instanceof Date 
           ? category.deadline.toISOString().split('T')[0] 
           : category.deadline
       };
 
-      const data = await fetchWithControlledRetry<Category[]>(url, {
+      const data = await fetchWithControlledRetry<Category[]>(baseUrl, {
         method: 'POST',
         body: JSON.stringify(processedCategory)
       });
