@@ -56,7 +56,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       signOut: logout,
       updateUser,
       clearError,
-      refreshProfile,
+      refreshProfile: async () => {
+        const user = await refreshProfile();
+        return user || null;
+      },
       refreshSession,
       updatePassword,
       updateProfile,
@@ -64,7 +67,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       resetPassword,
       register,
       setError,
-      createUser: register,
+      createUser: async (userData) => {
+        try {
+          return await register(userData);
+        } catch (error) {
+          return { data: null, error };
+        }
+      },
       signup,
       updateUserData: async (data) => {
         try {

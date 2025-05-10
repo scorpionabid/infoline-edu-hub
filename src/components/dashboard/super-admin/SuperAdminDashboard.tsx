@@ -1,68 +1,109 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLanguage } from '@/context/LanguageContext';
-import StatusCards from '@/components/dashboard/StatusCards';
-import { SuperAdminDashboardProps } from '@/types/dashboard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import StatsGrid from '@/components/dashboard/StatsGrid';
+import DashboardChart from '@/components/dashboard/DashboardChart';
+import CategoryProgressList from '@/components/dashboard/CategoryProgressList';
+import SchoolsCompletionList from '@/components/dashboard/SchoolsCompletionList';
+import RegionsList from './RegionsList';
+import { SuperAdminDashboardData } from '@/types/dashboard';
+
+interface SuperAdminDashboardProps {
+  data: SuperAdminDashboardData;
+}
 
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
-  const { t } = useLanguage();
-  
+  const stats = [
+    {
+      title: 'Aktiv istifadəçilər',
+      value: data.activeUsers || 0,
+      color: 'bg-green-50'
+    },
+    {
+      title: 'Ümumi regionlar',
+      value: data.totalRegions || 0,
+      color: 'bg-blue-50'
+    },
+    {
+      title: 'Ümumi sektorlar',
+      value: data.totalSectors || 0,
+      color: 'bg-amber-50'
+    },
+    {
+      title: 'Ümumi məktəblər',
+      value: data.totalSchools || 0,
+      color: 'bg-purple-50'
+    }
+  ];
+
   return (
-    <div className="space-y-6">
-      <StatusCards
-        completion={data.completion}
-        status={data.status}
-        formStats={data.formStats}
-      />
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="space-y-4">
+      <StatsGrid stats={stats} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('totalRegions')}</CardTitle>
+          <CardHeader>
+            <CardTitle>Qeydlərin tamamlanması</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{data.totalRegions || 0}</p>
+            <DashboardChart 
+              completion={data.completionRate || 0} 
+              stats={{
+                approved: data.approvedEntries || 0,
+                pending: data.pendingEntries || 0,
+                rejected: data.rejectedEntries || 0
+              }} 
+            />
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('totalSectors')}</CardTitle>
+          <CardHeader>
+            <CardTitle>Kateqoriyalar</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{data.totalSectors || 0}</p>
+            <CategoryProgressList categories={data.categories || []} />
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('totalSchools')}</CardTitle>
+          <CardHeader>
+            <CardTitle>Məktəblər</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{data.totalSchools || 0}</p>
+            <SchoolsCompletionList schools={data.schools || []} />
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('totalUsers')}</CardTitle>
+          <CardHeader>
+            <CardTitle>Məlumat Statistikası</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{data.totalUsers || 0}</p>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">İstifadəçilər</span>
+                <span className="text-lg font-medium">{data.activeUsers || 0}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">Məktəblər</span>
+                <span className="text-lg font-medium">{data.totalSchools || 0}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
+
+        {data.regions && data.regions.length > 0 && (
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>Regionlar</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RegionsList regions={data.regions} />
+            </CardContent>
+          </Card>
+        )}
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('systemOverview')}</CardTitle>
-          <CardDescription>{t('systemOverviewDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">{t('superAdminDashboardComingSoon')}</p>
-        </CardContent>
-      </Card>
     </div>
   );
 };

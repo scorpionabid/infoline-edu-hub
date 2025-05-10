@@ -1,10 +1,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { UserRole } from '@/types/supabase';
+import { UserRole } from '@/types/auth';
 
-// Using FullUserData from supabase.ts to avoid duplication
-import { FullUserData } from '@/types/supabase';
-export { FullUserData };
+// Import FullUserData from the correct location
+import { FullUserData } from '@/types/auth';
+export type { FullUserData };  // Use export type for re-exporting types
 
 export const fetchUserData = async (userId: string): Promise<FullUserData | null> => {
   try {

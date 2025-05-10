@@ -1,65 +1,92 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { SuperAdminDashboardProps } from '@/types/dashboard';
+import StatsGrid from './StatsGrid';
+import DashboardChart from './DashboardChart';
+import CategoryProgressList from './CategoryProgressList';
+import SchoolsCompletionList from './SchoolsCompletionList';
 
-const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
-  const { completion, regionStats = [], sectorStats = [], schoolStats = [] } = data;
-  
+const SuperAdminDashboard = ({ data }) => {
+  const stats = [
+    {
+      title: 'Aktiv istifadəçilər',
+      value: data.activeUsers || 0,
+      color: 'bg-green-50'
+    },
+    {
+      title: 'Ümumi regionlar',
+      value: data.totalRegions || 0,
+      color: 'bg-blue-50'
+    },
+    {
+      title: 'Ümumi sektorlar',
+      value: data.totalSectors || 0,
+      color: 'bg-amber-50'
+    },
+    {
+      title: 'Ümumi məktəblər',
+      value: data.totalSchools || 0,
+      color: 'bg-purple-50'
+    }
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="space-y-4">
+      <StatsGrid stats={stats} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Region</CardTitle>
+          <CardHeader>
+            <CardTitle>Qeydlərin tamamlanması</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.totalRegions || regionStats.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Total regions in the system
-            </p>
+            <DashboardChart 
+              completion={data.completionRate || 0} 
+              stats={{
+                approved: data.approvedEntries || 0,
+                pending: data.pendingEntries || 0,
+                rejected: data.rejectedEntries || 0
+              }} 
+            />
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Sector</CardTitle>
+          <CardHeader>
+            <CardTitle>Kateqoriyalar</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.totalSectors || sectorStats.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Total sectors in the system
-            </p>
+            <CategoryProgressList categories={data.categories || []} />
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">School</CardTitle>
+          <CardHeader>
+            <CardTitle>Tamamlanma dərəcələri</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.totalSchools || schoolStats.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Total schools in the system
-            </p>
+            <SchoolsCompletionList schools={data.schools || []} />
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Completion</CardTitle>
+          <CardHeader>
+            <CardTitle>Məlumat Statistikası</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completion.percentage.toFixed(0)}%</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Overall completion rate
-            </p>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">İstifadəçilər</span>
+                <span className="text-lg font-medium">{data.activeUsers || 0}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">Məktəblər</span>
+                <span className="text-lg font-medium">{data.totalSchools || 0}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
-      
-      {/* Additional content can be added here */}
     </div>
   );
 };

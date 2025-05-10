@@ -41,7 +41,9 @@ export const useAuth = (): AuthContextType => {
       signOut: store.logout,
       updateUser: store.updateUser,
       clearError: store.clearError,
-      refreshProfile: store.refreshProfile,
+      refreshProfile: async () => {
+        return await store.refreshProfile() || null;
+      },
       refreshSession: store.refreshSession,
       updatePassword: store.updatePassword,
       updateProfile: store.updateProfile,
@@ -49,7 +51,7 @@ export const useAuth = (): AuthContextType => {
       resetPassword: store.resetPassword,
       register: store.register,
       setError: store.setError,
-      createUser: store.createUser,
+      createUser: store.register,
       signup: store.signup,
       updateUserData: async (data) => {
         try {

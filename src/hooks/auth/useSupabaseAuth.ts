@@ -2,14 +2,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuthStore } from './useAuthStore';
-import { FullUserData } from '@/types/supabase';
+import { FullUserData } from '@/types/auth';
 
 /**
  * Hook for direct access to Supabase authentication functionality
  * This provides a simpler API for registration flows
  */
 export const useSupabaseAuth = () => {
-  const { setError, setUser, setSession } = useAuthStore();
+  const { setError, updateUser, setSession } = useAuthStore();
   
   /**
    * Sign up a new user with email and password
@@ -71,8 +71,10 @@ export const useSupabaseAuth = () => {
       
       if (data.session) {
         setSession(data.session);
-        // Use user data directly without type conversion that would cause errors
-        setUser(data.user as unknown as FullUserData);
+        // Use updateUser instead of setUser
+        if (data.user) {
+          updateUser(data.user as unknown as FullUserData);
+        }
         return { success: true, data: data.user };
       }
       

@@ -1,184 +1,218 @@
-import { useState, useCallback } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Category, CategoryFilter } from '@/types/category';
-import { usePermissions } from '@/hooks/auth/usePermissions';
 import { toast } from 'sonner';
+import { Category, CategoryFilter, CategoryStatus } from '@/types/category';
+import { ColumnData } from '@/types/column';
 
 export const useCategories = () => {
-  const { userRole, regionId, sectorId, schoolId } = usePermissions();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchCategories = useCallback(async (filterOptions: CategoryFilter = {}) => {
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Add pagination state
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  
+  // Fetch categories with filters
+  const fetchCategories = useCallback(async (filter: CategoryFilter = {}) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
+      let query = supabase.from('categories').select('*', { count: 'exact' });
       
-      // Start building the query
-      let query = supabase
-        .from('categories')
-        .select('*');
-
-      // Apply filters based on user role and permissions
-      if (userRole === 'sectoradmin' && sectorId) {
-        // Filter categories based on sector assignment
-        // This is a placeholder - implement according to your schema
-        // For now, we'll just fetch all categories for sector admins
-        // You may need to adjust this based on your actual data model
+      // Apply filters
+      if (filter.status) {
+        query = query.eq('status', filter.status);
+      }
+      
+      if (filter.search) {
+        query = query.ilike('name', `%${filter.search}%`);
+      }
+      
+      if (filter.archived !== undefined) {
+        query = query.eq('archived', filter.archived);
       }
 
-      // Apply status filter if provided
-      if (filterOptions.status && filterOptions.status.length > 0) {
-        query = query.in('status', filterOptions.status);
+      // Add pagination
+      const pageNumber = filter.page || currentPage;
+      const limit = filter.limit || pageSize;
+      const startIndex = (pageNumber - 1) * limit;
+      
+      query = query.range(startIndex, startIndex + limit - 1);
+      
+      const { data, count, error } = await query;
+      
+      if (error) {
+        throw error;
       }
-
-      // Apply search filter if provided
-      if (filterOptions.search) {
-        query = query.ilike('name', `%${filterOptions.search}%`);
+      
+      if (count !== null) {
+        setTotalCount(count);
       }
-
-      // Apply pagination if provided
-      if (filterOptions.page !== undefined && filterOptions.limit !== undefined) {
-        const from = filterOptions.page * filterOptions.limit;
-        const to = from + filterOptions.limit - 1;
-        query = query.range(from, to);
+      
+      if (data) {
+        // Transform data to match Category type
+        const transformedData: Category[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          deadline: item.deadline || '',
+          status: (item.status || 'active') as CategoryStatus,
+          priority: item.priority || 0,
+          assignment: item.assignment || 'all',
+          column_count: item.column_count || 0,
+          archived: item.archived || false,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          completionRate: 0
+        }));
+        
+        setCategories(transformedData);
       }
-
-      // Execute the query
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      setCategories(data as Category[]);
-    } catch (err: any) {
-      console.error('Error fetching categories:', err);
-      setError(err);
-      toast.error('Failed to load categories', {
-        description: err.message
-      });
+    } catch (error: any) {
+      setError(error.message);
+      toast.error('Kateqoriyalar yüklənərkən xəta baş verdi');
+      console.error('Error fetching categories:', error);
     } finally {
       setLoading(false);
     }
-  }, [userRole, regionId, sectorId, schoolId]);
-
-  const createCategory = useCallback(async (categoryData: Omit<Category, 'id'>) => {
+  }, [currentPage, pageSize]);
+  
+  // Create a new category
+  const createCategory = async (categoryData: Omit<Category, 'id'>) => {
     try {
-      setLoading(true);
-      setError(null);
-
+      // Prepare data for insertion
+      const insertData = {
+        name: categoryData.name,
+        description: categoryData.description,
+        deadline: categoryData.deadline,
+        status: categoryData.status,
+        priority: categoryData.priority,
+        assignment: categoryData.assignment,
+        archived: categoryData.archived
+      };
+      
       const { data, error } = await supabase
         .from('categories')
-        .insert([categoryData])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setCategories(prev => [...prev, data as Category]);
-      return data as Category;
-    } catch (err: any) {
-      console.error('Error creating category:', err);
-      setError(err);
-      toast.error('Failed to create category', {
-        description: err.message
-      });
-      throw err;
-    } finally {
-      setLoading(false);
+        .insert([insertData])
+        .select();
+        
+      if (error) {
+        throw error;
+      }
+      
+      if (data && data[0]) {
+        // Add the new category to state
+        const newCategory: Category = {
+          id: data[0].id,
+          name: data[0].name,
+          description: data[0].description || '',
+          deadline: data[0].deadline || '',
+          status: (data[0].status || 'active') as CategoryStatus,
+          priority: data[0].priority || 0,
+          assignment: data[0].assignment || 'all',
+          column_count: data[0].column_count || 0,
+          archived: data[0].archived || false,
+          created_at: data[0].created_at,
+          updated_at: data[0].updated_at,
+          completionRate: 0
+        };
+        
+        setCategories(prev => [...prev, newCategory]);
+        toast.success('Kateqoriya uğurla yaradıldı');
+        return newCategory;
+      }
+      return null;
+    } catch (error: any) {
+      toast.error('Kateqoriya yaradılarkən xəta baş verdi');
+      console.error('Error creating category:', error);
+      return null;
     }
-  }, []);
-
-  const updateCategory = useCallback(async (id: string, categoryData: Partial<Category>) => {
+  };
+  
+  // Update a category
+  const updateCategory = async (id: string, categoryData: Partial<Category>) => {
     try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error } = await supabase
+      // Prepare data for update, removing any properties not in the database schema
+      const updateData = {
+        name: categoryData.name,
+        description: categoryData.description,
+        deadline: categoryData.deadline instanceof Date 
+          ? categoryData.deadline.toISOString() 
+          : categoryData.deadline,
+        status: categoryData.status,
+        priority: categoryData.priority,
+        assignment: categoryData.assignment,
+        archived: categoryData.archived
+      };
+      
+      const { error } = await supabase
         .from('categories')
-        .update(categoryData)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setCategories(prev => prev.map(category => 
-        category.id === id ? { ...category, ...data } : category
+        .update(updateData)
+        .eq('id', id);
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Update the category in state
+      setCategories(prev => prev.map(cat => 
+        cat.id === id ? { ...cat, ...categoryData } : cat
       ));
-      return data as Category;
-    } catch (err: any) {
-      console.error('Error updating category:', err);
-      setError(err);
-      toast.error('Failed to update category', {
-        description: err.message
-      });
-      throw err;
-    } finally {
-      setLoading(false);
+      
+      toast.success('Kateqoriya uğurla yeniləndi');
+      return true;
+    } catch (error: any) {
+      toast.error('Kateqoriya yenilənərkən xəta baş verdi');
+      console.error('Error updating category:', error);
+      return false;
     }
-  }, []);
-
-  const deleteCategory = useCallback(async (id: string) => {
+  };
+  
+  // Delete a category
+  const deleteCategory = async (id: string) => {
     try {
-      setLoading(true);
-      setError(null);
-
       const { error } = await supabase
         .from('categories')
         .delete()
         .eq('id', id);
-
-      if (error) throw error;
-
-      setCategories(prev => prev.filter(category => category.id !== id));
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Remove the category from state
+      setCategories(prev => prev.filter(cat => cat.id !== id));
+      
+      toast.success('Kateqoriya uğurla silindi');
       return true;
-    } catch (err: any) {
-      console.error('Error deleting category:', err);
-      setError(err);
-      toast.error('Failed to delete category', {
-        description: err.message
-      });
-      throw err;
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      toast.error('Kateqoriya silinərkən xəta baş verdi');
+      console.error('Error deleting category:', error);
+      return false;
     }
-  }, []);
-
-  const getCategoryById = useCallback(async (id: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-
-      return data as Category;
-    } catch (err: any) {
-      console.error('Error fetching category:', err);
-      setError(err);
-      toast.error('Failed to load category', {
-        description: err.message
-      });
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  };
+  
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+  
   return {
     categories,
     loading,
     error,
+    totalCount,
+    currentPage,
+    pageSize,
+    setCurrentPage,
+    setPageSize,
     fetchCategories,
     createCategory,
     updateCategory,
-    deleteCategory,
-    getCategoryById
+    deleteCategory
   };
 };
