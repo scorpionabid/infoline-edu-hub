@@ -16,22 +16,22 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   const stats = [
     {
       title: 'Aktiv istifadəçilər',
-      value: data.activeUsers || 0,
+      value: data.users?.active || 0,
       color: 'bg-green-50'
     },
     {
       title: 'Ümumi regionlar',
-      value: data.totalRegions || 0,
+      value: data.regionCount || 0,
       color: 'bg-blue-50'
     },
     {
       title: 'Ümumi sektorlar',
-      value: data.totalSectors || 0,
+      value: data.sectorCount || 0,
       color: 'bg-amber-50'
     },
     {
       title: 'Ümumi məktəblər',
-      value: data.totalSchools || 0,
+      value: data.schoolCount || 0,
       color: 'bg-purple-50'
     }
   ];
@@ -47,11 +47,15 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
           </CardHeader>
           <CardContent>
             <DashboardChart 
-              completion={data.completionRate || 0} 
+              completion={data.completion || 0} 
               stats={{
-                approved: data.approvedEntries || 0,
-                pending: data.pendingEntries || 0,
-                rejected: data.rejectedEntries || 0
+                total: data.entryCount?.total || 0,
+                approved: data.entryCount?.approved || 0,
+                pending: data.entryCount?.pending || 0,
+                rejected: data.entryCount?.rejected || 0,
+                dueSoon: data.entryCount?.dueSoon || 0,
+                overdue: data.entryCount?.overdue || 0,
+                draft: data.entryCount?.draft || 0
               }} 
             />
           </CardContent>
@@ -62,7 +66,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
             <CardTitle>Kateqoriyalar</CardTitle>
           </CardHeader>
           <CardContent>
-            <CategoryProgressList categories={data.categories || []} />
+            <CategoryProgressList categories={data.categoryData || []} />
           </CardContent>
         </Card>
 
@@ -71,7 +75,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
             <CardTitle>Məktəblər</CardTitle>
           </CardHeader>
           <CardContent>
-            <SchoolsCompletionList schools={data.schools || []} />
+            <SchoolsCompletionList schools={data.schoolData || []} />
           </CardContent>
         </Card>
 
@@ -83,23 +87,23 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground">İstifadəçilər</span>
-                <span className="text-lg font-medium">{data.activeUsers || 0}</span>
+                <span className="text-lg font-medium">{data.users?.active || 0}</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground">Məktəblər</span>
-                <span className="text-lg font-medium">{data.totalSchools || 0}</span>
+                <span className="text-lg font-medium">{data.schoolCount || 0}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {data.regions && data.regions.length > 0 && (
+        {data.regionData && data.regionData.length > 0 && (
           <Card className="md:col-span-2">
             <CardHeader>
               <CardTitle>Regionlar</CardTitle>
             </CardHeader>
             <CardContent>
-              <RegionsList regions={data.regions} />
+              <RegionsList regions={data.regionData} />
             </CardContent>
           </Card>
         )}

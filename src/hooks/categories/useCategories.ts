@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Category, CategoryFilter, CategoryStatus } from '@/types/category';
-import { ColumnData } from '@/types/column';
+import { Category, CategoryFilter, CategoryStatus, CategoryAssignment } from '@/types/category';
 
 export const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -25,15 +24,26 @@ export const useCategories = () => {
       
       // Apply filters
       if (filter.status) {
-        query = query.eq('status', filter.status);
+        // Handle status as string or string[]
+        if (Array.isArray(filter.status)) {
+          if (filter.status.length > 0) {
+            query = query.in('status', filter.status);
+          }
+        } else if (filter.status) {
+          query = query.eq('status', filter.status);
+        }
       }
       
       if (filter.search) {
         query = query.ilike('name', `%${filter.search}%`);
       }
       
+      // Only add archived filter if it exists in the filter object
       if (filter.archived !== undefined) {
         query = query.eq('archived', filter.archived);
+      } else {
+        // Default to non-archived categories
+        query = query.eq('archived', false);
       }
 
       // Add pagination
@@ -69,7 +79,7 @@ export const useCategories = () => {
             deadline: item.deadline || '',
             status: (item.status || 'active') as CategoryStatus,
             priority: item.priority || 0,
-            assignment: item.assignment || 'all',
+            assignment: (item.assignment || 'all') as CategoryAssignment,
             column_count: item.column_count || 0,
             archived: item.archived || false,
             created_at: item.created_at,
@@ -211,7 +221,7 @@ export const useCategories = () => {
   
   // Fetch categories on mount
   useEffect(() => {
-    fetchCategories();
+    fetchCategories({ archived: false });
   }, [fetchCategories]);
   
   return {

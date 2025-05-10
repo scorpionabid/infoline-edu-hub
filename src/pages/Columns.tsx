@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Plus, Database, Search } from 'lucide-react';
+import { Plus, Database, Search, Loader2, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Select, 
   SelectContent, 
@@ -32,8 +33,16 @@ const Columns: React.FC = () => {
   const [columnFormDialogOpen, setColumnFormDialogOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState<Column | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { columns, isLoading, isError, error, refetch } = useColumns();
-  const { categories, isLoading: categoriesLoading, getCategories } = useCategories();
+  const [loadingRetries, setLoadingRetries] = useState(0);
+  
+  const { columns, isLoading: columnsLoading, isError, error: columnsError, refetch: refetchColumns } = useColumns();
+  const { 
+    categories, 
+    loading: categoriesLoading, 
+    error: categoriesError, 
+    fetchCategories 
+  } = useCategories();
+  
   const { userRole } = usePermissions();
   const { createColumn, updateColumn, deleteColumn } = useColumnMutations();
   
@@ -53,19 +62,35 @@ const Columns: React.FC = () => {
     categoryId: ''
   });
 
-  // Kategoriyaları yükləyin
-  useEffect(() => {
-    getCategories();
-  }, [getCategories]);
+  // Load categories and columns with retry logic
+  const loadData = useCallback(() => {
+    console.log('Loading categories and columns data');
+    fetchCategories({ archived: false });
+    refetchColumns();
+  }, [fetchCategories, refetchColumns]);
 
-  // Sütunları yükləyin
+  // Retry if data loading fails
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    if ((categoriesError || columnsError) && loadingRetries < 3) {
+      const timer = setTimeout(() => {
+        console.log(`Retrying data fetch (attempt ${loadingRetries + 1})`);
+        setLoadingRetries(prev => prev + 1);
+        loadData();
+      }, Math.pow(2, loadingRetries) * 1000); // Exponential backoff
+      return () => clearTimeout(timer);
+    }
+  }, [categoriesError, columnsError, loadingRetries, loadData]);
+
+  // Initial data load
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Filter columns
   const filteredColumns = React.useMemo(() => {
-    return columns?.filter(column => {
+    if (!columns) return [];
+    
+    return columns.filter(column => {
       // Filter by search query
       const matchesSearch = searchQuery === '' || 
         column.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -116,7 +141,7 @@ const Columns: React.FC = () => {
           description: t('columnAddedDescription')
         });
         setColumnFormDialogOpen(false);
-        refetch();
+        refetchColumns();
         return true;
       } else {
         toast.error(t('columnAddFailed'), {
@@ -155,7 +180,7 @@ const Columns: React.FC = () => {
           description: t('columnUpdatedDescription')
         });
         setColumnFormDialogOpen(false);
-        refetch();
+        refetchColumns();
         return true;
       } else {
         toast.error(t('columnUpdateFailed'), {
@@ -204,7 +229,7 @@ const Columns: React.FC = () => {
           description: t('columnDeletedDescription')
         });
         setDeleteDialog({ ...deleteDialog, isOpen: false });
-        refetch();
+        refetchColumns();
       } else {
         toast.error(t('columnDeleteFailed'), {
           description: result.error || t('unknownError')
@@ -219,6 +244,45 @@ const Columns: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Show error message if all retries failed
+  if ((categoriesError || columnsError) && loadingRetries >= 3) {
+    return (
+      <div className="container mx-auto py-6 space-y-6">
+        <PageHeader
+          title={t('columnsPageTitle')}
+          description={t('columnsPageDescription')}
+          backButtonUrl="/categories"
+        />
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            {categoriesError || columnsError}
+          </AlertDescription>
+          <Button variant="outline" size="sm" onClick={loadData} className="ml-auto">
+            {t('tryAgain')}
+          </Button>
+        </Alert>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if ((columnsLoading || categoriesLoading) && !columnsError && !categoriesError) {
+    return (
+      <div className="container mx-auto py-6 space-y-6">
+        <PageHeader
+          title={t('columnsPageTitle')}
+          description={t('columnsPageDescription')}
+          backButtonUrl="/categories"
+        />
+        <div className="flex flex-col items-center justify-center h-64">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+          <p>{t('loadingColumns')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -304,7 +368,7 @@ const Columns: React.FC = () => {
         </div>
       </div>
 
-      {filteredColumns.length === 0 && !isLoading ? (
+      {filteredColumns.length === 0 && !columnsLoading ? (
         <EmptyState
           icon={<Database className="h-12 w-12" />}
           title={t('noColumnsFound')}
@@ -318,8 +382,8 @@ const Columns: React.FC = () => {
         <ColumnList
           columns={filteredColumns}
           categories={categories || []}
-          isLoading={isLoading || categoriesLoading}
-          isError={!!error}
+          isLoading={columnsLoading || categoriesLoading}
+          isError={!!columnsError || !!categoriesError}
           onEditColumn={handleEditColumn}
           onDeleteColumn={(id, name) => handleOpenDeleteDialog(
             id, 

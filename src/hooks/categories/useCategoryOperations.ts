@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { Category, CategoryStatus } from '@/types/category';
+import { Category, CategoryStatus, CategoryFilter } from '@/types/category';
 
 // AddCategoryFormData tipini təyin edək
 export interface AddCategoryFormData {
@@ -20,34 +20,61 @@ export const useCategoryOperations = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCategories = useCallback(async (searchQuery: string, filter: any) => {
+  const fetchCategories = useCallback(async (searchQuery: string, filter: CategoryFilter = {}) => {
     try {
+      console.log('Fetching categories with searchQuery:', searchQuery, 'and filter:', filter);
       let query = supabase
         .from('categories')
-        .select('*')
-        .ilike('name', `%${searchQuery}%`);
+        .select('*');
 
-      if (filter.status !== 'all') {
-        query = query.eq('status', filter.status);
+      // Add search query filter
+      if (searchQuery) {
+        query = query.ilike('name', `%${searchQuery}%`);
       }
 
-      if (filter.assignment !== 'all' && filter.assignment !== '') {
-        query = query.eq('assignment', filter.assignment);
+      // Add status filter
+      if (filter.status && filter.status !== 'all') {
+        if (Array.isArray(filter.status)) {
+          if (filter.status.length > 0) {
+            query = query.in('status', filter.status);
+          }
+        } else {
+          query = query.eq('status', filter.status);
+        }
       }
 
+      // Add assignment filter
+      if (filter.assignment && filter.assignment !== 'all' && filter.assignment !== '') {
+        if (Array.isArray(filter.assignment)) {
+          if (filter.assignment.length > 0) {
+            query = query.in('assignment', filter.assignment);
+          }
+        } else {
+          query = query.eq('assignment', filter.assignment);
+        }
+      }
+
+      // Add deadline filter if present
       if (filter.deadline === 'upcoming') {
         query = query.gt('deadline', new Date().toISOString());
       } else if (filter.deadline === 'past') {
         query = query.lt('deadline', new Date().toISOString());
       }
 
+      // Add archived filter (default to false if not specified)
+      query = query.eq('archived', filter.archived !== undefined ? filter.archived : false);
+
+      console.log('Executing Supabase query:', query);
+
       const { data, error } = await query;
 
       if (error) {
+        console.error('Supabase error:', error);
         throw new Error(error.message);
       }
 
       if (data) {
+        console.log('Categories fetched successfully:', data);
         const typedCategories: Category[] = data.map(item => ({
           id: item.id,
           name: item.name,
@@ -63,9 +90,11 @@ export const useCategoryOperations = () => {
         }));
         return typedCategories;
       } else {
+        console.warn('No category data returned');
         return [];
       }
     } catch (err: any) {
+      console.error('Error in fetchCategories:', err);
       setError(err.message);
       toast.error(t('errorFetchingCategories'), {
         description: err.message

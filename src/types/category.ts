@@ -42,10 +42,13 @@ export interface FormCategory extends Category {
 
 export interface CategoryFilter {
   search?: string;
-  status?: string[];
-  assignment?: string[];
+  status?: string[] | string;
+  assignment?: string[] | string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+  archived?: boolean;
 }
 
 export interface TabDefinition {

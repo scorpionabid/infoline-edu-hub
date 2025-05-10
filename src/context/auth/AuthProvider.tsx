@@ -1,111 +1,134 @@
 
-import React, { useEffect, useMemo } from 'react';
-import { AuthContext } from './context';
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
-import { AuthContextType } from './types';
+import React, { createContext, useEffect, useState } from 'react';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { FullUserData, AuthContextType } from '@/types/auth';
+import { useSupabaseAuth } from '@/hooks/auth/useSupabaseAuth';
 
-type AuthProviderProps = {
-  children: React.ReactNode;
-};
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  session: null,
+  isAuthenticated: false,
+  authenticated: false,
+  loading: true,
+  error: '',
+  logIn: async () => null,
+  register: async () => null,
+  logOut: async () => {},
+  resetPassword: async () => null,
+  updatePassword: async () => null,
+  sendPasswordResetEmail: async () => null,
+  refreshSession: async () => null,
+  getSession: async () => null,
+  setSession: () => {},
+  updateProfile: async () => null,
+  fetchUserData: async () => null,
+  clearErrors: () => {},
+  setUser: () => {},
+  setLoading: () => {},
+  setError: () => {},
+  updateUserData: async () => null
+});
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<FullUserData | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+
   const {
-    user,
-    session,
-    isAuthenticated,
-    isLoading: loading,
-    error,
     login,
-    logout,
-    clearError,
-    refreshProfile,
-    refreshSession,
-    updatePassword,
-    updateProfile,
-    resetPassword,
     register,
-    signup,
-    updateUser,
-    setError
-  } = useAuthStore();
+    logout,
+    resetPassword,
+    updatePassword,
+    sendPasswordResetEmail,
+    refreshSession,
+    getSession,
+    updateProfile,
+    fetchUserData,
+    updateUserData
+  } = useSupabaseAuth();
 
-  // Initialize auth on mount - only refresh session once
   useEffect(() => {
-    console.log("[AuthProvider] Initializing authentication");
-    refreshSession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Create memoized context value to avoid unnecessary re-renders
-  const contextValue = useMemo<AuthContextType>(() => {
-    console.log("[AuthProvider] Creating context value, user:", user?.email, "role:", user?.role);
-    return {
-      user,
-      session,
-      isAuthenticated,
-      authenticated: isAuthenticated,
-      loading,
-      error,
-      logIn: async (email, password) => {
-        const success = await login(email, password);
-        return { data: success ? user : null, error: success ? null : error };
-      },
-      login,
-      logOut: logout,
-      logout,
-      signOut: logout,
-      updateUser,
-      clearError,
-      refreshProfile: async () => {
-        const user = await refreshProfile();
-        return user || null;
-      },
-      refreshSession,
-      updatePassword,
-      updateProfile,
-      updateUserProfile: updateProfile,
-      resetPassword,
-      register,
-      setError,
-      createUser: async (userData) => {
-        try {
-          return await register(userData);
-        } catch (error) {
-          return { data: null, error };
+    // Check for active session on mount
+    const checkSession = async () => {
+      try {
+        setLoading(true);
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        if (currentSession) {
+          setSession(currentSession);
+          const userData = await fetchUserData();
+          if (userData) {
+            setUser(userData);
+          }
         }
-      },
-      signup,
-      updateUserData: async (data) => {
-        try {
-          const result = await updateProfile(data);
-          return result;
-        } catch (error) {
-          console.error('Error updating user data:', error);
-          return { data: null, error };
-        }
+      } catch (err: any) {
+        console.error('Session check error:', err);
+        setError(err.message || 'Authentication error');
+      } finally {
+        setLoading(false);
       }
     };
-  }, [
+
+    checkSession();
+
+    // Set up auth listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        if (event === 'SIGNED_IN' && currentSession) {
+          setSession(currentSession);
+          const userData = await fetchUserData();
+          if (userData) {
+            setUser(userData);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setSession(null);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const clearErrors = () => {
+    setError('');
+  };
+
+  const isAuthenticated = !!session && !!user;
+
+  const value: AuthContextType = {
     user,
     session,
     isAuthenticated,
+    authenticated: isAuthenticated, // For backwards compatibility
     loading,
     error,
-    login,
-    logout,
-    updateUser,
-    clearError,
-    refreshProfile,
-    refreshSession,
-    updatePassword,
-    updateProfile,
-    resetPassword,
+    logIn: login,
     register,
-    signup,
-    setError
-  ]);
+    logOut: logout,
+    resetPassword,
+    updatePassword,
+    sendPasswordResetEmail,
+    refreshSession,
+    getSession,
+    setSession,
+    updateProfile,
+    fetchUserData,
+    clearErrors,
+    setUser,
+    setLoading,
+    setError,
+    updateUserData
+  };
 
-  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
-
-export default AuthProvider;
