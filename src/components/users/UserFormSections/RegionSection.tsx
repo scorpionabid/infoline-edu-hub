@@ -3,25 +3,27 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
 import { Region } from '@/types/region';
-import { Control } from 'react-hook-form';
+import { Control, FieldValues, Path } from 'react-hook-form';
 
-interface RegionSectionProps {
-  control: Control<any>;
+interface RegionSectionProps<TFieldValues extends FieldValues> {
+  control: Control<TFieldValues>;
+  name?: Path<TFieldValues>;
   regions: Region[];
   disabled?: boolean;
 }
 
-const RegionSection: React.FC<RegionSectionProps> = ({
+function RegionSection<TFieldValues extends FieldValues>({
   control,
+  name = 'region_id' as Path<TFieldValues>,
   regions,
   disabled = false,
-}) => {
+}: RegionSectionProps<TFieldValues>) {
   const { t } = useLanguage();
 
   return (
     <FormField
       control={control}
-      name="region_id"
+      name={name}
       render={({ field }) => (
         <FormItem>
           <FormLabel>{t('region')}</FormLabel>
@@ -49,6 +51,6 @@ const RegionSection: React.FC<RegionSectionProps> = ({
       )}
     />
   );
-};
+}
 
 export default RegionSection;
