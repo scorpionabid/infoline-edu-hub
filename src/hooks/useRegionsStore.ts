@@ -1,7 +1,5 @@
-
 import { create } from 'zustand';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { Region } from '@/hooks/regions/useRegions';
 
@@ -29,11 +27,11 @@ interface RegionsState {
   resetFilters: () => void;
   
   // CRUD əməliyyatları
-  fetchRegions: () => Promise<EnhancedRegion[]>;
+  fetchRegions: (t?: (key: string) => string) => Promise<EnhancedRegion[]>;
   getRegionById: (id: string) => EnhancedRegion | undefined;
-  handleAddRegion: (regionData: Partial<Region>) => Promise<EnhancedRegion>;
-  handleUpdateRegion: (id: string, regionData: Partial<Region>) => Promise<EnhancedRegion>;
-  handleDeleteRegion: (id: string) => Promise<boolean>;
+  handleAddRegion: (regionData: Partial<Region>, t?: (key: string) => string) => Promise<EnhancedRegion>;
+  handleUpdateRegion: (id: string, regionData: Partial<Region>, t?: (key: string) => string) => Promise<EnhancedRegion>;
+  handleDeleteRegion: (id: string, t?: (key: string) => string) => Promise<boolean>;
 }
 
 export const useRegionsStore = create<RegionsState>((set, get) => ({
@@ -71,8 +69,7 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
   },
   
   // Bütün regionları əldə et
-  fetchRegions: async () => {
-    const { t } = useLanguage();
+  fetchRegions: async (t) => {
     try {
       set({ loading: true, error: null });
       
@@ -81,7 +78,14 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
         .from('regions')
         .select('*');
         
-      if (regionsError) throw regionsError;
+      if (regionsError) {
+        const errorMessage = t 
+          ? t('errorLoadingRegions') 
+          : 'Failed to load regions';
+        
+        set({ error: errorMessage, loading: false });
+        throw regionsError;
+      }
         
       // Əlavə məlumatları əldə etmək
       const enhancedRegions: EnhancedRegion[] = await Promise.all(
@@ -141,8 +145,7 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
       return enhancedRegions;
     } catch (err: any) {
       console.error('Regionları yükləyərkən xəta baş verdi:', err);
-      set({ error: err.message || t('errorLoadingRegions'), loading: false });
-      toast.error(t('errorLoadingRegions'));
+      set({ error: String(err), loading: false });
       return [];
     }
   },
@@ -153,8 +156,7 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
   },
   
   // Region yaratmaq
-  handleAddRegion: async (regionData: Partial<Region>) => {
-    const { t } = useLanguage();
+  handleAddRegion: async (regionData: Partial<Region>, t) => {
     try {
       set({ loading: true });
       
@@ -181,19 +183,26 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
         loading: false
       }));
       
-      toast.success(t('regionCreatedSuccessfully'));
+      const successMessage = t 
+        ? t('regionCreatedSuccessfully') 
+        : 'Region created successfully';
+        
+      toast.success(successMessage);
       return enhancedRegion;
     } catch (err: any) {
       console.error('Region yaradılarkən xəta:', err);
       set({ loading: false });
-      toast.error(t('errorCreatingRegion'));
+      const errorMessage = t 
+        ? t('errorCreatingRegion') 
+        : 'Error creating region';
+        
+      toast.error(errorMessage);
       throw err;
     }
   },
   
   // Region yeniləmək
-  handleUpdateRegion: async (id: string, regionData: Partial<Region>) => {
-    const { t } = useLanguage();
+  handleUpdateRegion: async (id: string, regionData: Partial<Region>, t) => {
     try {
       set({ loading: true });
       
@@ -222,19 +231,26 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
         loading: false
       }));
       
-      toast.success(t('regionUpdatedSuccessfully'));
+      const successMessage = t 
+        ? t('regionUpdatedSuccessfully') 
+        : 'Region updated successfully';
+        
+      toast.success(successMessage);
       return enhancedRegion;
     } catch (err: any) {
       console.error('Region yenilənərkən xəta:', err);
       set({ loading: false });
-      toast.error(t('errorUpdatingRegion'));
+      const errorMessage = t 
+        ? t('errorUpdatingRegion') 
+        : 'Error updating region';
+        
+      toast.error(errorMessage);
       throw err;
     }
   },
   
   // Region silmək
-  handleDeleteRegion: async (id: string) => {
-    const { t } = useLanguage();
+  handleDeleteRegion: async (id: string, t) => {
     try {
       set({ loading: true });
       
@@ -251,12 +267,20 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
         loading: false
       }));
       
-      toast.success(t('regionDeletedSuccessfully'));
+      const successMessage = t 
+        ? t('regionDeletedSuccessfully') 
+        : 'Region deleted successfully';
+        
+      toast.success(successMessage);
       return true;
     } catch (err: any) {
       console.error('Region silinərkən xəta:', err);
       set({ loading: false });
-      toast.error(t('errorDeletingRegion'));
+      const errorMessage = t 
+        ? t('errorDeletingRegion') 
+        : 'Error deleting region';
+        
+      toast.error(errorMessage);
       throw err;
     }
   }

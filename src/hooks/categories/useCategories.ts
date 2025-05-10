@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -17,6 +16,7 @@ export const useCategories = () => {
   
   // Fetch categories with filters
   const fetchCategories = useCallback(async (filter: CategoryFilter = {}) => {
+    console.log('Fetching categories with filter:', filter);
     setLoading(true);
     setError(null);
     
@@ -43,9 +43,14 @@ export const useCategories = () => {
       
       query = query.range(startIndex, startIndex + limit - 1);
       
+      console.log('Supabase query:', query);
+      
       const { data, count, error } = await query;
       
+      console.log('Query result:', { data, count, error });
+      
       if (error) {
+        console.error('Supabase query error:', error);
         throw error;
       }
       
@@ -55,27 +60,35 @@ export const useCategories = () => {
       
       if (data) {
         // Transform data to match Category type
-        const transformedData: Category[] = data.map(item => ({
-          id: item.id,
-          name: item.name,
-          description: item.description || '',
-          deadline: item.deadline || '',
-          status: (item.status || 'active') as CategoryStatus,
-          priority: item.priority || 0,
-          assignment: item.assignment || 'all',
-          column_count: item.column_count || 0,
-          archived: item.archived || false,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          completionRate: 0
-        }));
+        const transformedData: Category[] = data.map(item => {
+          console.log('Raw category item:', item);
+          return {
+            id: item.id,
+            name: item.name,
+            description: item.description || '',
+            deadline: item.deadline || '',
+            status: (item.status || 'active') as CategoryStatus,
+            priority: item.priority || 0,
+            assignment: item.assignment || 'all',
+            column_count: item.column_count || 0,
+            archived: item.archived || false,
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+            completionRate: 0
+          };
+        });
+        
+        console.log('Transformed categories:', transformedData);
         
         setCategories(transformedData);
+      } else {
+        console.warn('No category data returned');
+        setCategories([]);
       }
     } catch (error: any) {
+      console.error('Full error in fetchCategories:', error);
       setError(error.message);
       toast.error('Kateqoriyalar yüklənərkən xəta baş verdi');
-      console.error('Error fetching categories:', error);
     } finally {
       setLoading(false);
     }
