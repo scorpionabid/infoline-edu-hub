@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatsGrid from './StatsGrid';
@@ -30,6 +29,16 @@ const SuperAdminDashboard = ({ data }) => {
     }
   ];
 
+  const dashboardStats = {
+    total: data.approvedEntries + data.pendingEntries + data.rejectedEntries || 0,
+    approved: data.approvedEntries || 0,
+    pending: data.pendingEntries || 0,
+    rejected: data.rejectedEntries || 0,
+    dueSoon: data.dueSoonEntries || 0,
+    overdue: data.overdueEntries || 0,
+    draft: data.draftEntries || 0
+  };
+
   return (
     <div className="space-y-4">
       <StatsGrid stats={stats} />
@@ -42,11 +51,7 @@ const SuperAdminDashboard = ({ data }) => {
           <CardContent>
             <DashboardChart 
               completion={data.completionRate || 0} 
-              stats={{
-                approved: data.approvedEntries || 0,
-                pending: data.pendingEntries || 0,
-                rejected: data.rejectedEntries || 0
-              }} 
+              stats={dashboardStats} 
             />
           </CardContent>
         </Card>
