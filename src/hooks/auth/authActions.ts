@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserStatus } from '@/types/auth';
 
@@ -164,4 +163,9 @@ export const getUserProfile = async (userId: string): Promise<FullUserData | nul
     console.error('Get profile error:', err);
     return null;
   }
+};
+
+// Export the fetchUserData function that's being imported in useAuthStore.ts
+export const fetchUserData = async (userId: string): Promise<FullUserData | null> => {
+  return getUserProfile(userId);
 };
