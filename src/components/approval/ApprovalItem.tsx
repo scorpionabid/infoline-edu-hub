@@ -34,7 +34,9 @@ const ApprovalItem: React.FC<ApprovalItemProps> = ({
     }
   };
 
-  const formattedDate = (dateStr: string) => {
+  const formattedDate = (dateStr?: string) => {
+    if (!dateStr) return '';
+    
     try {
       return format(new Date(dateStr), 'PPp');
     } catch (e) {
@@ -51,7 +53,7 @@ const ApprovalItem: React.FC<ApprovalItemProps> = ({
               <h3 className="font-medium">{item.schoolName}</h3>
               <p className="text-sm text-muted-foreground">{item.categoryName}</p>
               <p className="text-xs text-muted-foreground">
-                {t('submittedAt')}: {formattedDate(item.submittedAt)}
+                {t('submittedAt')}: {formattedDate(item.submittedAt || item.createdAt)}
               </p>
             </div>
             

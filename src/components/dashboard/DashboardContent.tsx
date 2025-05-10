@@ -14,7 +14,10 @@ const mockSuperAdminData = {
   status: { total: 0, approved: 0, pending: 0, rejected: 0, draft: 0, active: 0, inactive: 0 } as DashboardStatus, 
   completion: { total: 0, completed: 0, percentage: 0 },
   regionStats: [],
-  sectorStats: []
+  pendingApprovals: [],
+  totalRegions: 5,
+  totalSectors: 12,
+  totalSchools: 45
 };
 
 const mockRegionAdminData = { 

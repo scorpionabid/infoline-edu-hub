@@ -42,14 +42,14 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
     { title: t('inactiveSchools'), value: data.status.inactive, color: 'bg-gray-100' },
   ];
   
-  const formStatsData: DashboardFormStats = {
+  const formStatsData: DashboardFormStats = data.formStats || {
     pending: data.status.pending,
     approved: data.status.approved,
     rejected: data.status.rejected,
     total: data.status.total,
-    dueSoon: 0, // These values will need to come from the API
-    overdue: 0, // These values will need to come from the API
-    draft: 0    // Adding the missing draft field
+    dueSoon: 0,
+    overdue: 0,
+    draft: data.status.draft || 0
   };
 
   return (
@@ -98,7 +98,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
         </TabsList>
         
         <TabsContent value="approvals" className="space-y-4">
-          <PendingApprovalsCard approvals={data.pendingApprovals} />
+          <PendingApprovalsCard items={data.pendingApprovals} />
         </TabsContent>
         
         <TabsContent value="categories" className="space-y-4">

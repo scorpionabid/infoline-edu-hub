@@ -40,7 +40,7 @@ export const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ item
           {items.slice(0, 5).map((item) => (
             <div key={item.id} className="flex justify-between items-center border-b pb-3 last:border-0">
               <div>
-                <h4 className="font-medium">{item.schoolName}</h4>
+                <h4 className="font-medium">{item.title || item.schoolName}</h4>
                 <div className="text-sm text-muted-foreground">{item.categoryName}</div>
                 <div className="flex items-center text-xs mt-1 text-muted-foreground">
                   <Clock className="h-3 w-3 mr-1" />

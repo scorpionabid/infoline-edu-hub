@@ -1,8 +1,6 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import RegionCompletionCard from './superadmin/RegionCompletionCard';
-import SectorCompletionCard from './superadmin/SectorCompletionCard';
 import { SuperAdminDashboardProps } from '@/types/dashboard';
 
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
@@ -61,11 +59,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
         </Card>
       </div>
       
-      {/* Region and Sector Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <RegionCompletionCard regions={regionStats} />
-        <SectorCompletionCard sectors={sectorStats} />
-      </div>
+      {/* Additional content can be added here */}
     </div>
   );
 };

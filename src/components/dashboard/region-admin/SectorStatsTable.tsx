@@ -1,45 +1,74 @@
 
 import React from 'react';
-import { CardHeader, CardContent, CardTitle } from '@/components/ui/card';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow 
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/context/LanguageContext';
 import { SectorStat } from '@/types/dashboard';
+import { Progress } from '@/components/ui/progress';
+import { ArrowRight } from 'lucide-react';
 
 interface SectorStatsTableProps {
-  stats: SectorStat[];
+  sectors: SectorStat[];
 }
 
-const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ stats }) => {
+const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors }) => {
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+  
   return (
-    <div>
-      <CardHeader>
-        <CardTitle>Sektor statistikası</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {stats.length === 0 ? (
-          <p className="text-center text-muted-foreground">Sektor məlumatı tapılmadı</p>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sektor</TableHead>
-                  <TableHead className="text-right">Məktəb sayı</TableHead>
-                  <TableHead className="text-right">Tamamlanma</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {stats.map((sector) => (
-                  <TableRow key={sector.id}>
-                    <TableCell>{sector.name}</TableCell>
-                    <TableCell className="text-right">{sector.schoolCount || 0}</TableCell>
-                    <TableCell className="text-right">{sector.schoolCount ? `${Math.round(sector.schoolCount)}%` : '0%'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('sector')}</TableHead>
+            <TableHead>{t('schools')}</TableHead>
+            <TableHead>{t('completion')}</TableHead>
+            <TableHead className="text-right">{t('actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sectors.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                {t('noSectors')}
+              </TableCell>
+            </TableRow>
+          ) : (
+            sectors.map((sector) => (
+              <TableRow key={sector.id}>
+                <TableCell className="font-medium">{sector.name}</TableCell>
+                <TableCell>{sector.schoolCount || 0}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span>{sector.completion || 0}%</span>
+                    </div>
+                    <Progress value={sector.completion || 0} className="h-1.5" />
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => navigate(`/sectors/${sector.id}`)}
+                  >
+                    {t('details')}
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 };

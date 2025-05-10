@@ -10,7 +10,6 @@ import { CategoryItem, DeadlineItem, FormItem, SchoolAdminDashboardData } from '
 import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 import FormTabs from './FormTabs';
 import { AppNotification } from '@/types/notification';
-import { adaptDashboardNotificationToApp } from '@/utils/notificationUtils';
 
 interface SchoolAdminDashboardProps {
   schoolId?: string;
@@ -51,21 +50,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
       total: 0
     },
     pendingForms: [],
-    completionRate: 0,
-    notifications: [],
   });
-
-  // Bildirişləri adaptasiya etmək
-  useEffect(() => {
-    const dashboardNotifications = notifications.map(notification => 
-      adaptDashboardNotificationToApp(notification)
-    );
-
-    setDashboardData(prev => ({
-      ...prev,
-      notifications: dashboardNotifications
-    }));
-  }, [notifications]);
 
   // Real data və ya mock data yükləmək
   useEffect(() => {
@@ -89,7 +74,6 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
         categories: processedCategories,
         upcoming: data.upcoming || [],
         pendingForms: data.pendingForms || [],
-        completionRate: data.completionRate || 0,
         formStats: data.formStats || {
           pending: data.status?.pending || 0,
           approved: data.status?.approved || 0,
@@ -138,11 +122,15 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
         </div>
 
         <div className="space-y-6">
-          <NotificationsCard 
-            title={t('notifications')}
-            notifications={dashboardData.notifications.map(n => adaptDashboardNotificationToApp(n)) as AppNotification[]} 
-            onMarkAsRead={markAsRead} 
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('notifications')}</CardTitle>
+              <CardDescription>{t('recentNotifications')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">{t('noRecentNotifications')}</p>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
@@ -151,7 +139,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {Math.round(dashboardData.completionRate || 0)}%
+                {Math.round(data?.completion?.percentage || 0)}%
               </div>
               <div className="mt-4 text-sm text-muted-foreground">
                 {t('completedFormsInfo', {
