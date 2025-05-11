@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRegionsStore } from '@/hooks/useRegionsStore';
@@ -33,7 +32,7 @@ const Regions = () => {
   } = useRegionsStore();
 
   // Əlavə olaraq birbaşa useRegions hook-dan istifadə edək
-  const { regions: directRegions, loading: directLoading, error: directError, fetchRegions: directFetchRegions, refresh: refreshDirectRegions } = useRegions();
+  const { regions: directRegions, loading: directLoading, error: directError, fetchRegions: directFetchRegions } = useRegions();
   
   // DirectRegions var ama storeRegions yoxdursa, store regions-u yeniləyək
   useEffect(() => {
@@ -59,9 +58,9 @@ const Regions = () => {
     if (refreshTrigger > 0) {
       console.log('Regionlar siyahısı yenilənir...');
       fetchRegionsStore();
-      refreshDirectRegions();
+      directFetchRegions();
     }
-  }, [refreshTrigger, fetchRegionsStore, refreshDirectRegions]);
+  }, [refreshTrigger, fetchRegionsStore, directFetchRegions]);
 
   useEffect(() => {
     // Component yükləndikdə regionları yükləyək
@@ -204,29 +203,36 @@ const Regions = () => {
         </div>
       )}
       
-      <RegionDialog
-        open={openRegionDialog}
-        setOpen={setOpenRegionDialog}
-        selectedRegion={selectedRegion}
-        onSubmit={handleFormSubmit}
-      />
-      
-      {/* Köhnə admin təyin etmə dialoqu - yeni admin yaratmaq üçün */}
-      {openAdminDialog && (
+      {openRegionDialog && selectedRegion && (
+        <RegionDialog
+          open={openRegionDialog}
+          onOpenChange={setOpenRegionDialog}
+          initialData={{
+            name: selectedRegion.name || '',
+            description: selectedRegion.description || '',
+            status: selectedRegion.status || 'active',
+          }}
+          onSave={handleFormSubmit}
+          title={selectedRegion.id ? t('edit_region') : t('add_region')}
+        />
+      )}
+
+      {/* New User Admin Dialog */}
+      {openAdminDialog && selectedRegion && selectedRegion.id && (
         <RegionAdminDialog
           open={openAdminDialog}
-          setOpen={setOpenAdminDialog}
-          region={createdRegion || selectedRegion}
+          onClose={() => setOpenAdminDialog(false)}
+          regionId={selectedRegion.id}
           onSuccess={handleAdminAssigned}
         />
       )}
-      
-      {/* Mövcud istifadəçilərdən seçim üçün admin təyin etmə dialoqu */}
-      {openExistingUserDialog && (
+
+      {/* Existing User Admin Dialog */}
+      {openExistingUserDialog && (selectedRegion || createdRegion) && (
         <ExistingUserAdminDialog
           open={openExistingUserDialog}
           setOpen={setOpenExistingUserDialog}
-          region={createdRegion || selectedRegion}
+          region={selectedRegion || createdRegion!}
           onSuccess={handleAdminAssigned}
         />
       )}

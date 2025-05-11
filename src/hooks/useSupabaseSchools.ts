@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/supabase';
@@ -122,9 +121,9 @@ export const useSupabaseSchools = () => {
       if (sector && sector.region_id) {
         setSelectedRegion(sector.region_id);
       }
-    } else if (userRole === 'regionadmin' && user?.regionId) {
+    } else if (userRole === 'regionadmin' && user?.region_id) {
       // RegionAdmin üçün region filtri avtomatik təyin edilir
-      setSelectedRegion(user.regionId);
+      setSelectedRegion(user.region_id);
     }
   }, [userRole, sectorId, sectors, user]);
 

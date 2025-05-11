@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import {
@@ -44,7 +43,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   
   // Entity data
   const { regions } = useRegions();
-  const { sectors, fetchSectorsByRegion } = useSectors();
+  const { sectors, fetchSectors } = useSectors();
   const { schools, fetchSchoolsBySector } = useSchools();
   
   // Form state - status və language əlavə edildi
@@ -60,10 +59,10 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   
   // Seçilmiş regiondan asılı olaraq sektorları yeniləmək
   useEffect(() => {
-    if (userData.region_id) {
-      fetchSectorsByRegion(userData.region_id);
+    if (userData.role === 'sectoradmin' && userData.region_id) {
+      fetchSectors(userData.region_id);
     }
-  }, [userData.region_id, fetchSectorsByRegion]);
+  }, [userData.role, userData.region_id, fetchSectors]);
   
   // Seçilmiş sektordan asılı olaraq məktəbləri yeniləmək
   useEffect(() => {

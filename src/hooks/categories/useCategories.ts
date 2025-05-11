@@ -14,9 +14,7 @@ async function fetchWithControlledRetry<T>(
   const session = authStore.session;
 
   // Get Supabase API key safely
-  const supabaseApiKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || 
-    process.env.VITE_SUPABASE_ANON_KEY || 
-    '';
+  const supabaseApiKey = process.env.VITE_SUPABASE_ANON_KEY || '';
 
   const defaultHeaders: Record<string, string> = {
     'Accept': 'application/json',
@@ -109,10 +107,7 @@ export const useCategories = () => {
   const { session, user } = useAuthStore();
 
   // Safely get Supabase URL
-  const supabaseUrl = supabase.supabaseUrl || 
-    import.meta.env?.VITE_SUPABASE_URL || 
-    process.env.VITE_SUPABASE_URL || 
-    '';
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 
   const fetchCategories = useCallback(async (filter: CategoryFilter = {}) => {
     // Only fetch if authenticated
