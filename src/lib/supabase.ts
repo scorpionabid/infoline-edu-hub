@@ -8,9 +8,11 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 // Create a single Supabase client for working with the database
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
+    storage: localStorage, // Use localStorage for better persistence
+    persistSession: true,  // Always persist session
+    autoRefreshToken: true, // Auto refresh token on expiry
+    detectSessionInUrl: false, // Disable detecting session in URL to avoid conflicts
+    debug: process.env.NODE_ENV === 'development' // Enable debug logs in development
   }
 });
 

@@ -197,7 +197,7 @@ export interface SectorAdminDashboardData {
   pendingApprovals: PendingApproval[];
 }
 
-// PendingApproval interface (enhanced)
+// PendingApproval interface
 export interface PendingApproval {
   id: string;
   schoolId?: string;

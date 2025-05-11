@@ -1,11 +1,12 @@
 
 import React, { useEffect } from 'react';
 import { Toaster } from 'sonner';
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { useAuth2 } from '@/hooks/auth/useAuth2';
 import { AppRoutes } from '@/routes/AppRoutes';
+import { AuthProvider } from '@/context/auth/AuthProvider';
 
 function App() {
-  const { refreshSession } = useAuthStore();
+  const { refreshSession } = useAuth2();
   
   // Run once on app startup
   useEffect(() => {
@@ -18,10 +19,10 @@ function App() {
   }, [refreshSession]);
 
   return (
-    <>
+    <AuthProvider>
       <Toaster position="top-right" />
       <AppRoutes />
-    </>
+    </AuthProvider>
   );
 }
 
