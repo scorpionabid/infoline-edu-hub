@@ -39,7 +39,9 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
   };
   
   // Tarixi formatla
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    
     try {
       return format(parseISO(dateString), 'dd.MM.yyyy HH:mm');
     } catch (e) {

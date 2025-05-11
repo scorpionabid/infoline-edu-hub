@@ -1,20 +1,20 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useAuthStore, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
-import SectorAdminDashboard from './SectorAdminDashboard';
+import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
 import SchoolAdminDashboard from './SchoolAdminDashboard';
 import { useRealDashboardData } from '@/hooks/useRealDashboardData';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { DashboardStatus, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData, SuperAdminDashboardData } from '@/types/dashboard';
+import { RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData, SuperAdminDashboardData } from '@/types/dashboard';
 import { UserRole } from '@/types/supabase';
 
 const DashboardContent: React.FC = () => {
   const user = useAuthStore(selectUser);
   const userRole = useAuthStore(selectUserRole);
-  const { getDashboardData } = useRealDashboardData();
+  const { getDashboardData, loading, error: hookError } = useRealDashboardData();
 
   const { data, error, isLoading } = useQuery({
     queryKey: ['dashboardData', userRole, user?.id],
@@ -24,15 +24,15 @@ const DashboardContent: React.FC = () => {
   });
 
   useEffect(() => {
-    if (error) {
-      console.error('Dashboard data fetch error:', error);
+    if (error || hookError) {
+      console.error('Dashboard data fetch error:', error || hookError);
       toast.error('İdarə paneli məlumatları yüklənərkən xəta baş verdi', {
         description: 'Zəhmət olmasa, yenidən cəhd edin və ya administratorla əlaqə saxlayın',
       });
     }
-  }, [error]);
+  }, [error, hookError]);
 
-  if (isLoading) {
+  if (isLoading || loading) {
     return (
       <div className="w-full p-8 flex justify-center items-center">
         <div className="flex flex-col items-center">
@@ -43,7 +43,7 @@ const DashboardContent: React.FC = () => {
     );
   }
 
-  if (error || !data) {
+  if (error || hookError || !data) {
     return (
       <div className="w-full p-8">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">

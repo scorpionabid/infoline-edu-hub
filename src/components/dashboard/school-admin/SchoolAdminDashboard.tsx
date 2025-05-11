@@ -18,7 +18,7 @@ interface SchoolAdminDashboardProps {
 
 const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, data: propData }) => {
   const { t } = useLanguage();
-  const { notifications, markAsRead } = useNotifications();
+  const { notifications } = useNotifications();
   const { data: fetchedData, isLoading, error } = useSchoolAdminDashboard();
   
   const data = propData || fetchedData;
@@ -50,28 +50,38 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
       total: 0
     },
     pendingForms: [],
+    categoryData: [],
+    recentActivities: [],
+    notifications: []
   });
 
   // Real data və ya mock data yükləmək
   useEffect(() => {
     if (!isLoading && data) {
-      // Transform any Category objects to CategoryItem objects by ensuring completionRate is present
-      const processedCategories: CategoryItem[] = Array.isArray(data.categories) 
-        ? data.categories.map(cat => ({
-          id: cat.id,
-          name: cat.name,
-          description: cat.description,
-          deadline: cat.deadline,
-          completionRate: cat.completionRate || 0,
-          status: cat.status
-        }))
-        : [];
-        
-      setDashboardData(prev => ({
-        ...prev,
-        completion: data.completion,
-        status: data.status,
-        categories: processedCategories,
+      const transformedData: SchoolAdminDashboardData = {
+        completion: data.completion || {
+          percentage: data.completionRate || 0,
+          total: 0,
+          completed: 0
+        },
+        status: data.status || {
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+          draft: 0,
+          total: 0,
+          active: 0,
+          inactive: 0
+        },
+        categories: Array.isArray(data.categories) 
+          ? data.categories.map(cat => ({
+              id: cat.id,
+              name: cat.name,
+              description: cat.description || '',
+              completionRate: cat.completionRate || 0,
+              status: cat.status || 'active'
+            }))
+          : [],
         upcoming: data.upcoming || [],
         pendingForms: data.pendingForms || [],
         formStats: data.formStats || {
@@ -83,7 +93,13 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
           dueSoon: 0,
           overdue: 0
         },
-      }));
+        categoryData: data.categoryData || [],
+        recentActivities: data.recentActivities || [],
+        notifications: data.notifications || [],
+        completionRate: data.completionRate || data.completion?.percentage || 0
+      };
+
+      setDashboardData(transformedData);
     }
   }, [isLoading, data]);
 
@@ -114,9 +130,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
             </TabsList>
 
             <FormTabs 
-              categories={dashboardData.categories as CategoryItem[]}
-              upcoming={dashboardData.upcoming || []}
-              pendingForms={dashboardData.pendingForms || []}
+              categories={dashboardData.categories}
+              upcoming={dashboardData.upcoming}
+              pendingForms={dashboardData.pendingForms}
             />
           </Tabs>
         </div>
@@ -139,7 +155,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {Math.round(data?.completion?.percentage || 0)}%
+                {Math.round(dashboardData.completion?.percentage || dashboardData.completionRate || 0)}%
               </div>
               <div className="mt-4 text-sm text-muted-foreground">
                 {t('completedFormsInfo', {

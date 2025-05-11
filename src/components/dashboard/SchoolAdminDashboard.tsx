@@ -5,7 +5,7 @@ import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import NotificationsCard from './common/NotificationsCard';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
-import { adaptDashboardNotificationToApp } from '@/types/notification';
+import { AppNotification, adaptDashboardNotificationToApp } from '@/types/notification';
 import { WormIcon, CheckCircleIcon, AlertTriangleIcon, ClockIcon } from 'lucide-react';
 import FormTabs from './school-admin/FormTabs';
 import { Button } from '@/components/ui/button';
@@ -46,8 +46,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     );
   }
 
-  // Adapt notifications to correct type
-  const adaptedNotifications = Array.isArray(data.notifications)
+  // Ensure notifications exist and are properly formatted
+  const adaptedNotifications: AppNotification[] = Array.isArray(data.notifications)
     ? data.notifications.map(notification => {
         // Ensure all required fields exist
         const notificationWithAllFields = {
@@ -60,12 +60,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       })
     : [];
 
-  // Status object for DashboardStatus type
-  const statusData = data.status ? {
-    ...data.status,
-    active: data.status.active || 0,
-    inactive: data.status.inactive || 0,
-  } : {
+  // Ensure status data exists
+  const status = data.status || {
     pending: 0,
     approved: 0,
     rejected: 0,
@@ -75,12 +71,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     inactive: 0
   };
 
-  // Form stats object for DashboardFormStats type
-  const formStatsData = data.formStats ? {
-    ...data.formStats,
-    dueSoon: data.formStats.dueSoon || 0,
-    overdue: data.formStats.overdue || 0
-  } : {
+  // Ensure formStats data exists
+  const formStats = data.formStats || {
     pending: 0,
     approved: 0,
     rejected: 0,
@@ -90,11 +82,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     total: 0
   };
 
-  // Ensure all categories have completionRate
-  const processedCategories = data.categories ? data.categories.map(cat => ({
-    ...cat,
-    completionRate: cat.completionRate || 0
-  })) : [];
+  const completionRate = data.completionRate !== undefined ? data.completionRate : (
+    data.completion?.percentage !== undefined ? data.completion.percentage : 0
+  );
 
   return (
     <div className="space-y-6">
@@ -103,25 +93,25 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       <Grid columns={4} className="gap-4">
         <StatsCard
           title="Təsdiq gözləyən"
-          value={statusData.pending}
+          value={status.pending}
           icon={<ClockIcon className="h-4 w-4 text-primary" />}
           description="Təsdiq gözləyən formlar"
         />
         <StatsCard
           title="Təsdiqlənmiş"
-          value={statusData.approved}
+          value={status.approved}
           icon={<CheckCircleIcon className="h-4 w-4 text-primary" />}
           description="Təsdiqlənmiş formlar"
         />
         <StatsCard
           title="Son tarixə yaxın"
-          value={formStatsData.dueSoon || 0}
+          value={formStats.dueSoon || 0}
           icon={<AlertTriangleIcon className="h-4 w-4 text-primary" />}
           description="Tezliklə bitəcək formlar"
         />
         <StatsCard
           title="Toplam form"
-          value={statusData.total}
+          value={status.total}
           icon={<WormIcon className="h-4 w-4 text-primary" />}
           description="Ümumi form sayı"
         />
@@ -129,7 +119,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
 
       <Grid columns={2} className="gap-6">
         <CompletionRateCard
-          completionRate={data.completionRate || 0}
+          completionRate={completionRate}
           title="Tamamlanma dərəcəsi"
         />
         
@@ -139,10 +129,10 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         />
       </Grid>
       
-      {data.upcoming && data.categories && data.pendingForms && (
+      {data.categories && data.upcoming && data.pendingForms && (
         <FormTabs 
+          categories={data.categories}
           upcoming={data.upcoming}
-          categories={processedCategories}
           pendingForms={data.pendingForms}
           navigateToDataEntry={navigateToDataEntry}
           handleFormClick={handleFormClick}

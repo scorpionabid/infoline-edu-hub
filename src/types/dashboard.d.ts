@@ -27,6 +27,7 @@ export interface CategoryProgressData {
   completionRate: number;
   deadline?: string;
   status?: string;
+  description?: string;
 }
 
 export interface RegionData {
@@ -36,6 +37,15 @@ export interface RegionData {
   schoolCount: number;
   adminName?: string;
   completionRate: number;
+}
+
+// Add FormTabsProps interface
+export interface FormTabsProps {
+  categories: CategoryItem[];
+  upcoming: DeadlineItem[];
+  pendingForms: FormItem[];
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (id: string) => void;
 }
 
 export interface SuperAdminDashboardData {
@@ -89,39 +99,31 @@ export interface RegionAdminDashboardData {
   schoolData: SchoolCompletionData[];
   recentActivities: any[];
   sectorStats: SectorStat[];
+  pendingApprovals: PendingApproval[];
 }
 
 export interface SchoolAdminDashboardData {
-  categories: {
+  completion: {
+    percentage: number;
     total: number;
     completed: number;
-    pending: number;
-    draft: number;
   };
-  entryCount: {
-    total: number;
-    approved: number;
-    pending: number;
-    rejected: number;
-    dueSoon: number;
-    overdue: number;
-    draft: number;
-  };
-  completion: number;
-  categoryData: CategoryProgressData[];
-  recentActivities: any[];
-  
-  // These were flagged as missing in the errors
-  notifications: any[];
   status: {
     pending: number;
     approved: number;
     rejected: number;
     draft: number;
+    total: number;
+    active: number;
+    inactive: number;
   };
+  categories: CategoryItem[];
+  categoryData: CategoryProgressData[];
+  recentActivities: any[];
   formStats: DashboardFormStats;
-  upcoming: any[];
-  pendingForms: any[];
+  notifications: AppNotification[];
+  upcoming: DeadlineItem[];
+  pendingForms: FormItem[];
   completionRate?: number;
 }
 
@@ -142,36 +144,53 @@ export interface SectorAdminDashboardData {
     pending: number;
     rejected: number;
   };
-  completion: number;
+  completion: {
+    percentage: number;
+    total: number;
+    completed: number;
+  };
   categoryData: CategoryProgressData[];
   schoolData: SchoolCompletionData[];
   recentActivities: any[];
-  // These were missing
-  status: any;
+  status: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    draft: number;
+    total: number;
+    active: number;
+    inactive: number;
+  };
   formStats: DashboardFormStats;
-  categories: any[];
-  upcoming: any[];
-  pendingForms: any[];
-  schoolStats: any[];
-  pendingApprovals: any[];
+  categories: CategoryItem[];
+  upcoming: DeadlineItem[];
+  pendingForms: FormItem[];
+  schoolStats: SchoolStat[];
+  pendingApprovals: PendingApproval[];
 }
 
-// Missing dashboard types
+// Export PendingApproval interface (enhanced)
 export interface PendingApproval {
   id: string;
-  name: string;
-  school: string;
-  category: string;
-  submittedBy: string;
+  schoolId?: string;
+  schoolName: string;
+  categoryId?: string;
+  categoryName: string;
+  submittedBy?: string;
   submittedAt: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  createdAt?: string;
+  title?: string;
+  count?: number;
 }
 
 export interface SchoolStat {
   id: string;
   name: string;
   completionRate: number;
-  totalEntries: number;
-  pendingEntries: number;
+  totalEntries?: number;
+  pendingEntries?: number;
+  pendingCount?: number;
 }
 
 export interface SectorStat {
@@ -183,33 +202,48 @@ export interface SectorStat {
 
 export interface FormItem {
   id: string;
-  name: string;
-  category: string;
-  dueDate: string;
+  name?: string;
+  title?: string;
+  category?: string;
+  categoryId?: string;
+  categoryName?: string;
+  dueDate?: string;
   status: string;
 }
 
 export interface DeadlineItem {
   id: string;
-  name: string;
+  name?: string;
+  title?: string;
   deadline: string;
-  daysLeft: number;
+  daysLeft?: number;
+  category?: string;
+  categoryId?: string;
 }
 
 export interface CategoryItem {
   id: string;
   name: string;
-  completion: number;
+  description?: string;
+  completionRate: number;
   status: string;
+  deadline?: string;
 }
 
 export interface StatusCardsProps {
-  data: {
+  completion: {
+    percentage: number;
+    total: number;
+    completed: number;
+  };
+  status: {
     pending: number;
     approved: number;
     rejected: number;
     draft: number;
+    total?: number;
   };
+  formStats?: DashboardFormStats;
 }
 
 export type DashboardStatus = {
@@ -217,4 +251,10 @@ export type DashboardStatus = {
   approved: number;
   rejected: number;
   draft: number;
+  total?: number;
+  active?: number;
+  inactive?: number;
 };
+
+// Import for AppNotification
+import { AppNotification } from '@/types/notification';

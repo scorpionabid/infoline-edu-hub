@@ -1,76 +1,68 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PendingApproval } from '@/types/dashboard'; 
+import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Clock, Eye } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { PendingApproval } from '@/types/dashboard';
 import { useNavigate } from 'react-router-dom';
-import { useLanguageSafe } from '@/context/LanguageContext';
 
 interface PendingApprovalsCardProps {
   items: PendingApproval[];
+  limit?: number;
+  title?: string;
+  showFooter?: boolean;
 }
 
-export const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ items }) => {
+const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({
+  items,
+  limit = 5,
+  title,
+  showFooter = true
+}) => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
-  const { t } = useLanguageSafe();
   
-  if (!items || items.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('pendingApprovals')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-6">
-            {t('noPendingApprovals')}
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const displayItems = items?.slice(0, limit) || [];
   
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('pendingApprovals')}</CardTitle>
+        <CardTitle>{title || t('pendingApprovals')}</CardTitle>
+        <CardDescription>{t('pendingApprovalsDescription')}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {items.slice(0, 5).map((item) => (
-            <div key={item.id} className="flex justify-between items-center border-b pb-3 last:border-0">
-              <div>
-                <h4 className="font-medium">{item.title || item.schoolName}</h4>
-                <div className="text-sm text-muted-foreground">{item.categoryName}</div>
-                <div className="flex items-center text-xs mt-1 text-muted-foreground">
-                  <Clock className="h-3 w-3 mr-1" />
-                  {item.submittedAt || item.createdAt || ''}
+        {displayItems.length === 0 ? (
+          <div className="text-center py-4 text-muted-foreground">
+            <p>{t('noDataToShow')}</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {displayItems.map((item) => (
+              <div key={item.id} className="flex justify-between items-center border-b pb-3 last:border-0 last:pb-0">
+                <div>
+                  <h4 className="font-medium">{item.schoolName}</h4>
+                  <p className="text-sm text-muted-foreground">{item.categoryName}</p>
+                  <p className="text-xs text-muted-foreground">{t('submittedAt')}: {item.submittedAt}</p>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(`/approvals/${item.id}`)}
+                >
+                  {t('review')}
+                </Button>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="ml-4"
-                onClick={() => navigate(`/approvals?id=${item.id}`)}
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                {t('review')}
-              </Button>
-            </div>
-          ))}
-          
-          {items.length > 5 && (
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              size="sm"
-              onClick={() => navigate('/approvals')}
-            >
-              {items.length - 5} {t('seeMore')}
-            </Button>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
+      {showFooter && items?.length > limit && (
+        <CardFooter>
+          <Button variant="outline" className="w-full" onClick={() => navigate('/approvals')}>
+            {t('viewAll')} ({items.length})
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 };

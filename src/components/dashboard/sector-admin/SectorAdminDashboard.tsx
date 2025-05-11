@@ -3,7 +3,7 @@ import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DashboardFormStats, SectorAdminDashboardData } from '@/types/dashboard';
+import { DashboardFormStats, SectorAdminDashboardData, SchoolStat } from '@/types/dashboard';
 import StatsGrid from '../StatsGrid';
 import DashboardChart from '../DashboardChart';
 import PendingApprovalsCard from '../PendingApprovalsCard';
@@ -37,16 +37,16 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
   }
   
   const statsData = [
-    { title: t('totalSchools'), value: data.status.total, color: 'bg-blue-100' },
-    { title: t('activeSchools'), value: data.status.active, color: 'bg-green-100' },
-    { title: t('inactiveSchools'), value: data.status.inactive, color: 'bg-gray-100' },
+    { title: t('totalSchools'), value: data.status.total || data.schools.total, color: 'bg-blue-100' },
+    { title: t('activeSchools'), value: data.status.active || data.schools.active, color: 'bg-green-100' },
+    { title: t('inactiveSchools'), value: data.status.inactive || data.schools.inactive, color: 'bg-gray-100' },
   ];
   
   const formStatsData: DashboardFormStats = data.formStats || {
     pending: data.status.pending,
     approved: data.status.approved,
     rejected: data.status.rejected,
-    total: data.status.total,
+    total: data.status.total || 0,
     dueSoon: 0,
     overdue: 0,
     draft: data.status.draft || 0
@@ -84,7 +84,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
             <CardDescription>{t('schoolsProgressDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <SchoolsCompletionList schools={data.schoolStats} />
+            <SchoolsCompletionList schools={data.schoolStats || []} />
           </CardContent>
         </Card>
       </div>
@@ -98,19 +98,19 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
         </TabsList>
         
         <TabsContent value="approvals" className="space-y-4">
-          <PendingApprovalsCard items={data.pendingApprovals} />
+          <PendingApprovalsCard items={data.pendingApprovals || []} />
         </TabsContent>
         
         <TabsContent value="categories" className="space-y-4">
-          <CategoryProgressList categories={data.categories} />
+          <CategoryProgressList categories={data.categories || []} />
         </TabsContent>
         
         <TabsContent value="upcoming" className="space-y-4">
-          <UpcomingDeadlinesList deadlines={data.upcoming} />
+          <UpcomingDeadlinesList deadlines={data.upcoming || []} />
         </TabsContent>
         
         <TabsContent value="pendingForms" className="space-y-4">
-          <PendingFormsList forms={data.pendingForms} />
+          <PendingFormsList forms={data.pendingForms || []} />
         </TabsContent>
       </Tabs>
     </div>

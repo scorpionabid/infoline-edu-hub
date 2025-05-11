@@ -47,7 +47,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
                     <div className="flex items-start gap-3">
                       <FileClock className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <h4 className="font-medium">{item.title}</h4>
+                        <h4 className="font-medium">{item.title || item.name}</h4>
                         <div className="flex items-center text-xs text-muted-foreground mt-1">
                           <Clock className="h-3 w-3 mr-1" />
                           {item.deadline}
@@ -80,7 +80,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
                 {pendingForms.map((form) => (
                   <div key={form.id} className="flex items-center justify-between py-2 border-b last:border-0">
                     <div>
-                      <h4 className="font-medium">{form.title}</h4>
+                      <h4 className="font-medium">{form.title || form.name}</h4>
                       <div className="text-sm text-muted-foreground">{form.categoryName || form.category}</div>
                       {form.dueDate && (
                         <div className="text-xs text-muted-foreground mt-1">

@@ -56,8 +56,7 @@ export const Approval = () => {
           status: item.status as 'pending' | 'approved' | 'rejected',
           createdAt: item.created_at,
           submittedAt: item.created_at,
-          title: item.schools ? item.schools.name : 'Unknown School',
-          count: 1
+          title: item.schools ? item.schools.name : 'Unknown School'
         }));
         
         setApprovalData(approvals);
