@@ -43,7 +43,7 @@ const Users = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
-  // Filter parameters for sector and region admins
+  // Filter parameters for sector and region admins - ensure all fields are initialized
   const filterParams: UserFilter = {
     search: '',
     role: '',

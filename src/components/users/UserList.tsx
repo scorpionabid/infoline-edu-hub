@@ -12,6 +12,7 @@ import { UserFilter } from '@/types/user';
 import EditUserDialog from './EditUserDialog';
 import AddUserDialog from './AddUserDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { ensureFilterDefaults } from '@/utils/filterHelpers';
 
 interface UserListProps {
   users: FullUserData[];
@@ -25,18 +26,22 @@ interface UserListProps {
 }
 
 const UserList: React.FC<UserListProps> = ({
-  users,
-  filter = { search: '', role: '', status: '' }, // Provide default values for filter
+  users = [],
+  filter,
   onFilterChange,
-  loading,
+  loading = false,
   totalPages = 1,
   currentPage = 1,
-  onPageChange,
-  refetch
+  onPageChange = () => {},
+  refetch = () => {}
 }) => {
   const { t } = useLanguage();
+  
+  // Ensure filter has default values
+  const safeFilter = ensureFilterDefaults(filter);
+  
   // Initialize searchQuery with the filter.search value or empty string if undefined
-  const [searchQuery, setSearchQuery] = useState(filter?.search || '');
+  const [searchQuery, setSearchQuery] = useState(safeFilter.search || '');
   const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -93,7 +98,7 @@ const UserList: React.FC<UserListProps> = ({
     // Debounce search
     const timer = setTimeout(() => {
       onFilterChange({
-        ...(filter || {}), // Ensure filter is not undefined
+        ...(safeFilter),
         search: value,
         page: 1 // Reset to first page on search
       });
@@ -148,7 +153,7 @@ const UserList: React.FC<UserListProps> = ({
                   onClick={() => {
                     setSearchQuery('');
                     onFilterChange({
-                      ...(filter || {}),
+                      ...safeFilter,
                       search: '',
                       page: 1
                     });

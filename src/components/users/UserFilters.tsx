@@ -18,15 +18,15 @@ interface UserFiltersProps {
 export const UserFilters: React.FC<UserFiltersProps> = ({
   filter = {}, // Provide default empty object
   setFilter,
-  roleOptions,
-  statusOptions,
+  roleOptions = [], // Default to empty arrays if undefined
+  statusOptions = [],
   onSearch,
   regions = []
 }) => {
   const { t } = useLanguage();
   
   // Ensure filter is not undefined before accessing properties
-  const safeFilter = filter || {};
+  const safeFilter: UserFilter = filter || {};
 
   const handleSearchTermChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilter({ ...safeFilter, search: e.target.value });
