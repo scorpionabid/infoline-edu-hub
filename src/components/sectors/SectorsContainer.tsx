@@ -22,8 +22,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Region, Sector, EnhancedSector } from '@/types/supabase';
-import { useRegions } from '@/hooks/useRegions';
-import { useSectors } from '@/hooks/useSectors';
+import { useRegions } from '@/hooks/regions/useRegions';
+import { useSectors } from '@/hooks/sectors/useSectors';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -71,7 +71,6 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: external
     loading: sectorsLoading,
     error: sectorsError,
     fetchSectors,
-    fetchSectorsByRegion
   } = useSectors(regionFilter);
 
   const canManageSectors = () => {
@@ -219,11 +218,11 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: external
 
   useEffect(() => {
     if (user && userRole === 'regionadmin' && regionId) {
-      fetchSectorsByRegion(regionId);
+      fetchSectors(regionId);
     } else {
       fetchSectors();
     }
-  }, [fetchSectors, fetchSectorsByRegion, regionId, user, userRole]);
+  }, [fetchSectors, regionId, user, userRole]);
 
   useEffect(() => {
     fetchRegions();
@@ -250,7 +249,7 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: external
           </Button>
           <Button
             variant="outline"
-            onClick={fetchSectors}
+            onClick={() => fetchSectors()}
             disabled={sectorsLoading}
           >
             <RefreshCw className="mr-2 h-4 w-4" />

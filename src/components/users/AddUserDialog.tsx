@@ -20,8 +20,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateUser } from '@/hooks/useCreateUser';
-import { useRegions } from '@/hooks/useRegions';
-import { useSectors } from '@/hooks/useSectors';
+import { useRegions } from '@/hooks/regions/useRegions';
+import { useSectors } from '@/hooks/sectors/useSectors';
 import { useSchools } from '@/hooks/useSchools';
 import { toast } from 'sonner';
 import { UserFormData } from '@/types/user';
@@ -60,10 +60,10 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   
   // Seçilmiş regiondan asılı olaraq sektorları yeniləmək
   useEffect(() => {
-    if (userData.regionId) {
-      fetchSectorsByRegion(userData.regionId);
+    if (userData.region_id) {
+      fetchSectorsByRegion(userData.region_id);
     }
-  }, [userData.regionId, fetchSectorsByRegion]);
+  }, [userData.region_id, fetchSectorsByRegion]);
   
   // Seçilmiş sektordan asılı olaraq məktəbləri yeniləmək
   useEffect(() => {

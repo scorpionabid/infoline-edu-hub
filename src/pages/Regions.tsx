@@ -11,7 +11,7 @@ import { EnhancedRegion } from '@/hooks/useRegionsStore';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet';
 import { Pagination } from '@/components/ui/pagination';
-import { useRegions } from '@/hooks/useRegions';
+import { useRegions } from '@/hooks/regions/useRegions';
 
 const Regions = () => {
   const { t } = useLanguage();
