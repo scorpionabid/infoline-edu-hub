@@ -151,7 +151,7 @@ export interface SchoolAdminDashboardData {
     percentage: number;
     total: number;
     completed: number;
-  };
+  } | number;
   completionRate?: number;
   status?: {
     pending: number;

@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { FullUserData } from '@/types/auth';
 import { Session } from '@supabase/supabase-js';
@@ -214,3 +213,14 @@ export const selectSession = (state: AuthState) => state.session;
 export const selectIsAuthenticated = (state: AuthState) => state.isAuthenticated;
 export const selectIsLoading = (state: AuthState) => state.isLoading;
 export const selectUserRole = (state: AuthState) => state.user?.role || null;
+export const selectError = (state: AuthState) => state.error; // Add the missing selectError selector
+export const selectRegionId = (state: AuthState) => state.user?.region_id || null;
+export const selectSectorId = (state: AuthState) => state.user?.sector_id || null;
+export const selectSchoolId = (state: AuthState) => state.user?.school_id || null;
+
+// Helper functions
+export const shouldAuthenticate = () => true; // Always require authentication
+export const isProtectedRoute = (pathname: string) => !['login', 'register', 'forgot-password', 'reset-password'].some(route => pathname.includes(route));
+export const getRedirectPath = (role: string | null) => {
+  return '/dashboard';
+};
