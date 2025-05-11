@@ -49,6 +49,22 @@ export interface FormTabsProps {
   handleFormClick?: (id: string) => void;
 }
 
+export interface StatusCardsProps {
+  completion?: {
+    percentage: number;
+    total: number;
+    completed: number;
+  };
+  status?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    draft: number;
+    total?: number;
+  };
+  formStats?: DashboardFormStats;
+}
+
 export interface SuperAdminDashboardData {
   users: {
     active: number;
@@ -266,22 +282,6 @@ export interface CategoryItem {
   completionRate: number;
   status: string;
   deadline?: string;
-}
-
-export interface StatusCardsProps {
-  completion?: {
-    percentage: number;
-    total: number;
-    completed: number;
-  };
-  status?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    draft: number;
-    total?: number;
-  };
-  formStats?: DashboardFormStats;
 }
 
 export type DashboardStatus = {

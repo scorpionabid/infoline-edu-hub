@@ -6,12 +6,16 @@ import { Session, User } from '@supabase/supabase-js';
 // Cache keys
 const AUTH_USER_CACHE_KEY = 'auth:user';
 const SESSION_CACHE_KEY = 'auth:session';
+const CACHE_REFRESH_FLAG = 'auth:refresh_in_progress';
 
 export class AuthService {
-  // Cache timeout in milliseconds
-  private static CACHE_EXPIRY = 10 * 60 * 1000; // 10 minutes
+  // Cache timeout in milliseconds (10 minutes)
+  private static CACHE_EXPIRY = 10 * 60 * 1000;
+  
+  // Flag to prevent parallel session refreshes
+  private static refreshInProgress = false;
 
-  // Store user data in memory cache with timestamp
+  // Store user data in cache with timestamp
   private static storeUserInCache(userData: FullUserData): void {
     try {
       const cacheData = {
@@ -24,7 +28,7 @@ export class AuthService {
     }
   }
 
-  // Get user data from memory cache if not expired
+  // Get user data from cache if not expired
   private static getUserFromCache(): FullUserData | null {
     try {
       const cacheData = localStorage.getItem(AUTH_USER_CACHE_KEY);
@@ -58,6 +62,7 @@ export class AuthService {
   public static clearCache(): void {
     localStorage.removeItem(AUTH_USER_CACHE_KEY);
     localStorage.removeItem(SESSION_CACHE_KEY);
+    localStorage.removeItem(CACHE_REFRESH_FLAG);
   }
 
   // Login with email and password
@@ -67,9 +72,10 @@ export class AuthService {
     error: Error | null;
   }> {
     try {
-      // Clear any previous cache
+      // Clear previous cache to avoid stale data
       this.clearCache();
       
+      // Use signInWithPassword to authenticate
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -78,7 +84,7 @@ export class AuthService {
       if (error) throw error;
       
       if (data.session) {
-        // Store session in cache
+        // Store session in cache for later use
         this.storeSessionInCache(data.session);
         
         // Fetch and cache user data
@@ -143,30 +149,64 @@ export class AuthService {
     }
   }
 
-  // Refresh session
+  // Refresh session with mutex lock to prevent parallel calls
   public static async refreshSession(): Promise<{
     session: Session | null;
     error: Error | null;
   }> {
+    // If refresh already in progress, wait until complete
+    if (this.refreshInProgress) {
+      console.log('Session refresh already in progress, waiting...');
+      
+      // Wait for other refresh to complete
+      return new Promise((resolve) => {
+        const checkInterval = setInterval(() => {
+          if (!this.refreshInProgress) {
+            clearInterval(checkInterval);
+            
+            // Get session from cache to avoid another API call
+            const { data, error } = supabase.auth.getSession();
+            resolve({ session: data.session, error: null });
+          }
+        }, 100);
+        
+        // Set timeout to avoid infinite wait
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          resolve({ session: null, error: new Error('Session refresh timeout') });
+        }, 5000);
+      });
+    }
+    
+    // Set refresh in progress flag
+    this.refreshInProgress = true;
+    
     try {
-      // First, check if we have an existing session
+      // First try to use the existing session
       const { data, error } = await supabase.auth.refreshSession();
       
-      if (error) throw error;
+      if (error) {
+        // If refresh fails, try to get a fresh session
+        const sessionResult = await this.getSession();
+        this.refreshInProgress = false;
+        return sessionResult;
+      }
       
       if (data && data.session) {
         this.storeSessionInCache(data.session);
       }
       
+      this.refreshInProgress = false;
       return { session: data.session, error: null };
       
     } catch (error: any) {
       console.error('Refresh session error:', error);
+      this.refreshInProgress = false;
       return { session: null, error };
     }
   }
 
-  // Fetch user data
+  // Fetch user data with caching, error handling, and retry
   public static async fetchUserData(
     session: Session | null = null
   ): Promise<FullUserData | null> {
@@ -174,16 +214,23 @@ export class AuthService {
       // If no session provided, get the current session
       if (!session) {
         const { session: currentSession, error } = await this.getSession();
-        if (error || !currentSession) return null;
+        if (error || !currentSession) {
+          console.log('No active session to fetch user data');
+          return null;
+        }
         session = currentSession;
       }
       
       // Check if user exists in the session
-      if (!session.user) return null;
+      if (!session.user) {
+        console.log('Session has no user data');
+        return null;
+      }
       
       // Try to get user from cache first
       const cachedUser = this.getUserFromCache();
       if (cachedUser && cachedUser.id === session.user.id) {
+        console.log('Using cached user data');
         return cachedUser;
       }
       
@@ -209,7 +256,7 @@ export class AuthService {
         console.error('Error fetching profile:', profileError);
       }
       
-      // Build user data object
+      // Build user data object with defaults
       const userData: FullUserData = {
         id: session.user.id,
         email: session.user.email || '',

@@ -89,7 +89,7 @@ export const useAuth2 = (): UseAuthResult => {
     }
   }, [clearError]);
 
-  // Refresh session
+  // Refresh session with debounce to prevent multiple simultaneous calls
   const refreshSession = useCallback(async (): Promise<void> => {
     if (isLoading) return;
     
@@ -101,8 +101,8 @@ export const useAuth2 = (): UseAuthResult => {
       
       if (error) {
         console.error('Session refresh xətası:', error);
-        // If session refresh fails, we might want to clear the auth state
-        if (error.message.includes('JWT') || error.message.includes('session')) {
+        // Only clear auth state if JWT/session related error
+        if (error.message?.includes('JWT') || error.message?.includes('session')) {
           setUser(null);
           setSession(null);
           setIsAuthenticated(false);
@@ -152,49 +152,55 @@ export const useAuth2 = (): UseAuthResult => {
     }
   }, [session, isAuthenticated]);
 
-  // Initialize auth state
+  // Initialize auth state using a one-time flag to prevent loops
   useEffect(() => {
+    // Skip if already initialized
     if (authInitialized) return;
     
     const initialize = async () => {
       setIsLoading(true);
       
       try {
-        // Set up auth state listener first before checking for session
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event, currentSession) => {
-            // Handle auth state changes
-            if (event === 'SIGNED_IN') {
-              setSession(currentSession);
-              setIsAuthenticated(true);
-              
-              // Defer user data fetching to avoid deadlocks
-              setTimeout(async () => {
+        // Set up auth state listener first (before checking session)
+        // but use a variable to prevent multiple subscription setup
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+          console.log('Auth state change event:', event);
+          
+          if (event === 'SIGNED_IN') {
+            setSession(currentSession);
+            setIsAuthenticated(true);
+            
+            // Use setTimeout to avoid React state update deadlocks
+            setTimeout(async () => {
+              if (currentSession) {
                 const userData = await AuthService.fetchUserData(currentSession);
                 if (userData) {
                   setUser(userData);
                 }
-              }, 0);
-            } else if (event === 'SIGNED_OUT') {
-              setUser(null);
-              setSession(null);
-              setIsAuthenticated(false);
-              
-              // Clear cache on sign out
-              AuthService.clearCache();
-            } else if (event === 'TOKEN_REFRESHED') {
-              setSession(currentSession);
-              
-              // Refresh user data on token refresh if needed
-              setTimeout(async () => {
+              }
+            }, 0);
+          } 
+          else if (event === 'SIGNED_OUT') {
+            setUser(null);
+            setSession(null);
+            setIsAuthenticated(false);
+            // Clear cache on sign out
+            AuthService.clearCache();
+          } 
+          else if (event === 'TOKEN_REFRESHED') {
+            setSession(currentSession);
+            
+            // Refresh user data but use setTimeout to prevent React update deadlocks
+            setTimeout(async () => {
+              if (currentSession) {
                 const userData = await AuthService.fetchUserData(currentSession);
                 if (userData) {
                   setUser(userData);
                 }
-              }, 0);
-            }
+              }
+            }, 0);
           }
-        );
+        });
         
         // Check for existing session
         const { session: currentSession } = await AuthService.getSession();
@@ -207,15 +213,13 @@ export const useAuth2 = (): UseAuthResult => {
           
           if (userData) {
             setUser(userData);
-          } else {
-            // If user data fetch failed but session exists
-            console.warn('Session exists but user data fetch failed');
           }
         }
         
+        // Mark as initialized to prevent loops
         setAuthInitialized(true);
         
-        // Cleanup function
+        // Cleanup function to unsubscribe
         return () => {
           subscription.unsubscribe();
         };
@@ -227,7 +231,7 @@ export const useAuth2 = (): UseAuthResult => {
     };
     
     initialize();
-  }, [authInitialized]);
+  }, []);
 
   return {
     user,

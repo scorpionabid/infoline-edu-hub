@@ -84,7 +84,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
 
   // Handle both completion object and completionRate number
   const completion = data.completion || { percentage: 0, total: 0, completed: 0 };
-  const completionPercentage = completion.percentage || data.completionRate || 0;
+  const completionPercentage = typeof data.completion === 'object' ? 
+    (completion.percentage || 0) : (data.completionRate || 0);
 
   return (
     <div className="space-y-6">

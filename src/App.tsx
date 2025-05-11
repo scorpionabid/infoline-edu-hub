@@ -1,22 +1,23 @@
 
 import React, { useEffect } from 'react';
 import { Toaster } from 'sonner';
-import { useAuth2 } from '@/hooks/auth/useAuth2';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { AuthProvider } from '@/context/auth/AuthProvider';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
 function App() {
-  const { refreshSession } = useAuth2();
+  // Prevent double initialization by using a flag
+  const authInitialized = React.useRef(false);
+  const initializeAuth = useAuthStore(state => state.initializeAuth);
   
-  // Run once on app startup
+  // Run once on app startup, but use a ref to prevent repeated calls
   useEffect(() => {
-    const initializeAuth = async () => {
-      console.log('[App] Initializing authentication...');
-      await refreshSession();
-    };
+    if (authInitialized.current) return;
     
+    console.log('[App] Initializing authentication...');
+    authInitialized.current = true;
     initializeAuth();
-  }, [refreshSession]);
+  }, [initializeAuth]);
 
   return (
     <AuthProvider>
