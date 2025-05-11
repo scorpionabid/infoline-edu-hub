@@ -14,6 +14,10 @@ interface RegionAdminDashboardProps {
 export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
   
+  // Ensure sectorStats exists
+  const sectorStats = data.sectorStats || [];
+
+  // Using conditional rendering to avoid null/undefined access
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -24,7 +28,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.sectorStats.length}</div>
+            <div className="text-2xl font-bold">{sectorStats.length}</div>
             <p className="text-xs text-muted-foreground">
               {t('sectorsInRegion')}
             </p>
@@ -39,10 +43,10 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {data.sectorStats.filter(s => (s.completion || 0) >= 100).length}
+              {sectorStats.filter(s => (s.completion || s.completionRate || 0) >= 100).length}
             </div>
             <Progress 
-              value={(data.sectorStats.filter(s => (s.completion || 0) >= 100).length / Math.max(data.sectorStats.length, 1)) * 100} 
+              value={(sectorStats.filter(s => (s.completion || s.completionRate || 0) >= 100).length / Math.max(sectorStats.length, 1)) * 100} 
               className="h-2" 
             />
           </CardContent>
@@ -56,10 +60,10 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-amber-600">
-              {data.sectorStats.filter(s => (s.completion || 0) > 0 && (s.completion || 0) < 100).length}
+              {sectorStats.filter(s => (s.completion || s.completionRate || 0) > 0 && (s.completion || s.completionRate || 0) < 100).length}
             </div>
             <Progress 
-              value={(data.sectorStats.filter(s => (s.completion || 0) > 0 && (s.completion || 0) < 100).length / Math.max(data.sectorStats.length, 1)) * 100} 
+              value={(sectorStats.filter(s => (s.completion || s.completionRate || 0) > 0 && (s.completion || s.completionRate || 0) < 100).length / Math.max(sectorStats.length, 1)) * 100} 
               className="h-2" 
             />
           </CardContent>
@@ -73,10 +77,10 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-600">
-              {data.sectorStats.filter(s => (s.completion || 0) === 0).length}
+              {sectorStats.filter(s => (s.completion || s.completionRate || 0) === 0).length}
             </div>
             <Progress 
-              value={(data.sectorStats.filter(s => (s.completion || 0) === 0).length / Math.max(data.sectorStats.length, 1)) * 100} 
+              value={(sectorStats.filter(s => (s.completion || s.completionRate || 0) === 0).length / Math.max(sectorStats.length, 1)) * 100} 
               className="h-2" 
             />
           </CardContent>
@@ -90,11 +94,11 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
             <CardDescription>{t('sectorsInRegionDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <SectorStatsTable sectors={data.sectorStats} />
+            <SectorStatsTable sectors={sectorStats} />
           </CardContent>
         </Card>
         
-        <PendingApprovalsCard items={data.pendingApprovals} />
+        <PendingApprovalsCard items={data.pendingApprovals || []} />
       </div>
     </div>
   );

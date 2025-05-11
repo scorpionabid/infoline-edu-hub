@@ -82,9 +82,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     total: 0
   };
 
-  const completionRate = data.completionRate !== undefined ? data.completionRate : (
-    data.completion?.percentage !== undefined ? data.completion.percentage : 0
-  );
+  const completionRate = data.completionRate !== undefined ? data.completionRate : 
+    (data.completion && data.completion.percentage !== undefined ? data.completion.percentage : 0);
 
   return (
     <div className="space-y-6">

@@ -96,7 +96,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
         categoryData: data.categoryData || [],
         recentActivities: data.recentActivities || [],
         notifications: data.notifications || [],
-        completionRate: data.completionRate || data.completion?.percentage || 0
+        completionRate: data.completionRate || (data.completion?.percentage || 0)
       };
 
       setDashboardData(transformedData);
@@ -115,8 +115,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
   return (
     <div className="space-y-6">
       <StatusCards
-        completion={dashboardData.completion}
-        status={dashboardData.status}
+        completion={dashboardData.completion || {percentage: 0, total: 0, completed: 0}}
+        status={dashboardData.status || {pending: 0, approved: 0, rejected: 0, draft: 0, total: 0}}
         formStats={dashboardData.formStats}
       />
 
@@ -130,9 +130,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
             </TabsList>
 
             <FormTabs 
-              categories={dashboardData.categories}
-              upcoming={dashboardData.upcoming}
-              pendingForms={dashboardData.pendingForms}
+              categories={dashboardData.categories || []}
+              upcoming={dashboardData.upcoming || []}
+              pendingForms={dashboardData.pendingForms || []}
             />
           </Tabs>
         </div>
@@ -155,7 +155,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {Math.round(dashboardData.completion?.percentage || dashboardData.completionRate || 0)}%
+                {Math.round(dashboardData.completionRate || (dashboardData.completion?.percentage || 0))}%
               </div>
               <div className="mt-4 text-sm text-muted-foreground">
                 {t('completedFormsInfo', {

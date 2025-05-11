@@ -1,6 +1,7 @@
 
 import { Category } from './category';
-import { Region, EnhancedRegion } from '@/hooks/regions/useRegions';
+import { Region } from '@/hooks/regions/useRegions';
+import { AppNotification } from '@/types/notification';
 
 export interface DashboardFormStats {
   total: number;
@@ -39,7 +40,7 @@ export interface RegionData {
   completionRate: number;
 }
 
-// Add FormTabsProps interface
+// Added proper export for FormTabsProps
 export interface FormTabsProps {
   categories: CategoryItem[];
   upcoming: DeadlineItem[];
@@ -54,10 +55,17 @@ export interface SuperAdminDashboardData {
     total: number;
     new: number;
   };
+  stats?: {
+    regions: number;
+    sectors: number;
+    schools: number;
+    users: number;
+  };
   regionCount: number;
   sectorCount: number;
   schoolCount: number;
-  entryCount: {
+  userCount?: number;
+  entryCount?: {
     total: number;
     approved: number;
     pending: number;
@@ -66,10 +74,21 @@ export interface SuperAdminDashboardData {
     overdue: number;
     draft: number;
   };
-  completion: number;
-  categoryData: CategoryProgressData[];
-  schoolData: SchoolCompletionData[];
-  regionData: RegionData[];
+  approvalRate?: number;
+  completion?: number;
+  completionRate?: number;
+  categoryData?: CategoryProgressData[];
+  schoolData?: SchoolCompletionData[];
+  regionData?: RegionData[];
+  regions?: any[];
+  pendingApprovals?: PendingApproval[];
+  notifications?: AppNotification[];
+  formsByStatus?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    total: number;
+  };
 }
 
 export interface RegionAdminDashboardData {
@@ -88,27 +107,37 @@ export interface RegionAdminDashboardData {
     admins: number;
     teachers: number;
   };
+  stats?: {
+    sectors: number;
+    schools: number;
+    users: number;
+  };
   entryCount: {
     total: number;
     approved: number;
     pending: number;
     rejected: number;
   };
-  completion: number;
-  categoryData: CategoryProgressData[];
-  schoolData: SchoolCompletionData[];
-  recentActivities: any[];
-  sectorStats: SectorStat[];
-  pendingApprovals: PendingApproval[];
+  completion?: number;
+  completionRate?: number;
+  categoryData?: CategoryProgressData[];
+  schoolData?: SchoolCompletionData[];
+  recentActivities?: any[];
+  sectorStats?: SectorStat[];
+  pendingApprovals?: PendingApproval[];
+  categories?: CategoryItem[];
+  notifications?: AppNotification[];
+  pendingItems?: any[];
 }
 
 export interface SchoolAdminDashboardData {
-  completion: {
+  completion?: {
     percentage: number;
     total: number;
     completed: number;
   };
-  status: {
+  completionRate?: number;
+  status?: {
     pending: number;
     approved: number;
     rejected: number;
@@ -117,14 +146,13 @@ export interface SchoolAdminDashboardData {
     active: number;
     inactive: number;
   };
-  categories: CategoryItem[];
-  categoryData: CategoryProgressData[];
-  recentActivities: any[];
-  formStats: DashboardFormStats;
-  notifications: AppNotification[];
-  upcoming: DeadlineItem[];
-  pendingForms: FormItem[];
-  completionRate?: number;
+  categories?: CategoryItem[];
+  categoryData?: CategoryProgressData[];
+  recentActivities?: any[];
+  formStats?: DashboardFormStats;
+  notifications?: AppNotification[];
+  upcoming?: DeadlineItem[];
+  pendingForms?: FormItem[];
 }
 
 export interface SectorAdminDashboardData {
@@ -149,9 +177,9 @@ export interface SectorAdminDashboardData {
     total: number;
     completed: number;
   };
-  categoryData: CategoryProgressData[];
-  schoolData: SchoolCompletionData[];
-  recentActivities: any[];
+  categoryData?: CategoryProgressData[];
+  schoolData?: SchoolCompletionData[];
+  recentActivities?: any[];
   status: {
     pending: number;
     approved: number;
@@ -191,6 +219,7 @@ export interface SchoolStat {
   totalEntries?: number;
   pendingEntries?: number;
   pendingCount?: number;
+  completion?: number;
 }
 
 export interface SectorStat {
@@ -198,6 +227,7 @@ export interface SectorStat {
   name: string;
   schoolCount: number;
   completionRate: number;
+  completion?: number;
 }
 
 export interface FormItem {
@@ -255,6 +285,3 @@ export type DashboardStatus = {
   active?: number;
   inactive?: number;
 };
-
-// Import for AppNotification
-import { AppNotification } from '@/types/notification';
