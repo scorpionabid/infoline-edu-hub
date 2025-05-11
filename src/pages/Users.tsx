@@ -15,7 +15,7 @@ const Users = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  // User listini yeniləmək üçün state
+  // User list refresh trigger state
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // Redirect if not allowed to access this page
@@ -29,7 +29,7 @@ const Users = () => {
     return null;
   }
 
-  // SuperAdmin bütün entity növlərinə çıxışı var, RegionAdmin yalnız sektor və məktəblərə, SectorAdmin yalnız məktəblərə
+  // SuperAdmin has access to all entity types, RegionAdmin only to sectors and schools, SectorAdmin only to schools
   const entityTypes: Array<'region' | 'sector' | 'school'> = 
     isSuperAdmin 
       ? ['region', 'sector', 'school'] 
@@ -37,20 +37,28 @@ const Users = () => {
         ? ['sector', 'school'] 
         : ['school'];
 
-  // İstifadəçi əlavə edildikdə, yenilənməni işə sal
+  // Refresh user list when a user is added or edited
   const handleUserAddedOrEdited = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
-  // Sector ve Region admin üçün filter parametrləri
+  // Filter parameters for sector and region admins
   const filterParams = (() => {
+    // Initialize with safe default values
+    const params: Record<string, string> = {
+      search: ''
+    };
+    
     if (isSectorAdmin && sectorId) {
-      return { sectorId, role: 'schooladmin' };
+      params.sectorId = sectorId;
+      params.role = 'schooladmin';
     }
+    
     if (isRegionAdmin && regionId) {
-      return { regionId };
+      params.regionId = regionId;
     }
-    return {};
+    
+    return params;
   })();
 
   return (

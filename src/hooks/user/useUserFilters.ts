@@ -3,14 +3,35 @@ import { useState, useCallback } from 'react';
 import { UserFilter } from '@/hooks/useUserList';
 
 export const useUserFilters = () => {
-  const [filter, setFilter] = useState<UserFilter>({});
+  // Initialize with empty strings instead of undefined
+  const [filter, setFilter] = useState<UserFilter>({
+    search: '',
+    role: '',
+    status: '',
+    regionId: '',
+    sectorId: '',
+    schoolId: ''
+  });
 
   const updateFilter = useCallback((newFilter: Partial<UserFilter>) => {
-    setFilter(prev => ({ ...prev, ...newFilter }));
+    // Ensure no undefined values are set
+    const safeFilter = Object.entries(newFilter).reduce((acc, [key, value]) => {
+      acc[key] = value === undefined ? '' : value;
+      return acc;
+    }, {} as Record<string, any>);
+    
+    setFilter(prev => ({ ...prev, ...safeFilter }));
   }, []);
 
   const resetFilter = useCallback(() => {
-    setFilter({});
+    setFilter({
+      search: '',
+      role: '',
+      status: '',
+      regionId: '',
+      sectorId: '',
+      schoolId: ''
+    });
   }, []);
 
   return {

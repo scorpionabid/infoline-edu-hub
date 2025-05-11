@@ -16,19 +16,16 @@ export interface UserFilter {
 export const useUserList = (initialFilter: UserFilter = {}) => {
   const { regionId, sectorId, isSectorAdmin, isRegionAdmin } = usePermissions();
   
-  // Mövcud icazələrə əsasən ilkin filtr dəyərlərini müəyyən et
+  // Ensure filter properties are correctly initialized
   const defaultFilter: UserFilter = {
+    search: '',
+    role: '',
+    status: '',
+    regionId: isRegionAdmin ? regionId : '',
+    sectorId: isSectorAdmin ? sectorId : '',
+    schoolId: '',
     ...initialFilter
   };
-  
-  if (isSectorAdmin && sectorId) {
-    defaultFilter.sectorId = sectorId;
-    defaultFilter.role = 'schooladmin';
-  }
-  
-  if (isRegionAdmin && regionId) {
-    defaultFilter.regionId = regionId;
-  }
   
   const [filter, setFilter] = useState<UserFilter>(defaultFilter);
   const [currentPage, setCurrentPage] = useState(1);
@@ -39,8 +36,14 @@ export const useUserList = (initialFilter: UserFilter = {}) => {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   
   const updateFilter = useCallback((newFilter: UserFilter) => {
-    setFilter(newFilter);
-    setCurrentPage(1); // Filtr dəyişdikdə ilk səhifəyə qayıt
+    // Ensure we're not setting any undefined values
+    const safeFilter = Object.entries(newFilter).reduce((acc, [key, value]) => {
+      acc[key] = value === undefined ? '' : value;
+      return acc;
+    }, {} as Record<string, any>);
+    
+    setFilter(prev => ({ ...prev, ...safeFilter }));
+    setCurrentPage(1); // Reset to first page when filter changes
   }, []);
   
   const resetFilter = useCallback(() => {

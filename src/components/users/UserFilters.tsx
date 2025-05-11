@@ -16,7 +16,7 @@ interface UserFiltersProps {
 }
 
 export const UserFilters: React.FC<UserFiltersProps> = ({
-  filter,
+  filter = {}, // Provide default empty object
   setFilter,
   roleOptions,
   statusOptions,
@@ -24,21 +24,24 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
   regions = []
 }) => {
   const { t } = useLanguage();
+  
+  // Ensure filter is not undefined before accessing properties
+  const safeFilter = filter || {};
 
   const handleSearchTermChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter({ ...filter, search: e.target.value });
+    setFilter({ ...safeFilter, search: e.target.value });
   };
 
   const handleRoleChange = (value: string) => {
-    setFilter({ ...filter, role: value ? [value] : [] });
+    setFilter({ ...safeFilter, role: value ? [value] : [] });
   };
 
   const handleStatusChange = (value: string) => {
-    setFilter({ ...filter, status: value ? [value] : [] });
+    setFilter({ ...safeFilter, status: value ? [value] : [] });
   };
 
   const handleRegionChange = (value: string) => {
-    setFilter({ ...filter, region_id: value });
+    setFilter({ ...safeFilter, region_id: value });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -47,18 +50,27 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
     }
   };
 
+  // Safely access filter properties with fallbacks
+  const currentRole = Array.isArray(safeFilter.role) && safeFilter.role.length 
+    ? safeFilter.role[0] 
+    : typeof safeFilter.role === 'string' ? safeFilter.role : '';
+    
+  const currentStatus = Array.isArray(safeFilter.status) && safeFilter.status.length 
+    ? safeFilter.status[0] 
+    : typeof safeFilter.status === 'string' ? safeFilter.status : '';
+
   return (
     <div className="flex flex-col md:flex-row gap-3 mb-4">
       <Input
         placeholder={t('searchByNameOrEmail')}
-        value={filter.search || ''}
+        value={safeFilter.search || ''}
         onChange={handleSearchTermChange}
         onKeyDown={handleKeyDown}
         className="flex-grow md:w-auto"
       />
       
       <Select
-        value={filter.role?.length ? filter.role[0] : ''}
+        value={currentRole}
         onValueChange={handleRoleChange}
       >
         <SelectTrigger className="w-full md:w-[180px]">
@@ -75,7 +87,7 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
       </Select>
       
       <Select
-        value={filter.status?.length ? filter.status[0] : ''}
+        value={currentStatus}
         onValueChange={handleStatusChange}
       >
         <SelectTrigger className="w-full md:w-[180px]">
@@ -93,7 +105,7 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
       
       {regions.length > 0 && (
         <Select
-          value={filter.region_id || ''}
+          value={safeFilter.region_id || ''}
           onValueChange={handleRegionChange}
         >
           <SelectTrigger className="w-full md:w-[180px]">
