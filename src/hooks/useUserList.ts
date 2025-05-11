@@ -37,7 +37,7 @@ export const useUserList = (initialFilter: UserFilter = {}) => {
   
   const updateFilter = useCallback((newFilter: UserFilter) => {
     // Ensure we're not setting any undefined values
-    const safeFilter = Object.entries(newFilter).reduce((acc, [key, value]) => {
+    const safeFilter = Object.entries(newFilter || {}).reduce((acc, [key, value]) => {
       acc[key] = value === undefined ? '' : value;
       return acc;
     }, {} as Record<string, any>);

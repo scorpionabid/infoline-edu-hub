@@ -26,7 +26,7 @@ interface UserListProps {
 
 const UserList: React.FC<UserListProps> = ({
   users,
-  filter,
+  filter = { search: '', role: '', status: '' }, // Provide default values for filter
   onFilterChange,
   loading,
   totalPages = 1,
@@ -35,7 +35,8 @@ const UserList: React.FC<UserListProps> = ({
   refetch
 }) => {
   const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState(filter.search || '');
+  // Initialize searchQuery with the filter.search value or empty string if undefined
+  const [searchQuery, setSearchQuery] = useState(filter?.search || '');
   const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -92,7 +93,7 @@ const UserList: React.FC<UserListProps> = ({
     // Debounce search
     const timer = setTimeout(() => {
       onFilterChange({
-        ...filter,
+        ...(filter || {}), // Ensure filter is not undefined
         search: value,
         page: 1 // Reset to first page on search
       });
@@ -147,7 +148,7 @@ const UserList: React.FC<UserListProps> = ({
                   onClick={() => {
                     setSearchQuery('');
                     onFilterChange({
-                      ...filter,
+                      ...(filter || {}),
                       search: '',
                       page: 1
                     });

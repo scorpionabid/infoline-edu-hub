@@ -8,9 +8,9 @@ import { usePermissions } from '@/hooks/auth/usePermissions';
 import { UserFilter } from '@/hooks/useUserList';
 
 export const useUserFetch = (
-  filter: UserFilter,
-  currentPage: number,
-  pageSize: number
+  filter: UserFilter = {}, // Provide default empty object
+  currentPage: number = 1, // Provide default value
+  pageSize: number = 10    // Provide default value
 ) => {
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -25,30 +25,22 @@ export const useUserFetch = (
       
       console.log('Fetching users with filter:', filter);
       
+      // Ensure filter is not undefined
+      const safeFilter = filter || {};
+      
       // Filter parametrlərini hazırlayırıq
       const filterParams: Record<string, any> = {
-        p_page: currentPage,
-        p_limit: pageSize
+        p_page: currentPage || 1,
+        p_limit: pageSize || 10
       };
       
       // Null olmayan filter parametrlərini əlavə edirik
-      if (filter.role) {
-        filterParams.p_role = [filter.role];
-      } else {
-        filterParams.p_role = null;
-      }
-      
-      filterParams.p_region_id = filter.regionId || null;
-      filterParams.p_sector_id = filter.sectorId || null;
-      filterParams.p_school_id = filter.schoolId || null;
-      
-      if (filter.status) {
-        filterParams.p_status = [filter.status];
-      } else {
-        filterParams.p_status = null;
-      }
-      
-      filterParams.p_search = filter.search || null;
+      filterParams.p_role = safeFilter.role ? [safeFilter.role] : null;
+      filterParams.p_region_id = safeFilter.regionId || null;
+      filterParams.p_sector_id = safeFilter.sectorId || null;
+      filterParams.p_school_id = safeFilter.schoolId || null;
+      filterParams.p_status = safeFilter.status ? [safeFilter.status] : null;
+      filterParams.p_search = safeFilter.search || null;
       
       console.log('Sending filter params to DB:', filterParams);
       
@@ -100,30 +92,30 @@ export const useUserFetch = (
           }
           
           return {
-            id: user.id,
+            id: user.id || '',
             email: user.email || '',
             full_name: user.full_name || '',
             name: user.full_name || '',
             role: user.role || '',
-            region_id: user.region_id,
-            sector_id: user.sector_id,
-            school_id: user.school_id,
-            regionId: user.region_id,
-            sectorId: user.sector_id,
-            schoolId: user.school_id,
-            phone: user.phone,
-            position: user.position,
+            region_id: user.region_id || '',
+            sector_id: user.sector_id || '',
+            school_id: user.school_id || '',
+            regionId: user.region_id || '',
+            sectorId: user.sector_id || '',
+            schoolId: user.school_id || '',
+            phone: user.phone || '',
+            position: user.position || '',
             language: user.language || 'az',
-            avatar: user.avatar,
+            avatar: user.avatar || '',
             status: user.status || 'active',
-            last_login: user.last_login,
-            lastLogin: user.last_login,
-            created_at: user.created_at,
-            createdAt: user.created_at,
-            updated_at: user.updated_at,
-            updatedAt: user.updated_at,
-            entityName: user.entity_name,
-            notificationSettings: {
+            last_login: user.last_login || '',
+            lastLogin: user.last_login || '',
+            created_at: user.created_at || '',
+            createdAt: user.created_at || '',
+            updated_at: user.updated_at || '',
+            updatedAt: user.updated_at || '',
+            entityName: user.entity_name || '',
+            notificationSettings: user.notification_settings || {
               email: true,
               inApp: true,
               sms: false,

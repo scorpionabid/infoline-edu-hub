@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 import { Helmet } from 'react-helmet';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import { UserFilter } from '@/hooks/useUserList';
 
 const Users = () => {
   const { t } = useLanguage();
@@ -43,23 +44,14 @@ const Users = () => {
   };
 
   // Filter parameters for sector and region admins
-  const filterParams = (() => {
-    // Initialize with safe default values
-    const params: Record<string, string> = {
-      search: ''
-    };
-    
-    if (isSectorAdmin && sectorId) {
-      params.sectorId = sectorId;
-      params.role = 'schooladmin';
-    }
-    
-    if (isRegionAdmin && regionId) {
-      params.regionId = regionId;
-    }
-    
-    return params;
-  })();
+  const filterParams: UserFilter = {
+    search: '',
+    role: '',
+    status: '',
+    regionId: isRegionAdmin && regionId ? regionId : '',
+    sectorId: isSectorAdmin && sectorId ? sectorId : '',
+    schoolId: ''
+  };
 
   return (
     <>

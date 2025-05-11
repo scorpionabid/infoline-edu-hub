@@ -33,15 +33,15 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
   };
 
   const handleRoleChange = (value: string) => {
-    setFilter({ ...safeFilter, role: value ? [value] : [] });
+    setFilter({ ...safeFilter, role: value || '' });
   };
 
   const handleStatusChange = (value: string) => {
-    setFilter({ ...safeFilter, status: value ? [value] : [] });
+    setFilter({ ...safeFilter, status: value || '' });
   };
 
   const handleRegionChange = (value: string) => {
-    setFilter({ ...safeFilter, region_id: value });
+    setFilter({ ...safeFilter, region_id: value || '' });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -51,13 +51,9 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
   };
 
   // Safely access filter properties with fallbacks
-  const currentRole = Array.isArray(safeFilter.role) && safeFilter.role.length 
-    ? safeFilter.role[0] 
-    : typeof safeFilter.role === 'string' ? safeFilter.role : '';
-    
-  const currentStatus = Array.isArray(safeFilter.status) && safeFilter.status.length 
-    ? safeFilter.status[0] 
-    : typeof safeFilter.status === 'string' ? safeFilter.status : '';
+  const currentRole = typeof safeFilter.role === 'string' ? safeFilter.role : '';
+  const currentStatus = typeof safeFilter.status === 'string' ? safeFilter.status : '';
+  const currentRegionId = safeFilter.region_id || '';
 
   return (
     <div className="flex flex-col md:flex-row gap-3 mb-4">
@@ -103,9 +99,9 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
         </SelectContent>
       </Select>
       
-      {regions.length > 0 && (
+      {regions && regions.length > 0 && (
         <Select
-          value={safeFilter.region_id || ''}
+          value={currentRegionId}
           onValueChange={handleRegionChange}
         >
           <SelectTrigger className="w-full md:w-[180px]">
