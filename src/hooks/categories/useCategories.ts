@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -13,8 +14,8 @@ async function fetchWithControlledRetry<T>(
   const authStore = useAuthStore.getState();
   const session = authStore.session;
 
-  // Get Supabase API key safely
-  const supabaseApiKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+  // Get Supabase API key safely - use import.meta.env instead of process.env
+  const supabaseApiKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
   const defaultHeaders: Record<string, string> = {
     'Accept': 'application/json',
@@ -106,8 +107,8 @@ export const useCategories = () => {
 
   const { session, user } = useAuthStore();
 
-  // Safely get Supabase URL
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+  // Safely get Supabase URL using Vite's import.meta.env instead of process.env
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 
   const fetchCategories = useCallback(async (filter: CategoryFilter = {}) => {
     // Only fetch if authenticated

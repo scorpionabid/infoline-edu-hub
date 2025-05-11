@@ -159,8 +159,8 @@ export interface SchoolAdminDashboardData {
     rejected: number;
     draft: number;
     total: number;
-    active: number;
-    inactive: number;
+    active?: number;
+    inactive?: number;
   };
   categories?: CategoryItem[];
   categoryData?: CategoryProgressData[];
