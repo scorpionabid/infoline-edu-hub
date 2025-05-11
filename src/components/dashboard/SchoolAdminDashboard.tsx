@@ -6,7 +6,7 @@ import { CompletionRateCard } from './common/CompletionRateCard';
 import NotificationsCard from './common/NotificationsCard';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
 import { AppNotification, adaptDashboardNotificationToApp } from '@/types/notification';
-import { WormIcon, CheckCircleIcon, AlertTriangleIcon, ClockIcon } from 'lucide-react';
+import { ClockIcon, CheckCircleIcon, AlertTriangleIcon, FileText } from 'lucide-react';
 import FormTabs from './school-admin/FormTabs';
 import { Button } from '@/components/ui/button';
 
@@ -82,8 +82,10 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     total: 0
   };
 
-  const completionRate = data.completionRate !== undefined ? data.completionRate : 
-    (data.completion && data.completion.percentage !== undefined ? data.completion.percentage : 0);
+  // Handle both completion object and completionRate number
+  const completionPercentage = data.completion?.percentage !== undefined 
+    ? data.completion.percentage 
+    : (data.completionRate !== undefined ? data.completionRate : 0);
 
   return (
     <div className="space-y-6">
@@ -111,14 +113,14 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         <StatsCard
           title="Toplam form"
           value={status.total}
-          icon={<WormIcon className="h-4 w-4 text-primary" />}
+          icon={<FileText className="h-4 w-4 text-primary" />}
           description="Ümumi form sayı"
         />
       </Grid>
 
       <Grid columns={2} className="gap-6">
         <CompletionRateCard
-          completionRate={completionRate}
+          completionRate={completionPercentage}
           title="Tamamlanma dərəcəsi"
         />
         

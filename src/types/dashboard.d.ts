@@ -40,7 +40,7 @@ export interface RegionData {
   completionRate: number;
 }
 
-// Added proper export for FormTabsProps
+// FormTabsProps definition
 export interface FormTabsProps {
   categories: CategoryItem[];
   upcoming: DeadlineItem[];
@@ -197,7 +197,7 @@ export interface SectorAdminDashboardData {
   pendingApprovals: PendingApproval[];
 }
 
-// Export PendingApproval interface (enhanced)
+// PendingApproval interface (enhanced)
 export interface PendingApproval {
   id: string;
   schoolId?: string;
@@ -220,6 +220,14 @@ export interface SchoolStat {
   pendingEntries?: number;
   pendingCount?: number;
   completion?: number;
+  status?: string;
+  lastUpdate?: string;
+  formsCompleted?: number;
+  totalForms?: number;
+  principalName?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface SectorStat {
@@ -261,12 +269,12 @@ export interface CategoryItem {
 }
 
 export interface StatusCardsProps {
-  completion: {
+  completion?: {
     percentage: number;
     total: number;
     completed: number;
   };
-  status: {
+  status?: {
     pending: number;
     approved: number;
     rejected: number;
