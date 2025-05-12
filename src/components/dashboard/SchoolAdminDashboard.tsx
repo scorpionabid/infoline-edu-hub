@@ -89,6 +89,14 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     : (typeof data.completion === 'number' 
         ? data.completion 
         : (data.completionRate || 0));
+      
+  // Safely get completion details for display
+  const completionDetails = typeof data.completion === 'object' && data.completion
+    ? {
+        completed: data.completion.completed || 0,
+        total: data.completion.total || 0
+      }
+    : { completed: 0, total: 0 };
 
   return (
     <div className="space-y-6">

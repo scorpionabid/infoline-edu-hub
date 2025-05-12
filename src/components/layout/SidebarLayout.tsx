@@ -28,10 +28,10 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
   
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Sidebar - fixed position and proper z-index */}
+      {/* Sidebar - fixed position with higher z-index */}
       <div 
         className={cn(
-          "fixed inset-y-0 left-0 z-30 w-64 transform transition-transform duration-300 ease-in-out bg-white border-r border-gray-200 shadow-sm",
+          "fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out bg-white border-r border-gray-200 shadow-sm",
           !sidebarOpen && "-translate-x-full"
         )}
       >
@@ -70,10 +70,10 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
         </main>
       </div>
       
-      {/* Mobile sidebar backdrop */}
+      {/* Mobile sidebar backdrop with proper z-index */}
       {sidebarOpen && (
         <div 
-          className="md:hidden fixed inset-0 z-20 bg-black bg-opacity-50 transition-opacity"
+          className="md:hidden fixed inset-0 z-30 bg-black bg-opacity-50 transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}

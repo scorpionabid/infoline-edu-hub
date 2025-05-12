@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { MenuIcon, BellIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Button } from "@/components/ui/button";
+import { Menu, Bell, Search } from "lucide-react";
+import { useLanguage } from '@/context/LanguageContext';
 
 interface NavbarProps {
   sidebarOpen: boolean;
@@ -10,21 +11,37 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen, children }) => {
+  const { t } = useLanguage();
+
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-      <button
-        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background hover:bg-accent hover:text-accent-foreground h-9 w-9"
+    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden"
         onClick={() => setSidebarOpen(!sidebarOpen)}
       >
-        <MenuIcon className="h-5 w-5" />
-        <span className="sr-only">Toggle sidebar</span>
-      </button>
+        <Menu className="h-5 w-5" />
+        <span className="sr-only">Toggle Menu</span>
+      </Button>
       
-      <div className="flex-1">
-        <h1 className="text-xl font-semibold">InfoLine Admin</h1>
+      <div className="w-full flex-1 md:ml-0">
+        <form className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <input
+            type="search"
+            placeholder={t('search') || "Axtar..."}
+            className="w-full sm:w-64 bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring h-9 rounded-md border border-input px-4 py-2 text-sm pl-8 shadow-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-offset-0"
+          />
+        </form>
       </div>
       
-      <div className="flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2">
+        <Button variant="ghost" size="icon">
+          <Bell className="h-5 w-5" />
+          <span className="sr-only">{t('notifications') || "Bildirişlər"}</span>
+        </Button>
+        
         {children}
       </div>
     </header>
