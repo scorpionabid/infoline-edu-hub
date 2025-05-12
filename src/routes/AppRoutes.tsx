@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
 import { useAuthStore, selectIsAuthenticated, selectIsLoading } from "@/hooks/auth/useAuthStore";
 import { usePermissions } from "@/hooks/auth/usePermissions";
 import AccessDenied from "@/components/AccessDenied";
@@ -135,7 +135,9 @@ const AppRoutes = () => (
     {/* Protected Routes with SidebarLayout */}
     <Route element={
       <ProtectedRoute>
-        <SidebarLayout />
+        <SidebarLayout>
+          <Outlet />
+        </SidebarLayout>
       </ProtectedRoute>
     }>
       {/* Dashboard və digər səhifələr */}
