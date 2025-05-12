@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '@/types/supabase';
@@ -18,6 +17,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  
   
   // Check window size on mount and resize
   useEffect(() => {
@@ -48,7 +48,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
     return null;
   }
   
-  const userRole = user?.role as UserRole || 'user';
+  // DEFINE THE CORRECT DEFAULT ROLE HERE based on your UserRole type definition
+  // Example: Replace 'school_admin' with the actual default role if 'user.role' is null/undefined
+  const defaultRole: UserRole = 'schooladmin'; // <--- IMPORTANT: REPLACE WITH YOUR ACTUAL DEFAULT ROLE
+  
+  // Use nullish coalescing (??) to provide the default role only if user.role is null or undefined
+  const userRole: UserRole = user.role ?? defaultRole;
   
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
