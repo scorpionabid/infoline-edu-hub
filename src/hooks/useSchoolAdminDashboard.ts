@@ -5,7 +5,7 @@ import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
-import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
+import { SchoolAdminDashboardData, FormItem, CategoryItem, DeadlineItem } from '@/types/dashboard';
 
 const useSchoolAdminDashboard = () => {
   const [data, setData] = useState<SchoolAdminDashboardData | null>(null);
@@ -53,6 +53,7 @@ const useSchoolAdminDashboard = () => {
             pending: 0,
             approved: 0,
             rejected: 0,
+            draft: 0,
             total: 0,
             active: 0,
             inactive: 0
@@ -65,7 +66,8 @@ const useSchoolAdminDashboard = () => {
             rejected: 0,
             dueSoon: 0,
             overdue: 0,
-            total: 0
+            total: 0,
+            draft: 0
           },
           pendingForms: [],
           completionRate: 0,
@@ -76,14 +78,36 @@ const useSchoolAdminDashboard = () => {
       } else {
         console.log('Dashboard data loaded successfully:', dashboardData);
         
-        // Ensure status has active and inactive properties
-        const enhancedData = {
+        // Ensure required properties exist
+        const enhancedData: SchoolAdminDashboardData = {
           ...dashboardData,
-          status: {
-            ...(dashboardData.status || {}),
-            active: dashboardData.status?.active || 0,
-            inactive: dashboardData.status?.inactive || 0
-          }
+          status: dashboardData.status || {
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            draft: 0,
+            total: 0,
+            active: 0,
+            inactive: 0
+          },
+          formStats: dashboardData.formStats || {
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            dueSoon: 0,
+            overdue: 0,
+            total: 0,
+            draft: 0
+          },
+          categories: dashboardData.categories || [],
+          upcoming: dashboardData.upcoming || [],
+          pendingForms: dashboardData.pendingForms || [],
+          notifications: dashboardData.notifications || [],
+          completionRate: dashboardData.completionRate || (
+            typeof dashboardData.completion === 'object' 
+              ? dashboardData.completion?.percentage 
+              : (dashboardData.completion || 0)
+          )
         };
         
         setData(enhancedData);

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '@/types/supabase';
 import Navbar from '../navigation/Navbar';
@@ -15,8 +15,32 @@ interface SidebarLayoutProps {
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = true }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  
+  // Check window size on mount and resize
+  useEffect(() => {
+    const checkSize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // Auto collapse sidebar on mobile
+      if (mobile && sidebarOpen) {
+        setSidebarOpen(false);
+      } else if (!mobile && !sidebarOpen) {
+        setSidebarOpen(true);
+      }
+    };
+    
+    // Initial check
+    checkSize();
+    
+    // Add event listener
+    window.addEventListener('resize', checkSize);
+    
+    // Clean up
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
   
   // Make sure the user is logged in
   if (!isAuthenticated || !user) {
@@ -31,7 +55,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
       {/* Sidebar - fixed position with higher z-index */}
       <div 
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out bg-white border-r border-gray-200 shadow-sm",
+          "fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out bg-white border-r border-gray-200 shadow-sm",
           !sidebarOpen && "-translate-x-full"
         )}
       >
@@ -52,7 +76,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
       {/* Main content - with proper margin to avoid overlap */}
       <div className={cn(
         "flex flex-col flex-1 w-full transition-all duration-300 ease-in-out",
-        sidebarOpen ? "ml-64" : "ml-0"
+        sidebarOpen ? "md:ml-64" : "ml-0"
       )}>
         {/* Navbar */}
         {showHeader && (
@@ -71,9 +95,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
       </div>
       
       {/* Mobile sidebar backdrop with proper z-index */}
-      {sidebarOpen && (
+      {sidebarOpen && isMobile && (
         <div 
-          className="md:hidden fixed inset-0 z-30 bg-black bg-opacity-50 transition-opacity"
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}

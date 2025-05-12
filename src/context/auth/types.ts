@@ -1,6 +1,7 @@
 
 import { Session } from '@supabase/supabase-js';
-import { UserRole, FullUserData } from '@/types/supabase';
+import { FullUserData } from '@/types/auth';
+import { UserRole } from '@/types/supabase';
 
 export type AuthErrorType = string | null;
 

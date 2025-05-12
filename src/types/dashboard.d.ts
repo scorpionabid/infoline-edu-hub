@@ -152,6 +152,16 @@ export interface RegionAdminDashboardData {
   pendingItems?: any[];
   upcoming?: DeadlineItem[];
   pendingForms?: FormItem[];
+  status?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    draft: number;
+    total: number;
+    active?: number;
+    inactive?: number;
+  };
+  formStats?: DashboardFormStats;
 }
 
 export interface SchoolAdminDashboardData {
@@ -170,7 +180,12 @@ export interface SchoolAdminDashboardData {
     active?: number;
     inactive?: number;
   };
-  categories?: CategoryItem[];
+  categories?: {
+    total: number;
+    completed: number;
+    pending: number;
+    draft: number;
+  } | CategoryItem[];
   categoryData?: CategoryProgressData[];
   recentActivities?: any[];
   formStats?: DashboardFormStats;
@@ -254,6 +269,7 @@ export interface SchoolStat {
   address?: string;
   phone?: string;
   email?: string;
+  pendingForms?: number;
 }
 
 // SectorStat interface - export explicitly

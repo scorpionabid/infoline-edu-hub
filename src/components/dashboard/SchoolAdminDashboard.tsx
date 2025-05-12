@@ -84,7 +84,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   };
 
   // Handle both completion object and completionRate number
-  const completionPercentage = typeof data.completion === 'object' 
+  const completionPercentage = typeof data.completion === 'object' && data.completion
     ? (data.completion?.percentage || 0) 
     : (typeof data.completion === 'number' 
         ? data.completion 
@@ -143,7 +143,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       
       {data.categories && data.upcoming && data.pendingForms && (
         <FormTabs 
-          categories={data.categories}
+          categories={Array.isArray(data.categories) ? data.categories : []}
           upcoming={data.upcoming}
           pendingForms={data.pendingForms}
           navigateToDataEntry={navigateToDataEntry}
