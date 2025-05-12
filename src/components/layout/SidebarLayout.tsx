@@ -5,6 +5,7 @@ import Header from './Header';
 import Sidebar from './Sidebar';
 import { useAuth } from '@/context/auth';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
 interface SidebarLayoutProps {
   // Bu interface-i boş saxlayırıq, çünki komponentə xarici proplar ötürülmür
@@ -16,13 +17,14 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
   const navigate = useNavigate();
   const { isDesktop } = useBreakpoint('md');
 
+  // Check authentication status
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       navigate('/login');
     }
   }, [isAuthenticated, loading, navigate]);
 
-  // Desktop-da sidebar avtomatik açılır
+  // Desktop-da sidebar avtomatik açılır, mobilede bağlı olur
   useEffect(() => {
     if (isDesktop) {
       setIsSidebarOpen(true);
@@ -53,13 +55,15 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        onToggle={handleToggleSidebar} 
-        onMenuClick={handleMenuClick}
-      />
+      <div className={`fixed inset-y-0 left-0 z-50 ${isSidebarOpen ? '' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:translate-x-0`}>
+        <Sidebar 
+          isOpen={isSidebarOpen} 
+          onToggle={handleToggleSidebar} 
+          onMenuClick={handleMenuClick}
+        />
+      </div>
       
-      <div className="flex flex-col flex-1 w-full">
+      <div className="flex flex-col flex-1 w-full md:pl-[250px]">
         <Header 
           onSidebarToggle={handleToggleSidebar} 
           isSidebarOpen={isSidebarOpen} 

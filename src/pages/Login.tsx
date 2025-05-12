@@ -31,13 +31,22 @@ const Login = () => {
       
       // Yönləndirməni başladıb göstəricini təyin edirik
       setRedirectInProgress(true);
-      navigate(from, { replace: true });
+      
+      // Timeout ilə yönləndirmə sürətini azaltırıq ki, state update-lər gedə bilsin
+      setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 100);
     }
   }, [isAuthenticated, isLoading, user, from, navigate, redirectInProgress]);
 
   // Show loading state when auth is being checked
   if (isLoading) {
     return <LoadingScreen message="Yüklənir, zəhmət olmasa gözləyin..." />;
+  }
+
+  // Əgər istifadəçi artıq daxil olubsa, login səhifəsindən çıxarırıq
+  if (isAuthenticated && user) {
+    return <LoadingScreen message="Yönləndiriliyor..." />;
   }
 
   // When not authenticated, show login form

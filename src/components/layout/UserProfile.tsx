@@ -12,16 +12,23 @@ import { useAuth } from '@/context/auth';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Settings, User } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { toast } from 'sonner';
 
 export const UserProfile = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const logout = useAuthStore(state => state.logout);
   const { t } = useLanguage();
   const navigate = useNavigate();
   
   const handleLogout = async () => {
-    if (logout) {
+    try {
       await logout();
-      navigate('/login');
+      toast.success('Çıxış uğurla edildi');
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Çıxış zamanı xəta baş verdi');
     }
   };
   
