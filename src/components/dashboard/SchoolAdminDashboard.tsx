@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
@@ -74,32 +74,27 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
 
   // Ensure formStats data exists
   const formStats = data.formStats || {
-    total: 0,
     pending: 0,
     approved: 0,
     rejected: 0,
     draft: 0,
     dueSoon: 0,
-    overdue: 0
+    overdue: 0,
+    total: 0
   };
 
-  // Handle different completion value types safely
-  let completionPercentage = 0;
-  if (data.completion !== undefined && data.completion !== null) {
-    if (typeof data.completion === 'object') {
-      completionPercentage = data.completion.percentage || 0;
-    } else if (typeof data.completion === 'number') {
-      completionPercentage = data.completion;
-    }
-  } else if (data.completionRate !== undefined) {
-    completionPercentage = data.completionRate;
-  }
+  // Handle both completion object and completionRate number
+  const completionPercentage = typeof data.completion === 'object' 
+    ? (data.completion?.percentage || 0) 
+    : (typeof data.completion === 'number' 
+        ? data.completion 
+        : (data.completionRate || 0));
 
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Məktəb Dashboard</h2>
       
-      <Grid columns={{ default: 1, sm: 2, md: 4 }} className="gap-4">
+      <Grid columns={4} className="gap-4">
         <StatsCard
           title="Təsdiq gözləyən"
           value={status.pending}
@@ -126,7 +121,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         />
       </Grid>
 
-      <Grid columns={{ default: 1, md: 2 }} className="gap-6">
+      <Grid columns={2} className="gap-6">
         <CompletionRateCard
           completionRate={completionPercentage}
           title="Tamamlanma dərəcəsi"

@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
@@ -8,56 +8,54 @@ import { usePermissions } from '@/hooks/auth/usePermissions';
 import { UserFilter } from '@/hooks/useUserList';
 
 export const useUserFetch = (
-  filter: UserFilter = {}, 
-  currentPage: number = 1, 
-  pageSize: number = 10
+  filter: UserFilter = {}, // Provide default empty object
+  currentPage: number = 1, // Provide default value
+  pageSize: number = 10    // Provide default value
 ) => {
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const { session } = useAuth();
-  const fetchCounter = useRef(0);
-  const isInitialMount = useRef(true);
   
-  // Use memoized filter to prevent unnecessary re-renders
   const fetchUsers = useCallback(async () => {
     try {
-      // Avoid unnecessary subsequent fetches on mount
-      if (isInitialMount.current) {
-        isInitialMount.current = false;
-      } else {
-        // Add a fetch counter to track and avoid excessive fetches
-        fetchCounter.current += 1;
-        const currentFetch = fetchCounter.current;
-        
-        // Log fetch information
-        console.log(`Fetch #${currentFetch} starting with filter:`, filter);
-      }
-      
       setLoading(true);
       setError(null);
+      
+      console.log('Fetching users with filter:', filter);
       
       // Ensure filter is not undefined
       const safeFilter = filter || {};
       
-      // Prepare filter parameters
+      // Filter parametrlərini hazırlayırıq
       const filterParams: Record<string, any> = {
         p_page: currentPage || 1,
         p_limit: pageSize || 10
       };
       
-      // Add non-null filter parameters
-      filterParams.p_role = safeFilter.role ? [safeFilter.role] : null;
+      // Null olmayan filter parametrlərini əlavə edirik
+      if (safeFilter.role) {
+        filterParams.p_role = [safeFilter.role];
+      } else {
+        filterParams.p_role = null;
+      }
+      
       filterParams.p_region_id = safeFilter.regionId || null;
       filterParams.p_sector_id = safeFilter.sectorId || null;
       filterParams.p_school_id = safeFilter.schoolId || null;
-      filterParams.p_status = safeFilter.status ? [safeFilter.status] : null;
+      
+      if (safeFilter.status) {
+        filterParams.p_status = [safeFilter.status];
+      } else {
+        filterParams.p_status = null;
+      }
+      
       filterParams.p_search = safeFilter.search || null;
       
       console.log('Sending filter params to DB:', filterParams);
       
-      // Get users with filters
+      // Database funksiyası ilə istifadəçiləri əldə edirik
       const { data: userData, error: fetchError } = await supabase.rpc(
         'get_filtered_users',
         filterParams
@@ -68,9 +66,9 @@ export const useUserFetch = (
         throw new Error(`İstifadəçilər əldə edilərkən xəta: ${fetchError.message}`);
       }
       
-      console.log('Users fetched:', userData?.length || 0);
+      console.log('Users fetched:', userData?.length || 0, userData);
       
-      // Get user count
+      // Count-u da əldə edirik
       const { data: countData, error: countError } = await supabase.rpc(
         'get_filtered_users_count',
         {
@@ -90,18 +88,18 @@ export const useUserFetch = (
         console.log('Total user count:', countData);
       }
       
-      // Format user data
+      // Verilənləri FullUserData formatına çeviririk
       const formattedUsers: FullUserData[] = (userData || []).map((item: any) => {
         try {
           let user;
-          // Parse JSON safely
+          // JSON.parse bəzən xəta verə bilər, bunu try-catch ilə idarə edirik
           if (typeof item.user_json === 'string') {
             user = JSON.parse(item.user_json);
           } else if (typeof item.user_json === 'object') {
             user = item.user_json;
           } else {
             console.error('Unexpected user_json type:', typeof item.user_json);
-            user = {}; // Default empty object 
+            user = {}; // Default boş obyekt 
           }
           
           // Ensure ID is present
@@ -173,15 +171,8 @@ export const useUserFetch = (
     }
   }, [filter, currentPage, pageSize, session]);
   
-  // Only fetch on mount and when dependencies change
   useEffect(() => {
-    // Skip the initial fetch if filters are empty
-    const shouldFetch = !isInitialMount.current || 
-      Object.values(filter).some(val => val !== '' && val !== undefined && val !== null);
-    
-    if (shouldFetch) {
-      fetchUsers();
-    }
+    fetchUsers();
   }, [fetchUsers]);
   
   return {

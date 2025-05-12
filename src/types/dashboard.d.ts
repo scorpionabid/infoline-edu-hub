@@ -221,7 +221,7 @@ export interface SectorAdminDashboardData {
   pendingApprovals: PendingApproval[];
 }
 
-// PendingApproval interface
+// PendingApproval interface - export explicitly
 export interface PendingApproval {
   id: string;
   schoolId?: string;
@@ -237,7 +237,7 @@ export interface PendingApproval {
   date?: string;
 }
 
-// SchoolStat interface
+// SchoolStat interface - export explicitly
 export interface SchoolStat {
   id: string;
   name: string;
@@ -256,7 +256,7 @@ export interface SchoolStat {
   email?: string;
 }
 
-// SectorStat interface
+// SectorStat interface - export explicitly
 export interface SectorStat {
   id: string;
   name: string;
@@ -265,7 +265,7 @@ export interface SectorStat {
   completion?: number;
 }
 
-// FormItem interface
+// FormItem interface - export explicitly
 export interface FormItem {
   id: string;
   name?: string;
@@ -277,7 +277,7 @@ export interface FormItem {
   status: string;
 }
 
-// DeadlineItem interface
+// DeadlineItem interface - export explicitly
 export interface DeadlineItem {
   id: string;
   name?: string;
@@ -289,7 +289,7 @@ export interface DeadlineItem {
   categoryName?: string;
 }
 
-// CategoryItem interface
+// CategoryItem interface - export explicitly
 export interface CategoryItem {
   id: string;
   name: string;

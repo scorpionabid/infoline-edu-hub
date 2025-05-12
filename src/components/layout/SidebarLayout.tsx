@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '@/types/supabase';
 import Navbar from '../navigation/Navbar';
@@ -18,24 +18,6 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   
-  // Auto collapse sidebar on mobile
-  useEffect(() => {
-    const checkWidth = () => {
-      if (window.innerWidth < 768) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
-    };
-    
-    // Check on initial load
-    checkWidth();
-    
-    // Add resize listener
-    window.addEventListener('resize', checkWidth);
-    return () => window.removeEventListener('resize', checkWidth);
-  }, []);
-  
   // Make sure the user is logged in
   if (!isAuthenticated || !user) {
     // Redirect will be handled by the routes
@@ -46,14 +28,6 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
   
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div 
-          className="md:hidden fixed inset-0 z-20 bg-black bg-opacity-50 transition-opacity"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-    
       {/* Sidebar - fixed position and proper z-index */}
       <div 
         className={cn(
@@ -78,7 +52,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
       {/* Main content - with proper margin to avoid overlap */}
       <div className={cn(
         "flex flex-col flex-1 w-full transition-all duration-300 ease-in-out",
-        sidebarOpen ? "md:ml-64" : "ml-0"
+        sidebarOpen ? "ml-64" : "ml-0"
       )}>
         {/* Navbar */}
         {showHeader && (
@@ -91,10 +65,18 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
         )}
         
         {/* Main content with padding and scrollable area */}
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+        <main className="flex-1 overflow-auto p-6">
           {children}
         </main>
       </div>
+      
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <div 
+          className="md:hidden fixed inset-0 z-20 bg-black bg-opacity-50 transition-opacity"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 };

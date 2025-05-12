@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUserList, UserFilter } from '@/hooks/useUserList';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
@@ -13,7 +13,6 @@ import UserActions from './UserActions';
 import { useLanguage } from '@/context/LanguageContext';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface UserListProps {
   refreshTrigger?: number;
@@ -45,27 +44,17 @@ const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = 
   } = useUserList(defaultFilter);
   
   // Debounce search to prevent too many requests
-  const debouncedSearch = useCallback(
-    (value: string) => {
-      const handler = setTimeout(() => {
-        updateFilter({ ...filter, search: value });
-      }, 300);
-      
-      return () => clearTimeout(handler);
-    },
-    [filter, updateFilter]
-  );
-  
-  // Handle search input change - prevent loop by using effect cleanup
   useEffect(() => {
-    const cleanup = debouncedSearch(searchTerm);
-    return cleanup;
-  }, [searchTerm, debouncedSearch]);
+    const handler = setTimeout(() => {
+      updateFilter({ ...filter, search: searchTerm });
+    }, 300);
+    
+    return () => clearTimeout(handler);
+  }, [searchTerm, updateFilter, filter]);
   
-  // Handle refresh trigger from parent without causing loops
+  // Handle refresh trigger from parent
   useEffect(() => {
     if (refreshTrigger > 0) {
-      console.log('Refresh triggered:', refreshTrigger);
       refetch();
     }
   }, [refreshTrigger, refetch]);
@@ -78,16 +67,6 @@ const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
-
-  // Handle role filter change
-  const handleRoleFilter = (value: string) => {
-    updateFilter({ ...filter, role: value });
-  };
-
-  // Handle status filter change 
-  const handleStatusFilter = (value: string) => {
-    updateFilter({ ...filter, status: value });
-  };
   
   if (error) {
     console.error("Error loading users:", error);
@@ -98,62 +77,25 @@ const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = 
   
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row gap-3">
-        <form onSubmit={handleSearch} className="flex flex-1 items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={t('searchUsers')}
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Button type="submit" className="whitespace-nowrap">{t('search')}</Button>
-        </form>
-        
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Select value={filter.role || ''} onValueChange={handleRoleFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder={t('role')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Bütün rollar</SelectItem>
-              <SelectItem value="superadmin">Super Admin</SelectItem>
-              <SelectItem value="regionadmin">Region Admin</SelectItem>
-              <SelectItem value="sectoradmin">Sektor Admin</SelectItem>
-              <SelectItem value="schooladmin">Məktəb Admin</SelectItem>
-              <SelectItem value="user">İstifadəçi</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select value={filter.status || ''} onValueChange={handleStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder={t('status')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Bütün statuslar</SelectItem>
-              <SelectItem value="active">Aktiv</SelectItem>
-              <SelectItem value="inactive">Qeyri-aktiv</SelectItem>
-              <SelectItem value="blocked">Bloklanan</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          {(searchTerm || Object.values(filter).some(Boolean)) && (
-            <Button 
-              variant="outline" 
-              className="whitespace-nowrap"
-              onClick={() => {
-                setSearchTerm('');
-                resetFilter();
-              }}
-            >
-              {t('reset')}
-            </Button>
-          )}
+      <form onSubmit={handleSearch} className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder={t('searchUsers')}
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-      </div>
+        <Button type="submit">{t('search')}</Button>
+        {(searchTerm || Object.values(filter).some(Boolean)) && (
+          <Button variant="outline" onClick={() => {
+            setSearchTerm('');
+            resetFilter();
+          }}>{t('reset')}</Button>
+        )}
+      </form>
       
       <Card>
         <CardContent className="p-0">
@@ -219,7 +161,7 @@ const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = 
           </div>
           
           {totalCount > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-2 border-t">
+            <div className="flex items-center justify-between px-4 py-2 border-t">
               <div className="text-sm text-muted-foreground">
                 {t('showingNofMResults', { n: users.length, m: totalCount })}
               </div>
