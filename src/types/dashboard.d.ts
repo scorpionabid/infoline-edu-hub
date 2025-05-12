@@ -54,13 +54,15 @@ export interface StatusCardsProps {
     percentage: number;
     total: number;
     completed: number;
-  };
+  } | null;
   status?: {
     pending: number;
     approved: number;
     rejected: number;
     draft: number;
     total?: number;
+    active?: number;
+    inactive?: number;
   };
   formStats?: DashboardFormStats;
 }
@@ -134,7 +136,11 @@ export interface RegionAdminDashboardData {
     pending: number;
     rejected: number;
   };
-  completion?: number;
+  completion?: number | {
+    percentage: number;
+    total: number;
+    completed: number;
+  };
   completionRate?: number;
   categoryData?: CategoryProgressData[];
   schoolData?: SchoolCompletionData[];
@@ -144,6 +150,8 @@ export interface RegionAdminDashboardData {
   categories?: CategoryItem[];
   notifications?: AppNotification[];
   pendingItems?: any[];
+  upcoming?: DeadlineItem[];
+  pendingForms?: FormItem[];
 }
 
 export interface SchoolAdminDashboardData {
@@ -151,7 +159,7 @@ export interface SchoolAdminDashboardData {
     percentage: number;
     total: number;
     completed: number;
-  } | number;
+  } | number | null;
   completionRate?: number;
   status?: {
     pending: number;
@@ -226,6 +234,7 @@ export interface PendingApproval {
   createdAt?: string;
   title?: string;
   count?: number;
+  date?: string;
 }
 
 // SchoolStat interface - export explicitly
