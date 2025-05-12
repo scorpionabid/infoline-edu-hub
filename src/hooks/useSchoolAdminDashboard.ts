@@ -5,7 +5,7 @@ import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
-import { SchoolAdminDashboardData, FormItem, CategoryItem, DeadlineItem } from '@/types/dashboard';
+import { SchoolAdminDashboardData, CategoryItem, FormItem, DeadlineItem } from '@/types/dashboard';
 
 const useSchoolAdminDashboard = () => {
   const [data, setData] = useState<SchoolAdminDashboardData | null>(null);

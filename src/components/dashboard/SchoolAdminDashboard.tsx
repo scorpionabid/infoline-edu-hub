@@ -99,7 +99,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     : { completed: 0, total: 0 };
 
   // Prepare categories, upcoming and pendingForms
-  const categories = Array.isArray(data.categories) ? data.categories : [];
+  const categories = Array.isArray(data.categories) ? data.categories as CategoryItem[] : [];
   const upcoming = Array.isArray(data.upcoming) ? data.upcoming : [];
   const pendingForms = Array.isArray(data.pendingForms) ? data.pendingForms : [];
 

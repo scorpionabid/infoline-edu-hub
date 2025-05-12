@@ -60,7 +60,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
     notifications: []
   });
 
-  // Real data və ya mock data yükləmək
+  // Load data from props or fetched data
   useEffect(() => {
     if (!isLoading && data) {
       const transformedData: SchoolAdminDashboardData = {
@@ -78,17 +78,6 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
           active: 0,
           inactive: 0
         },
-        categories: Array.isArray(data.categories) 
-          ? data.categories.map(cat => ({
-              id: cat.id,
-              name: cat.name,
-              description: cat.description || '',
-              completionRate: cat.completionRate || 0,
-              status: cat.status || 'active'
-            }))
-          : [],
-        upcoming: data.upcoming || [],
-        pendingForms: data.pendingForms || [],
         formStats: data.formStats || {
           pending: data.status?.pending || 0,
           approved: data.status?.approved || 0,
@@ -98,13 +87,18 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
           dueSoon: 0,
           overdue: 0
         },
+        categories: Array.isArray(data.categories) 
+          ? data.categories
+          : [],
+        upcoming: data.upcoming || [],
+        pendingForms: data.pendingForms || [],
         categoryData: data.categoryData || [],
         recentActivities: data.recentActivities || [],
         notifications: data.notifications || [],
         completionRate: data.completionRate || (
           typeof data.completion === 'object' && data.completion 
             ? data.completion?.percentage || 0 
-            : data.completion || 0
+            : (typeof data.completion === 'number' ? data.completion : 0)
         )
       };
 
@@ -137,9 +131,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
     : { completed: 0, total: 0 };
 
   // Prepare categories, upcoming and pendingForms data
-  const categories = Array.isArray(dashboardData.categories) ? dashboardData.categories : [];
-  const upcoming = Array.isArray(dashboardData.upcoming) ? dashboardData.upcoming : [];
-  const pendingForms = Array.isArray(dashboardData.pendingForms) ? dashboardData.pendingForms : [];
+  const categories = Array.isArray(dashboardData.categories) ? dashboardData.categories as CategoryItem[] : [];
+  const upcoming = dashboardData.upcoming || [];
+  const pendingForms = dashboardData.pendingForms || [];
 
   return (
     <div className="space-y-6">
