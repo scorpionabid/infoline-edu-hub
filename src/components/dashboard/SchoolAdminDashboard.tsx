@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import NotificationsCard from './common/NotificationsCard';
-import { SchoolAdminDashboardData } from '@/types/dashboard';
+import { SchoolAdminDashboardData, CategoryItem, FormItem, DeadlineItem } from '@/types/dashboard';
 import { AppNotification, adaptDashboardNotificationToApp } from '@/types/notification';
 import { ClockIcon, CheckCircleIcon, AlertTriangleIcon, FileText } from 'lucide-react';
 import FormTabs from './school-admin/FormTabs';
@@ -98,6 +98,11 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       }
     : { completed: 0, total: 0 };
 
+  // Prepare categories, upcoming and pendingForms
+  const categories = Array.isArray(data.categories) ? data.categories : [];
+  const upcoming = Array.isArray(data.upcoming) ? data.upcoming : [];
+  const pendingForms = Array.isArray(data.pendingForms) ? data.pendingForms : [];
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Məktəb Dashboard</h2>
@@ -141,11 +146,11 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         />
       </Grid>
       
-      {data.categories && data.upcoming && data.pendingForms && (
+      {categories.length > 0 && upcoming.length > 0 && pendingForms.length > 0 && (
         <FormTabs 
-          categories={Array.isArray(data.categories) ? data.categories : []}
-          upcoming={data.upcoming}
-          pendingForms={data.pendingForms}
+          categories={categories}
+          upcoming={upcoming}
+          pendingForms={pendingForms}
           navigateToDataEntry={navigateToDataEntry}
           handleFormClick={handleFormClick}
         />

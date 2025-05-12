@@ -105,7 +105,7 @@ const useSchoolAdminDashboard = () => {
           notifications: dashboardData.notifications || [],
           completionRate: dashboardData.completionRate || (
             typeof dashboardData.completion === 'object' 
-              ? dashboardData.completion?.percentage 
+              ? dashboardData.completion?.percentage || 0
               : (dashboardData.completion || 0)
           )
         };

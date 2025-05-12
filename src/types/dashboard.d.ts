@@ -54,7 +54,7 @@ export interface StatusCardsProps {
     percentage: number;
     total: number;
     completed: number;
-  } | null;
+  } | number | null;
   status?: {
     pending: number;
     approved: number;
@@ -180,12 +180,12 @@ export interface SchoolAdminDashboardData {
     active?: number;
     inactive?: number;
   };
-  categories?: {
+  categories?: CategoryItem[] | {
     total: number;
     completed: number;
     pending: number;
     draft: number;
-  } | CategoryItem[];
+  };
   categoryData?: CategoryProgressData[];
   recentActivities?: any[];
   formStats?: DashboardFormStats;

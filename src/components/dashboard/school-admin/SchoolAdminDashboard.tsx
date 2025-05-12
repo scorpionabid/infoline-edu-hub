@@ -6,7 +6,12 @@ import StatusCards from '../StatusCards';
 import NotificationsCard from '../common/NotificationsCard';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotifications } from '@/context/NotificationContext';
-import { CategoryItem, DeadlineItem, FormItem, SchoolAdminDashboardData } from '@/types/dashboard';
+import { 
+  CategoryItem, 
+  DeadlineItem, 
+  FormItem, 
+  SchoolAdminDashboardData 
+} from '@/types/dashboard';
 import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 import FormTabs from './FormTabs';
 import { AppNotification } from '@/types/notification';
@@ -97,7 +102,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
         recentActivities: data.recentActivities || [],
         notifications: data.notifications || [],
         completionRate: data.completionRate || (
-          typeof data.completion === 'object' ? data.completion?.percentage || 0 : data.completion || 0
+          typeof data.completion === 'object' && data.completion 
+            ? data.completion?.percentage || 0 
+            : data.completion || 0
         )
       };
 
@@ -114,20 +121,25 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
     );
   }
 
-  // Compute the completion rate safely
-  const completionRate = typeof dashboardData.completion === 'object' 
+  // Safely compute the completion rate
+  const completionRate = typeof dashboardData.completion === 'object' && dashboardData.completion
     ? dashboardData.completion?.percentage || 0
     : typeof dashboardData.completion === 'number'
       ? dashboardData.completion
       : dashboardData.completionRate || 0;
       
   // Safely get completion details for display
-  const completionDetails = typeof dashboardData.completion === 'object' 
+  const completionDetails = typeof dashboardData.completion === 'object' && dashboardData.completion
     ? {
         completed: dashboardData.completion?.completed || 0,
         total: dashboardData.completion?.total || 0
       }
     : { completed: 0, total: 0 };
+
+  // Prepare categories, upcoming and pendingForms data
+  const categories = Array.isArray(dashboardData.categories) ? dashboardData.categories : [];
+  const upcoming = Array.isArray(dashboardData.upcoming) ? dashboardData.upcoming : [];
+  const pendingForms = Array.isArray(dashboardData.pendingForms) ? dashboardData.pendingForms : [];
 
   return (
     <div className="space-y-6">
@@ -147,9 +159,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
             </TabsList>
 
             <FormTabs 
-              categories={dashboardData.categories || []}
-              upcoming={dashboardData.upcoming || []}
-              pendingForms={dashboardData.pendingForms || []}
+              categories={categories}
+              upcoming={upcoming}
+              pendingForms={pendingForms}
             />
           </Tabs>
         </div>
