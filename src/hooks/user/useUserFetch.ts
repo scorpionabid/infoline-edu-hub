@@ -35,11 +35,22 @@ export const useUserFetch = (
       };
       
       // Null olmayan filter parametrlərini əlavə edirik
-      filterParams.p_role = safeFilter.role ? [safeFilter.role] : null;
+      if (safeFilter.role) {
+        filterParams.p_role = [safeFilter.role];
+      } else {
+        filterParams.p_role = null;
+      }
+      
       filterParams.p_region_id = safeFilter.regionId || null;
       filterParams.p_sector_id = safeFilter.sectorId || null;
       filterParams.p_school_id = safeFilter.schoolId || null;
-      filterParams.p_status = safeFilter.status ? [safeFilter.status] : null;
+      
+      if (safeFilter.status) {
+        filterParams.p_status = [safeFilter.status];
+      } else {
+        filterParams.p_status = null;
+      }
+      
       filterParams.p_search = safeFilter.search || null;
       
       console.log('Sending filter params to DB:', filterParams);
@@ -55,7 +66,7 @@ export const useUserFetch = (
         throw new Error(`İstifadəçilər əldə edilərkən xəta: ${fetchError.message}`);
       }
       
-      console.log('Users fetched:', userData?.length || 0);
+      console.log('Users fetched:', userData?.length || 0, userData);
       
       // Count-u da əldə edirik
       const { data: countData, error: countError } = await supabase.rpc(
@@ -89,6 +100,11 @@ export const useUserFetch = (
           } else {
             console.error('Unexpected user_json type:', typeof item.user_json);
             user = {}; // Default boş obyekt 
+          }
+          
+          // Ensure ID is present
+          if (!user.id && item.id) {
+            user.id = item.id;
           }
           
           return {
@@ -126,8 +142,8 @@ export const useUserFetch = (
         } catch (parseError) {
           console.error('Error parsing user data:', parseError, item);
           return {
-            id: '',
-            email: '',
+            id: item.id || '',
+            email: item.email || '',
             full_name: 'Error loading user',
             name: 'Error loading user',
             role: '',

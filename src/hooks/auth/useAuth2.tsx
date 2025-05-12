@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { AuthService } from '@/services/auth/AuthService';
 import { FullUserData } from '@/types/auth';
@@ -64,26 +63,48 @@ export const useAuth2 = (): UseAuthResult => {
     }
   }, [clearError]);
 
-  // Logout
+  // Logout - fixed implementation to properly clear the state
   const logout = useCallback(async (): Promise<void> => {
     setIsLoading(true);
     clearError();
     
     try {
+      console.log("Logging out user...");
+      
+      // Call Supabase logout directly to ensure it works
+      await supabase.auth.signOut();
+      
+      // Also call through our service for any additional cleanup
       const { error } = await AuthService.logout();
       
       if (error) {
         console.error('Logout xətası:', error);
         toast.error('Çıxış xətası', { description: error.message });
+      } else {
+        console.log("Logout successful via AuthService");
       }
       
-      // Reset auth state regardless of logout success/failure
+      // Always clear the state regardless of API success
       setUser(null);
       setSession(null);
       setIsAuthenticated(false);
       
+      // Clear the auth cache as well
+      AuthService.clearCache && AuthService.clearCache();
+      
+      // Force redirect to login page
+      window.location.href = '/login';
+      
     } catch (err: any) {
       console.error('Logout exception:', err);
+      
+      // Still clear state on exception
+      setUser(null);
+      setSession(null);
+      setIsAuthenticated(false);
+      
+      // Force redirect to login page even on error
+      window.location.href = '/login';
     } finally {
       setIsLoading(false);
     }

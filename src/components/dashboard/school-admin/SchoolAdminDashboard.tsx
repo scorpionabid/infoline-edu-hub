@@ -96,7 +96,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
         categoryData: data.categoryData || [],
         recentActivities: data.recentActivities || [],
         notifications: data.notifications || [],
-        completionRate: data.completionRate || (data.completion?.percentage || 0)
+        completionRate: data.completionRate || (
+          typeof data.completion === 'object' ? data.completion?.percentage || 0 : data.completion || 0
+        )
       };
 
       setDashboardData(transformedData);
@@ -112,11 +114,26 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
     );
   }
 
+  // Compute the completion rate safely
+  const completionRate = typeof dashboardData.completion === 'object' 
+    ? dashboardData.completion?.percentage || 0
+    : typeof dashboardData.completion === 'number'
+      ? dashboardData.completion
+      : dashboardData.completionRate || 0;
+      
+  // Safely get completion details for display
+  const completionDetails = typeof dashboardData.completion === 'object' 
+    ? {
+        completed: dashboardData.completion?.completed || 0,
+        total: dashboardData.completion?.total || 0
+      }
+    : { completed: 0, total: 0 };
+
   return (
     <div className="space-y-6">
       <StatusCards
-        completion={dashboardData.completion || {percentage: 0, total: 0, completed: 0}}
-        status={dashboardData.status || {pending: 0, approved: 0, rejected: 0, draft: 0, total: 0}}
+        completion={typeof dashboardData.completion === 'object' ? dashboardData.completion : { percentage: completionRate, total: 0, completed: 0 }}
+        status={dashboardData.status}
         formStats={dashboardData.formStats}
       />
 
@@ -155,12 +172,12 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ schoolId, d
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {Math.round(dashboardData.completionRate || (dashboardData.completion?.percentage || 0))}%
+                {Math.round(completionRate)}%
               </div>
               <div className="mt-4 text-sm text-muted-foreground">
                 {t('completedFormsInfo', {
-                  completed: dashboardData.completion?.completed || 0,
-                  total: dashboardData.completion?.total || 0
+                  completed: completionDetails.completed,
+                  total: completionDetails.total
                 })}
               </div>
             </CardContent>

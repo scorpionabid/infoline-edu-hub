@@ -47,18 +47,19 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   }
 
   // Ensure notifications exist and are properly formatted
-  const adaptedNotifications: AppNotification[] = Array.isArray(data.notifications)
-    ? data.notifications.map(notification => {
-        // Ensure all required fields exist
-        const notificationWithAllFields = {
-          ...notification,
-          isRead: notification.isRead ?? false,
-          date: notification.date ?? new Date().toISOString(),
-          createdAt: notification.createdAt ?? notification.date ?? new Date().toISOString()
-        };
-        return adaptDashboardNotificationToApp(notificationWithAllFields);
-      })
-    : [];
+  const adaptedNotifications: AppNotification[] = 
+    Array.isArray(data.notifications)
+      ? data.notifications.map(notification => {
+          // Ensure all required fields exist
+          const notificationWithAllFields = {
+            ...notification,
+            isRead: notification.isRead ?? false,
+            date: notification.date ?? new Date().toISOString(),
+            createdAt: notification.createdAt ?? notification.date ?? new Date().toISOString()
+          };
+          return adaptDashboardNotificationToApp(notificationWithAllFields);
+        })
+      : [];
 
   // Ensure status data exists
   const status = data.status || {
