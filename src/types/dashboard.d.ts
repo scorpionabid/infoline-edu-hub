@@ -273,6 +273,7 @@ export interface DeadlineItem {
   daysLeft?: number;
   category?: string;
   categoryId?: string;
+  categoryName?: string;
 }
 
 export interface CategoryItem {
