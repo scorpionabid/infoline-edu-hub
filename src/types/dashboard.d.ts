@@ -55,15 +55,7 @@ export interface StatusCardsProps {
     total: number;
     completed: number;
   } | number | null;
-  status?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    draft: number;
-    total?: number;
-    active?: number;
-    inactive?: number;
-  };
+  status?: DashboardStatus;
   formStats?: DashboardFormStats;
 }
 
@@ -110,17 +102,17 @@ export interface SuperAdminDashboardData {
 }
 
 export interface RegionAdminDashboardData {
-  schools: {
+  schools?: {
     total: number;
     active: number;
     inactive: number;
   };
-  sectors: {
+  sectors?: {
     total: number;
     active: number;
     inactive: number;
   };
-  users: {
+  users?: {
     total: number;
     admins: number;
     teachers: number;
@@ -130,7 +122,7 @@ export interface RegionAdminDashboardData {
     schools: number;
     users: number;
   };
-  entryCount: {
+  entryCount?: {
     total: number;
     approved: number;
     pending: number;
@@ -152,15 +144,7 @@ export interface RegionAdminDashboardData {
   pendingItems?: any[];
   upcoming?: DeadlineItem[];
   pendingForms?: FormItem[];
-  status?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    draft: number;
-    total: number;
-    active?: number;
-    inactive?: number;
-  };
+  status?: DashboardStatus;
   formStats?: DashboardFormStats;
 }
 
@@ -171,15 +155,7 @@ export interface SchoolAdminDashboardData {
     completed: number;
   } | number | null;
   completionRate?: number;
-  status?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    draft: number;
-    total: number;
-    active?: number;
-    inactive?: number;
-  };
+  status?: DashboardStatus;
   categories?: CategoryItem[] | {
     total: number;
     completed: number;
@@ -195,23 +171,23 @@ export interface SchoolAdminDashboardData {
 }
 
 export interface SectorAdminDashboardData {
-  schools: {
+  schools?: {
     total: number;
     active: number;
     inactive: number;
   };
-  users: {
+  users?: {
     total: number;
     admins: number;
     teachers: number;
   };
-  entryCount: {
+  entryCount?: {
     total: number;
     approved: number;
     pending: number;
     rejected: number;
   };
-  completion: {
+  completion?: {
     percentage: number;
     total: number;
     completed: number;
@@ -219,21 +195,13 @@ export interface SectorAdminDashboardData {
   categoryData?: CategoryProgressData[];
   schoolData?: SchoolCompletionData[];
   recentActivities?: any[];
-  status: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    draft: number;
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  formStats: DashboardFormStats;
-  categories: CategoryItem[];
-  upcoming: DeadlineItem[];
-  pendingForms: FormItem[];
-  schoolStats: SchoolStat[];
-  pendingApprovals: PendingApproval[];
+  status?: DashboardStatus;
+  formStats?: DashboardFormStats;
+  categories?: CategoryItem[];
+  upcoming?: DeadlineItem[];
+  pendingForms?: FormItem[];
+  schoolStats?: SchoolStat[];
+  pendingApprovals?: PendingApproval[];
 }
 
 // PendingApproval interface - export explicitly

@@ -7,6 +7,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
 import { SchoolAdminDashboardData, CategoryItem, FormItem, DeadlineItem } from '@/types/dashboard';
 
+/**
+ * Hook to fetch and manage dashboard data for School Admins
+ */
 const useSchoolAdminDashboard = () => {
   const [data, setData] = useState<SchoolAdminDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,6 +18,9 @@ const useSchoolAdminDashboard = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
+  /**
+   * Fetches dashboard data from the API
+   */
   const fetchDashboardData = useCallback(async () => {
     if (!user || !user.school_id) {
       console.warn('School ID not found, cannot load data.');
@@ -78,7 +84,7 @@ const useSchoolAdminDashboard = () => {
       } else {
         console.log('Dashboard data loaded successfully:', dashboardData);
         
-        // Ensure required properties exist
+        // Ensure required properties exist and are properly typed
         const enhancedData: SchoolAdminDashboardData = {
           ...dashboardData,
           status: dashboardData.status || {
@@ -99,10 +105,18 @@ const useSchoolAdminDashboard = () => {
             total: 0,
             draft: 0
           },
-          categories: dashboardData.categories || [],
-          upcoming: dashboardData.upcoming || [],
-          pendingForms: dashboardData.pendingForms || [],
+          // Ensure these are arrays of the right type
+          categories: Array.isArray(dashboardData.categories) 
+            ? dashboardData.categories as CategoryItem[]
+            : [],
+          upcoming: Array.isArray(dashboardData.upcoming) 
+            ? dashboardData.upcoming as DeadlineItem[]
+            : [],
+          pendingForms: Array.isArray(dashboardData.pendingForms) 
+            ? dashboardData.pendingForms as FormItem[]
+            : [],
           notifications: dashboardData.notifications || [],
+          // Handle completion/completionRate properly
           completionRate: dashboardData.completionRate || (
             typeof dashboardData.completion === 'object' 
               ? dashboardData.completion?.percentage || 0
@@ -127,10 +141,16 @@ const useSchoolAdminDashboard = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  /**
+   * Navigate to specific form for data entry
+   */
   const handleFormClick = (formId: string) => {
     navigate(`/data-entry/${formId}`);
   };
 
+  /**
+   * Navigate to general data entry page
+   */
   const navigateToDataEntry = () => {
     navigate('/data-entry');
   };
