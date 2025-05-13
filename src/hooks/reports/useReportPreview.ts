@@ -2,61 +2,67 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Report } from '@/types/report';
+import { toast } from 'sonner';
 
-export const useReportPreview = (reportId?: string) => {
+export const useReportPreview = (reportId: string) => {
   const [report, setReport] = useState<Report | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const fetchReport = async () => {
-    if (!reportId) return;
-    
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .eq('id', reportId)
-        .single();
-
-      if (error) throw error;
-
-      // Əgər report mövcuddursa, yaradılma tarixini düzəldirik
-      if (data) {
-        // createdAt və created_at uyğunlaşdırması
-        const processedReport = {
-          ...data,
-          createdAt: data.created_at || data.createdAt || new Date().toISOString(),
-          createdBy: data.created_by || data.createdBy || null
-        };
-        
-        setReport(processedReport as Report);
-      }
-    } catch (err: any) {
-      console.error('Report yüklənməsi xətası:', err);
-      setError(err.message || 'Hesabat yüklənərkən xəta baş verdi');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getReportById = (id: string) => {
-    // reportId dəyişdikdə useEffect tapşırığı avtomatik işə salınacaq
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (reportId) {
-      fetchReport();
+    if (!reportId) {
+      setLoading(false);
+      return;
     }
+
+    const fetchReport = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('reports')
+          .select('*')
+          .eq('id', reportId)
+          .single();
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        // Convert the Supabase data format to our Report type
+        if (data) {
+          const reportData: Report = {
+            id: data.id,
+            title: data.title,
+            description: data.description,
+            type: data.type as any,
+            content: data.content,
+            filters: data.filters,
+            status: data.status,
+            created_at: data.created_at,
+            created_by: data.created_by,
+            updated_at: data.updated_at,
+            insights: data.insights || [],
+            recommendations: data.recommendations || [],
+            is_template: data.is_template || false,
+            shared_with: data.shared_with || []
+          };
+          setReport(reportData);
+        }
+      } catch (err: any) {
+        console.error('Error fetching report:', err);
+        setError(err.message);
+        toast.error('Error loading report', {
+          description: err.message
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReport();
   }, [reportId]);
 
-  return {
-    report,
-    isLoading,
-    error,
-    fetchReport,
-    getReportById
-  };
+  return { report, loading, error };
 };
+
+export default useReportPreview;

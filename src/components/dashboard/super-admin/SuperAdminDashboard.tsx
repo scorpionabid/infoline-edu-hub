@@ -6,7 +6,7 @@ import DashboardChart from '@/components/dashboard/DashboardChart';
 import CategoryProgressList from '@/components/dashboard/CategoryProgressList';
 import SchoolsCompletionList from '@/components/dashboard/SchoolsCompletionList';
 import RegionsList from './RegionsList';
-import { SuperAdminDashboardData } from '@/types/dashboard';
+import { SuperAdminDashboardData, CategoryItem } from '@/types/dashboard';
 
 interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
@@ -36,6 +36,24 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
     }
   ];
 
+  // Handle completion data safely regardless of type
+  const completionValue = typeof data.completion === 'object' && data.completion
+    ? data.completion.percentage
+    : (typeof data.completion === 'number' ? data.completion : data.completionRate || 0);
+
+  // Convert categoryData to CategoryItem array if needed
+  const categoryItems: CategoryItem[] = data.categoryData 
+    ? data.categoryData.map(item => ({
+        id: item.id,
+        name: item.name,
+        completionRate: item.completionRate,
+        description: item.description,
+        deadline: item.deadline,
+        // Ensure status is always provided
+        status: item.status || 'active'
+      }))
+    : [];
+
   return (
     <div className="space-y-4">
       <StatsGrid stats={stats} />
@@ -47,7 +65,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
           </CardHeader>
           <CardContent>
             <DashboardChart 
-              completion={data.completion || 0} 
+              completion={completionValue}
               stats={{
                 total: data.entryCount?.total || 0,
                 approved: data.entryCount?.approved || 0,
@@ -66,7 +84,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
             <CardTitle>Kateqoriyalar</CardTitle>
           </CardHeader>
           <CardContent>
-            <CategoryProgressList categories={data.categoryData || []} />
+            <CategoryProgressList categories={categoryItems} />
           </CardContent>
         </Card>
 

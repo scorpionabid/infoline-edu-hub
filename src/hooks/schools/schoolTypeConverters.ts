@@ -1,63 +1,74 @@
 
-import { School } from '@/data/schoolsData';
-import { School as SupabaseSchool } from '@/types/supabase';
+import { School } from '@/types/ui';
 
-export interface MappedSchool {
-  id: string;
-  name: string;
-  principalName: string;
-  address: string;
-  regionId: string;
-  sectorId: string;
-  phone: string;
-  email: string;
-  studentCount: number;
-  teacherCount: number;
-  status: string;
-  type: string;
-  language: string;
-  adminEmail: string;
+/**
+ * Converts raw database/Supabase school data to our School type
+ */
+export function convertToSchool(data: any): School {
+  return {
+    id: data.id,
+    name: data.name,
+    address: data.address,
+    phone: data.phone,
+    email: data.email,
+    region_id: data.region_id,
+    sector_id: data.sector_id,
+    status: data.status || 'active',
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    principal_name: data.principal_name,
+    logo: data.logo || null
+  };
 }
 
-export const mapToMockSchool = (school: SupabaseSchool): MappedSchool => {
-  return {
-    id: school.id,
-    name: school.name,
-    principalName: school.principal_name || '',
-    address: school.address || '',
-    regionId: school.region_id,
-    sectorId: school.sector_id,
-    phone: school.phone || '',
-    email: school.email || '',
-    studentCount: school.student_count || 0,
-    teacherCount: school.teacher_count || 0,
-    status: school.status || 'active',
-    type: school.type || '',
-    language: school.language || '',
-    adminEmail: school.admin_email || ''
-  };
-};
+/**
+ * Converts an array of raw school data from Supabase to School type
+ */
+export function convertToSchools(data: any[]): School[] {
+  if (!Array.isArray(data)) {
+    console.warn('Invalid data passed to convertToSchools, expected array');
+    return [];
+  }
+  
+  return data.map(convertToSchool);
+}
 
-export const convertToSchoolType = (school: SupabaseSchool): School => {
-  return {
-    id: school.id,
-    name: school.name,
-    principalName: school.principal_name || '',
-    address: school.address || '',
-    regionId: school.region_id,
-    sectorId: school.sector_id,
-    phone: school.phone || '',
-    email: school.email || '',
-    studentCount: school.student_count || 0,
-    teacherCount: school.teacher_count || 0,
-    status: school.status || 'active',
-    type: school.type || '',
-    language: school.language || '',
-    createdAt: school.created_at,
-    completionRate: school.completion_rate,
-    region: '',
-    sector: '',
-    logo: school.logo || '',
-    adminEmail: school.admin_email || ''
-  };
-};
+/**
+ * Enriches a school object with additional data like region name, sector name, etc.
+ */
+export function enrichSchool(school: School, regions: any[], sectors: any[]): School {
+  const enriched = { ...school };
+  
+  // Add region name if region_id exists
+  if (school.region_id && regions && Array.isArray(regions)) {
+    const region = regions.find(r => r.id === school.region_id);
+    if (region) {
+      enriched.region_name = region.name;
+    }
+  }
+  
+  // Add sector name if sector_id exists
+  if (school.sector_id && sectors && Array.isArray(sectors)) {
+    const sector = sectors.find(s => s.id === school.sector_id);
+    if (sector) {
+      enriched.sector_name = sector.name;
+    }
+  }
+  
+  // Ensure logo is properly set or null
+  if (!enriched.logo) {
+    enriched.logo = null;
+  }
+  
+  return enriched;
+}
+
+/**
+ * Prepare school data for API requests
+ */
+export function prepareSchoolForApi(school: Partial<School>) {
+  // Remove any properties that shouldn't be sent to the API
+  const { region_name, sector_name, ...apiData } = school as any;
+  
+  return apiData;
+}

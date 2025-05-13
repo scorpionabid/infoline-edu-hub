@@ -1,6 +1,6 @@
 
 import { useMemo } from 'react';
-import { CategoryWithColumns } from '@/types/column';
+import { CategoryWithColumns } from '@/types/category';
 
 export function useCategoryStatus(category: CategoryWithColumns | null) {
   const isComplete = useMemo(() => {

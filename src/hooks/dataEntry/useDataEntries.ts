@@ -1,119 +1,64 @@
 
-import { useState, useCallback } from 'react';
-import { toast } from 'sonner';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { DataEntry } from '@/types/dataEntry';
+import { useAuth } from '@/context/auth';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
+import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
 
-export const useDataEntries = (schoolId: string, categoryId: string) => {
+const useDataEntries = (categoryId: string, schoolId: string) => {
   const [entries, setEntries] = useState<DataEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth();
+  const { t } = useLanguage();
 
   const fetchEntries = useCallback(async () => {
-    if (!schoolId || !categoryId) {
-      setEntries([]);
-      setLoading(false);
-      return;
-    }
-
+    if (!categoryId || !schoolId) return;
+    
     setLoading(true);
     setError(null);
-
+    
     try {
       const { data, error } = await supabase
         .from('data_entries')
         .select('*')
+        .eq('category_id', categoryId)
         .eq('school_id', schoolId)
-        .eq('category_id', categoryId);
-
+        .is('deleted_at', null);
+        
       if (error) throw error;
-
-      setEntries(data || []);
-    } catch (err) {
-      console.error('Error fetching data entries:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch entries'));
-      toast.error('Məlumatları yükləmək mümkün olmadı');
+      
+      if (data) {
+        // Type cast the data entries to include proper status type
+        const typedEntries: DataEntry[] = data.map(entry => ({
+          ...entry,
+          status: entry.status as DataEntryStatus
+        }));
+        
+        setEntries(typedEntries);
+      }
+    } catch (err: any) {
+      setError(err);
+      toast.error(t('errorLoadingEntries'), {
+        description: err.message
+      });
+      console.error('Error loading data entries:', err);
     } finally {
       setLoading(false);
     }
-  }, [schoolId, categoryId]);
+  }, [categoryId, schoolId, t]);
 
-  const createOrUpdateEntry = useCallback(async (entry: Omit<DataEntry, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      // Check if entry with this column_id already exists
-      const { data: existingEntries } = await supabase
-        .from('data_entries')
-        .select('id')
-        .eq('school_id', entry.school_id || schoolId)
-        .eq('category_id', entry.category_id || categoryId)
-        .eq('column_id', entry.column_id);
-
-      let result;
-
-      if (existingEntries && existingEntries.length > 0) {
-        // Update existing entry
-        result = await supabase
-          .from('data_entries')
-          .update({
-            value: entry.value,
-            status: entry.status || 'draft'
-          })
-          .eq('id', existingEntries[0].id)
-          .select();
-      } else {
-        // Create new entry
-        result = await supabase
-          .from('data_entries')
-          .insert({
-            column_id: entry.column_id,
-            school_id: entry.school_id || schoolId,
-            category_id: entry.category_id || categoryId,
-            value: entry.value,
-            status: entry.status || 'draft'
-          })
-          .select();
-      }
-
-      if (result.error) throw result.error;
-
-      // Update local state
-      fetchEntries();
-
-      return result.data[0];
-    } catch (err) {
-      console.error('Error creating/updating entry:', err);
-      toast.error('Məlumatı saxlamaq mümkün olmadı');
-      throw err;
-    }
-  }, [schoolId, categoryId, fetchEntries]);
-
-  const deleteEntry = useCallback(async (entryId: string) => {
-    try {
-      const { error } = await supabase
-        .from('data_entries')
-        .delete()
-        .eq('id', entryId);
-
-      if (error) throw error;
-
-      // Update local state
-      setEntries(prevEntries => prevEntries.filter(entry => entry.id !== entryId));
-      toast.success('Məlumat silindi');
-
-      return true;
-    } catch (err) {
-      console.error('Error deleting entry:', err);
-      toast.error('Məlumatı silmək mümkün olmadı');
-      throw err;
-    }
-  }, []);
-
+  useEffect(() => {
+    fetchEntries();
+  }, [fetchEntries]);
+  
   return {
     entries,
     loading,
     error,
-    fetchEntries,
-    createOrUpdateEntry,
-    deleteEntry
+    refreshEntries: fetchEntries
   };
 };
+
+export default useDataEntries;

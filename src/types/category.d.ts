@@ -34,6 +34,7 @@ export interface ColumnData {
 
 export interface CategoryWithColumns extends Category {
   columns: ColumnData[];
+  completionRate?: number;
 }
 
 export interface FormCategory extends Category {

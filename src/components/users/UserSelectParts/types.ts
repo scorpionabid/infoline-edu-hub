@@ -12,3 +12,11 @@ export interface UserFilter {
   sector_id?: string;
   school_id?: string;
 }
+
+export interface User {
+  id: string;
+  full_name?: string;
+  email?: string;
+  role?: string;
+  status?: string;
+}

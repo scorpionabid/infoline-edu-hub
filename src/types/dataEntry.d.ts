@@ -1,12 +1,14 @@
 
 import { Column } from './column';
 
+export type DataEntryStatus = 'pending' | 'approved' | 'rejected' | 'draft';
+
 export interface DataEntryForm {
   id?: string;
   schoolId: string;
   categoryId: string;
   entries: DataEntryItem[];
-  status?: EntryStatus;
+  status?: DataEntryStatus;
   createdAt?: string;
   updatedAt?: string;
   submittedAt?: string;
@@ -16,10 +18,25 @@ export interface DataEntryForm {
 export interface DataEntryItem {
   columnId: string;
   value: any;
-  status?: EntryStatus;
+  status?: DataEntryStatus;
 }
 
-export type EntryStatus = 'pending' | 'approved' | 'rejected' | 'draft';
+export interface DataEntry {
+  id: string;
+  school_id: string;
+  category_id: string;
+  column_id: string;
+  value: string | any;
+  status: DataEntryStatus;
+  created_at: string;
+  updated_at?: string;
+  created_by?: string;
+  approved_at?: string;
+  approved_by?: string;
+  rejected_by?: string;
+  rejection_reason?: string;
+  deleted_at?: string;
+}
 
 export interface DataEntryRecord {
   id: string;
@@ -27,7 +44,7 @@ export interface DataEntryRecord {
   schoolName: string;
   categoryId: string;
   categoryName: string;
-  status: EntryStatus;
+  status: DataEntryStatus;
   createdAt: string;
   updatedAt?: string;
   submittedAt?: string;

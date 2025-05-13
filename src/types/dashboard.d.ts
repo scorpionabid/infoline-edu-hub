@@ -14,10 +14,10 @@ export interface DashboardFormStats {
 }
 
 export interface DashboardStatus {
-  pending: number;
-  approved: number;
-  rejected: number;
-  draft: number;
+  pending?: number;
+  approved?: number;
+  rejected?: number;
+  draft?: number;
   total?: number;
   active?: number;
   inactive?: number;
@@ -236,7 +236,7 @@ export interface RegionAdminDashboardData extends BaseDashboardData {
 
 // Super Admin Dashboard Data
 export interface SuperAdminDashboardData extends BaseDashboardData {
-  users: {
+  users?: {
     active: number;
     total: number;
     new: number;

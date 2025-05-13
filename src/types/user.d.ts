@@ -1,118 +1,58 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
-
-export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
-
 export interface User {
+  id: string;
+  full_name?: string;
+  email: string;
+  avatar_url?: string;
+  role?: string;
+  status?: 'active' | 'inactive' | 'pending';
+}
+
+export interface FullUserData {
   id: string;
   email: string;
   full_name?: string;
-  fullName?: string;
-  role?: UserRole;
-  status?: UserStatus;
-  phone?: string;
+  avatar_url?: string;
+  role?: string;
+  school_id?: string;
+  sector_id?: string;
+  region_id?: string;
+  status?: string;
   language?: string;
-  position?: string;
   created_at?: string;
-  createdAt?: string;
   updated_at?: string;
-  updatedAt?: string;
-  last_login?: string;
-  lastLogin?: string;
-  region_id?: string;
-  regionId?: string;
-  sector_id?: string;
-  sectorId?: string;
-  school_id?: string;
-  schoolId?: string;
-  notification_settings?: NotificationSettings;
-  notificationSettings?: NotificationSettings;
+  last_sign_in_at?: string;
   name?: string;
-  avatar?: string;
-}
-
-export interface NotificationSettings {
-  email: boolean;
-  inApp: boolean;
-  push: boolean;
-  system: boolean;
-  deadline: boolean;
-  sms?: boolean;
-  deadlineReminders?: boolean;
-}
-
-export interface FullUserData extends User {
-  avatar?: string;
-  region_id?: string;
-  regionId?: string;
-  region_name?: string;
-  regionName?: string;
-  sector_id?: string;
-  sectorId?: string;
-  sector_name?: string;
-  sectorName?: string;
-  school_id?: string;
-  schoolId?: string;
-  school_name?: string;
-  schoolName?: string;
-  name?: string;
-  entityName?: {
-    region?: string;
-    sector?: string;
-    school?: string;
+  entityName?: string;
+  notificationSettings?: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
   };
-  notification_settings?: NotificationSettings;
-  notificationSettings?: NotificationSettings;
-  entityTypes?: string[];
-}
-
-export interface UserFilter {
-  role?: UserRole[] | string[];
-  status?: string[] | "" | UserStatus;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
 }
 
 export interface UserFormData {
   id?: string;
   email: string;
-  password?: string;
   full_name?: string;
-  fullName?: string;
-  name?: string;
-  role: string;
-  region_id?: string | null;
-  sector_id?: string | null;
-  school_id?: string | null;
-  phone?: string | null;
-  position?: string | null;
-  language?: string;
-  avatar?: string | null;
+  password?: string;
+  confirmPassword?: string;
+  role?: string;
   status?: string;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  notification_settings?: any;
-  notificationSettings?: any;
-  entityTypes?: string[];
+  school_id?: string;
+  region_id?: string;
+  sector_id?: string;
+  language?: string;
+  avatar_url?: string;
 }
 
-export interface Sector {
+export interface UserRole {
   id: string;
-  name: string;
-  region_id: string;
-  description?: string;
-  status?: string;
-  created_at: string;
+  user_id: string;
+  role: string;
+  created_at?: string;
   updated_at?: string;
-  admin_id?: string;
-  admin_email?: string;
-  completion_rate?: number;
+  school_id?: string;
+  sector_id?: string;
+  region_id?: string;
 }

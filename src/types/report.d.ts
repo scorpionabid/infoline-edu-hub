@@ -1,56 +1,38 @@
 
+export type ReportType = 'bar' | 'line' | 'pie' | 'table';
+
 export interface Report {
   id: string;
   title: string;
   description?: string;
   type: ReportType;
-  status?: ReportStatus;
-  content?: any;
-  parameters?: any;
+  content: any;
   filters?: any;
+  shared_with?: string[];
+  status?: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
   insights?: string[];
   recommendations?: string[];
-  createdAt?: string;
-  createdBy?: string;
-  updatedAt?: string;
-  isTemplate?: boolean;
-  sharedWith?: string[];
+  is_template?: boolean;
 }
 
-export type ReportType = 'school' | 'sector' | 'region' | 'system' | 'custom';
-export type ReportStatus = 'draft' | 'published' | 'archived';
-
-export interface ReportTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  type: ReportType;
-  config?: any;
-  status?: 'active' | 'inactive';
+export interface ReportChartProps {
+  report: Report;
+  height?: number;
+  width?: number;
 }
 
-export interface SchoolColumnData {
-  schoolId: string;
-  schoolName: string;
-  regionId?: string;
-  regionName?: string;
-  sectorId?: string;
-  sectorName?: string;
-  columns: ColumnData[];
-}
-
-export interface ColumnData {
-  columnId: string;
-  columnName: string;
-  categoryId: string;
-  categoryName: string;
-  value: any;
-  status: string;
-}
-
-export interface ExportOptions {
-  format: 'pdf' | 'excel' | 'csv';
-  includeCharts?: boolean;
-  includeMetadata?: boolean;
-  includeRecommendations?: boolean;
+export interface ReportFilter {
+  search?: string;
+  type?: string[];
+  status?: string[];
+  date_from?: string;
+  date_to?: string;
+  shared_with?: string[];
+  created_by?: string;
+  is_template?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
