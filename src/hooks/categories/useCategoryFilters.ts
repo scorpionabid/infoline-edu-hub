@@ -2,85 +2,86 @@
 import { useState, useCallback } from 'react';
 import { CategoryFilter } from '@/types/category';
 
-// Default filters
-const defaultFilters: CategoryFilter = {
-  search: '',
-  status: '',
-  assignment: '',
-  date: undefined
-};
+// Extend CategoryFilter with date property
+interface ExtendedCategoryFilter extends CategoryFilter {
+  date?: 'upcoming' | 'past' | 'all' | '';
+}
 
-export const useCategoryFilters = () => {
-  const [filters, setFilters] = useState<CategoryFilter>(defaultFilters);
-  
-  // Update a specific filter
-  const updateFilter = useCallback((key: keyof CategoryFilter, value: string | undefined) => {
-    setFilters(prev => ({
+export const useCategoryFilters = (initialFilter: ExtendedCategoryFilter = {}) => {
+  const [filter, setFilter] = useState<ExtendedCategoryFilter>({
+    search: '',
+    status: '',
+    assignment: '',
+    sortBy: 'name',
+    sortOrder: 'asc',
+    archived: false,
+    date: '',
+    ...initialFilter
+  });
+
+  /**
+   * Update a single filter property
+   */
+  const updateFilter = useCallback(<K extends keyof ExtendedCategoryFilter>(
+    key: K, 
+    value: ExtendedCategoryFilter[K]
+  ) => {
+    setFilter(prev => ({
       ...prev,
       [key]: value
     }));
   }, []);
-  
-  // Update search filter
-  const updateSearch = useCallback((value: string) => {
-    updateFilter('search', value);
-  }, [updateFilter]);
-  
-  // Update status filter
-  const updateStatus = useCallback((value: string) => {
-    updateFilter('status', value);
-  }, [updateFilter]);
-  
-  // Update assignment filter
-  const updateAssignment = useCallback((value: string) => {
-    updateFilter('assignment', value);
-  }, [updateFilter]);
-  
-  // Update date filter
-  const updateDate = useCallback((value: string | undefined) => {
-    updateFilter('date', value);
-  }, [updateFilter]);
-  
-  // Reset all filters
-  const resetFilters = useCallback(() => {
-    setFilters(defaultFilters);
+
+  /**
+   * Update multiple filter properties at once
+   */
+  const updateFilters = useCallback((updates: Partial<ExtendedCategoryFilter>) => {
+    setFilter(prev => ({
+      ...prev,
+      ...updates
+    }));
   }, []);
-  
-  // Apply filters to a list of categories
-  const applyFilters = useCallback((categories: any[]) => {
-    return categories.filter(category => {
-      // Apply search filter
-      if (filters.search && !category.name.toLowerCase().includes(filters.search.toLowerCase())) {
-        return false;
-      }
-      
-      // Apply status filter
-      if (filters.status && category.status !== filters.status) {
-        return false;
-      }
-      
-      // Apply assignment filter
-      if (filters.assignment && category.assignment !== filters.assignment) {
-        return false;
-      }
-      
-      // Apply date filter (if implemented)
-      if (filters.date && category.deadline) {
-        // Implement date filtering logic here
-      }
-      
-      return true;
+
+  /**
+   * Reset filters to defaults or specified values
+   */
+  const resetFilters = useCallback((defaults: Partial<ExtendedCategoryFilter> = {}) => {
+    setFilter({
+      search: '',
+      status: '',
+      assignment: '',
+      sortBy: 'name',
+      sortOrder: 'asc',
+      archived: false,
+      date: '',
+      ...defaults
     });
-  }, [filters]);
-  
+  }, []);
+
+  /**
+   * Toggle sort order for a specific column
+   */
+  const toggleSort = useCallback((column: string) => {
+    setFilter(prev => ({
+      ...prev,
+      sortBy: column,
+      sortOrder: prev.sortBy === column && prev.sortOrder === 'asc' ? 'desc' : 'asc'
+    }));
+  }, []);
+
+  /**
+   * Helper to get current sort direction for a column
+   */
+  const getSortDirection = useCallback((column: string) => {
+    return filter.sortBy === column ? filter.sortOrder : null;
+  }, [filter.sortBy, filter.sortOrder]);
+
   return {
-    filters,
+    filter,
     updateFilter,
-    updateSearch,
-    updateStatus,
-    updateAssignment,
-    updateDate,
+    updateFilters,
     resetFilters,
-    applyFilters
+    toggleSort,
+    getSortDirection
   };
 };

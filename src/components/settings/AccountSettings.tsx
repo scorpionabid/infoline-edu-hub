@@ -18,7 +18,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { FullUserData, NotificationSettings } from '@/types/supabase';
+import { FullUserData } from '@/types/supabase';
+
+// Import the updateUserProfile function
 import { updateUserProfile } from '@/hooks/auth/authActions';
 
 const profileFormSchema = z.object({
@@ -29,7 +31,7 @@ const profileFormSchema = z.object({
   }).optional(),
   phone: z.string().optional(),
   language: z.string().optional(),
-  notificationSettings: z.object({
+  notification_settings: z.object({
     email: z.boolean().default(false),
     inApp: z.boolean().default(false),
     push: z.boolean().default(false),
@@ -42,7 +44,9 @@ export const AccountSettings = () => {
   const { t } = useLanguage();
   const user = useAuthStore(selectUser);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const refreshUserData = useAuthStore((state) => state.refreshUserData);
+  
+  // Get the refreshSession function directly from the store
+  const refreshSession = useAuthStore((state) => state.refreshSession);
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
@@ -50,7 +54,7 @@ export const AccountSettings = () => {
       full_name: user?.full_name || "",
       phone: user?.phone || "",
       language: user?.language || "az",
-      notificationSettings: user?.notificationSettings || {
+      notification_settings: user?.notification_settings || {
         email: false,
         inApp: false,
         push: false,
@@ -67,7 +71,7 @@ export const AccountSettings = () => {
         full_name: user.full_name || "",
         phone: user.phone || "",
         language: user.language || "az",
-        notificationSettings: user.notificationSettings || {
+        notification_settings: user.notification_settings || {
           email: false,
           inApp: false,
           push: false,
@@ -78,28 +82,32 @@ export const AccountSettings = () => {
     }
   }, [user, profileForm]);
 
-  const handleUpdateUserProfile = async (data: Partial<FullUserData>) => {
+  const handleUpdateUserProfile = async (data: z.infer<typeof profileFormSchema>) => {
     try {
       setIsSubmitting(true);
     
       // Properly format the notification settings to match the expected structure
-      const notificationSettings: NotificationSettings = {
-        email: data.notificationSettings?.email || false,
-        inApp: data.notificationSettings?.inApp || false,
-        push: data.notificationSettings?.push || false,
-        system: data.notificationSettings?.system || false,
-        deadline: data.notificationSettings?.deadline || false
+      const notification_settings = {
+        email: data.notification_settings?.email || false,
+        inApp: data.notification_settings?.inApp || false,
+        push: data.notification_settings?.push || false,
+        system: data.notification_settings?.system || false,
+        deadline: data.notification_settings?.deadline || false
       };
 
       const userUpdateData: Partial<FullUserData> = {
         ...data,
         id: user?.id,
-        notificationSettings
+        notification_settings
       };
 
       await updateUserProfile(userUpdateData);
       toast.success(t('profileUpdated'));
-      refreshUserData();
+      
+      // Refresh the session to get updated user data
+      if (refreshSession) {
+        await refreshSession();
+      }
     } catch (error) {
       toast.error(t('profileUpdateFailed'));
       console.error('Profile update error:', error);
@@ -156,7 +164,7 @@ export const AccountSettings = () => {
 
           <FormField
             control={profileForm.control}
-            name="notificationSettings.email"
+            name="notification_settings.email"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
@@ -177,7 +185,7 @@ export const AccountSettings = () => {
 
           <FormField
             control={profileForm.control}
-            name="notificationSettings.inApp"
+            name="notification_settings.inApp"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
@@ -198,7 +206,7 @@ export const AccountSettings = () => {
 
           <FormField
             control={profileForm.control}
-            name="notificationSettings.push"
+            name="notification_settings.push"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
@@ -219,7 +227,7 @@ export const AccountSettings = () => {
 
           <FormField
             control={profileForm.control}
-            name="notificationSettings.system"
+            name="notification_settings.system"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
@@ -240,7 +248,7 @@ export const AccountSettings = () => {
 
           <FormField
             control={profileForm.control}
-            name="notificationSettings.deadline"
+            name="notification_settings.deadline"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">

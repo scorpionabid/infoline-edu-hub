@@ -5,7 +5,7 @@ import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
-import { SchoolAdminDashboardData, CategoryItem, FormItem, DeadlineItem } from '@/types/dashboard';
+import { SchoolAdminDashboardData, CategoryItem, FormItem, DeadlineItem, DashboardStatus, DashboardFormStats } from '@/types/dashboard';
 
 /**
  * Hook to fetch and manage dashboard data for School Admins
@@ -95,7 +95,7 @@ const useSchoolAdminDashboard = () => {
             total: 0,
             active: 0,
             inactive: 0
-          },
+          } as DashboardStatus,
           formStats: dashboardData.formStats || {
             pending: 0,
             approved: 0,
@@ -104,7 +104,7 @@ const useSchoolAdminDashboard = () => {
             overdue: 0,
             total: 0,
             draft: 0
-          },
+          } as DashboardFormStats,
           // Ensure these are arrays of the right type
           categories: Array.isArray(dashboardData.categories) 
             ? dashboardData.categories as CategoryItem[]

@@ -16,9 +16,9 @@ interface UserFiltersProps {
 }
 
 export const UserFilters: React.FC<UserFiltersProps> = ({
-  filter = {}, // Provide default empty object
+  filter = {}, 
   setFilter,
-  roleOptions = [], // Default to empty arrays if undefined
+  roleOptions = [],
   statusOptions = [],
   onSearch,
   regions = []
@@ -33,15 +33,15 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
   };
 
   const handleRoleChange = (value: string) => {
-    setFilter({ ...safeFilter, role: value || '' });
+    setFilter({ ...safeFilter, role: value });
   };
 
   const handleStatusChange = (value: string) => {
-    setFilter({ ...safeFilter, status: value || '' });
+    setFilter({ ...safeFilter, status: value });
   };
 
   const handleRegionChange = (value: string) => {
-    setFilter({ ...safeFilter, region_id: value || '' });
+    setFilter({ ...safeFilter, region_id: value });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -51,8 +51,8 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
   };
 
   // Safely access filter properties with fallbacks
-  const currentRole = typeof safeFilter.role === 'string' ? safeFilter.role : '';
-  const currentStatus = typeof safeFilter.status === 'string' ? safeFilter.status : '';
+  const currentRole = safeFilter.role || '';
+  const currentStatus = safeFilter.status || '';
   const currentRegionId = safeFilter.region_id || '';
 
   return (

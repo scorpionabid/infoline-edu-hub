@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 export function ProfileSettings() {
   const { t } = useLanguageSafe();
   const { toast } = useToast();
-  const { user, updateUser, loading } = useAuth();
+  const { user, loading } = useAuth();
   
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -25,12 +25,16 @@ export function ProfileSettings() {
     
     setIsSaving(true);
     try {
-      await updateUser({
-        id: user.id,
-        full_name: fullName,
-        phone,
-        position
+      // Use the supabase client directly since updateUser is not available in AuthContext
+      const { data, error } = await window.supabase.auth.updateUser({
+        data: { 
+          full_name: fullName,
+          phone,
+          position
+        }
       });
+      
+      if (error) throw error;
       
       toast({
         title: t('profileUpdated'),
