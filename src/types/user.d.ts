@@ -33,7 +33,7 @@ export interface FullUserData {
     sector?: string;
     school?: string;
   } | string;
-  notificationSettings?: {
+  notification_settings?: {
     email: boolean;
     push: boolean;
     sms: boolean;
@@ -41,7 +41,7 @@ export interface FullUserData {
     system?: boolean;
     deadline?: boolean;
   };
-  notification_settings?: {
+  notificationSettings?: {
     email: boolean;
     push: boolean;
     sms: boolean;
