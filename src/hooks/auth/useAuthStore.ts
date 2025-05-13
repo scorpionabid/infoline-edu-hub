@@ -22,6 +22,7 @@ export interface AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   initializeAuth: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -185,15 +186,44 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       );
 
-      // Cleanup function (not used in initialization but for completeness)
-      return () => {
-        subscription.unsubscribe();
-      };
+      // Setting the initialized state to true
+      set({ initialized: true, loading: false });
     } catch (error: any) {
       console.error('Auth initialization error:', error);
+      set({ error: error.message, loading: false, initialized: true });
+    }
+  },
+
+  refreshSession: async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        throw error;
+      }
+      
+      set({ 
+        session: data.session, 
+        isAuthenticated: !!data.session 
+      });
+
+      if (data.session) {
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.session.user.id)
+          .single();
+
+        if (userError) {
+          console.error('Error fetching user profile:', userError);
+          set({ error: userError.message });
+        } else {
+          set({ user: userData as FullUserData });
+        }
+      }
+    } catch (error: any) {
+      console.error('Session refresh error:', error);
       set({ error: error.message });
-    } finally {
-      set({ loading: false, initialized: true });
     }
   }
 }));

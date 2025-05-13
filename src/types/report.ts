@@ -1,45 +1,35 @@
 
-export type ReportType = 'bar' | 'pie' | 'line' | 'table';
+export type ReportType = 'standard' | 'custom' | 'comparative';
+export type ReportScope = 'school' | 'sector' | 'region' | 'all';
 export type ReportStatus = 'draft' | 'published' | 'archived';
+export type ReportFormat = 'table' | 'chart' | 'summary';
+export type ReportVisibility = 'private' | 'public' | 'admin';
 
-export const ReportTypeValues = {
-  BAR: 'bar',
-  PIE: 'pie',
-  LINE: 'line',
-  TABLE: 'table'
-} as const;
+export interface ReportFilter {
+  field: string;
+  operator: string;
+  value: string | number | boolean | Date;
+}
 
 export interface Report {
   id: string;
-  title: string;
-  description?: string;
+  name: string;
+  description: string;
   type: ReportType;
-  status?: ReportStatus;
-  createdAt?: string;
-  updatedAt?: string;
-  createdBy?: string;
-  category?: string;
-  sharedWith?: string[];
-  created_at?: string; // geriyə uyğunluq üçün
-  updated_at?: string; // geriyə uyğunluq üçün
-  content?: any;
-  filters?: any;
-  created_by?: string; // geriyə uyğunluq üçün
-  is_template?: boolean;
-  shared_with?: string[]; // geriyə uyğunluq üçün
-  insights?: string[];
-  recommendations?: string[];
-}
-
-export interface ReportChartProps {
-  report: Report;
-}
-
-export interface ReportPreviewDialogProps {
-  isOpen?: boolean;
-  open?: boolean;
-  onClose: () => void;
-  reportId: string;
-  reportTitle?: string;
-  reportDescription?: string;
+  scope: ReportScope;
+  status: ReportStatus;
+  format: ReportFormat;
+  visibility: ReportVisibility;
+  creator_id: string;
+  created_at: string;
+  updated_at: string;
+  filters?: ReportFilter[];
+  insights?: string;
+  recommendations?: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  category_id?: string;
+  chart_config?: any;
+  table_config?: any;
 }

@@ -85,16 +85,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       
       if (success) {
         console.log('Giriş uğurlu oldu, autentifikasiya tamamlandı');
-        toast({
-          title: t('loginSuccess')
-        });
+        toast(t('loginSuccess'));
         reset(); // Clear form fields
         
         // Navigation will happen in the useEffect when isAuthenticated changes
       } else {
         console.log('Giriş uğursuz oldu');
-        toast({
-          title: t('invalidCredentials'),
+        toast(t('invalidCredentials'), {
           variant: 'destructive'
         });
         setFormError('root', { 
@@ -104,8 +101,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       }
     } catch (err: any) {
       console.error('Login zamanı xəta baş verdi:', err);
-      toast({
-        title: err.message || t('unexpectedError'),
+      toast(err.message || t('unexpectedError'), {
         variant: 'destructive'
       });
       setFormError('root', { 

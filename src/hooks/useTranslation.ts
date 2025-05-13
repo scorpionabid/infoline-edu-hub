@@ -5,6 +5,6 @@ export const useTranslation = () => {
   return useLanguage();
 };
 
-export { useLanguage } from '@/context/LanguageContext';
+export { useLanguage };
 
 export default useTranslation;

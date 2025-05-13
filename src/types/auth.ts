@@ -7,7 +7,7 @@ export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
 export interface UserNotificationSettings {
   email: boolean;
   push: boolean;
-  app: boolean;
+  app?: boolean;
   // Add these for compatibility with NotificationSettings
   inApp?: boolean;
   system?: boolean;

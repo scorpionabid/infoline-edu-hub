@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -33,13 +34,16 @@ const AccountSettings = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get notification settings from user with proper fallback
-  const notificationSettings: NotificationSettings = user?.notification_settings || user?.notificationSettings || {
+  const defaultSettings: NotificationSettings = {
     email: true,
     push: false,
     inApp: true,
     system: true,
     deadline: true
   };
+
+  // Use either notification_settings or notificationSettings, with fallback to defaults
+  const notificationSettings = user?.notificationSettings || user?.notification_settings || defaultSettings;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -62,9 +66,9 @@ const AccountSettings = () => {
         throw new Error('User not found');
       }
 
-      // Update notification settings - use snake_case for API but camelCase for state
+      // Update user data with the correct property name (notificationSettings)
       const updatedUser: Partial<FullUserData> = {
-        notification_settings: {
+        notificationSettings: {
           email: data.notificationSettings.email,
           push: data.notificationSettings.push,
           inApp: data.notificationSettings.inApp,
@@ -78,18 +82,16 @@ const AccountSettings = () => {
 
       // Update local user state - keep both properties for compatibility
       updateUser({
-        notification_settings: updatedUser.notification_settings,
-        notificationSettings: updatedUser.notification_settings
+        notificationSettings: updatedUser.notificationSettings,
+        notification_settings: updatedUser.notificationSettings
       });
 
-      toast({
-        title: t('settingsSaved'),
-        description: t('notificationSettingsUpdated'),
+      toast(t('settingsSaved'), {
+        description: t('notificationSettingsUpdated')
       });
     } catch (error: any) {
       console.error('Error updating notification settings:', error);
-      toast({
-        title: t('errorOccurred'),
+      toast(t('errorOccurred'), {
         description: error.message || t('failedToUpdateSettings'),
         variant: 'destructive'
       });

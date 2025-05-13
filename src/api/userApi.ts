@@ -16,8 +16,9 @@ export const updateUserProfile = async (userId: string, userData: Partial<FullUs
       updated_at: new Date().toISOString(),
     };
     
-    // Remove notificationSettings if notification_settings exists to prevent duplication
-    if (updateData.notification_settings && updateData.notificationSettings) {
+    // If notificationSettings exists but notification_settings doesn't, copy it over
+    if (!updateData.notification_settings && updateData.notificationSettings) {
+      updateData.notification_settings = updateData.notificationSettings;
       delete updateData.notificationSettings;
     }
     

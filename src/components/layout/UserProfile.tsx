@@ -24,14 +24,11 @@ export const UserProfile = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      toast({
-        title: 'Çıxış uğurla edildi',
-      });
+      toast('Çıxış uğurla edildi');
       navigate('/login', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
-      toast({
-        title: 'Çıxış zamanı xəta baş verdi',
+      toast('Çıxış zamanı xəta baş verdi', {
         variant: 'destructive'
       });
     }
