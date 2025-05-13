@@ -4,14 +4,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
-import { useLanguageSafe } from "@/context/LanguageContext";
+import { useToast } from "@/hooks/useToast";
+import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 
 export function ProfileSettings() {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const { user, loading } = useAuth();
   
@@ -26,7 +26,6 @@ export function ProfileSettings() {
     
     setIsSaving(true);
     try {
-      // Use the imported supabase client instead of accessing it through window
       const { data, error } = await supabase.auth.updateUser({
         data: { 
           full_name: fullName,
@@ -37,16 +36,13 @@ export function ProfileSettings() {
       
       if (error) throw error;
       
-      toast({
-        title: t('profileUpdated'),
+      toast.success(t('profileUpdated'), {
         description: t('profileUpdatedDescription')
       });
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      toast({
-        title: t('error'),
-        description: error.message || t('errorUpdatingProfile'),
-        variant: 'destructive'
+      toast.error(t('error'), {
+        description: error.message || t('errorUpdatingProfile')
       });
     } finally {
       setIsSaving(false);
@@ -54,6 +50,7 @@ export function ProfileSettings() {
   };
 
   const getInitials = (name: string) => {
+    if (!name) return 'U';
     return name
       .split(' ')
       .map(part => part[0])

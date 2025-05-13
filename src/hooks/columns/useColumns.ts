@@ -43,11 +43,19 @@ export const useColumns = () => {
         ? String(columnData.default_value)
         : undefined;
 
+      // Convert options to JSON string if it's an array
+      const options = columnData.options ? JSON.stringify(columnData.options) : undefined;
+      
+      // Convert validation to JSON string if it exists
+      const validation = columnData.validation ? JSON.stringify(columnData.validation) : undefined;
+
       const { data, error } = await supabase
         .from('columns')
         .insert([{
           ...columnData,
           default_value: defaultValue,
+          options: options,
+          validation: validation,
           category_id: categoryId,
           status: 'active',
           order_index: orderIndex
@@ -79,10 +87,18 @@ export const useColumns = () => {
         ? String(columnData.default_value)
         : undefined;
 
+      // Convert options to JSON string if it's an array
+      const options = columnData.options ? JSON.stringify(columnData.options) : undefined;
+      
+      // Convert validation to JSON string if it exists
+      const validation = columnData.validation ? JSON.stringify(columnData.validation) : undefined;
+
       // Prepare data for update
       const updateData = {
         ...columnData,
-        default_value: defaultValue
+        default_value: defaultValue,
+        options: options,
+        validation: validation
       };
 
       const { data, error } = await supabase

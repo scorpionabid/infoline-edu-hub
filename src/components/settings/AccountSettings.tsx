@@ -30,7 +30,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const AccountSettings = () => {
   const { t } = useTranslation();
-  const { user, updateUser } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -41,7 +41,7 @@ const AccountSettings = () => {
     inApp: true,
     system: true,
     deadline: true,
-    ...(user?.notification_settings || {})
+    ...(user?.notification_settings || user?.notificationSettings || {})
   };
 
   const form = useForm<FormValues>({
@@ -61,28 +61,25 @@ const AccountSettings = () => {
 
       // Update notification settings
       const updatedUser: Partial<FullUserData> = {
-        notification_settings: data.notificationSettings
+        notificationSettings: data.notificationSettings
       };
 
       // Call API to update user profile
       await updateUserProfile(user.id, updatedUser);
 
       // Update local user state
-      updateUser({
+      setUser({
         ...user,
-        notification_settings: data.notificationSettings
+        notificationSettings: data.notificationSettings
       });
 
-      toast({
-        title: t('settingsSaved'),
+      toast.success(t('settingsSaved'), {
         description: t('notificationSettingsUpdated'),
       });
     } catch (error: any) {
       console.error('Error updating notification settings:', error);
-      toast({
-        title: t('errorOccurred'),
+      toast.error(t('errorOccurred'), {
         description: error.message || t('failedToUpdateSettings'),
-        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);

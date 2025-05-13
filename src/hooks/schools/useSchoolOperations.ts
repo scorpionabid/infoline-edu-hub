@@ -1,93 +1,103 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { School } from '@/types/ui';
+import { mapApiDataToSchool } from './schoolTypeConverters';
 
 export const useSchoolOperations = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const createSchool = async (schoolData: Partial<School> & { name: string }) => {
-    setIsLoading(true);
+  const createSchool = async (schoolData: Pick<School, 'name'> & Partial<Omit<School, 'id' | 'created_at' | 'updated_at'>>) => {
+    setLoading(true);
     setError(null);
-
+    
     try {
-      const { data, error } = await supabase
-        .from('schools')
-        .insert([schoolData])
-        .select()
-        .single();
-
-      if (error) throw new Error(error.message);
-      
-      toast.success('School created successfully');
-      return data;
-    } catch (err) {
-      const error = err as Error;
-      console.error('Error creating school:', error);
-      setError(error);
-      toast.error(`Error creating school: ${error.message}`);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateSchool = async (id: string, schoolData: Partial<School> & { name: string }) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Ensure name is always present
+      // Ensure name is not undefined
       if (!schoolData.name) {
         throw new Error('School name is required');
       }
-
-      const { data, error } = await supabase
+      
+      const { data, error: apiError } = await supabase
         .from('schools')
-        .update(schoolData)
+        .insert([{ 
+          ...schoolData,
+          status: schoolData.status || 'active'
+        }])
+        .select()
+        .single();
+        
+      if (apiError) throw new Error(apiError.message);
+      
+      if (!data) {
+        throw new Error('Failed to create school');
+      }
+      
+      return mapApiDataToSchool(data);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to create school');
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const updateSchool = async (id: string, schoolData: Partial<School> & { name: string }) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Ensure name is not undefined
+      if (!schoolData.name) {
+        throw new Error('School name is required');
+      }
+      
+      const { data, error: apiError } = await supabase
+        .from('schools')
+        .update({
+          ...schoolData,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .select()
         .single();
-
-      if (error) throw new Error(error.message);
+        
+      if (apiError) throw new Error(apiError.message);
       
-      toast.success('School updated successfully');
-      return data;
+      if (!data) {
+        throw new Error('Failed to update school');
+      }
+      
+      return mapApiDataToSchool(data);
     } catch (err) {
-      const error = err as Error;
-      console.error('Error updating school:', error);
+      const error = err instanceof Error ? err : new Error('Failed to update school');
       setError(error);
-      toast.error(`Error updating school: ${error.message}`);
-      return null;
+      throw error;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const deleteSchool = async (id: string) => {
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
-
+    
     try {
-      const { error } = await supabase
+      const { error: apiError } = await supabase
         .from('schools')
         .delete()
         .eq('id', id);
-
-      if (error) throw new Error(error.message);
+        
+      if (apiError) throw new Error(apiError.message);
       
-      toast.success('School deleted successfully');
       return true;
     } catch (err) {
-      const error = err as Error;
-      console.error('Error deleting school:', error);
+      const error = err instanceof Error ? err : new Error('Failed to delete school');
       setError(error);
-      toast.error(`Error deleting school: ${error.message}`);
-      return false;
+      throw error;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -95,7 +105,7 @@ export const useSchoolOperations = () => {
     createSchool,
     updateSchool,
     deleteSchool,
-    isLoading,
-    error,
+    loading,
+    error
   };
 };

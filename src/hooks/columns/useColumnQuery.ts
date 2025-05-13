@@ -62,7 +62,7 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
         created_at: data.created_at,
         updated_at: data.updated_at,
         description: data.description || '',
-        color: data.color
+        color: data.color || undefined
       } as Column;
     }
     

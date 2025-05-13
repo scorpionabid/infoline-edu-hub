@@ -3,116 +3,113 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { useLanguage } from '@/context/LanguageContext';
-import { CategoryStatus, CategoryAssignment } from '@/types/category';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { CategoryStatus } from '@/types/category';
+import { useLanguage } from '@/hooks/useTranslation';
 
-export type FormStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'all';
-export type AssignmentType = 'all' | 'sectors' | 'schools';
-
-export interface CategoryFilter {
-  status?: CategoryStatus | 'all';
-  assignment?: AssignmentType | 'all';
-  search?: string;
+export interface CategoryFilterProps {
+  title?: string;
+  statuses: string[];
+  onStatusChange: (status: string, checked: boolean) => void;
+  assignments: string[];
+  onAssignmentChange: (assignment: string, checked: boolean) => void;
+  showArchived: boolean;
+  onArchivedChange: (checked: boolean) => void;
 }
 
-interface CategoryFilterCardProps {
-  filter: CategoryFilter;
-  onFilterChange: (filter: CategoryFilter) => void;
-}
-
-export const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
-  filter,
-  onFilterChange,
+const CategoryFilterCard: React.FC<CategoryFilterProps> = ({
+  title = 'Filters',
+  statuses = [],
+  onStatusChange,
+  assignments = [],
+  onAssignmentChange,
+  showArchived,
+  onArchivedChange
 }) => {
   const { t } = useLanguage();
   
-  const handleStatusChange = (status: CategoryStatus | 'all') => {
-    onFilterChange({ ...filter, status });
+  // Available status options
+  const statusOptions = [
+    { value: 'all', label: t('all') },
+    { value: 'active', label: t('active'), color: 'bg-green-500' },
+    { value: 'draft', label: t('draft'), color: 'bg-yellow-500' },
+    { value: 'approved', label: t('approved'), color: 'bg-blue-500' },
+    { value: 'pending', label: t('pending'), color: 'bg-orange-500' }
+  ];
+  
+  // Available assignment options
+  const assignmentOptions = [
+    { value: 'all', label: t('all') },
+    { value: 'schools', label: t('schools') },
+    { value: 'sectors', label: t('sectors') }
+  ];
+  
+  // Handle status checkbox changes
+  const handleStatusChange = (status: string, checked: boolean) => {
+    onStatusChange(status, checked);
   };
-
-  const handleAssignmentChange = (assignment: AssignmentType) => {
-    onFilterChange({ ...filter, assignment });
+  
+  // Handle assignment checkbox changes
+  const handleAssignmentChange = (assignment: string, checked: boolean) => {
+    onAssignmentChange(assignment, checked);
   };
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{t('filters')}</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <h3 className="mb-2 font-semibold">{t('status')}</h3>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="status-all" 
-                checked={filter.status === 'all'} 
-                onCheckedChange={() => handleStatusChange('all')}
-              />
-              <Label htmlFor="status-all">{t('all')}</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="status-active" 
-                checked={filter.status === 'active'} 
-                onCheckedChange={() => handleStatusChange('active')}
-              />
-              <Label htmlFor="status-active">{t('active')}</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="status-inactive" 
-                checked={filter.status === 'inactive'} 
-                onCheckedChange={() => handleStatusChange('inactive')}
-              />
-              <Label htmlFor="status-inactive">{t('inactive')}</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="status-draft" 
-                checked={filter.status === 'draft' as CategoryStatus} 
-                onCheckedChange={() => handleStatusChange('draft' as CategoryStatus)}
-              />
-              <Label htmlFor="status-draft">{t('draft')}</Label>
+      <CardContent>
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-medium mb-2">{t('status')}</h3>
+            <div className="space-y-2">
+              {statusOptions.map((option) => (
+                <div key={option.value} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`status-${option.value}`} 
+                    checked={statuses.includes(option.value)} 
+                    onCheckedChange={(checked: boolean) => handleStatusChange(option.value, checked)}
+                  />
+                  <Label htmlFor={`status-${option.value}`} className="flex items-center cursor-pointer">
+                    {option.value !== 'all' && (
+                      <Badge variant="outline" className={`mr-2 w-3 h-3 rounded-full ${option.color}`}>&nbsp;</Badge>
+                    )}
+                    {option.label}
+                  </Label>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-        
-        <div>
-          <h3 className="mb-2 font-semibold">{t('assignment')}</h3>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="assignment-all" 
-                checked={filter.assignment === 'all'} 
-                onCheckedChange={() => handleAssignmentChange('all')}
-              />
-              <Label htmlFor="assignment-all">{t('all')}</Label>
+          
+          <Separator />
+          
+          <div>
+            <h3 className="font-medium mb-2">{t('assignment')}</h3>
+            <div className="space-y-2">
+              {assignmentOptions.map((option) => (
+                <div key={option.value} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`assignment-${option.value}`} 
+                    checked={assignments.includes(option.value)} 
+                    onCheckedChange={(checked: boolean) => handleAssignmentChange(option.value, checked)}
+                  />
+                  <Label htmlFor={`assignment-${option.value}`}>{option.label}</Label>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="assignment-all-users" 
-                checked={filter.assignment === 'all'} 
-                onCheckedChange={() => handleAssignmentChange('all')}
-              />
-              <Label htmlFor="assignment-all-users">{t('allUsers')}</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="assignment-sectors" 
-                checked={filter.assignment === 'sectors'} 
-                onCheckedChange={() => handleAssignmentChange('sectors')}
-              />
-              <Label htmlFor="assignment-sectors">{t('sectorOnly')}</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="assignment-schools" 
-                checked={filter.assignment === 'schools'} 
-                onCheckedChange={() => handleAssignmentChange('schools')}
-              />
-              <Label htmlFor="assignment-schools">{t('schoolsOnly')}</Label>
-            </div>
+          </div>
+          
+          <Separator />
+          
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="show-archived" 
+              checked={showArchived} 
+              onCheckedChange={(checked: boolean) => onArchivedChange(checked)}
+            />
+            <Label htmlFor="show-archived">{t('showArchived')}</Label>
           </div>
         </div>
       </CardContent>

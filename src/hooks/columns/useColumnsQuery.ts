@@ -63,7 +63,7 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
           created_at: column.created_at,
           updated_at: column.updated_at,
           description: column.description || '',
-          color: column.color
+          color: column.color || undefined
         } as Column;
       });
     }

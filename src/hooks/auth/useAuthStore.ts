@@ -16,6 +16,7 @@ interface AuthState {
   setSession: (session: Session | null) => void;
   setError: (error: string | null) => void;
   setLoading: (isLoading: boolean) => void;
+  updateUser: (userData: Partial<FullUserData>) => void; // Add this method
   
   // Auth Operations
   login: (email: string, password: string) => Promise<boolean>;
@@ -40,6 +41,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setSession: (session) => set({ session }),
   setError: (error) => set({ error }),
   setLoading: (isLoading) => set({ isLoading }),
+  
+  // Add updateUser method
+  updateUser: (userData) => set((state) => ({
+    user: state.user ? { ...state.user, ...userData } : null
+  })),
   
   login: async (email, password) => {
     set({ isLoading: true, error: null });
@@ -213,7 +219,7 @@ export const selectSession = (state: AuthState) => state.session;
 export const selectIsAuthenticated = (state: AuthState) => state.isAuthenticated;
 export const selectIsLoading = (state: AuthState) => state.isLoading;
 export const selectUserRole = (state: AuthState) => state.user?.role || null;
-export const selectError = (state: AuthState) => state.error; // Add the missing selectError selector
+export const selectError = (state: AuthState) => state.error;
 export const selectRegionId = (state: AuthState) => state.user?.region_id || null;
 export const selectSectorId = (state: AuthState) => state.user?.sector_id || null;
 export const selectSchoolId = (state: AuthState) => state.user?.school_id || null;
