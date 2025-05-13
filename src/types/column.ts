@@ -1,5 +1,7 @@
 
 import { Json } from '@/types/supabase';
+import * as React from 'react';
+import { FileText, Hash, Calendar, ListChecks, Layers, AlignLeft, File, Mail, Globe, Phone, Lock, CheckSquare, CircleDot, SlidersHorizontal, Palette, Heading, Watch } from 'lucide-react';
 
 export interface ColumnOption {
   id: string;
@@ -25,6 +27,8 @@ export interface Column {
   updated_at: string;
   description?: string;
   color?: string;
+  parent_column_id?: string;
+  version?: number;
 }
 
 export interface ColumnFormData {
@@ -86,107 +90,110 @@ export const columnTypes = [
 ] as const;
 
 // Define column type definitions with icons and descriptions
-import { FileText, Hash, Calendar, ListChecks, Layers, AlignLeft, File, Mail, Globe, Phone, Lock, CheckSquare, CircleDot, SlidersHorizontal, Palette, Heading, Watch } from 'lucide-react';
-import React from 'react';
-
-export const columnTypeDefinitions: Record<ColumnType, {
+export type ColumnTypeDefinition = {
   label: string;
   description: string;
   icon: React.ReactNode;
-}> = {
+};
+
+export const columnTypeDefinitions: Record<ColumnType, ColumnTypeDefinition> = {
   text: {
     label: 'Text',
     description: 'Single line of text',
-    icon: <FileText className="h-4 w-4" />
+    icon: React.createElement(FileText, { className: "h-4 w-4" })
   },
   number: {
     label: 'Number',
     description: 'Numeric values only',
-    icon: <Hash className="h-4 w-4" />
+    icon: React.createElement(Hash, { className: "h-4 w-4" })
   },
   boolean: {
     label: 'Boolean',
     description: 'Yes/No value',
-    icon: <CheckSquare className="h-4 w-4" />
+    icon: React.createElement(CheckSquare, { className: "h-4 w-4" })
   },
   date: {
     label: 'Date',
     description: 'Date selection',
-    icon: <Calendar className="h-4 w-4" />
+    icon: React.createElement(Calendar, { className: "h-4 w-4" })
   },
   datetime: {
     label: 'Date & Time',
     description: 'Date and time selection',
-    icon: <Watch className="h-4 w-4" />
+    icon: React.createElement(Watch, { className: "h-4 w-4" })
   },
   select: {
     label: 'Select',
     description: 'Single selection from options',
-    icon: <ListChecks className="h-4 w-4" />
+    icon: React.createElement(ListChecks, { className: "h-4 w-4" })
   },
   multiselect: {
     label: 'Multi-select',
     description: 'Multiple selections from options',
-    icon: <Layers className="h-4 w-4" />
+    icon: React.createElement(Layers, { className: "h-4 w-4" })
   },
   textarea: {
     label: 'Text Area',
     description: 'Multiple lines of text',
-    icon: <AlignLeft className="h-4 w-4" />
+    icon: React.createElement(AlignLeft, { className: "h-4 w-4" })
   },
   file: {
     label: 'File Upload',
     description: 'Document or image upload',
-    icon: <File className="h-4 w-4" />
+    icon: React.createElement(File, { className: "h-4 w-4" })
   },
   email: {
     label: 'Email',
     description: 'Email address field',
-    icon: <Mail className="h-4 w-4" />
+    icon: React.createElement(Mail, { className: "h-4 w-4" })
   },
   url: {
     label: 'URL',
     description: 'Web address field',
-    icon: <Globe className="h-4 w-4" />
+    icon: React.createElement(Globe, { className: "h-4 w-4" })
   },
   tel: {
     label: 'Telephone',
     description: 'Phone number field',
-    icon: <Phone className="h-4 w-4" />
+    icon: React.createElement(Phone, { className: "h-4 w-4" })
   },
   phone: {
     label: 'Phone',
     description: 'Phone number field with formatting',
-    icon: <Phone className="h-4 w-4" />
+    icon: React.createElement(Phone, { className: "h-4 w-4" })
   },
   password: {
     label: 'Password',
     description: 'Secure password field',
-    icon: <Lock className="h-4 w-4" />
+    icon: React.createElement(Lock, { className: "h-4 w-4" })
   },
   checkbox: {
     label: 'Checkboxes',
     description: 'Multiple checkboxes',
-    icon: <CheckSquare className="h-4 w-4" />
+    icon: React.createElement(CheckSquare, { className: "h-4 w-4" })
   },
   radio: {
     label: 'Radio Buttons',
     description: 'Single selection radio buttons',
-    icon: <CircleDot className="h-4 w-4" />
+    icon: React.createElement(CircleDot, { className: "h-4 w-4" })
   },
   range: {
     label: 'Range Slider',
     description: 'Slider for range selection',
-    icon: <SlidersHorizontal className="h-4 w-4" />
+    icon: React.createElement(SlidersHorizontal, { className: "h-4 w-4" })
   },
   color: {
     label: 'Color Picker',
     description: 'Color selection field',
-    icon: <Palette className="h-4 w-4" />
+    icon: React.createElement(Palette, { className: "h-4 w-4" })
   },
   richtext: {
     label: 'Rich Text',
     description: 'Formatted text editor',
-    icon: <Heading className="h-4 w-4" />
+    icon: React.createElement(Heading, { className: "h-4 w-4" })
   }
 };
+
+export interface ColumnValidation {
+  [key: string]: any;
+}
