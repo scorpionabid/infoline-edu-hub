@@ -41,8 +41,8 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
             id: opt.id || String(Math.random()),
             label: opt.label || '',
             value: opt.value || '',
-            color: opt.color,
-            disabled: opt.disabled
+            color: opt.color || undefined,
+            disabled: opt.disabled || false
           }))
         : undefined;
 
@@ -61,7 +61,8 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
         options: formattedOptions,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        description: data.description
+        description: data.description || '',
+        color: data.color
       } as Column;
     }
     

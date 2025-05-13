@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns } from '@/types/column';
+import { CategoryWithColumns, Column } from '@/types/column';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
@@ -54,14 +54,21 @@ export const useCategoryData = (schoolId?: string) => {
       if (columnError) throw columnError;
 
       // Kateqoriyalara sütunları əlavə et
-      const categoriesWithColumns = categoryData.map(category => {
+      const categoriesWithColumns: CategoryWithColumns[] = categoryData.map(category => {
         const categoryColumns = columnData
           .filter(column => column.category_id === category.id)
-          .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+          .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
+          .map(col => ({
+            ...col,
+            type: col.type as Column['type']
+          }));
 
         return {
           ...category,
-          columns: categoryColumns
+          status: category.status as CategoryWithColumns['status'],
+          columns: categoryColumns as Column[],
+          columnCount: categoryColumns.length,
+          completionRate: 0 // Default completion rate
         };
       });
 

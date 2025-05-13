@@ -1,7 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Category } from '@/types/category';
-import { CategoryWithColumns } from '@/types/column';
+import { CategoryWithColumns, Column } from '@/types/column';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
@@ -50,23 +51,26 @@ export const useCategories = () => {
       if (columnError) throw columnError;
 
       // Kategoriyalara sütunları əlavə et
-      const enhancedCategories = categoryData.map((category: Category) => {
-        const categoryColumns = columnData.filter((column: any) => 
-          column.category_id === category.id
-        ).sort((a: any, b: any) => a.order_index - b.order_index);
+      const enhancedCategories: CategoryWithColumns[] = categoryData.map((category: any) => {
+        const categoryColumns = columnData
+          .filter((column: any) => column.category_id === category.id)
+          .sort((a: any, b: any) => a.order_index - b.order_index)
+          .map((col: any) => ({
+            ...col,
+            type: col.type as Column['type']
+          }));
         
         // Bütün tarix xüsusiyyətlərini Date tipinə çeviririk
-        const enhancedCategory = {
+        return {
           ...category,
-          columns: categoryColumns,
+          status: category.status as Category['status'],
+          columns: categoryColumns as Column[],
           columnCount: categoryColumns.length,
+          completionRate: 0, // Default completion rate
           deadline: category.deadline ? new Date(category.deadline) : undefined,
           created_at: category.created_at ? new Date(category.created_at) : undefined,
           updated_at: category.updated_at ? new Date(category.updated_at) : undefined
         };
-        
-        // Tipi uyğunlaşdırmaq üçün unknown-a çeviririk
-        return enhancedCategory as unknown as CategoryWithColumns;
       });
 
       setCategories(enhancedCategories);

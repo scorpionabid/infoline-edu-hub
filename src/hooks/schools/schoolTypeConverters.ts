@@ -2,97 +2,65 @@
 import { School } from '@/types/ui';
 
 /**
- * Converts raw database/Supabase school data to our School type
+ * Map database school object to UI School object
+ * @param dbSchool - School object from database
+ * @returns School object for UI
  */
-export function convertToSchool(data: any): School {
+export const mapDbSchoolToUiSchool = (dbSchool: any): School => {
   return {
-    id: data.id,
-    name: data.name,
-    address: data.address,
-    phone: data.phone,
-    email: data.email,
-    region_id: data.region_id,
-    sector_id: data.sector_id,
-    status: data.status || 'active',
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-    principal_name: data.principal_name,
-    logo: data.logo || null,
-    region_name: data.region_name,
-    sector_name: data.sector_name
+    id: dbSchool.id,
+    name: dbSchool.name,
+    address: dbSchool.address || '',
+    phone: dbSchool.phone || '',
+    email: dbSchool.email || '',
+    region_id: dbSchool.region_id || '',
+    sector_id: dbSchool.sector_id || '',
+    status: dbSchool.status || 'active',
+    created_at: dbSchool.created_at || '',
+    updated_at: dbSchool.updated_at || '',
+    principal_name: dbSchool.principal_name || '',
+    logo: dbSchool.logo || null,
+    region_name: dbSchool.region_name || '',
+    sector_name: dbSchool.sector_name || ''
   };
-}
+};
 
 /**
- * Converts an array of raw school data from Supabase to School type
+ * Map UI School object to database school object format
+ * @param uiSchool - School object from UI
+ * @returns School object for database
  */
-export function convertToSchools(data: any[]): School[] {
-  if (!Array.isArray(data)) {
-    console.warn('Invalid data passed to convertToSchools, expected array');
-    return [];
-  }
-  
-  return data.map(convertToSchool);
-}
+export const mapUiSchoolToDbSchool = (uiSchool: School): any => {
+  const { region_name, sector_name, ...dbSchool } = uiSchool;
+  return dbSchool;
+};
 
 /**
- * Enriches a school object with additional data like region name, sector name, etc.
+ * Create a mock school object for testing
+ * @returns Mock school object
  */
-export function enrichSchool(school: School, regions: any[], sectors: any[]): School {
-  const enriched = { ...school };
-  
-  // Add region name if region_id exists
-  if (school.region_id && regions && Array.isArray(regions)) {
-    const region = regions.find(r => r.id === school.region_id);
-    if (region) {
-      enriched.region_name = region.name;
-    }
-  }
-  
-  // Add sector name if sector_id exists
-  if (school.sector_id && sectors && Array.isArray(sectors)) {
-    const sector = sectors.find(s => s.id === school.sector_id);
-    if (sector) {
-      enriched.sector_name = sector.name;
-    }
-  }
-  
-  // Ensure logo is properly set or null
-  if (!enriched.logo) {
-    enriched.logo = null;
-  }
-  
-  return enriched;
-}
-
-/**
- * Prepare school data for API requests
- */
-export function prepareSchoolForApi(school: Partial<School>) {
-  // Create a copy of the school object to avoid modifying the original
-  const apiData = { ...school };
-  
-  // Remove any properties that shouldn't be sent to the API if they exist
-  if ('region_name' in apiData) delete (apiData as any).region_name;
-  if ('sector_name' in apiData) delete (apiData as any).sector_name;
-  
-  return apiData;
-}
-
-// Add missing function mapToMockSchool
-export function mapToMockSchool(data: any): School {
+export const mapToMockSchool = (): School => {
   return {
-    id: data.id || 'mock-id',
-    name: data.name || 'Mock School',
-    address: data.address || 'Mock Address',
-    phone: data.phone || '123456789',
-    email: data.email || 'mock@example.com',
-    region_id: data.region_id,
-    sector_id: data.sector_id,
-    status: data.status || 'active',
-    created_at: data.created_at || new Date().toISOString(),
-    updated_at: data.updated_at || new Date().toISOString(),
-    principal_name: data.principal_name || 'Mock Principal',
-    logo: data.logo || null
+    id: 'mock-id',
+    name: 'Mock School',
+    address: 'Mock Address',
+    phone: '123456789',
+    email: 'mock@school.com',
+    region_id: 'mock-region-id',
+    sector_id: 'mock-sector-id',
+    status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    principal_name: 'Mock Principal',
+    logo: null,
+    region_name: 'Mock Region',
+    sector_name: 'Mock Sector'
   };
-}
+};
+
+export const formatSchoolSelectOptions = (schools: School[]) => {
+  return schools.map(school => ({
+    value: school.id,
+    label: school.name
+  }));
+};

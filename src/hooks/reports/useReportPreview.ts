@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Report } from '@/types/report';
+import { Report, ReportStatus } from '@/types/report';
 import { toast } from 'sonner';
 
 export const useReportPreview = (reportId: string) => {
@@ -37,14 +37,14 @@ export const useReportPreview = (reportId: string) => {
             type: data.type as any,
             content: data.content,
             filters: data.filters,
-            status: data.status,
+            status: data.status as ReportStatus | string,
             created_at: data.created_at,
             created_by: data.created_by,
             updated_at: data.updated_at,
-            insights: data.insights || [],
-            recommendations: data.recommendations || [],
+            insights: Array.isArray(data.insights) ? data.insights : [],
+            recommendations: Array.isArray(data.recommendations) ? data.recommendations : [],
             is_template: data.is_template || false,
-            shared_with: data.shared_with || []
+            shared_with: Array.isArray(data.shared_with) ? data.shared_with : []
           };
           setReport(reportData);
         }

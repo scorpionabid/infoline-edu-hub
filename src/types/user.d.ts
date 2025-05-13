@@ -41,6 +41,14 @@ export interface FullUserData {
     system?: boolean;
     deadline?: boolean;
   };
+  notification_settings?: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+    inApp?: boolean;
+    system?: boolean;
+    deadline?: boolean;
+  };
 }
 
 export interface UserFormData {

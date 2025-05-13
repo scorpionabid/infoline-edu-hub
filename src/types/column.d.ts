@@ -32,7 +32,7 @@ export interface Column {
   id: string;
   category_id: string;
   name: string;
-  type: ColumnType;
+  type: ColumnType | string;
   is_required: boolean;
   placeholder?: string;
   help_text?: string;

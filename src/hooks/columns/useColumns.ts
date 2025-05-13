@@ -38,10 +38,16 @@ export const useColumns = () => {
         ? (existingColumns[0].order_index || 0) + 1 
         : 0;
 
+      // Convert default_value to string if it's not already
+      const defaultValue = columnData.default_value !== undefined
+        ? String(columnData.default_value)
+        : undefined;
+
       const { data, error } = await supabase
         .from('columns')
         .insert([{
           ...columnData,
+          default_value: defaultValue,
           category_id: categoryId,
           status: 'active',
           order_index: orderIndex
@@ -68,9 +74,20 @@ export const useColumns = () => {
       setLoading(true);
       setError(null);
 
+      // Convert default_value to string if it's not already
+      const defaultValue = columnData.default_value !== undefined
+        ? String(columnData.default_value)
+        : undefined;
+
+      // Prepare data for update
+      const updateData = {
+        ...columnData,
+        default_value: defaultValue
+      };
+
       const { data, error } = await supabase
         .from('columns')
-        .update(columnData)
+        .update(updateData)
         .eq('id', columnId)
         .select()
         .single();

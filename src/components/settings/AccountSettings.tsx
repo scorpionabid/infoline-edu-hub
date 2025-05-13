@@ -54,7 +54,7 @@ export const AccountSettings = () => {
       full_name: user?.full_name || "",
       phone: user?.phone || "",
       language: user?.language || "az",
-      notificationSettings: user?.notificationSettings || {
+      notificationSettings: user?.notification_settings || user?.notificationSettings || {
         email: false,
         inApp: false,
         push: false,
@@ -71,7 +71,7 @@ export const AccountSettings = () => {
         full_name: user.full_name || "",
         phone: user.phone || "",
         language: user.language || "az",
-        notificationSettings: user.notificationSettings || {
+        notificationSettings: user?.notification_settings || user?.notificationSettings || {
           email: false,
           inApp: false,
           push: false,
@@ -164,7 +164,7 @@ export const AccountSettings = () => {
 
           <FormField
             control={profileForm.control}
-            name="notification_settings.email"
+            name="notificationSettings.email"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
@@ -175,7 +175,7 @@ export const AccountSettings = () => {
                 </div>
                 <FormControl>
                   <Switch
-                    checked={field.value}
+                    checked={field.value || false}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
@@ -185,7 +185,7 @@ export const AccountSettings = () => {
 
           <FormField
             control={profileForm.control}
-            name="notification_settings.inApp"
+            name="notificationSettings.inApp"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
@@ -196,7 +196,7 @@ export const AccountSettings = () => {
                 </div>
                 <FormControl>
                   <Switch
-                    checked={field.value}
+                    checked={field.value || false}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
@@ -206,7 +206,7 @@ export const AccountSettings = () => {
 
           <FormField
             control={profileForm.control}
-            name="notification_settings.push"
+            name="notificationSettings.push"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
@@ -217,7 +217,7 @@ export const AccountSettings = () => {
                 </div>
                 <FormControl>
                   <Switch
-                    checked={field.value}
+                    checked={field.value || false}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
@@ -227,7 +227,7 @@ export const AccountSettings = () => {
 
           <FormField
             control={profileForm.control}
-            name="notification_settings.system"
+            name="notificationSettings.system"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
@@ -238,7 +238,7 @@ export const AccountSettings = () => {
                 </div>
                 <FormControl>
                   <Switch
-                    checked={field.value}
+                    checked={field.value || false}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
@@ -248,7 +248,7 @@ export const AccountSettings = () => {
 
           <FormField
             control={profileForm.control}
-            name="notification_settings.deadline"
+            name="notificationSettings.deadline"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
@@ -259,7 +259,7 @@ export const AccountSettings = () => {
                 </div>
                 <FormControl>
                   <Switch
-                    checked={field.value}
+                    checked={field.value || false}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>

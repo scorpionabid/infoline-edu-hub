@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/context/LanguageContext';
-import { CategoryStatus, CategoryAssignment } from '@/types/category.d';
+import { CategoryStatus, CategoryAssignment } from '@/types/category';
 
 export type FormStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'all';
 export type AssignmentType = 'all' | 'sectors' | 'schools';
@@ -70,8 +70,8 @@ export const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
             <div className="flex items-center space-x-2">
               <Checkbox 
                 id="status-draft" 
-                checked={filter.status === 'draft'} 
-                onCheckedChange={() => handleStatusChange('draft')}
+                checked={filter.status === 'draft' as CategoryStatus} 
+                onCheckedChange={() => handleStatusChange('draft' as CategoryStatus)}
               />
               <Label htmlFor="status-draft">{t('draft')}</Label>
             </div>

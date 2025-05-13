@@ -9,13 +9,13 @@ export interface Report {
   type: ReportType;
   content: any;
   filters?: any;
-  shared_with?: string[];
+  shared_with?: string[] | any;
   status?: ReportStatus | string;
   created_at?: string;
   created_by?: string;
   updated_at?: string;
-  insights?: string[];
-  recommendations?: string[];
+  insights?: string[] | any;
+  recommendations?: string[] | any;
   is_template?: boolean;
 }
 
