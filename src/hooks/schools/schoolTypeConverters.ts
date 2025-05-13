@@ -17,7 +17,9 @@ export function convertToSchool(data: any): School {
     created_at: data.created_at,
     updated_at: data.updated_at,
     principal_name: data.principal_name,
-    logo: data.logo || null
+    logo: data.logo || null,
+    region_name: data.region_name,
+    sector_name: data.sector_name
   };
 }
 
@@ -67,8 +69,30 @@ export function enrichSchool(school: School, regions: any[], sectors: any[]): Sc
  * Prepare school data for API requests
  */
 export function prepareSchoolForApi(school: Partial<School>) {
-  // Remove any properties that shouldn't be sent to the API
-  const { region_name, sector_name, ...apiData } = school as any;
+  // Create a copy of the school object to avoid modifying the original
+  const apiData = { ...school };
+  
+  // Remove any properties that shouldn't be sent to the API if they exist
+  if ('region_name' in apiData) delete (apiData as any).region_name;
+  if ('sector_name' in apiData) delete (apiData as any).sector_name;
   
   return apiData;
+}
+
+// Add missing function mapToMockSchool
+export function mapToMockSchool(data: any): School {
+  return {
+    id: data.id || 'mock-id',
+    name: data.name || 'Mock School',
+    address: data.address || 'Mock Address',
+    phone: data.phone || '123456789',
+    email: data.email || 'mock@example.com',
+    region_id: data.region_id,
+    sector_id: data.sector_id,
+    status: data.status || 'active',
+    created_at: data.created_at || new Date().toISOString(),
+    updated_at: data.updated_at || new Date().toISOString(),
+    principal_name: data.principal_name || 'Mock Principal',
+    logo: data.logo || null
+  };
 }

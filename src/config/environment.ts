@@ -5,7 +5,8 @@
 export const getEnv = (key: string, defaultValue: string = ''): string => {
   // For Vite applications
   if (typeof import.meta !== 'undefined') {
-    return ((import.meta as any).env?.[key]) || defaultValue;
+    // @ts-ignore - for environment variables in Vite
+    return ((import.meta.env?.[key]) || defaultValue);
   }
   
   // For Node.js

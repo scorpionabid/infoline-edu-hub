@@ -39,27 +39,12 @@ export interface Column {
   order_index?: number;
   status: string;
   validation?: ValidationRules;
-  default_value?: string;
+  default_value?: string | number | boolean;
   options?: ColumnOption[];
   created_at?: string;
   updated_at?: string;
   description?: string;
   color?: string;
-}
-
-export interface ColumnFormValues {
-  name: string;
-  type: ColumnType;
-  category_id: string;
-  is_required: boolean;
-  placeholder?: string;
-  help_text?: string;
-  default_value?: string;
-  options?: ColumnOption[];
-  validation?: ValidationRules;
-  status?: string;
-  description?: string;
-  order_index?: number;
 }
 
 // Re-export Category from category.d.ts for compatibility

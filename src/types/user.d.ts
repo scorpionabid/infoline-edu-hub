@@ -6,6 +6,8 @@ export interface User {
   avatar_url?: string;
   role?: string;
   status?: 'active' | 'inactive' | 'pending';
+  name?: string;
+  entityName?: string;
 }
 
 export interface FullUserData {
@@ -17,17 +19,27 @@ export interface FullUserData {
   school_id?: string;
   sector_id?: string;
   region_id?: string;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
   status?: string;
   language?: string;
   created_at?: string;
   updated_at?: string;
   last_sign_in_at?: string;
   name?: string;
-  entityName?: string;
+  entityName?: {
+    region?: string;
+    sector?: string;
+    school?: string;
+  } | string;
   notificationSettings?: {
     email: boolean;
     push: boolean;
     sms: boolean;
+    inApp?: boolean;
+    system?: boolean;
+    deadline?: boolean;
   };
 }
 

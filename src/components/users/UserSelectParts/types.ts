@@ -19,4 +19,10 @@ export interface User {
   email?: string;
   role?: string;
   status?: string;
+  name?: string;
+  entityName?: string | {
+    region?: string;
+    sector?: string;
+    school?: string;
+  };
 }

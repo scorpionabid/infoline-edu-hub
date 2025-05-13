@@ -8,7 +8,7 @@ export interface DataEntryForm {
   schoolId: string;
   categoryId: string;
   entries: DataEntryItem[];
-  status?: DataEntryStatus;
+  status?: DataEntryStatus | string;
   createdAt?: string;
   updatedAt?: string;
   submittedAt?: string;
@@ -18,7 +18,7 @@ export interface DataEntryForm {
 export interface DataEntryItem {
   columnId: string;
   value: any;
-  status?: DataEntryStatus;
+  status?: DataEntryStatus | string;
 }
 
 export interface DataEntry {
@@ -27,7 +27,7 @@ export interface DataEntry {
   category_id: string;
   column_id: string;
   value: string | any;
-  status: DataEntryStatus;
+  status: DataEntryStatus | string;
   created_at: string;
   updated_at?: string;
   created_by?: string;
@@ -44,7 +44,7 @@ export interface DataEntryRecord {
   schoolName: string;
   categoryId: string;
   categoryName: string;
-  status: DataEntryStatus;
+  status: DataEntryStatus | string;
   createdAt: string;
   updatedAt?: string;
   submittedAt?: string;

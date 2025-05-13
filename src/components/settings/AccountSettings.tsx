@@ -18,7 +18,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { FullUserData } from '@/types/supabase';
+import { FullUserData } from '@/types/user';
 
 // Import the updateUserProfile function
 import { updateUserProfile } from '@/hooks/auth/authActions';
@@ -31,7 +31,7 @@ const profileFormSchema = z.object({
   }).optional(),
   phone: z.string().optional(),
   language: z.string().optional(),
-  notification_settings: z.object({
+  notificationSettings: z.object({
     email: z.boolean().default(false),
     inApp: z.boolean().default(false),
     push: z.boolean().default(false),
@@ -54,7 +54,7 @@ export const AccountSettings = () => {
       full_name: user?.full_name || "",
       phone: user?.phone || "",
       language: user?.language || "az",
-      notification_settings: user?.notification_settings || {
+      notificationSettings: user?.notificationSettings || {
         email: false,
         inApp: false,
         push: false,
@@ -71,7 +71,7 @@ export const AccountSettings = () => {
         full_name: user.full_name || "",
         phone: user.phone || "",
         language: user.language || "az",
-        notification_settings: user.notification_settings || {
+        notificationSettings: user.notificationSettings || {
           email: false,
           inApp: false,
           push: false,
@@ -87,18 +87,18 @@ export const AccountSettings = () => {
       setIsSubmitting(true);
     
       // Properly format the notification settings to match the expected structure
-      const notification_settings = {
-        email: data.notification_settings?.email || false,
-        inApp: data.notification_settings?.inApp || false,
-        push: data.notification_settings?.push || false,
-        system: data.notification_settings?.system || false,
-        deadline: data.notification_settings?.deadline || false
+      const notificationSettings = {
+        email: data.notificationSettings?.email || false,
+        inApp: data.notificationSettings?.inApp || false,
+        push: data.notificationSettings?.push || false,
+        system: data.notificationSettings?.system || false,
+        deadline: data.notificationSettings?.deadline || false
       };
 
       const userUpdateData: Partial<FullUserData> = {
         ...data,
         id: user?.id,
-        notification_settings
+        notificationSettings
       };
 
       await updateUserProfile(userUpdateData);

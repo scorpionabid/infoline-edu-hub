@@ -1,144 +1,106 @@
-
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { School } from '@/types/ui';
+import { convertToSchool, prepareSchoolForApi } from './schoolTypeConverters';
 import { useLanguage } from '@/context/LanguageContext';
-import { School } from '@/types/school';
+import { toast } from 'sonner';
 
-interface SchoolOperationsResult {
-  isSubmitting: boolean;
-  addSchool: (schoolData: Partial<School>) => Promise<void>;
-  updateSchool: (schoolData: Partial<School>, originalSchool: School | null) => Promise<void>;
-  deleteSchool: (school: School | null) => Promise<void>;
-  assignAdmin: (schoolId: string, userId: string) => Promise<void>;
-  resetAdminPassword: (adminId: string, newPassword: string) => Promise<void>;
-  handleAddSubmit: (schoolData: Partial<School>) => Promise<void>;
-  handleEditSubmit: (schoolData: Partial<School>, originalSchool: School | null) => Promise<void>;
-  handleDeleteConfirm: (school: School | null) => Promise<void>;
-  handleAdminUpdate: () => Promise<void>;
-  handleResetPassword: (newPassword: string) => Promise<void>;
-}
-
-export const useSchoolOperations = (
-  onSuccess?: () => void,
-  onClose?: (type: 'add' | 'edit' | 'delete' | 'admin') => void
-): SchoolOperationsResult => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export const useSchoolOperations = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
 
-  const addSchool = useCallback(async (schoolData: Partial<School>) => {
+  const createSchool = async (schoolData: Partial<School>) => {
     try {
-      setIsSubmitting(true);
-      
-      const { error } = await supabase
-        .from('schools')
-        .insert(schoolData);
-      
-      if (error) throw error;
-      
-      if (onSuccess) onSuccess();
-      if (onClose) onClose('add');
-      
-      toast.success(t('schoolCreated') || 'School created successfully');
-    } catch (error: any) {
-      console.error('Error creating school:', error);
-      toast.error(t('errorCreatingSchool') || 'Failed to create school', {
-        description: error.message,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [onSuccess, onClose, t]);
+      setLoading(true);
+      setError(null);
 
-  const updateSchool = useCallback(async (schoolData: Partial<School>, originalSchool: School | null) => {
-    if (!schoolData.id) {
-      toast.error(t('schoolIdRequired') || 'School ID is required for updates');
-      return;
-    }
-    
-    try {
-      setIsSubmitting(true);
-      
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('schools')
-        .update(schoolData)
-        .eq('id', schoolData.id);
-      
-      if (error) throw error;
-      
-      if (onSuccess) onSuccess();
-      if (onClose) onClose('edit');
-      
-      toast.success(t('schoolUpdated') || 'School updated successfully');
-    } catch (error: any) {
-      console.error('Error updating school:', error);
-      toast.error(t('errorUpdatingSchool') || 'Failed to update school', {
-        description: error.message,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [onSuccess, onClose, t]);
+        .insert([schoolData])
+        .select()
+        .single();
 
-  const deleteSchool = useCallback(async (school: School | null) => {
-    if (!school?.id) {
-      toast.error(t('schoolIdRequired') || 'School ID is required for deletion');
-      return;
+      if (error) throw error;
+
+      toast.success(t('schoolCreated'));
+      return convertToSchool(data);
+    } catch (err: any) {
+      console.error('Error creating school:', err);
+      setError(err.message);
+      toast.error(t('errorCreatingSchool'));
+      return null;
+    } finally {
+      setLoading(false);
     }
-    
+  };
+
+  const updateSchool = async (id: string, schoolData: Partial<School>) => {
     try {
-      setIsSubmitting(true);
-      
+      setLoading(true);
+      setError(null);
+
+      // Ensure data has required fields for Supabase
+      const updatedData = {
+        ...schoolData,
+        // Add name if missing (required field but could be optional in our Partial type)
+        name: schoolData.name || '' // This ensures name is always present
+      };
+
+      // Prepare data for API
+      const apiData = prepareSchoolForApi(updatedData);
+
+      const { data, error } = await supabase
+        .from('schools')
+        .update(apiData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success(t('schoolUpdated'));
+      return convertToSchool(data);
+    } catch (err: any) {
+      console.error('Error updating school:', err);
+      setError(err.message);
+      toast.error(t('errorUpdatingSchool'));
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteSchool = async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
       const { error } = await supabase
         .from('schools')
         .delete()
-        .eq('id', school.id);
-      
+        .eq('id', id);
+
       if (error) throw error;
-      
-      if (onSuccess) onSuccess();
-      if (onClose) onClose('delete');
-      
-      toast.success(t('schoolDeleted') || 'School deleted successfully');
-    } catch (error: any) {
-      console.error('Error deleting school:', error);
-      toast.error(t('errorDeletingSchool') || 'Failed to delete school', {
-        description: error.message,
-      });
+
+      toast.success(t('schoolDeleted'));
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting school:', err);
+      setError(err.message);
+      toast.error(t('errorDeletingSchool'));
+      return false;
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
-  }, [onSuccess, onClose, t]);
-
-  const assignAdmin = useCallback(async (schoolId: string, userId: string) => {
-    // Implementation
-    if (onSuccess) onSuccess();
-  }, [onSuccess]);
-
-  const resetAdminPassword = useCallback(async (adminId: string, newPassword: string) => {
-    // Implementation
-    if (onSuccess) onSuccess();
-  }, [onSuccess]);
-
-  // For compatibility with useSchoolDialogHandlers
-  const handleAddSubmit = addSchool;
-  const handleEditSubmit = updateSchool;
-  const handleDeleteConfirm = deleteSchool;
-  const handleAdminUpdate = async () => {}; // Placeholder
-  const handleResetPassword = async (newPassword: string) => {}; // Placeholder
+  };
 
   return {
-    isSubmitting,
-    addSchool,
+    createSchool,
     updateSchool,
     deleteSchool,
-    assignAdmin,
-    resetAdminPassword,
-    handleAddSubmit,
-    handleEditSubmit,
-    handleDeleteConfirm,
-    handleAdminUpdate,
-    handleResetPassword
+    loading,
+    error
   };
 };
 

@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useLanguageSafe } from "@/context/LanguageContext";
 import { useAuth } from "@/context/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 
 export function ProfileSettings() {
   const { t } = useLanguageSafe();
@@ -25,8 +26,8 @@ export function ProfileSettings() {
     
     setIsSaving(true);
     try {
-      // Use the supabase client directly since updateUser is not available in AuthContext
-      const { data, error } = await window.supabase.auth.updateUser({
+      // Use the imported supabase client instead of accessing it through window
+      const { data, error } = await supabase.auth.updateUser({
         data: { 
           full_name: fullName,
           phone,

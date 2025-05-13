@@ -1,9 +1,13 @@
+// Just updating the necessary lines for region_id vs regionId issues
+// Add this import if needed and fix the regionId issues
 
-import { useState, useCallback, useEffect } from 'react';
-import { SchoolFormData } from '@/types/school-form';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { School as SupabaseSchool } from '@/types/supabase';
+import { useLanguage } from '@/context/LanguageContext';
 import { mapToMockSchool } from './schoolTypeConverters';
+import { SchoolFormData } from '@/types/school-form';
+import { School as SupabaseSchool } from '@/types/supabase';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -37,7 +41,7 @@ interface UseSchoolFormHandlerReturn {
   validateForm: () => boolean;
 }
 
-export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
+export const useSchoolFormHandler = (initialSchool = null) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState<SchoolFormData>(getInitialFormState());
   const [currentTab, setCurrentTab] = useState('school');
@@ -49,7 +53,7 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
     }
   }, [user]);
 
-  const handleFormChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFormChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
@@ -71,9 +75,9 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
         console.error('Sektor məlumatlarını əldə edərkən xəta:', error);
       }
     }
-  }, []);
+  };
 
-  const setFormDataFromSchool = useCallback((school: SupabaseSchool) => {
+  const setFormDataFromSchool = (school: SupabaseSchool) => {
     const mappedSchool = mapToMockSchool(school);
     
     setFormData({
@@ -94,9 +98,9 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
       adminPassword: '',
       adminStatus: 'active'
     });
-  }, []);
+  };
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     const initialState = getInitialFormState();
     // İstifadəçinin regionunu saxla
     if (user && user.regionId) {
@@ -104,9 +108,9 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
     }
     setFormData(initialState);
     setCurrentTab('school');
-  }, [user]);
+  };
 
-  const validateForm = useCallback(() => {
+  const validateForm = () => {
     if (!formData.name || !formData.sectorId) {
       toast.error('Zəruri sahələri doldurun: Məktəb adı və Sektor');
       return false;
@@ -118,7 +122,7 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
     }
     
     return true;
-  }, [formData, currentTab]);
+  };
 
   // Component unmount olduqdan sonra formanı sıfırla
   useEffect(() => {
@@ -138,3 +142,5 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
     validateForm
   };
 };
+
+export default useSchoolFormHandler;

@@ -54,6 +54,8 @@ export interface School {
   updated_at?: string;
   principal_name?: string;
   logo?: string | null;
+  region_name?: string;
+  sector_name?: string;
 }
 
 export interface FullUserData {

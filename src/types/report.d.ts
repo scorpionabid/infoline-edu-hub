@@ -1,5 +1,6 @@
 
 export type ReportType = 'bar' | 'line' | 'pie' | 'table';
+export type ReportStatus = 'draft' | 'published' | 'archived';
 
 export interface Report {
   id: string;
@@ -9,7 +10,7 @@ export interface Report {
   content: any;
   filters?: any;
   shared_with?: string[];
-  status?: string;
+  status?: ReportStatus | string;
   created_at?: string;
   created_by?: string;
   updated_at?: string;
