@@ -4,7 +4,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Control } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash, Edit, ArrowUp, ArrowDown, Check, X } from 'lucide-react';
+import { Plus, Trash, Edit, Check, X } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { ColumnOption } from '@/types/column';
 

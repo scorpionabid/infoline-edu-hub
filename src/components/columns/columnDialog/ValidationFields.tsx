@@ -186,7 +186,7 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({ type, control }) =>
     );
   }
   
-  if (type === 'phone') {
+  if (type === 'phone' || type === 'tel') {
     return (
       <div className="space-y-4">
         <FormField
