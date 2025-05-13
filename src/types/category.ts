@@ -30,6 +30,8 @@ export interface ColumnData {
   category_id: string;
   order_index?: number;
   status?: string;
+  description?: string;
+  color?: string;
 }
 
 export interface CategoryWithColumns extends Category {

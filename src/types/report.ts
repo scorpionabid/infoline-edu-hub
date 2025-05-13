@@ -1,5 +1,6 @@
 
 export type ReportType = 'bar' | 'pie' | 'line' | 'table';
+export type ReportStatus = 'draft' | 'published' | 'archived';
 
 export const ReportTypeValues = {
   BAR: 'bar',
@@ -13,7 +14,7 @@ export interface Report {
   title: string;
   description?: string;
   type: ReportType;
-  status?: 'draft' | 'published' | 'archived';
+  status?: ReportStatus;
   createdAt?: string;
   updatedAt?: string;
   createdBy?: string;
@@ -26,6 +27,8 @@ export interface Report {
   created_by?: string; // geriyə uyğunluq üçün
   is_template?: boolean;
   shared_with?: string[]; // geriyə uyğunluq üçün
+  insights?: string[];
+  recommendations?: string[];
 }
 
 export interface ReportChartProps {

@@ -1,120 +1,122 @@
 
-import { useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { schoolFormSchema } from '@/lib/validationSchemas';
+import { z } from 'zod';
 import { School, SchoolFormData } from '@/types/ui';
-import { useSchoolOperations } from './useSchoolOperations';
-import { mapToMockSchool } from './schoolTypeConverters';
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/useToast';
 import { useTranslation } from '@/hooks/useTranslation';
 
-export type SchoolFormMode = 'create' | 'edit';
+// Form validation schema
+const schoolFormSchema = z.object({
+  name: z.string().min(1, 'School name is required'),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email('Invalid email format').optional().or(z.literal('')),
+  region_id: z.string().min(1, 'Region is required'),
+  sector_id: z.string().min(1, 'Sector is required'),
+  status: z.string().optional(),
+  principal_name: z.string().optional(),
+  logo: z.string().optional().nullable(),
+  id: z.string().optional()
+});
 
-interface UseSchoolFormHandlerProps {
-  onSuccess?: (school: School) => void;
-  onCancel?: () => void;
-  initialSchool?: School;
-  mode: SchoolFormMode;
-}
-
-export const useSchoolFormHandler = ({
-  onSuccess,
-  onCancel,
-  initialSchool = mapToMockSchool(),
-  mode
-}: UseSchoolFormHandlerProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export const useSchoolFormHandler = () => {
   const { t } = useTranslation();
-  const { createSchool, updateSchool } = useSchoolOperations();
-  const { user } = useAuthStore();
+  const { toast } = useToast();
+  const [currentTab, setCurrentTab] = useState<string>('general');
+  const [formData, setFormData] = useState<SchoolFormData>({
+    name: '',
+    address: '',
+    phone: '',
+    email: '',
+    region_id: '',
+    sector_id: '',
+    status: 'active',
+    principal_name: '',
+    logo: null
+  });
   
-  // Initialize form with initialSchool data or empty values
+  // Form setup with react-hook-form
   const form = useForm<SchoolFormData>({
     resolver: zodResolver(schoolFormSchema),
-    defaultValues: {
-      id: initialSchool?.id || undefined,
-      name: initialSchool?.name || '',
-      address: initialSchool?.address || '',
-      phone: initialSchool?.phone || '',
-      email: initialSchool?.email || '',
-      principal_name: initialSchool?.principal_name || '',
-      region_id: initialSchool?.region_id || user?.region_id || '',
-      sector_id: initialSchool?.sector_id || user?.sector_id || '',
-      status: initialSchool?.status || 'active',
-      logo: initialSchool?.logo || null
-    }
+    defaultValues: formData
   });
 
-  const handleSubmit = async (formData: SchoolFormData) => {
-    try {
-      setIsSubmitting(true);
+  // Function to set form data from a School object
+  const setFormDataFromSchool = (school: School | null) => {
+    if (!school) return;
+    
+    const newFormData = {
+      id: school.id,
+      name: school.name,
+      address: school.address || '',
+      phone: school.phone || '',
+      email: school.email || '',
+      region_id: school.region_id,
+      sector_id: school.sector_id,
+      status: school.status || 'active',
+      principal_name: school.principal_name || '',
+      logo: school.logo
+    };
+    
+    setFormData(newFormData);
+    form.reset(newFormData);
+  };
 
-      // For school admins, we don't allow changing region or sector
-      if (user?.role === 'schooladmin') {
-        formData.region_id = user.region_id;
-        formData.sector_id = user.sector_id;
-      } 
-      // For sector admins, we don't allow changing region
-      else if (user?.role === 'sectoradmin') {
-        formData.region_id = user.region_id;
-      }
+  // Handle form field changes
+  const handleFormChange = (field: keyof SchoolFormData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    form.setValue(field, value);
+  };
 
-      // Create or update school based on mode
-      const result = mode === 'create' 
-        ? await createSchool({
-            name: formData.name,
-            address: formData.address,
-            phone: formData.phone,
-            email: formData.email,
-            principal_name: formData.principal_name,
-            region_id: formData.region_id,
-            sector_id: formData.sector_id,
-            status: formData.status,
-            logo: formData.logo
-          })
-        : await updateSchool(formData.id!, {
-            name: formData.name,
-            address: formData.address,
-            phone: formData.phone,
-            email: formData.email,
-            principal_name: formData.principal_name,
-            region_id: formData.region_id,
-            sector_id: formData.sector_id,
-            status: formData.status,
-            logo: formData.logo
-          });
+  // Reset form to empty state
+  const resetForm = () => {
+    const emptyForm = {
+      name: '',
+      address: '',
+      phone: '',
+      email: '',
+      region_id: '',
+      sector_id: '',
+      status: 'active',
+      principal_name: '',
+      logo: null
+    };
+    setFormData(emptyForm);
+    form.reset(emptyForm);
+    setCurrentTab('general');
+  };
 
-      if (result) {
-        toast.success(
-          mode === 'create' ? t('schoolCreated') : t('schoolUpdated'), 
-          { description: mode === 'create' ? t('schoolCreatedDesc') : t('schoolUpdatedDesc') }
-        );
-        if (onSuccess) onSuccess(result);
-      }
-    } catch (error: any) {
-      console.error('School form error:', error);
-      toast.error(t('errorOccurred'), { description: error.message });
-    } finally {
-      setIsSubmitting(false);
+  // Validate form data
+  const validateForm = () => {
+    const isValid = form.trigger();
+    if (!isValid) {
+      toast.error(t('validationError'), {
+        description: t('pleaseCheckFormErrors')
+      });
     }
+    return isValid;
   };
-
-  const handleCancel = () => {
-    form.reset();
-    if (onCancel) onCancel();
-  };
-
-  // Additional helper functions
-  const isDirty = form.formState.isDirty;
 
   return {
     form,
-    handleSubmit: form.handleSubmit(handleSubmit),
-    isSubmitting,
-    handleCancel,
-    isDirty,
+    formData,
+    currentTab,
+    setCurrentTab,
+    setFormDataFromSchool,
+    handleFormChange,
+    resetForm,
+    validateForm,
+    handleSubmit: form.handleSubmit,
+    isSubmitting: form.formState.isSubmitting,
+    handleCancel: () => resetForm(),
+    isDirty: form.formState.isDirty,
     errors: form.formState.errors
   };
 };
+
+export default useSchoolFormHandler;

@@ -1,4 +1,3 @@
-
 export type ColumnType = 
   | 'text'
   | 'number'
@@ -23,6 +22,8 @@ export interface ColumnOption {
   id: string;
   label: string;
   value: string;
+  color?: string;
+  disabled?: boolean;
 }
 
 export interface ValidationRules {
@@ -55,6 +56,7 @@ export interface Column {
   validation?: ValidationRules;
   status: 'active' | 'inactive' | 'draft';
   description?: string;
+  color?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -73,12 +75,7 @@ export interface ColumnFormValues {
   validation?: ValidationRules;
   status: 'active' | 'inactive' | 'draft';
   description?: string;
-}
-
-export interface ColumnTypeDefinition {
-  label: string;
-  description: string;
-  icon: string;
+  color?: string;
 }
 
 export const columnTypes: Record<ColumnType, string | { label: string; description: string; icon: string }> = {

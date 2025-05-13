@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   full_name?: string;
@@ -8,6 +7,16 @@ export interface User {
   status?: 'active' | 'inactive' | 'pending';
   name?: string;
   entityName?: string;
+}
+
+export interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  inApp: boolean;
+  system: boolean;
+  deadline: boolean;
+  sms?: boolean;
+  deadlineReminders?: boolean;
 }
 
 export interface FullUserData {
@@ -33,22 +42,8 @@ export interface FullUserData {
     sector?: string;
     school?: string;
   } | string;
-  notification_settings?: {
-    email: boolean;
-    push: boolean;
-    sms: boolean;
-    inApp?: boolean;
-    system?: boolean;
-    deadline?: boolean;
-  };
-  notificationSettings?: {
-    email: boolean;
-    push: boolean;
-    sms: boolean;
-    inApp?: boolean;
-    system?: boolean;
-    deadline?: boolean;
-  };
+  notification_settings?: NotificationSettings;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface UserFormData {

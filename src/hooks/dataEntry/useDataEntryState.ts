@@ -11,13 +11,13 @@ export const useDataEntryState = (schoolId?: string) => {
   
   // useCategoryData'dan döndürülən dəyərləri al
   const categoryDataResult = useCategoryData(schoolId);
-  const { categories, loading, error, refreshCategories } = categoryDataResult;
+  const { categories, loading, error, refetch } = categoryDataResult;
   
   // Manuel yeniləmə funksiyası
   const handleRefresh = useCallback(async () => {
     console.log('Data entry state yenilənir...');
-    await refreshCategories(); 
-  }, [refreshCategories]);
+    await refetch(); 
+  }, [refetch]);
   
   return {
     categories,

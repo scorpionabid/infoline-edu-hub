@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { FullUserData } from '@/types/user';
+import { FullUserData, NotificationSettings } from '@/types/user';
 import { updateUserProfile } from '@/api/userApi';
 
 const notificationSchema = z.object({
@@ -34,20 +34,25 @@ const AccountSettings = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // Get notification settings from user
-  const notificationDefaults = {
+  // Get notification settings from user with proper fallback
+  const notificationSettings = user?.notification_settings || {
     email: true,
     push: false,
     inApp: true,
     system: true,
-    deadline: true,
-    ...(user?.notification_settings || user?.notificationSettings || {})
+    deadline: true
   };
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      notificationSettings: notificationDefaults
+      notificationSettings: {
+        email: notificationSettings.email,
+        push: notificationSettings.push,
+        inApp: notificationSettings.inApp,
+        system: notificationSettings.system,
+        deadline: notificationSettings.deadline
+      }
     },
   });
 
@@ -61,7 +66,13 @@ const AccountSettings = () => {
 
       // Update notification settings
       const updatedUser: Partial<FullUserData> = {
-        notificationSettings: data.notificationSettings
+        notification_settings: {
+          email: data.notificationSettings.email,
+          push: data.notificationSettings.push,
+          inApp: data.notificationSettings.inApp,
+          system: data.notificationSettings.system,
+          deadline: data.notificationSettings.deadline
+        }
       };
 
       // Call API to update user profile
@@ -70,7 +81,7 @@ const AccountSettings = () => {
       // Update local user state
       setUser({
         ...user,
-        notificationSettings: data.notificationSettings
+        notification_settings: updatedUser.notification_settings
       });
 
       toast.success(t('settingsSaved'), {

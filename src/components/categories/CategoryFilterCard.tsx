@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { CategoryStatus } from '@/types/category';
-import { useLanguage } from '@/hooks/useTranslation';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export interface CategoryFilterProps {
   title?: string;
@@ -27,7 +27,7 @@ const CategoryFilterCard: React.FC<CategoryFilterProps> = ({
   showArchived,
   onArchivedChange
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   
   // Available status options
   const statusOptions = [

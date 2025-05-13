@@ -4,6 +4,7 @@ import { School } from '@/types/school';
 import { useSchoolDialogs } from './useSchoolDialogs';
 import { useSchoolFormHandler } from './useSchoolFormHandler';
 import { useSchoolOperations } from './useSchoolOperations';
+import { SchoolFormData } from '@/types/ui';
 
 export const useSchoolDialogHandlers = () => {
   const [isOperationComplete, setIsOperationComplete] = useState(false);
@@ -28,6 +29,7 @@ export const useSchoolDialogHandlers = () => {
     handleDeleteDialogOpen
   } = useSchoolDialogs();
 
+  const schoolFormHandler = useSchoolFormHandler();
   const {
     formData,
     currentTab,
@@ -36,7 +38,7 @@ export const useSchoolDialogHandlers = () => {
     handleFormChange,
     resetForm,
     validateForm
-  } = useSchoolFormHandler();
+  } = schoolFormHandler;
 
   const onSuccess = useCallback(() => {
     setIsOperationComplete(true);
@@ -49,40 +51,55 @@ export const useSchoolDialogHandlers = () => {
     if (type === 'admin') closeAdminDialog();
   }, [closeAddDialog, closeEditDialog, closeDeleteDialog, closeAdminDialog]);
 
+  const schoolOperations = useSchoolOperations(onSuccess);
   const {
-    handleAddSubmit: operationAddSubmit,
-    handleEditSubmit: operationEditSubmit,
-    handleDeleteConfirm: operationDeleteConfirm,
-    handleAdminUpdate: operationAdminUpdate,
-    handleResetPassword: operationResetPassword
-  } = useSchoolOperations(onSuccess);
+    createSchool,
+    updateSchool,
+    deleteSchool,
+    assignAdmin,
+    resetPassword
+  } = schoolOperations;
 
   const handleAddDialogOpen = useCallback(() => {
     resetForm();
     openAddDialog();
   }, [resetForm, openAddDialog]);
 
-  const handleAddSubmit = useCallback(async () => {
+  const handleAddSubmit = useCallback(async (data?: SchoolFormData) => {
     if (!validateForm()) return;
-    await operationAddSubmit(formData);
-  }, [formData, validateForm, operationAddSubmit]);
+    const schoolData = data || formData;
+    await createSchool({
+      name: schoolData.name,
+      address: schoolData.address,
+      phone: schoolData.phone,
+      email: schoolData.email,
+      region_id: schoolData.region_id,
+      sector_id: schoolData.sector_id,
+      principal_name: schoolData.principal_name,
+      status: schoolData.status || 'active',
+      logo: schoolData.logo
+    });
+  }, [formData, validateForm, createSchool]);
 
   const handleEditSubmit = useCallback(async () => {
-    if (!validateForm()) return;
-    await operationEditSubmit(formData, selectedSchool);
-  }, [formData, selectedSchool, validateForm, operationEditSubmit]);
+    if (!validateForm() || !selectedSchool) return;
+    await updateSchool(selectedSchool.id, formData);
+  }, [formData, selectedSchool, validateForm, updateSchool]);
 
   const handleDeleteConfirm = useCallback(async () => {
-    await operationDeleteConfirm(selectedSchool);
-  }, [selectedSchool, operationDeleteConfirm]);
+    if (!selectedSchool) return;
+    await deleteSchool(selectedSchool.id);
+  }, [selectedSchool, deleteSchool]);
 
-  const handleAdminUpdate = useCallback(async () => {
-    await operationAdminUpdate();
-  }, [operationAdminUpdate]);
+  const handleAdminUpdate = useCallback(async (data?: any) => {
+    if (!selectedSchool) return;
+    await assignAdmin(selectedSchool.id, data);
+  }, [selectedSchool, assignAdmin]);
 
   const handleResetPassword = useCallback(async (newPassword: string) => {
-    await operationResetPassword(newPassword);
-  }, [operationResetPassword]);
+    if (!selectedAdmin) return;
+    await resetPassword(selectedAdmin.id, newPassword);
+  }, [selectedAdmin, resetPassword]);
 
   return {
     isDeleteDialogOpen,

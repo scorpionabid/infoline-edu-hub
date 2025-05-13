@@ -41,16 +41,17 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
             id: opt.id || String(Math.random()),
             label: opt.label || '',
             value: opt.value || '',
-            color: opt.color || undefined,
+            color: opt.color,
             disabled: opt.disabled || false
           }))
         : undefined;
 
+      // Convert database column to our Column type
       return {
         id: data.id,
         category_id: data.category_id,
         name: data.name,
-        type: data.type,
+        type: data.type as Column['type'],
         is_required: data.is_required,
         placeholder: data.placeholder,
         help_text: data.help_text,
@@ -62,7 +63,7 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
         created_at: data.created_at,
         updated_at: data.updated_at,
         description: data.description || '',
-        color: data.color || undefined
+        color: data.color
       } as Column;
     }
     

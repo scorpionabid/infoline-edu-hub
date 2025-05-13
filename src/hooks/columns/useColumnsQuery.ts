@@ -42,11 +42,12 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
               id: opt.id || String(Math.random()),
               label: opt.label || '',
               value: opt.value || '',
-              color: opt.color || undefined,
+              color: opt.color,
               disabled: opt.disabled || false
             }))
           : undefined;
 
+        // Convert database column to our Column type
         return {
           id: column.id,
           category_id: column.category_id,
@@ -63,7 +64,7 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
           created_at: column.created_at,
           updated_at: column.updated_at,
           description: column.description || '',
-          color: column.color || undefined
+          color: column.color
         } as Column;
       });
     }
