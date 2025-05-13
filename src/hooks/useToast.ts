@@ -1,23 +1,36 @@
 
 import { toast } from 'sonner';
 
-export function useToast() {
+export const useToast = () => {
   return {
-    toast: {
-      success: (title: string, options?: { description?: string }) => {
-        toast.success(title, options);
-      },
-      error: (title: string, options?: { description?: string }) => {
-        toast.error(title, options);
-      },
-      warning: (title: string, options?: { description?: string }) => {
-        toast.warning(title, options);
-      },
-      info: (title: string, options?: { description?: string }) => {
-        toast.info(title, options);
-      }
+    toast,
+    success: (title: string, description?: string) => {
+      toast({
+        title,
+        description,
+      });
+    },
+    error: (title: string, description?: string) => {
+      toast({
+        title,
+        description,
+        variant: 'destructive'
+      });
+    },
+    warning: (title: string, description?: string) => {
+      toast({
+        title,
+        description,
+        variant: 'warning'
+      });
+    },
+    info: (title: string, description?: string) => {
+      toast({
+        title,
+        description,
+      });
     }
   };
-}
+};
 
-export { toast };
+export default useToast;

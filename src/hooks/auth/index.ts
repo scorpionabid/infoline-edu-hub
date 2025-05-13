@@ -8,7 +8,7 @@ export {
   selectUser,
   selectIsAuthenticated,
   selectIsLoading,
-  selectError, // Include this missing selector
+  selectError,
   selectSession,
   selectUserRole,
   selectRegionId,

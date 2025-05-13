@@ -24,11 +24,16 @@ export const UserProfile = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success('Çıxış uğurla edildi');
+      toast({
+        title: 'Çıxış uğurla edildi',
+      });
       navigate('/login', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
-      toast.error('Çıxış zamanı xəta baş verdi');
+      toast({
+        title: 'Çıxış zamanı xəta baş verdi',
+        variant: 'destructive'
+      });
     }
   };
   
@@ -50,39 +55,44 @@ export const UserProfile = () => {
     }
   };
   
+  const handleSettings = () => {
+    navigate('/settings');
+  };
+
+  const handleProfile = () => {
+    navigate('/profile');
+  };
+
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Avatar className="cursor-pointer">
-          <AvatarImage src={user.avatar} alt={user.full_name || ''} />
+      <DropdownMenuTrigger className="focus:outline-none">
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={user.avatar || ''} alt={user.full_name || 'User'} />
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      
       <DropdownMenuContent align="end">
-        <div className="px-2 py-1.5 text-sm">
-          <div className="font-medium">{user.full_name}</div>
-          <div className="text-xs text-muted-foreground">{getRoleName()}</div>
-          <div className="text-xs text-muted-foreground">{user.email}</div>
+        <div className="flex flex-col px-3 py-2 space-y-1">
+          <p className="text-sm font-medium">{user.full_name || 'User'}</p>
+          <p className="text-xs text-muted-foreground">{user.email}</p>
+          <p className="text-xs text-muted-foreground">{getRoleName()}</p>
         </div>
-        
         <DropdownMenuSeparator />
-        
-        <DropdownMenuItem onClick={() => navigate('/profile')}>
+        <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
           <User className="mr-2 h-4 w-4" />
-          {t('profile')}
+          <span>{t('profile') || 'Profil'}</span>
         </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={() => navigate('/settings')}>
+        <DropdownMenuItem onClick={handleSettings} className="cursor-pointer">
           <Settings className="mr-2 h-4 w-4" />
-          {t('settings')}
+          <span>{t('settings') || 'Parametrlər'}</span>
         </DropdownMenuItem>
-        
         <DropdownMenuSeparator />
-        
-        <DropdownMenuItem onClick={handleLogout}>
+        <DropdownMenuItem 
+          onClick={handleLogout}
+          className="cursor-pointer text-red-600 focus:text-red-600"
+        >
           <LogOut className="mr-2 h-4 w-4" />
-          {t('logout')}
+          <span>{t('logout') || 'Çıxış'}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

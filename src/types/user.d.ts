@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   full_name?: string;
@@ -42,6 +43,7 @@ export interface FullUserData {
     sector?: string;
     school?: string;
   } | string;
+  // Support both camelCase and snake_case for backward compatibility
   notification_settings?: NotificationSettings;
   notificationSettings?: NotificationSettings;
 }

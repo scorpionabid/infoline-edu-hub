@@ -10,13 +10,21 @@ import { FullUserData } from '@/types/user';
  */
 export const updateUserProfile = async (userId: string, userData: Partial<FullUserData>) => {
   try {
+    // Handle both notification_settings and notificationSettings
+    const updateData = {
+      ...userData,
+      updated_at: new Date().toISOString(),
+    };
+    
+    // Remove notificationSettings if notification_settings exists to prevent duplication
+    if (updateData.notification_settings && updateData.notificationSettings) {
+      delete updateData.notificationSettings;
+    }
+    
     // Update the user's profile in the profiles table
     const { data, error } = await supabase
       .from('profiles')
-      .update({
-        ...userData,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', userId)
       .select()
       .single();
@@ -26,5 +34,26 @@ export const updateUserProfile = async (userId: string, userData: Partial<FullUs
   } catch (error: any) {
     console.error('Error updating profile:', error);
     throw error;
+  }
+};
+
+/**
+ * Fetches a user profile by ID
+ * @param userId The ID of the user to fetch
+ * @returns The user data or null if an error occurred
+ */
+export const fetchUserProfile = async (userId: string): Promise<FullUserData | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (error) throw error;
+    return data as FullUserData;
+  } catch (error: any) {
+    console.error('Error fetching profile:', error);
+    return null;
   }
 };

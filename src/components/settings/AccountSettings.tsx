@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
-import { useTranslation } from '@/hooks/useTranslation';
-import { useToast } from '@/hooks/useToast';
+import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
@@ -29,13 +28,12 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const AccountSettings = () => {
-  const { t } = useTranslation();
-  const { user, setUser } = useAuthStore();
+  const { t } = useLanguage();
+  const { user, updateUser } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
 
   // Get notification settings from user with proper fallback
-  const notificationSettings = user?.notification_settings || {
+  const notificationSettings: NotificationSettings = user?.notification_settings || user?.notificationSettings || {
     email: true,
     push: false,
     inApp: true,
@@ -49,9 +47,9 @@ const AccountSettings = () => {
       notificationSettings: {
         email: notificationSettings.email,
         push: notificationSettings.push,
-        inApp: notificationSettings.inApp,
-        system: notificationSettings.system,
-        deadline: notificationSettings.deadline
+        inApp: notificationSettings.inApp || false,
+        system: notificationSettings.system || false,
+        deadline: notificationSettings.deadline || false
       }
     },
   });
@@ -64,7 +62,7 @@ const AccountSettings = () => {
         throw new Error('User not found');
       }
 
-      // Update notification settings
+      // Update notification settings - use snake_case for API but camelCase for state
       const updatedUser: Partial<FullUserData> = {
         notification_settings: {
           email: data.notificationSettings.email,
@@ -78,19 +76,22 @@ const AccountSettings = () => {
       // Call API to update user profile
       await updateUserProfile(user.id, updatedUser);
 
-      // Update local user state
-      setUser({
-        ...user,
-        notification_settings: updatedUser.notification_settings
+      // Update local user state - keep both properties for compatibility
+      updateUser({
+        notification_settings: updatedUser.notification_settings,
+        notificationSettings: updatedUser.notification_settings
       });
 
-      toast.success(t('settingsSaved'), {
+      toast({
+        title: t('settingsSaved'),
         description: t('notificationSettingsUpdated'),
       });
     } catch (error: any) {
       console.error('Error updating notification settings:', error);
-      toast.error(t('errorOccurred'), {
+      toast({
+        title: t('errorOccurred'),
         description: error.message || t('failedToUpdateSettings'),
+        variant: 'destructive'
       });
     } finally {
       setIsSubmitting(false);
