@@ -9,7 +9,9 @@ import {
   FileText, 
   CheckSquare, 
   Settings,
-  BarChart3
+  BarChart3,
+  ClipboardList,
+  Columns
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserRole } from '@/types/supabase';
@@ -53,6 +55,18 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onToggle }) => {
       href: '/schools', 
       icon: School,
       visible: isAdmin
+    },
+    { 
+      label: t('categories') || 'Kateqoriyalar', 
+      href: '/categories', 
+      icon: ClipboardList,
+      visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole)
+    },
+    { 
+      label: t('columns') || 'Sütunlar', 
+      href: '/columns', 
+      icon: Columns,
+      visible: ['superadmin', 'regionadmin'].includes(userRole)
     },
     { 
       label: t('users') || 'İstifadəçilər', 

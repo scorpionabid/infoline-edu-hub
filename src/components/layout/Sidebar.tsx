@@ -4,14 +4,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Menu, ChevronLeft } from "lucide-react";
-import SidebarNav from './SidebarNav';
+import NavigationSidebar from '@/components/navigation/Sidebar';
+import { usePermissions } from '@/hooks/auth';
 import Logo from './Logo';
 
 interface SidebarProps {
   isOpen?: boolean;
   onToggle?: () => void;
   onMenuClick?: () => void;
-  isSidebarOpen?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -19,6 +19,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onToggle, 
   onMenuClick = () => {} 
 }) => {
+  const { userRole } = usePermissions();
+
   return (
     <div
       className={cn(
@@ -39,9 +41,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         </Button>
       </div>
       
-      <ScrollArea className="flex-1 px-2">
-        <SidebarNav onMenuClick={onMenuClick} />
-      </ScrollArea>
+      <NavigationSidebar 
+        userRole={userRole || 'schooladmin'} 
+        isOpen={isOpen} 
+        onToggle={onMenuClick} 
+      />
       
       <div className="mt-auto p-4 border-t border-border">
         <p className="text-xs text-muted-foreground text-center">
