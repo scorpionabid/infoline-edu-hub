@@ -2,10 +2,9 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { usePermissions } from '@/hooks/auth';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/hooks/auth';
 
 interface NavigationMenuProps {
   onMenuClick?: () => void;
@@ -15,11 +14,9 @@ interface NavigationMenuProps {
 const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarOpen }) => {
   const { t } = useLanguageSafe();
   const location = useLocation();
-  const { user } = useAuthStore();
   const { userRole } = usePermissions();
   
   console.log("NavigationMenu rendering with user role:", userRole);
-  console.log("Current user data:", user);
 
   const activeItem = location.pathname.split('/')[1] || 'dashboard';
 
@@ -34,7 +31,6 @@ const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarO
     { id: 'users', label: t('users'), path: '/users', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
     { id: 'data-entry', label: t('dataEntry'), path: '/data-entry', visible: ['superadmin', 'sectoradmin', 'schooladmin'].includes(userRole as string) },
     { id: 'approvals', label: t('approvals'), path: '/approvals', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
-    { id: 'reports', label: t('reports'), path: '/reports', visible: true },
     { id: 'settings', label: t('settings'), path: '/settings', visible: true },
   ];
 

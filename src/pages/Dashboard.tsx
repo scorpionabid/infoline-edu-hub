@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, selectIsAuthenticated, selectIsLoading, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
@@ -26,6 +27,14 @@ const Dashboard: React.FC = () => {
     userRole,
     role: user?.role 
   });
+
+  // Initialize auth if not already done
+  useEffect(() => {
+    if (!useAuthStore.getState().initialized) {
+      console.log('[Dashboard.tsx] Initializing auth');
+      useAuthStore.getState().initializeAuth();
+    }
+  }, []);
 
   // Redirect to login if not authenticated after loading completes
   useEffect(() => {

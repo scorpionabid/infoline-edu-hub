@@ -32,7 +32,7 @@ export interface UsePermissionsResult {
 export const usePermissions = (): UsePermissionsResult => {
   // Get user data directly from the store using selectors
   const user = useAuthStore(selectUser);
-  const userRole = useAuthStore(selectUserRole);
+  const userRole = useAuthStore(selectUserRole) as UserRole | null;
   
   return useMemo(() => {
     console.log("[usePermissions] Evaluating permissions for role:", userRole);

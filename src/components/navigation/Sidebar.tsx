@@ -28,10 +28,12 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onToggle }) => {
   const { t } = useLanguage();
   
+  // Improve role checking with boolean flags for better readability
   const isAdmin = ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole);
   const isSuperAdmin = userRole === 'superadmin';
   const isRegionAdmin = userRole === 'regionadmin';
   const isSectorAdmin = userRole === 'sectoradmin';
+  const isSchoolAdmin = userRole === 'schooladmin';
   
   console.log("Navigation Sidebar rendering with role:", userRole);
   
@@ -64,13 +66,13 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onToggle }) => {
       label: t('categories') || 'Kateqoriyalar', 
       href: '/categories', 
       icon: ClipboardList,
-      visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole)
+      visible: isAdmin
     },
     { 
       label: t('columns') || 'Sütunlar', 
       href: '/columns', 
       icon: Columns,
-      visible: ['superadmin', 'regionadmin'].includes(userRole)
+      visible: isSuperAdmin || isRegionAdmin
     },
     { 
       label: t('users') || 'İstifadəçilər', 
