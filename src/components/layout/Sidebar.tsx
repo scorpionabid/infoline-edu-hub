@@ -3,9 +3,9 @@ import React from 'react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Menu, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import NavigationSidebar from '@/components/navigation/Sidebar';
-import { usePermissions } from '@/hooks/auth';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 import Logo from './Logo';
 
 interface SidebarProps {

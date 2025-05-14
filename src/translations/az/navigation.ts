@@ -21,6 +21,8 @@ const navigation = {
   dataEntry: "Məlumat daxiletmə",
   regions: "Regionlar",
   sectors: "Sektorlar",
+  schools: "Məktəblər",
+  users: "İstifadəçilər",
   formStatus: "Form statusu",
   formStatusDesc: "Formalarınızın ümumi vəziyyəti",
   addNewData: "Məlumat əlavə et",
@@ -48,15 +50,9 @@ const navigation = {
   logout: "Çıxış",
   settings: "Tənzimləmələr",
   
-  // Users
-  users: "İstifadəçilər",
-  
   // Reports
   reports: "Hesabatlar",
   
-  // School related
-  schools: "Məktəblər",
-
   // Analytics
   analytics: "Analitika",
 
@@ -68,7 +64,53 @@ const navigation = {
   addColumn: "Sütun əlavə et",
   import: "İdxal et",
   backToCategories: "Kateqoriyalara qayıt",
-  columnsDescription: "Kateqoriya üçün sütunları idarə edin"
+  columnsDescription: "Kateqoriya üçün sütunları idarə edin",
+  openSidebar: "Yan paneli aç",
+  closeSidebar: "Yan paneli bağla",
+  
+  // School related
+  searchSchools: "Məktəbləri axtar...",
+  filterByRegion: "Regiona görə filtrlə",
+  filterBySector: "Sektora görə filtrlə",
+  allRegions: "Bütün regionlar",
+  allSectors: "Bütün sektorlar",
+  addSchool: "Məktəb əlavə et",
+  exportToExcel: "Excel-ə ixrac et",
+  importFromExcel: "Excel-dən idxal et",
+  schoolsDescription: "Məktəbləri idarə edin",
+  schoolsList: "Məktəblər siyahısı",
+  schoolName: "Məktəbin adı",
+  principal: "Direktor",
+  
+  // Sector related
+  sectorAdmin: "Sektor admini",
+  addSector: "Sektor əlavə et",
+  sectorsDescription: "Sektorları idarə edin",
+  
+  // User related
+  addUser: "İstifadəçi əlavə et",
+  usersDescription: "İstifadəçiləri idarə edin",
+  
+  // Common actions
+  add: "Əlavə et",
+  edit: "Redaktə et",
+  delete: "Sil",
+  save: "Yadda saxla",
+  cancel: "Ləğv et",
+  export: "İxrac et",
+  import: "İdxal et",
+  confirm: "Təsdiqlə",
+  actions: "Əməliyyatlar",
+  search: "Axtar",
+  refresh: "Yenilə",
+  active: "Aktiv",
+  inactive: "Deaktiv",
+  blocked: "Bloklanıb",
+  region: "Region",
+  sector: "Sektor",
+  school: "Məktəb",
+  status: "Status",
+  assignAdmin: "Admin təyin et",
 };
 
 export default navigation;

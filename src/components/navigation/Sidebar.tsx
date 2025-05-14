@@ -11,7 +11,9 @@ import {
   Settings,
   BarChart3,
   ClipboardList,
-  Columns
+  Columns,
+  Building,
+  Building2
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserRole } from '@/types/supabase';
@@ -31,6 +33,8 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onToggle }) => {
   const isRegionAdmin = userRole === 'regionadmin';
   const isSectorAdmin = userRole === 'sectoradmin';
   
+  console.log("Navigation Sidebar rendering with role:", userRole);
+  
   const navItems = [
     { 
       label: t('dashboard') || 'Dashboard', 
@@ -41,13 +45,13 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onToggle }) => {
     { 
       label: t('regions') || 'Regionlar', 
       href: '/regions', 
-      icon: BarChart3,
+      icon: Building,
       visible: isSuperAdmin
     },
     { 
       label: t('sectors') || 'Sektorlar', 
       href: '/sectors', 
-      icon: BarChart3,
+      icon: Building2,
       visible: isSuperAdmin || isRegionAdmin
     },
     { 
