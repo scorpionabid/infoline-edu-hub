@@ -9,25 +9,36 @@ import {
   FileText, 
   CheckSquare, 
   Settings,
-  BarChart3
+  BarChart3,
+  ClipboardList,
+  Columns,
+  Building,
+  Building2
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserRole } from '@/types/supabase';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface SidebarProps {
-  userRole: UserRole;
+  userRole: UserRole | string;
   isOpen: boolean;
   onToggle: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onToggle }) => {
+const Sidebar: React.FC<SidebarProps> = ({ userRole = 'schooladmin', isOpen, onToggle }) => {
   const { t } = useLanguage();
   
-  const isAdmin = ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole);
-  const isSuperAdmin = userRole === 'superadmin';
-  const isRegionAdmin = userRole === 'regionadmin';
-  const isSectorAdmin = userRole === 'sectoradmin';
+  console.log("Navigation Sidebar rendering with role:", userRole);
+  
+  // Normalize role to handle string or UserRole type
+  const normalizedRole = userRole || 'schooladmin';
+  
+  // Improve role checking with boolean flags for better readability
+  const isAdmin = ['superadmin', 'regionadmin', 'sectoradmin'].includes(normalizedRole as string);
+  const isSuperAdmin = normalizedRole === 'superadmin';
+  const isRegionAdmin = normalizedRole === 'regionadmin';
+  const isSectorAdmin = normalizedRole === 'sectoradmin';
+  const isSchoolAdmin = normalizedRole === 'schooladmin';
   
   const navItems = [
     { 
@@ -39,13 +50,13 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onToggle }) => {
     { 
       label: t('regions') || 'Regionlar', 
       href: '/regions', 
-      icon: BarChart3,
+      icon: Building,
       visible: isSuperAdmin
     },
     { 
       label: t('sectors') || 'Sektorlar', 
       href: '/sectors', 
-      icon: BarChart3,
+      icon: Building2,
       visible: isSuperAdmin || isRegionAdmin
     },
     { 
@@ -53,6 +64,18 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onToggle }) => {
       href: '/schools', 
       icon: School,
       visible: isAdmin
+    },
+    { 
+      label: t('categories') || 'Kateqoriyalar', 
+      href: '/categories', 
+      icon: ClipboardList,
+      visible: isAdmin
+    },
+    { 
+      label: t('columns') || 'Sütunlar', 
+      href: '/columns', 
+      icon: Columns,
+      visible: isSuperAdmin || isRegionAdmin
     },
     { 
       label: t('users') || 'İstifadəçilər', 

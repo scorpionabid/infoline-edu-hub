@@ -14,9 +14,23 @@ const useCategoryActions = () => {
   const createCategory = async (categoryData: Partial<Category>) => {
     setIsLoading(true);
     try {
+      // Convert Date objects to ISO strings for Supabase
+      const processedData = {
+        ...categoryData,
+        deadline: categoryData.deadline instanceof Date ? 
+          categoryData.deadline.toISOString() : categoryData.deadline
+      };
+
       const { data, error } = await supabase
         .from('categories')
-        .insert(categoryData)
+        .insert({
+          name: processedData.name || '',
+          description: processedData.description,
+          status: processedData.status || 'active',
+          assignment: processedData.assignment || 'all',
+          deadline: processedData.deadline,
+          priority: processedData.priority
+        })
         .select()
         .single();
 
@@ -38,9 +52,23 @@ const useCategoryActions = () => {
   const updateCategory = async (id: string, categoryData: Partial<Category>) => {
     setIsLoading(true);
     try {
+      // Convert Date objects to ISO strings for Supabase
+      const processedData = {
+        ...categoryData,
+        deadline: categoryData.deadline instanceof Date ? 
+          categoryData.deadline.toISOString() : categoryData.deadline
+      };
+      
       const { data, error } = await supabase
         .from('categories')
-        .update(categoryData)
+        .update({
+          name: processedData.name,
+          description: processedData.description,
+          status: processedData.status,
+          assignment: processedData.assignment,
+          deadline: processedData.deadline,
+          priority: processedData.priority
+        })
         .eq('id', id)
         .select()
         .single();

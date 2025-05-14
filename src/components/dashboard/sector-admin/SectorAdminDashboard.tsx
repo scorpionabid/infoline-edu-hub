@@ -37,20 +37,25 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
   }
   
   const statsData = [
-    { title: t('totalSchools'), value: data.status.total || data.schools.total, color: 'bg-blue-100' },
-    { title: t('activeSchools'), value: data.status.active || data.schools.active, color: 'bg-green-100' },
-    { title: t('inactiveSchools'), value: data.status.inactive || data.schools.inactive, color: 'bg-gray-100' },
+    { title: t('totalSchools'), value: data.status?.total || data.schools?.total || 0, color: 'bg-blue-100' },
+    { title: t('activeSchools'), value: data.status?.active || data.schools?.active || 0, color: 'bg-green-100' },
+    { title: t('inactiveSchools'), value: data.status?.inactive || data.schools?.inactive || 0, color: 'bg-gray-100' },
   ];
   
   const formStatsData: DashboardFormStats = data.formStats || {
-    pending: data.status.pending,
-    approved: data.status.approved,
-    rejected: data.status.rejected,
-    total: data.status.total || 0,
+    pending: data.status?.pending || 0,
+    approved: data.status?.approved || 0,
+    rejected: data.status?.rejected || 0,
+    total: data.status?.total || 0,
     dueSoon: 0,
     overdue: 0,
-    draft: data.status.draft || 0
+    draft: data.status?.draft || 0
   };
+
+  // Handle completion data safely regardless of whether it's an object or number
+  const completionPercentage = typeof data.completion === 'object' && data.completion
+    ? data.completion.percentage
+    : (typeof data.completion === 'number' ? data.completion : data.completionRate || 0);
 
   return (
     <div className="space-y-4">
@@ -72,7 +77,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
           </CardHeader>
           <CardContent>
             <DashboardChart 
-              completion={data.completion.percentage} 
+              completion={completionPercentage} 
               stats={formStatsData} 
             />
           </CardContent>

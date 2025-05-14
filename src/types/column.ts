@@ -1,137 +1,199 @@
 
-export type ColumnType = 
-  | 'text'
-  | 'number'
-  | 'textarea'
-  | 'select'
-  | 'checkbox'
-  | 'radio'
-  | 'date'
-  | 'datetime'
-  | 'time'
-  | 'email'
-  | 'url'
-  | 'phone'
-  | 'file'
-  | 'image'
-  | 'color'
-  | 'password'
-  | 'richtext'
-  | 'range';
+import { Json } from '@/types/supabase';
+import * as React from 'react';
+import { FileText, Hash, Calendar, ListChecks, Layers, AlignLeft, File, Mail, Globe, Phone, Lock, CheckSquare, CircleDot, SlidersHorizontal, Palette, Heading, Watch } from 'lucide-react';
 
 export interface ColumnOption {
   id: string;
-  label: string;
   value: string;
-}
-
-export interface ValidationRules {
-  required?: boolean;
-  minLength?: number;
-  maxLength?: number;
-  min?: number;
-  max?: number;
-  minValue?: number;
-  maxValue?: number;
-  pattern?: string;
-  email?: boolean;
-  url?: boolean;
-  tel?: boolean;
-  minDate?: string;
-  maxDate?: string;
+  label: string;
+  color?: string;
 }
 
 export interface Column {
   id: string;
   name: string;
-  type: ColumnType;
   category_id: string;
+  type: ColumnType;
+  options: Json | ColumnOption[];
   is_required: boolean;
-  order_index?: number;
-  help_text?: string;
-  placeholder?: string;
-  default_value?: string | number | boolean;
-  options?: ColumnOption[];
-  validation?: ValidationRules;
-  status: 'active' | 'inactive' | 'draft';
+  status: string;
+  order_index: number;
+  placeholder: string;
+  help_text: string;
+  default_value: string;
+  validation: Json;
+  created_at: string;
+  updated_at: string;
   description?: string;
-  created_at?: string;
-  updated_at?: string;
+  color?: string;
+  parent_column_id?: string;
+  version?: number;
 }
 
-// Form tərəfindən istifadə edilən tip
+export interface ColumnFormData {
+  name: string;
+  type: ColumnType;
+  options?: ColumnOption[];
+  is_required: boolean;
+  placeholder?: string;
+  help_text?: string;
+  default_value?: string;
+  validation?: Record<string, any>;
+  description?: string;
+  color?: string;
+}
+
 export interface ColumnFormValues {
   name: string;
   type: ColumnType;
-  category_id?: string;
+  category_id: string;
   is_required: boolean;
-  order_index?: number;
-  help_text?: string;
-  placeholder?: string;
-  default_value?: string | number | boolean;
-  options?: ColumnOption[];
-  validation?: ValidationRules;
-  status: 'active' | 'inactive' | 'draft';
-  description?: string;
-}
-
-export interface ColumnTypeDefinition {
-  label: string;
+  help_text: string;
+  placeholder: string;
+  default_value: string;
+  options: ColumnOption[];
+  validation: Record<string, any>;
+  status: string;
   description: string;
-  icon: string;
+  order_index: number;
 }
 
-export const columnTypes: Record<ColumnType, string | { label: string; description: string; icon: string }> = {
-  text: { label: 'Mətn', description: 'Mətn sahəsi', icon: 'text' },
-  number: { label: 'Rəqəm', description: 'Rəqəm sahəsi', icon: 'hash' },
-  textarea: { label: 'Mətn sahəsi', description: 'Çoxsətirli mətn sahəsi', icon: 'textAlignLeft' },
-  select: { label: 'Seçim', description: 'Dropdown seçim sahəsi', icon: 'listBox' },
-  checkbox: { label: 'Çoxlu seçim', description: 'Birdən çox seçim etmək mümkündür', icon: 'check' },
-  radio: { label: 'Tək seçim', description: 'Yalnız bir seçim etmək mümkündür', icon: 'circle' },
-  date: { label: 'Tarix', description: 'Tarix seçimi', icon: 'calendar' },
-  datetime: { label: 'Tarix və saat', description: 'Tarix və saat seçimi', icon: 'calendarClock' },
-  time: { label: 'Vaxt', description: 'Vaxt seçimi', icon: 'clock' },
-  email: { label: 'E-poçt', description: 'E-poçt sahəsi', icon: 'mail' },
-  url: { label: 'URL', description: 'URL sahəsi', icon: 'link' },
-  phone: { label: 'Telefon', description: 'Telefon nömrəsi sahəsi', icon: 'phone' },
-  file: { label: 'Fayl', description: 'Fayl yükləmə sahəsi', icon: 'file' },
-  image: { label: 'Şəkil', description: 'Şəkil yükləmə sahəsi', icon: 'image' },
-  color: { label: 'Rəng', description: 'Rəng seçimi sahəsi', icon: 'palette' },
-  password: { label: 'Şifrə', description: 'Şifrə sahəsi', icon: 'lock' },
-  richtext: { label: 'Zəngin mətn', description: 'Formatlaşdırılmış mətn sahəsi', icon: 'formattingTwo' },
-  range: { label: 'Aralıq', description: 'Aralıq seçimi sahəsi', icon: 'sliders' }
-};
-
-export const columnTypeDefinitions: Record<ColumnType, ColumnTypeDefinition> = {
-  text: { label: 'Mətn', description: 'Mətn sahəsi', icon: 'text' },
-  number: { label: 'Rəqəm', description: 'Rəqəm sahəsi', icon: 'hash' },
-  textarea: { label: 'Mətn sahəsi', description: 'Çoxsətirli mətn sahəsi', icon: 'textAlignLeft' },
-  select: { label: 'Seçim', description: 'Dropdown seçim sahəsi', icon: 'listBox' },
-  checkbox: { label: 'Çoxlu seçim', description: 'Birdən çox seçim etmək mümkündür', icon: 'check' },
-  radio: { label: 'Tək seçim', description: 'Yalnız bir seçim etmək mümkündür', icon: 'circle' },
-  date: { label: 'Tarix', description: 'Tarix seçimi', icon: 'calendar' },
-  datetime: { label: 'Tarix və saat', description: 'Tarix və saat seçimi', icon: 'calendarClock' },
-  time: { label: 'Vaxt', description: 'Vaxt seçimi', icon: 'clock' },
-  email: { label: 'E-poçt', description: 'E-poçt sahəsi', icon: 'mail' },
-  url: { label: 'URL', description: 'URL sahəsi', icon: 'link' },
-  phone: { label: 'Telefon', description: 'Telefon nömrəsi sahəsi', icon: 'phone' },
-  file: { label: 'Fayl', description: 'Fayl yükləmə sahəsi', icon: 'file' },
-  image: { label: 'Şəkil', description: 'Şəkil yükləmə sahəsi', icon: 'image' },
-  color: { label: 'Rəng', description: 'Rəng seçimi sahəsi', icon: 'palette' },
-  password: { label: 'Şifrə', description: 'Şifrə sahəsi', icon: 'lock' },
-  richtext: { label: 'Zəngin mətn', description: 'Formatlaşdırılmış mətn sahəsi', icon: 'formattingTwo' },
-  range: { label: 'Aralıq', description: 'Aralıq seçimi sahəsi', icon: 'sliders' }
-};
-
-// CategoryWithColumns tipi əlavə edək
 export interface CategoryWithColumns {
   id: string;
   name: string;
-  description?: string;
-  status?: string;
-  deadline?: string;
   columns: Column[];
-  created_at?: string;
-  updated_at?: string;
-  assignment?: string;
+}
+
+export type ColumnType = 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multiselect' | 'textarea' | 'file' | 'email' | 'url' | 'tel' | 'password' | 'checkbox' | 'radio' | 'range' | 'color' | 'richtext' | 'phone' | 'datetime';
+
+export const columnTypes = [
+  'text',
+  'number',
+  'boolean',
+  'date',
+  'select',
+  'multiselect',
+  'textarea',
+  'file',
+  'email',
+  'url',
+  'tel',
+  'password',
+  'checkbox',
+  'radio',
+  'range',
+  'color',
+  'richtext',
+  'phone',
+  'datetime'
+] as const;
+
+// Define column type definitions with icons and descriptions
+export type ColumnTypeDefinition = {
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+};
+
+export const columnTypeDefinitions: Record<ColumnType, ColumnTypeDefinition> = {
+  text: {
+    label: 'Text',
+    description: 'Single line of text',
+    icon: React.createElement(FileText, { className: "h-4 w-4" })
+  },
+  number: {
+    label: 'Number',
+    description: 'Numeric values only',
+    icon: React.createElement(Hash, { className: "h-4 w-4" })
+  },
+  boolean: {
+    label: 'Boolean',
+    description: 'Yes/No value',
+    icon: React.createElement(CheckSquare, { className: "h-4 w-4" })
+  },
+  date: {
+    label: 'Date',
+    description: 'Date selection',
+    icon: React.createElement(Calendar, { className: "h-4 w-4" })
+  },
+  datetime: {
+    label: 'Date & Time',
+    description: 'Date and time selection',
+    icon: React.createElement(Watch, { className: "h-4 w-4" })
+  },
+  select: {
+    label: 'Select',
+    description: 'Single selection from options',
+    icon: React.createElement(ListChecks, { className: "h-4 w-4" })
+  },
+  multiselect: {
+    label: 'Multi-select',
+    description: 'Multiple selections from options',
+    icon: React.createElement(Layers, { className: "h-4 w-4" })
+  },
+  textarea: {
+    label: 'Text Area',
+    description: 'Multiple lines of text',
+    icon: React.createElement(AlignLeft, { className: "h-4 w-4" })
+  },
+  file: {
+    label: 'File Upload',
+    description: 'Document or image upload',
+    icon: React.createElement(File, { className: "h-4 w-4" })
+  },
+  email: {
+    label: 'Email',
+    description: 'Email address field',
+    icon: React.createElement(Mail, { className: "h-4 w-4" })
+  },
+  url: {
+    label: 'URL',
+    description: 'Web address field',
+    icon: React.createElement(Globe, { className: "h-4 w-4" })
+  },
+  tel: {
+    label: 'Telephone',
+    description: 'Phone number field',
+    icon: React.createElement(Phone, { className: "h-4 w-4" })
+  },
+  phone: {
+    label: 'Phone',
+    description: 'Phone number field with formatting',
+    icon: React.createElement(Phone, { className: "h-4 w-4" })
+  },
+  password: {
+    label: 'Password',
+    description: 'Secure password field',
+    icon: React.createElement(Lock, { className: "h-4 w-4" })
+  },
+  checkbox: {
+    label: 'Checkboxes',
+    description: 'Multiple checkboxes',
+    icon: React.createElement(CheckSquare, { className: "h-4 w-4" })
+  },
+  radio: {
+    label: 'Radio Buttons',
+    description: 'Single selection radio buttons',
+    icon: React.createElement(CircleDot, { className: "h-4 w-4" })
+  },
+  range: {
+    label: 'Range Slider',
+    description: 'Slider for range selection',
+    icon: React.createElement(SlidersHorizontal, { className: "h-4 w-4" })
+  },
+  color: {
+    label: 'Color Picker',
+    description: 'Color selection field',
+    icon: React.createElement(Palette, { className: "h-4 w-4" })
+  },
+  richtext: {
+    label: 'Rich Text',
+    description: 'Formatted text editor',
+    icon: React.createElement(Heading, { className: "h-4 w-4" })
+  }
+};
+
+export interface ColumnValidation {
+  [key: string]: any;
 }

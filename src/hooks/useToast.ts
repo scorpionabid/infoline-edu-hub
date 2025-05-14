@@ -1,12 +1,6 @@
 
 import { toast } from 'sonner';
 
-type ToastProps = {
-  title?: string;
-  description?: string;
-  variant?: 'default' | 'destructive' | 'warning' | 'success';
-};
-
 export const useToast = () => {
   return {
     toast,
@@ -14,7 +8,6 @@ export const useToast = () => {
       toast({
         title,
         description,
-        variant: 'success'
       });
     },
     error: (title: string, description?: string) => {
@@ -39,7 +32,5 @@ export const useToast = () => {
     }
   };
 };
-
-export { toast };
 
 export default useToast;

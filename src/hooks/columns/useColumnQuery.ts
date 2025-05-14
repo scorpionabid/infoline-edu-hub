@@ -42,15 +42,16 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
             label: opt.label || '',
             value: opt.value || '',
             color: opt.color,
-            disabled: opt.disabled
+            disabled: opt.disabled || false
           }))
         : undefined;
 
+      // Convert database column to our Column type
       return {
         id: data.id,
         category_id: data.category_id,
         name: data.name,
-        type: data.type,
+        type: data.type as Column['type'],
         is_required: data.is_required,
         placeholder: data.placeholder,
         help_text: data.help_text,
@@ -61,7 +62,8 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
         options: formattedOptions,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        description: data.description
+        description: data.description || '',
+        color: data.color
       } as Column;
     }
     

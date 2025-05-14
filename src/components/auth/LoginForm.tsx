@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuthStore, selectIsAuthenticated, selectIsLoading } from '@/hooks/auth/useAuthStore';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -36,7 +35,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
   const isLoading = useAuthStore(selectIsLoading);
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
@@ -85,13 +84,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       
       if (success) {
         console.log('Giriş uğurlu oldu, autentifikasiya tamamlandı');
-        toast.success(t('loginSuccess'));
+        toast.error(t('loginSuccess'));
         reset(); // Clear form fields
         
         // Navigation will happen in the useEffect when isAuthenticated changes
       } else {
         console.log('Giriş uğursuz oldu');
-        toast.error(t('invalidCredentials'));
+        toast.error(t('invalidCredentials'), {
+          description: t('invalidCredentials')
+        });
         setFormError('root', { 
           type: 'manual',
           message: t('invalidCredentials')
@@ -99,7 +100,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       }
     } catch (err: any) {
       console.error('Login zamanı xəta baş verdi:', err);
-      toast.error(err.message || t('unexpectedError'));
+      toast.error(err.message || t('unexpectedError'), {
+        description: err.message || t('unexpectedError')
+      });
       setFormError('root', { 
         type: 'manual',
         message: err.message || t('unexpectedError')
@@ -141,7 +144,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
               type="email"
               placeholder="name@example.com"
               autoComplete="email"
-              disabled={isButtonDisabled}
+              disabled={!!isButtonDisabled}
               {...register('email', { 
                 required: t('emailRequired'),
                 pattern: {
@@ -163,7 +166,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
-                disabled={isButtonDisabled}
+                disabled={!!isButtonDisabled}
                 {...register('password', { 
                   required: t('passwordRequired'),
                   minLength: {
@@ -178,7 +181,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
                 className="absolute inset-y-0 right-0 px-3 flex items-center"
                 onClick={togglePasswordVisibility}
                 tabIndex={-1}
-                disabled={isButtonDisabled}
+                disabled={!!isButtonDisabled}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -197,7 +200,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
           <Button 
             type="submit" 
             className="w-full"
-            disabled={isButtonDisabled}
+            disabled={!!isButtonDisabled}
           >
             {isLoading || formSubmitting ? (
               <>

@@ -1,226 +1,305 @@
 import { create } from 'zustand';
-import { FullUserData } from '@/types/auth';
 import { Session } from '@supabase/supabase-js';
-import { AuthService } from '@/services/auth/AuthService';
+import { supabase } from '@/integrations/supabase/client';
+import { FullUserData } from '@/types/auth';
 
-interface AuthState {
+export interface AuthState {
   user: FullUserData | null;
   session: Session | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
+  loading: boolean;
   error: string | null;
   initialized: boolean;
+  isAuthenticated: boolean;
   
   // Actions
   setUser: (user: FullUserData | null) => void;
   setSession: (session: Session | null) => void;
+  setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  setLoading: (isLoading: boolean) => void;
-  
-  // Auth Operations
+  clearError: () => void;
+  updateUser: (userData: Partial<FullUserData>) => void;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  refreshSession: () => Promise<void>;
-  clearError: () => void;
   initializeAuth: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
-
-// Flag to prevent double initialization
-let authInitializing = false;
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
-  isAuthenticated: false,
-  isLoading: true,
+  loading: true,
   error: null,
   initialized: false,
+  isAuthenticated: false,
   
-  setUser: (user) => set({ user }),
-  setSession: (session) => set({ session }),
-  setError: (error) => set({ error }),
-  setLoading: (isLoading) => set({ isLoading }),
+  setUser: (user) => set((state) => ({
+    ...state,
+    user,
+    isAuthenticated: !!user
+  })),
   
+  setSession: (session) => set((state) => ({
+    ...state,
+    session,
+    isAuthenticated: !!session
+  })),
+  
+  setLoading: (loading) => set((state) => ({
+    ...state,
+    loading
+  })),
+  
+  setError: (error) => set((state) => ({
+    ...state,
+    error
+  })),
+  
+  clearError: () => set((state) => ({
+    ...state,
+    error: null
+  })),
+  
+  updateUser: (userData) => set((state) => ({
+    ...state,
+    user: state.user ? { ...state.user, ...userData } : null
+  })),
+
   login: async (email, password) => {
-    set({ isLoading: true, error: null });
+    set({ loading: true, error: null });
     
     try {
-      const { user, session, error } = await AuthService.login(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
       if (error) {
-        set({ error: error.message, isLoading: false });
+        set({ error: error.message, loading: false });
         return false;
       }
       
-      if (session && user) {
+      if (data?.session) {
         set({
-          user,
-          session,
+          session: data.session,
           isAuthenticated: true,
-          isLoading: false
+          loading: false
         });
+        
+        // Fetch user profile
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.session.user.id)
+          .single();
+          
+        if (!userError && userData) {
+          // Also fetch user role
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('*')
+            .eq('user_id', data.session.user.id)
+            .single();
+            
+          // Combine profile and role data
+          const fullUserData: FullUserData = {
+            ...userData,
+            role: roleData?.role || 'schooladmin', // Default to schooladmin if no role found
+          };
+          
+          set({ user: fullUserData });
+          console.log("Login complete. User data:", fullUserData);
+        } else {
+          console.error('Error fetching user profile:', userError);
+        }
+        
         return true;
       } else {
-        set({ error: 'Login unsuccessful', isLoading: false });
+        set({ loading: false, error: 'No session returned after login' });
         return false;
       }
-    } catch (err: any) {
-      set({ error: err.message, isLoading: false });
+    } catch (error: any) {
+      set({ 
+        loading: false,
+        error: error.message || 'An unexpected error occurred during login'
+      });
       return false;
     }
   },
   
   logout: async () => {
-    set({ isLoading: true });
+    set({ loading: true });
     
     try {
-      await AuthService.logout();
-      
-      // Always clear local state regardless of API response
-      set({
-        user: null,
-        session: null,
-        isAuthenticated: false,
-        isLoading: false
-      });
-    } catch (err: any) {
-      console.error('Logout error:', err);
-      
-      // Still clear local state even if API fails
-      set({
-        user: null,
-        session: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: err.message
-      });
-    }
-  },
-  
-  refreshSession: async () => {
-    const { isLoading } = get();
-    if (isLoading) return;
-    
-    set({ isLoading: true });
-    
-    try {
-      const { session, error } = await AuthService.refreshSession();
+      const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error('Session refresh error:', error);
-        if (error.message.includes('JWT') || error.message.includes('session')) {
-          // Clear auth state on token issues
-          set({
-            user: null,
-            session: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: 'Session expired. Please login again.'
-          });
-        } else {
-          set({ isLoading: false, error: error.message });
-        }
+        set({ error: error.message, loading: false });
         return;
       }
       
-      if (session) {
-        set({ session });
-        
-        // Fetch user data with the refreshed session
-        const userData = await AuthService.fetchUserData(session);
-        
-        if (userData) {
-          set({
-            user: userData,
-            isAuthenticated: true,
-            isLoading: false
-          });
-        } else {
-          set({ isLoading: false, error: 'Failed to load user data' });
-        }
-      } else {
-        set({ isLoading: false, isAuthenticated: false });
-      }
-    } catch (err: any) {
-      console.error('Session refresh exception:', err);
-      set({ isLoading: false, error: err.message });
+      set({
+        user: null,
+        session: null,
+        isAuthenticated: false,
+        loading: false
+      });
+    } catch (error: any) {
+      set({ 
+        loading: false,
+        error: error.message || 'An unexpected error occurred during logout'
+      });
     }
   },
-  
-  clearError: () => set({ error: null }),
-  
+
   initializeAuth: async () => {
-    // Prevent concurrent initializations
-    if (authInitializing || get().initialized) return;
-    
-    authInitializing = true;
-    set({ isLoading: true });
-    
+    set({ loading: true });
+
     try {
-      // Setup auth state listener will be handled by useAuth2
-      
-      // Check for existing session
-      const { session, error } = await AuthService.getSession();
+      // Get initial session
+      const { data: { session } } = await supabase.auth.getSession();
+      set({ session, isAuthenticated: !!session });
+
+      // If we have a session, load the user profile and role
+      if (session) {
+        // Fetch user profile
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (userError) {
+          console.error('Error fetching user profile:', userError);
+          set({ error: userError.message });
+        } else {
+          // Also fetch user role
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single();
+            
+          // Combine profile and role data
+          const fullUserData: FullUserData = {
+            ...userData,
+            role: roleData?.role || 'schooladmin', // Default to schooladmin if no role found
+          };
+          
+          set({ user: fullUserData });
+          console.log("Auth initialized. User data:", fullUserData);
+        }
+      }
+
+      // Set up auth state change listener
+      const { data: { subscription } } = await supabase.auth.onAuthStateChange(
+        async (_event, session) => {
+          set({ session, isAuthenticated: !!session });
+
+          if (session) {
+            // Fetch user profile
+            const { data: userData, error: userError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+
+            if (userError) {
+              console.error('Error fetching user profile:', userError);
+              set({ error: userError.message });
+            } else {
+              // Also fetch user role
+              const { data: roleData, error: roleError } = await supabase
+                .from('user_roles')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .single();
+                
+              // Combine profile and role data
+              const fullUserData: FullUserData = {
+                ...userData,
+                role: roleData?.role || 'schooladmin', // Default to schooladmin if no role found
+              };
+              
+              set({ user: fullUserData });
+              console.log("Auth state changed. User data:", fullUserData);
+            }
+          } else {
+            set({ user: null });
+          }
+        }
+      );
+
+      // Setting the initialized state to true
+      set({ initialized: true, loading: false });
+    } catch (error: any) {
+      console.error('Auth initialization error:', error);
+      set({ error: error.message, loading: false, initialized: true });
+    }
+  },
+
+  refreshSession: async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
       
       if (error) {
-        console.error('Session loading error:', error);
-        set({ isLoading: false, error: error.message });
-        authInitializing = false;
-        return;
+        throw error;
       }
       
-      if (session) {
-        set({ session });
-        
-        const userData = await AuthService.fetchUserData(session);
-        
-        if (userData) {
-          set({
-            user: userData,
-            isAuthenticated: true,
-            isLoading: false,
-            initialized: true
-          });
-        } else {
-          set({
-            isLoading: false,
-            initialized: true
-          });
-        }
-      } else {
-        set({
-          isLoading: false,
-          isAuthenticated: false,
-          initialized: true
-        });
-      }
-    } catch (err: any) {
-      console.error('Auth initialization error:', err);
-      set({
-        isLoading: false,
-        error: err.message,
-        initialized: true
+      set({ 
+        session: data.session, 
+        isAuthenticated: !!data.session 
       });
+
+      if (data.session) {
+        // Fetch user profile
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.session.user.id)
+          .single();
+
+        if (userError) {
+          console.error('Error fetching user profile:', userError);
+          set({ error: userError.message });
+        } else {
+          // Also fetch user role
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('*')
+            .eq('user_id', data.session.user.id)
+            .single();
+            
+          // Combine profile and role data
+          const fullUserData: FullUserData = {
+            ...userData,
+            role: roleData?.role || 'schooladmin', // Default to schooladmin if no role found
+          };
+          
+          set({ user: fullUserData });
+          console.log("Session refreshed. User data:", fullUserData);
+        }
+      }
+    } catch (error: any) {
+      console.error('Session refresh error:', error);
+      set({ error: error.message });
     }
-    
-    authInitializing = false;
   }
 }));
 
-// Selector functions for better performance
+// Selector functions - export these to be used with useAuthStore
 export const selectUser = (state: AuthState) => state.user;
-export const selectSession = (state: AuthState) => state.session;
 export const selectIsAuthenticated = (state: AuthState) => state.isAuthenticated;
-export const selectIsLoading = (state: AuthState) => state.isLoading;
+export const selectIsLoading = (state: AuthState) => state.loading;
+export const selectError = (state: AuthState) => state.error;
+export const selectSession = (state: AuthState) => state.session;
 export const selectUserRole = (state: AuthState) => state.user?.role || null;
-export const selectError = (state: AuthState) => state.error; // Add the missing selectError selector
-export const selectRegionId = (state: AuthState) => state.user?.region_id || null;
-export const selectSectorId = (state: AuthState) => state.user?.sector_id || null;
-export const selectSchoolId = (state: AuthState) => state.user?.school_id || null;
+export const selectRegionId = (state: AuthState) => state.user?.region_id;
+export const selectSectorId = (state: AuthState) => state.user?.sector_id;
+export const selectSchoolId = (state: AuthState) => state.user?.school_id;
 
-// Helper functions
-export const shouldAuthenticate = () => true; // Always require authentication
-export const isProtectedRoute = (pathname: string) => !['login', 'register', 'forgot-password', 'reset-password'].some(route => pathname.includes(route));
-export const getRedirectPath = (role: string | null) => {
-  return '/dashboard';
-};
+// Utility functions
+export const shouldAuthenticate = (state: AuthState) => !state.isAuthenticated && !state.loading;
+export const isProtectedRoute = (path: string) => !['/', '/login', '/register', '/reset-password'].includes(path);
+export const getRedirectPath = (path: string) => isProtectedRoute(path) ? path : '/dashboard';
+
+export default useAuthStore;

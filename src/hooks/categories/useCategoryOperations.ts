@@ -5,7 +5,12 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { Category, CategoryStatus, CategoryFilter } from '@/types/category';
 
-// AddCategoryFormData tipini təyin edək
+// Define extended CategoryFilter with deadline filter
+interface ExtendedCategoryFilter extends CategoryFilter {
+  deadline?: 'upcoming' | 'past' | '';
+}
+
+// AddCategoryFormData type definition
 export interface AddCategoryFormData {
   name: string;
   description?: string;
@@ -20,7 +25,7 @@ export const useCategoryOperations = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCategories = useCallback(async (searchQuery: string, filter: CategoryFilter = {}) => {
+  const fetchCategories = useCallback(async (searchQuery: string, filter: ExtendedCategoryFilter = {}) => {
     try {
       console.log('Fetching categories with searchQuery:', searchQuery, 'and filter:', filter);
       let query = supabase
@@ -108,7 +113,7 @@ export const useCategoryOperations = () => {
     try {
       const now = new Date().toISOString();
       
-      // Form tipinin Date formatını string formatına çeviririk
+      // Convert Date format to string format
       const deadline = newCategory.deadline instanceof Date 
         ? newCategory.deadline.toISOString() 
         : newCategory.deadline;

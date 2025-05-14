@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Category, CategoryFilter, CategoryStatus } from '@/types/category';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config/environment';
 
 // Enhanced fetch utility to prevent request loops and handle authentication
 async function fetchWithControlledRetry<T>(
@@ -14,14 +15,11 @@ async function fetchWithControlledRetry<T>(
   const authStore = useAuthStore.getState();
   const session = authStore.session;
 
-  // Get Supabase API key safely - use import.meta.env instead of process.env
-  const supabaseApiKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
   const defaultHeaders: Record<string, string> = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
     'Accept-Profile': 'public',
-    'apikey': supabaseApiKey
+    'apikey': SUPABASE_ANON_KEY
   };
 
   // Add authentication headers if session exists
@@ -107,9 +105,6 @@ export const useCategories = () => {
 
   const { session, user } = useAuthStore();
 
-  // Safely get Supabase URL using Vite's import.meta.env instead of process.env
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-
   const fetchCategories = useCallback(async (filter: CategoryFilter = {}) => {
     // Only fetch if authenticated
     if (!session || !user) {
@@ -122,7 +117,7 @@ export const useCategories = () => {
 
     try {
       // Construct Supabase REST API URL with filters
-      const baseUrl = `${supabaseUrl}/rest/v1/categories`;
+      const baseUrl = `${SUPABASE_URL}/rest/v1/categories`;
       const queryParams = new URLSearchParams({
         select: '*',
         order: 'name.asc',
@@ -146,7 +141,7 @@ export const useCategories = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, session, user, supabaseUrl]);
+  }, [currentPage, pageSize, session, user]);
 
   useEffect(() => {
     fetchCategories();
@@ -168,7 +163,7 @@ export const useCategories = () => {
     }
 
     try {
-      const baseUrl = `${supabaseUrl}/rest/v1/categories`;
+      const baseUrl = `${SUPABASE_URL}/rest/v1/categories`;
       
       const processedCategory = {
         ...category,

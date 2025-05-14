@@ -43,15 +43,16 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
               label: opt.label || '',
               value: opt.value || '',
               color: opt.color,
-              disabled: opt.disabled
+              disabled: opt.disabled || false
             }))
           : undefined;
 
+        // Convert database column to our Column type
         return {
           id: column.id,
           category_id: column.category_id,
           name: column.name,
-          type: column.type,
+          type: column.type as Column['type'],
           is_required: column.is_required,
           placeholder: column.placeholder,
           help_text: column.help_text,
@@ -62,7 +63,8 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
           options: formattedOptions,
           created_at: column.created_at,
           updated_at: column.updated_at,
-          description: column.description
+          description: column.description || '',
+          color: column.color
         } as Column;
       });
     }

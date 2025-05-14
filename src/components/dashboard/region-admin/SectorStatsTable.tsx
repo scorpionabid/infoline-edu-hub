@@ -1,75 +1,79 @@
 
 import React from 'react';
-import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow 
-} from '@/components/ui/table';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 import { SectorStat } from '@/types/dashboard';
-import { Progress } from '@/components/ui/progress';
-import { ArrowRight } from 'lucide-react';
 
 interface SectorStatsTableProps {
   sectors: SectorStat[];
 }
 
 const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors }) => {
-  const navigate = useNavigate();
   const { t } = useLanguage();
-  
+  const navigate = useNavigate();
+
+  if (!sectors || sectors.length === 0) {
+    return (
+      <div className="text-center py-4 text-muted-foreground">
+        <p>{t('noSectors')}</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t('sector')}</TableHead>
-            <TableHead>{t('schools')}</TableHead>
-            <TableHead>{t('completion')}</TableHead>
-            <TableHead className="text-right">{t('actions')}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sectors.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
-                {t('noSectors')}
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{t('name')}</TableHead>
+          <TableHead>{t('schools')}</TableHead>
+          <TableHead className="text-right">{t('completion')}</TableHead>
+          <TableHead></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {sectors.map((sector) => {
+          const completionRate = sector.completionRate || sector.completion || 0;
+          let statusColor = 'bg-gray-100 text-gray-700';
+          
+          if (completionRate >= 90) {
+            statusColor = 'bg-green-100 text-green-700';
+          } else if (completionRate >= 50) {
+            statusColor = 'bg-blue-100 text-blue-700';
+          } else if (completionRate > 0) {
+            statusColor = 'bg-amber-100 text-amber-700';
+          }
+          
+          return (
+            <TableRow key={sector.id}>
+              <TableCell className="font-medium">{sector.name}</TableCell>
+              <TableCell>{sector.schoolCount || 0}</TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <Progress value={completionRate} className="h-2 w-20" />
+                  <Badge variant="outline" className={statusColor}>
+                    {completionRate}%
+                  </Badge>
+                </div>
+              </TableCell>
+              <TableCell>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(`/sectors/${sector.id}`)}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               </TableCell>
             </TableRow>
-          ) : (
-            sectors.map((sector) => (
-              <TableRow key={sector.id}>
-                <TableCell className="font-medium">{sector.name}</TableCell>
-                <TableCell>{sector.schoolCount || 0}</TableCell>
-                <TableCell>
-                  <div className="flex flex-col space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span>{sector.completion || 0}%</span>
-                    </div>
-                    <Progress value={sector.completion || 0} className="h-1.5" />
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => navigate(`/sectors/${sector.id}`)}
-                  >
-                    {t('details')}
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
+          );
+        })}
+      </TableBody>
+    </Table>
   );
 };
 

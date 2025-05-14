@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useUserList, UserFilter } from '@/hooks/useUserList';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,6 +42,24 @@ const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = 
     refetch
   } = useUserList(defaultFilter);
   
+  // Helper function to get user display name
+  const getUserDisplayName = (user: any) => {
+    return user.full_name || user.name || 'N/A';
+  };
+
+  // Helper function to get entity name (safely)
+  const getEntityName = (user: any) => {
+    if (!user) return 'N/A';
+    
+    if (typeof user.entityName === 'string') {
+      return user.entityName;
+    } else if (user.entityName && typeof user.entityName === 'object') {
+      return user.entityName.region || user.entityName.sector || user.entityName.school || 'N/A';
+    } else {
+      return 'N/A';
+    }
+  };
+
   // Debounce search to prevent too many requests
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -127,14 +144,14 @@ const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = 
                 ) : users && users.length > 0 ? (
                   users.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.full_name || user.name || 'N/A'}</TableCell>
+                      <TableCell className="font-medium">{getUserDisplayName(user)}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
                           {t(user.role) || user.role}
                         </Badge>
                       </TableCell>
-                      <TableCell>{user.entityName || 'N/A'}</TableCell>
+                      <TableCell>{getEntityName(user)}</TableCell>
                       <TableCell>
                         <Badge className={`${
                           user.status === 'active' ? 'bg-green-500' :

@@ -1,92 +1,61 @@
-import { useState, useEffect, useCallback } from 'react';
+
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/category';
-import { CategoryWithColumns } from '@/types/column';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import { CategoryWithColumns, CategoryStatus, CategoryAssignment } from '@/types/category';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { Column } from '@/types/column';
 
-/**
- * Data entry üçün kateqoriyaları əldə etmək üçün hook
- * @returns {Object} Kateqoriyalar, yüklənmə vəziyyəti, xəta və yeniləmə funksiyası
- */
 export const useCategories = () => {
-  const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
-  const { t } = useLanguage();
-  const { user } = useAuth();
-  const { isSuperAdmin, isRegionAdmin } = usePermissions();
+  const { hasRegionAccess, hasSectorAccess, hasRoleAtLeast } = usePermissions();
+  const { user } = useAuthStore(); 
 
-  const fetchCategories = useCallback(async () => {
-    if (!user) return;
+  return useQuery({
+    queryKey: ['categories', user?.id],
+    queryFn: async (): Promise<CategoryWithColumns[]> => {
+      let query = supabase.from('categories').select(`
+        *,
+        columns (*)
+      `);
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Kategoriyaları əldə et
-      let categoryQuery = supabase.from('categories')
-        .select('*')
-        .eq('archived', false)
-        .eq('status', 'active');
-
-      // İstifadəçi roluna görə kategoriya filteri
-      if (!isSuperAdmin && !isRegionAdmin) {
-        categoryQuery = categoryQuery.in('assignment', ['all', 'sectors']);
+      // Apply role-based filters
+      if (hasRoleAtLeast('superadmin')) {
+        // Super admin sees all categories
+      } else if (hasRoleAtLeast('regionadmin')) {
+        if (user?.region_id) {
+          query = query.eq('region_id', user.region_id)
+            .or(`region_id.is.null,assignment.eq.region`);
+        }
+      } else if (hasRoleAtLeast('sectoradmin')) {
+        if (user?.sector_id) {
+          query = query.eq('sector_id', user.sector_id)
+            .or(`sector_id.is.null,assignment.eq.sector`);
+        }
+      } else {
+        // School admin or regular user
+        query = query.eq('assignment', 'school');
       }
 
-      const { data: categoryData, error: categoryError } = await categoryQuery;
+      const { data, error } = await query.order('created_at', { ascending: false });
 
-      if (categoryError) throw categoryError;
+      if (error) throw error;
 
-      // Sütunları əldə et
-      const { data: columnData, error: columnError } = await supabase
-        .from('columns')
-        .select('*')
-        .eq('status', 'active');
-
-      if (columnError) throw columnError;
-
-      // Kategoriyalara sütunları əlavə et
-      const enhancedCategories = categoryData.map((category: Category) => {
-        const categoryColumns = columnData.filter((column: any) => 
-          column.category_id === category.id
-        ).sort((a: any, b: any) => a.order_index - b.order_index);
+      // Transform the data to ensure type safety
+      return data.map(category => {
+        const columns = category.columns as Column[];
         
-        // Bütün tarix xüsusiyyətlərini Date tipinə çeviririk
-        const enhancedCategory = {
+        return {
           ...category,
-          columns: categoryColumns,
-          columnCount: categoryColumns.length,
-          deadline: category.deadline ? new Date(category.deadline) : undefined,
-          created_at: category.created_at ? new Date(category.created_at) : undefined,
-          updated_at: category.updated_at ? new Date(category.updated_at) : undefined
+          status: category.status as CategoryStatus,
+          assignment: (category.assignment || null) as CategoryAssignment,
+          columns,
+          columnCount: columns.length,
         };
-        
-        // Tipi uyğunlaşdırmaq üçün unknown-a çeviririk
-        return enhancedCategory as unknown as CategoryWithColumns;
       });
-
-      setCategories(enhancedCategories);
-    } catch (err) {
-      console.error('Error fetching categories:', err);
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      toast.error(t('errorFetchingData'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, isSuperAdmin, isRegionAdmin, t]);
-
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
-
-  return { 
-    categories, 
-    isLoading, 
-    error,
-    refetch: fetchCategories
-  };
+    },
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
 };
+
+export default useCategories;

@@ -13,7 +13,7 @@ interface RegionAdminDashboardProps {
 export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
   
-  // Ensure sectorStats exists
+  // Ensure sectorStats exists with a default empty array
   const sectorStats = data.sectorStats || [];
 
   // Using conditional rendering to avoid null/undefined access

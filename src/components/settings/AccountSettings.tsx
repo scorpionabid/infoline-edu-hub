@@ -1,269 +1,219 @@
 
-import React, { useState, useEffect } from 'react';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { useLanguage } from '@/context/LanguageContext';
-import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
+import React, { useState } from 'react';
+import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
-import { FullUserData, NotificationSettings } from '@/types/supabase';
-import { updateUserProfile } from '@/hooks/auth/authActions';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { FullUserData, NotificationSettings } from '@/types/user';
+import { updateUserProfile } from '@/api/userApi';
 
-const profileFormSchema = z.object({
-  full_name: z.string().min(2, {
-    message: "Ad və soyad ən azı 2 simvol olmalıdır.",
-  }).max(50, {
-    message: "Ad və soyad 50 simvolu keçməməlidir.",
-  }).optional(),
-  phone: z.string().optional(),
-  language: z.string().optional(),
-  notificationSettings: z.object({
-    email: z.boolean().default(false),
-    inApp: z.boolean().default(false),
-    push: z.boolean().default(false),
-    system: z.boolean().default(false),
-    deadline: z.boolean().default(false)
-  }).optional()
+const notificationSchema = z.object({
+  email: z.boolean().default(true),
+  push: z.boolean().default(false),
+  inApp: z.boolean().default(true),
+  system: z.boolean().default(true),
+  deadline: z.boolean().default(true),
 });
 
-export const AccountSettings = () => {
-  const { t } = useLanguage();
-  const user = useAuthStore(selectUser);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const refreshUserData = useAuthStore((state) => state.refreshUserData);
+const formSchema = z.object({
+  notificationSettings: notificationSchema
+});
 
-  const profileForm = useForm<z.infer<typeof profileFormSchema>>({
-    resolver: zodResolver(profileFormSchema),
+type FormValues = z.infer<typeof formSchema>;
+
+const AccountSettings = () => {
+  const { t } = useLanguage();
+  const { user, updateUser } = useAuthStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Get notification settings from user with proper fallback
+  const defaultSettings: NotificationSettings = {
+    email: true,
+    push: false,
+    inApp: true,
+    system: true,
+    deadline: true
+  };
+
+  // Use either notification_settings or notificationSettings, with fallback to defaults
+  const notificationSettings = user?.notificationSettings || user?.notification_settings || defaultSettings;
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      full_name: user?.full_name || "",
-      phone: user?.phone || "",
-      language: user?.language || "az",
-      notificationSettings: user?.notificationSettings || {
-        email: false,
-        inApp: false,
-        push: false,
-        system: false,
-        deadline: false
+      notificationSettings: {
+        email: notificationSettings.email,
+        push: notificationSettings.push,
+        inApp: notificationSettings.inApp || false,
+        system: notificationSettings.system || false,
+        deadline: notificationSettings.deadline || false
       }
     },
-    mode: "onChange",
   });
 
-  useEffect(() => {
-    if (user) {
-      profileForm.reset({
-        full_name: user.full_name || "",
-        phone: user.phone || "",
-        language: user.language || "az",
-        notificationSettings: user.notificationSettings || {
-          email: false,
-          inApp: false,
-          push: false,
-          system: false,
-          deadline: false
-        }
-      });
-    }
-  }, [user, profileForm]);
-
-  const handleUpdateUserProfile = async (data: Partial<FullUserData>) => {
+  const onSubmit = async (data: FormValues) => {
     try {
       setIsSubmitting(true);
-    
-      // Properly format the notification settings to match the expected structure
-      const notificationSettings: NotificationSettings = {
-        email: data.notificationSettings?.email || false,
-        inApp: data.notificationSettings?.inApp || false,
-        push: data.notificationSettings?.push || false,
-        system: data.notificationSettings?.system || false,
-        deadline: data.notificationSettings?.deadline || false
+      
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Update user data with the correct property name (notificationSettings)
+      const updatedUser: Partial<FullUserData> = {
+        notificationSettings: {
+          email: data.notificationSettings.email,
+          push: data.notificationSettings.push,
+          inApp: data.notificationSettings.inApp,
+          system: data.notificationSettings.system,
+          deadline: data.notificationSettings.deadline
+        }
       };
 
-      const userUpdateData: Partial<FullUserData> = {
-        ...data,
-        id: user?.id,
-        notificationSettings
-      };
+      // Call API to update user profile
+      await updateUserProfile(user.id, updatedUser);
 
-      await updateUserProfile(userUpdateData);
-      toast.success(t('profileUpdated'));
-      refreshUserData();
-    } catch (error) {
-      toast.error(t('profileUpdateFailed'));
-      console.error('Profile update error:', error);
+      // Update local user state - keep both properties for compatibility
+      updateUser({
+        notificationSettings: updatedUser.notificationSettings,
+        notification_settings: updatedUser.notificationSettings
+      });
+
+      toast(t('settingsSaved'), {
+        description: t('notificationSettingsUpdated')
+      });
+    } catch (error: any) {
+      console.error('Error updating notification settings:', error);
+      toast(t('errorOccurred'), {
+        description: error.message || t('failedToUpdateSettings'),
+        variant: 'destructive'
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Form {...profileForm}>
-      <form onSubmit={profileForm.handleSubmit(handleUpdateUserProfile)} className="space-y-8">
-        <div className="grid gap-4">
-          <FormField
-            control={profileForm.control}
-            name="full_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('fullName')}</FormLabel>
-                <FormControl>
-                  <Input placeholder={t('enterFullName')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>{t('notificationSettings')}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="notificationSettings.email"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">{t('emailNotifications')}</FormLabel>
+                      <FormDescription>{t('emailNotificationsDesc')}</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={profileForm.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('phone')}</FormLabel>
-                <FormControl>
-                  <Input placeholder={t('enterPhone')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="notificationSettings.inApp"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">{t('inAppNotifications')}</FormLabel>
+                      <FormDescription>{t('inAppNotificationsDesc')}</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={profileForm.control}
-            name="language"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('language')}</FormLabel>
-                <FormControl>
-                  <Input placeholder={t('enterLanguage')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="notificationSettings.push"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">{t('pushNotifications')}</FormLabel>
+                      <FormDescription>{t('pushNotificationsDesc')}</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={profileForm.control}
-            name="notificationSettings.email"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>{t('emailNotifications')}</FormLabel>
-                  <FormDescription>
-                    {t('emailNotificationsDescription')}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="notificationSettings.system"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">{t('systemNotifications')}</FormLabel>
+                      <FormDescription>{t('systemNotificationsDesc')}</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={profileForm.control}
-            name="notificationSettings.inApp"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>{t('inAppNotifications')}</FormLabel>
-                  <FormDescription>
-                    {t('inAppNotificationsDescription')}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="notificationSettings.deadline"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">{t('deadlineNotifications')}</FormLabel>
+                      <FormDescription>{t('deadlineNotificationsDesc')}</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
 
-          <FormField
-            control={profileForm.control}
-            name="notificationSettings.push"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>{t('pushNotifications')}</FormLabel>
-                  <FormDescription>
-                    {t('pushNotificationsDescription')}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+            <Separator />
 
-          <FormField
-            control={profileForm.control}
-            name="notificationSettings.system"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>{t('systemNotifications')}</FormLabel>
-                  <FormDescription>
-                    {t('systemNotificationsDescription')}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={profileForm.control}
-            name="notificationSettings.deadline"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>{t('deadlineReminders')}</FormLabel>
-                  <FormDescription>
-                    {t('deadlineRemindersDescription')}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        </div>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? t('updating') : t('updateProfile')}
-        </Button>
-      </form>
-    </Form>
+            <Button type="submit" disabled={isSubmitting} className="ml-auto">
+              {isSubmitting ? t('saving') : t('saveSettings')}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import {
   Dialog,
@@ -76,7 +77,8 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
     
     try {
       if (category?.id) {
-        const result = await updateCategory(category.id, {
+        const result = await updateCategory({
+          id: category.id,
           name,
           description,
           assignment,
@@ -101,7 +103,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           created_at: now,
           updated_at: now,
           archived: false
-        });
+        } as Omit<Category, 'id'>);
         
         if (result.success) {
           onSave && onSave();

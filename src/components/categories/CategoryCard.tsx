@@ -39,7 +39,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
     }
   };
   
-  const formatDeadline = (deadline: string | Date | undefined) => {
+  const formatDeadline = (deadline: string | Date | undefined | null) => {
     if (!deadline) return t('noDeadline');
     
     try {
@@ -50,6 +50,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
     }
   };
   
+  // Safe access to completionRate with default value
   const completionRate = category.completionRate !== undefined ? category.completionRate : 0;
 
   return (

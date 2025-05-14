@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserRole } from '@/types/supabase';
 import Navbar from '../navigation/Navbar';
-import Sidebar from '../navigation/Sidebar';
+import Sidebar from './Sidebar';
 import UserProfile from '../auth/UserProfile';
 import { useAuth } from '@/context/auth';
+import { usePermissions } from '@/hooks/auth';
 import { cn } from '@/lib/utils';
 
 interface SidebarLayoutProps {
@@ -17,7 +18,6 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  
   
   // Check window size on mount and resize
   useEffect(() => {
@@ -40,7 +40,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
     
     // Clean up
     return () => window.removeEventListener('resize', checkSize);
-  }, []);
+  }, [sidebarOpen]);
   
   // Make sure the user is logged in
   if (!isAuthenticated || !user) {
@@ -48,35 +48,16 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
     return null;
   }
   
-  // DEFINE THE CORRECT DEFAULT ROLE HERE based on your UserRole type definition
-  // Example: Replace 'school_admin' with the actual default role if 'user.role' is null/undefined
-  const defaultRole: UserRole = 'schooladmin'; // <--- IMPORTANT: REPLACE WITH YOUR ACTUAL DEFAULT ROLE
-  
-  // Use nullish coalescing (??) to provide the default role only if user.role is null or undefined
-  const userRole: UserRole = user.role ?? defaultRole;
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Sidebar - fixed position with higher z-index */}
-      <div 
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out bg-white border-r border-gray-200 shadow-sm",
-          !sidebarOpen && "-translate-x-full"
-        )}
-      >
-        {/* Sidebar content */}
-        <div className="flex flex-col h-full">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">InfoLine</h2>
-          </div>
-          
-          <Sidebar 
-            userRole={userRole} 
-            isOpen={sidebarOpen} 
-            onToggle={() => setSidebarOpen(!sidebarOpen)}
-          />
-        </div>
-      </div>
+      {/* Unified Sidebar component */}
+      <Sidebar 
+        isOpen={sidebarOpen}
+        onToggle={toggleSidebar}
+        onMenuClick={() => isMobile && setSidebarOpen(false)}
+      />
       
       {/* Main content - with proper margin to avoid overlap */}
       <div className={cn(
@@ -103,7 +84,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
       {sidebarOpen && isMobile && (
         <div 
           className="fixed inset-0 z-40 bg-black bg-opacity-50 transition-opacity"
-          onClick={() => setSidebarOpen(false)}
+          onClick={toggleSidebar}
         />
       )}
     </div>

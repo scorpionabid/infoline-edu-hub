@@ -13,7 +13,7 @@ interface UseColumnFormProps {
 export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps) => {
   const isEditMode = !!column;
   const [selectedType, setSelectedType] = useState<ColumnType>(column?.type || 'text');
-  const [options, setOptions] = useState<ColumnOption[]>(column?.options || []);
+  const [options, setOptions] = useState<ColumnOption[]>(Array.isArray(column?.options) ? column?.options : []);
   const [newOption, setNewOption] = useState<ColumnOption>({ id: uuidv4(), label: '', value: '' });
   const [isOptionsMode, setIsOptionsMode] = useState(false);
 
@@ -26,7 +26,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
       help_text: column?.help_text || '',
       placeholder: column?.placeholder || '',
       default_value: column?.default_value || '',
-      options: column?.options || [],
+      options: Array.isArray(column?.options) ? column?.options : [],
       validation: column?.validation || {},
       status: column?.status || 'active',
       description: column?.description || '',
@@ -71,6 +71,19 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
     form.setValue('options', updatedOptions);
   };
 
+  // Option yeniləmək funksiyası
+  const updateOption = (oldOption: ColumnOption, newOption: ColumnOption): boolean => {
+    if (!newOption.label || !newOption.value) return false;
+    
+    const updatedOptions = options.map(option => 
+      option.id === oldOption.id ? newOption : option
+    );
+    
+    setOptions(updatedOptions);
+    form.setValue('options', updatedOptions);
+    return true;
+  };
+
   // Form submit handler
   const onSubmit = async (data: ColumnFormValues) => {
     try {
@@ -107,6 +120,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
     options,
     addOption,
     removeOption,
+    updateOption,
     newOption,
     setNewOption,
     onSubmit,

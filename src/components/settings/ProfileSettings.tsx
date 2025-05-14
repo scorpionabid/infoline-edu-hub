@@ -4,15 +4,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
-import { useLanguageSafe } from "@/context/LanguageContext";
+import { useToast } from "@/hooks/useToast";
+import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 
 export function ProfileSettings() {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   const { toast } = useToast();
-  const { user, updateUser, loading } = useAuth();
+  const { user, loading } = useAuth();
   
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -25,23 +26,23 @@ export function ProfileSettings() {
     
     setIsSaving(true);
     try {
-      await updateUser({
-        id: user.id,
-        full_name: fullName,
-        phone,
-        position
+      const { data, error } = await supabase.auth.updateUser({
+        data: { 
+          full_name: fullName,
+          phone,
+          position
+        }
       });
       
-      toast({
-        title: t('profileUpdated'),
+      if (error) throw error;
+      
+      toast.success(t('profileUpdated'), {
         description: t('profileUpdatedDescription')
       });
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      toast({
-        title: t('error'),
-        description: error.message || t('errorUpdatingProfile'),
-        variant: 'destructive'
+      toast.error(t('error'), {
+        description: error.message || t('errorUpdatingProfile')
       });
     } finally {
       setIsSaving(false);
@@ -49,6 +50,7 @@ export function ProfileSettings() {
   };
 
   const getInitials = (name: string) => {
+    if (!name) return 'U';
     return name
       .split(' ')
       .map(part => part[0])

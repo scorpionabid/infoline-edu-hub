@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, selectIsAuthenticated, selectIsLoading, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
@@ -27,31 +28,43 @@ const Dashboard: React.FC = () => {
     role: user?.role 
   });
 
+  // Initialize auth if not already done
+  useEffect(() => {
+    if (!useAuthStore.getState().initialized) {
+      console.log('[Dashboard.tsx] Initializing auth');
+      useAuthStore.getState().initializeAuth();
+    }
+  }, []);
+
   // Redirect to login if not authenticated after loading completes
   useEffect(() => {
     console.log('[Dashboard.tsx] useEffect triggered. Deps:', { isAuthenticated, isLoading, user, userRole });
     
-    // Yalnız yüklənmə tamamlandıqda işləsin
+    // Only run when loading completes
     if (!isLoading) {
       console.log('[Dashboard.tsx] useEffect: Auth loading is false. Setting initialCheck to false.');
       setInitialCheck(false);
 
-      // Autentifikasiya olmayıbsa login səhifəsinə yönləndir
+      // Redirect to login if not authenticated
       if (!isAuthenticated) {
         console.log("[Dashboard.tsx] useEffect: Not authenticated, redirecting to login.");
         navigate('/login', { state: { from: location } });
         return;
       }
 
-      // İstifadəçi data yoxlama
+      // Check for user data
       if (isAuthenticated && !user) {
         console.error("[Dashboard.tsx] useEffect: Authenticated but no user data. This is problematic.");
         toast.error('İstifadəçi məlumatları yüklənərkən xəta baş verdi', {
           description: 'Zəhmət olmasa, yenidən daxil olun',
         });
         
-        // İstifadəçi məlumatları yoxdursa, sessiyanı çıxış etdir
+        // Logout if user data is missing
         useAuthStore.getState().logout();
+      } else if (isAuthenticated && user && !user.role) {
+        console.error("[Dashboard.tsx] useEffect: User exists but role is missing. Trying to refresh session.");
+        // Try to refresh the session to get the role
+        useAuthStore.getState().refreshSession();
       }
     }
   }, [isAuthenticated, isLoading, user, navigate, location]);
@@ -70,8 +83,8 @@ const Dashboard: React.FC = () => {
   
   console.log('[Dashboard.tsx] Render: Authenticated and user exists. Proceeding to render content.', { user, userRole });
 
-  // Tip xətalarını aradan qaldırmaq üçün etibarlı bir rol təyin edirik
-  const roleForDisplay = userRole || user?.role || 'unknown';
+  // Assign a valid role for display purposes
+  const roleForDisplay = userRole || user?.role || 'schooladmin';
   const isSchoolAdmin = roleForDisplay === 'schooladmin';
 
   return (

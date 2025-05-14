@@ -4,7 +4,7 @@ import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import NotificationsCard from './common/NotificationsCard';
-import { SchoolAdminDashboardData, CategoryItem, FormItem, DeadlineItem } from '@/types/dashboard';
+import { SchoolAdminDashboardData, CategoryItem, FormItem, DeadlineItem, DashboardStatus, DashboardFormStats } from '@/types/dashboard';
 import { AppNotification, adaptDashboardNotificationToApp } from '@/types/notification';
 import { ClockIcon, CheckCircleIcon, AlertTriangleIcon, FileText } from 'lucide-react';
 import FormTabs from './school-admin/FormTabs';
@@ -62,7 +62,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       : [];
 
   // Ensure status data exists
-  const status = data.status || {
+  const status: DashboardStatus = data.status || {
     pending: 0,
     approved: 0,
     rejected: 0,
@@ -73,7 +73,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   };
 
   // Ensure formStats data exists
-  const formStats = data.formStats || {
+  const formStats: DashboardFormStats = data.formStats || {
     pending: 0,
     approved: 0,
     rejected: 0,
@@ -85,7 +85,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
 
   // Handle both completion object and completionRate number
   const completionPercentage = typeof data.completion === 'object' && data.completion
-    ? (data.completion?.percentage || 0) 
+    ? (data.completion.percentage || 0) 
     : (typeof data.completion === 'number' 
         ? data.completion 
         : (data.completionRate || 0));
@@ -99,9 +99,17 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     : { completed: 0, total: 0 };
 
   // Prepare categories, upcoming and pendingForms
-  const categories = Array.isArray(data.categories) ? data.categories as CategoryItem[] : [];
-  const upcoming = Array.isArray(data.upcoming) ? data.upcoming : [];
-  const pendingForms = Array.isArray(data.pendingForms) ? data.pendingForms : [];
+  const categories: CategoryItem[] = Array.isArray(data.categories) 
+    ? data.categories 
+    : [];
+    
+  const upcoming: DeadlineItem[] = Array.isArray(data.upcoming) 
+    ? data.upcoming 
+    : [];
+    
+  const pendingForms: FormItem[] = Array.isArray(data.pendingForms) 
+    ? data.pendingForms 
+    : [];
 
   return (
     <div className="space-y-6">

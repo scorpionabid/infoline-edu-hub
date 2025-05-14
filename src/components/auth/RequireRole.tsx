@@ -22,7 +22,7 @@ const RequireRole: React.FC<RequireRoleProps> = ({
   const { hasRole } = usePermissions();
   
   // Yüklənmə zamanı yükləmə ekranı göstəririk
-  if (isLoading) {
+  if (!!isLoading) {
     return <LoadingScreen />;
   }
   
