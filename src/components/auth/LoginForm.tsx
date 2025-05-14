@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -85,14 +84,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       
       if (success) {
         console.log('Giriş uğurlu oldu, autentifikasiya tamamlandı');
-        toast(t('loginSuccess'));
+        toast.error(t('loginSuccess'));
         reset(); // Clear form fields
         
         // Navigation will happen in the useEffect when isAuthenticated changes
       } else {
         console.log('Giriş uğursuz oldu');
-        toast(t('invalidCredentials'), {
-          variant: 'destructive'
+        toast.error(t('invalidCredentials'), {
+          description: t('invalidCredentials')
         });
         setFormError('root', { 
           type: 'manual',
@@ -101,8 +100,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       }
     } catch (err: any) {
       console.error('Login zamanı xəta baş verdi:', err);
-      toast(err.message || t('unexpectedError'), {
-        variant: 'destructive'
+      toast.error(err.message || t('unexpectedError'), {
+        description: err.message || t('unexpectedError')
       });
       setFormError('root', { 
         type: 'manual',

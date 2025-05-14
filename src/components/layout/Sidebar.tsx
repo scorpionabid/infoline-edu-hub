@@ -20,6 +20,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onMenuClick = () => {} 
 }) => {
   const { userRole } = usePermissions();
+  
+  console.log("Layout Sidebar rendering with user role:", userRole);
 
   return (
     <div

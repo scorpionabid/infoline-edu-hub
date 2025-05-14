@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
@@ -24,13 +23,11 @@ export const UserProfile = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      toast('Çıxış uğurla edildi');
+      toast.success('Çıxış uğurla edildi');
       navigate('/login', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
-      toast('Çıxış zamanı xəta baş verdi', {
-        variant: 'destructive'
-      });
+      toast.error('Çıxış zamanı xəta baş verdi');
     }
   };
   

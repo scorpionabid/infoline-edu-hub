@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,7 +93,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .single();
           
         if (!userError && userData) {
-          set({ user: userData as FullUserData });
+          // Also fetch user role
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('*')
+            .eq('user_id', data.session.user.id)
+            .single();
+            
+          // Combine profile and role data
+          const fullUserData: FullUserData = {
+            ...userData,
+            role: roleData?.role || 'schooladmin', // Default to schooladmin if no role found
+          };
+          
+          set({ user: fullUserData });
+          console.log("Login complete. User data:", fullUserData);
         } else {
           console.error('Error fetching user profile:', userError);
         }
@@ -146,8 +159,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { data: { session } } = await supabase.auth.getSession();
       set({ session, isAuthenticated: !!session });
 
-      // If we have a session, load the user profile
+      // If we have a session, load the user profile and role
       if (session) {
+        // Fetch user profile
         const { data: userData, error: userError } = await supabase
           .from('profiles')
           .select('*')
@@ -158,7 +172,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           console.error('Error fetching user profile:', userError);
           set({ error: userError.message });
         } else {
-          set({ user: userData as FullUserData });
+          // Also fetch user role
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single();
+            
+          // Combine profile and role data
+          const fullUserData: FullUserData = {
+            ...userData,
+            role: roleData?.role || 'schooladmin', // Default to schooladmin if no role found
+          };
+          
+          set({ user: fullUserData });
+          console.log("Auth initialized. User data:", fullUserData);
         }
       }
 
@@ -168,6 +196,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           set({ session, isAuthenticated: !!session });
 
           if (session) {
+            // Fetch user profile
             const { data: userData, error: userError } = await supabase
               .from('profiles')
               .select('*')
@@ -178,7 +207,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               console.error('Error fetching user profile:', userError);
               set({ error: userError.message });
             } else {
-              set({ user: userData as FullUserData });
+              // Also fetch user role
+              const { data: roleData, error: roleError } = await supabase
+                .from('user_roles')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .single();
+                
+              // Combine profile and role data
+              const fullUserData: FullUserData = {
+                ...userData,
+                role: roleData?.role || 'schooladmin', // Default to schooladmin if no role found
+              };
+              
+              set({ user: fullUserData });
+              console.log("Auth state changed. User data:", fullUserData);
             }
           } else {
             set({ user: null });
@@ -208,6 +251,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
 
       if (data.session) {
+        // Fetch user profile
         const { data: userData, error: userError } = await supabase
           .from('profiles')
           .select('*')
@@ -218,7 +262,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           console.error('Error fetching user profile:', userError);
           set({ error: userError.message });
         } else {
-          set({ user: userData as FullUserData });
+          // Also fetch user role
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('*')
+            .eq('user_id', data.session.user.id)
+            .single();
+            
+          // Combine profile and role data
+          const fullUserData: FullUserData = {
+            ...userData,
+            role: roleData?.role || 'schooladmin', // Default to schooladmin if no role found
+          };
+          
+          set({ user: fullUserData });
+          console.log("Session refreshed. User data:", fullUserData);
         }
       }
     } catch (error: any) {
@@ -234,7 +292,7 @@ export const selectIsAuthenticated = (state: AuthState) => state.isAuthenticated
 export const selectIsLoading = (state: AuthState) => state.loading;
 export const selectError = (state: AuthState) => state.error;
 export const selectSession = (state: AuthState) => state.session;
-export const selectUserRole = (state: AuthState) => state.user?.role;
+export const selectUserRole = (state: AuthState) => state.user?.role || null;
 export const selectRegionId = (state: AuthState) => state.user?.region_id;
 export const selectSectorId = (state: AuthState) => state.user?.sector_id;
 export const selectSchoolId = (state: AuthState) => state.user?.school_id;
