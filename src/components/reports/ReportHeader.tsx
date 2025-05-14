@@ -1,66 +1,54 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText } from 'lucide-react';
-import PageHeader from '@/components/layout/PageHeader';
+import { PlusCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import CreateReportDialog from '@/components/reports/CreateReportDialog';
-import { useReports } from '@/hooks/useReports';
-import { toast } from 'sonner';
+import { CreateReportDialog } from './CreateReportDialog';
+import { useReports } from '@/hooks/reports/useReports';
+import { ReportTypeValues } from '@/types/report';
 
-export function ReportHeader() {
+interface ReportHeaderProps {
+  onCategorySelect: (categoryId: string) => void;
+}
+
+const ReportHeader: React.FC<ReportHeaderProps> = ({ onCategorySelect }) => {
   const { t } = useLanguage();
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { createReport } = useReports();
 
   const handleCreateReport = async (data: { title: string; description: string; type: string }) => {
     try {
-      const result = await createReport({
+      await createReport({
         title: data.title,
         description: data.description,
-        type: data.type as any // Type conversion to match ReportType
+        type: data.type as any,
+        status: 'draft'
       });
-
-      if (result) {
-        toast.success(t('reportCreated'));
-        return;
-      }
+      
+      setIsCreateDialogOpen(false);
     } catch (error) {
-      console.error('Hesabat yaradılarkən xəta:', error);
-      toast.error(t('reportCreationFailed'));
+      console.error('Failed to create report:', error);
     }
   };
 
   return (
-    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
-      <PageHeader 
-        title={t('reports')}
-        subtitle={t('reportsDescription')}
-      />
+    <div className="flex justify-between items-center mb-6">
+      <h1 className="text-2xl font-bold">{t('reports')}</h1>
       
-      <div className="flex items-center space-x-2 mt-4 md:mt-0">
-        <Button variant="outline" size="sm">
-          <FileText className="h-4 w-4 mr-2" />
-          {t('importTemplate')}
-        </Button>
-        <Button 
-          onClick={() => setCreateDialogOpen(true)}
-          size="sm"
-        >
-          <Plus className="h-4 w-4 mr-2" />
+      <div className="flex gap-2">
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <PlusCircle className="h-4 w-4 mr-2" />
           {t('createReport')}
         </Button>
       </div>
-
-      {createDialogOpen && (
-        <CreateReportDialog
-          open={createDialogOpen}
-          onClose={() => setCreateDialogOpen(false)}
-          onCreate={handleCreateReport}
-        />
-      )}
+      
+      <CreateReportDialog
+        open={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        onCreate={handleCreateReport}
+      />
     </div>
   );
-}
+};
 
 export default ReportHeader;

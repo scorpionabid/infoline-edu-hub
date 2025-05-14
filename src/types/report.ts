@@ -5,6 +5,16 @@ export type ReportStatus = 'draft' | 'published' | 'archived';
 export type ReportFormat = 'table' | 'chart' | 'summary';
 export type ReportVisibility = 'private' | 'public' | 'admin';
 
+/**
+ * Constants for report types used in UI components
+ */
+export const ReportTypeValues = {
+  BAR: 'bar',
+  LINE: 'line',
+  PIE: 'pie',
+  TABLE: 'table',
+} as const;
+
 export interface ReportFilter {
   field: string;
   operator: string;
@@ -32,4 +42,13 @@ export interface Report {
   category_id?: string;
   chart_config?: any;
   table_config?: any;
+}
+
+/**
+ * Interface for props used by report chart components
+ */
+export interface ReportChartProps {
+  report: Report;
+  height?: number;
+  width?: number;
 }

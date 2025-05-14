@@ -57,10 +57,10 @@ export const ReportFilter: React.FC<ReportFilterProps> = ({
           <SelectContent>
             <SelectGroup>
               <SelectItem value="all">{t("allTypes")}</SelectItem>
-              <SelectItem value={ReportTypeValues.BAR || 'bar'}>{t("statistics")}</SelectItem>
-              <SelectItem value={ReportTypeValues.PIE || 'pie'}>{t("completion")}</SelectItem>
-              <SelectItem value={ReportTypeValues.LINE || 'line'}>{t("comparison")}</SelectItem>
-              <SelectItem value={ReportTypeValues.TABLE || 'table'}>{t("column")}</SelectItem>
+              <SelectItem value={ReportTypeValues.BAR}>{t("statistics")}</SelectItem>
+              <SelectItem value={ReportTypeValues.PIE}>{t("completion")}</SelectItem>
+              <SelectItem value={ReportTypeValues.LINE}>{t("comparison")}</SelectItem>
+              <SelectItem value={ReportTypeValues.TABLE}>{t("column")}</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>

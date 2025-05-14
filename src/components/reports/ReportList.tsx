@@ -1,97 +1,141 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, ChartBarIcon, FileText, BarChart3, Share2, Trash, Edit, Eye } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+
+import React, { useState } from 'react';
+import { useReports } from '@/hooks/reports/useReports';
+import ReportItem from '@/components/reports/reportList/ReportItem';
+import ReportFilter from '@/components/reports/reportList/ReportFilter';
+import ReportEmptyState from '@/components/reports/reportList/ReportEmptyState';
+import ReportLoading from '@/components/reports/reportList/ReportLoading';
+import { ReportPreviewDialog } from '@/components/reports/ReportPreviewDialog';
+import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { Report } from '@/types/report'; // form əvəzinə report istifadə edirik
+import { Grid } from '@/components/ui/grid';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
+import { CreateReportDialog } from '@/components/reports/CreateReportDialog';
+import { ReportTypeValues } from '@/types/report';
 
-interface ReportListProps {
-  reports: Report[];
-  onEdit: (report: Report) => void;
-  onDelete: (report: Report) => void;
-  onShare: (report: Report) => void;
-  onView: (report: Report) => void;
-}
-
-const ReportList: React.FC<ReportListProps> = ({ reports, onEdit, onDelete, onShare, onView }) => {
-  const navigate = useNavigate();
+const ReportList: React.FC = () => {
   const { t } = useLanguage();
+  const [filters, setFilters] = useState({
+    search: '',
+    type: 'all',
+    status: 'all'
+  });
+  const [previewReport, setPreviewReport] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  
+  const { data: reports, isLoading, isError, createReport, deleteReport, archiveReport } = useReports();
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-700 border-gray-300';
-      case 'published':
-        return 'bg-green-100 text-green-700 border-green-300';
-      case 'archived':
-        return 'bg-red-100 text-red-700 border-red-300';
-      default:
-        return 'bg-gray-50 text-gray-500 border-gray-100';
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleCreateReport = async (data: { title: string, description: string, type: string }) => {
+    try {
+      await createReport({
+        title: data.title,
+        description: data.description,
+        type: data.type as any,
+        status: 'draft'
+      });
+      
+      toast.success(t('reportCreated'));
+    } catch (error) {
+      console.error('Failed to create report:', error);
+      toast.error(t('reportCreationFailed'));
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return t('draft');
-      case 'published':
-        return t('published');
-      case 'archived':
-        return t('archived');
-      default:
-        return t('unknown');
-    }
-  };
+  const filteredReports = React.useMemo(() => {
+    if (!reports) return [];
+    
+    return reports.filter(report => {
+      const matchesSearch = filters.search 
+        ? (report.title || report.name || '').toLowerCase().includes(filters.search.toLowerCase()) || 
+          (report.description || '').toLowerCase().includes(filters.search.toLowerCase())
+        : true;
+      
+      const matchesType = filters.type === 'all' ? true : report.type === filters.type;
+      const matchesStatus = filters.status === 'all' ? true : report.status === filters.status;
+      
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [reports, filters]);
+
+  if (isLoading) return <ReportLoading />;
+  
+  if (isError) return <div className="text-center py-8">{t('failedToLoadReports')}</div>;
+  
+  if (filteredReports.length === 0) {
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">{t('reports')}</h2>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            {t('createReport')}
+          </Button>
+        </div>
+        
+        <ReportFilter 
+          filters={filters}
+          onFilterChange={handleFilterChange}
+        />
+        
+        <ReportEmptyState onCreateClick={() => setIsCreateDialogOpen(true)} />
+        
+        <CreateReportDialog
+          open={isCreateDialogOpen}
+          onClose={() => setIsCreateDialogOpen(false)}
+          onCreate={handleCreateReport}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {reports.map((report) => (
-        <Card key={report.id} className="bg-white shadow-md rounded-md overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{report.title}</CardTitle>
-            <Badge variant="secondary" className={getStatusColor(report.status)}>
-              {getStatusText(report.status)}
-            </Badge>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground">
-              <div className="flex items-center mb-1">
-                {report.type === 'table' ? (
-                  <FileText className="h-4 w-4 mr-2" />
-                ) : (
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                )}
-                {t('type')}: {report.type}
-              </div>
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2" />
-                {t('lastUpdated')}: {formatDistanceToNow(new Date(report.updatedAt), { addSuffix: true })}
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button variant="ghost" size="sm" onClick={() => onView(report)}>
-                <Eye className="h-4 w-4 mr-2" />
-                {t('view')}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => onEdit(report)}>
-                <Edit className="h-4 w-4 mr-2" />
-                {t('edit')}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => onShare(report)}>
-                <Share2 className="h-4 w-4 mr-2" />
-                {t('share')}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => onDelete(report)}>
-                <Trash className="h-4 w-4 mr-2" />
-                {t('delete')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">{t('reports')}</h2>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <PlusCircle className="h-4 w-4 mr-2" />
+          {t('createReport')}
+        </Button>
+      </div>
+      
+      <ReportFilter 
+        filters={filters}
+        onFilterChange={handleFilterChange}
+      />
+      
+      <Grid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredReports.map(report => (
+          <ReportItem
+            key={report.id}
+            report={report}
+            onView={(id) => setPreviewReport(id)}
+            onEdit={(id) => console.log('Edit report', id)}
+            onDelete={deleteReport}
+            onDownload={(id) => console.log('Download report', id)}
+            onShare={(id) => console.log('Share report', id)}
+            onArchive={archiveReport}
+          />
+        ))}
+      </Grid>
+      
+      {previewReport && (
+        <ReportPreviewDialog
+          reportId={previewReport}
+          open={!!previewReport}
+          onClose={() => setPreviewReport(null)}
+        />
+      )}
+      
+      <CreateReportDialog
+        open={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        onCreate={handleCreateReport}
+      />
     </div>
   );
 };

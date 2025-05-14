@@ -8,8 +8,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/context/LanguageContext';
-import { Report } from '@/types/report';
-import { ReportTypeValues } from '@/types/report';
+import { Report, ReportTypeValues } from '@/types/report';
 
 interface ReportItemProps {
   report: Report;
@@ -76,6 +75,8 @@ export const ReportItem: React.FC<ReportItemProps> = ({
   };
 
   const isArchived = report.status === 'archived';
+  // Use title property if it exists, otherwise use name
+  const reportTitle = 'title' in report ? report.title : (report.name || '');
 
   return (
     <Card className={cn(
@@ -88,7 +89,7 @@ export const ReportItem: React.FC<ReportItemProps> = ({
             <div className="flex items-center gap-3">
               {getReportIcon()}
               <div>
-                <h3 className="font-semibold">{report.title}</h3>
+                <h3 className="font-semibold">{reportTitle}</h3>
                 <p className="text-sm text-muted-foreground">{getReportTypeLabel()}</p>
               </div>
             </div>
@@ -103,8 +104,8 @@ export const ReportItem: React.FC<ReportItemProps> = ({
       </CardContent>
       <CardFooter className="p-4 bg-muted/30 flex items-center justify-between">
         <div className="text-xs text-muted-foreground">
-          {t('created')}: {format(new Date(report.createdAt || report.created_at || new Date()), 'PPP')}
-          {report.createdBy || report.created_by ? ` ${t('by')} ${report.createdBy || report.created_by}` : ''}
+          {t('created')}: {format(new Date(report.created_at || new Date()), 'PPP')}
+          {report.created_by ? ` ${t('by')} ${report.created_by}` : ''}
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => onView(report.id)}>
