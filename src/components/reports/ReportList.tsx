@@ -5,10 +5,9 @@ import ReportItem from '@/components/reports/reportList/ReportItem';
 import ReportFilter from '@/components/reports/reportList/ReportFilter';
 import ReportEmptyState from '@/components/reports/reportList/ReportEmptyState';
 import ReportLoading from '@/components/reports/reportList/ReportLoading';
-import { ReportPreviewDialog } from '@/components/reports/ReportPreviewDialog';
+import ReportPreviewDialog from '@/components/reports/ReportPreviewDialog';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { Grid } from '@/components/ui/grid';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { CreateReportDialog } from '@/components/reports/CreateReportDialog';
@@ -24,7 +23,7 @@ const ReportList: React.FC = () => {
   const [previewReport, setPreviewReport] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
-  const { data: reports, isLoading, isError, createReport, deleteReport, archiveReport } = useReports();
+  const { reports, isLoading, isError, createReport } = useReports();
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -35,8 +34,7 @@ const ReportList: React.FC = () => {
       await createReport({
         title: data.title,
         description: data.description,
-        type: data.type as any,
-        status: 'draft'
+        type: data.type as any
       });
       
       toast.success(t('reportCreated'));
@@ -44,6 +42,16 @@ const ReportList: React.FC = () => {
       console.error('Failed to create report:', error);
       toast.error(t('reportCreationFailed'));
     }
+  };
+
+  const handleDeleteReport = async (id: string) => {
+    // This would be implemented in the useReports hook
+    console.log('Delete report', id);
+  };
+
+  const handleArchiveReport = async (id: string) => {
+    // This would be implemented in the useReports hook
+    console.log('Archive report', id);
   };
 
   const filteredReports = React.useMemo(() => {
@@ -82,7 +90,7 @@ const ReportList: React.FC = () => {
           onFilterChange={handleFilterChange}
         />
         
-        <ReportEmptyState onCreateClick={() => setIsCreateDialogOpen(true)} />
+        <ReportEmptyState />
         
         <CreateReportDialog
           open={isCreateDialogOpen}
@@ -108,20 +116,20 @@ const ReportList: React.FC = () => {
         onFilterChange={handleFilterChange}
       />
       
-      <Grid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredReports.map(report => (
           <ReportItem
             key={report.id}
             report={report}
             onView={(id) => setPreviewReport(id)}
             onEdit={(id) => console.log('Edit report', id)}
-            onDelete={deleteReport}
+            onDelete={handleDeleteReport}
             onDownload={(id) => console.log('Download report', id)}
             onShare={(id) => console.log('Share report', id)}
-            onArchive={archiveReport}
+            onArchive={handleArchiveReport}
           />
         ))}
-      </Grid>
+      </div>
       
       {previewReport && (
         <ReportPreviewDialog

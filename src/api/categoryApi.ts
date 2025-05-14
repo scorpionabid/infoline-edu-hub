@@ -22,7 +22,7 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
   const now = new Date().toISOString();
   
   // Convert deadline to string if it's a Date object
-  let deadlineStr: string | undefined = undefined;
+  let deadlineStr: string | null = null;
   if (category.deadline) {
     deadlineStr = typeof category.deadline === 'object' 
       ? category.deadline.toISOString() 
@@ -57,7 +57,7 @@ export const createCategory = async (category: Omit<Category, 'id'>): Promise<Ca
 // Kateqoriya yenilə
 export const updateCategory = async (category: Partial<Category> & { id: string }): Promise<Category> => {
   // Convert deadline to string if it's a Date object
-  let deadlineStr: string | undefined = undefined;
+  let deadlineStr: string | null = null;
   if (category.deadline) {
     deadlineStr = typeof category.deadline === 'object' 
       ? category.deadline.toISOString() 
@@ -71,7 +71,9 @@ export const updateCategory = async (category: Partial<Category> & { id: string 
   };
   
   // Remove fields that shouldn't be sent to Supabase
-  delete updatedData.completionRate;
+  if ('completionRate' in updatedData) {
+    delete updatedData.completionRate;
+  }
   
   const { data, error } = await supabase
     .from('categories')
@@ -100,7 +102,7 @@ export const deleteCategory = async (id: string): Promise<void> => {
 };
 
 // Kateqoriyanın statusunu dəyişdir
-export const updateCategoryStatus = async (id: string, status: string): Promise<Category> => {
+export const updateCategoryStatus = async (id: string, status: CategoryStatus): Promise<Category> => {
   const { data, error } = await supabase
     .from('categories')
     .update({ status, updated_at: new Date().toISOString() })

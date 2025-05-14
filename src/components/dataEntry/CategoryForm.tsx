@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -31,7 +32,7 @@ const CategoryForm = ({
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<string>("general");
   
-  // Define tabs with general tab and column tabs if needed
+  // Define tabs with general tab 
   const tabs: TabDefinition[] = [
     {
       id: "general",
@@ -39,7 +40,8 @@ const CategoryForm = ({
     }
   ];
   
-  if (category.columns && category.columns.length > 0) {
+  // If using in CategoryWithColumns context, it will have columns property
+  if ('columns' in category && Array.isArray(category.columns) && category.columns.length > 0) {
     // Group columns by 8 per tab
     const columnGroups = [];
     for (let i = 0; i < category.columns.length; i += 8) {
@@ -61,6 +63,9 @@ const CategoryForm = ({
     e.preventDefault();
     onSubmit();
   };
+
+  // Get completionRate only if available
+  const completionRate = category.completionRate !== undefined ? category.completionRate : 0;
 
   return (
     <div className="space-y-6">
@@ -103,10 +108,10 @@ const CategoryForm = ({
         <div className="flex justify-between">
           <span className="text-sm font-medium">{t('completionStatus')}</span>
           <span className="text-sm font-medium">
-            {category.completionRate || 0}%
+            {completionRate}%
           </span>
         </div>
-        <Progress value={category.completionRate || 0} />
+        <Progress value={completionRate} />
       </div>
       
       <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab}>
@@ -156,13 +161,12 @@ const CategoryForm = ({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Column content would go here */}
                   <div>
                     <h3 className="text-lg font-medium">{t('columns')}</h3>
                   </div>
                   
                   <div className="space-y-4">
-                    {tab.columns.map((column: any) => (
+                    {tab.columns?.map((column: any) => (
                       <div key={column.id} className="border p-4 rounded-md">
                         <h4 className="font-medium">{column.name}</h4>
                         <p className="text-sm text-muted-foreground">{column.type}</p>

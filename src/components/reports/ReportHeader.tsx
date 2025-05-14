@@ -21,8 +21,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ onCategorySelect }) => {
       await createReport({
         title: data.title,
         description: data.description,
-        type: data.type as any,
-        status: 'draft'
+        type: data.type as any
       });
       
       setIsCreateDialogOpen(false);

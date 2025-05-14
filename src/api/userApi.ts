@@ -19,7 +19,6 @@ export const updateUserProfile = async (userId: string, userData: Partial<FullUs
     // If notificationSettings exists but notification_settings doesn't, copy it over
     if (!updateData.notification_settings && updateData.notificationSettings) {
       updateData.notification_settings = updateData.notificationSettings;
-      delete updateData.notificationSettings;
     }
     
     // Update the user's profile in the profiles table

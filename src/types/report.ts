@@ -1,5 +1,5 @@
 
-export type ReportType = 'standard' | 'custom' | 'comparative';
+export type ReportType = 'standard' | 'custom' | 'comparative' | 'bar' | 'line' | 'pie' | 'table';
 export type ReportScope = 'school' | 'sector' | 'region' | 'all';
 export type ReportStatus = 'draft' | 'published' | 'archived';
 export type ReportFormat = 'table' | 'chart' | 'summary';
@@ -23,25 +23,30 @@ export interface ReportFilter {
 
 export interface Report {
   id: string;
-  name: string;
+  name?: string;
+  title?: string;
   description: string;
   type: ReportType;
-  scope: ReportScope;
+  scope?: ReportScope;
   status: ReportStatus;
-  format: ReportFormat;
-  visibility: ReportVisibility;
-  creator_id: string;
+  format?: ReportFormat;
+  visibility?: ReportVisibility;
+  creator_id?: string;
+  created_by?: string;
   created_at: string;
   updated_at: string;
-  filters?: ReportFilter[];
-  insights?: string;
-  recommendations?: string;
+  filters?: ReportFilter[] | any;
+  insights?: string | string[];
+  recommendations?: string | string[];
   region_id?: string;
   sector_id?: string;
   school_id?: string;
   category_id?: string;
   chart_config?: any;
   table_config?: any;
+  content?: any;
+  shared_with?: string[] | any;
+  is_template?: boolean;
 }
 
 /**
