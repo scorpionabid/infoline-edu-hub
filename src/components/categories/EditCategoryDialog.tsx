@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   Dialog,
@@ -88,7 +87,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           updated_at: now,
         };
         
-        const result = await updateCategory(categoryData, false);
+        const result = await updateCategory(categoryData);
         
         if (result.success) {
           onSave && onSave();

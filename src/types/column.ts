@@ -116,5 +116,11 @@ export const columnTypeDefinitions = [
   }
 ];
 
-export const columnTypes = Object.values(columnTypeDefinitions)
-  .flatMap(group => group.types.map(type => type.value)) as ColumnType[];
+export const columnTypes = columnTypeDefinitions.flatMap(group => 
+  group.types.map(type => ({ 
+    value: type.value, 
+    label: type.label, 
+    description: type.description, 
+    icon: type.icon 
+  }))
+);

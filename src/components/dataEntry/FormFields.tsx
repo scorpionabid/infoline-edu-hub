@@ -1,13 +1,21 @@
-
-import React, { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import React from 'react';
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { DatePicker } from '@/components/ui/date-picker';
-import { ValidationResult } from '@/types/dataEntry';
+import { Control } from 'react-hook-form';
+import { Column } from '@/types/column';
+
+export interface ValidationResult {
+  valid: boolean;
+  message?: string;
+  errors?: Record<string, string>;
+}
 
 // Tip tərifini genişləndirərək string | number | boolean | Date tipləri ilə işləyəcək hala gətirək
 interface FormFieldsProps {

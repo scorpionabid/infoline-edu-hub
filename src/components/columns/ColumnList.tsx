@@ -113,17 +113,18 @@ const ColumnList: React.FC<ColumnListProps> = ({
 
   // Column tipinə görə ətraflı məlumat əldə et
   const getColumnTypeInfo = (type: string) => {
-    const typeInfo = columnTypes[type as keyof typeof columnTypes];
+    // Find the column type from our defined types
+    const typeInfo = columnTypes.find(t => t.value === type);
     
-    if (typeof typeInfo === 'string') {
+    if (typeInfo) {
       return {
-        label: typeInfo,
-        description: t('columnTypeDescription'),
-        icon: 'circle'
+        label: typeInfo.label,
+        description: typeInfo.description,
+        icon: typeInfo.icon
       };
     }
     
-    return typeInfo || {
+    return {
       label: type,
       description: t('unknownColumnType'),
       icon: 'circle'

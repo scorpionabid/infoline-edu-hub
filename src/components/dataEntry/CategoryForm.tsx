@@ -36,6 +36,7 @@ const CategoryForm = ({
   const tabs: TabDefinition[] = [
     {
       id: "general",
+      title: t('general'),
       label: t('general')
     }
   ];
@@ -53,6 +54,7 @@ const CategoryForm = ({
     columnGroups.forEach((group, index) => {
       tabs.push({
         id: `columns-${index + 1}`,
+        title: `${t('columns')} ${index + 1}`,
         label: `${t('columns')} ${index + 1}`,
         columns: group
       });

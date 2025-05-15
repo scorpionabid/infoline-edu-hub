@@ -62,3 +62,16 @@ export interface ColumnValidationError {
   message: string;
   type: 'error' | 'warning';
 }
+
+export interface ValidationResult {
+  valid: boolean;
+  message?: string;
+  errors?: Record<string, string>;
+}
+
+export interface DataEntryTableData {
+  id: string;
+  columns: Column[];
+  values: Record<string, any>;
+  status: DataEntryStatus;
+}

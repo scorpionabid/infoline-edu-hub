@@ -15,6 +15,7 @@ export interface Category {
   archived?: boolean;
   column_count?: number;
   assignment?: CategoryAssignment | string;
+  completionRate?: number;
 }
 
 export interface CategoryWithColumns extends Category {
@@ -23,3 +24,9 @@ export interface CategoryWithColumns extends Category {
   completionRate?: number;
 }
 
+export interface TabDefinition {
+  id: string;
+  title: string;
+  label: string;
+  columns?: any[];
+}

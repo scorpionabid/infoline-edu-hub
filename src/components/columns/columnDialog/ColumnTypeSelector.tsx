@@ -3,9 +3,10 @@ import React from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { ColumnType, columnTypeDefinitions } from '@/types/column';
+import { ColumnType } from '@/types/column';
 import { Icons } from '@/components/ui/icons';
 import { LucideIcon } from 'lucide-react';
+import { columnTypeDefinitions } from '@/types/column';
 
 interface ColumnTypeSelectorProps {
   value: ColumnType;
@@ -14,9 +15,10 @@ interface ColumnTypeSelectorProps {
 
 export function ColumnTypeSelector({ value, onValueChange }: ColumnTypeSelectorProps) {
   // Helper function to get icon component
-  const getIconComponent = (iconName: string): LucideIcon | null => {
+  const getIconComponent = (iconName: string): LucideIcon => {
     const iconKey = iconName as keyof typeof Icons;
-    return Icons[iconKey] || null;
+    // Provide a default icon if the requested one doesn't exist
+    return Icons[iconKey] || Icons.Circle;
   };
 
   return (
@@ -46,7 +48,7 @@ export function ColumnTypeSelector({ value, onValueChange }: ColumnTypeSelectorP
                       value === type.value ? "border-primary" : ""
                     )}
                   >
-                    {IconComponent && <IconComponent className="mb-2 h-6 w-6" />}
+                    <IconComponent className="mb-2 h-6 w-6" />
                     <div className="text-center">
                       <p className="font-medium leading-none">{type.label}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -63,3 +65,5 @@ export function ColumnTypeSelector({ value, onValueChange }: ColumnTypeSelectorP
     </RadioGroup>
   );
 }
+
+export default ColumnTypeSelector;

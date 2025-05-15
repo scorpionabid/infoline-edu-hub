@@ -1,6 +1,7 @@
-
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Column } from '@/types/column';
+import { DataEntry } from '@/types/dataEntry';
 import { DataEntryTableData } from '@/types/dataEntry';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/context/LanguageContext';

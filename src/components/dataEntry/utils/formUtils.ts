@@ -1,5 +1,10 @@
+import { Column } from '@/types/column';
 
-import { ValidationResult } from '@/types/dataEntry';
+export interface ValidationResult {
+  valid: boolean;
+  message?: string;
+  errors?: Record<string, string>;
+}
 
 /**
  * Sahə validasiyasını həyata keçirir
@@ -15,14 +20,14 @@ export const validateField = (
 ): ValidationResult => {
   // Validasiya qaydaları yoxdursa, true qaytarırıq
   if (!validationRules) {
-    return { isValid: true };
+    return { valid: true };
   }
 
   // Boş məlumat yoxlaması
   if (validationRules.required && (!value || value.trim() === '')) {
     return { 
-      isValid: false, 
-      errorMessage: 'Bu sahə məcburidir' 
+      valid: false, 
+      message: 'Bu sahə məcburidir' 
     };
   }
 
@@ -33,24 +38,24 @@ export const validateField = (
     // Ədədi format yoxlaması
     if (isNaN(numValue)) {
       return { 
-        isValid: false, 
-        errorMessage: 'Düzgün ədəd formatında deyil' 
+        valid: false, 
+        message: 'Düzgün ədəd formatında deyil' 
       };
     }
 
     // Minimum dəyər yoxlaması
     if (validationRules.min !== undefined && numValue < validationRules.min) {
       return { 
-        isValid: false, 
-        errorMessage: `Minimum dəyər ${validationRules.min} olmalıdır` 
+        valid: false, 
+        message: `Minimum dəyər ${validationRules.min} olmalıdır` 
       };
     }
 
     // Maksimum dəyər yoxlaması
     if (validationRules.max !== undefined && numValue > validationRules.max) {
       return { 
-        isValid: false, 
-        errorMessage: `Maksimum dəyər ${validationRules.max} olmalıdır` 
+        valid: false, 
+        message: `Maksimum dəyər ${validationRules.max} olmalıdır` 
       };
     }
   }
@@ -60,24 +65,24 @@ export const validateField = (
     // Minimum uzunluq yoxlaması
     if (validationRules.minLength && value.length < validationRules.minLength) {
       return { 
-        isValid: false, 
-        errorMessage: `Minimum ${validationRules.minLength} simvol olmalıdır` 
+        valid: false, 
+        message: `Minimum ${validationRules.minLength} simvol olmalıdır` 
       };
     }
 
     // Maksimum uzunluq yoxlaması
     if (validationRules.maxLength && value.length > validationRules.maxLength) {
       return { 
-        isValid: false, 
-        errorMessage: `Maksimum ${validationRules.maxLength} simvol olmalıdır` 
+        valid: false, 
+        message: `Maksimum ${validationRules.maxLength} simvol olmalıdır` 
       };
     }
 
     // Pattern yoxlaması
     if (validationRules.pattern && !new RegExp(validationRules.pattern).test(value)) {
       return { 
-        isValid: false, 
-        errorMessage: validationRules.patternMessage || 'Format düzgün deyil' 
+        valid: false, 
+        message: validationRules.patternMessage || 'Format düzgün deyil' 
       };
     }
   }
@@ -87,8 +92,8 @@ export const validateField = (
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(value)) {
       return { 
-        isValid: false, 
-        errorMessage: 'Düzgün email formatı deyil' 
+        valid: false, 
+        message: 'Düzgün email formatı deyil' 
       };
     }
   }
@@ -98,14 +103,14 @@ export const validateField = (
     const dateValue = new Date(value);
     if (isNaN(dateValue.getTime())) {
       return { 
-        isValid: false, 
-        errorMessage: 'Düzgün tarix formatı deyil' 
+        valid: false, 
+        message: 'Düzgün tarix formatı deyil' 
       };
     }
   }
 
   // Validasiyanı uğurla keçdikdə
-  return { isValid: true };
+  return { valid: true };
 };
 
 /**

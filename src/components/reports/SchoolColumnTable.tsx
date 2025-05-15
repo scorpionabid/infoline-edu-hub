@@ -18,6 +18,19 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Column } from '@/types/column';
+import { 
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
+import { Edit, Copy, FileText, Download, Upload } from 'lucide-react';
 
 // Define the CategoryWithColumns type
 interface CategoryWithColumns {
@@ -35,6 +48,7 @@ interface SchoolColumnTableProps {
 }
 
 const SchoolColumnTable: React.FC<SchoolColumnTableProps> = ({ categoryId, schoolId }) => {
+  const { t } = useLanguage();
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [columns, setColumns] = useState<Column[]>([]);
@@ -151,7 +165,7 @@ const SchoolColumnTable: React.FC<SchoolColumnTableProps> = ({ categoryId, schoo
             <Download className="h-4 w-4 mr-1" /> İxrac
           </Button>
           <Button variant="outline" size="sm" onClick={handleGenerateTemplate}>
-            <File className="h-4 w-4 mr-1" /> Şablon
+            <FileText className="h-4 w-4 mr-1" /> Şablon
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -12,7 +12,7 @@ interface UseColumnFormProps {
 
 export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps) => {
   const isEditMode = !!column;
-  const [selectedType, setSelectedType] = useState<ColumnType>(column?.type || 'text');
+  const [selectedType, setSelectedType] = useState<ColumnType>(column?.type as ColumnType || 'text');
   const [options, setOptions] = useState<ColumnOption[]>(Array.isArray(column?.options) ? column?.options : []);
   const [newOption, setNewOption] = useState<ColumnOption>({ id: uuidv4(), label: '', value: '' });
   const [isOptionsMode, setIsOptionsMode] = useState(false);
@@ -20,7 +20,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
   const form = useForm<ColumnFormValues>({
     defaultValues: {
       name: column?.name || '',
-      type: column?.type || 'text',
+      type: column?.type as ColumnType || 'text',
       category_id: column?.category_id || categoryId || '',
       is_required: column?.is_required ?? true,
       help_text: column?.help_text || '',
@@ -88,7 +88,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
   const onSubmit = async (data: ColumnFormValues) => {
     try {
       // Create a complete column data object with all required fields
-      const formData: Omit<Column, "id"> = {
+      const formData = {
         ...data,
         category_id: data.category_id || categoryId || '',
         options: ['select', 'radio', 'checkbox'].includes(data.type) ? options : [],
@@ -98,7 +98,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
         name: data.name,
         created_at: column?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      };
+      } as Omit<Column, "id">;
 
       // Include the ID if we're editing
       const columnData = {

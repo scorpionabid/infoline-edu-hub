@@ -1,127 +1,125 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Filter, ArrowUpDown } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { useReports } from '@/hooks/reports/useReports';
-import { Report } from '@/types/report';
-import { CreateReportDialog } from './CreateReportDialog';
-import { ReportPreviewDialog } from './ReportPreviewDialog';
+import ReportCard from './ReportCard';
+import CreateReportDialog from './CreateReportDialog';
+import ReportPreviewDialog from './ReportPreviewDialog';
+import ReportEmptyState from './ReportEmptyState';
 
-interface ReportItemProps {
-  report: Report;
-  onSelect: (reportId: string) => void;
+interface Report {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
-interface ReportEmptyStateProps {
-  onCreateReport: () => void;
-}
-
-const ReportItem: React.FC<ReportItemProps> = ({ report, onSelect }) => {
-  return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onSelect(report.id)}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">{report.title}</CardTitle>
-        <CardDescription>{report.description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-between items-center text-sm text-muted-foreground">
-          <div>{new Date(report.created_at || Date.now()).toLocaleDateString()}</div>
-          <div className="capitalize">{report.type}</div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const ReportEmptyState: React.FC<ReportEmptyStateProps> = ({ onCreateReport }) => {
-  return (
-    <Card className="w-full">
-      <CardHeader className="text-center">
-        <CardTitle>No Reports Found</CardTitle>
-        <CardDescription>Create your first report to get started</CardDescription>
-      </CardHeader>
-      <CardContent className="flex justify-center pb-6">
-        <Button onClick={onCreateReport}>Create Report</Button>
-      </CardContent>
-    </Card>
-  );
-};
-
-export const ReportList: React.FC = () => {
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
-  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-  
-  // Mock reports data
+const ReportList: React.FC = () => {
   const { reports, createReport } = useReports();
-  
-  // Add mock loading and error states until properly implemented
+  // Define isLoading and isError manually since they're not in the hook response
   const isLoading = false;
   const isError = false;
   
-  const handleCreateReport = async (reportData: { title: string; description: string; type: string }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<string | null>(null);
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+  
+  const filteredReports = reports.filter(report => 
+    report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleCreateReport = async (reportData: { 
+    title: string; 
+    description: string; 
+    type: string;
+  }) => {
     try {
       await createReport(reportData);
-      setCreateDialogOpen(false);
+      setIsCreateDialogOpen(false);
     } catch (error) {
       console.error('Error creating report:', error);
     }
   };
-  
-  const handleSelectReport = (reportId: string) => {
-    setSelectedReportId(reportId);
-    setPreviewDialogOpen(true);
+
+  const handleViewReport = (reportId: string) => {
+    setSelectedReport(reportId);
+    setIsPreviewDialogOpen(true);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="bg-red-50 text-red-800 p-4 rounded-md">
-        <h3 className="font-bold">Error loading reports</h3>
-        <p>Something went wrong. Please try again later.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Reports</h2>
-        <Button onClick={() => setCreateDialogOpen(true)}>Create Report</Button>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center space-y-4 sm:space-y-0">
+        <h1 className="text-2xl font-bold">Reports</h1>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Create Report
+        </Button>
+      </div>
+      
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="relative flex-1">
+          <Input
+            placeholder="Search reports..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <Filter className="h-4 w-4" />
+          </span>
+        </div>
+        <Button variant="outline" size="sm">
+          <ArrowUpDown className="mr-2 h-4 w-4" />
+          Sort by
+        </Button>
       </div>
 
-      {reports && reports.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {reports.map((report) => (
-            <ReportItem 
-              key={report.id} 
-              report={report} 
-              onSelect={handleSelectReport} 
-            />
-          ))}
-        </div>
-      ) : (
-        <ReportEmptyState onCreateReport={() => setCreateDialogOpen(true)} />
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>All Reports</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-8">Loading reports...</div>
+          ) : isError ? (
+            <div className="flex justify-center py-8 text-destructive">
+              Error loading reports. Please try again later.
+            </div>
+          ) : filteredReports.length === 0 ? (
+            <ReportEmptyState onCreateReport={() => setIsCreateDialogOpen(true)} />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredReports.map((report) => (
+                <ReportCard
+                  key={report.id}
+                  report={report}
+                  onView={() => handleViewReport(report.id)}
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <CreateReportDialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
+        open={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
         onSubmit={handleCreateReport}
       />
 
-      {selectedReportId && (
-        <ReportPreviewDialog 
-          report={reports.find(r => r.id === selectedReportId) || null}
-          open={previewDialogOpen}
-          onClose={() => setPreviewDialogOpen(false)}
+      {selectedReport && (
+        <ReportPreviewDialog
+          reportId={selectedReport}
+          open={isPreviewDialogOpen}
+          onClose={() => setIsPreviewDialogOpen(false)}
         />
       )}
     </div>

@@ -4,6 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Category, CategoryStatus } from '@/types/category';
 
+export interface AddCategoryFormData {
+  name: string;
+  description?: string;
+  assignment?: string;
+  deadline?: Date | null;
+  priority?: number;
+}
+
 export const useCategoryOperations = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
