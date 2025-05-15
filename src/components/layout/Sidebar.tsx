@@ -21,7 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { userRole } = usePermissions();
   
-  console.log("Layout Sidebar rendering with user role:", userRole);
+  console.log("[Layout Sidebar] Rendering with user role:", userRole);
 
   return (
     <div
@@ -44,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
       
       <NavigationSidebar 
-        userRole={userRole || 'schooladmin'} 
+        userRole={userRole} 
         isOpen={isOpen} 
         onToggle={onMenuClick} 
       />

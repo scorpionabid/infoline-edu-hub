@@ -1,5 +1,5 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+import { UserRole } from './role';
 
 export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
 
@@ -100,15 +100,5 @@ export interface UserFormData {
   notificationSettings?: NotificationSettings;
 }
 
-export interface Sector {
-  id: string;
-  name: string;
-  region_id: string;
-  description?: string;
-  status?: string;
-  created_at: string;
-  updated_at?: string;
-  admin_id?: string;
-  admin_email?: string;
-  completion_rate?: number;
-}
+// Re-export for backward compatibility
+export { UserRole } from './role';

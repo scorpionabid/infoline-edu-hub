@@ -1,7 +1,7 @@
 
 import { Session } from '@supabase/supabase-js';
+import { UserRole } from './role';
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
 
 export interface UserNotificationSettings {
