@@ -96,6 +96,8 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
         is_required: data.is_required || false,
         type: data.type,
         name: data.name,
+        created_at: column?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
       // Include the ID if we're editing

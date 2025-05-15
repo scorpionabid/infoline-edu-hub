@@ -5,6 +5,9 @@
  */
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
+// Define UserStatus for consistency
+export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
+
 /**
  * Mapping of roles to their display names
  */

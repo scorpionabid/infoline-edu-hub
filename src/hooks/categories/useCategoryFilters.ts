@@ -1,87 +1,85 @@
 
 import { useState, useCallback } from 'react';
-import { CategoryFilter } from '@/types/category';
+import { useDebounce } from '@/hooks/common/useDebounce';
+import { CategoryStatus } from '@/types/category';
 
-// Extend CategoryFilter with date property
-interface ExtendedCategoryFilter extends CategoryFilter {
-  date?: 'upcoming' | 'past' | 'all' | '';
+interface CategoryFilter {
+  status: CategoryStatus | '';
+  search: string;
+  assignment: string;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
 }
 
-export const useCategoryFilters = (initialFilter: ExtendedCategoryFilter = {}) => {
-  const [filter, setFilter] = useState<ExtendedCategoryFilter>({
+export const useCategoryFilters = () => {
+  const [filters, setFilters] = useState<CategoryFilter>({
+    status: '' as (CategoryStatus | ''),
     search: '',
-    status: '',
     assignment: '',
-    sortBy: 'name',
-    sortOrder: 'asc',
-    archived: false,
-    date: '',
-    ...initialFilter
+    sortBy: 'updated_at',
+    sortOrder: 'desc'
   });
 
-  /**
-   * Update a single filter property
-   */
-  const updateFilter = useCallback(<K extends keyof ExtendedCategoryFilter>(
-    key: K, 
-    value: ExtendedCategoryFilter[K]
-  ) => {
-    setFilter(prev => ({
-      ...prev,
-      [key]: value
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  
+  // Debounce the search filter to prevent excessive queries
+  const debouncedSetSearch = useDebounce((value: string) => {
+    setDebouncedSearch(value);
+    setFilters(prev => ({ ...prev, search: value }));
+  }, 300);
+
+  const handleSearchChange = useCallback((value: string) => {
+    debouncedSetSearch(value);
+  }, [debouncedSetSearch]);
+
+  const handleStatusChange = useCallback((value: string) => {
+    setFilters(prev => ({ 
+      ...prev, 
+      status: value as (CategoryStatus | '')
     }));
   }, []);
 
-  /**
-   * Update multiple filter properties at once
-   */
-  const updateFilters = useCallback((updates: Partial<ExtendedCategoryFilter>) => {
-    setFilter(prev => ({
-      ...prev,
-      ...updates
-    }));
+  const handleAssignmentChange = useCallback((value: string) => {
+    setFilters(prev => ({ ...prev, assignment: value }));
   }, []);
 
-  /**
-   * Reset filters to defaults or specified values
-   */
-  const resetFilters = useCallback((defaults: Partial<ExtendedCategoryFilter> = {}) => {
-    setFilter({
-      search: '',
-      status: '',
-      assignment: '',
-      sortBy: 'name',
-      sortOrder: 'asc',
-      archived: false,
-      date: '',
-      ...defaults
+  const handleSortChange = useCallback((field: string) => {
+    setFilters(prev => {
+      if (prev.sortBy === field) {
+        // Toggle sort order
+        return { ...prev, sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc' };
+      }
+      // New sort field, default to ascending
+      return { ...prev, sortBy: field, sortOrder: 'asc' };
     });
   }, []);
 
-  /**
-   * Toggle sort order for a specific column
-   */
-  const toggleSort = useCallback((column: string) => {
-    setFilter(prev => ({
-      ...prev,
-      sortBy: column,
-      sortOrder: prev.sortBy === column && prev.sortOrder === 'asc' ? 'desc' : 'asc'
-    }));
+  const resetFilters = useCallback(() => {
+    setFilters({
+      status: '' as (CategoryStatus | ''),
+      search: '',
+      assignment: '',
+      sortBy: 'updated_at',
+      sortOrder: 'desc'
+    });
+    setDebouncedSearch('');
   }, []);
 
-  /**
-   * Helper to get current sort direction for a column
-   */
-  const getSortDirection = useCallback((column: string) => {
-    return filter.sortBy === column ? filter.sortOrder : null;
-  }, [filter.sortBy, filter.sortOrder]);
+  // Calculate if any filters are active
+  const hasActiveFilters = filters.status !== '' || 
+    filters.assignment !== '' || 
+    filters.search !== '';
 
   return {
-    filter,
-    updateFilter,
-    updateFilters,
+    filters,
+    debouncedSearch,
+    handleSearchChange,
+    handleStatusChange,
+    handleAssignmentChange,
+    handleSortChange,
     resetFilters,
-    toggleSort,
-    getSortDirection
+    hasActiveFilters
   };
 };
+
+export default useCategoryFilters;

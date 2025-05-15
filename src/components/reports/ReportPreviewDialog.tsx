@@ -1,87 +1,104 @@
 
 import React, { useState } from 'react';
-import { 
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, BarChart2, Table as TableIcon, Activity } from 'lucide-react';
-import TableView from '@/components/reports/views/TableView';
-import ChartView from '@/components/reports/views/ChartView';
-import DataMetricsView from '@/components/reports/views/DataMetricsView';
-import { toast } from 'sonner';
+import { Report } from '@/types/report';
+import { Button } from '@/components/ui/button';
+import { Download, Share } from 'lucide-react';
 
 interface ReportPreviewDialogProps {
+  report: Report | null;
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  reportData?: Record<string, any>[];
-  title?: string;
-  columns?: string[];
+  onClose: () => void;
 }
 
-const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
+export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
+  report,
   open,
-  onOpenChange,
-  reportData = [],
-  title = "Hesabat Önbaxışı",
-  columns = []
+  onClose,
 }) => {
-  const [activeTab, setActiveTab] = useState('table');
+  const [activeTab, setActiveTab] = useState('chart');
 
-  const handleExport = () => {
-    toast.success("Hesabat yüklənir...");
-    // Excel export işləmini əlavə etmək mümkündür
-  };
+  if (!report) {
+    return null;
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-auto">
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-auto">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{report.title}</DialogTitle>
+          <DialogDescription>{report.description}</DialogDescription>
         </DialogHeader>
-        
-        <Tabs defaultValue="table" value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList>
-            <TabsTrigger value="table">
-              <TableIcon className="h-4 w-4 mr-2" />
-              Cədvəl
-            </TabsTrigger>
-            <TabsTrigger value="chart">
-              <BarChart2 className="h-4 w-4 mr-2" />
-              Qrafik
-            </TabsTrigger>
-            <TabsTrigger value="metrics">
-              <Activity className="h-4 w-4 mr-2" />
-              Metrikalar
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="table" className="border rounded-lg mt-2 p-2">
-            <TableView data={reportData} columns={columns} />
-          </TabsContent>
-          
-          <TabsContent value="chart" className="border rounded-lg mt-2 p-2">
-            <ChartView data={reportData} type="bar" />
-          </TabsContent>
-          
-          <TabsContent value="metrics" className="border rounded-lg mt-2 p-2">
-            <DataMetricsView data={reportData} />
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter className="mt-4">
-          <Button 
-            variant="outline" 
-            onClick={handleExport}
-            className="flex items-center"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Excel-ə ixrac et
-          </Button>
-          <DialogClose asChild>
-            <Button variant="secondary">Bağla</Button>
-          </DialogClose>
-        </DialogFooter>
+
+        <div className="flex justify-between items-center mt-4 mb-2">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList>
+              <TabsTrigger value="chart">Chart View</TabsTrigger>
+              <TabsTrigger value="table">Table View</TabsTrigger>
+              <TabsTrigger value="insights">Insights</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="flex space-x-2">
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button variant="outline" size="sm">
+              <Share className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+          </div>
+        </div>
+
+        <TabsContent value="chart" className="mt-2">
+          <div className="bg-muted/20 border rounded-md p-8 flex items-center justify-center h-[400px]">
+            Chart visualization will be displayed here
+          </div>
+        </TabsContent>
+
+        <TabsContent value="table" className="mt-2">
+          <div className="bg-muted/20 border rounded-md p-8 flex items-center justify-center h-[400px]">
+            Table data will be displayed here
+          </div>
+        </TabsContent>
+
+        <TabsContent value="insights" className="mt-2">
+          <div className="space-y-4">
+            <div className="bg-muted/20 border rounded-md p-4">
+              <h3 className="font-medium mb-2">Key Insights</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                {report.insights?.length ? (
+                  report.insights.map((insight, index) => (
+                    <li key={index}>{insight}</li>
+                  ))
+                ) : (
+                  <li>No insights available for this report</li>
+                )}
+              </ul>
+            </div>
+
+            <div className="bg-muted/20 border rounded-md p-4">
+              <h3 className="font-medium mb-2">Recommendations</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                {report.recommendations?.length ? (
+                  report.recommendations.map((rec, index) => (
+                    <li key={index}>{rec}</li>
+                  ))
+                ) : (
+                  <li>No recommendations available for this report</li>
+                )}
+              </ul>
+            </div>
+          </div>
+        </TabsContent>
       </DialogContent>
     </Dialog>
   );

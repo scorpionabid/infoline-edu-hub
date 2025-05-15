@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -7,31 +6,28 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
+} from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Edit, Copy, Download, Upload, File, FilePlus, AlertTriangle } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { toast } from 'sonner';
-import { CategoryWithColumns, Column } from '@/types/column';
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import { useToast } from "@/components/ui/use-toast"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Column } from '@/types/column';
+
+// Define the CategoryWithColumns type
+interface CategoryWithColumns {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  deadline?: string;
+  columns: Column[];
+}
 
 interface SchoolColumnTableProps {
   categoryId?: string;
@@ -39,7 +35,6 @@ interface SchoolColumnTableProps {
 }
 
 const SchoolColumnTable: React.FC<SchoolColumnTableProps> = ({ categoryId, schoolId }) => {
-  const { t } = useLanguage();
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [columns, setColumns] = useState<Column[]>([]);
@@ -124,7 +119,7 @@ const SchoolColumnTable: React.FC<SchoolColumnTableProps> = ({ categoryId, schoo
     }
   ];
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Real verilənləri backenddən çəkmək üçün istifadə edilə bilər
     // İmitasiya üçün setTimeout istifadə edirik
     const timer = setTimeout(() => {

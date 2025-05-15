@@ -1,96 +1,65 @@
 
 import React from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { ColumnType, columnTypeDefinitions } from '@/types/column';
-import { useLanguage } from '@/context/LanguageContext';
+import { Icons } from '@/components/ui/icons';
+import { LucideIcon } from 'lucide-react';
 
 interface ColumnTypeSelectorProps {
   value: ColumnType;
-  onChange: (value: ColumnType) => void;
-  disabled?: boolean;
+  onValueChange: (value: ColumnType) => void;
 }
 
-const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({
-  value,
-  onChange,
-  disabled = false
-}) => {
-  const { t } = useLanguage();
-  const [open, setOpen] = React.useState(false);
-
-  const columnTypes = Object.entries(columnTypeDefinitions) as [ColumnType, typeof columnTypeDefinitions.text][];
+export function ColumnTypeSelector({ value, onValueChange }: ColumnTypeSelectorProps) {
+  // Helper function to get icon component
+  const getIconComponent = (iconName: string): LucideIcon | null => {
+    const iconKey = iconName as keyof typeof Icons;
+    return Icons[iconKey] || null;
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          disabled={disabled}
-          className={cn(
-            "w-full justify-between",
-            !value && "text-muted-foreground"
-          )}
-        >
-          {value ? (
-            <span className="flex items-center">
-              <span className="mr-2">{columnTypeDefinitions[value]?.icon}</span>
-              {columnTypeDefinitions[value]?.label}
-            </span>
-          ) : (
-            t('selectColumnType')
-          )}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0">
-        <Command>
-          <CommandInput placeholder={t('searchColumnTypes')} />
-          <CommandEmpty>{t('noColumnTypesFound')}</CommandEmpty>
-          <CommandGroup>
-            {columnTypes.map(([type, definition]) => (
-              <CommandItem
-                key={type}
-                value={type}
-                onSelect={() => {
-                  onChange(type);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === type ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <div className="flex flex-col">
-                  <span>{definition.label}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {definition.description}
-                  </span>
+    <RadioGroup
+      value={value}
+      onValueChange={(val) => onValueChange(val as ColumnType)}
+      className="grid grid-cols-3 gap-4"
+    >
+      {columnTypeDefinitions.map((group, groupIndex) => (
+        <div key={`group-${groupIndex}`} className="col-span-3">
+          <h3 className="mb-2 text-sm font-medium">{group.group}</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {group.types.map((type) => {
+              const IconComponent = getIconComponent(type.icon);
+              
+              return (
+                <div key={type.value}>
+                  <RadioGroupItem
+                    value={type.value}
+                    id={`type-${type.value}`}
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor={`type-${type.value}`}
+                    className={cn(
+                      "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary",
+                      value === type.value ? "border-primary" : ""
+                    )}
+                  >
+                    {IconComponent && <IconComponent className="mb-2 h-6 w-6" />}
+                    <div className="text-center">
+                      <p className="font-medium leading-none">{type.label}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {type.description}
+                      </p>
+                    </div>
+                  </Label>
                 </div>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </RadioGroup>
   );
-};
-
-export default ColumnTypeSelector;
+}

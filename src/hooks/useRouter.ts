@@ -1,25 +1,40 @@
 
-import { useNavigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { useCallback } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
-export function useRouter() {
+export const useRouter = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const params = useParams();
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
+  const push = useCallback(
+    (path: string, state?: any) => {
+      navigate(path, { state });
+    },
+    [navigate]
+  );
+
+  const replace = useCallback(
+    (path: string, state?: any) => {
+      navigate(path, { replace: true, state });
+    },
+    [navigate]
+  );
+
+  const goBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
 
   return {
-    pathname: location.pathname,
-    query: {
-      ...Object.fromEntries(searchParams.entries()),
-      ...params,
-    },
-    location,
-    navigate,
+    push,
+    replace,
+    goBack,
     params,
-    searchParams,
-    push: navigate,
-    back: () => navigate(-1),
+    pathname: location.pathname,
+    query: new URLSearchParams(location.search),
+    location,
+    navigate
   };
-}
+};
 
 export default useRouter;

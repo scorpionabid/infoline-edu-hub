@@ -56,21 +56,43 @@ export async function updateUserProfile(userId: string, data: Partial<FullUserDa
     
     // If role or entity IDs are included, update the user role
     if (data.role || data.region_id || data.sector_id || data.school_id) {
-      // Convert UserRole to string since the database expects a string, not our UserRole type
+      // Convert the role to string for database storage
       const roleValue = data.role ? String(data.role) : undefined;
       
-      // Using insertOne for single record insertion
-      const { error: roleError } = await supabase
+      // Check if the user role exists
+      const { data: existingRole } = await supabase
         .from('user_roles')
-        .upsert({
-          user_id: userId,
-          role: roleValue,
-          region_id: data.region_id || null,
-          sector_id: data.sector_id || null,
-          school_id: data.school_id || null,
-        });
+        .select('id')
+        .eq('user_id', userId)
+        .single();
       
-      if (roleError) throw roleError;
+      if (existingRole) {
+        // Update existing role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .update({
+            role: roleValue as any, // Type casting to avoid TS errors
+            region_id: data.region_id || null,
+            sector_id: data.sector_id || null,
+            school_id: data.school_id || null,
+          })
+          .eq('user_id', userId);
+          
+        if (roleError) throw roleError;
+      } else {
+        // Insert new role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role: roleValue as any, // Type casting to avoid TS errors
+            region_id: data.region_id || null,
+            sector_id: data.sector_id || null,
+            school_id: data.school_id || null,
+          });
+          
+        if (roleError) throw roleError;
+      }
     }
     
     toast.success('Profile updated successfully');
@@ -119,7 +141,7 @@ export async function createUser(userData: any) {
       .from('user_roles')
       .insert({
         user_id: authData.user.id,
-        role: roleValue,
+        role: roleValue as any, // Type casting to avoid TS errors
         region_id: userData.region_id || null,
         sector_id: userData.sector_id || null,
         school_id: userData.school_id || null,

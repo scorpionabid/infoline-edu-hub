@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -9,10 +10,11 @@ import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FullUserData } from '@/types/auth';
 import { updateUserProfile } from '@/api/userApi';
+import { Separator } from '@/components/ui/separator';
 
 const AccountSettings = () => {
   const { user, updateUser } = useAuthStore();
-  const { t, supportedLanguages, changeLanguage } = useLanguage();
+  const { t, supportedLanguages } = useLanguage();
   
   const [formData, setFormData] = useState<Partial<FullUserData>>({
     full_name: '',
@@ -66,20 +68,16 @@ const AccountSettings = () => {
       
       // Update language if it was changed
       if (formData.language && formData.language !== user.language) {
-        changeLanguage(formData.language);
+        // Language change will be handled by the language context
+        if (window.location) {
+          window.location.reload();
+        }
       }
       
-      toast({
-        title: t('profileUpdated'),
-        description: t('profileUpdateSuccess'),
-        // Using standard toast options without 'variant'
-      });
+      toast.success(t('profileUpdated'));
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      toast({
-        title: t('error'),
-        description: error.message || t('profileUpdateError'),
-      });
+      toast.error(error.message || t('profileUpdateError'));
     } finally {
       setIsLoading(false);
     }
@@ -131,17 +129,14 @@ const AccountSettings = () => {
             
             <Label htmlFor="language">{t('language')}</Label>
             <Select
-              id="language"
-              name="language"
               value={formData.language}
-              onChange={handleLanguageChange}
-              className="w-full"
+              onValueChange={handleLanguageChange}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder={t('selectLanguage')} />
               </SelectTrigger>
               <SelectContent>
-                {supportedLanguages.map((lang) => (
+                {supportedLanguages && supportedLanguages.map((lang) => (
                   <SelectItem key={lang.code} value={lang.code}>
                     {lang.name}
                   </SelectItem>

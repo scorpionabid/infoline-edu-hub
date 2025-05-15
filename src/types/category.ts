@@ -1,38 +1,24 @@
 
-export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'approved' | 'archived';
-
+export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived' | 'approved';
 export type CategoryAssignment = 'all' | 'sectors' | 'schools';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  status?: CategoryStatus;
-  created_at?: string;
-  updated_at?: string;
   assignment?: CategoryAssignment;
+  status?: CategoryStatus;
   priority?: number;
-  deadline?: string | Date | null;
+  deadline?: string | null;
+  updated_at: string;
+  created_at?: string;
   archived?: boolean;
   column_count?: number;
-  completionRate?: number; // Added missing property
+  completionRate?: number; // Added for UI components
 }
 
-export interface CategoryFilter {
-  status?: CategoryStatus | null;
-  search?: string | null;
-  sortBy?: string | null;
-  sortOrder?: 'asc' | 'desc' | null;
-  archived?: boolean;
-}
-
-// Definition for TabDefinition used in CategoryForm
 export interface TabDefinition {
   id: string;
-  label: string;
-  icon?: React.ReactNode;
-}
-
-export interface ExtendedCategoryFilter extends CategoryFilter {
-  search?: string;
+  title: string;
+  columns?: any[];
 }

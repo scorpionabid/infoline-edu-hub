@@ -16,9 +16,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertTriangle, Loader2, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CategoryWithColumns, Column } from '@/types/column';
+import { Column } from '@/types/column';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+
+// Define the CategoryWithColumns type
+interface CategoryWithColumns {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  deadline?: string;
+  columns: Column[];
+}
 
 interface DataEntryFormProps {
   categoryId?: string;
