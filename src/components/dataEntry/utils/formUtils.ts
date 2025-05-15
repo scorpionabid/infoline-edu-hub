@@ -1,144 +1,91 @@
-import { Column } from '@/types/column';
 
-export interface ValidationResult {
-  valid: boolean;
-  message?: string;
-  errors?: Record<string, string>;
+import { ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { Column } from '@/types/column';
+import { ValidationResult } from '@/types/dataEntry';
+
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs));
 }
 
-/**
- * Sahə validasiyasını həyata keçirir
- * @param value Sahə dəyəri
- * @param validationRules Validasiya qaydaları
- * @param fieldType Sahə tipi
- * @returns Validasiya nəticəsi {isValid, errorMessage}
- */
-export const validateField = (
-  value: string, 
-  validationRules: any, 
-  fieldType: string
-): ValidationResult => {
-  // Validasiya qaydaları yoxdursa, true qaytarırıq
-  if (!validationRules) {
+export const validateField = (value: any, column: Column): ValidationResult => {
+  if (!column) {
     return { valid: true };
   }
-
-  // Boş məlumat yoxlaması
-  if (validationRules.required && (!value || value.trim() === '')) {
-    return { 
-      valid: false, 
-      message: 'Bu sahə məcburidir' 
+  
+  const errors: Record<string, string> = {};
+  
+  // Check required fields
+  if (column.is_required && (value === undefined || value === null || value === '')) {
+    return {
+      valid: false,
+      message: 'This field is required',
+      errors: { required: 'This field is required' }
     };
   }
-
-  // Ədədi sahələr üçün
-  if (fieldType === 'number' && value) {
-    const numValue = parseFloat(value);
-    
-    // Ədədi format yoxlaması
-    if (isNaN(numValue)) {
-      return { 
-        valid: false, 
-        message: 'Düzgün ədəd formatında deyil' 
-      };
-    }
-
-    // Minimum dəyər yoxlaması
-    if (validationRules.min !== undefined && numValue < validationRules.min) {
-      return { 
-        valid: false, 
-        message: `Minimum dəyər ${validationRules.min} olmalıdır` 
-      };
-    }
-
-    // Maksimum dəyər yoxlaması
-    if (validationRules.max !== undefined && numValue > validationRules.max) {
-      return { 
-        valid: false, 
-        message: `Maksimum dəyər ${validationRules.max} olmalıdır` 
-      };
-    }
+  
+  // Skip further validation if empty and not required
+  if (value === undefined || value === null || value === '') {
+    return { valid: true };
   }
-
-  // Mətn sahələri üçün
-  if (fieldType === 'text' || fieldType === 'textarea') {
-    // Minimum uzunluq yoxlaması
-    if (validationRules.minLength && value.length < validationRules.minLength) {
-      return { 
-        valid: false, 
-        message: `Minimum ${validationRules.minLength} simvol olmalıdır` 
-      };
-    }
-
-    // Maksimum uzunluq yoxlaması
-    if (validationRules.maxLength && value.length > validationRules.maxLength) {
-      return { 
-        valid: false, 
-        message: `Maksimum ${validationRules.maxLength} simvol olmalıdır` 
-      };
-    }
-
-    // Pattern yoxlaması
-    if (validationRules.pattern && !new RegExp(validationRules.pattern).test(value)) {
-      return { 
-        valid: false, 
-        message: validationRules.patternMessage || 'Format düzgün deyil' 
-      };
-    }
-  }
-
-  // Email validasiyası
-  if (fieldType === 'email' && value) {
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(value)) {
-      return { 
-        valid: false, 
-        message: 'Düzgün email formatı deyil' 
-      };
-    }
-  }
-
-  // Tarix validasiyası
-  if (fieldType === 'date' && value) {
-    const dateValue = new Date(value);
-    if (isNaN(dateValue.getTime())) {
-      return { 
-        valid: false, 
-        message: 'Düzgün tarix formatı deyil' 
-      };
-    }
-  }
-
-  // Validasiyanı uğurla keçdikdə
-  return { valid: true };
-};
-
-/**
- * Sahə dəyərini formatlandırır
- * @param value Sahə dəyəri
- * @param fieldType Sahə tipi
- * @returns Formatlanmış dəyər
- */
-export const formatValue = (value: string, fieldType: string): string => {
-  if (!value) return value;
-
-  switch (fieldType) {
+  
+  const validation = column.validation || {};
+  
+  // Type specific validations
+  switch (column.type) {
     case 'number':
-      // Rəqəmlər üçün formatlandırma (məsələn, minlik ayırıcı)
-      return parseFloat(value).toLocaleString('az-AZ');
-    
-    case 'date':
-      // Tarix formatı
-      try {
-        const date = new Date(value);
-        return date.toLocaleDateString('az-AZ');
-      } catch (err) {
-        return value;
+      if (validation.min !== undefined && Number(value) < validation.min) {
+        errors.min = `Value must be at least ${validation.min}`;
       }
+      if (validation.max !== undefined && Number(value) > validation.max) {
+        errors.max = `Value must be at most ${validation.max}`;
+      }
+      break;
       
     case 'text':
     case 'textarea':
-    default:
-      return value;
+      if (validation.minLength !== undefined && String(value).length < validation.minLength) {
+        errors.minLength = `Text must be at least ${validation.minLength} characters`;
+      }
+      if (validation.maxLength !== undefined && String(value).length > validation.maxLength) {
+        errors.maxLength = `Text must be at most ${validation.maxLength} characters`;
+      }
+      if (validation.pattern && !new RegExp(validation.pattern).test(String(value))) {
+        errors.pattern = 'Input does not match the required format';
+      }
+      break;
+      
+    case 'email':
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(String(value))) {
+        errors.email = 'Please enter a valid email address';
+      }
+      break;
+      
+    case 'date':
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        errors.date = 'Please enter a valid date';
+      }
+      if (validation.minDate && new Date(value) < new Date(validation.minDate)) {
+        errors.minDate = `Date must be after ${new Date(validation.minDate).toLocaleDateString()}`;
+      }
+      if (validation.maxDate && new Date(value) > new Date(validation.maxDate)) {
+        errors.maxDate = `Date must be before ${new Date(validation.maxDate).toLocaleDateString()}`;
+      }
+      break;
   }
+  
+  const isValid = Object.keys(errors).length === 0;
+  
+  return {
+    valid: isValid,
+    message: isValid ? undefined : Object.values(errors)[0],
+    errors: isValid ? undefined : errors
+  };
+};
+
+export default {
+  cn,
+  validateField
 };

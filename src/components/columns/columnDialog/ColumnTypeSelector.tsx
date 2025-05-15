@@ -18,7 +18,7 @@ export function ColumnTypeSelector({ value, onValueChange }: ColumnTypeSelectorP
   const getIconComponent = (iconName: string): LucideIcon => {
     const iconKey = iconName as keyof typeof Icons;
     // Provide a default icon if the requested one doesn't exist
-    return Icons[iconKey] || Icons.Circle;
+    return Icons[iconKey] || Icons.circle;
   };
 
   return (

@@ -41,9 +41,7 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
           ? options.map((opt: any): ColumnOption => ({
               id: opt.id || String(Math.random()),
               label: opt.label || '',
-              value: opt.value || '',
-              color: opt.color,
-              disabled: opt.disabled || false
+              value: opt.value || ''
             }))
           : undefined;
 
@@ -64,7 +62,6 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
           created_at: column.created_at,
           updated_at: column.updated_at,
           description: column.description || '',
-          color: column.color
         } as Column;
       });
     }

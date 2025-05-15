@@ -1,5 +1,8 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
@@ -8,8 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -18,114 +29,117 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import { useLanguage } from '@/context/LanguageContext';
+import { CreateReportDialogProps } from '@/types/report';
 
-export interface CreateReportDialogProps {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (reportData: { 
-    title: string; 
-    description: string; 
-    type: string;
-  }) => Promise<void>;
-}
+const formSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  type: z.string().min(1, 'Report type is required'),
+});
 
-export const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
-  open,
-  onClose,
+type FormValues = z.infer<typeof formSchema>;
+
+const CreateReportDialog: React.FC<CreateReportDialogProps> = ({ 
+  open, 
+  onClose, 
   onSubmit,
+  onCreate
 }) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [type, setType] = useState('summary');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useLanguage();
+  const handleSubmit = onCreate || onSubmit;
 
-  const handleSubmit = async () => {
-    if (!title.trim()) {
-      // Show validation error
-      return;
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      type: '',
+    },
+  });
+
+  const onFormSubmit = async (data: FormValues) => {
+    if (handleSubmit) {
+      await handleSubmit(data);
+      form.reset();
     }
-
-    setIsSubmitting(true);
-    try {
-      await onSubmit({
-        title,
-        description,
-        type,
-      });
-      resetForm();
-      onClose();
-    } catch (error) {
-      console.error('Error creating report:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setType('summary');
-  };
-
-  const handleClose = () => {
-    resetForm();
-    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Report</DialogTitle>
+          <DialogTitle>{t('createReport')}</DialogTitle>
           <DialogDescription>
-            Create a new report based on your data. Add a clear title and description to make it easily identifiable.
+            {t('createReportDescription')}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Report Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter a descriptive title for your report"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('title')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t('reportTitlePlaceholder')} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Provide more details about the purpose and content of this report"
-              rows={4}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('description')}</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder={t('reportDescriptionPlaceholder')} 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="type">Report Type</Label>
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger id="type">
-                <SelectValue placeholder="Select report type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="summary">Summary Report</SelectItem>
-                <SelectItem value="detailed">Detailed Report</SelectItem>
-                <SelectItem value="comparison">Comparison Report</SelectItem>
-                <SelectItem value="analysis">Analysis Report</SelectItem>
-                <SelectItem value="custom">Custom Report</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Creating...' : 'Create Report'}
-          </Button>
-        </DialogFooter>
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('reportType')}</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('selectReportType')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="analytics">
+                        {t('analyticsReport')}
+                      </SelectItem>
+                      <SelectItem value="performance">
+                        {t('performanceReport')}
+                      </SelectItem>
+                      <SelectItem value="summary">
+                        {t('summaryReport')}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? t('creating') : t('create')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

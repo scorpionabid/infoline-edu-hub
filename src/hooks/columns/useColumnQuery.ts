@@ -40,9 +40,7 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
         ? options.map((opt: any): ColumnOption => ({
             id: opt.id || String(Math.random()),
             label: opt.label || '',
-            value: opt.value || '',
-            color: opt.color,
-            disabled: opt.disabled || false
+            value: opt.value || ''
           }))
         : undefined;
 
@@ -63,7 +61,6 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
         created_at: data.created_at,
         updated_at: data.updated_at,
         description: data.description || '',
-        color: data.color
       } as Column;
     }
     

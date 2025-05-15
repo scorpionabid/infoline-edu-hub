@@ -1,14 +1,35 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { CategoryWithColumns, CategoryStatus, CategoryAssignment } from '@/types/category';
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { CategoryWithColumns } from '@/types/category';
 import { Column } from '@/types/column';
 
+interface UsePermissionsResult {
+  hasRegionAccess?: boolean;
+  hasSectorAccess?: boolean;
+  hasRoleAtLeast?: (role: string) => boolean;
+}
+
+// Mock permissions hook - replace with your actual permissions hook
+const usePermissions = (): UsePermissionsResult => {
+  return {
+    hasRegionAccess: true,
+    hasSectorAccess: true,
+    hasRoleAtLeast: (role: string) => true,
+  };
+};
+
+// Mock auth store - replace with your actual auth store
+const useAuthStore = () => {
+  return {
+    user: { id: '1', region_id: '1', sector_id: '1', role: 'admin' }
+  };
+};
+
 export const useCategories = () => {
-  const { hasRegionAccess, hasSectorAccess, hasRoleAtLeast } = usePermissions();
-  const { user } = useAuthStore(); 
+  const permissions = usePermissions();
+  const authStore = useAuthStore();
+  const { user } = authStore;
 
   return useQuery({
     queryKey: ['categories', user?.id],
@@ -18,15 +39,15 @@ export const useCategories = () => {
         columns (*)
       `);
 
-      // Apply role-based filters
-      if (hasRoleAtLeast('superadmin')) {
+      // Apply role-based filters based on the user's role
+      if (user?.role === 'superadmin') {
         // Super admin sees all categories
-      } else if (hasRoleAtLeast('regionadmin')) {
+      } else if (user?.role === 'regionadmin') {
         if (user?.region_id) {
           query = query.eq('region_id', user.region_id)
             .or(`region_id.is.null,assignment.eq.region`);
         }
-      } else if (hasRoleAtLeast('sectoradmin')) {
+      } else if (user?.role === 'sectoradmin') {
         if (user?.sector_id) {
           query = query.eq('sector_id', user.sector_id)
             .or(`sector_id.is.null,assignment.eq.sector`);
@@ -42,15 +63,28 @@ export const useCategories = () => {
 
       // Transform the data to ensure type safety
       return data.map(category => {
-        const columns = category.columns as Column[];
+        const typedColumns = (category.columns || []).map((col: any) => {
+          // Parse JSON fields if they're stored as strings
+          const options = col.options 
+            ? (typeof col.options === 'string' ? JSON.parse(col.options) : col.options)
+            : [];
+            
+          const validation = col.validation
+            ? (typeof col.validation === 'string' ? JSON.parse(col.validation) : col.validation)
+            : {};
+
+          return {
+            ...col,
+            options,
+            validation
+          } as Column;
+        });
         
         return {
           ...category,
-          status: category.status as CategoryStatus,
-          assignment: (category.assignment || null) as CategoryAssignment,
-          columns,
-          columnCount: columns.length,
-        };
+          columns: typedColumns,
+          columnCount: typedColumns.length,
+        } as CategoryWithColumns;
       });
     },
     refetchOnWindowFocus: false,

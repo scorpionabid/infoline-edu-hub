@@ -30,3 +30,9 @@ export interface TabDefinition {
   label: string;
   columns?: any[];
 }
+
+export interface CategoryFilter {
+  search: string;
+  status: CategoryStatus | '';
+  assignment: CategoryAssignment | '';
+}

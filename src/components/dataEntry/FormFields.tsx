@@ -1,234 +1,227 @@
-import React from 'react';
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-  FormDescription,
-} from "@/components/ui/form";
-import { Input } from '@/components/ui/input';
-import { Control } from 'react-hook-form';
+
+import React, { useState } from 'react';
 import { Column } from '@/types/column';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { DatePicker } from '@/components/ui/date-picker';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ValidationResult } from '@/types/dataEntry';
+import { validateField, cn } from '@/components/dataEntry/utils/formUtils';
 
-export interface ValidationResult {
-  valid: boolean;
-  message?: string;
-  errors?: Record<string, string>;
+interface FormFieldProps {
+  column: Column;
+  value: any;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  onValueChange?: (value: any) => void;
+  isDisabled?: boolean;
 }
 
-// Tip tərifini genişləndirərək string | number | boolean | Date tipləri ilə işləyəcək hala gətirək
-interface FormFieldsProps {
-  fields: any[];
-  values: Record<string, string>; // Dəyişdik - Əvvəlcə string olaraq dəyərləri alaq
-  setValues: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  errors: Record<string, string>;
-  setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  disabled?: boolean;
-}
-
-const FormFields: React.FC<FormFieldsProps> = ({ 
-  fields, 
-  values, 
-  setValues, 
-  errors,
-  setErrors,
-  disabled = false
+export const FormFields: React.FC<FormFieldProps> = ({ 
+  column, 
+  value, 
+  onChange, 
+  onValueChange,
+  isDisabled = false
 }) => {
-  const validateField = (field: any, value: any): string | null => {
-    if (!field || !field.validation) return null;
-    
-    const { validation } = field;
-    
-    if (field.isRequired && (!value || value === "")) {
-      return "Bu sahə məcburidir";
-    }
-    
-    if (validation.min !== undefined && Number(value) < validation.min) {
-      return `Minimum dəyər ${validation.min} olmalıdır`;
-    }
-    
-    if (validation.max !== undefined && Number(value) > validation.max) {
-      return `Maksimum dəyər ${validation.max} olmalıdır`;
-    }
-    
-    if (validation.minLength !== undefined && value.length < validation.minLength) {
-      return `Minimum ${validation.minLength} simvol olmalıdır`;
-    }
-    
-    if (validation.maxLength !== undefined && value.length > validation.maxLength) {
-      return `Maksimum ${validation.maxLength} simvol olmalıdır`;
-    }
-    
-    if (validation.pattern && !new RegExp(validation.pattern).test(value)) {
-      return validation.patternMessage || "Dəyər düzgün formatda deyil";
-    }
-    
-    return null;
+  const [validationResult, setValidationResult] = useState<ValidationResult>({ valid: true });
+
+  const handleBlur = () => {
+    const result = validateField(value, column);
+    setValidationResult(result);
   };
 
-  const handleChange = (id: string, value: string) => {
-    // Dəyəri əvvəlcə string olaraq saxla
-    setValues(prev => ({
-      ...prev,
-      [id]: value
-    }));
-
-    // Xətaları yoxla
-    const field = fields.find(f => f.id === id);
-    const error = validateField(field, value);
-    
-    if (error) {
-      setErrors(prev => ({ ...prev, [id]: error }));
-    } else {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[id];
-        return newErrors;
-      });
+  const handleDateChange = (date: Date | undefined) => {
+    if (onValueChange) {
+      onValueChange(date ? date.toISOString() : '');
     }
   };
 
-  const renderField = (field: any) => {
-    const { id, name, type, placeholder, helpText, options = [], defaultValue, validation = {} } = field;
-    const value = values[id] || '';
-    const error = errors[id];
+  const handleBooleanChange = (checked: boolean) => {
+    if (onValueChange) {
+      onValueChange(checked);
+    }
+  };
 
-    switch (type) {
+  const handleCheckboxChange = (checked: boolean) => {
+    if (onValueChange) {
+      onValueChange(checked ? 'true' : 'false');
+    }
+  };
+
+  const handleRadioChange = (value: string) => {
+    if (onValueChange) {
+      onValueChange(value);
+    }
+  };
+
+  const handleSelectChange = (value: string) => {
+    if (onValueChange) {
+      onValueChange(value);
+    }
+  };
+
+  const renderField = () => {
+    switch (column.type) {
       case 'text':
+      case 'email':
+      case 'tel':
+      case 'url':
+      case 'password':
         return (
           <Input
-            id={id}
-            value={value}
-            onChange={(e) => handleChange(id, e.target.value)}
-            placeholder={placeholder}
-            className={cn(error && 'border-destructive')}
-            disabled={disabled}
+            type={column.type}
+            name={column.id}
+            value={value || ''}
+            onChange={onChange}
+            onBlur={handleBlur}
+            placeholder={column.placeholder}
+            required={column.is_required}
+            disabled={isDisabled}
+            className={cn(
+              "w-full",
+              !validationResult.valid && "border-destructive"
+            )}
           />
         );
-      
+
       case 'textarea':
         return (
           <Textarea
-            id={id}
-            value={value}
-            onChange={(e) => handleChange(id, e.target.value)}
-            placeholder={placeholder}
-            className={cn(error && 'border-destructive')}
-            disabled={disabled}
+            name={column.id}
+            value={value || ''}
+            onChange={onChange}
+            onBlur={handleBlur}
+            placeholder={column.placeholder}
+            required={column.is_required}
+            disabled={isDisabled}
+            className={cn(
+              "w-full resize-y min-h-[100px]",
+              !validationResult.valid && "border-destructive"
+            )}
           />
         );
-      
+
       case 'number':
         return (
           <Input
-            id={id}
             type="number"
-            value={value}
-            onChange={(e) => handleChange(id, e.target.value)}
-            placeholder={placeholder}
-            className={cn(error && 'border-destructive')}
-            disabled={disabled}
+            name={column.id}
+            value={value || ''}
+            onChange={onChange}
+            onBlur={handleBlur}
+            placeholder={column.placeholder}
+            required={column.is_required}
+            disabled={isDisabled}
+            min={column.validation?.min}
+            max={column.validation?.max}
+            className={cn(
+              "w-full",
+              !validationResult.valid && "border-destructive"
+            )}
           />
         );
-      
+
       case 'checkbox':
         return (
           <div className="flex items-center space-x-2">
             <Switch
-              id={id}
-              checked={value === 'true'}
-              onCheckedChange={(checked) => handleChange(id, checked ? 'true' : 'false')}
-              disabled={disabled}
+              checked={value === 'true' || value === true}
+              onCheckedChange={handleCheckboxChange}
+              disabled={isDisabled}
             />
-            <Label htmlFor={id}>{placeholder}</Label>
+            <Label htmlFor={column.id}>{column.placeholder || column.name}</Label>
           </div>
         );
-      
+
       case 'date':
         return (
           <DatePicker
-            value={value ? new Date(value) : undefined}
-            onChange={(date) => handleChange(id, date ? date.toISOString() : '')}
-            disabled={disabled}
+            date={value ? new Date(value) : undefined}
+            onSelect={handleDateChange}
+            disabled={isDisabled}
           />
-        );
-        
-      case 'select':
-        return (
-          <select
-            id={id}
-            value={value}
-            onChange={(e) => handleChange(id, e.target.value)}
-            className={cn(
-              "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:text-muted-foreground file:h-10 file:w-full file:flex-1 file:cursor-pointer",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-              error && 'border-destructive'
-            )}
-            disabled={disabled}
-          >
-            <option value="">{placeholder}</option>
-            {options.map((option: any) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
         );
 
       case 'radio':
         return (
-          <div className="flex flex-col space-y-2">
-            {options.map((option: any) => (
+          <RadioGroup
+            value={value || ''}
+            onValueChange={handleRadioChange}
+            disabled={isDisabled}
+            className="space-y-1"
+          >
+            {column.options?.map((option) => (
               <div key={option.value} className="flex items-center space-x-2">
-                <Input
-                  type="radio"
-                  id={`${id}-${option.value}`}
-                  name={id}
-                  value={option.value}
-                  checked={value === option.value}
-                  onChange={() => handleChange(id, option.value)}
-                  disabled={disabled}
-                />
-                <Label htmlFor={`${id}-${option.value}`}>{option.label}</Label>
+                <RadioGroupItem value={option.value} id={`${column.id}-${option.value}`} />
+                <Label htmlFor={`${column.id}-${option.value}`}>{option.label}</Label>
               </div>
             ))}
-          </div>
+          </RadioGroup>
+        );
+
+      case 'select':
+        return (
+          <Select
+            value={value || ''}
+            onValueChange={handleSelectChange}
+            disabled={isDisabled}
+          >
+            <SelectTrigger className={cn(
+              "w-full",
+              !validationResult.valid && "border-destructive"
+            )}>
+              <SelectValue placeholder={column.placeholder || `Select ${column.name}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {column.options?.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         );
 
       default:
         return (
           <Input
-            id={id}
-            value={value}
-            onChange={(e) => handleChange(id, e.target.value)}
-            placeholder={placeholder}
-            className={cn(error && 'border-destructive')}
-            disabled={disabled}
+            type="text"
+            name={column.id}
+            value={value || ''}
+            onChange={onChange}
+            onBlur={handleBlur}
+            placeholder={column.placeholder}
+            required={column.is_required}
+            disabled={isDisabled}
+            className={cn(
+              "w-full",
+              !validationResult.valid && "border-destructive"
+            )}
           />
         );
     }
   };
 
   return (
-    <div className="space-y-4">
-      {fields.map((field) => (
-        <div key={field.id} className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor={field.id} className={cn(field.isRequired && 'after:content-["*"] after:ml-0.5 after:text-destructive')}>
-              {field.name}
-            </Label>
-            {field.helpText && <span className="text-xs text-muted-foreground">{field.helpText}</span>}
-          </div>
-          
-          {renderField(field)}
-          
-          {errors[field.id] && (
-            <p className="text-xs text-destructive">{errors[field.id]}</p>
-          )}
-        </div>
-      ))}
+    <div className="space-y-2">
+      <Label htmlFor={column.id} className={cn(!validationResult.valid && "text-destructive")}>
+        {column.name}
+        {column.is_required && <span className="text-destructive ml-1">*</span>}
+      </Label>
+      
+      {renderField()}
+      
+      {column.help_text && (
+        <p className="text-xs text-muted-foreground">{column.help_text}</p>
+      )}
+      
+      {!validationResult.valid && validationResult.message && (
+        <p className="text-xs text-destructive mt-1">{validationResult.message}</p>
+      )}
     </div>
   );
 };

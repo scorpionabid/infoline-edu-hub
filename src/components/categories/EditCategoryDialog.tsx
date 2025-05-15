@@ -84,17 +84,12 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           status,
           priority,
           deadline: deadline ? deadline.toISOString() : null,
-          updated_at: now,
+          updated_at: now
         };
         
-        const result = await updateCategory(categoryData);
-        
-        if (result.success) {
-          onSave && onSave();
-          onClose();
-        }
+        await updateCategory(category.id, categoryData);
       } else {
-        const result = await createCategory({
+        const categoryData = {
           name,
           description,
           assignment,
@@ -102,15 +97,18 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           priority,
           deadline: deadline ? deadline.toISOString() : null,
           created_at: now,
-          updated_at: now,
-          archived: false
-        } as Omit<Category, 'id'>);
+          updated_at: now
+        };
         
-        if (result.success) {
-          onSave && onSave();
-          onClose();
-        }
+        await createCategory(categoryData);
       }
+      
+      if (onSave) {
+        onSave();
+      }
+      
+      onClose();
+      resetForm();
     } catch (error) {
       console.error('Error saving category:', error);
     }

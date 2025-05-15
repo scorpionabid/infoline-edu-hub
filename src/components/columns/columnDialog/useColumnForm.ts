@@ -88,6 +88,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
   const onSubmit = async (data: ColumnFormValues) => {
     try {
       // Create a complete column data object with all required fields
+      const now = new Date().toISOString();
       const formData = {
         ...data,
         category_id: data.category_id || categoryId || '',
@@ -96,8 +97,8 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
         is_required: data.is_required || false,
         type: data.type,
         name: data.name,
-        created_at: column?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: column?.created_at || now,
+        updated_at: now,
       } as Omit<Column, "id">;
 
       // Include the ID if we're editing

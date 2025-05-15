@@ -1,84 +1,44 @@
 
 import { useState, useCallback } from 'react';
-import { useDebounce } from '@/hooks/common/useDebounce';
-import { CategoryStatus } from '@/types/category';
-
-interface CategoryFilter {
-  status: CategoryStatus | '';
-  search: string;
-  assignment: string;
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
-}
+import { CategoryAssignment, CategoryFilter, CategoryStatus } from '@/types/category';
+import useDebounce from '@/hooks/common/useDebounce';
 
 export const useCategoryFilters = () => {
   const [filters, setFilters] = useState<CategoryFilter>({
-    status: '' as (CategoryStatus | ''),
     search: '',
-    assignment: '',
-    sortBy: 'updated_at',
-    sortOrder: 'desc'
+    status: '' as CategoryStatus,
+    assignment: '' as CategoryAssignment
   });
-
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   
-  // Debounce the search filter to prevent excessive queries
-  const debouncedSetSearch = useDebounce((value: string) => {
-    setDebouncedSearch(value);
-    setFilters(prev => ({ ...prev, search: value }));
-  }, 300);
+  const debouncedSearch = useDebounce(filters.search, 300);
 
-  const handleSearchChange = useCallback((value: string) => {
-    debouncedSetSearch(value);
-  }, [debouncedSetSearch]);
-
-  const handleStatusChange = useCallback((value: string) => {
-    setFilters(prev => ({ 
-      ...prev, 
-      status: value as (CategoryStatus | '')
-    }));
+  const updateSearchFilter = useCallback((search: string) => {
+    setFilters(prev => ({ ...prev, search }));
   }, []);
 
-  const handleAssignmentChange = useCallback((value: string) => {
-    setFilters(prev => ({ ...prev, assignment: value }));
+  const updateStatusFilter = useCallback((status: CategoryStatus | '') => {
+    setFilters(prev => ({ ...prev, status }));
   }, []);
 
-  const handleSortChange = useCallback((field: string) => {
-    setFilters(prev => {
-      if (prev.sortBy === field) {
-        // Toggle sort order
-        return { ...prev, sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc' };
-      }
-      // New sort field, default to ascending
-      return { ...prev, sortBy: field, sortOrder: 'asc' };
-    });
+  const updateAssignmentFilter = useCallback((assignment: CategoryAssignment | '') => {
+    setFilters(prev => ({ ...prev, assignment }));
   }, []);
 
-  const resetFilters = useCallback(() => {
+  const clearFilters = useCallback(() => {
     setFilters({
-      status: '' as (CategoryStatus | ''),
       search: '',
-      assignment: '',
-      sortBy: 'updated_at',
-      sortOrder: 'desc'
+      status: '' as CategoryStatus,
+      assignment: '' as CategoryAssignment
     });
-    setDebouncedSearch('');
   }, []);
-
-  // Calculate if any filters are active
-  const hasActiveFilters = filters.status !== '' || 
-    filters.assignment !== '' || 
-    filters.search !== '';
 
   return {
     filters,
     debouncedSearch,
-    handleSearchChange,
-    handleStatusChange,
-    handleAssignmentChange,
-    handleSortChange,
-    resetFilters,
-    hasActiveFilters
+    updateSearchFilter,
+    updateStatusFilter,
+    updateAssignmentFilter,
+    clearFilters
   };
 };
 
