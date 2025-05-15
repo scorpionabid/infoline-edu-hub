@@ -23,6 +23,8 @@ const Login = () => {
   // Daha effektiv yoxlama üçün göstəricilər
   const [redirectInProgress, setRedirectInProgress] = useState(false);
   
+  console.log('[Login.tsx] Render state:', { isAuthenticated, isLoading, user, error, redirectInProgress });
+
   // Authentication state effect - sonsuz dövrləri aradan qaldırılmış versiya
   useEffect(() => {
     // Əgər istifadəçi artıq yönləndirilmirsə və autentifikasiya olunubsa
@@ -38,6 +40,14 @@ const Login = () => {
       }, 100);
     }
   }, [isAuthenticated, isLoading, user, from, navigate, redirectInProgress]);
+
+  // Initialize auth if not already done
+  useEffect(() => {
+    if (!useAuthStore.getState().initialized) {
+      console.log('[Login.tsx] Initializing auth');
+      useAuthStore.getState().initializeAuth();
+    }
+  }, []);
 
   // Show loading state when auth is being checked
   if (isLoading) {

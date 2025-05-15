@@ -7,13 +7,16 @@ import DashboardContent from '@/components/dashboard/DashboardContent';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
 import { toast } from 'sonner';
 import LoadingScreen from '@/components/auth/LoadingScreen';
-import { UserRole } from '@/types/supabase';
+import { UserRole, normalizeRole } from '@/types/role';
 
 const Dashboard: React.FC = () => {
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const isLoading = useAuthStore(selectIsLoading);
   const user = useAuthStore(selectUser);
-  const userRole = useAuthStore(selectUserRole) as UserRole | null;
+  const rawUserRole = useAuthStore(selectUserRole);
+  
+  // Ensure we have a properly normalized role
+  const userRole = normalizeRole(rawUserRole);
   
   const [initialCheck, setInitialCheck] = useState(true);
   const navigate = useNavigate();
@@ -24,8 +27,8 @@ const Dashboard: React.FC = () => {
     initialCheck, 
     isAuthenticated, 
     user,
-    userRole,
-    role: user?.role 
+    rawUserRole,
+    normalizedRole: userRole
   });
 
   // Initialize auth if not already done
@@ -83,9 +86,8 @@ const Dashboard: React.FC = () => {
   
   console.log('[Dashboard.tsx] Render: Authenticated and user exists. Proceeding to render content.', { user, userRole });
 
-  // Assign a valid role for display purposes
-  const roleForDisplay = userRole || user?.role || 'schooladmin';
-  const isSchoolAdmin = roleForDisplay === 'schooladmin';
+  // Check if user is a school admin for showing the setup check
+  const isSchoolAdmin = userRole === 'schooladmin';
 
   return (
     <div className="space-y-3">
