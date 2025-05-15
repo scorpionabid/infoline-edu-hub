@@ -33,6 +33,22 @@ export interface FullUserData {
   // Support both for backward compatibility
   notification_settings?: UserNotificationSettings;
   notificationSettings?: UserNotificationSettings;
+  // Additional fields for compatibility
+  name?: string;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  lastLogin?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  adminEntity?: {
+    type?: string;
+    name?: string;
+    schoolName?: string;
+    sectorName?: string;
+    regionName?: string;
+  };
+  entityTypes?: string[];
 }
 
 export interface AuthStore {
@@ -68,3 +84,6 @@ export interface AuthContextType {
   setError: (error: string) => void;
   updateUserData: (data: Partial<FullUserData>) => Promise<any>;
 }
+
+// Re-export UserRole type for backward compatibility
+export { UserRole } from './role';

@@ -1,159 +1,131 @@
-import { supabase } from '@/lib/supabase';
-import { FullUserData, UserRole, UserStatus } from '@/types/auth';
 
-// Function to fetch all users
-export const getAllUsers = async (): Promise<FullUserData[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*');
+import { supabase } from '@/integrations/supabase/client';
+import { UserRole } from '@/types/role';
+import { FullUserData, UserStatus } from '@/types/auth';
+import { toast } from 'sonner';
 
-    if (error) {
-      console.error('Error fetching users:', error);
-      throw error;
-    }
-
-    return data.map(adaptUser);
-  } catch (error: any) {
-    console.error('Error in getAllUsers:', error.message);
-    throw error;
-  }
-};
-
-// Function to fetch a single user by ID
-export const getUserById = async (id: string): Promise<FullUserData | null> => {
+export async function fetchUserProfile(userId: string): Promise<FullUserData | null> {
   try {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', id)
+      .eq('id', userId)
       .single();
 
-    if (error) {
-      console.error('Error fetching user by ID:', error);
-      return null;
-    }
-
-    return adaptUser(data);
-  } catch (error: any) {
-    console.error('Error in getUserById:', error.message);
-    return null;
-  }
-};
-
-// Function to create a new user
-export const createUser = async (userData: Omit<FullUserData, 'id'>): Promise<FullUserData | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert([userData])
+    if (error) throw error;
+    
+    // Also get the user role
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
       .select('*')
+      .eq('user_id', userId)
       .single();
-
-    if (error) {
-      console.error('Error creating user:', error);
-      throw error;
+    
+    if (roleError && roleError.code !== 'PGRST116') {
+      console.error('Error fetching user role:', roleError);
     }
-
-    return adaptUser(data);
-  } catch (error: any) {
-    console.error('Error in createUser:', error.message);
+    
+    // Create the full user data
+    return {
+      ...data,
+      role: roleData?.role || 'user' as UserRole,
+      status: data.status as UserStatus || 'active',
+    };
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
     return null;
   }
-};
+}
 
-// Function to update an existing user
-export const updateUser = async (id: string, userData: Partial<FullUserData>): Promise<FullUserData | null> => {
+export async function updateUserProfile(userId: string, data: Partial<FullUserData>) {
   try {
-    const { data, error } = await supabase
+    // First, update the profile
+    const { error: profileError } = await supabase
       .from('profiles')
-      .update(userData)
-      .eq('id', id)
-      .select('*')
-      .single();
-
-    if (error) {
-      console.error('Error updating user:', error);
-      throw error;
-    }
-
-    return adaptUser(data);
-  } catch (error: any) {
-    console.error('Error in updateUser:', error.message);
-    return null;
-  }
-};
-
-// Function to delete a user by ID
-export const deleteUser = async (id: string): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error deleting user:', error);
-      return false;
-    }
-
-    return true;
-  } catch (error: any) {
-    console.error('Error in deleteUser:', error.message);
-    return false;
-  }
-};
-
-// Function to update user status
-export const updateUserStatus = async (id: string, status: UserStatus): Promise<FullUserData | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ status })
-      .eq('id', id)
-      .select('*')
-      .single();
-
-    if (error) {
-      console.error('Error updating user status:', error);
-      return null;
-    }
-
-    return adaptUser(data);
-  } catch (error: any) {
-    console.error('Error in updateUserStatus:', error.message);
-    return null;
-  }
-};
-
-// Function to assign a role to a user
-export const assignRoleToUser = async (userId: string, role: UserRole): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ role })
+      .update({
+        full_name: data.full_name,
+        phone: data.phone,
+        position: data.position,
+        language: data.language,
+        avatar: data.avatar,
+        status: data.status,
+      })
       .eq('id', userId);
-
-    if (error) {
-      console.error('Error assigning role to user:', error);
-      return false;
+    
+    if (profileError) throw profileError;
+    
+    // If role or entity IDs are included, update the user role
+    if (data.role || data.region_id || data.sector_id || data.school_id) {
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .upsert({
+          user_id: userId,
+          role: data.role,
+          region_id: data.region_id || null,
+          sector_id: data.sector_id || null,
+          school_id: data.school_id || null,
+        })
+        .eq('user_id', userId);
+      
+      if (roleError) throw roleError;
     }
-
-    return true;
+    
+    toast.success('Profile updated successfully');
+    return { data: true, error: null };
   } catch (error: any) {
-    console.error('Error in assignRoleToUser:', error.message);
-    return false;
+    console.error('Error updating user profile:', error);
+    toast.error('Failed to update profile: ' + error.message);
+    return { data: null, error };
   }
-};
+}
 
-// When dealing with notification settings, use notificationSettings consistently
-const adaptUser = (user: any): FullUserData => {
-  return {
-    ...user,
-    notificationSettings: user.notificationSettings || user.notification_settings || {
-      email: true,
-      push: true,
-      app: true
-    }
-  };
-};
+export async function createUser(userData: any) {
+  try {
+    // Create auth user
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: userData.email,
+      password: userData.password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: userData.full_name,
+      },
+    });
+    
+    if (authError) throw authError;
+    
+    // Create profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: authData.user.id,
+        email: userData.email,
+        full_name: userData.full_name,
+        phone: userData.phone,
+        position: userData.position,
+        language: userData.language || 'az',
+        status: userData.status || 'active',
+      });
+    
+    if (profileError) throw profileError;
+    
+    // Create user role
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: authData.user.id,
+        role: userData.role,
+        region_id: userData.region_id || null,
+        sector_id: userData.sector_id || null,
+        school_id: userData.school_id || null,
+      });
+    
+    if (roleError) throw roleError;
+    
+    toast.success('User created successfully');
+    return { data: authData.user, error: null };
+  } catch (error: any) {
+    console.error('Error creating user:', error);
+    toast.error('Failed to create user: ' + error.message);
+    return { data: null, error };
+  }
+}

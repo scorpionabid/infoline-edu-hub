@@ -1,7 +1,5 @@
 
-import { UserRole } from './role';
-
-export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
+import { UserRole, UserStatus } from './role';
 
 export interface NotificationSettings {
   email: boolean;
@@ -10,6 +8,7 @@ export interface NotificationSettings {
   system: boolean;
   deadline: boolean;
   sms?: boolean;
+  app?: boolean;
   deadlineReminders?: boolean;
 }
 
@@ -36,6 +35,7 @@ export interface User {
   school_id?: string;
   schoolId?: string;
   notificationSettings?: NotificationSettings;
+  notification_settings?: NotificationSettings;
   name?: string;
   avatar?: string;
 }
@@ -59,8 +59,17 @@ export interface FullUserData extends User {
     region?: string;
     sector?: string;
     school?: string;
-  };
+  } | string;
   notificationSettings?: NotificationSettings;
+  notification_settings?: NotificationSettings;
+  adminEntity?: {
+    type?: string;
+    name?: string;
+    schoolName?: string;
+    sectorName?: string;
+    regionName?: string;
+  };
+  entityTypes?: string[];
 }
 
 export interface UserFilter {
@@ -100,5 +109,5 @@ export interface UserFormData {
   notificationSettings?: NotificationSettings;
 }
 
-// Re-export for backward compatibility
-export { UserRole } from './role';
+// Re-export UserRole and UserStatus for backward compatibility
+export { UserRole, UserStatus } from './role';

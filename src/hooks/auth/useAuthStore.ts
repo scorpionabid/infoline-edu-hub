@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData } from '@/types/auth';
+import { FullUserData, UserStatus } from '@/types/auth';
 import { UserRole, normalizeRole } from '@/types/role';
 
 export interface AuthState {
@@ -134,6 +134,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const fullUserData: FullUserData = {
           ...profileData,
           role: normalizeRole(role), // Ensure role is a valid UserRole
+          status: (profileData.status as UserStatus) || 'active'
         };
           
         set({ 
@@ -241,6 +242,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           const fullUserData: FullUserData = {
             ...profileData,
             role: normalizeRole(role), // Ensure role is a valid UserRole
+            status: (profileData.status as UserStatus) || 'active'
           };
           
           set({ user: fullUserData });
@@ -296,6 +298,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               const fullUserData: FullUserData = {
                 ...profileData,
                 role: normalizeRole(role), // Ensure role is a valid UserRole
+                status: (profileData.status as UserStatus) || 'active'
               };
               
               set({ user: fullUserData });
@@ -375,6 +378,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           const fullUserData: FullUserData = {
             ...profileData,
             role: normalizeRole(role), // Ensure role is a valid UserRole
+            status: (profileData.status as UserStatus) || 'active'
           };
           
           set({ user: fullUserData });

@@ -1,22 +1,23 @@
-import { useEffect, useState, useCallback } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from './useAuthStore';
-import { FullUserData } from '@/types/user';
+import { FullUserData, UserStatus } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { UserRole } from '@/types/user';
+import { UserRole, normalizeRole } from '@/types/role';
 
 const useOptimizedAuth = () => {
   const { 
-    isAuthenticated, 
     user, 
     loading, 
     error, 
+    isAuthenticated,
     setUser, 
-    setAuthenticated, 
+    setSession, 
     setLoading, 
-    setError, 
-    clear 
+    setError,
+    clearError
   } = useAuthStore();
-  const [session, setSession] = useState<any>(null);
+  const [session, setLocalSession] = useState<any>(null);
 
   // Load initial session
   useEffect(() => {
@@ -26,8 +27,8 @@ const useOptimizedAuth = () => {
         if (error) throw error;
         
         if (data?.session) {
+          setLocalSession(data.session);
           setSession(data.session);
-          setAuthenticated(true);
           
           // Fetch user data if we have a session but no user
           if (!user) {
@@ -50,17 +51,17 @@ const useOptimizedAuth = () => {
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        setLocalSession(session);
         setSession(session);
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          setAuthenticated(true);
-          
           if (session?.user) {
             fetchUserData(session.user.id);
           }
         } else if (event === 'SIGNED_OUT') {
-          clear();
+          setUser(null);
           setLoading(false);
+          clearError();
         }
       }
     );
@@ -89,7 +90,7 @@ const useOptimizedAuth = () => {
 
       // Extract role info from user_roles
       const role = Array.isArray(data.user_roles) && data.user_roles.length 
-        ? data.user_roles[0]?.role as UserRole || 'user'
+        ? data.user_roles[0]?.role
         : 'user';
       
       const region_id = Array.isArray(data.user_roles) && data.user_roles.length 
@@ -108,22 +109,23 @@ const useOptimizedAuth = () => {
       const userData: FullUserData = {
         id: userId,
         email: data.email,
-        full_name: data.full_name,
+        full_name: data.full_name || '',
         phone: data.phone,
-        role: role,
+        role: normalizeRole(role),
         region_id: region_id,
-        regionId: region_id,
         sector_id: sector_id,
-        sectorId: sector_id,
         school_id: school_id,
-        schoolId: school_id,
         position: data.position,
         avatar: data.avatar,
         language: data.language || 'az',
-        status: (profileData?.status as UserStatus) || 'active',
+        status: (data.status as UserStatus) || 'active',
         last_login: data.last_login,
         created_at: data.created_at,
-        updated_at: data.updated_at
+        updated_at: data.updated_at,
+        // Add compatibility fields
+        regionId: region_id,
+        sectorId: sector_id,
+        schoolId: school_id,
       };
 
       setUser(userData);
@@ -133,31 +135,7 @@ const useOptimizedAuth = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const formatUserData = (userData: any): FullUserData => {
-    return {
-      id: userData.id,
-      email: userData.email,
-      full_name: userData.full_name || userData.user_metadata?.full_name,
-      avatar: userData.avatar,
-      role: userData.role,
-      status: userData.status,
-      language: userData.language,
-      region_id: userData.region_id,
-      regionId: userData.region_id,
-      sector_id: userData.sector_id,
-      sectorId: userData.sector_id,
-      school_id: userData.school_id,
-      schoolId: userData.school_id,
-      phone: userData.phone,
-      position: userData.position,
-      last_login: userData.last_login,
-      created_at: userData.created_at,
-      updated_at: userData.updated_at,
-      notificationSettings: userData.notification_settings
-    };
-  };
+  }, [setUser, setLoading, setError]);
 
   return {
     isAuthenticated,
