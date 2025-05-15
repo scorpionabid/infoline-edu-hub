@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { CalendarIcon, CheckCircle, Clock, XCircle, Pencil, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Category } from '@/types/category';
+import { Category, CategoryStatus } from '@/types/category';
 import { format, isAfter, parseISO } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -35,7 +36,9 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
   const { canApproveData } = usePermissions();
 
   const getStatusDetails = () => {
-    if (category.status === 'active') {
+    const status = category.status as CategoryStatus || 'active';
+    
+    if (status === 'active') {
       return {
         color: 'bg-green-100 text-green-800 border-green-200',
         icon: <CheckCircle className="h-4 w-4" />,
@@ -43,7 +46,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
       };
     }
     
-    if (category.status === 'approved') {
+    if (status === 'approved') {
       return {
         color: 'bg-green-100 text-green-800 border-green-200',
         icon: <CheckCircle className="h-4 w-4" />,
@@ -51,7 +54,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
       };
     }
     
-    if (category.status === 'draft') {
+    if (status === 'draft') {
       return {
         color: 'bg-gray-100 text-gray-800 border-gray-200',
         icon: <Pencil className="h-4 w-4" />,
@@ -59,18 +62,18 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
       };
     }
     
-    if (category.status === 'inactive' || category.status === 'archived') {
+    if (status === 'inactive' || status === 'archived') {
       return {
         color: 'bg-red-100 text-red-800 border-red-200',
         icon: <XCircle className="h-4 w-4" />,
-        label: t(category.status)
+        label: t(status)
       };
     }
 
     return {
       color: 'bg-gray-100 text-gray-800 border-gray-200',
       icon: <FileText className="h-4 w-4" />,
-      label: category.status
+      label: status
     };
   };
 

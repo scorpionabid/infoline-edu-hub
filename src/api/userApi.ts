@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { UserRole } from '@/types/role';
+import { UserRole, normalizeRole } from '@/types/role';
 import { FullUserData, UserStatus } from '@/types/auth';
 import { toast } from 'sonner';
 
@@ -28,8 +28,8 @@ export async function fetchUserProfile(userId: string): Promise<FullUserData | n
     // Create the full user data
     return {
       ...data,
-      role: roleData?.role || 'user' as UserRole,
-      status: data.status as UserStatus || 'active',
+      role: normalizeRole(roleData?.role) || 'user',
+      status: (data.status as UserStatus) || 'active',
     };
   } catch (error) {
     console.error('Error fetching user profile:', error);
@@ -56,16 +56,19 @@ export async function updateUserProfile(userId: string, data: Partial<FullUserDa
     
     // If role or entity IDs are included, update the user role
     if (data.role || data.region_id || data.sector_id || data.school_id) {
+      // Convert UserRole to string since the database expects a string, not our UserRole type
+      const roleValue = data.role ? String(data.role) : undefined;
+      
+      // Using insertOne for single record insertion
       const { error: roleError } = await supabase
         .from('user_roles')
         .upsert({
           user_id: userId,
-          role: data.role,
+          role: roleValue,
           region_id: data.region_id || null,
           sector_id: data.sector_id || null,
           school_id: data.school_id || null,
-        })
-        .eq('user_id', userId);
+        });
       
       if (roleError) throw roleError;
     }
@@ -108,12 +111,15 @@ export async function createUser(userData: any) {
     
     if (profileError) throw profileError;
     
+    // Convert UserRole to string for the database
+    const roleValue = userData.role ? String(userData.role) : 'user';
+    
     // Create user role
     const { error: roleError } = await supabase
       .from('user_roles')
       .insert({
         user_id: authData.user.id,
-        role: userData.role,
+        role: roleValue,
         region_id: userData.region_id || null,
         sector_id: userData.sector_id || null,
         school_id: userData.school_id || null,

@@ -71,9 +71,10 @@ export const CategoryList = () => {
     }
   };
 
-  const handleUpdateCategoryStatus = async (id: string, status: CategoryStatus) => {
+  const handleUpdateCategoryStatus = async (id: string, status: "active" | "inactive" | "draft") => {
     try {
-      await updateCategoryStatus(id, status);
+      // Cast the status to CategoryStatus to match the function signature
+      await updateCategoryStatus(id, status as CategoryStatus);
       refetch();
     } catch (error) {
       console.error('Error updating category status:', error);

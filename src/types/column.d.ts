@@ -47,5 +47,11 @@ export interface Column {
   color?: string;
 }
 
+// Add CategoryWithColumns interface
+export interface CategoryWithColumns {
+  category: Category;
+  columns: Column[];
+}
+
 // Re-export Category from category.d.ts for compatibility
 export { type Category } from '@/types/category';

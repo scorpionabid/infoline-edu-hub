@@ -86,7 +86,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           priority,
           deadline: deadline ? deadline.toISOString() : null,
           updated_at: now,
-        });
+        }, false); // Add the second required argument
         
         if (result.success) {
           onSave && onSave();
