@@ -19,7 +19,7 @@ const ReportList: React.FC = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<string | null>(null);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   
   const filteredReports = reports.filter(report => 
@@ -40,8 +40,8 @@ const ReportList: React.FC = () => {
     }
   };
 
-  const handleViewReport = (reportId: string) => {
-    setSelectedReport(reportId);
+  const handleViewReport = (report: Report) => {
+    setSelectedReport(report);
     setIsPreviewDialogOpen(true);
   };
 
@@ -92,7 +92,7 @@ const ReportList: React.FC = () => {
                 <ReportCard
                   key={report.id}
                   report={report}
-                  onView={() => handleViewReport(report.id)}
+                  onView={() => handleViewReport(report)}
                 />
               ))}
             </div>
@@ -102,15 +102,15 @@ const ReportList: React.FC = () => {
 
       <CreateReportDialog
         open={isCreateDialogOpen}
-        onClose={() => setIsCreateDialogOpen(false)}
+        onOpenChange={setIsCreateDialogOpen}
         onCreate={handleCreateReport}
       />
 
       {selectedReport && (
         <ReportPreviewDialog
           open={isPreviewDialogOpen}
-          onClose={() => setIsPreviewDialogOpen(false)}
-          reportId={selectedReport}
+          onOpenChange={setIsPreviewDialogOpen}
+          report={selectedReport}
         />
       )}
     </div>

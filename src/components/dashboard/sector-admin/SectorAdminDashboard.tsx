@@ -3,7 +3,7 @@ import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DashboardFormStats, SectorAdminDashboardData, SchoolStat } from '@/types/dashboard';
+import { DashboardFormStats, SectorAdminDashboardData } from '@/types/dashboard';
 import StatsGrid from '../StatsGrid';
 import DashboardChart from '../DashboardChart';
 import PendingApprovalsCard from '../PendingApprovalsCard';
@@ -37,9 +37,21 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
   }
   
   const statsData = [
-    { title: t('totalSchools'), value: data.status?.total || data.schools?.total || 0, color: 'bg-blue-100' },
-    { title: t('activeSchools'), value: data.status?.active || data.schools?.active || 0, color: 'bg-green-100' },
-    { title: t('inactiveSchools'), value: data.status?.inactive || data.schools?.inactive || 0, color: 'bg-gray-100' },
+    { 
+      title: t('totalSchools'), 
+      value: data.status?.total || (data.schools ? data.schools.total : 0), 
+      color: 'bg-blue-100' 
+    },
+    { 
+      title: t('activeSchools'), 
+      value: data.status?.active || (data.schools ? data.schools.active : 0), 
+      color: 'bg-green-100' 
+    },
+    { 
+      title: t('inactiveSchools'), 
+      value: data.status?.inactive || (data.schools ? data.schools.inactive : 0), 
+      color: 'bg-gray-100' 
+    },
   ];
   
   const formStatsData: DashboardFormStats = data.formStats || {
@@ -49,7 +61,9 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
     total: data.status?.total || 0,
     dueSoon: 0,
     overdue: 0,
-    draft: data.status?.draft || 0
+    draft: data.status?.draft || 0,
+    completed: data.status?.approved || 0,
+    percentage: data.completionRate || 0
   };
 
   // Handle completion data safely regardless of whether it's an object or number

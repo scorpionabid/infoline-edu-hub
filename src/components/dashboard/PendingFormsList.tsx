@@ -46,25 +46,32 @@ const PendingFormsList: React.FC<PendingFormsListProps> = ({ forms, onOpenForm }
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {forms.map((form) => (
-            <div key={form.id} className="flex justify-between items-center border-b pb-3 last:border-0 last:pb-0">
-              <div>
-                <h4 className="font-medium">{form.name || form.title}</h4>
-                <p className="text-sm text-muted-foreground">{form.categoryName || form.category}</p>
-                {form.dueDate && (
-                  <p className="text-xs text-muted-foreground">{t('dueDate')}: {form.dueDate}</p>
-                )}
+          {forms.map((form) => {
+            // Handle both new and legacy property names
+            const formTitle = form.title || form.name;
+            const formCategoryName = form.categoryName || (form.category ? form.category.name : '');
+            const formDueDate = form.dueDate || form.deadline;
+            
+            return (
+              <div key={form.id} className="flex justify-between items-center border-b pb-3 last:border-0 last:pb-0">
+                <div>
+                  <h4 className="font-medium">{formTitle}</h4>
+                  <p className="text-sm text-muted-foreground">{formCategoryName}</p>
+                  {formDueDate && (
+                    <p className="text-xs text-muted-foreground">{t('dueDate')}: {formDueDate}</p>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenForm(form.id)}
+                >
+                  <ArrowRightIcon className="h-4 w-4 mr-1" />
+                  {t('continue')}
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleOpenForm(form.id)}
-              >
-                <ArrowRightIcon className="h-4 w-4 mr-1" />
-                {t('continue')}
-              </Button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>

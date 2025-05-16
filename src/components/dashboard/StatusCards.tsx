@@ -8,7 +8,8 @@ const StatusCards: React.FC<StatusCardsProps> = ({ completion, status, formStats
     pending: 0,
     approved: 0,
     rejected: 0,
-    draft: 0
+    draft: 0,
+    total: 0
   };
   
   const forms = formStats || {
@@ -18,7 +19,9 @@ const StatusCards: React.FC<StatusCardsProps> = ({ completion, status, formStats
     draft: 0,
     dueSoon: 0,
     overdue: 0,
-    total: 0
+    total: 0,
+    completed: 0,
+    percentage: 0
   };
   
   let completionData = {

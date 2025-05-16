@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatsGrid from './StatsGrid';
 import DashboardChart from './DashboardChart';
 import CategoryProgressList from './CategoryProgressList';
 import SchoolsCompletionList from './SchoolsCompletionList';
+import { DashboardFormStats } from '@/types/dashboard';
 
 const SuperAdminDashboard = ({ data }) => {
   const stats = [
@@ -29,14 +31,16 @@ const SuperAdminDashboard = ({ data }) => {
     }
   ];
 
-  const dashboardStats = {
+  const dashboardStats: DashboardFormStats = {
     total: data.approvedEntries + data.pendingEntries + data.rejectedEntries || 0,
     approved: data.approvedEntries || 0,
     pending: data.pendingEntries || 0,
     rejected: data.rejectedEntries || 0,
     dueSoon: data.dueSoonEntries || 0,
     overdue: data.overdueEntries || 0,
-    draft: data.draftEntries || 0
+    draft: data.draftEntries || 0,
+    completed: data.approvedEntries || 0,
+    percentage: data.completionRate || 0
   };
 
   return (

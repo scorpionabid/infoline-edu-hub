@@ -1,153 +1,157 @@
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
+import CategoryItem from "./CategoryItem";
+import { PlusIcon } from "lucide-react";
+import { useCategories } from "@/hooks/useCategories";
+import CreateCategoryDialog from "./CreateCategoryDialog";
+import { useLanguage } from "@/context/LanguageContext";
+import { Category, CategoryStatus } from "@/types/category";
+// Import EmptyState directly instead of using named import
+import EmptyState from "@/components/ui/empty-state";
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import DataTable from '@/components/ui/data-table';
-import { PlusCircle, Loader2 } from 'lucide-react';
-import { useCategories } from '@/hooks/categories/useCategories';
-import useCategoryActions from '@/hooks/categories/useCategoryActions';
-import { useLanguage } from '@/context/LanguageContext';
-import { CategoryColumns } from './CategoryColumns';
-import { CategoryStatus, CategoryFilter } from '@/types/category';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Info } from 'lucide-react';
+interface CategoryListProps {
+  onCategorySelect?: (categoryId: string) => void;
+}
 
-export const CategoryList = () => {
-  const navigate = useNavigate();
-  const { t, currentLanguage } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loadingRetries, setLoadingRetries] = useState(0);
-  
-  const {
-    categories,
-    loading: categoriesLoading,
-    error: categoriesError,
-    fetchCategories
-  } = useCategories();
-
-  const {
-    deleteCategory,
-    updateCategoryStatus,
-    isLoading: actionsLoading
-  } = useCategoryActions();
-  
-  const isLoading = categoriesLoading || actionsLoading;
-
-  // Filter categories based on search query
-  const filteredCategories = categories?.filter(category => 
-    category?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (category?.description && category?.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  ) || [];
-
-  // Refetch categories
-  const refetch = () => {
-    console.log("Refetching categories with archived: false");
-    const filter: CategoryFilter = {
-      search: '',
-      status: '',
-      sortBy: 'name',
-      sortOrder: 'asc',
-      archived: false
-    };
-    fetchCategories(filter);
-  };
-
-  // Retry loading if categories fail to load
-  useEffect(() => {
-    if (categoriesError && loadingRetries < 3) {
-      const timer = setTimeout(() => {
-        console.log(`Retrying category fetch (attempt ${loadingRetries + 1})`);
-        setLoadingRetries(prev => prev + 1);
-        refetch();
-      }, Math.pow(2, loadingRetries) * 1000); // Exponential backoff
-      return () => clearTimeout(timer);
-    }
-  }, [categoriesError, loadingRetries]);
+const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
+  const { categories, isLoading, error, refetch } = useCategories();
+  const [open, setOpen] = useState(false);
+  const { t } = useLanguage();
+  const [activeTab, setActiveTab] = useState<CategoryStatus>("active");
 
   useEffect(() => {
-    console.log("Initial categories fetch");
     refetch();
-  }, []);
+  }, [refetch]);
 
-  const handleDeleteCategory = async (id: string) => {
-    try {
-      await deleteCategory(id);
-      refetch();
-    } catch (error) {
-      console.error('Error deleting category:', error);
-    }
+  const handleTabChange = (tab: CategoryStatus) => {
+    setActiveTab(tab);
   };
 
-  const handleUpdateCategoryStatus = async (id: string, status: "active" | "inactive" | "draft") => {
-    try {
-      // Cast the status to CategoryStatus to match the function signature
-      await updateCategoryStatus(id, status as CategoryStatus);
-      refetch();
-    } catch (error) {
-      console.error('Error updating category status:', error);
-    }
-  };
+  const filteredCategories = categories?.filter((category) => category.status === activeTab);
 
-  if (categoriesError && loadingRetries >= 3) {
-    return (
-      <Alert variant="destructive" className="mb-4">
-        <AlertTriangle className="h-4 w-4 mr-2" />
-        <AlertDescription>
-          {t('errorLoadingCategories')}: {categoriesError}
-        </AlertDescription>
-        <Button variant="outline" size="sm" onClick={refetch} className="ml-auto">
-          {t('tryAgain')}
-        </Button>
-      </Alert>
-    );
-  }
+  const handleCategorySelect = (categoryId: string) => {
+    onCategorySelect?.(categoryId);
+  };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">{currentLanguage === 'az' ? 'Kateqoriyalar' : 'Categories'}</h1>
-        <Button onClick={() => navigate('/categories/new')}><PlusCircle className="mr-2 h-4 w-4" /> {t('addCategory')}</Button>
+    <>
+      <div className="md:flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">{t("categories")}</h2>
+        <Button onClick={() => setOpen(true)}>
+          <PlusIcon className="mr-2 h-4 w-4" />
+          {t("newCategory")}
+        </Button>
       </div>
-      
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center h-64">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-          <p>{t('loadingCategories')}</p>
-        </div>
-      ) : categories && categories.length === 0 ? (
-        <Alert className="mb-4">
-          <Info className="h-4 w-4 mr-2" />
-          <AlertDescription>
-            {t('noCategories')}
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <DataTable
-          columns={CategoryColumns({
-            onDelete: handleDeleteCategory,
-            onUpdateStatus: handleUpdateCategoryStatus,
-            isLoading,
-            refetch
-          })}
-          data={filteredCategories}
-          isLoading={isLoading}
-          onSearch={setSearchQuery}
-          searchValue={searchQuery}
-        />
-      )}
-      
-      {categoriesError && !isLoading && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          <AlertDescription>
-            {categoriesError}
-          </AlertDescription>
-          <Button variant="outline" size="sm" onClick={refetch} className="ml-auto">
-            {t('retry')}
-          </Button>
-        </Alert>
-      )}
-    </div>
+
+      <Tabs defaultValue="active" className="w-full">
+        <TabsList>
+          <TabsTrigger value="active" onClick={() => handleTabChange("active")}>
+            {t("active")}
+          </TabsTrigger>
+          <TabsTrigger value="inactive" onClick={() => handleTabChange("inactive")}>
+            {t("inactive")}
+          </TabsTrigger>
+          <TabsTrigger value="draft" onClick={() => handleTabChange("draft")}>
+            {t("draft")}
+          </TabsTrigger>
+          <TabsTrigger value="archived" onClick={() => handleTabChange("archived")}>
+            {t("archived")}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="active">
+          {isLoading ? (
+            <p>{t("loadingCategories")}</p>
+          ) : error ? (
+            <p className="text-red-500">{error.message}</p>
+          ) : filteredCategories && filteredCategories.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredCategories.map((category) => (
+                <CategoryItem
+                  key={category.id}
+                  category={category}
+                  onCategorySelect={handleCategorySelect}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title={t("noActiveCategories")}
+              description={t("noActiveCategoriesDescription")}
+            />
+          )}
+        </TabsContent>
+        <TabsContent value="inactive">
+          {isLoading ? (
+            <p>{t("loadingCategories")}</p>
+          ) : error ? (
+            <p className="text-red-500">{error.message}</p>
+          ) : filteredCategories && filteredCategories.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredCategories.map((category) => (
+                <CategoryItem
+                  key={category.id}
+                  category={category}
+                  onCategorySelect={handleCategorySelect}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title={t("noInactiveCategories")}
+              description={t("noInactiveCategoriesDescription")}
+            />
+          )}
+        </TabsContent>
+        <TabsContent value="draft">
+          {isLoading ? (
+            <p>{t("loadingCategories")}</p>
+          ) : error ? (
+            <p className="text-red-500">{error.message}</p>
+          ) : filteredCategories && filteredCategories.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredCategories.map((category) => (
+                <CategoryItem
+                  key={category.id}
+                  category={category}
+                  onCategorySelect={handleCategorySelect}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title={t("noDraftCategories")}
+              description={t("noDraftCategoriesDescription")}
+            />
+          )}
+        </TabsContent>
+        <TabsContent value="archived">
+          {isLoading ? (
+            <p>{t("loadingCategories")}</p>
+          ) : error ? (
+            <p className="text-red-500">{error.message}</p>
+          ) : filteredCategories && filteredCategories.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredCategories.map((category) => (
+                <CategoryItem
+                  key={category.id}
+                  category={category}
+                  onCategorySelect={handleCategorySelect}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title={t("noArchivedCategories")}
+              description={t("noArchivedCategoriesDescription")}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
+
+      <CreateCategoryDialog open={open} setOpen={setOpen} onSuccess={() => refetch()} />
+    </>
   );
 };
 

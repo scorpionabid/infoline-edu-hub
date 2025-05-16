@@ -16,9 +16,10 @@ import { formatDate } from '@/lib/utils';
 
 export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({ 
   open, 
-  onClose, 
+  onOpenChange,
+  report: initialReport,
   reportId,
-  report: initialReport
+  onClose
 }) => {
   const { t } = useLanguage();
   const [report, setReport] = useState<Report | undefined>(initialReport);
@@ -36,9 +37,11 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
         id: reportId,
         title: 'Sample Report',
         description: 'This is a sample report description',
-        type: 'analytics',
-        status: 'published',
+        type: 'BAR' as keyof typeof import('@/types/report').ReportTypeValues,
+        content: {},
+        status: 'published' as import('@/types/report').ReportStatus,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         insights: ['Good performance in reading', 'Math scores need improvement'],
         recommendations: ['Focus more on mathematics', 'Continue reading program']
       } as Report;
@@ -53,6 +56,11 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
       setReport(initialReport);
     }
   }, [data, initialReport]);
+
+  const handleClose = () => {
+    if (onClose) onClose();
+    if (onOpenChange) onOpenChange(false);
+  };
 
   const renderInsights = () => {
     if (!report?.insights) return null;
@@ -109,7 +117,9 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) handleClose();
+    }}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         {isLoading || !report ? (
           <>
