@@ -61,18 +61,16 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         })
       : [];
 
-  // Ensure status data exists
+  // Ensure status data exists with required fields
   const status: DashboardStatus = data.status || {
     pending: 0,
     approved: 0,
     rejected: 0,
     draft: 0,
     total: 0,
-    active: 0,
-    inactive: 0
   };
 
-  // Ensure formStats data exists
+  // Ensure formStats data exists with required fields
   const formStats: DashboardFormStats = data.formStats || {
     pending: 0,
     approved: 0,
@@ -80,7 +78,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     draft: 0,
     dueSoon: 0,
     overdue: 0,
-    total: 0
+    total: 0,
+    completed: 0,
+    percentage: 0
   };
 
   // Handle both completion object and completionRate number

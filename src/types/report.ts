@@ -48,6 +48,8 @@ export interface CreateReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onReportCreated?: (report: Report) => void;
+  onClose?: () => void;
+  onCreate?: (data: any) => Promise<void>;
 }
 
 export interface ReportPreviewDialogProps {
@@ -65,4 +67,11 @@ export interface ReportChartProps {
   report: Report;
   height?: number;
   width?: number;
+}
+
+export interface ReportHeaderProps {
+  title: string;
+  description?: string;
+  onCreateReport?: () => void;
+  isLoading?: boolean;
 }

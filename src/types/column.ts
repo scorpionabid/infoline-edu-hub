@@ -2,7 +2,7 @@
 export type ColumnType = 
   'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 
   'date' | 'file' | 'radio' | 'email' | 'url' | 'richtext' | 
-  'range' | 'datetime' | 'phone' | 'tel';
+  'range' | 'datetime' | 'phone' | 'tel' | 'password';
 
 export interface Column {
   id: string;
@@ -19,6 +19,8 @@ export interface Column {
   created_at: string;
   updated_at: string;
   status?: string;
+  description?: string;
+  section?: string;
 }
 
 export interface ColumnOption {
@@ -34,6 +36,9 @@ export interface ColumnValidation {
   maxValue?: number;
   pattern?: string;
   errorMessage?: string;
+  patternMessage?: string;
+  min?: number; // For backward compatibility
+  max?: number; // For backward compatibility
 }
 
 export interface ColumnFormValues {
@@ -49,6 +54,7 @@ export interface ColumnFormValues {
   order_index?: number;
   status?: string;
   description?: string;
+  section?: string;
 }
 
 export interface ColumnTypeInfo {
@@ -76,6 +82,7 @@ export const columnTypes: Record<ColumnType, ColumnTypeInfo> & {
   range: { label: 'Range', description: 'Value within a range' },
   phone: { label: 'Phone', description: 'Phone number input' },
   tel: { label: 'Telephone', description: 'Telephone number input' },
+  password: { label: 'Password', description: 'Password input field' },
   
   // Add the find method
   find: function(type: string) {
@@ -84,14 +91,3 @@ export const columnTypes: Record<ColumnType, ColumnTypeInfo> & {
       .find(([key]) => key === type)?.[1];
   }
 };
-
-export interface BasicColumnFieldsProps {
-  form: any;
-  control: any;
-  categories: { id: string; name: string; }[];
-  columns: Column[];
-  editColumn: Column;
-  selectedType: ColumnType;
-  onTypeChange: (type: ColumnType) => void;
-  isEditMode: boolean;
-}

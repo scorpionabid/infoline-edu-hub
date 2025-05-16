@@ -26,6 +26,7 @@ const adaptSchoolToSchoolStat = (school: any): SchoolStat => {
     id: school.id || '',
     name: school.name || '',
     status: school.status || 'active',
+    completion: school.completionRate || school.completion_rate || 0,
     completionRate: school.completionRate || school.completion_rate || 0,
     lastUpdate: school.lastUpdate || school.updated_at || '',
     pendingForms: school.pendingForms || 0,

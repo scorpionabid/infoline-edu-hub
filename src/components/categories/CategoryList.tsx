@@ -1,153 +1,323 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import DataTable from '@/components/ui/data-table';
-import { PlusCircle, Loader2 } from 'lucide-react';
-import { useCategories } from '@/hooks/categories/useCategories';
-import useCategoryActions from '@/hooks/categories/useCategoryActions';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Eye, PlusCircle, Search, Trash } from 'lucide-react';
+import { Category, CategoryFilter, CategoryStatus } from '@/types/category';
 import { useLanguage } from '@/context/LanguageContext';
-import { CategoryColumns } from './CategoryColumns';
-import { CategoryStatus, CategoryFilter } from '@/types/category';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Info } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-export const CategoryList = () => {
+interface CategoryListProps {
+  categories: Category[];
+  isLoading: boolean;
+  onCategoryDelete?: (id: string) => void;
+  onFilterChange?: (filter: CategoryFilter) => void;
+  filter?: CategoryFilter;
+}
+
+const CategoryList: React.FC<CategoryListProps> = ({
+  categories,
+  isLoading,
+  onCategoryDelete,
+  onFilterChange,
+  filter = {}
+}) => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
-  const { t, currentLanguage } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loadingRetries, setLoadingRetries] = useState(0);
-  
-  const {
-    categories,
-    loading: categoriesLoading,
-    error: categoriesError,
-    fetchCategories
-  } = useCategories();
+  const [searchTerm, setSearchTerm] = useState(filter.search || '');
+  const [activeTab, setActiveTab] = useState<string>("active");
 
-  const {
-    deleteCategory,
-    updateCategoryStatus,
-    isLoading: actionsLoading
-  } = useCategoryActions();
-  
-  const isLoading = categoriesLoading || actionsLoading;
-
-  // Filter categories based on search query
-  const filteredCategories = categories?.filter(category => 
-    category?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (category?.description && category?.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  ) || [];
-
-  // Refetch categories
-  const refetch = () => {
-    console.log("Refetching categories with archived: false");
-    const filter: CategoryFilter = {
-      search: '',
-      status: '',
-      sortBy: 'name',
-      sortOrder: 'asc',
-      archived: false
-    };
-    fetchCategories(filter);
+  const handleAddCategory = () => {
+    navigate('/categories/new');
   };
 
-  // Retry loading if categories fail to load
-  useEffect(() => {
-    if (categoriesError && loadingRetries < 3) {
-      const timer = setTimeout(() => {
-        console.log(`Retrying category fetch (attempt ${loadingRetries + 1})`);
-        setLoadingRetries(prev => prev + 1);
-        refetch();
-      }, Math.pow(2, loadingRetries) * 1000); // Exponential backoff
-      return () => clearTimeout(timer);
-    }
-  }, [categoriesError, loadingRetries]);
-
-  useEffect(() => {
-    console.log("Initial categories fetch");
-    refetch();
-  }, []);
-
-  const handleDeleteCategory = async (id: string) => {
-    try {
-      await deleteCategory(id);
-      refetch();
-    } catch (error) {
-      console.error('Error deleting category:', error);
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    if (onFilterChange) {
+      onFilterChange({
+        ...filter,
+        search: e.target.value
+      });
     }
   };
 
-  const handleUpdateCategoryStatus = async (id: string, status: "active" | "inactive" | "draft") => {
-    try {
-      // Cast the status to CategoryStatus to match the function signature
-      await updateCategoryStatus(id, status as CategoryStatus);
-      refetch();
-    } catch (error) {
-      console.error('Error updating category status:', error);
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (onFilterChange) {
+      onFilterChange({
+        ...filter,
+        status: value === 'all' ? undefined : [value as CategoryStatus],
+        archived: value === 'archived'
+      });
     }
   };
 
-  if (categoriesError && loadingRetries >= 3) {
+  const getStatusBadge = (status?: CategoryStatus | string) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="outline">{t('active')}</Badge>;
+      case 'inactive':
+        return <Badge variant="secondary">{t('inactive')}</Badge>;
+      case 'draft':
+        return <Badge className="bg-gray-100 text-gray-700 border-gray-200">{t('draft')}</Badge>;
+      case 'archived':
+        return <Badge className="bg-red-100 text-red-700 border-red-200">{t('archived')}</Badge>;
+      case 'approved':
+          return <Badge className="bg-green-100 text-green-700 border-green-200">{t('approved')}</Badge>;
+      default:
+        return <Badge>{t('unknown')}</Badge>;
+    }
+  };
+
+  const filteredCategories = useMemo(() => {
+    let filtered = [...categories];
+
+    if (filter.search) {
+      filtered = filtered.filter(category =>
+        category.name.toLowerCase().includes(filter.search!.toLowerCase())
+      );
+    }
+
+    if (filter.status && filter.status !== 'all') {
+      filtered = filtered.filter(category => filter.status?.includes(category.status as CategoryStatus));
+    }
+
+    return filtered;
+  }, [categories, filter]);
+
+  if (isLoading) {
     return (
-      <Alert variant="destructive" className="mb-4">
-        <AlertTriangle className="h-4 w-4 mr-2" />
-        <AlertDescription>
-          {t('errorLoadingCategories')}: {categoriesError}
-        </AlertDescription>
-        <Button variant="outline" size="sm" onClick={refetch} className="ml-auto">
-          {t('tryAgain')}
-        </Button>
-      </Alert>
+      <Card>
+        <CardHeader>
+          <CardTitle><Skeleton className="h-8 w-3/4" /></CardTitle>
+          <CardDescription><Skeleton className="h-4 w-1/2" /></CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">{currentLanguage === 'az' ? 'Kateqoriyalar' : 'Categories'}</h1>
-        <Button onClick={() => navigate('/categories/new')}><PlusCircle className="mr-2 h-4 w-4" /> {t('addCategory')}</Button>
-      </div>
-      
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center h-64">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-          <p>{t('loadingCategories')}</p>
-        </div>
-      ) : categories && categories.length === 0 ? (
-        <Alert className="mb-4">
-          <Info className="h-4 w-4 mr-2" />
-          <AlertDescription>
-            {t('noCategories')}
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <DataTable
-          columns={CategoryColumns({
-            onDelete: handleDeleteCategory,
-            onUpdateStatus: handleUpdateCategoryStatus,
-            isLoading,
-            refetch
-          })}
-          data={filteredCategories}
-          isLoading={isLoading}
-          onSearch={setSearchQuery}
-          searchValue={searchQuery}
-        />
-      )}
-      
-      {categoriesError && !isLoading && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          <AlertDescription>
-            {categoriesError}
-          </AlertDescription>
-          <Button variant="outline" size="sm" onClick={refetch} className="ml-auto">
-            {t('retry')}
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('categories')}</CardTitle>
+        <CardDescription>{t('manageCategories')}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4 flex justify-between items-center">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              type="search"
+              placeholder={t('searchCategories')}
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="pl-8 shadow-sm"
+            />
+          </div>
+          <Button onClick={handleAddCategory}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            {t('addCategory')}
           </Button>
-        </Alert>
-      )}
-    </div>
+        </div>
+
+        <Tabs defaultValue={activeTab} className="w-full" onValueChange={handleTabChange}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="active">{t('active')}</TabsTrigger>
+            <TabsTrigger value="inactive">{t('inactive')}</TabsTrigger>
+            <TabsTrigger value="draft">{t('draft')}</TabsTrigger>
+            <TabsTrigger value="archived">{t('archived')}</TabsTrigger>
+            <TabsTrigger value="all">{t('all')}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="active">
+            {filteredCategories.filter(c => c.status === 'active').length === 0 ? (
+              <EmptyState message={t('noActiveCategories')} />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('name')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead className="text-right">{t('actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCategories.filter(c => c.status === 'active').map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell>{getStatusBadge(category.status)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/categories/${category.id}`)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t('view')}
+                        </Button>
+                        {onCategoryDelete && (
+                          <Button variant="ghost" size="sm" onClick={() => onCategoryDelete(category.id)}>
+                            <Trash className="mr-2 h-4 w-4" />
+                            {t('delete')}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+          <TabsContent value="inactive">
+            {filteredCategories.filter(c => c.status === 'inactive').length === 0 ? (
+              <EmptyState message={t('noInactiveCategories')} />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('name')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead className="text-right">{t('actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCategories.filter(c => c.status === 'inactive').map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell>{getStatusBadge(category.status)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/categories/${category.id}`)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t('view')}
+                        </Button>
+                        {onCategoryDelete && (
+                          <Button variant="ghost" size="sm" onClick={() => onCategoryDelete(category.id)}>
+                            <Trash className="mr-2 h-4 w-4" />
+                            {t('delete')}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+          <TabsContent value="draft">
+            {filteredCategories.filter(c => c.status === 'draft').length === 0 ? (
+              <EmptyState message={t('noDraftCategories')} />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('name')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead className="text-right">{t('actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCategories.filter(c => c.status === 'draft').map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell>{getStatusBadge(category.status)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/categories/${category.id}`)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t('view')}
+                        </Button>
+                        {onCategoryDelete && (
+                          <Button variant="ghost" size="sm" onClick={() => onCategoryDelete(category.id)}>
+                            <Trash className="mr-2 h-4 w-4" />
+                            {t('delete')}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+          <TabsContent value="archived">
+            {filteredCategories.filter(c => c.archived).length === 0 ? (
+              <EmptyState message={t('noArchivedCategories')} />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('name')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead className="text-right">{t('actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCategories.filter(c => c.archived).map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell>{getStatusBadge(category.status)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/categories/${category.id}`)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t('view')}
+                        </Button>
+                        {onCategoryDelete && (
+                          <Button variant="ghost" size="sm" onClick={() => onCategoryDelete(category.id)}>
+                            <Trash className="mr-2 h-4 w-4" />
+                            {t('delete')}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+          <TabsContent value="all">
+            {filteredCategories.length === 0 ? (
+              <EmptyState message={t('noCategoriesFound')} />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('name')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead className="text-right">{t('actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCategories.map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell>{getStatusBadge(category.status)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/categories/${category.id}`)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t('view')}
+                        </Button>
+                        {onCategoryDelete && (
+                          <Button variant="ghost" size="sm" onClick={() => onCategoryDelete(category.id)}>
+                            <Trash className="mr-2 h-4 w-4" />
+                            {t('delete')}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 

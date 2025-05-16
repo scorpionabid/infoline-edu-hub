@@ -14,13 +14,13 @@ export interface Category {
   completionRate?: number; // Add this property to match component usage
 }
 
-export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived';
+export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived' | 'approved';
 
 export type CategoryAssignment = 'all' | 'sectors' | 'regions';
 
 export interface CategoryFilter {
   search?: string;
-  status?: CategoryStatus[];
+  status?: CategoryStatus[] | string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   archived?: boolean;
@@ -34,3 +34,17 @@ export interface AddCategoryFormData {
   assignment?: CategoryAssignment;
   priority?: number;
 }
+
+export interface CategoryWithColumns extends Category {
+  columns?: Column[];
+}
+
+export interface TabDefinition {
+  id: string;
+  title: string;
+  label: string;
+  columns: Column[];
+}
+
+// Import Column type for CategoryWithColumns
+import { Column } from './column';
