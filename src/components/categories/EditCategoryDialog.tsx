@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   Dialog,
@@ -199,8 +198,8 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
             <div className="grid gap-2">
               <Label htmlFor="deadline">Son tarix</Label>
               <DatePicker
-                value={deadline}
-                onChange={setDeadline}
+                selected={deadline}
+                onSelect={setDeadline}
               />
             </div>
           </div>

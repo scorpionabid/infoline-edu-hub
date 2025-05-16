@@ -1,91 +1,90 @@
 
-import { ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import { Column } from '@/types/column';
+import { cn } from '@/lib/utils';
 import { ValidationResult } from '@/types/dataEntry';
 
-export function cn(...inputs: ClassValue[]): string {
-  return twMerge(clsx(inputs));
-}
-
 export const validateField = (value: any, column: Column): ValidationResult => {
-  if (!column) {
+  // Skip validation if field is not required and value is empty
+  if (!column.is_required && (!value || value === '')) {
     return { valid: true };
   }
-  
-  const errors: Record<string, string> = {};
-  
-  // Check required fields
-  if (column.is_required && (value === undefined || value === null || value === '')) {
-    return {
-      valid: false,
-      message: 'This field is required',
-      errors: { required: 'This field is required' }
+
+  // Required field validation
+  if (column.is_required && (!value || value === '')) {
+    return { 
+      valid: false, 
+      message: 'Bu sahə tələb olunur' 
     };
   }
-  
-  // Skip further validation if empty and not required
-  if (value === undefined || value === null || value === '') {
-    return { valid: true };
+
+  // Validation rules from column configuration
+  if (column.validation) {
+    // Numeric validation
+    if (column.type === 'number' && typeof value === 'string' && value) {
+      const numValue = Number(value);
+      
+      if (isNaN(numValue)) {
+        return { valid: false, message: 'Rəqəm daxil edin' };
+      }
+
+      // Min/max validation
+      const min = column.validation.min;
+      const max = column.validation.max;
+      
+      if (min !== undefined && numValue < min) {
+        return { 
+          valid: false, 
+          message: `Minimum dəyər ${min} olmalıdır` 
+        };
+      }
+      
+      if (max !== undefined && numValue > max) {
+        return { 
+          valid: false, 
+          message: `Maksimum dəyər ${max} olmalıdır` 
+        };
+      }
+    }
+    
+    // String length validation for text/textarea
+    if (['text', 'textarea'].includes(column.type) && typeof value === 'string') {
+      const minLength = column.validation.minLength;
+      const maxLength = column.validation.maxLength;
+      
+      if (minLength !== undefined && value.length < minLength) {
+        return { 
+          valid: false, 
+          message: `Minimum ${minLength} simvol olmalıdır` 
+        };
+      }
+      
+      if (maxLength !== undefined && value.length > maxLength) {
+        return { 
+          valid: false, 
+          message: `Maksimum ${maxLength} simvol olmalıdır` 
+        };
+      }
+    }
+    
+    // Regex pattern validation
+    if (column.validation.pattern && typeof value === 'string') {
+      try {
+        const regex = new RegExp(column.validation.pattern);
+        if (!regex.test(value)) {
+          return { 
+            valid: false, 
+            message: column.validation.patternMessage || 'Format doğru deyil' 
+          };
+        }
+      } catch (error) {
+        console.error('Invalid regex pattern:', error);
+      }
+    }
   }
-  
-  const validation = column.validation || {};
-  
-  // Type specific validations
-  switch (column.type) {
-    case 'number':
-      if (validation.min !== undefined && Number(value) < validation.min) {
-        errors.min = `Value must be at least ${validation.min}`;
-      }
-      if (validation.max !== undefined && Number(value) > validation.max) {
-        errors.max = `Value must be at most ${validation.max}`;
-      }
-      break;
-      
-    case 'text':
-    case 'textarea':
-      if (validation.minLength !== undefined && String(value).length < validation.minLength) {
-        errors.minLength = `Text must be at least ${validation.minLength} characters`;
-      }
-      if (validation.maxLength !== undefined && String(value).length > validation.maxLength) {
-        errors.maxLength = `Text must be at most ${validation.maxLength} characters`;
-      }
-      if (validation.pattern && !new RegExp(validation.pattern).test(String(value))) {
-        errors.pattern = 'Input does not match the required format';
-      }
-      break;
-      
-    case 'email':
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(String(value))) {
-        errors.email = 'Please enter a valid email address';
-      }
-      break;
-      
-    case 'date':
-      const date = new Date(value);
-      if (isNaN(date.getTime())) {
-        errors.date = 'Please enter a valid date';
-      }
-      if (validation.minDate && new Date(value) < new Date(validation.minDate)) {
-        errors.minDate = `Date must be after ${new Date(validation.minDate).toLocaleDateString()}`;
-      }
-      if (validation.maxDate && new Date(value) > new Date(validation.maxDate)) {
-        errors.maxDate = `Date must be before ${new Date(validation.maxDate).toLocaleDateString()}`;
-      }
-      break;
-  }
-  
-  const isValid = Object.keys(errors).length === 0;
-  
-  return {
-    valid: isValid,
-    message: isValid ? undefined : Object.values(errors)[0],
-    errors: isValid ? undefined : errors
-  };
+
+  // If all validations pass
+  return { valid: true };
 };
 
-export default {
-  cn,
-  validateField
-};
+// Export cn utility for consistency
+export { cn };

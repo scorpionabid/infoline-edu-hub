@@ -155,8 +155,12 @@ Common pattern for component props errors:
 | Module '"@/types/dataEntry"' has no exported member 'ValidationResult' | Added ValidationResult interface to dataEntry.d.ts | 2025-05-20 |
 | Module '"@/types/report"' has no exported member named 'ReportChartProps' | Added ReportChartProps interface to report.ts | 2025-05-20 |
 | Module '"@/types/report"' has no exported member 'ReportTypeValues' | Added ReportTypeValues enum to report.ts | 2025-05-20 |
-| Property 'date' does not exist on type 'IntrinsicAttributes & DatePickerProps' | Created DatePicker component with proper props interface | 2025-05-20 |
+| Property 'date' does not exist on type 'IntrinsicAttributes & DatePickerProps' | Updated DatePicker component with proper props interface | 2025-05-20 |
 | Type 'ForwardRefExoticComponent<...>' is not assignable to type 'LucideIcon' | Added direct import of icons in ColumnTypeSelector | 2025-05-20 |
 | Cannot find module '@/lib/constants' | Created constants.ts file with required exports | 2025-05-20 |
 | UserRole type incompatibility between modules | Updated UserRole type to include all possible values | 2025-05-20 |
-
+| Module '"@/types/role"' has no exported member 'normalizeRole' | Added normalizeRole function to role.ts | 2025-05-21 |
+| Module '"@/types/category"' has no exported member 'CategoryWithColumns' | Added CategoryWithColumns interface to category.d.ts | 2025-05-21 |
+| Property 'section' does not exist on type 'Column' | Updated Column interface to include section property | 2025-05-21 |
+| Property 'label' does not exist on type 'TabDefinition' | Updated TabDefinition to include label property | 2025-05-21 |
+| Property 'value' does not exist on type 'IntrinsicAttributes & DatePickerProps' | Updated DatePicker component to accept both value/onChange and selected/onSelect props | 2025-05-21 |
