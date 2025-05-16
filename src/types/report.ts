@@ -1,51 +1,68 @@
 
-// Report type definitions
-
-export enum ReportTypeValues {
-  TABLE = 'table',
-  CHART = 'chart',
-  DASHBOARD = 'dashboard',
-  SUMMARY = 'summary'
-}
-
 export interface Report {
   id: string;
   title: string;
   description?: string;
-  type: string;
-  status?: string;
-  content?: any;
+  type: keyof typeof ReportTypeValues;
+  content: any;
   filters?: any;
+  created_at: string;
+  updated_at: string;
   created_by?: string;
-  created_at?: string;
-  updated_at?: string;
-  shared_with?: string[];
+  status: ReportStatus;
   is_template?: boolean;
-  recommendations?: string[];
+  shared_with?: string[];
   insights?: string[];
+  recommendations?: string[];
 }
 
+export type ReportStatus = 'draft' | 'published' | 'archived';
+
+export const ReportTypeValues = {
+  BAR: 'bar',
+  PIE: 'pie',
+  LINE: 'line',
+  TABLE: 'table',
+  SUMMARY: 'summary'
+} as const;
+
 export interface ReportFilter {
-  search: string;
-  type: string;
+  search?: string;
+  type?: string[];
+  status?: ReportStatus[];
   dateRange?: {
-    from: Date | null;
-    to: Date | null;
+    from?: Date;
+    to?: Date;
   };
-  status?: string;
+}
+
+export interface CreateReportFormValues {
+  title: string;
+  description?: string;
+  type: keyof typeof ReportTypeValues;
+  content: any;
+  filters?: any;
+}
+
+export interface CreateReportDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onReportCreated?: (report: Report) => void;
+}
+
+export interface ReportPreviewDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  report: Report;
+}
+
+export interface ReportEmptyStateProps {
+  message?: string;
+  onCreateReport?: () => void;
 }
 
 export interface ReportChartProps {
-  data: any[];
-  type: string;
-  title?: string;
-  description?: string;
-  config?: any;
-}
-
-export interface ReportHeaderProps {
-  title: string;
-  description?: string;
-  onCreateReport?: () => void;
-  onFilterChange?: (filters: ReportFilter) => void;
+  report: Report;
+  height?: number;
+  width?: number;
 }

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Card,
@@ -25,7 +24,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Column, columnTypes } from '@/types/column';
+import { Column, ColumnType } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 import { Icons } from '@/components/ui/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -112,23 +111,12 @@ const ColumnList: React.FC<ColumnListProps> = ({
   };
 
   // Column tipinə görə ətraflı məlumat əldə et
-  const getColumnTypeInfo = (type: string) => {
-    // Find the column type from our defined types
-    const typeInfo = columnTypes.find(t => t.value === type);
-    
-    if (typeInfo) {
-      return {
-        label: typeInfo.label,
-        description: typeInfo.description,
-        icon: typeInfo.icon
-      };
-    }
-    
-    return {
+  const getColumnTypeInfo = (type: ColumnType) => {
+    const typeInfo = columnTypes[type] || {
       label: type,
-      description: t('unknownColumnType'),
-      icon: 'circle'
+      description: 'Custom column type'
     };
+    return typeInfo;
   };
 
   if (isLoading) {

@@ -4,6 +4,10 @@ import { Toaster } from 'sonner';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { AuthProvider } from '@/context/auth/AuthProvider';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { ThemeProvider } from '@/components/ui/theme-provider';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/query-client';
+import logger from './lib/logger';
 
 function App() {
   // Prevent double initialization by using a flag
@@ -14,16 +18,27 @@ function App() {
   useEffect(() => {
     if (authInitialized.current) return;
     
-    console.log('[App] Initializing authentication...');
+    logger.info('Initializing application', { context: 'App' });
     authInitialized.current = true;
-    initializeAuth();
+    
+    // Use setTimeout to prevent potential auth deadlock
+    setTimeout(() => {
+      logger.info('Initializing authentication', { context: 'App' });
+      initializeAuth().catch(error => {
+        logger.error('Failed to initialize authentication', error, { context: 'App' });
+      });
+    }, 0);
   }, [initializeAuth]);
 
   return (
-    <AuthProvider>
-      <Toaster position="top-right" />
-      <AppRoutes />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="light">
+        <AuthProvider>
+          <Toaster position="top-right" />
+          <AppRoutes />
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

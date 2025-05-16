@@ -1,61 +1,36 @@
 
-import { Column } from './column';
-
-export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved' | 'pending';
-
-export type CategoryAssignment = 'all' | 'sectors' | 'schools';
-
 export interface Category {
   id: string;
   name: string;
   description?: string;
   status?: CategoryStatus;
-  priority?: number;
   deadline?: string;
+  priority?: number;
+  created_at: string;
+  updated_at: string;
   assignment?: CategoryAssignment;
   archived?: boolean;
   column_count?: number;
-  created_at?: string;
-  updated_at?: string;
-  completionRate?: number;
+  completionRate?: number; // Add this property to match component usage
 }
 
-export interface CategoryWithColumns extends Category {
-  columns: Column[];
-}
+export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived';
+
+export type CategoryAssignment = 'all' | 'sectors' | 'regions';
 
 export interface CategoryFilter {
-  search: string;
-  status: string;
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
+  search?: string;
+  status?: CategoryStatus[];
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
   archived?: boolean;
 }
 
 export interface AddCategoryFormData {
   name: string;
   description?: string;
-  assignment: CategoryAssignment;
-  status: CategoryStatus;
-  priority: number;
-  deadline?: string | null;
-}
-
-export interface TabDefinition {
-  id: string;
-  title: string;
-  label?: string;
-  columns?: any[];
-}
-
-export interface CategoryItem {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-  completion: number;
-  completionRate?: number;
+  status?: CategoryStatus;
   deadline?: string;
-  daysLeft?: number;
-  columnCount?: number;
+  assignment?: CategoryAssignment;
+  priority?: number;
 }
