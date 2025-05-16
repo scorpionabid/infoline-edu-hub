@@ -7,6 +7,8 @@ export interface DashboardStatus {
   approved: number;
   rejected: number;
   draft: number;
+  active?: number;
+  inactive?: number;
 }
 
 export interface DashboardFormStats {
@@ -14,6 +16,8 @@ export interface DashboardFormStats {
   completed: number;
   pending: number;
   percentage: number;
+  approved?: number;
+  rejected?: number;
 }
 
 export interface CategoryItem {
@@ -24,6 +28,10 @@ export interface CategoryItem {
   totalColumns?: number;
   completedColumns?: number;
   categoryId?: string;
+  description?: string;
+  deadline?: string;
+  daysLeft?: number;
+  completionRate?: number;
 }
 
 export interface FormItem {
@@ -32,6 +40,9 @@ export interface FormItem {
   status: string;
   completion: number;
   dueDate?: string;
+  title?: string;
+  categoryName?: string;
+  category?: string;
 }
 
 export interface DeadlineItem {
@@ -44,11 +55,19 @@ export interface DeadlineItem {
 
 export interface PendingApproval {
   id: string;
-  name: string;
-  school: string;
-  category: string;
+  name?: string;
+  school?: string;
+  category?: string;
   submittedAt: string;
-  submittedBy: string;
+  submittedBy?: string;
+  // Additional properties used in components
+  status?: 'pending' | 'approved' | 'rejected';
+  schoolId?: string;
+  schoolName?: string;
+  categoryId?: string;
+  categoryName?: string;
+  createdAt?: string;
+  title?: string;
 }
 
 export interface SchoolStat {

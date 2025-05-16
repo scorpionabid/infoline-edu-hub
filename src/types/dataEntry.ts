@@ -80,3 +80,19 @@ export interface FormFieldProps {
     error: string;
   };
 }
+
+export interface DataEntryRecord extends DataEntry {
+  columns?: {
+    name: string;
+  };
+  categories?: {
+    name: string;
+  };
+  schools?: {
+    name: string;
+  };
+  schoolName?: string;
+  categoryName?: string;
+  columnName?: string;
+  createdAt?: string;
+}
