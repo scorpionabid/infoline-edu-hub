@@ -45,7 +45,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({ onCreateReport }) =>
       <CreateReportDialog
         open={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
-        onSubmit={handleCreate}
+        onCreate={handleCreate}
       />
     </div>
   );

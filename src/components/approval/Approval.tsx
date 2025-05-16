@@ -7,7 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
 import { PendingApproval } from '@/types/dashboard';
 import { Loader2 } from 'lucide-react';
-import { DataEntryRecord } from '@/types/dataEntry';
+import { DataEntry } from '@/types/dataEntry';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ApprovalItem from '@/components/approval/ApprovalItem';
@@ -18,7 +18,7 @@ export const Approval = () => {
   const [approvalData, setApprovalData] = useState<PendingApproval[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
-  const [selectedItem, setSelectedItem] = useState<DataEntryRecord | null>(null);
+  const [selectedItem, setSelectedItem] = useState<DataEntry | null>(null);
 
   useEffect(() => {
     fetchPendingApprovals();

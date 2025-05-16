@@ -1,146 +1,155 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Category } from '@/types/category';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CategoryWithColumns } from '@/types/category';
 import { Column } from '@/types/column';
-import { TabDefinition } from '@/types/dataEntry';
+import FormFields from './FormFields';
 import { useLanguage } from '@/context/LanguageContext';
+import { Button } from '@/components/ui/button';
+import { TabDefinition } from '@/types/category';
 
 interface CategoryFormProps {
-  category: Category & { columns?: Column[] };
-  formData: Record<string, any>;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  handleFieldChange?: (columnId: string, value: any) => void;
-  handleSubmit: (e: React.FormEvent) => Promise<void>;
-  handleSave: () => Promise<void>;
-  isSubmitting: boolean;
-  isAutoSaving: boolean;
-  readonly?: boolean;
-  children?: React.ReactNode;
+  category: CategoryWithColumns;
+  onSubmit: (data: Record<string, any>) => void;
+  initialData?: Record<string, any>;
+  isSubmitting?: boolean;
+  errors?: Record<string, string>;
 }
 
-export const CategoryForm: React.FC<CategoryFormProps> = ({
+const CategoryForm: React.FC<CategoryFormProps> = ({
   category,
-  formData,
-  handleInputChange,
-  handleFieldChange,
-  handleSubmit,
-  handleSave,
-  isSubmitting,
-  isAutoSaving,
-  readonly = false,
-  children
+  onSubmit,
+  initialData = {},
+  isSubmitting = false,
+  errors = {}
 }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<string>('all');
-  
-  // Group columns by type to create tabs
-  const tabs: TabDefinition[] = [
-    {
-      id: 'all',
-      title: t('allFields'),
-      label: t('allFields')
-    }
-  ];
+  const [formData, setFormData] = useState<Record<string, any>>(initialData);
 
-  // Only generate tabs if columns exist
-  if (category.columns && category.columns.length > 0) {
-    // Add dynamic tabs based on column types
-    const columnsByType: Record<string, Column[]> = {};
+  // Group columns by section if any
+  const groupColumnsBySection = (columns: Column[]) => {
+    const sections = new Map<string, Column[]>();
     
-    category.columns.forEach(column => {
-      const type = column.type.toString();
-      if (!columnsByType[type]) {
-        columnsByType[type] = [];
+    columns.forEach(column => {
+      const section = column.section || t('defaultSection');
+      if (!sections.has(section)) {
+        sections.set(section, []);
       }
-      columnsByType[type].push(column);
+      sections.get(section)?.push(column);
     });
     
-    // Add tabs for each type that has multiple columns
-    Object.entries(columnsByType).forEach(([type, columns]) => {
-      if (columns.length > 0) {
-        tabs.push({
-          id: type,
-          title: t(type + 'Fields', { defaultValue: type }),
-          label: t(type + 'Fields', { defaultValue: type }),
-          columns
-        });
-      }
+    return sections;
+  };
+
+  const sections = groupColumnsBySection(category.columns || []);
+  
+  // Create tab definitions
+  const tabs: TabDefinition[] = [];
+  
+  if (sections.size > 0) {
+    sections.forEach((columns, sectionName) => {
+      tabs.push({
+        id: sectionName,
+        title: sectionName,
+        label: sectionName,
+        columns: columns
+      });
+    });
+  } else {
+    // If no sections defined, create a default tab
+    tabs.push({
+      id: 'default',
+      title: t('generalInfo'),
+      label: t('generalInfo'),
+      columns: category.columns || []
     });
   }
-
-  // Calculate completion percentage
-  const requiredColumns = category.columns?.filter(col => col.is_required) || [];
-  const completedRequiredFields = requiredColumns.filter(col => {
-    const value = formData[col.id];
-    return value !== undefined && value !== null && value !== '';
-  });
   
-  const completionPercent = requiredColumns.length > 0
-    ? (completedRequiredFields.length / requiredColumns.length) * 100
-    : 0;
+  const handleFieldChange = (columnId: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [columnId]: value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit}>
       <Card>
         <CardHeader>
-          <div className="flex flex-col space-y-1.5">
-            <CardTitle>{category.name}</CardTitle>
-            <CardDescription>{category.description}</CardDescription>
-          </div>
+          <CardTitle>{category.name}</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Completion Progress */}
-          <div className="mb-6">
-            <div className="flex justify-between mb-2">
-              <span className="text-sm font-medium">
-                {t('completionProgress')}
-              </span>
-              <span className="text-sm font-medium">
-                {completedRequiredFields.length} / {requiredColumns.length} ({Math.round(completionPercent)}%)
-              </span>
-            </div>
-            <Progress value={completionPercent} className="h-2" />
-          </div>
-
-          {/* Form Tabs */}
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-4">
-              {tabs.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id}>
-                  {tab.label}
-                </TabsTrigger>
+          {tabs.length > 1 ? (
+            <Tabs defaultValue={tabs[0].id}>
+              <TabsList className="mb-4">
+                {tabs.map(tab => (
+                  <TabsTrigger key={tab.id} value={tab.id}>
+                    {tab.title}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {tabs.map(tab => (
+                <TabsContent key={tab.id} value={tab.id}>
+                  <div className="space-y-4">
+                    {tab.columns && tab.columns.map(column => (
+                      <FormFields
+                        key={column.id}
+                        field={{
+                          id: column.id,
+                          name: column.name,
+                          type: column.type,
+                          value: formData[column.id] ?? column.default_value ?? '',
+                          required: column.is_required,
+                          placeholder: column.placeholder,
+                          helpText: column.help_text,
+                          options: column.options,
+                          validation: column.validation,
+                          onChange: (value) => handleFieldChange(column.id, value),
+                          error: errors[column.id]
+                        }}
+                      />
+                    ))}
+                  </div>
+                </TabsContent>
               ))}
-            </TabsList>
-
-            {tabs.map((tab) => (
-              <TabsContent key={tab.id} value={tab.id} className="space-y-4">
-                {children}
-              </TabsContent>
-            ))}
-          </Tabs>
+            </Tabs>
+          ) : (
+            <div className="space-y-4">
+              {tabs[0].columns && tabs[0].columns.map(column => (
+                <FormFields
+                  key={column.id}
+                  field={{
+                    id: column.id,
+                    name: column.name,
+                    type: column.type,
+                    value: formData[column.id] ?? column.default_value ?? '',
+                    required: column.is_required,
+                    placeholder: column.placeholder,
+                    helpText: column.help_text,
+                    options: column.options,
+                    validation: column.validation,
+                    onChange: (value) => handleFieldChange(column.id, value),
+                    error: errors[column.id]
+                  }}
+                />
+              ))}
+            </div>
+          )}
+          
+          <div className="mt-6 flex justify-end">
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? t('submitting') : t('submit')}
+            </Button>
+          </div>
         </CardContent>
       </Card>
-
-      {/* Form Actions */}
-      {!readonly && (
-        <div className="flex justify-end space-x-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleSave}
-            disabled={isSubmitting || isAutoSaving}
-          >
-            {isAutoSaving ? t('saving') : t('saveAsDraft')}
-          </Button>
-          <Button type="submit" disabled={isSubmitting || isAutoSaving}>
-            {isSubmitting ? t('submitting') : t('submit')}
-          </Button>
-        </div>
-      )}
     </form>
   );
 };

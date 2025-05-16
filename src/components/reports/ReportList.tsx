@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Filter, ArrowUpDown } from 'lucide-react';
@@ -9,16 +9,7 @@ import ReportCard from './ReportCard';
 import CreateReportDialog from './CreateReportDialog';
 import ReportPreviewDialog from './ReportPreviewDialog';
 import ReportEmptyState from './ReportEmptyState';
-
-interface Report {
-  id: string;
-  title: string;
-  description: string;
-  type: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
+import { Report } from '@/types/report';
 
 const ReportList: React.FC = () => {
   const { reports, createReport } = useReports();
@@ -33,7 +24,7 @@ const ReportList: React.FC = () => {
   
   const filteredReports = reports.filter(report => 
     report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.description.toLowerCase().includes(searchTerm.toLowerCase())
+    (report.description && report.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleCreateReport = async (reportData: { 
@@ -112,14 +103,14 @@ const ReportList: React.FC = () => {
       <CreateReportDialog
         open={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
-        onSubmit={handleCreateReport}
+        onCreate={handleCreateReport}
       />
 
       {selectedReport && (
         <ReportPreviewDialog
-          reportId={selectedReport}
           open={isPreviewDialogOpen}
           onClose={() => setIsPreviewDialogOpen(false)}
+          reportId={selectedReport}
         />
       )}
     </div>

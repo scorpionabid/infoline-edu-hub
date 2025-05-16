@@ -3,10 +3,9 @@ import React from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { ColumnType } from '@/types/column';
+import { ColumnType, columnTypeDefinitions } from '@/types/column';
 import { Icons } from '@/components/ui/icons';
 import { LucideIcon } from 'lucide-react';
-import { columnTypeDefinitions } from '@/types/column';
 
 interface ColumnTypeSelectorProps {
   value: ColumnType;

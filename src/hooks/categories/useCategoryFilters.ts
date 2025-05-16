@@ -6,8 +6,8 @@ import useDebounce from '@/hooks/common/useDebounce';
 export const useCategoryFilters = () => {
   const [filters, setFilters] = useState<CategoryFilter>({
     search: '',
-    status: '' as CategoryStatus,
-    assignment: '' as CategoryAssignment
+    status: '' as CategoryStatus | '',
+    assignment: '' as CategoryAssignment | ''
   });
   
   const debouncedSearch = useDebounce(filters.search, 300);
@@ -27,8 +27,8 @@ export const useCategoryFilters = () => {
   const clearFilters = useCallback(() => {
     setFilters({
       search: '',
-      status: '' as CategoryStatus,
-      assignment: '' as CategoryAssignment
+      status: '' as CategoryStatus | '',
+      assignment: '' as CategoryAssignment | ''
     });
   }, []);
 

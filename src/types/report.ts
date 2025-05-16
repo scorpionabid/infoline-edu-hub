@@ -26,8 +26,7 @@ export interface ReportPreviewDialogProps {
 export interface CreateReportDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit?: (reportData: { title: string; description: string; type: string }) => Promise<void>;
-  onCreate?: (reportData: { title: string; description: string; type: string }) => Promise<void>;
+  onCreate: (reportData: { title: string; description: string; type: string }) => Promise<void>;
 }
 
 export interface ReportEmptyStateProps {

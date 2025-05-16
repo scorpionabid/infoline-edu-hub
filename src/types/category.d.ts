@@ -18,6 +18,17 @@ export interface Category {
   completionRate?: number;
 }
 
+export interface CategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  completionRate: number;
+  deadline?: string;
+  daysLeft?: number;
+  columnCount?: number;
+}
+
 export interface CategoryWithColumns extends Category {
   columns: import('./column').Column[];
   columnCount?: number;
@@ -35,4 +46,13 @@ export interface CategoryFilter {
   search: string;
   status: CategoryStatus | '';
   assignment: CategoryAssignment | '';
+}
+
+export interface AddCategoryFormData {
+  name: string;
+  description?: string;
+  assignment: CategoryAssignment;
+  status: CategoryStatus;
+  priority: number;
+  deadline?: string | null;
 }

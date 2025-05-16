@@ -1,26 +1,15 @@
 
-import React from 'react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -32,114 +21,96 @@ import {
 import { useLanguage } from '@/context/LanguageContext';
 import { CreateReportDialogProps } from '@/types/report';
 
-const formSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
-  type: z.string().min(1, 'Report type is required'),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
 const CreateReportDialog: React.FC<CreateReportDialogProps> = ({ 
   open, 
-  onClose, 
-  onSubmit,
-  onCreate
+  onClose,
+  onCreate 
 }) => {
   const { t } = useLanguage();
-  const handleSubmit = onCreate || onSubmit;
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [type, setType] = useState('standard');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      type: '',
-    },
-  });
-
-  const onFormSubmit = async (data: FormValues) => {
-    if (handleSubmit) {
-      await handleSubmit(data);
-      form.reset();
+  const handleSubmit = async () => {
+    if (!title.trim()) return;
+    
+    setIsSubmitting(true);
+    try {
+      if (onCreate) {
+        await onCreate({ title, description, type });
+      }
+      resetForm();
+      onClose();
+    } catch (error) {
+      console.error('Error creating report:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setType('standard');
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t('createReport')}</DialogTitle>
+          <DialogTitle>{t('createNewReport')}</DialogTitle>
           <DialogDescription>
             {t('createReportDescription')}
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('title')}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={t('reportTitlePlaceholder')} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <label htmlFor="title" className="text-sm font-medium">{t('title')}</label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t('reportTitlePlaceholder')}
             />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('description')}</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder={t('reportDescriptionPlaceholder')} 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          
+          <div className="grid gap-2">
+            <label htmlFor="description" className="text-sm font-medium">{t('description')}</label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t('reportDescriptionPlaceholder')}
+              rows={3}
             />
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('reportType')}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('selectReportType')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="analytics">
-                        {t('analyticsReport')}
-                      </SelectItem>
-                      <SelectItem value="performance">
-                        {t('performanceReport')}
-                      </SelectItem>
-                      <SelectItem value="summary">
-                        {t('summaryReport')}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? t('creating') : t('create')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          </div>
+          
+          <div className="grid gap-2">
+            <label htmlFor="type" className="text-sm font-medium">{t('reportType')}</label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('selectReportType')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">{t('standardReport')}</SelectItem>
+                <SelectItem value="analytics">{t('analyticsReport')}</SelectItem>
+                <SelectItem value="summary">{t('summaryReport')}</SelectItem>
+                <SelectItem value="custom">{t('customReport')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {t('cancel')}
+          </Button>
+          <Button onClick={handleSubmit} disabled={!title.trim() || isSubmitting}>
+            {isSubmitting ? t('creating') : t('create')}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

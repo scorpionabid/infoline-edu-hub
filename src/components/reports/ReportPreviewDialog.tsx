@@ -57,11 +57,13 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
   const renderInsights = () => {
     if (!report?.insights) return null;
     
-    const insightsList = Array.isArray(report.insights) 
-      ? report.insights
-      : typeof report.insights === 'string' 
-        ? [report.insights]
-        : [];
+    let insightsList: string[] = [];
+    
+    if (Array.isArray(report.insights)) {
+      insightsList = report.insights;
+    } else if (typeof report.insights === 'string') {
+      insightsList = [report.insights];
+    }
         
     return (
       <Card className="mb-4">
@@ -82,11 +84,13 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
   const renderRecommendations = () => {
     if (!report?.recommendations) return null;
     
-    const recommendationsList = Array.isArray(report.recommendations) 
-      ? report.recommendations 
-      : typeof report.recommendations === 'string'
-        ? [report.recommendations]
-        : [];
+    let recommendationsList: string[] = [];
+    
+    if (Array.isArray(report.recommendations)) {
+      recommendationsList = report.recommendations;
+    } else if (typeof report.recommendations === 'string') {
+      recommendationsList = [report.recommendations];
+    }
         
     return (
       <Card className="mb-4">

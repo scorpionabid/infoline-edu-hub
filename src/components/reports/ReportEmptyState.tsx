@@ -1,25 +1,27 @@
 
 import React from 'react';
-import { FileBarChart, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-export interface ReportEmptyStateProps {
-  onCreateReport: () => void;
-}
+import { PlusCircle, BookOpen } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { ReportEmptyStateProps } from '@/types/report';
 
 const ReportEmptyState: React.FC<ReportEmptyStateProps> = ({ onCreateReport }) => {
+  const { t } = useLanguage();
+
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-        <FileBarChart className="h-8 w-8 text-muted-foreground" />
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+      <div className="bg-muted rounded-full p-4 mb-4">
+        <BookOpen className="h-8 w-8 text-muted-foreground" />
       </div>
-      <h3 className="text-lg font-medium">No reports found</h3>
-      <p className="text-sm text-muted-foreground max-w-sm mt-1">
-        Create your first report to analyze and visualize data from your collections.
+      <h3 className="text-lg font-semibold mb-2">
+        {t('noReportsYet')}
+      </h3>
+      <p className="text-muted-foreground mb-6 max-w-lg">
+        {t('reportEmptyStateDescription')}
       </p>
-      <Button onClick={onCreateReport} className="mt-4">
-        <Plus className="mr-2 h-4 w-4" />
-        Create New Report
+      <Button onClick={onCreateReport}>
+        <PlusCircle className="h-4 w-4 mr-2" />
+        {t('createFirstReport')}
       </Button>
     </div>
   );

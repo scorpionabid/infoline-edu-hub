@@ -1,23 +1,18 @@
 
 import React from 'react';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Control } from "react-hook-form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { useLanguage } from "@/context/LanguageContext";
-import { ColumnType } from '@/types/column';
-import { ColumnTypeSelector } from "@/components/columns/columnDialog/ColumnTypeSelector";
-
-interface BasicColumnFieldsProps {
-  control: Control<any>;
-  selectedType: ColumnType;
-  onTypeChange: (type: ColumnType) => void;
-  isEditMode?: boolean;
-}
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { ColumnType, Column, BasicColumnFieldsProps } from '@/types/column';
+import { ColumnTypeSelector } from './ColumnTypeSelector';
+import { useLanguage } from '@/context/LanguageContext';
 
 const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
   control,
+  categories,
+  columns,
+  editColumn,
   selectedType,
   onTypeChange,
   isEditMode
@@ -26,99 +21,121 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
 
   return (
     <div className="space-y-4">
-      <FormField
-        control={control}
-        name="name"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("columnName")}</FormLabel>
-            <FormControl>
-              <Input placeholder={t("columnName")} {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={control}
-        name="description"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("description")}</FormLabel>
-            <FormControl>
-              <Textarea
-                placeholder={t("description")}
-                className="resize-none"
-                {...field}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
+      <div className="grid grid-cols-2 gap-4">
+        <FormField
+          control={control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('columnName')}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={control}
+          name="category_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('category')}</FormLabel>
+              <Select
+                disabled={isEditMode}
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('selectCategory')} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+      
       <FormField
         control={control}
         name="type"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t("columnType")}</FormLabel>
-            <ColumnTypeSelector
-              value={selectedType}
-              onValueChange={onTypeChange}
-            />
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={control}
-        name="placeholder"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("placeholder")}</FormLabel>
+            <FormLabel>{t('fieldType')}</FormLabel>
             <FormControl>
-              <Input placeholder={t("placeholder")} {...field} />
+              <ColumnTypeSelector 
+                value={selectedType} 
+                onValueChange={(type) => {
+                  field.onChange(type);
+                  onTypeChange(type);
+                }}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-
-      <FormField
-        control={control}
-        name="help_text"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("helpText")}</FormLabel>
-            <FormControl>
-              <Input placeholder={t("helpText")} {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
+      
+      <div className="grid grid-cols-2 gap-4">
+        <FormField
+          control={control}
+          name="help_text"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('helpText')}</FormLabel>
+              <FormControl>
+                <Textarea {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={control}
+          name="placeholder"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('placeholder')}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+      
       <FormField
         control={control}
         name="is_required"
         render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <FormLabel className="text-sm">{t("isRequired")}</FormLabel>
-              <FormDescription>
-                {t("isRequiredDescription")}
-              </FormDescription>
-            </div>
+          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
             <FormControl>
-              <Switch
+              <input
+                type="checkbox"
                 checked={field.value}
-                onCheckedChange={field.onChange}
-                disabled={isEditMode}
+                onChange={field.onChange}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
             </FormControl>
+            <div className="space-y-1 leading-none">
+              <FormLabel>{t('required')}</FormLabel>
+              <p className="text-sm text-muted-foreground">
+                {t('requiredFieldDescription')}
+              </p>
+            </div>
           </FormItem>
         )}
       />
