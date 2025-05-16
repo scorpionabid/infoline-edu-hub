@@ -12,24 +12,19 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    // Local storage'dan mövcud mövzu seçimini yükləyirik
+    // Default to light mode to ensure white background
     const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme) {
-      return savedTheme;
-    }
-    // Əgər lokal yaddaşda mövzu yoxdursa, sistem mövzusunu təyin edirik
-    return 'system';
+    return savedTheme || 'light';
   });
 
-  // Mövzu dəyişdikdə lokal yaddaşı yeniləyirik
+  // Update localStorage and document class when theme changes
   useEffect(() => {
     localStorage.setItem('theme', theme);
     
-    // HTML root elementinə class əlavə edirik
+    // Apply the theme class to the HTML root element
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     
-    // Əgər sistem mövzusu seçilibsə, istifadəçinin sistem mövzusunu müəyyən edirik
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       root.classList.add(systemTheme);
@@ -38,7 +33,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [theme]);
   
-  // System mövzusu dəyişdikdə hadisəni dinləyirik
+  // Listen for system theme changes if using system theme
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
@@ -69,14 +64,13 @@ export const useTheme = () => {
   return context;
 };
 
-// useThemeSafe əlavə edildi - xətaları qabaqlamaq üçün
+// Safe version that won't throw errors if used outside provider
 export const useThemeSafe = () => {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    // Default theme konteksti qaytarırıq
     return {
-      theme: 'light',
-      setTheme: () => console.warn('ThemeProvider initialized olmayıb')
+      theme: 'light', // Default to light mode
+      setTheme: () => console.warn('ThemeProvider not initialized')
     };
   }
   return context;

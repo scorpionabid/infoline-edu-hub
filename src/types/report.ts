@@ -1,52 +1,51 @@
 
+// Report type definitions
+
 export enum ReportTypeValues {
-  BAR = 'bar',
-  PIE = 'pie',
-  LINE = 'line',
-  TABLE = 'table'
+  TABLE = 'table',
+  CHART = 'chart',
+  DASHBOARD = 'dashboard',
+  SUMMARY = 'summary'
 }
 
 export interface Report {
   id: string;
   title: string;
-  name?: string; // Added for backward compatibility
   description?: string;
   type: string;
-  content?: Record<string, any>;
-  status: 'draft' | 'published' | 'archived';
-  created_at: string;
-  updated_at?: string;
+  status?: string;
+  content?: any;
+  filters?: any;
   created_by?: string;
-  insights?: string[] | string;
-  recommendations?: string[] | string;
-  filters?: Record<string, any>;
-  shared_with?: string[] | Record<string, any>[];
+  created_at?: string;
+  updated_at?: string;
+  shared_with?: string[];
   is_template?: boolean;
+  recommendations?: string[];
+  insights?: string[];
+}
+
+export interface ReportFilter {
+  search: string;
+  type: string;
+  dateRange?: {
+    from: Date | null;
+    to: Date | null;
+  };
+  status?: string;
 }
 
 export interface ReportChartProps {
-  report: Report;
-  height?: number;
-  width?: number;
-}
-
-export interface ReportPreviewDialogProps {
-  open: boolean;
-  onClose: () => void;
-  report?: Report;
-  reportId?: string;
-}
-
-export interface CreateReportDialogProps {
-  open: boolean;
-  onClose: () => void;
-  onCreate: (reportData: { title: string; description: string; type: string }) => Promise<void>;
-}
-
-export interface ReportEmptyStateProps {
-  onCreateReport: () => void;
+  data: any[];
+  type: string;
+  title?: string;
+  description?: string;
+  config?: any;
 }
 
 export interface ReportHeaderProps {
-  onCreateReport: (reportData: { title: string; description: string; type: string }) => Promise<Report>;
+  title: string;
+  description?: string;
+  onCreateReport?: () => void;
+  onFilterChange?: (filters: ReportFilter) => void;
 }

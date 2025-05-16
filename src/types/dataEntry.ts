@@ -36,6 +36,20 @@ export interface DataEntry {
   created_by?: string;
 }
 
+export interface DataEntryForm {
+  categoryId: string;
+  schoolId: string;
+  entries: EntryValue[];
+  isModified: boolean;
+}
+
+export interface EntryValue {
+  id?: string;
+  columnId: string;
+  value: any;
+  status?: DataEntryStatus;
+}
+
 export interface DataEntryTableData {
   columns: Column[];
   values: Record<string, any>;
@@ -52,4 +66,17 @@ export interface FormFieldProps {
   onChange?: (e: React.ChangeEvent<any>) => void;
   onValueChange?: (value: any) => void;
   isDisabled?: boolean;
+  field?: {
+    id: any;
+    name: any;
+    type: any;
+    value: any;
+    required: any;
+    placeholder: any;
+    helpText: any;
+    options: any;
+    validation: any;
+    onChange: (value: any) => void;
+    error: string;
+  };
 }

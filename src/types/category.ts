@@ -1,24 +1,27 @@
 
-export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived' | 'approved';
-export type CategoryAssignment = 'all' | 'sectors' | 'schools';
+import { Column } from './column';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  assignment?: CategoryAssignment;
-  status?: CategoryStatus;
+  status?: string;
   priority?: number;
-  deadline?: string | null;
-  updated_at: string;
-  created_at?: string;
+  deadline?: string;
+  assignment?: string;
   archived?: boolean;
   column_count?: number;
-  completionRate?: number; // Added for UI components
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface TabDefinition {
-  id: string;
-  title: string;
-  columns?: any[];
+export interface CategoryWithColumns extends Category {
+  columns: Column[];
+}
+
+export interface CategoryFilter {
+  search: string;
+  status: string;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
 }
