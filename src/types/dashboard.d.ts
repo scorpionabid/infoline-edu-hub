@@ -1,6 +1,5 @@
 
 import { AppNotification } from './notification';
-import { Category, CategoryItem } from './category';
 
 export interface DashboardStatus {
   pending: number;
@@ -21,6 +20,16 @@ export interface DashboardFormStats {
   overdue: number;
   total: number;
   forms?: number;
+}
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  completionRate: number;
+  status: string;
+  deadline?: string;
+  daysLeft?: number;
 }
 
 export interface FormItem {
@@ -67,6 +76,8 @@ export interface SchoolStat {
   pendingCount?: number;
   pendingForms?: number;
   lastUpdate?: string;
+  formsCompleted?: number;
+  totalForms?: number;
 }
 
 export interface SectorStat {
@@ -95,11 +106,24 @@ export interface SchoolAdminDashboardData {
 }
 
 export interface SectorAdminDashboardData {
-  schools?: SchoolStat[];
+  schools?: {
+    total: number;
+    active: number;
+    inactive: number;
+  };
   status?: DashboardStatus;
   formStats?: DashboardFormStats;
   categories?: CategoryItem[];
   pendingApprovals?: PendingApproval[];
+  schoolStats?: SchoolStat[];
+  upcoming?: DeadlineItem[];
+  pendingForms?: FormItem[];
+  completion?: {
+    percentage: number;
+    total: number;
+    completed: number;
+  } | number;
+  completionRate?: number;
 }
 
 export interface RegionAdminDashboardData {
@@ -123,6 +147,31 @@ export interface SuperAdminDashboardData {
   completionRate?: number;
   categories?: CategoryItem[];
   schools?: SchoolStat[];
+  users?: {
+    active: number;
+    total: number;
+    new?: number;
+  };
+  regionCount?: number;
+  sectorCount?: number;
+  schoolCount?: number;
+  entryCount?: {
+    total: number;
+    approved: number;
+    pending: number;
+    rejected: number;
+    dueSoon?: number;
+    overdue?: number;
+    draft?: number;
+  };
+  completion?: number | {
+    percentage: number;
+    total: number;
+    completed: number;
+  };
+  categoryData?: any[];
+  schoolData?: any[];
+  regionData?: any[];
 }
 
 export interface StatusCardsProps {

@@ -32,3 +32,7 @@ export interface CreateReportDialogProps {
 export interface ReportEmptyStateProps {
   onCreateReport: () => void;
 }
+
+export interface ReportHeaderProps {
+  onCreateReport: (reportData: { title: string; description: string; type: string }) => Promise<Report>;
+}

@@ -89,3 +89,58 @@ When working with dashboard data:
 2. Handle both object and primitive value representations
 3. Use proper type assertions when working with arrays
 4. Consider using type guards for complex logic
+
+## Component Props Resolution
+
+Common pattern for component props errors:
+
+1. **Missing component props interface:**
+   ```typescript
+   // Error
+   Type '{ open: boolean; onClose: () => void; onCreate: (data: { title: string; description: string; type: string; }) => Promise<void>; }' is not assignable to type 'IntrinsicAttributes & CreateReportDialogProps'.
+   
+   // Solution
+   // Define explicit props interface
+   export interface CreateReportDialogProps {
+     open: boolean;
+     onClose: () => void;
+     onCreate: (reportData: { title: string; description: string; type: string }) => Promise<void>;
+   }
+   ```
+
+2. **Property missing in interface:**
+   ```typescript
+   // Error
+   Property 'section' does not exist on type 'Column'.
+   
+   // Solution
+   export interface Column {
+     // existing properties
+     section?: string; // Add the missing property
+   }
+   ```
+
+3. **Icon type compatibility errors:**
+   ```typescript
+   // Error
+   Type 'ForwardRefExoticComponent<...>' is not assignable to type 'LucideIcon'.
+   
+   // Solution
+   // Use correct type for icons
+   import { type LucideIcon } from 'lucide-react';
+   
+   const icons: Record<string, LucideIcon> = {
+     text: TextIcon,
+     number: HashIcon
+   };
+   ```
+
+## Recent Resolved Errors
+
+| Error | Solution | Date |
+|------|-------|-------|
+| Module '"@/types/dashboard"' has no exported member 'CategoryItem' | Added CategoryItem export in dashboard.d.ts | 2025-05-16 |
+| Property 'schoolStats' does not exist on type 'SectorAdminDashboardData' | Added schoolStats property to SectorAdminDashboardData interface | 2025-05-16 |
+| Property 'section' does not exist on type 'Column' | Added section optional property to Column interface | 2025-05-16 |
+| Property 'label' does not exist on type 'TabDefinition' | Added label optional property to TabDefinition interface | 2025-05-16 |
+| Module '"@/hooks/common/useDebounce"' has no exported member 'useDebounce' | Created useDebounce.ts hook with proper default export | 2025-05-16 |

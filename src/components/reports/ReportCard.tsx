@@ -1,12 +1,12 @@
 
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Report } from '@/types/report';
 import { formatDate } from '@/lib/utils';
+import { Report } from '@/types/report';
+import { Eye, FileText } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/context/LanguageContext';
-import { Eye, BarChart, FileText, PieChart } from 'lucide-react';
 
 interface ReportCardProps {
   report: Report;
@@ -15,54 +15,52 @@ interface ReportCardProps {
 
 const ReportCard: React.FC<ReportCardProps> = ({ report, onView }) => {
   const { t } = useLanguage();
-  
-  const getReportIcon = () => {
-    switch(report.type) {
-      case 'analytics':
-        return <BarChart className="h-5 w-5" />;
-      case 'summary':
-        return <PieChart className="h-5 w-5" />;
-      default:
-        return <FileText className="h-5 w-5" />;
-    }
-  };
-  
-  const getStatusBadge = () => {
-    switch(report.status) {
-      case 'published':
-        return <Badge variant="default">Published</Badge>;
-      case 'draft':
-        return <Badge variant="outline">Draft</Badge>;
-      case 'archived':
-        return <Badge variant="secondary">Archived</Badge>;
-      default:
-        return null;
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
+      case 'published': return 'bg-green-100 text-green-800';
+      case 'archived': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-blue-100 text-blue-800';
     }
   };
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="bg-muted/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            {getReportIcon()}
-            <CardTitle className="text-md">{report.title}</CardTitle>
-          </div>
-          {getStatusBadge()}
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-lg font-medium">{report.title}</CardTitle>
+          <Badge 
+            variant="outline" 
+            className={`${getStatusColor(report.status)} text-xs`}
+          >
+            {t(report.status)}
+          </Badge>
         </div>
-      </CardHeader>
-      <CardContent className="pt-4">
-        <p className="text-sm text-muted-foreground line-clamp-2">
+        <CardDescription className="line-clamp-2 text-sm">
           {report.description || t('noDescription')}
-        </p>
-        <div className="mt-4 text-xs text-muted-foreground">
-          {t('created')}: {formatDate(report.created_at)}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <div className="space-y-2">
+          <div className="flex items-center text-sm text-muted-foreground">
+            <FileText className="h-4 w-4 mr-1" />
+            <span>{t('reportType')}: {report.type}</span>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {t('createdAt')}: {formatDate(report.created_at)}
+          </div>
         </div>
       </CardContent>
-      <CardFooter className="border-t bg-muted/20 p-3">
-        <Button variant="ghost" size="sm" onClick={onView} className="ml-auto">
-          <Eye className="h-4 w-4 mr-1" />
-          {t('view')}
+      <CardFooter className="pt-2">
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          className="w-full" 
+          onClick={onView}
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          {t('viewReport')}
         </Button>
       </CardFooter>
     </Card>

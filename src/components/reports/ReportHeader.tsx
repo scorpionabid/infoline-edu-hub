@@ -4,11 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import { Plus, Filter } from 'lucide-react';
 import CreateReportDialog from './CreateReportDialog';
-import { Report } from '@/types/report';
-
-interface ReportHeaderProps {
-  onCreateReport: (reportData: { title: string; description: string; type: string }) => Promise<Report>;
-}
+import { Report, ReportHeaderProps } from '@/types/report';
 
 export const ReportHeader: React.FC<ReportHeaderProps> = ({ onCreateReport }) => {
   const { t } = useLanguage();

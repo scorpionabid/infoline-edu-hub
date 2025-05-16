@@ -45,3 +45,27 @@ export interface FormField {
   onBlur?: () => void;
   error?: string;
 }
+
+export enum DataEntryStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  DRAFT = 'draft'
+}
+
+export enum DataEntrySaveStatus {
+  IDLE = 'idle',
+  SAVING = 'saving',
+  SAVED = 'saved',
+  ERROR = 'error',
+  SUBMITTING = 'submitting',
+  SUBMITTED = 'submitted'
+}
+
+export interface DataEntryForm {
+  id: string;
+  categoryId: string;
+  schoolId: string;
+  values: Record<string, string>;
+  status: DataEntryStatus;
+}

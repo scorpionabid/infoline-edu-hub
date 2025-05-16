@@ -38,7 +38,7 @@ export interface CategoryWithColumns extends Category {
 export interface TabDefinition {
   id: string;
   title: string;
-  label: string;
+  label?: string; // Added missing label property
   columns?: any[];
 }
 
