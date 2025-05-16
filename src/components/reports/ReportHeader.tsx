@@ -4,15 +4,17 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import { Plus, Filter } from 'lucide-react';
 import CreateReportDialog from './CreateReportDialog';
-import { Report, ReportHeaderProps } from '@/types/report';
+import { ReportHeaderProps } from '@/types/report';
 
-export const ReportHeader: React.FC<ReportHeaderProps> = ({ onCreateReport }) => {
+export const ReportHeader: React.FC<ReportHeaderProps> = ({ onCreateReport, title, description }) => {
   const { t } = useLanguage();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const handleCreate = async (data: { title: string; description: string; type: string }) => {
     try {
-      await onCreateReport(data);
+      if (onCreateReport) {
+        await onCreateReport(data);
+      }
       setIsCreateDialogOpen(false);
     } catch (error) {
       console.error('Error creating report:', error);
@@ -22,9 +24,9 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({ onCreateReport }) =>
   return (
     <div className="flex justify-between items-center mb-6">
       <div>
-        <h1 className="text-3xl font-bold">{t('reports')}</h1>
+        <h1 className="text-3xl font-bold">{title || t('reports')}</h1>
         <p className="text-muted-foreground mt-1">
-          {t('reportsDescription')}
+          {description || t('reportsDescription')}
         </p>
       </div>
       <div className="flex space-x-2">
@@ -40,7 +42,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({ onCreateReport }) =>
 
       <CreateReportDialog
         open={isCreateDialogOpen}
-        onClose={() => setIsCreateDialogOpen(false)}
+        onOpenChange={setIsCreateDialogOpen}
         onCreate={handleCreate}
       />
     </div>

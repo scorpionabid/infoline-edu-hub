@@ -12,8 +12,8 @@ export interface Report {
   status: ReportStatus;
   is_template?: boolean;
   shared_with?: string[];
-  insights?: string[];
-  recommendations?: string[];
+  insights?: string[] | string;
+  recommendations?: string[] | string;
 }
 
 export type ReportStatus = 'draft' | 'published' | 'archived';
@@ -55,7 +55,9 @@ export interface CreateReportDialogProps {
 export interface ReportPreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  report: Report;
+  report?: Report;
+  onClose?: () => void;
+  reportId?: string;
 }
 
 export interface ReportEmptyStateProps {
@@ -70,8 +72,9 @@ export interface ReportChartProps {
 }
 
 export interface ReportHeaderProps {
-  title: string;
+  title?: string;
   description?: string;
-  onCreateReport?: () => void;
+  onCreateReport?: (data?: any) => void;
+  onCategorySelect?: (categoryId: string) => void;
   isLoading?: boolean;
 }

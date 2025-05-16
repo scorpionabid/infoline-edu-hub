@@ -63,6 +63,15 @@ export interface ColumnTypeInfo {
   description: string;
 }
 
+// Add the missing BasicColumnFieldsProps interface
+export interface BasicColumnFieldsProps {
+  register: any;
+  errors: any;
+  columnType: ColumnType;
+  setValue: (name: string, value: any) => void;
+  getValues: (name?: string) => any;
+}
+
 // Make columnTypes both a Record and have a find method by using an interface extension
 export const columnTypes: Record<ColumnType, ColumnTypeInfo> & { 
   find: (type: string) => ColumnTypeInfo | undefined 

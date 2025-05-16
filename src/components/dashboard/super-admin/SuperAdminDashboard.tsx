@@ -6,7 +6,7 @@ import DashboardChart from '@/components/dashboard/DashboardChart';
 import CategoryProgressList from '@/components/dashboard/CategoryProgressList';
 import SchoolsCompletionList from '@/components/dashboard/SchoolsCompletionList';
 import RegionsList from './RegionsList';
-import { SuperAdminDashboardData, CategoryItem } from '@/types/dashboard';
+import { SuperAdminDashboardData, CategoryItem, DashboardFormStats } from '@/types/dashboard';
 
 interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
@@ -36,7 +36,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
     }
   ];
 
-  // Handle completion data safely regardless of type
+  // Handle completion data safely regardless of whether it's an object or number
   const completionValue = typeof data.completion === 'object' && data.completion
     ? data.completion.percentage
     : (typeof data.completion === 'number' ? data.completion : data.completionRate || 0);
@@ -54,6 +54,18 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
       }))
     : [];
 
+  const formStats: DashboardFormStats = {
+    total: data.entryCount?.total || 0,
+    approved: data.entryCount?.approved || 0,
+    pending: data.entryCount?.pending || 0,
+    rejected: data.entryCount?.rejected || 0,
+    dueSoon: data.entryCount?.dueSoon || 0,
+    overdue: data.entryCount?.overdue || 0,
+    draft: data.entryCount?.draft || 0,
+    completed: data.entryCount?.approved || 0,
+    percentage: completionValue
+  };
+
   return (
     <div className="space-y-4">
       <StatsGrid stats={stats} />
@@ -65,16 +77,8 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
           </CardHeader>
           <CardContent>
             <DashboardChart 
-              completion={completionValue}
-              stats={{
-                total: data.entryCount?.total || 0,
-                approved: data.entryCount?.approved || 0,
-                pending: data.entryCount?.pending || 0,
-                rejected: data.entryCount?.rejected || 0,
-                dueSoon: data.entryCount?.dueSoon || 0,
-                overdue: data.entryCount?.overdue || 0,
-                draft: data.entryCount?.draft || 0
-              }} 
+              completion={completionValue} 
+              stats={formStats} 
             />
           </CardContent>
         </Card>
