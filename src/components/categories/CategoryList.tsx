@@ -8,7 +8,7 @@ import { useCategories } from '@/hooks/categories/useCategories';
 import useCategoryActions from '@/hooks/categories/useCategoryActions';
 import { useLanguage } from '@/context/LanguageContext';
 import { CategoryColumns } from './CategoryColumns';
-import { CategoryStatus } from '@/types/category';
+import { CategoryStatus, CategoryFilter } from '@/types/category';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Info } from 'lucide-react';
 
@@ -42,7 +42,14 @@ export const CategoryList = () => {
   // Refetch categories
   const refetch = () => {
     console.log("Refetching categories with archived: false");
-    fetchCategories({ archived: false });
+    const filter: CategoryFilter = {
+      search: '',
+      status: '',
+      sortBy: 'name',
+      sortOrder: 'asc',
+      archived: false
+    };
+    fetchCategories(filter);
   };
 
   // Retry loading if categories fail to load

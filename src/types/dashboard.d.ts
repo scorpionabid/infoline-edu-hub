@@ -18,6 +18,9 @@ export interface DashboardFormStats {
   percentage: number;
   approved?: number;
   rejected?: number;
+  draft?: number;
+  dueSoon?: number;
+  overdue?: number;
 }
 
 export interface CategoryItem {
@@ -51,6 +54,7 @@ export interface DeadlineItem {
   deadline: string;
   daysLeft: number;
   categoryId?: string;
+  name?: string;
 }
 
 export interface PendingApproval {
@@ -74,24 +78,36 @@ export interface SchoolStat {
   id: string;
   name: string;
   completion: number;
+  completionRate?: number;
+  status?: string;
   principalName?: string;
   email?: string;
   phone?: string;
+  totalEntries?: number;
+  pendingEntries?: number;
+  pendingCount?: number;
+  pendingForms?: number;
+  lastUpdate?: string;
 }
 
 export interface SectorStat {
   id: string;
   name: string;
   completion: number;
+  completionRate?: number;
   schoolCount?: number;
 }
 
 export interface SchoolAdminDashboardData {
   status: DashboardStatus;
-  forms: FormItem[];
+  forms?: FormItem[];
   categories: CategoryItem[];
-  completion: DashboardFormStats;
-  deadlines: DeadlineItem[];
+  completion: DashboardFormStats | number;
+  completionRate?: number;
+  deadlines?: DeadlineItem[];
+  upcoming?: DeadlineItem[];
+  pendingForms?: FormItem[];
+  formStats?: DashboardFormStats;
   recentActivity?: any[];
   notifications?: any[];
 }
@@ -100,6 +116,7 @@ export interface SectorAdminDashboardData {
   status: DashboardStatus;
   completion: DashboardFormStats;
   schoolStats: SchoolStat[];
+  schools?: SchoolStat[];
   pendingApprovals: PendingApproval[];
   categories: CategoryItem[];
   deadlines: DeadlineItem[];
@@ -124,4 +141,18 @@ export interface SuperAdminDashboardData {
   pendingApprovals: PendingApproval[];
   categories: CategoryItem[];
   recentActivity?: any[];
+}
+
+export interface StatusCardsProps {
+  completion?: DashboardFormStats | number;
+  status?: DashboardStatus;
+  formStats?: any;
+}
+
+export interface FormTabsProps {
+  categories: CategoryItem[];
+  upcoming: DeadlineItem[];
+  pendingForms: FormItem[];
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (id: string) => void;
 }

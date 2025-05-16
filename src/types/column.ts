@@ -34,7 +34,7 @@ export interface BasicColumnFieldsProps {
   isEditMode: boolean;
 }
 
-export type ColumnType = 'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 'date' | 'file' | 'radio';
+export type ColumnType = 'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 'date' | 'file' | 'radio' | 'email' | 'url' | 'richtext' | 'range' | 'datetime' | 'phone' | 'tel';
 
 export interface ColumnTypeOption {
   value: string;
@@ -85,6 +85,7 @@ export interface ColumnFormValues {
   validation?: Record<string, any>;
   section?: string;
   description?: string;
+  status?: string;
 }
 
 export const columnTypes: Record<ColumnType, ColumnTypeInfo> = {
@@ -127,5 +128,40 @@ export const columnTypes: Record<ColumnType, ColumnTypeInfo> = {
     icon: 'CircleDot',
     label: 'Radio',
     description: 'For selecting one option from several choices'
+  },
+  email: {
+    icon: 'Mail',
+    label: 'Email',
+    description: 'For email addresses'
+  },
+  url: {
+    icon: 'Link',
+    label: 'URL',
+    description: 'For website and other URLs'
+  },
+  richtext: {
+    icon: 'FileText',
+    label: 'Rich Text',
+    description: 'Formatted text with styling options'
+  },
+  range: {
+    icon: 'SlidersHorizontal',
+    label: 'Range',
+    description: 'For selecting a value within a range'
+  },
+  datetime: {
+    icon: 'Clock',
+    label: 'Date & Time',
+    description: 'For selecting date and time'
+  },
+  phone: {
+    icon: 'Phone',
+    label: 'Phone',
+    description: 'For phone numbers'
+  },
+  tel: {
+    icon: 'Phone',
+    label: 'Tel',
+    description: 'For telephone numbers'
   }
 };

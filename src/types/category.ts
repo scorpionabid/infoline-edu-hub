@@ -9,10 +9,10 @@ export interface Category {
   id: string;
   name: string;
   description?: string;
-  status?: string;
+  status?: CategoryStatus;
   priority?: number;
   deadline?: string;
-  assignment?: string;
+  assignment?: CategoryAssignment;
   archived?: boolean;
   column_count?: number;
   created_at?: string;
