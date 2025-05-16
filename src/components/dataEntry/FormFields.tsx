@@ -9,18 +9,10 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ValidationResult } from '@/types/dataEntry';
+import { ValidationResult, FormFieldProps } from '@/types/dataEntry';
 import { validateField, cn } from '@/components/dataEntry/utils/formUtils';
 
-interface FormFieldProps {
-  column: Column;
-  value: any;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  onValueChange?: (value: any) => void;
-  isDisabled?: boolean;
-}
-
-export const FormFields: React.FC<FormFieldProps> = ({ 
+const FormFields: React.FC<FormFieldProps> = ({ 
   column, 
   value, 
   onChange, 
@@ -140,7 +132,7 @@ export const FormFields: React.FC<FormFieldProps> = ({
       case 'date':
         return (
           <DatePicker
-            date={value ? new Date(value) : undefined}
+            selected={value ? new Date(value) : undefined}
             onSelect={handleDateChange}
             disabled={isDisabled}
           />

@@ -1,7 +1,15 @@
 
+export enum ReportTypeValues {
+  BAR = 'bar',
+  PIE = 'pie',
+  LINE = 'line',
+  TABLE = 'table'
+}
+
 export interface Report {
   id: string;
   title: string;
+  name?: string; // Added for backward compatibility
   description?: string;
   type: string;
   content?: Record<string, any>;
@@ -14,6 +22,12 @@ export interface Report {
   filters?: Record<string, any>;
   shared_with?: string[] | Record<string, any>[];
   is_template?: boolean;
+}
+
+export interface ReportChartProps {
+  report: Report;
+  height?: number;
+  width?: number;
 }
 
 export interface ReportPreviewDialogProps {

@@ -3,9 +3,78 @@ import React from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { ColumnType, columnTypeDefinitions } from '@/types/column';
-import { Icons } from '@/components/ui/icons';
-import { LucideIcon } from 'lucide-react';
+import { ColumnType } from '@/types/column';
+import { 
+  TextIcon, AlignLeft, Hash, List, CheckSquare, Circle,
+  Calendar, Clock
+} from 'lucide-react';
+
+// Define the column type definitions here to avoid importing from types
+const columnTypeDefinitions = [
+  {
+    group: "Basic",
+    types: [
+      {
+        value: "text",
+        label: "Text",
+        description: "Simple text input",
+        icon: "TextIcon"
+      },
+      {
+        value: "textarea",
+        label: "Text Area",
+        description: "Multi-line text input",
+        icon: "AlignLeft"
+      },
+      {
+        value: "number",
+        label: "Number",
+        description: "Numeric input only",
+        icon: "Hash"
+      }
+    ]
+  },
+  {
+    group: "Selection",
+    types: [
+      {
+        value: "select",
+        label: "Select",
+        description: "Dropdown selection",
+        icon: "List"
+      },
+      {
+        value: "checkbox",
+        label: "Checkbox",
+        description: "True/false selection",
+        icon: "CheckSquare"
+      },
+      {
+        value: "radio",
+        label: "Radio",
+        description: "Single option selection",
+        icon: "Circle"
+      }
+    ]
+  },
+  {
+    group: "Date & Time",
+    types: [
+      {
+        value: "date",
+        label: "Date",
+        description: "Date picker",
+        icon: "Calendar"
+      },
+      {
+        value: "datetime",
+        label: "Date & Time",
+        description: "Date and time picker",
+        icon: "Clock"
+      }
+    ]
+  }
+];
 
 interface ColumnTypeSelectorProps {
   value: ColumnType;
@@ -14,10 +83,18 @@ interface ColumnTypeSelectorProps {
 
 export function ColumnTypeSelector({ value, onValueChange }: ColumnTypeSelectorProps) {
   // Helper function to get icon component
-  const getIconComponent = (iconName: string): LucideIcon => {
-    const iconKey = iconName as keyof typeof Icons;
-    // Provide a default icon if the requested one doesn't exist
-    return Icons[iconKey] || Icons.circle;
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case 'TextIcon': return TextIcon;
+      case 'AlignLeft': return AlignLeft;
+      case 'Hash': return Hash;
+      case 'List': return List;
+      case 'CheckSquare': return CheckSquare;
+      case 'Circle': return Circle;
+      case 'Calendar': return Calendar;
+      case 'Clock': return Clock;
+      default: return Circle;
+    }
   };
 
   return (

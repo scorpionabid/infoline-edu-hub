@@ -14,23 +14,30 @@ export interface Column {
   status?: string;
   created_at?: string;
   updated_at?: string;
-  section?: string; // Added missing section property
+  section?: string;
+  description?: string;
+  color?: string;
 }
 
 export interface ColumnOption {
   value: string;
   label: string;
-  color?: string; // Added missing color property
-  description?: string; // Added missing description property
+  color?: string;
+  description?: string;
 }
 
 export interface BasicColumnFieldsProps {
-  form: any;
+  form?: any;
   control: any;
-  register: any;
-  errors: Record<string, any>;
-  isSubmitting: boolean;
+  register?: any;
+  errors?: Record<string, any>;
+  isSubmitting?: boolean;
   isEditMode: boolean;
+  categories: any[];
+  columns?: any[];
+  editColumn?: Column;
+  selectedType: ColumnType;
+  onTypeChange: (type: ColumnType) => void;
 }
 
 export type ColumnType = 'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 'date' | 'file' | 'radio';

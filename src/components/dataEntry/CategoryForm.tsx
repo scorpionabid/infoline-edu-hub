@@ -101,19 +101,10 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
                     {tab.columns && tab.columns.map(column => (
                       <FormFields
                         key={column.id}
-                        field={{
-                          id: column.id,
-                          name: column.name,
-                          type: column.type,
-                          value: formData[column.id] ?? column.default_value ?? '',
-                          required: column.is_required,
-                          placeholder: column.placeholder,
-                          helpText: column.help_text,
-                          options: column.options,
-                          validation: column.validation,
-                          onChange: (value) => handleFieldChange(column.id, value),
-                          error: errors[column.id]
-                        }}
+                        column={column}
+                        value={formData[column.id] ?? column.default_value ?? ''}
+                        onChange={(e) => handleFieldChange(column.id, e.target.value)}
+                        onValueChange={(value) => handleFieldChange(column.id, value)}
                       />
                     ))}
                   </div>
@@ -125,19 +116,10 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
               {tabs[0].columns && tabs[0].columns.map(column => (
                 <FormFields
                   key={column.id}
-                  field={{
-                    id: column.id,
-                    name: column.name,
-                    type: column.type,
-                    value: formData[column.id] ?? column.default_value ?? '',
-                    required: column.is_required,
-                    placeholder: column.placeholder,
-                    helpText: column.help_text,
-                    options: column.options,
-                    validation: column.validation,
-                    onChange: (value) => handleFieldChange(column.id, value),
-                    error: errors[column.id]
-                  }}
+                  column={column}
+                  value={formData[column.id] ?? column.default_value ?? ''}
+                  onChange={(e) => handleFieldChange(column.id, e.target.value)}
+                  onValueChange={(value) => handleFieldChange(column.id, value)}
                 />
               ))}
             </div>

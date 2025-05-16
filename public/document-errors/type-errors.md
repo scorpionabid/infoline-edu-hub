@@ -1,3 +1,4 @@
+
 # TypeScript Type Error Resolution Guide
 
 ## Dashboard Module Type System
@@ -126,12 +127,17 @@ Common pattern for component props errors:
    Type 'ForwardRefExoticComponent<...>' is not assignable to type 'LucideIcon'.
    
    // Solution
-   // Use correct type for icons
-   import { type LucideIcon } from 'lucide-react';
+   // Use specific icon component imports instead of dynamic resolution
+   import { TextIcon, AlignLeft, Hash } from 'lucide-react';
    
-   const icons: Record<string, LucideIcon> = {
-     text: TextIcon,
-     number: HashIcon
+   // Define a mapping function that returns the correct component
+   const getIconComponent = (iconName: string) => {
+     switch(iconName) {
+       case 'TextIcon': return TextIcon;
+       case 'AlignLeft': return AlignLeft;
+       case 'Hash': return Hash;
+       default: return Circle;
+     }
    };
    ```
 
@@ -144,3 +150,13 @@ Common pattern for component props errors:
 | Property 'section' does not exist on type 'Column' | Added section optional property to Column interface | 2025-05-16 |
 | Property 'label' does not exist on type 'TabDefinition' | Added label optional property to TabDefinition interface | 2025-05-16 |
 | Module '"@/hooks/common/useDebounce"' has no exported member 'useDebounce' | Created useDebounce.ts hook with proper default export | 2025-05-16 |
+| Property 'field' does not exist on type 'IntrinsicAttributes & FormFieldProps' | Updated FormFields component to accept proper props structure | 2025-05-20 |
+| Module '"@/types/dataEntry"' has no exported member 'DataEntryTableData' | Added DataEntryTableData interface to dataEntry.d.ts | 2025-05-20 |
+| Module '"@/types/dataEntry"' has no exported member 'ValidationResult' | Added ValidationResult interface to dataEntry.d.ts | 2025-05-20 |
+| Module '"@/types/report"' has no exported member named 'ReportChartProps' | Added ReportChartProps interface to report.ts | 2025-05-20 |
+| Module '"@/types/report"' has no exported member 'ReportTypeValues' | Added ReportTypeValues enum to report.ts | 2025-05-20 |
+| Property 'date' does not exist on type 'IntrinsicAttributes & DatePickerProps' | Created DatePicker component with proper props interface | 2025-05-20 |
+| Type 'ForwardRefExoticComponent<...>' is not assignable to type 'LucideIcon' | Added direct import of icons in ColumnTypeSelector | 2025-05-20 |
+| Cannot find module '@/lib/constants' | Created constants.ts file with required exports | 2025-05-20 |
+| UserRole type incompatibility between modules | Updated UserRole type to include all possible values | 2025-05-20 |
+

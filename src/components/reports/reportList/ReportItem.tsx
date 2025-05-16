@@ -76,7 +76,7 @@ export const ReportItem: React.FC<ReportItemProps> = ({
 
   const isArchived = report.status === 'archived';
   // Use title property if it exists, otherwise use name
-  const reportTitle = 'title' in report ? report.title : (report.name || '');
+  const reportTitle = report.title || '';
 
   return (
     <Card className={cn(

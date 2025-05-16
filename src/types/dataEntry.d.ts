@@ -27,8 +27,9 @@ export interface DataEntryTableData {
 }
 
 export interface ValidationResult {
-  isValid: boolean;
+  valid: boolean;
   message?: string;
+  errors?: Record<string, string>;
 }
 
 export interface FormField {
@@ -44,6 +45,14 @@ export interface FormField {
   onChange: (value: any) => void;
   onBlur?: () => void;
   error?: string;
+}
+
+export interface FormFieldProps {
+  column: import('./column').Column;
+  value: any;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  onValueChange?: (value: any) => void;
+  isDisabled?: boolean;
 }
 
 export enum DataEntryStatus {
