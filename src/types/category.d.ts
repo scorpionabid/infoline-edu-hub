@@ -49,8 +49,8 @@ export interface CategoryFilter {
 }
 
 export interface CategoryFilterProps {
-  filter: CategoryFilter;
-  onChange: (filter: CategoryFilter) => void;
+  filters: CategoryFilter;
+  onChange: (filters: CategoryFilter) => void;
   showAssignmentFilter?: boolean;
 }
 

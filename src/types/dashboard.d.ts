@@ -1,6 +1,4 @@
 
-import { Category } from './category';
-
 // Basic dashboard statistics
 export interface DashboardStatus {
   pending: number;
@@ -21,15 +19,15 @@ export interface DashboardFormStats {
   dueSoon: number;
   overdue: number;
   total: number;
-  completed: number;
-  percentage: number;
+  completed?: number;
+  percentage?: number;
 }
 
 // Category in dashboard context
 export interface CategoryItem {
   id: string;
   name: string;
-  completionRate?: number;
+  completionRate: number;
   completion?: number;
   description?: string;
   deadline?: string;
@@ -55,6 +53,7 @@ export interface SchoolStat {
   address?: string;
   phone?: string;
   email?: string;
+  completion?: number;
 }
 
 // Sector in dashboard context

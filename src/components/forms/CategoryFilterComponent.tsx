@@ -12,22 +12,22 @@ import { useLanguage } from '@/context/LanguageContext';
 import { CategoryFilter, CategoryFilterProps } from '@/types/category';
 
 const CategoryFilterComponent: React.FC<CategoryFilterProps> = ({ 
-  filter, // Updated from filters to filter
+  filters, 
   onChange, 
   showAssignmentFilter = false 
 }) => {
   const { t } = useLanguage();
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange({ ...filter, search: e.target.value });
+    onChange({ ...filters, search: e.target.value });
   };
 
   const handleStatusChange = (value: string) => {
-    onChange({ ...filter, status: value as any });
+    onChange({ ...filters, status: value as any });
   };
 
   const handleAssignmentChange = (value: string) => {
-    onChange({ ...filter, assignment: value as any });
+    onChange({ ...filters, assignment: value as any });
   };
 
   return (
@@ -35,14 +35,14 @@ const CategoryFilterComponent: React.FC<CategoryFilterProps> = ({
       <div className="flex-1">
         <Input
           placeholder={t('searchCategories')}
-          value={filter.search}
+          value={filters.search}
           onChange={handleSearchChange}
           className="w-full"
         />
       </div>
       <div className="w-full md:w-48">
         <Select
-          value={filter.status}
+          value={filters.status}
           onValueChange={handleStatusChange}
         >
           <SelectTrigger>
@@ -60,7 +60,7 @@ const CategoryFilterComponent: React.FC<CategoryFilterProps> = ({
       {showAssignmentFilter && (
         <div className="w-full md:w-48">
           <Select
-            value={filter.assignment}
+            value={filters.assignment}
             onValueChange={handleAssignmentChange}
           >
             <SelectTrigger>

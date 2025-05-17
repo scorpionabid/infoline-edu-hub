@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -37,12 +38,14 @@ const FormsPage: React.FC = () => {
 
       if (error) throw error;
 
-      const categoriesWithColumns = data.map(category => ({
+      // Process data to match CategoryWithColumns type
+      const processedCategories: CategoryWithColumns[] = data.map(category => ({
         ...category,
-        columnCount: category.columns ? category.columns.length : 0
+        columnCount: category.columns ? category.columns.length : 0,
+        columns: Array.isArray(category.columns) ? category.columns : []
       }));
 
-      setCategories(categoriesWithColumns);
+      setCategories(processedCategories);
     } catch (error: any) {
       console.error('Error fetching categories:', error);
       toast({
@@ -82,7 +85,6 @@ const FormsPage: React.FC = () => {
     return true;
   });
 
-  // Modify the component to use the updated interface
   return (
     <div className="container py-6">
       <div className="flex justify-between items-center mb-6">
@@ -96,7 +98,7 @@ const FormsPage: React.FC = () => {
       <Card className="mb-6">
         <CardContent className="pt-6">
           <CategoryFilterComponent 
-            filter={filters}
+            filters={filters}
             onChange={setFilters}
             showAssignmentFilter={true}
           />

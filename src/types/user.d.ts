@@ -1,4 +1,13 @@
 
+export type UserRoleType = 
+  | 'superadmin'
+  | 'regionadmin' 
+  | 'sectoradmin' 
+  | 'schooladmin' 
+  | 'user';
+
+export type UserRole = UserRoleType;
+
 export interface User {
   id: string;
   full_name?: string;
@@ -46,6 +55,7 @@ export interface FullUserData {
   // Support both camelCase and snake_case for backward compatibility
   notification_settings?: NotificationSettings;
   notificationSettings?: NotificationSettings;
+  preferences?: any;
 }
 
 export interface UserFormData {
@@ -75,10 +85,3 @@ export interface UserRole {
   sector_id?: string;
   region_id?: string;
 }
-
-export type UserRoleType = 
-  | 'superadmin'
-  | 'regionadmin' 
-  | 'sectoradmin' 
-  | 'schooladmin' 
-  | 'user';
