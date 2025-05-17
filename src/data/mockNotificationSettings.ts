@@ -9,7 +9,9 @@ export const defaultNotificationSettings: NotificationSettings = {
   system: true,
   deadline: true,
   sms: false,
-  deadlineReminders: true
+  deadlineReminders: true,
+  statusUpdates: true,
+  weeklyReports: false
 };
 
 // Mock data üçün legacy notificationSettings-ləri yeni formata çevirmək
@@ -21,6 +23,9 @@ export const adaptLegacyNotificationSettings = (legacySettings: any): Notificati
     system: legacySettings?.system || true,
     deadline: true, // Əksik olan məcburi xassələri default dəyərlərə mənimsədirik
     sms: legacySettings?.sms || false,
-    deadlineReminders: legacySettings?.deadlineReminders || true
+    deadlineReminders: legacySettings?.deadlineReminders || true,
+    statusUpdates: legacySettings?.statusUpdates || true,
+    weeklyReports: legacySettings?.weeklyReports || false
   };
 };
+

@@ -1,3 +1,4 @@
+
 import { UserRole } from './role';
 
 export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | string;
@@ -43,8 +44,8 @@ export interface FullUserData extends User {
   updatedAt?: string;
   notification_settings?: NotificationSettings;
 
-  // Adding avatar property to fix the build error
-  avatar?: string;
+  // Adding avatar_url property to fix the build error
+  avatar_url?: string;
 }
 
 export interface NotificationSettings {
@@ -109,3 +110,4 @@ export function normalizeUserData(userData: any): FullUserData {
     notification_settings: userData.notification_settings || userData.notificationSettings || defaultNotificationSettings
   };
 }
+

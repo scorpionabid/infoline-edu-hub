@@ -1,3 +1,4 @@
+
 export interface AppNotification {
   id: string;
   title: string;
@@ -57,3 +58,4 @@ export function adaptDashboardNotificationToApp(notification: any): AppNotificat
     relatedEntityType: notification.related_entity_type || notification.relatedEntityType
   };
 }
+
