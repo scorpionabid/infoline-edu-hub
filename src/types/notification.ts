@@ -1,82 +1,46 @@
 
-export type NotificationType = 'info' | 'warning' | 'error' | 'success' | 'system' | 'approval' | 'deadline';
-export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical';
-
 export interface AppNotification {
   id: string;
   title: string;
-  message: string;
-  type: NotificationType;
-  isRead: boolean;
+  message?: string;
+  type?: string;
+  isRead?: boolean;
   createdAt: string;
   date?: string;
-  priority?: NotificationPriority;
+  priority?: string;
+  link?: string;
   relatedEntityId?: string;
   relatedEntityType?: string;
 }
 
-export interface DashboardNotification {
-  id: string;
-  title: string;
-  message: string;
-  type: string;
-  isRead?: boolean;
-  createdAt?: string;
-  date?: string;
-  priority?: string;
+export interface DashboardNotification extends AppNotification {
+  related_entity_id?: string;
+  related_entity_type?: string;
 }
 
-export interface NotificationsCardProps {
-  title?: string;
-  notifications: AppNotification[];
-  onMarkAsRead?: (id: string) => void;
+export interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  inApp: boolean;
+  system: boolean;
+  deadlineReminders: boolean;
+  statusUpdates: boolean;
+  weeklyReports: boolean;
+  sms: boolean;
 }
 
-// Helper function to adapt dashboard notifications to app notifications
-export const adaptDashboardNotificationToApp = (notification: DashboardNotification): AppNotification => {
+export function adaptDashboardNotificationToApp(notification: any): AppNotification {
   return {
     id: notification.id,
     title: notification.title,
     message: notification.message,
-    type: notification.type as NotificationType,
-    isRead: notification.isRead ?? false,
-    createdAt: notification.createdAt || notification.date || new Date().toISOString(),
-    date: notification.date,
-    priority: notification.priority as NotificationPriority | undefined,
+    type: notification.type || 'info',
+    isRead: notification.is_read || notification.isRead || false,
+    createdAt: notification.created_at || notification.createdAt || new Date().toISOString(),
+    date: notification.date || notification.created_at || notification.createdAt || new Date().toISOString(),
+    priority: notification.priority || 'normal',
+    link: notification.link,
+    relatedEntityId: notification.related_entity_id || notification.relatedEntityId,
+    relatedEntityType: notification.related_entity_type || notification.relatedEntityType
   };
-};
-
-// Helper function to adapt app notifications to dashboard notifications
-export const adaptAppNotificationToDashboard = (appNotification: AppNotification): DashboardNotification => {
-  // Convert AppNotification types to DashboardNotification types
-  let dashboardType: 'error' | 'info' | 'warning' | 'success' = 'info';
-  
-  switch(appNotification.type) {
-    case 'error':
-      dashboardType = 'error';
-      break;
-    case 'warning':
-      dashboardType = 'warning';
-      break;
-    case 'success':
-      dashboardType = 'success';
-      break;
-    case 'deadline':
-    case 'approval':
-    case 'system':
-    case 'info':
-    default:
-      dashboardType = 'info';
-      break;
-  }
-
-  return {
-    id: appNotification.id,
-    title: appNotification.title,
-    message: appNotification.message,
-    type: dashboardType,
-    date: appNotification.createdAt,
-    createdAt: appNotification.createdAt,
-    isRead: appNotification.isRead,
-  };
-};
+}

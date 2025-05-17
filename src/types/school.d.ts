@@ -29,6 +29,9 @@ export interface SchoolStat {
   completionRate: number;
   status?: string;
   lastUpdate?: string;
+  pendingCount?: number;
+  pendingEntries?: number;
+  totalEntries?: number;
   pendingForms?: number;
   formsCompleted?: number;
   totalForms?: number;
@@ -39,13 +42,19 @@ export interface SchoolStat {
 }
 
 // Məktəb tipi - matched with Supabase.School
-export interface School extends SupabaseSchool {}
+export interface School extends SupabaseSchool {
+  status?: string;
+}
 
 // Region tipi - matched with Supabase.Region
-export interface Region extends SupabaseRegion {}
+export interface Region extends SupabaseRegion {
+  status?: string;
+}
 
 // Sector tipi - matched with Supabase.Sector
-export interface Sector extends SupabaseSector {}
+export interface Sector extends SupabaseSector {
+  status?: string;
+}
 
 // SchoolForm props tipi
 export interface SchoolFormProps {

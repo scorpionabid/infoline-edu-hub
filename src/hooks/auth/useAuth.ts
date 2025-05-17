@@ -16,14 +16,15 @@ export const useAuth = () => {
     login,
     logout,
     updateUser,
-    clearError
+    clearError,
+    refreshSession
   } = useAuthStore();
   
   // Add convenience methods
   const refreshProfile = useCallback(async (): Promise<FullUserData | null> => {
-    // Implementation is in useAuthStore
+    await refreshSession();
     return user;
-  }, [user]);
+  }, [user, refreshSession]);
   
   return {
     // Basic state
@@ -45,6 +46,7 @@ export const useAuth = () => {
     updateUser,
     refreshProfile,
     clearError,
+    refreshSession,
     
     // Legacy compatibility aliases
     updateProfile: updateUser,

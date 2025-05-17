@@ -34,6 +34,8 @@ export interface CategoryItem {
   description?: string;
   deadline?: string;
   status: string;
+  daysLeft?: number;
+  columnCount?: number;
 }
 
 // School in dashboard context
@@ -50,6 +52,10 @@ export interface SchoolStat {
   totalForms?: number;
   lastUpdate?: string;
   status?: string;
+  principalName?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
 }
 
 // Sector in dashboard context
@@ -60,6 +66,7 @@ export interface SectorStat {
   completion?: number;
   schoolCount: number;
   pendingCount?: number;
+  status?: string;
 }
 
 // Region in dashboard context
@@ -70,19 +77,20 @@ export interface RegionStat {
   completion?: number;
   sectorCount: number;
   schoolCount: number;
+  status?: string;
 }
 
 // Pending approval
 export interface PendingApproval {
   id: string;
-  title: string;
+  title?: string;
   schoolId: string;
   schoolName: string;
   categoryId: string;
   categoryName: string;
-  submittedAt: string;
+  submittedAt?: string;
   status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
+  createdAt?: string;
   // Legacy properties
   name?: string;
   school?: {
@@ -102,10 +110,10 @@ export interface PendingApproval {
 // Form item
 export interface FormItem {
   id: string;
-  title: string;
+  title?: string;
   name?: string;
-  categoryId: string;
-  categoryName: string;
+  categoryId?: string;
+  categoryName?: string;
   category?: {
     id: string;
     name: string;
@@ -121,10 +129,10 @@ export interface DeadlineItem {
   id: string;
   name?: string;
   title?: string;
-  categoryId: string;
+  categoryId?: string;
   categoryName?: string;
-  deadline: string;
-  daysLeft: number;
+  deadline?: string;
+  daysLeft?: number;
   status?: string;
 }
 
