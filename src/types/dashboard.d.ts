@@ -8,6 +8,8 @@ export interface DashboardStatus {
   rejected: number;
   draft: number;
   total: number;
+  active?: number;
+  inactive?: number;
 }
 
 // Form statistics
@@ -108,22 +110,22 @@ export interface FormItem {
     id: string;
     name: string;
   };
-  dueDate: string;
+  dueDate?: string;
   deadline?: string;
   status: string;
-  progress: number;
+  progress?: number;
 }
 
 // Deadline item
 export interface DeadlineItem {
   id: string;
-  name: string;
+  name?: string;
   title?: string;
   categoryId: string;
-  categoryName: string;
+  categoryName?: string;
   deadline: string;
   daysLeft: number;
-  status: string;
+  status?: string;
 }
 
 // School Admin Dashboard Data
@@ -228,12 +230,4 @@ export interface FormTabsProps {
   upcoming: DeadlineItem[];
   navigateToDataEntry?: () => void;
   handleFormClick?: (id: string) => void;
-}
-
-// Statistics grid item
-export interface StatItem {
-  title: string;
-  value: number;
-  color?: string;
-  icon?: React.ReactNode;
 }

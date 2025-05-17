@@ -85,10 +85,16 @@ export interface DataEntryForm {
 }
 
 export interface DataEntrySaveBarProps {
-  isDirty: boolean;
-  isSubmitting: boolean;
+  lastSaved?: string;
   isSaving: boolean;
-  onSave: () => Promise<any>;
-  errors: boolean;
-  isPendingApproval: boolean;
+  isSubmitting: boolean;
+  isDirty?: boolean;
+  completionPercentage?: number;
+  onSave: () => void;
+  onSubmit?: () => void;
+  onDownloadTemplate?: () => void;
+  onUploadData?: (file: File) => void;
+  readOnly?: boolean;
+  errors?: boolean;
+  isPendingApproval?: boolean;
 }

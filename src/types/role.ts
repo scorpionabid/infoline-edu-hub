@@ -1,41 +1,45 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'teacher' | 'user';
+export type UserRole = 
+  | 'superadmin'
+  | 'regionadmin' 
+  | 'sectoradmin' 
+  | 'schooladmin' 
+  | 'user';
 
-export function normalizeRole(role: string | null | undefined): UserRole {
-  if (!role) return 'user';
-  
-  switch(role.toLowerCase()) {
+export interface RoleDefinition {
+  value: UserRole;
+  label: string;
+  description?: string;
+}
+
+export const USER_ROLES: Record<UserRole, string> = {
+  superadmin: 'Super Admin',
+  regionadmin: 'Region Admin',
+  sectoradmin: 'Sector Admin',
+  schooladmin: 'School Admin',
+  user: 'User'
+};
+
+export const normalizeRole = (role: string): UserRole => {
+  switch (role.toLowerCase()) {
     case 'superadmin':
+    case 'super_admin':
+    case 'super-admin':
+    case 'admin':
       return 'superadmin';
     case 'regionadmin':
+    case 'region_admin':
+    case 'region-admin':
       return 'regionadmin';
     case 'sectoradmin':
+    case 'sector_admin':
+    case 'sector-admin':
       return 'sectoradmin';
     case 'schooladmin':
+    case 'school_admin':
+    case 'school-admin':
       return 'schooladmin';
-    case 'teacher':
-      return 'teacher';
     default:
       return 'user';
   }
-}
-
-export const roleHierarchy: UserRole[] = [
-  'user',
-  'teacher',
-  'schooladmin',
-  'sectoradmin', 
-  'regionadmin',
-  'superadmin'
-];
-
-export function getRoleLevel(role: UserRole): number {
-  const index = roleHierarchy.indexOf(role);
-  return index === -1 ? 0 : index;
-}
-
-export function isRoleAtLeast(userRole: UserRole, requiredRole: UserRole): boolean {
-  const userLevel = getRoleLevel(userRole);
-  const requiredLevel = getRoleLevel(requiredRole);
-  return userLevel >= requiredLevel;
-}
+};

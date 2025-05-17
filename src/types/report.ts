@@ -58,6 +58,20 @@ export interface ReportPreviewDialogProps {
   onClose?: () => void;
 }
 
+// Add ReportFilter interface for filtering reports
+export interface ReportFilter {
+  search?: string;
+  type?: string[];
+  status?: string[];
+  date_from?: string;
+  date_to?: string;
+  shared_with?: string[];
+  created_by?: string;
+  is_template?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 // Add constant for use in ReportFilter and ReportItem
 export const REPORT_TYPE_VALUES = {
   BAR: 'BAR',

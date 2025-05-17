@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { useFormContext } from 'react-hook-form';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,9 +8,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FormFieldProps, FormFieldsProps } from '@/types/dataEntry';
 import { Column, ColumnType } from '@/types/column';
+import { useFormContext } from 'react-hook-form';
 
-// Individual form field component
-const FormField: React.FC<FormFieldProps> = ({ column, value, onChange, onValueChange, isDisabled = false }) => {
+// Individual form field renderer component
+const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, onValueChange, isDisabled = false }) => {
   const renderField = () => {
     switch (column.type) {
       case 'text':
@@ -146,14 +146,32 @@ const FormField: React.FC<FormFieldProps> = ({ column, value, onChange, onValueC
 
 // Main component to render a collection of form fields
 const FormFields: React.FC<FormFieldsProps> = ({ columns, disabled = false }) => {
-  const { control, formState: { errors } } = useFormContext();
+  const form = useFormContext();
 
+  if (!form) {
+    // Standalone mode - no form context
+    return (
+      <div className="space-y-6">
+        {columns.map((column) => (
+          <FormFieldRenderer
+            key={column.id}
+            column={column}
+            value=""
+            onChange={() => {}}
+            onValueChange={() => {}}
+            isDisabled={disabled}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // With form context
   return (
     <div className="space-y-6">
       {columns.map((column) => (
         <FormField
           key={column.id}
-          control={control}
           name={column.id}
           render={({ field }) => (
             <FormItem>
@@ -162,7 +180,7 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns, disabled = false }) =>
                 {column.is_required && <span className="text-red-500 ml-1">*</span>}
               </FormLabel>
               <FormControl>
-                <FormField
+                <FormFieldRenderer
                   column={column}
                   value={field.value}
                   onChange={field.onChange}

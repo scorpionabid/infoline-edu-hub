@@ -27,7 +27,7 @@ export interface User {
 
 export interface FullUserData extends User {
   // Additional properties specific to the application
-  notificationSettings?: any;
+  notificationSettings?: NotificationSettings;
   entityTypes?: string[];
   entityName?: any;
   adminEntity?: any;
@@ -42,7 +42,7 @@ export interface FullUserData extends User {
   lastLogin?: string;
   createdAt?: string;
   updatedAt?: string;
-  notification_settings?: any;
+  notification_settings?: NotificationSettings;
 }
 
 export interface NotificationSettings {
@@ -71,6 +71,18 @@ export interface UserFormData {
 
 // Helper function to normalize FullUserData between different sources
 export function normalizeUserData(userData: any): FullUserData {
+  const defaultNotificationSettings: NotificationSettings = {
+    email: true,
+    push: false,
+    sms: false,
+    inApp: true,
+    deadlineReminders: true,
+    statusUpdates: true,
+    weeklyReports: false,
+    system: true,
+    deadline: true
+  };
+
   return {
     ...userData,
     // Ensure status is compatible with UserStatus type
@@ -87,6 +99,7 @@ export function normalizeUserData(userData: any): FullUserData {
     lastLogin: userData.last_login || userData.lastLogin,
     createdAt: userData.created_at || userData.createdAt,
     updatedAt: userData.updated_at || userData.updatedAt,
-    notification_settings: userData.notificationSettings || userData.notification_settings
+    notificationSettings: userData.notification_settings || userData.notificationSettings || defaultNotificationSettings,
+    notification_settings: userData.notification_settings || userData.notificationSettings || defaultNotificationSettings
   };
 }

@@ -98,30 +98,18 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
               {tabs.map(tab => (
                 <TabsContent key={tab.id} value={tab.id}>
                   <div className="space-y-4">
-                    {tab.columns && tab.columns.map(column => (
-                      <FormFields
-                        key={column.id}
-                        column={column}
-                        value={formData[column.id] ?? column.default_value ?? ''}
-                        onChange={(e) => handleFieldChange(column.id, e.target.value)}
-                        onValueChange={(value) => handleFieldChange(column.id, value)}
-                      />
-                    ))}
+                    {tab.columns && <FormFields
+                      columns={tab.columns}
+                    />}
                   </div>
                 </TabsContent>
               ))}
             </Tabs>
           ) : (
             <div className="space-y-4">
-              {tabs[0].columns && tabs[0].columns.map(column => (
-                <FormFields
-                  key={column.id}
-                  column={column}
-                  value={formData[column.id] ?? column.default_value ?? ''}
-                  onChange={(e) => handleFieldChange(column.id, e.target.value)}
-                  onValueChange={(value) => handleFieldChange(column.id, value)}
-                />
-              ))}
+              {tabs[0].columns && <FormFields
+                columns={tabs[0].columns}
+              />}
             </div>
           )}
           

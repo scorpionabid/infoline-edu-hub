@@ -8,28 +8,34 @@ import { formatDistanceToNow } from 'date-fns';
 import { az } from 'date-fns/locale';
 import { useLanguage } from '@/context/LanguageContext';
 
-interface DataEntrySaveBarProps {
+export interface DataEntrySaveBarProps {
   lastSaved?: string;
   isSaving: boolean;
   isSubmitting: boolean;
-  completionPercentage: number;
+  isDirty?: boolean;
+  completionPercentage?: number;
   onSave: () => void;
-  onSubmit: () => void;
-  onDownloadTemplate: () => void;
-  onUploadData: (file: File) => void;
+  onSubmit?: () => void;
+  onDownloadTemplate?: () => void;
+  onUploadData?: (file: File) => void;
   readOnly?: boolean;
+  errors?: boolean;
+  isPendingApproval?: boolean;
 }
 
 const DataEntrySaveBar: React.FC<DataEntrySaveBarProps> = ({
   lastSaved,
   isSaving,
   isSubmitting,
-  completionPercentage,
+  isDirty = false,
+  completionPercentage = 0,
   onSave,
-  onSubmit,
-  onDownloadTemplate,
-  onUploadData,
-  readOnly = false
+  onSubmit = () => {},
+  onDownloadTemplate = () => {},
+  onUploadData = () => {},
+  readOnly = false,
+  errors = false,
+  isPendingApproval = false
 }) => {
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -154,7 +160,7 @@ const DataEntrySaveBar: React.FC<DataEntrySaveBarProps> = ({
           variant="default" 
           size="sm" 
           onClick={onSubmit} 
-          disabled={isSubmitting || completionPercentage < 100 || readOnly}
+          disabled={isSubmitting || completionPercentage < 100 || readOnly || errors}
         >
           {isSubmitting ? (
             <>

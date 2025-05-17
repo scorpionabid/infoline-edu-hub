@@ -48,6 +48,18 @@ export interface CategoryFilter {
   assignment: CategoryAssignment | '';
 }
 
+export interface CategoryFilterProps {
+  filters?: CategoryFilter;
+  onChange: (filters: CategoryFilter) => void;
+  showAssignmentFilter?: boolean;
+}
+
+export interface CreateCategoryDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCategoryCreated: () => Promise<void>;
+}
+
 export interface AddCategoryFormData {
   name: string;
   description?: string;
