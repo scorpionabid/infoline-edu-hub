@@ -1,7 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole, normalizeRole } from '@/types/role';
-import { FullUserData, UserStatus } from '@/types/auth';
+import { FullUserData, UserStatus } from '@/types/user';
 import { toast } from 'sonner';
 
 export async function fetchUserProfile(userId: string): Promise<FullUserData | null> {
@@ -47,7 +46,7 @@ export async function updateUserProfile(userId: string, data: Partial<FullUserDa
         phone: data.phone,
         position: data.position,
         language: data.language,
-        avatar: data.avatar,
+        avatar_url: data.avatar_url || data.avatar, // Use either avatar_url or avatar
         status: data.status,
       })
       .eq('id', userId);

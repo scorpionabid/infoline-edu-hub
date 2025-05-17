@@ -42,4 +42,11 @@ export interface AuthContextType {
   setError: (error: string | null) => void;
   createUser: (userData: any) => Promise<{ data: any; error: any }>;
   signup: (email: string, password: string, options?: any) => Promise<{ user: any; error: any }>;
+  getSession?: () => Promise<Session | null>;
+  setSession?: (session: Session | null) => void;
+  fetchUserData?: () => Promise<FullUserData | null>;
+  clearErrors?: () => void;
+  setUser?: (userData: FullUserData | null) => void;
+  setLoading?: (loading: boolean) => void;
+  sendPasswordResetEmail?: (email: string) => Promise<any>;
 }

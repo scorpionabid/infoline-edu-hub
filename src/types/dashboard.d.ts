@@ -41,6 +41,7 @@ export interface SchoolStat {
   id: string;
   name: string;
   completionRate: number;
+  completion?: number;
   status?: string;
   lastUpdate?: string;
   pendingCount?: number;
@@ -53,7 +54,6 @@ export interface SchoolStat {
   address?: string;
   phone?: string;
   email?: string;
-  completion?: number;
 }
 
 // Sector in dashboard context

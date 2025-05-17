@@ -1,4 +1,3 @@
-
 import { UserRole } from './role';
 
 export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | string;
@@ -43,6 +42,9 @@ export interface FullUserData extends User {
   createdAt?: string;
   updatedAt?: string;
   notification_settings?: NotificationSettings;
+
+  // Adding avatar property to fix the build error
+  avatar?: string;
 }
 
 export interface NotificationSettings {

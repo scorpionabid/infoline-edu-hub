@@ -1,4 +1,3 @@
-
 export interface AppNotification {
   id: string;
   title: string;
@@ -36,6 +35,7 @@ export interface NotificationSettings {
   push: boolean;
   inApp: boolean;
   system: boolean;
+  deadline: boolean;
   deadlineReminders: boolean;
   statusUpdates: boolean;
   weeklyReports: boolean;
