@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Report, ReportType } from '@/types/report';
+import { Report } from '@/types/report';
 
 export function useReports() {
   const [reports, setReports] = useState<Report[]>([
@@ -8,28 +8,34 @@ export function useReports() {
       id: '1',
       title: 'School Performance Overview',
       description: 'Overview of school performance metrics',
-      type: 'bar' as ReportType,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: 'System'
+      type: 'bar',
+      content: {},
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      created_by: 'System',
+      status: 'draft'
     },
     {
       id: '2',
       title: 'Completion Rates by Region',
       description: 'Comparison of completion rates across regions',
-      type: 'pie' as ReportType,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: 'System'
+      type: 'pie',
+      content: {},
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      created_by: 'System',
+      status: 'draft'
     },
     {
       id: '3',
       title: 'Quarterly Comparison',
       description: 'Comparison of metrics across quarters',
-      type: 'line' as ReportType,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: 'System'
+      type: 'line',
+      content: {},
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      created_by: 'System',
+      status: 'draft'
     }
   ]);
   
@@ -40,10 +46,11 @@ export function useReports() {
         id: Math.random().toString(36).substring(2, 9),
         title: reportData.title,
         description: reportData.description,
-        type: reportData.type as ReportType,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'current-user',
+        type: reportData.type as any,
+        content: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'current-user',
         status: 'draft'
       };
       

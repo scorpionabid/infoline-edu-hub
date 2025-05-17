@@ -13,7 +13,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({ onCreateReport, titl
   const handleCreate = async (data: { title: string; description: string; type: string }) => {
     try {
       if (onCreateReport) {
-        await onCreateReport(data);
+        await onCreateReport();
       }
       setIsCreateDialogOpen(false);
     } catch (error) {

@@ -6,7 +6,7 @@ import DashboardChart from '@/components/dashboard/DashboardChart';
 import CategoryProgressList from '@/components/dashboard/CategoryProgressList';
 import SchoolsCompletionList from '@/components/dashboard/SchoolsCompletionList';
 import RegionsList from './RegionsList';
-import { SuperAdminDashboardData, CategoryItem, DashboardFormStats } from '@/types/dashboard';
+import { SuperAdminDashboardData, DashboardFormStats, CategoryItem } from '@/types/dashboard';
 
 interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;

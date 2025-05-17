@@ -1,79 +1,103 @@
 
 import React from 'react';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '@/context/LanguageContext';
+import { ArrowRight, BarChart } from 'lucide-react';
 import { SectorStat } from '@/types/dashboard';
+import { useLanguage } from '@/context/LanguageContext';
+import { useNavigate } from '@/hooks/useRouter';
 
 interface SectorStatsTableProps {
   sectors: SectorStat[];
+  showActions?: boolean;
 }
 
-const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors }) => {
+const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors, showActions = true }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
+  // Sort sectors by completion rate in descending order
+  const sortedSectors = [...sectors].sort((a, b) => {
+    const completionA = a.completionRate ?? a.completion ?? 0;
+    const completionB = b.completionRate ?? b.completion ?? 0;
+    return completionB - completionA;
+  });
+
+  const handleViewSector = (sectorId: string) => {
+    navigate(`/sectors/${sectorId}`);
+  };
+
   if (!sectors || sectors.length === 0) {
     return (
-      <div className="text-center py-4 text-muted-foreground">
-        <p>{t('noSectors')}</p>
+      <div className="text-center py-6 text-muted-foreground">
+        {t('noSectorsFound')}
       </div>
     );
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{t('name')}</TableHead>
-          <TableHead>{t('schools')}</TableHead>
-          <TableHead className="text-right">{t('completion')}</TableHead>
-          <TableHead></TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {sectors.map((sector) => {
-          const completionRate = sector.completionRate || sector.completion || 0;
-          let statusColor = 'bg-gray-100 text-gray-700';
-          
-          if (completionRate >= 90) {
-            statusColor = 'bg-green-100 text-green-700';
-          } else if (completionRate >= 50) {
-            statusColor = 'bg-blue-100 text-blue-700';
-          } else if (completionRate > 0) {
-            statusColor = 'bg-amber-100 text-amber-700';
-          }
-          
-          return (
-            <TableRow key={sector.id}>
-              <TableCell className="font-medium">{sector.name}</TableCell>
-              <TableCell>{sector.schoolCount || 0}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-2">
-                  <Progress value={completionRate} className="h-2 w-20" />
-                  <Badge variant="outline" className={statusColor}>
-                    {completionRate}%
-                  </Badge>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate(`/sectors/${sector.id}`)}
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('sector')}</TableHead>
+            <TableHead className="text-right">{t('progress')}</TableHead>
+            <TableHead className="text-center">{t('schoolCount')}</TableHead>
+            {showActions && <TableHead className="text-right">{t('actions')}</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedSectors.map((sector) => {
+            const completionRate = sector.completionRate ?? sector.completion ?? 0;
+            
+            return (
+              <TableRow key={sector.id}>
+                <TableCell className="font-medium">{sector.name}</TableCell>
+                <TableCell>
+                  <div className="flex items-center justify-end gap-2">
+                    <Progress 
+                      value={completionRate} 
+                      className="h-2" 
+                      indicatorClassName={
+                        completionRate < 30 
+                          ? "bg-red-500" 
+                          : completionRate < 70 
+                            ? "bg-yellow-500" 
+                            : "bg-green-500"
+                      }
+                    />
+                    <span className="text-sm tabular-nums w-10">
+                      {`${Math.round(completionRate)}%`}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">{sector.schoolCount}</TableCell>
+                {showActions && (
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewSector(sector.id)}
+                    >
+                      <BarChart className="mr-2 h-4 w-4" />
+                      {t('view')}
+                    </Button>
+                  </TableCell>
+                )}
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

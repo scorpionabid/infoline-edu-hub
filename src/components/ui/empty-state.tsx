@@ -1,30 +1,43 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { Button } from "./button";
+import { cn } from "@/lib/utils";
 
 export interface EmptyStateProps {
-  title?: string;
-  description?: string;
+  title: string;
+  description: string;
   icon?: React.ReactNode;
   action?: {
     label: string;
     onClick: () => void;
+    variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   };
+  className?: string;
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({
-  title = 'No data available',
-  description = 'There are no items to display at the moment.',
+  title,
+  description,
   icon,
   action,
+  className,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-      {icon && <div className="mb-4">{icon}</div>}
-      <h3 className="text-lg font-medium mb-1">{title}</h3>
-      <p className="text-sm text-muted-foreground mb-6 max-w-md">{description}</p>
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center p-8 text-center",
+        className
+      )}
+    >
+      {icon && <div className="mb-4 text-muted-foreground">{icon}</div>}
+      <h3 className="text-lg font-semibold">{title}</h3>
+      <p className="mt-2 text-sm text-muted-foreground">{description}</p>
       {action && (
-        <Button onClick={action.onClick}>
+        <Button
+          onClick={action.onClick}
+          className="mt-4"
+          variant={action.variant || "default"}
+        >
           {action.label}
         </Button>
       )}

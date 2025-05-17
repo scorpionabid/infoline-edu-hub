@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Card,
@@ -107,7 +108,8 @@ const ColumnList: React.FC<ColumnListProps> = ({
   };
 
   // İkon komponenti əldə et
-  const getIconComponent = (iconName: string) => {
+  const getIconComponent = (iconName: string | undefined) => {
+    if (!iconName) return Edit;
     return iconComponents[iconName] || Edit;
   };
 
@@ -222,7 +224,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
                           <TooltipTrigger asChild>
                             <div className="flex items-center space-x-2">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeBadgeColor(column.type)}`}>
-                                <IconComponent className="w-3 h-3 mr-1" />
+                                {IconComponent && typeof IconComponent === 'function' && <IconComponent className="w-3 h-3 mr-1" />}
                                 {typeInfo.label}
                               </span>
                             </div>
@@ -287,8 +289,8 @@ const ColumnList: React.FC<ColumnListProps> = ({
   );
 };
 
-// Əvvəlki iconComponents obyektini silək və Icons-dan istifadə edək
-const iconComponents = {
+// Define icon components mapping
+const iconComponents: Record<string, React.FC<any>> = {
   text: Icons.text,
   textAlignLeft: Icons.alignLeft,
   hash: Icons.hash,

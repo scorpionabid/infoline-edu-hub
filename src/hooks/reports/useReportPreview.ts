@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Report, ReportType } from '@/types/report';
+import { Report } from '@/types/report';
 
 export const useReportPreview = () => {
   const [report, setReport] = useState<Report | null>(null);
@@ -10,7 +10,7 @@ export const useReportPreview = () => {
       id: reportData.id || 'preview',
       title: reportData.title || 'Preview Report',
       description: reportData.description || '',
-      type: (reportData.type as ReportType) || 'bar',
+      type: reportData.type || 'bar',
       content: reportData.content || {},
       filters: reportData.filters || {},
       status: reportData.status || 'draft',

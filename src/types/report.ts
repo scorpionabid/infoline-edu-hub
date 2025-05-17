@@ -1,52 +1,48 @@
 
+export type ReportType = 'bar' | 'line' | 'pie' | 'table' | 'summary';
+export type ReportStatus = 'draft' | 'published' | 'archived';
+
 export interface Report {
   id: string;
   title: string;
   description?: string;
-  type: keyof typeof ReportTypeValues | string;
+  type: ReportType;
   content: any;
   filters?: any;
+  shared_with?: string[] | any;
+  status?: ReportStatus | string;
   created_at: string;
-  updated_at: string;
   created_by?: string;
-  status: ReportStatus;
+  updated_at: string;
+  insights?: string[] | any;
+  recommendations?: string[] | any;
   is_template?: boolean;
-  shared_with?: string[];
-  insights?: string[] | string;
-  recommendations?: string[] | string;
 }
 
-export type ReportStatus = 'draft' | 'published' | 'archived';
-
-// Updated to handle both uppercase and lowercase values in match statements
-export const ReportTypeValues = {
-  BAR: 'bar',
-  PIE: 'pie',
-  LINE: 'line',
-  TABLE: 'table',
-  SUMMARY: 'summary',
-  bar: 'BAR',
-  pie: 'PIE', 
-  line: 'LINE',
-  table: 'TABLE',
-  summary: 'SUMMARY'
-} as const;
+export interface ReportChartProps {
+  report: Report;
+  height?: number;
+  width?: number;
+}
 
 export interface ReportFilter {
   search?: string;
   type?: string[];
-  status?: ReportStatus[];
-  dateRange?: {
-    from?: Date;
-    to?: Date;
-  };
+  status?: string[];
+  date_from?: string;
+  date_to?: string;
+  shared_with?: string[];
+  created_by?: string;
+  is_template?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface CreateReportFormValues {
   title: string;
   description?: string;
-  type: keyof typeof ReportTypeValues | string;
-  content: any;
+  type: ReportType;
+  content?: any;
   filters?: any;
 }
 
@@ -71,11 +67,19 @@ export interface ReportEmptyStateProps {
   onCreateReport?: () => void;
 }
 
-export interface ReportChartProps {
-  report: Report;
-  height?: number;
-  width?: number;
-}
+// Updated to handle both uppercase and lowercase values in match statements
+export const ReportTypeValues = {
+  BAR: 'bar',
+  PIE: 'pie',
+  LINE: 'line',
+  TABLE: 'table',
+  SUMMARY: 'summary',
+  bar: 'BAR',
+  pie: 'PIE', 
+  line: 'LINE',
+  table: 'TABLE',
+  summary: 'SUMMARY'
+} as const;
 
 export interface ReportHeaderProps {
   title?: string;

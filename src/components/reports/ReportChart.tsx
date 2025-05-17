@@ -6,18 +6,18 @@ import { Report, ReportChartProps, ReportTypeValues } from '@/types/report';
 
 export const ReportChart: React.FC<ReportChartProps> = ({ report, height = 400, width = 600 }) => {
   const renderChart = () => {
-    // Normalize the report type to uppercase for comparison
-    const normalizedType = report.type.toUpperCase() as keyof typeof ReportTypeValues;
+    // Convert the report type to uppercase for comparison
+    const reportType = report.type.toUpperCase();
     
-    switch (normalizedType) {
-      case "BAR":
-        return <div className="flex items-center justify-center h-full"><BarChart size={64} className="text-muted-foreground" /></div>;
-      case "LINE":
-        return <div className="flex items-center justify-center h-full"><LineChart size={64} className="text-muted-foreground" /></div>;
-      case "PIE":
-        return <div className="flex items-center justify-center h-full"><PieChart size={64} className="text-muted-foreground" /></div>;
-      default:
-        return <div className="flex items-center justify-center h-full text-muted-foreground">No chart available</div>;
+    // Use the correct string comparison approach
+    if (reportType === 'BAR') {
+      return <div className="flex items-center justify-center h-full"><BarChart size={64} className="text-muted-foreground" /></div>;
+    } else if (reportType === 'LINE') {
+      return <div className="flex items-center justify-center h-full"><LineChart size={64} className="text-muted-foreground" /></div>;
+    } else if (reportType === 'PIE') {
+      return <div className="flex items-center justify-center h-full"><PieChart size={64} className="text-muted-foreground" /></div>;
+    } else {
+      return <div className="flex items-center justify-center h-full text-muted-foreground">No chart available</div>;
     }
   };
 

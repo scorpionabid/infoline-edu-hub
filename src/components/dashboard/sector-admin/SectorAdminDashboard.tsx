@@ -54,16 +54,16 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
     },
   ];
   
-  const formStatsData: DashboardFormStats = data.formStats || {
-    pending: data.status?.pending || 0,
-    approved: data.status?.approved || 0,
-    rejected: data.status?.rejected || 0,
-    total: data.status?.total || 0,
-    dueSoon: 0,
-    overdue: 0,
-    draft: data.status?.draft || 0,
-    completed: data.status?.approved || 0,
-    percentage: data.completionRate || 0
+  const formStatsData: DashboardFormStats = {
+    pending: data.formStats?.pending || data.status?.pending || 0,
+    approved: data.formStats?.approved || data.status?.approved || 0,
+    rejected: data.formStats?.rejected || data.status?.rejected || 0,
+    total: data.formStats?.total || data.status?.total || 0,
+    dueSoon: data.formStats?.dueSoon || 0,
+    overdue: data.formStats?.overdue || 0,
+    draft: data.formStats?.draft || data.status?.draft || 0,
+    completed: data.formStats?.completed || data.status?.approved || 0,
+    percentage: data.formStats?.percentage || data.completionRate || 0
   };
 
   // Handle completion data safely regardless of whether it's an object or number
