@@ -1,21 +1,15 @@
 
 export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | string;
 
-export type UserRoleType = 
-  | 'superadmin'
-  | 'regionadmin' 
-  | 'sectoradmin' 
-  | 'schooladmin' 
-  | 'user';
-
-export type UserRole = UserRoleType | string;
+// Use UserRoleType from role.ts
+import { UserRoleType, UserRole } from './role';
 
 export interface User {
   id: string;
   full_name?: string;
   email: string;
   avatar_url?: string;
-  role?: UserRole | string;
+  role?: UserRole;
   status?: 'active' | 'inactive' | 'pending' | string;
   name?: string;
   entityName?: string;
@@ -31,9 +25,9 @@ export interface NotificationSettings {
   system: boolean;
   deadline: boolean;
   sms?: boolean;
-  deadlineReminders?: boolean;
-  statusUpdates?: boolean;
-  weeklyReports?: boolean;
+  deadlineReminders: boolean;
+  statusUpdates: boolean;
+  weeklyReports: boolean;
 }
 
 export interface FullUserData {
@@ -41,14 +35,14 @@ export interface FullUserData {
   email: string;
   full_name?: string;
   avatar_url?: string;
-  role?: UserRole | string;
+  role?: UserRole;
   school_id?: string;
   sector_id?: string;
   region_id?: string;
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
-  status?: UserStatus | string;
+  status?: UserStatus;
   language?: string;
   created_at?: string;
   updated_at?: string;
@@ -72,7 +66,7 @@ export interface UserFormData {
   full_name?: string;
   password?: string;
   confirmPassword?: string;
-  role?: UserRole | string;
+  role?: UserRole;
   status?: string;
   school_id?: string;
   region_id?: string;
@@ -83,7 +77,7 @@ export interface UserFormData {
   notificationSettings?: NotificationSettings;
 }
 
-export interface UserRole {
+export interface UserRoleData {
   id: string;
   user_id: string;
   role: string;

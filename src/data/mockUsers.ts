@@ -1,134 +1,166 @@
+
 import { User } from '@/types/user';
 
-const users: User[] = [
+export const mockUsers: User[] = [
   {
     id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
+    email: 'admin@example.com',
+    full_name: 'Super Admin',
     role: 'superadmin',
-    avatar: '/avatars/avatar-1.png',
-    position: 'Administrator',
+    status: 'active',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
     notificationSettings: {
       email: true,
       inApp: true,
       push: true,
       sms: false,
       system: true,
-      deadline: true
+      deadline: true,
+      deadlineReminders: true,
+      statusUpdates: true,
+      weeklyReports: false
     }
   },
   {
     id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
+    email: 'region@example.com',
+    full_name: 'Region Admin',
     role: 'regionadmin',
-    avatar: '/avatars/avatar-2.png',
-    position: 'Regional Manager',
+    status: 'active',
+    region_id: 'reg1',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=region',
     notificationSettings: {
       email: true,
       inApp: true,
       push: true,
       sms: false,
       system: true,
-      deadline: true
+      deadline: true,
+      deadlineReminders: true,
+      statusUpdates: true,
+      weeklyReports: false
     }
   },
   {
     id: '3',
-    name: 'Alice Johnson',
-    email: 'alice@example.com',
+    email: 'sector@example.com',
+    full_name: 'Sector Admin',
     role: 'sectoradmin',
-    avatar: '/avatars/avatar-3.png',
-    position: 'Sector Coordinator',
+    status: 'active',
+    region_id: 'reg1',
+    sector_id: 'sec1',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sector',
     notificationSettings: {
       email: true,
       inApp: true,
       push: true,
       sms: false,
       system: true,
-      deadline: true
+      deadline: true,
+      deadlineReminders: true,
+      statusUpdates: true,
+      weeklyReports: false
     }
   },
   {
     id: '4',
-    name: 'Bob Williams',
-    email: 'bob@example.com',
+    email: 'school@example.com',
+    full_name: 'School Admin',
     role: 'schooladmin',
-    avatar: '/avatars/avatar-4.png',
-    position: 'School Principal',
+    status: 'active',
+    region_id: 'reg1',
+    sector_id: 'sec1',
+    school_id: 'sch1',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=school',
     notificationSettings: {
       email: true,
       inApp: true,
       push: true,
       sms: false,
       system: true,
-      deadline: true
+      deadline: true,
+      deadlineReminders: true,
+      statusUpdates: true,
+      weeklyReports: false
     }
   },
   {
     id: '5',
-    name: 'Charlie Brown',
-    email: 'charlie@example.com',
+    email: 'user@example.com',
+    full_name: 'Regular User',
     role: 'user',
-    avatar: '/avatars/avatar-5.png',
-    position: 'Teacher',
+    status: 'active',
+    region_id: 'reg1',
+    sector_id: 'sec1',
+    school_id: 'sch1',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user',
     notificationSettings: {
       email: true,
       inApp: true,
       push: true,
       sms: false,
       system: true,
-      deadline: true
+      deadline: true,
+      deadlineReminders: true,
+      statusUpdates: true,
+      weeklyReports: false
     }
   },
   {
     id: '6',
-    name: 'Diana Miller',
-    email: 'diana@example.com',
+    email: 'inactive@example.com',
+    full_name: 'Inactive User',
     role: 'user',
-    avatar: '/avatars/avatar-6.png',
-    position: 'Student',
+    status: 'inactive',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=inactive',
     notificationSettings: {
       email: true,
       inApp: true,
       push: true,
       sms: false,
       system: true,
-      deadline: true
+      deadline: true,
+      deadlineReminders: true,
+      statusUpdates: true,
+      weeklyReports: false
     }
   },
   {
     id: '7',
-    name: 'Ethan Davis',
-    email: 'ethan@example.com',
+    email: 'pending@example.com',
+    full_name: 'Pending User',
     role: 'user',
-    avatar: '/avatars/avatar-7.png',
-    position: 'Parent',
+    status: 'pending',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=pending',
     notificationSettings: {
       email: true,
       inApp: true,
       push: true,
       sms: false,
       system: true,
-      deadline: true
+      deadline: true,
+      deadlineReminders: true,
+      statusUpdates: true,
+      weeklyReports: false
     }
   },
   {
     id: '8',
-    name: 'Fiona Wilson',
-    email: 'fiona@example.com',
+    email: 'suspended@example.com',
+    full_name: 'Suspended User',
     role: 'user',
-    avatar: '/avatars/avatar-8.png',
-    position: 'Librarian',
+    status: 'suspended',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=suspended',
     notificationSettings: {
       email: true,
       inApp: true,
       push: true,
       sms: false,
       system: true,
-      deadline: true
+      deadline: true,
+      deadlineReminders: true,
+      statusUpdates: true,
+      weeklyReports: false
     }
   }
 ];
-
-export default users;

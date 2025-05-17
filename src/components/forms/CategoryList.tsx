@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,6 +53,17 @@ const CategoryList: React.FC<CategoryListProps> = ({
         return <Badge variant="outline">{t('allEntities')}</Badge>;
     }
   };
+
+  function formatDate(date: string | Date): string {
+    if (date instanceof Date) {
+      return date.toLocaleDateString();
+    }
+    try {
+      return new Date(date).toLocaleDateString();
+    } catch (e) {
+      return String(date);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -126,7 +136,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                   )}
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
                     <span>{t('columns')}: {category.column_count || 0}</span>
-                    {category.deadline && <span>{t('deadline')}: {category.deadline}</span>}
+                    {category.deadline && <span>{t('deadline')}: {formatDate(category.deadline)}</span>}
                   </div>
                 </div>
                 

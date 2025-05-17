@@ -1,6 +1,7 @@
 
 import { NotificationSettings, UserStatus } from './user';
 import { UserRole } from './role';
+import { Session } from '@supabase/supabase-js';
 
 export interface AuthState {
   isAuthenticated: boolean;
@@ -15,7 +16,7 @@ export interface FullUserData {
   email: string;
   avatar_url?: string;
   avatar?: string; // For backwards compatibility
-  role?: UserRole | string;
+  role?: UserRole;
   school_id?: string;
   sector_id?: string;
   region_id?: string;
@@ -24,7 +25,7 @@ export interface FullUserData {
   sectorId?: string;
   schoolId?: string;
   // Status
-  status?: UserStatus | string;
+  status?: UserStatus;
   // Time fields
   created_at?: string;
   updated_at?: string;
@@ -59,7 +60,7 @@ export interface RegistrationData {
   email: string;
   password: string;
   full_name: string;
-  role?: UserRole | string;
+  role?: UserRole;
   school_id?: string;
   sector_id?: string;
   region_id?: string;
@@ -76,7 +77,7 @@ export interface AuthFormState {
 
 export interface AuthContextType {
   user: FullUserData | null;
-  session: any | null;
+  session: Session | null;
   isAuthenticated: boolean;
   authenticated: boolean; // Alias for isAuthenticated
   loading: boolean;
@@ -99,8 +100,8 @@ export interface AuthContextType {
   setError: (error: string | null) => void;
   createUser: (userData: any) => Promise<{ data: any; error: any }>;
   signup: (email: string, password: string, options?: any) => Promise<{ user: any; error: any }>;
-  getSession?: () => Promise<any>;
-  setSession?: (session: any | null) => void;
+  getSession?: () => Promise<Session | null>;
+  setSession?: (session: Session | null) => void;
   fetchUserData?: () => Promise<FullUserData | null>;
   clearErrors?: () => void;
   setUser?: (userData: FullUserData | null) => void;
