@@ -12,8 +12,8 @@ export interface AuthState {
 
 export interface FullUserData {
   id: string;
-  full_name?: string;
   email: string;
+  full_name?: string;
   avatar_url?: string;
   avatar?: string; // For backwards compatibility
   role?: UserRole;
@@ -108,3 +108,6 @@ export interface AuthContextType {
   setLoading?: (loading: boolean) => void;
   sendPasswordResetEmail?: (email: string) => Promise<any>;
 }
+
+// Export UserStatus for backward compatibility
+export { UserStatus };

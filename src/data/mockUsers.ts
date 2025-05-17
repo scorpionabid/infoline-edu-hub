@@ -1,4 +1,3 @@
-
 import { User } from '@/types/user';
 
 export const mockUsers: User[] = [
@@ -27,7 +26,6 @@ export const mockUsers: User[] = [
     full_name: 'Region Admin',
     role: 'regionadmin',
     status: 'active',
-    region_id: 'reg1',
     avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=region',
     notificationSettings: {
       email: true,

@@ -21,13 +21,11 @@ function App() {
     logger.info('Initializing application', { context: 'App' });
     authInitialized.current = true;
     
-    // Use setTimeout to prevent potential auth deadlock
-    setTimeout(() => {
-      logger.info('Initializing authentication', { context: 'App' });
-      initializeAuth().catch(error => {
-        logger.error('Failed to initialize authentication', error, { context: 'App' });
-      });
-    }, 0);
+    // Initialize auth immediately to avoid any timing issues
+    logger.info('Initializing authentication', { context: 'App' });
+    initializeAuth().catch(error => {
+      logger.error('Failed to initialize authentication', error, { context: 'App' });
+    });
   }, [initializeAuth]);
 
   return (

@@ -1,8 +1,7 @@
 
-export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | string;
+import { UserRole } from './role';
 
-// Use UserRoleType from role.ts
-import { UserRoleType, UserRole } from './role';
+export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | string;
 
 export interface User {
   id: string;
@@ -87,3 +86,6 @@ export interface UserRoleData {
   sector_id?: string;
   region_id?: string;
 }
+
+// Export UserRole explicitly from here for backward compatibility
+export { UserRole };

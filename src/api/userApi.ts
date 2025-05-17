@@ -2,7 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole, normalizeRole } from '@/types/role';
 import { FullUserData, UserStatus } from '@/types/user';
-import { toast } from 'sonner';
 
 export async function fetchUserProfile(userId: string): Promise<FullUserData | null> {
   try {
@@ -56,13 +55,16 @@ export async function updateUserProfile(userId: string, data: Partial<FullUserDa
     
     // Then, if role is provided, update the user role
     if (data.role) {
+      // Normalize the role to ensure it's a valid role
+      const normalizedRole = normalizeRole(data.role);
+      
+      // Upsert to user_roles table with user_id field
       const { error: roleError } = await supabase
         .from('user_roles')
         .upsert({
           user_id: userId,
-          role: data.role,
-        })
-        .eq('user_id', userId);
+          role: normalizedRole
+        });
       
       if (roleError) throw roleError;
     }
