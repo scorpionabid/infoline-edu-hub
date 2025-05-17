@@ -29,22 +29,19 @@ import { UserFilter } from '@/hooks/useUserList';
 import { useUserList } from '@/hooks/useUserList';
 
 interface UserHeaderProps {
-  onUserAddedOrEdited: () => void;
-  entityTypes: Array<'region' | 'sector' | 'school'>;
-  filterParams?: {
-    sectorId?: string;
-    regionId?: string;
-  };
+  title: string;
+  filterProps: any;
+  onRefresh?: () => void;
 }
 
 const UserHeader: React.FC<UserHeaderProps> = ({ 
-  onUserAddedOrEdited,
-  entityTypes,
-  filterParams
+  title,
+  filterProps,
+  onRefresh
 }) => {
   const { t } = useLanguage();
   const { filter, updateFilter, resetFilter } = useUserList();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -54,10 +51,10 @@ const UserHeader: React.FC<UserHeaderProps> = ({
 
   // Filter parametrlərini izləyək
   useEffect(() => {
-    if (filterParams) {
-      updateFilter(filterParams);
+    if (filterProps) {
+      updateFilter(filterProps);
     }
-  }, [filterParams, updateFilter]);
+  }, [filterProps, updateFilter]);
 
   // Aktiv filterləri izləyək
   useEffect(() => {
@@ -75,13 +72,13 @@ const UserHeader: React.FC<UserHeaderProps> = ({
 
   // İstifadəçi əlavə etmə dialoqu
   const handleOpenAddDialog = () => {
-    setIsAddDialogOpen(true);
+    setIsAddUserDialogOpen(true);
   };
 
   // İstifadəçi əlavə edildikdən sonra
   const handleUserAdded = () => {
-    setIsAddDialogOpen(false);
-    onUserAddedOrEdited();
+    setIsAddUserDialogOpen(false);
+    onRefresh?.();
   };
 
   // İmport dialoqu
@@ -111,7 +108,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
       setIsImportDialogOpen(false);
       setImportFile(null);
       toast.success(t('usersImported'));
-      onUserAddedOrEdited();
+      onRefresh?.();
     }, 2000);
   };
 
@@ -180,9 +177,9 @@ const UserHeader: React.FC<UserHeaderProps> = ({
   };
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <H1>{t('users')}</H1>
+        <H1>{title}</H1>
         
         <div className="flex space-x-2">
           {/* Axtarış */}
@@ -336,13 +333,18 @@ const UserHeader: React.FC<UserHeaderProps> = ({
       )}
 
       {/* İstifadəçi əlavə etmə dialoqu */}
-      <AddUserDialog
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        onComplete={handleUserAdded}
-        entityTypes={entityTypes}
-      />
-
+      {isAddUserDialogOpen && (
+        <AddUserDialog
+          open={isAddUserDialogOpen}
+          onClose={() => setIsAddUserDialogOpen(false)}
+          onComplete={() => {
+            setIsAddUserDialogOpen(false);
+            onRefresh?.();
+          }}
+          entityTypes={['region', 'sector', 'school']}
+        />
+      )}
+      
       {/* İmport dialoqu */}
       <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
         <DialogContent>

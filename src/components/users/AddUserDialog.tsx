@@ -27,31 +27,34 @@ import { UserFormData } from '@/types/user';
 
 interface AddUserDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
+  onClose: () => void;
+  onComplete?: () => void;
+  entityTypes?: Array<'region' | 'sector' | 'school'>;
 }
 
-const AddUserDialog = ({ open, onOpenChange, onSuccess, regionId, sectorId, schoolId }: AddUserDialogProps) => {
+const AddUserDialog: React.FC<AddUserDialogProps> = ({ 
+  open, 
+  onClose, 
+  onComplete,
+  entityTypes = ['region', 'sector', 'school'] 
+}) => {
   const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { regions } = useRegions();
-  const { sectors } = useSectors(regionId);
-  const { schools } = useSchools(sectorId);
+  const { sectors } = useSectors(entityTypes.includes('region') ? entityTypes[0] : undefined);
+  const { schools } = useSchools(entityTypes.includes('sector') ? entityTypes[1] : undefined);
 
-  const initialRole: UserRole = schoolId ? 'schooladmin' : sectorId ? 'sectoradmin' : regionId ? 'regionadmin' : 'user';
+  const initialRole: UserRole = entityTypes.includes('school') ? 'schooladmin' : entityTypes.includes('sector') ? 'sectoradmin' : entityTypes.includes('region') ? 'regionadmin' : 'user';
 
   const [formData, setFormData] = useState<UserFormData>(() => ({
     email: '',
     password: '',
     full_name: '',
     role: initialRole,
-    region_id: regionId || '',
-    sector_id: sectorId || '',
-    school_id: schoolId || '',
+    region_id: entityTypes.includes('region') ? entityTypes[0] : '',
+    sector_id: entityTypes.includes('sector') ? entityTypes[1] : '',
+    school_id: entityTypes.includes('school') ? entityTypes[2] : '',
   }));
 
   const formSchema = z.object({
@@ -71,32 +74,32 @@ const AddUserDialog = ({ open, onOpenChange, onSuccess, regionId, sectorId, scho
       email: '',
       full_name: '',
       role: initialRole,
-      region_id: regionId || '',
-      sector_id: sectorId || '',
-      school_id: schoolId || '',
+      region_id: entityTypes.includes('region') ? entityTypes[0] : '',
+      sector_id: entityTypes.includes('sector') ? entityTypes[1] : '',
+      school_id: entityTypes.includes('school') ? entityTypes[2] : '',
     },
   });
 
   useEffect(() => {
-    if (regionId) {
+    if (entityTypes.includes('region') && entityTypes[0]) {
       setFormData((prevData) => ({
         ...prevData,
-        region_id: regionId,
+        region_id: entityTypes[0],
       }));
     }
-    if (sectorId) {
+    if (entityTypes.includes('sector') && entityTypes[1]) {
       setFormData((prevData) => ({
         ...prevData,
-        sector_id: sectorId,
+        sector_id: entityTypes[1],
       }));
     }
-    if (schoolId) {
+    if (entityTypes.includes('school') && entityTypes[2]) {
       setFormData((prevData) => ({
         ...prevData,
-        school_id: schoolId,
+        school_id: entityTypes[2],
       }));
     }
-  }, [regionId, sectorId, schoolId]);
+  }, [entityTypes]);
 
   const availableRoles = [
     { value: 'user', label: t('user') },
@@ -142,8 +145,8 @@ const AddUserDialog = ({ open, onOpenChange, onSuccess, regionId, sectorId, scho
 
       // Simulate success
       toast.success(t('userCreatedSuccessfully'));
-      onSuccess?.();
-      onOpenChange(false);
+      onComplete?.();
+      onClose();
       form.reset();
     } catch (error: any) {
       setError(error.message || t('createUserError'));
@@ -154,7 +157,7 @@ const AddUserDialog = ({ open, onOpenChange, onSuccess, regionId, sectorId, scho
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{t('createUser')}</DialogTitle>

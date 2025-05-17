@@ -42,16 +42,15 @@ export interface CategoryItem {
 export interface SchoolStat {
   id: string;
   name: string;
-  completionRate?: number;
-  completion?: number;
+  completionRate: number;
+  status?: string;
+  lastUpdate?: string;
   pendingCount?: number;
   pendingEntries?: number;
   totalEntries?: number;
   pendingForms?: number;
   formsCompleted?: number;
   totalForms?: number;
-  lastUpdate?: string;
-  status?: string;
   principalName?: string;
   address?: string;
   phone?: string;

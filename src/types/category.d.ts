@@ -1,5 +1,4 @@
 
-
 export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved' | 'pending';
 
 export type CategoryAssignment = 'all' | 'sectors' | 'schools';
@@ -50,8 +49,8 @@ export interface CategoryFilter {
 }
 
 export interface CategoryFilterProps {
-  filters: CategoryFilter;
-  onChange: (filters: CategoryFilter) => void;
+  filter: CategoryFilter;
+  onChange: (filter: CategoryFilter) => void;
   showAssignmentFilter?: boolean;
 }
 

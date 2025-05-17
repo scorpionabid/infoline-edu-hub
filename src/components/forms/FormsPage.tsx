@@ -1,42 +1,80 @@
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { Category, CategoryStatus, CategoryFilter } from '@/types/category';
-import { useCategories } from '@/hooks/categories';
+import { Card, CardContent } from '@/components/ui/card';
+import { PlusCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import CategoryCard from './CategoryCard';
-import CreateCategoryDialog from '@/components/categories/CreateCategoryDialog';
-import CategoryFilterCard from '@/components/categories/CategoryFilterCard';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { CategoryWithColumns } from '@/types/category';
+import { CategoryFilter } from '@/types/category';
+import CategoryFilterComponent from './CategoryFilterComponent';
+import CategoryList from './CategoryList';
+import CreateCategoryDialog from './CreateCategoryDialog';
 
 const FormsPage: React.FC = () => {
-  const navigate = useNavigate();
   const { t } = useLanguage();
-  const { canManageCategories } = usePermissions();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
   const [filters, setFilters] = useState<CategoryFilter>({
     search: '',
-    status: 'active' as CategoryStatus,
+    status: '',
     assignment: ''
   });
 
-  const { categories, loading, error, fetchCategories } = useCategories();
+  const fetchCategories = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select(`
+          *,
+          columns:category_columns(*)
+        `)
+        .order('priority', { ascending: false });
+
+      if (error) throw error;
+
+      const categoriesWithColumns = data.map(category => ({
+        ...category,
+        columnCount: category.columns ? category.columns.length : 0
+      }));
+
+      setCategories(categoriesWithColumns);
+    } catch (error: any) {
+      console.error('Error fetching categories:', error);
+      toast({
+        title: t('error'),
+        description: t('errorFetchingCategories'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const refreshCategories = async () => {
+    await fetchCategories();
+  };
 
   const filteredCategories = categories.filter(category => {
-    // Filter by search term in name or description
-    if (filters.search && !category.name.toLowerCase().includes(filters.search.toLowerCase()) && 
-        (!category.description || !category.description.toLowerCase().includes(filters.search.toLowerCase()))) {
+    // Filter by search term
+    if (filters.search && !category.name.toLowerCase().includes(filters.search.toLowerCase())) {
       return false;
     }
 
-    // Filter by status (active, inactive, etc.)
+    // Filter by status
     if (filters.status && category.status !== filters.status) {
       return false;
     }
 
-    // Filter by assignment (schools, sectors, all)
+    // Filter by assignment
     if (filters.assignment && category.assignment !== filters.assignment) {
       return false;
     }
@@ -44,85 +82,37 @@ const FormsPage: React.FC = () => {
     return true;
   });
 
-  const handleCreateCategory = async () => {
-    await fetchCategories();
-    setDialogOpen(false);
-  };
-
-  const navigateToDataEntry = (categoryId: string) => {
-    navigate(`/data-entry/${categoryId}`);
-  };
-
-  const navigateToDetails = (categoryId: string) => {
-    navigate(`/categories/${categoryId}`);
-  };
-
+  // Modify the component to use the updated interface
   return (
-    <div className="container mx-auto py-6">
+    <div className="container py-6">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">{t('dataForms')}</h1>
-          <p className="text-muted-foreground">{t('dataFormsDescription')}</p>
-        </div>
-
-        {canManageCategories && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            {t('createForm')}
-          </Button>
-        )}
+        <h1 className="text-2xl font-bold">{t('forms')}</h1>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          {t('addCategory')}
+        </Button>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-4">
-        <div className="md:col-span-1">
-          <CategoryFilterCard 
-            filters={filters}
+      
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <CategoryFilterComponent 
+            filter={filters}
             onChange={setFilters}
             showAssignmentFilter={true}
           />
-        </div>
-
-        <div className="md:col-span-3">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-48 bg-muted animate-pulse rounded-md" />
-              ))}
-            </div>
-          ) : filteredCategories.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredCategories.map((category) => (
-                <CategoryCard 
-                  key={category.id} 
-                  category={category} 
-                  onSubmit={navigateToDataEntry}
-                  onView={navigateToDetails}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center p-8 bg-muted/10 rounded-lg border border-dashed">
-              <h3 className="font-medium text-lg mb-2">{t('noFormsFound')}</h3>
-              <p className="text-muted-foreground text-center mb-4">
-                {filters.search || filters.status !== 'active' || filters.assignment
-                  ? t('noMatchingForms')
-                  : t('noFormsAvailable')}
-              </p>
-              {canManageCategories && (
-                <Button onClick={() => setDialogOpen(true)} variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('createForm')}
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
+        </CardContent>
+      </Card>
+      
+      <CategoryList 
+        categories={filteredCategories} 
+        isLoading={isLoading} 
+        onRefresh={refreshCategories}
+      />
+      
       <CreateCategoryDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onCategoryCreated={handleCreateCategory}
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onCategoryCreated={refreshCategories}
       />
     </div>
   );

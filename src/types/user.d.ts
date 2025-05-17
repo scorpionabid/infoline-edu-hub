@@ -61,6 +61,8 @@ export interface UserFormData {
   sector_id?: string;
   language?: string;
   avatar_url?: string;
+  notification_settings?: NotificationSettings;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface UserRole {
@@ -73,3 +75,10 @@ export interface UserRole {
   sector_id?: string;
   region_id?: string;
 }
+
+export type UserRoleType = 
+  | 'superadmin'
+  | 'regionadmin' 
+  | 'sectoradmin' 
+  | 'schooladmin' 
+  | 'user';

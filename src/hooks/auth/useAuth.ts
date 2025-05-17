@@ -25,6 +25,21 @@ export const useAuth = () => {
     await refreshSession();
     return user;
   }, [user, refreshSession]);
+
+  // Add method for user preferences
+  const updateUserPreferences = useCallback(async (preferences: any): Promise<void> => {
+    if (!user) return;
+    
+    const updatedUser = {
+      ...user,
+      preferences: {
+        ...(user.preferences || {}),
+        ...preferences
+      }
+    };
+    
+    updateUser(updatedUser);
+  }, [user, updateUser]);
   
   return {
     // Basic state
@@ -47,6 +62,7 @@ export const useAuth = () => {
     refreshProfile,
     clearError,
     refreshSession,
+    updateUserPreferences,
     
     // Legacy compatibility aliases
     updateProfile: updateUser,

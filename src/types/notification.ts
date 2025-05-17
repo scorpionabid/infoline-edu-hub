@@ -18,6 +18,19 @@ export interface DashboardNotification extends AppNotification {
   related_entity_type?: string;
 }
 
+export type NotificationType = 'info' | 'success' | 'warning' | 'error' | 'deadline';
+export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical';
+
+export interface NotificationsCardProps {
+  title: string;
+  notifications: AppNotification[];
+  maxItems?: number;
+  showViewAll?: boolean;
+  onViewAll?: () => void;
+  onMarkAsRead?: (id: string) => void;
+  onDelete?: (id: string) => void;
+}
+
 export interface NotificationSettings {
   email: boolean;
   push: boolean;

@@ -1,0 +1,82 @@
+
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useLanguage } from '@/context/LanguageContext';
+import { CategoryFilter, CategoryFilterProps } from '@/types/category';
+
+const CategoryFilterComponent: React.FC<CategoryFilterProps> = ({ 
+  filter, // Updated from filters to filter
+  onChange, 
+  showAssignmentFilter = false 
+}) => {
+  const { t } = useLanguage();
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange({ ...filter, search: e.target.value });
+  };
+
+  const handleStatusChange = (value: string) => {
+    onChange({ ...filter, status: value as any });
+  };
+
+  const handleAssignmentChange = (value: string) => {
+    onChange({ ...filter, assignment: value as any });
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex-1">
+        <Input
+          placeholder={t('searchCategories')}
+          value={filter.search}
+          onChange={handleSearchChange}
+          className="w-full"
+        />
+      </div>
+      <div className="w-full md:w-48">
+        <Select
+          value={filter.status}
+          onValueChange={handleStatusChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={t('status')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">{t('all')}</SelectItem>
+            <SelectItem value="active">{t('active')}</SelectItem>
+            <SelectItem value="inactive">{t('inactive')}</SelectItem>
+            <SelectItem value="archived">{t('archived')}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {showAssignmentFilter && (
+        <div className="w-full md:w-48">
+          <Select
+            value={filter.assignment}
+            onValueChange={handleAssignmentChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={t('assignment')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">{t('all')}</SelectItem>
+              <SelectItem value="all">{t('allEntities')}</SelectItem>
+              <SelectItem value="sectors">{t('sectors')}</SelectItem>
+              <SelectItem value="schools">{t('schools')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CategoryFilterComponent;
