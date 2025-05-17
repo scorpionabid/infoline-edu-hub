@@ -1,10 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Tab, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAutoSave } from '@/hooks/form/useAutoSave';
@@ -21,6 +20,7 @@ import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
+import { FormFieldsProps } from '@/types/dataEntry';
 
 // Helper to group columns by section
 const groupColumnsBySection = (columns: Column[]): { [key: string]: Column[] } => {
@@ -98,6 +98,23 @@ const createSchema = (columns: Column[]): z.ZodObject<any> => {
   });
   
   return z.object(shape);
+};
+
+// Create a FormFieldsWrapper component
+const FormFieldsWrapper: React.FC<FormFieldsProps> = ({ columns, disabled }) => {
+  return (
+    <div className="space-y-4">
+      {columns.map(column => (
+        <FormFields
+          key={column.id}
+          column={column}
+          value=""
+          onChange={() => {}}
+          isDisabled={disabled}
+        />
+      ))}
+    </div>
+  );
 };
 
 interface DataEntryFormProps {
@@ -350,7 +367,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
               
               {tabs.map(tab => (
                 <TabsContent key={tab.id} value={tab.id} className="space-y-4">
-                  <FormFields 
+                  <FormFieldsWrapper 
                     columns={tab.columns || []} 
                     disabled={submitting || saving || isSaving}
                   />
@@ -358,7 +375,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
               ))}
             </Tabs>
           ) : (
-            <FormFields 
+            <FormFieldsWrapper 
               columns={category.columns || []} 
               disabled={submitting || saving || isSaving}
             />

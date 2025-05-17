@@ -60,6 +60,11 @@ export interface ValidationResult {
   message?: string;
 }
 
+export interface FormFieldsProps {
+  columns: Column[];
+  disabled?: boolean;
+}
+
 export interface FormFieldProps {
   column: Column;
   value: any;
@@ -79,6 +84,15 @@ export interface FormFieldProps {
     onChange: (value: any) => void;
     error: string;
   };
+}
+
+export interface DataEntrySaveBarProps {
+  isDirty: boolean;
+  isSubmitting: boolean;
+  isSaving: boolean;
+  onSave: () => Promise<any>;
+  errors: boolean;
+  isPendingApproval: boolean;
 }
 
 export interface DataEntryRecord extends DataEntry {

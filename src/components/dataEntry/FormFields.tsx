@@ -61,11 +61,12 @@ const FormFields: React.FC<FormFieldProps> = ({
       case 'text':
       case 'email':
       case 'tel':
+      case 'phone':
       case 'url':
       case 'password':
         return (
           <Input
-            type={column.type}
+            type={column.type === 'tel' || column.type === 'phone' ? 'tel' : column.type}
             name={column.id}
             value={value || ''}
             onChange={onChange}

@@ -1,7 +1,8 @@
+
 export type ColumnType = 
   'text' | 'textarea' | 'number' | 'select' | 'multiselect' | 'checkbox' | 
-  'radio' | 'date' | 'time' | 'file' | 'image' | 'email' | 'phone' | 'url' | 'password' | 
-  'color' | 'range';
+  'radio' | 'date' | 'time' | 'datetime' | 'file' | 'image' | 'email' | 'phone' | 'tel' | 'url' | 'password' | 
+  'color' | 'range' | 'richtext';
 
 export interface Column {
   id: string;
@@ -82,7 +83,7 @@ export interface BasicColumnFieldsProps {
 }
 
 // Updated columnTypes definition with proper type and find method
-const columnTypesObj: Record<ColumnType, ColumnTypeInfo> = {
+const columnTypesObj: Record<string, ColumnTypeInfo> = {
   text: { label: 'Text', description: 'Single line text input', icon: 'text' },
   textarea: { label: 'Text Area', description: 'Multiple line text input', icon: 'textAlignLeft' },
   number: { label: 'Number', description: 'Numeric value input', icon: 'hash' },
@@ -101,12 +102,13 @@ const columnTypesObj: Record<ColumnType, ColumnTypeInfo> = {
   password: { label: 'Password', description: 'Password input field', icon: 'lock' },
   color: { label: 'Color', description: 'Color selection', icon: 'color' },
   range: { label: 'Range', description: 'Value within a range', icon: 'sliders' },
+  richtext: { label: 'Rich Text', description: 'Formatted text editor', icon: 'textAlignLeft' },
 };
 
 // Export columnTypes with find method
 export const columnTypes = {
   ...columnTypesObj,
   find: function(type: string): ColumnTypeInfo | undefined {
-    return columnTypesObj[type as ColumnType];
+    return columnTypesObj[type];
   }
 };

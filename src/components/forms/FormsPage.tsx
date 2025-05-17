@@ -22,9 +22,7 @@ const FormsPage: React.FC = () => {
     assignment: ''
   });
 
-  const { categories, isLoading, refetch } = useCategories(
-    filters.status ? { status: filters.status } : undefined
-  );
+  const { categories, loading, error, fetchCategories } = useCategories();
 
   const filteredCategories = categories.filter(category => {
     // Filter by search term in name or description
@@ -47,7 +45,7 @@ const FormsPage: React.FC = () => {
   });
 
   const handleCreateCategory = async () => {
-    await refetch();
+    await fetchCategories();
     setDialogOpen(false);
   };
 
@@ -85,7 +83,7 @@ const FormsPage: React.FC = () => {
         </div>
 
         <div className="md:col-span-3">
-          {isLoading ? (
+          {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="h-48 bg-muted animate-pulse rounded-md" />

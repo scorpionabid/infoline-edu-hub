@@ -54,3 +54,15 @@ export interface AddCategoryFormData {
   priority: number;
   deadline?: string | null;
 }
+
+export interface CategoryFilterProps {
+  filters: CategoryFilter;
+  onChange: (filters: CategoryFilter) => void;
+  showAssignmentFilter?: boolean;
+}
+
+export interface CreateCategoryDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCategoryCreated: () => void;
+}

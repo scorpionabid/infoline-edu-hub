@@ -18,6 +18,12 @@ export interface Report {
 
 export type ReportTypeValues = 'BAR' | 'LINE' | 'PIE' | 'TABLE' | 'METRICS' | 'CUSTOM';
 
+export enum ReportStatus {
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  ARCHIVED = 'archived'
+}
+
 export interface ReportChartProps {
   report: Report;
   height?: number;
@@ -36,4 +42,26 @@ export interface CreateReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreate: (data: { title: string; description: string; type: string }) => Promise<void>;
+  onClose?: () => void; // Added this missing prop
 }
+
+export interface ReportEmptyStateProps {
+  message?: string;
+  onCreateReport?: () => void;
+}
+
+export interface ReportPreviewDialogProps {
+  report: Report;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+// Adding this for the report list components
+export const REPORT_TYPE_VALUES = {
+  BAR: 'BAR',
+  LINE: 'LINE', 
+  PIE: 'PIE',
+  TABLE: 'TABLE',
+  METRICS: 'METRICS',
+  CUSTOM: 'CUSTOM'
+} as const;
