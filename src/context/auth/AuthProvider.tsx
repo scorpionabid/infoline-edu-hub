@@ -1,3 +1,4 @@
+
 import React, { createContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -175,6 +176,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { user: null, error: null };
       } catch (err: any) {
         return { user: null, error: err };
+      }
+    },
+    
+    // Add the missing refreshProfile method
+    refreshProfile: async () => {
+      try {
+        if (!auth.user?.id) {
+          return null;
+        }
+        
+        // In a real implementation, this would fetch user profile data
+        const userData = await auth.refreshUserData();
+        return userData;
+      } catch (err) {
+        console.error('Error refreshing profile:', err);
+        return null;
       }
     }
   };

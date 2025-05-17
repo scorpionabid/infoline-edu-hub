@@ -32,7 +32,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
     }
   };
 
-  const getPriorityClass = (priority: NotificationPriority | undefined) => {
+  const getPriorityClass = (priority: string | undefined) => {
+    if (!priority) return '';
+    
     switch(priority) {
       case 'high':
         return 'border-l-4 border-orange-500';

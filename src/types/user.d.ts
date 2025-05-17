@@ -8,15 +8,15 @@ export type UserRoleType =
   | 'schooladmin' 
   | 'user';
 
-export type UserRole = UserRoleType;
+export type UserRole = UserRoleType | string;
 
 export interface User {
   id: string;
   full_name?: string;
   email: string;
   avatar_url?: string;
-  role?: string;
-  status?: 'active' | 'inactive' | 'pending';
+  role?: UserRole | string;
+  status?: 'active' | 'inactive' | 'pending' | string;
   name?: string;
   entityName?: string;
   // Adding support for notification settings
@@ -41,14 +41,14 @@ export interface FullUserData {
   email: string;
   full_name?: string;
   avatar_url?: string;
-  role?: string;
+  role?: UserRole | string;
   school_id?: string;
   sector_id?: string;
   region_id?: string;
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
-  status?: string;
+  status?: UserStatus | string;
   language?: string;
   created_at?: string;
   updated_at?: string;
@@ -72,7 +72,7 @@ export interface UserFormData {
   full_name?: string;
   password?: string;
   confirmPassword?: string;
-  role?: string;
+  role?: UserRole | string;
   status?: string;
   school_id?: string;
   region_id?: string;

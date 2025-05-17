@@ -7,7 +7,7 @@ export interface AppNotification {
   isRead?: boolean;
   createdAt: string;
   date?: string;
-  priority?: string;
+  priority?: NotificationPriority | string;
   link?: string;
   relatedEntityId?: string;
   relatedEntityType?: string;
@@ -58,4 +58,3 @@ export function adaptDashboardNotificationToApp(notification: any): AppNotificat
     relatedEntityType: notification.related_entity_type || notification.relatedEntityType
   };
 }
-

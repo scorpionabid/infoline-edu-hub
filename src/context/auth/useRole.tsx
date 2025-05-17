@@ -2,6 +2,7 @@
 import { useContext } from 'react';
 import { AuthContext } from './context';
 import { UserRole } from '@/types/role';
+import { normalizeRole } from '@/types/role';
 
 /**
  * Hook to access user role information from Auth context
@@ -14,13 +15,14 @@ export function useRole() {
   }
   
   const { user } = context;
+  const userRole = user?.role ? normalizeRole(user.role) : 'user';
   
   return {
-    role: user?.role as UserRole || 'user',
+    role: userRole,
     hasRole: (roles: UserRole | UserRole[]): boolean => {
       if (!user) return false;
       
-      const userRole = user.role as UserRole;
+      const userRole = normalizeRole(user.role);
       
       if (Array.isArray(roles)) {
         return roles.includes(userRole);

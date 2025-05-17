@@ -63,16 +63,18 @@ const CategoryList: React.FC<CategoryListProps> = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <Skeleton className="h-5 w-40 mb-2" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
-                <div className="flex space-x-2">
-                  <Skeleton className="h-9 w-9 rounded-md" />
-                  <Skeleton className="h-9 w-9 rounded-md" />
-                  <Skeleton className="h-9 w-9 rounded-md" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="p-4 border rounded-lg">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <Skeleton className="h-5 w-40 mb-2" />
+                    <Skeleton className="h-4 w-64" />
+                  </div>
+                  <div className="flex space-x-2">
+                    <Skeleton className="h-9 w-9 rounded-md" />
+                    <Skeleton className="h-9 w-9 rounded-md" />
+                    <Skeleton className="h-9 w-9 rounded-md" />
+                  </div>
                 </div>
               </div>
             ))}
@@ -89,9 +91,10 @@ const CategoryList: React.FC<CategoryListProps> = ({
           <CardTitle>{t('categories')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">{t('noCategoriesFound')}</p>
-            <Button onClick={() => onRefresh()}>
+          <div className="p-8 text-center">
+            <p className="mb-4 text-muted-foreground">{t('noCategories')}</p>
+            <Button onClick={() => window.location.reload()}>
+              <Plus className="mr-2 h-4 w-4" />
               {t('refresh')}
             </Button>
           </div>
@@ -108,65 +111,45 @@ const CategoryList: React.FC<CategoryListProps> = ({
       <CardContent>
         <div className="space-y-4">
           {categories.map((category) => (
-            <div
-              key={category.id}
-              className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg"
-            >
-              <div>
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h3 className="font-medium text-lg">{category.name}</h3>
-                  {getStatusBadge(category.status)}
-                  {getAssignmentBadge(category.assignment)}
+            <div key={category.id} className="p-4 border rounded-lg">
+              <div className="flex flex-wrap justify-between items-center gap-2">
+                <div>
+                  <div className="flex flex-wrap gap-2 items-center mb-1">
+                    <h3 className="font-medium">{category.name}</h3>
+                    <div className="flex space-x-2">
+                      {getStatusBadge(category.status)}
+                      {category.assignment && getAssignmentBadge(category.assignment)}
+                    </div>
+                  </div>
+                  {category.description && (
+                    <p className="text-sm text-muted-foreground">{category.description}</p>
+                  )}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
+                    <span>{t('columns')}: {category.column_count || 0}</span>
+                    {category.deadline && <span>{t('deadline')}: {category.deadline}</span>}
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  {category.description || t('noDescription')}
-                </p>
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <span>
-                    {t('columns')}: {category.columnCount || 0}
-                  </span>
-                  {category.deadline && (
-                    <span>
-                      {t('deadline')}: {new Date(category.deadline).toLocaleDateString()}
-                    </span>
+                
+                <div className="flex space-x-2">
+                  {onViewDetails && (
+                    <Button variant="outline" size="sm" onClick={() => onViewDetails(category)}>
+                      <Settings className="h-4 w-4 mr-1" />
+                      {t('manage')}
+                    </Button>
+                  )}
+                  {onEditCategory && (
+                    <Button variant="outline" size="sm" onClick={() => onEditCategory(category)}>
+                      <Pencil className="h-4 w-4 mr-1" />
+                      {t('edit')}
+                    </Button>
+                  )}
+                  {onDeleteCategory && (
+                    <Button variant="outline" size="sm" onClick={() => onDeleteCategory(category)}>
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      {t('delete')}
+                    </Button>
                   )}
                 </div>
-              </div>
-              <div className="flex space-x-2 mt-3 sm:mt-0">
-                {onViewDetails && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onViewDetails(category)}
-                    title={t('viewDetails')}
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span className="sr-only">{t('viewDetails')}</span>
-                  </Button>
-                )}
-                {onEditCategory && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEditCategory(category)}
-                    title={t('edit')}
-                  >
-                    <Pencil className="h-4 w-4" />
-                    <span className="sr-only">{t('edit')}</span>
-                  </Button>
-                )}
-                {onDeleteCategory && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDeleteCategory(category)}
-                    title={t('delete')}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">{t('delete')}</span>
-                  </Button>
-                )}
               </div>
             </div>
           ))}

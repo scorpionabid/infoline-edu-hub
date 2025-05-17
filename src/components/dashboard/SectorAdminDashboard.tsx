@@ -1,306 +1,143 @@
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useSectorAdminDashboard } from '@/hooks/useSectorAdminDashboard';
-import { useLanguage } from '@/context/LanguageContext';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, CheckCircle, Clock, School, FileText, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import EnhancedApprovalDialog from '../approval/EnhancedApprovalDialog';
-import SchoolsTable from './sector-admin/SchoolsTable';
-import { SchoolStat } from '@/types/dashboard';
-import { SectorSchool } from '@/types/school';
 
-interface SectorAdminDashboardData {
-  // Add properties of SectorAdminDashboardData type here
+import React from 'react';
+import { useLanguage } from '@/context/LanguageContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DashboardFormStats, SectorAdminDashboardData, SchoolStat } from '@/types/dashboard';
+import StatsGrid from './StatsGrid';
+import DashboardChart from './DashboardChart';
+import PendingApprovalsCard from './PendingApprovalsCard';
+import SchoolsCompletionList from './SchoolsCompletionList';
+import CategoryProgressList from './CategoryProgressList';
+import UpcomingDeadlinesList from './UpcomingDeadlinesList';
+import PendingFormsList from './PendingFormsList';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { InfoIcon } from 'lucide-react';
+
+interface SectorAdminDashboardProps {
+  data: SectorAdminDashboardData;
+  isLoading?: boolean;
 }
 
-// Şəxsi adapter funksiyasını yazaq
-const adaptSchoolToSchoolStat = (school: any): SchoolStat => {
-  return {
-    id: school.id || '',
-    name: school.name || '',
-    status: school.status || 'active',
-    completion: school.completionRate || school.completion_rate || 0,
-    completionRate: school.completionRate || school.completion_rate || 0,
-    lastUpdate: school.lastUpdate || school.updated_at || '',
-    pendingForms: school.pendingForms || 0,
-    formsCompleted: school.formsCompleted || 0,
-    totalForms: school.totalForms || 0,
-    principalName: school.principalName || school.principal_name || '',
-    address: school.address || '',
-    phone: school.phone || '',
-    email: school.email || ''
-  };
-};
-
-export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> = ({ data }) => {
+const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoading = false }) => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  const [selectedApproval, setSelectedApproval] = React.useState<any>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
-  const [entryDetails, setEntryDetails] = React.useState<any>(null);
-  const [isEntryDetailsLoading, setIsEntryDetailsLoading] = React.useState(false);
-
-  const {
-    schools,
-    pendingApprovals,
-    totalSchools,
-    completedSchools,
-    pendingSchools,
-    notStartedSchools,
-    isLoading,
-    error,
-    refreshData,
-    approveEntries,
-    rejectEntries,
-    viewEntryDetails,
-  } = useSectorAdminDashboard();
-
-  const schoolStatsData: SchoolStat[] = useMemo(() => {
-    return (schools || []).map(school => adaptSchoolToSchoolStat(school));
-  }, [schools]);
-
-  const handleViewDetails = async (approval: any) => {
-    setSelectedApproval(approval);
-    setIsEntryDetailsLoading(true);
-
-    try {
-      const result = await viewEntryDetails(approval.schoolId, approval.categoryId);
-      if (result.success) {
-        setEntryDetails(result.data);
-        setIsDetailsOpen(true);
-      }
-    } catch (error) {
-      console.error('Məlumat detalları alınarkən xəta:', error);
-    } finally {
-      setIsEntryDetailsLoading(false);
-    }
-  };
-
+  
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-12 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-        <Skeleton className="h-64 w-full" />
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
+  
+  const statsData = [
+    { 
+      title: t('totalSchools'), 
+      value: data.status?.total || (data.schools ? data.schools.total : 0), 
+      color: 'bg-blue-100' 
+    },
+    { 
+      title: t('activeSchools'), 
+      value: data.status?.active || (data.schools ? data.schools.active : 0), 
+      color: 'bg-green-100' 
+    },
+    { 
+      title: t('inactiveSchools'), 
+      value: data.status?.inactive || (data.schools ? data.schools.inactive : 0), 
+      color: 'bg-gray-100' 
+    },
+  ];
+  
+  const formStatsData: DashboardFormStats = {
+    pending: data.formStats?.pending || data.status?.pending || 0,
+    approved: data.formStats?.approved || data.status?.approved || 0,
+    rejected: data.formStats?.rejected || data.status?.rejected || 0,
+    total: data.formStats?.total || data.status?.total || 0,
+    dueSoon: data.formStats?.dueSoon || 0,
+    overdue: data.formStats?.overdue || 0,
+    draft: data.formStats?.draft || data.status?.draft || 0,
+    completed: data.formStats?.completed || data.status?.approved || 0,
+    percentage: data.formStats?.percentage || data.completionRate || 0
+  };
 
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('error')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center text-destructive">
-            <AlertCircle className="mr-2" />
-            <p>{error}</p>
-          </div>
-          <Button onClick={refreshData} className="mt-4">
-            {t('tryAgain')}
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Handle completion data safely regardless of whether it's an object or number
+  const completionPercentage = typeof data.completion === 'object' && data.completion
+    ? data.completion.percentage
+    : (typeof data.completion === 'number' ? data.completion : data.completionRate || 0);
+
+  const schoolStats: SchoolStat[] = data.schoolStats?.map(school => ({
+    ...school,
+    completionRate: school.completionRate || school.completion || 0
+  })) || [];
 
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t('totalSchools')}
-            </CardTitle>
+    <div className="space-y-4">
+      <Alert>
+        <InfoIcon className="h-4 w-4" />
+        <AlertTitle>{t('sectorAdminWelcome')}</AlertTitle>
+        <AlertDescription>
+          {t('sectorAdminDashboardDescription')}
+        </AlertDescription>
+      </Alert>
+      
+      <StatsGrid stats={statsData} />
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>{t('completionRate')}</CardTitle>
+            <CardDescription>{t('overallCompletionDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalSchools}</div>
-            <p className="text-xs text-muted-foreground">
-              {t('schoolsInSector')}
-            </p>
+            <DashboardChart 
+              completion={completionPercentage} 
+              stats={formStatsData} 
+            />
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t('completedSchools')}
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>{t('schoolsProgress')}</CardTitle>
+            <CardDescription>{t('schoolsProgressDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{completedSchools}</div>
-            <Progress value={(completedSchools / totalSchools) * 100} className="h-2" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t('pendingSchools')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{pendingSchools}</div>
-            <Progress value={(pendingSchools / totalSchools) * 100} className="h-2" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t('notStartedSchools')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-600">{notStartedSchools}</div>
-            <Progress value={(notStartedSchools / totalSchools) * 100} className="h-2" />
+            <SchoolsCompletionList schools={schoolStats} />
           </CardContent>
         </Card>
       </div>
-
-      <Tabs defaultValue="pending" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="pending" className="flex items-center">
-            <FileText className="mr-2 h-4 w-4" />
-            {t('pendingApprovals')} 
-            {pendingApprovals.length > 0 && <Badge variant="secondary" className="ml-2">{pendingApprovals.length}</Badge>}
-          </TabsTrigger>
-          <TabsTrigger value="schools" className="flex items-center">
-            <School className="mr-2 h-4 w-4" />
-            {t('schools')}
-          </TabsTrigger>
+      
+      <Tabs defaultValue="approvals" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="approvals">{t('pendingApprovals')}</TabsTrigger>
+          <TabsTrigger value="categories">{t('categories')}</TabsTrigger>
+          <TabsTrigger value="upcoming">{t('upcomingDeadlines')}</TabsTrigger>
+          <TabsTrigger value="pendingForms">{t('pendingForms')}</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="pending">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('pendingApprovals')}</CardTitle>
-              <CardDescription>
-                {t('pendingApprovalsDescription')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {pendingApprovals.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <CheckCircle className="mx-auto h-12 w-12 mb-2 text-green-500" />
-                  <p>{t('noApprovals')}</p>
-                </div>
-              ) : (
-                <ScrollArea className="h-[400px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('school')}</TableHead>
-                        <TableHead>{t('category')}</TableHead>
-                        <TableHead>{t('submittedAt')}</TableHead>
-                        <TableHead>{t('status')}</TableHead>
-                        <TableHead>{t('actions')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pendingApprovals.map((approval) => (
-                        <TableRow key={approval.id}>
-                          <TableCell className="font-medium">{approval.schoolName}</TableCell>
-                          <TableCell>{approval.categoryName}</TableCell>
-                          <TableCell>{new Date(approval.submittedAt).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {t('pending')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleViewDetails(approval)}
-                              disabled={isEntryDetailsLoading}
-                            >
-                              {isEntryDetailsLoading && selectedApproval?.id === approval.id ? (
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                              ) : (
-                                <FileText className="h-3 w-3 mr-1" />
-                              )}
-                              {t('viewDetails')}
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
+        
+        <TabsContent value="approvals" className="space-y-4">
+          <PendingApprovalsCard items={data.pendingApprovals || []} />
         </TabsContent>
-
-        <TabsContent value="schools">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('schools')}</CardTitle>
-              <CardDescription>
-                {t('schoolsInSectorDescription')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[400px]">
-                <SchoolsTable schools={schoolStatsData} />
-              </ScrollArea>
-            </CardContent>
-          </Card>
+        
+        <TabsContent value="categories" className="space-y-4">
+          <CategoryProgressList categories={data.categories || []} />
+        </TabsContent>
+        
+        <TabsContent value="upcoming" className="space-y-4">
+          <UpcomingDeadlinesList deadlines={data.upcoming || []} />
+        </TabsContent>
+        
+        <TabsContent value="pendingForms" className="space-y-4">
+          <PendingFormsList forms={data.pendingForms || []} />
         </TabsContent>
       </Tabs>
-
-      {selectedApproval && entryDetails && (
-        <EnhancedApprovalDialog
-          open={isDetailsOpen}
-          onOpenChange={setIsDetailsOpen}
-          schoolName={selectedApproval.schoolName}
-          categoryName={selectedApproval.categoryName}
-          data={entryDetails.entries || []}
-          isProcessing={isEntryDetailsLoading}
-          currentStatus={selectedApproval.status}
-          onApprove={async () => {
-            const result = await approveEntries(
-              selectedApproval.schoolId,
-              selectedApproval.categoryId,
-              [selectedApproval.id]
-            );
-            if (result.success) {
-              setIsDetailsOpen(false);
-              setSelectedApproval(null);
-              refreshData();
-            }
-          }}
-          onReject={async (reason) => {
-            const result = await rejectEntries(
-              selectedApproval.schoolId,
-              selectedApproval.categoryId,
-              [selectedApproval.id],
-              reason
-            );
-            if (result.success) {
-              setIsDetailsOpen(false);
-              setSelectedApproval(null);
-              refreshData();
-            }
-          }}
-        />
-      )}
-    </>
+    </div>
   );
 };
 

@@ -8,6 +8,7 @@ export interface User {
   full_name?: string;
   email?: string;
   avatar?: string;
+  avatar_url?: string;
   role?: UserRole;
   region_id?: string;
   sector_id?: string;
@@ -23,6 +24,8 @@ export interface User {
   sector_name?: string;
   school_name?: string;
   name?: string;
+  notification_settings?: NotificationSettings;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface FullUserData extends User {
@@ -43,9 +46,6 @@ export interface FullUserData extends User {
   createdAt?: string;
   updatedAt?: string;
   notification_settings?: NotificationSettings;
-
-  // Adding avatar_url property to fix the build error
-  avatar_url?: string;
 }
 
 export interface NotificationSettings {
@@ -106,8 +106,9 @@ export function normalizeUserData(userData: any): FullUserData {
     lastLogin: userData.last_login || userData.lastLogin,
     createdAt: userData.created_at || userData.createdAt,
     updatedAt: userData.updated_at || userData.updatedAt,
+    avatar_url: userData.avatar_url || userData.avatar,
+    avatar: userData.avatar_url || userData.avatar,
     notificationSettings: userData.notification_settings || userData.notificationSettings || defaultNotificationSettings,
     notification_settings: userData.notification_settings || userData.notificationSettings || defaultNotificationSettings
   };
 }
-

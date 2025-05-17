@@ -6,7 +6,7 @@ import { PlusCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns } from '@/types/category';
+import { CategoryWithColumns, CategoryStatus, CategoryAssignment } from '@/types/category';
 import { CategoryFilter } from '@/types/category';
 import CategoryFilterComponent from './CategoryFilterComponent';
 import CategoryList from './CategoryList';
@@ -41,6 +41,9 @@ const FormsPage: React.FC = () => {
       // Process data to match CategoryWithColumns type
       const processedCategories: CategoryWithColumns[] = data.map(category => ({
         ...category,
+        status: category.status as CategoryStatus,
+        assignment: category.assignment as CategoryAssignment,
+        column_count: category.columns ? category.columns.length : 0,
         columnCount: category.columns ? category.columns.length : 0,
         columns: Array.isArray(category.columns) ? category.columns : []
       }));
