@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { Category, CategoryStatus } from '@/types/category';
+import { Category, CategoryStatus, CategoryFilter } from '@/types/category';
 import { useCategories } from '@/hooks/categories';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -16,7 +16,7 @@ const FormsPage: React.FC = () => {
   const { t } = useLanguage();
   const { canManageCategories } = usePermissions();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<CategoryFilter>({
     search: '',
     status: 'active' as CategoryStatus,
     assignment: ''

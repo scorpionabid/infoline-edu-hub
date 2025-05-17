@@ -19,7 +19,6 @@ export interface DashboardFormStats {
   dueSoon: number;
   overdue: number;
   total: number;
-  // Add missing properties
   completed: number;
   percentage: number;
 }
@@ -28,7 +27,6 @@ export interface DashboardFormStats {
 export interface CategoryItem {
   id: string;
   name: string;
-  // Both are used in the codebase
   completionRate?: number;
   completion?: number;
   description?: string;
@@ -40,7 +38,6 @@ export interface CategoryItem {
 export interface SchoolStat {
   id: string;
   name: string;
-  // Both are used in the codebase
   completionRate?: number;
   completion?: number;
   pendingCount?: number;
@@ -57,7 +54,6 @@ export interface SchoolStat {
 export interface SectorStat {
   id: string;
   name: string;
-  // Both are used in the codebase
   completionRate?: number;
   completion?: number;
   schoolCount: number;
@@ -68,7 +64,6 @@ export interface SectorStat {
 export interface RegionStat {
   id: string;
   name: string;
-  // Both are used in the codebase
   completionRate?: number; 
   completion?: number;
   sectorCount: number;
@@ -106,6 +101,7 @@ export interface PendingApproval {
 export interface FormItem {
   id: string;
   title: string;
+  name?: string;
   categoryId: string;
   categoryName: string;
   category?: {
@@ -113,6 +109,7 @@ export interface FormItem {
     name: string;
   };
   dueDate: string;
+  deadline?: string;
   status: string;
   progress: number;
 }
@@ -121,6 +118,7 @@ export interface FormItem {
 export interface DeadlineItem {
   id: string;
   name: string;
+  title?: string;
   categoryId: string;
   categoryName: string;
   deadline: string;
@@ -134,7 +132,7 @@ export interface SchoolAdminDashboardData {
     percentage: number;
     total: number;
     completed: number;
-  };
+  } | number;
   completionRate?: number;
   status?: DashboardStatus;
   categories?: CategoryItem[];
@@ -150,7 +148,7 @@ export interface SectorAdminDashboardData {
     percentage: number;
     total: number;
     completed: number;
-  };
+  } | number;
   completionRate?: number;
   status?: DashboardStatus;
   categories?: CategoryItem[];
@@ -172,7 +170,7 @@ export interface RegionAdminDashboardData {
     percentage: number;
     total: number;
     completed: number;
-  };
+  } | number;
   completionRate?: number;
   status?: DashboardStatus;
   categories?: CategoryItem[];
@@ -188,7 +186,7 @@ export interface SuperAdminDashboardData {
     percentage: number;
     total: number;
     completed: number;
-  };
+  } | number;
   completionRate?: number;
   users?: {
     total: number;
@@ -214,10 +212,13 @@ export interface SuperAdminDashboardData {
 
 // Status cards props
 export interface StatusCardsProps {
-  total: number;
-  active: number;
-  inactive?: number;
-  pending?: number;
+  completion?: {
+    percentage: number;
+    total: number;
+    completed: number;
+  } | number;
+  status?: DashboardStatus;
+  formStats?: DashboardFormStats;
 }
 
 // Form tabs props
@@ -225,6 +226,8 @@ export interface FormTabsProps {
   pendingForms: FormItem[];
   categories: CategoryItem[];
   upcoming: DeadlineItem[];
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (id: string) => void;
 }
 
 // Statistics grid item

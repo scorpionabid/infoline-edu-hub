@@ -4,7 +4,7 @@ export interface Report {
   title: string;
   description?: string;
   type: ReportTypeValues;
-  status?: string;
+  status?: ReportStatus | string;
   content?: any;
   filters?: any;
   created_by?: string;
@@ -42,7 +42,7 @@ export interface CreateReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreate: (data: { title: string; description: string; type: string }) => Promise<void>;
-  onClose?: () => void; // Added this missing prop
+  onClose?: () => void;
 }
 
 export interface ReportEmptyStateProps {
@@ -54,9 +54,11 @@ export interface ReportPreviewDialogProps {
   report: Report;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  reportId?: string;
+  onClose?: () => void;
 }
 
-// Adding this for the report list components
+// Add constant for use in ReportFilter and ReportItem
 export const REPORT_TYPE_VALUES = {
   BAR: 'BAR',
   LINE: 'LINE', 

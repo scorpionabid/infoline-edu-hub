@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -98,23 +99,6 @@ const createSchema = (columns: Column[]): z.ZodObject<any> => {
   });
   
   return z.object(shape);
-};
-
-// Create a FormFieldsWrapper component
-const FormFieldsWrapper: React.FC<FormFieldsProps> = ({ columns, disabled }) => {
-  return (
-    <div className="space-y-4">
-      {columns.map(column => (
-        <FormFields
-          key={column.id}
-          column={column}
-          value=""
-          onChange={() => {}}
-          isDisabled={disabled}
-        />
-      ))}
-    </div>
-  );
 };
 
 interface DataEntryFormProps {
@@ -367,7 +351,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
               
               {tabs.map(tab => (
                 <TabsContent key={tab.id} value={tab.id} className="space-y-4">
-                  <FormFieldsWrapper 
+                  <FormFields 
                     columns={tab.columns || []} 
                     disabled={submitting || saving || isSaving}
                   />
@@ -375,7 +359,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
               ))}
             </Tabs>
           ) : (
-            <FormFieldsWrapper 
+            <FormFields 
               columns={category.columns || []} 
               disabled={submitting || saving || isSaving}
             />

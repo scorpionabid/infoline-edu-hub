@@ -55,6 +55,11 @@ export interface FormFieldProps {
   isDisabled?: boolean;
 }
 
+export interface FormFieldsProps {
+  columns: import('./column').Column[];
+  disabled?: boolean;
+}
+
 export enum DataEntryStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
@@ -77,4 +82,13 @@ export interface DataEntryForm {
   schoolId: string;
   values: Record<string, string>;
   status: DataEntryStatus;
+}
+
+export interface DataEntrySaveBarProps {
+  isDirty: boolean;
+  isSubmitting: boolean;
+  isSaving: boolean;
+  onSave: () => Promise<any>;
+  errors: boolean;
+  isPendingApproval: boolean;
 }

@@ -53,8 +53,8 @@ export interface NotificationSettings {
   deadlineReminders: boolean;
   statusUpdates: boolean;
   weeklyReports: boolean;
-  system: boolean;  // Added this property
-  deadline: boolean;  // Added this property
+  system: boolean;
+  deadline: boolean;
 }
 
 export interface UserFormData {

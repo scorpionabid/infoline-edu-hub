@@ -1,220 +1,181 @@
 
-import React, { useState } from 'react';
-import { Column } from '@/types/column';
+import React from 'react';
+import { useFormContext } from 'react-hook-form';
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { DatePicker } from '@/components/ui/date-picker';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ValidationResult, FormFieldProps } from '@/types/dataEntry';
-import { validateField, cn } from '@/components/dataEntry/utils/formUtils';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { FormFieldProps, FormFieldsProps } from '@/types/dataEntry';
+import { Column, ColumnType } from '@/types/column';
 
-const FormFields: React.FC<FormFieldProps> = ({ 
-  column, 
-  value, 
-  onChange, 
-  onValueChange,
-  isDisabled = false
-}) => {
-  const [validationResult, setValidationResult] = useState<ValidationResult>({ valid: true });
-
-  const handleBlur = () => {
-    const result = validateField(value, column);
-    setValidationResult(result);
-  };
-
-  const handleDateChange = (date: Date | undefined) => {
-    if (onValueChange) {
-      onValueChange(date ? date.toISOString() : '');
-    }
-  };
-
-  const handleBooleanChange = (checked: boolean) => {
-    if (onValueChange) {
-      onValueChange(checked);
-    }
-  };
-
-  const handleCheckboxChange = (checked: boolean) => {
-    if (onValueChange) {
-      onValueChange(checked ? 'true' : 'false');
-    }
-  };
-
-  const handleRadioChange = (value: string) => {
-    if (onValueChange) {
-      onValueChange(value);
-    }
-  };
-
-  const handleSelectChange = (value: string) => {
-    if (onValueChange) {
-      onValueChange(value);
-    }
-  };
-
+// Individual form field component
+const FormField: React.FC<FormFieldProps> = ({ column, value, onChange, onValueChange, isDisabled = false }) => {
   const renderField = () => {
     switch (column.type) {
       case 'text':
       case 'email':
       case 'tel':
-      case 'phone':
       case 'url':
       case 'password':
         return (
-          <Input
-            type={column.type === 'tel' || column.type === 'phone' ? 'tel' : column.type}
-            name={column.id}
-            value={value || ''}
-            onChange={onChange}
-            onBlur={handleBlur}
-            placeholder={column.placeholder}
-            required={column.is_required}
+          <Input 
+            id={column.id} 
+            type={column.type === 'password' ? 'password' : 'text'} 
+            placeholder={column.placeholder} 
+            value={value || ''} 
+            onChange={onChange} 
             disabled={isDisabled}
-            className={cn(
-              "w-full",
-              !validationResult.valid && "border-destructive"
-            )}
           />
         );
-
+      
       case 'textarea':
         return (
-          <Textarea
-            name={column.id}
-            value={value || ''}
-            onChange={onChange}
-            onBlur={handleBlur}
-            placeholder={column.placeholder}
-            required={column.is_required}
+          <Textarea 
+            id={column.id} 
+            placeholder={column.placeholder} 
+            value={value || ''} 
+            onChange={onChange} 
             disabled={isDisabled}
-            className={cn(
-              "w-full resize-y min-h-[100px]",
-              !validationResult.valid && "border-destructive"
-            )}
           />
         );
-
+      
       case 'number':
         return (
-          <Input
-            type="number"
-            name={column.id}
-            value={value || ''}
-            onChange={onChange}
-            onBlur={handleBlur}
-            placeholder={column.placeholder}
-            required={column.is_required}
-            disabled={isDisabled}
-            min={column.validation?.min}
-            max={column.validation?.max}
-            className={cn(
-              "w-full",
-              !validationResult.valid && "border-destructive"
-            )}
-          />
-        );
-
-      case 'checkbox':
-        return (
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={value === 'true' || value === true}
-              onCheckedChange={handleCheckboxChange}
-              disabled={isDisabled}
-            />
-            <Label htmlFor={column.id}>{column.placeholder || column.name}</Label>
-          </div>
-        );
-
-      case 'date':
-        return (
-          <DatePicker
-            selected={value ? new Date(value) : undefined}
-            onSelect={handleDateChange}
+          <Input 
+            id={column.id} 
+            type="number" 
+            placeholder={column.placeholder} 
+            value={value || ''} 
+            onChange={onChange} 
             disabled={isDisabled}
           />
         );
-
-      case 'radio':
-        return (
-          <RadioGroup
-            value={value || ''}
-            onValueChange={handleRadioChange}
-            disabled={isDisabled}
-            className="space-y-1"
-          >
-            {column.options?.map((option) => (
-              <div key={option.value} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.value} id={`${column.id}-${option.value}`} />
-                <Label htmlFor={`${column.id}-${option.value}`}>{option.label}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-        );
-
+      
       case 'select':
         return (
-          <Select
-            value={value || ''}
-            onValueChange={handleSelectChange}
+          <Select 
+            value={value || ''} 
+            onValueChange={onValueChange} 
             disabled={isDisabled}
           >
-            <SelectTrigger className={cn(
-              "w-full",
-              !validationResult.valid && "border-destructive"
-            )}>
-              <SelectValue placeholder={column.placeholder || `Select ${column.name}`} />
+            <SelectTrigger>
+              <SelectValue placeholder={column.placeholder || 'Select an option'} />
             </SelectTrigger>
             <SelectContent>
               {column.options?.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
+                <SelectItem key={option.id} value={option.value}>
                   {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         );
-
+      
+      case 'checkbox':
+        return (
+          <div className="flex flex-col space-y-2">
+            {column.options?.map((option) => (
+              <div key={option.id} className="flex items-center space-x-2">
+                <Checkbox 
+                  id={`${column.id}-${option.id}`}
+                  checked={(value && Array.isArray(value) && value.includes(option.value)) || false}
+                  onCheckedChange={(checked) => {
+                    if (!onValueChange) return;
+                    
+                    const currentValue = Array.isArray(value) ? [...value] : [];
+                    if (checked) {
+                      onValueChange([...currentValue, option.value]);
+                    } else {
+                      onValueChange(currentValue.filter(val => val !== option.value));
+                    }
+                  }}
+                  disabled={isDisabled}
+                />
+                <label className="text-sm" htmlFor={`${column.id}-${option.id}`}>
+                  {option.label}
+                </label>
+              </div>
+            ))}
+          </div>
+        );
+      
+      case 'radio':
+        return (
+          <RadioGroup 
+            value={value || ''} 
+            onValueChange={onValueChange}
+            disabled={isDisabled}
+          >
+            {column.options?.map((option) => (
+              <div key={option.id} className="flex items-center space-x-2">
+                <RadioGroupItem value={option.value} id={`${column.id}-${option.id}`} />
+                <label className="text-sm" htmlFor={`${column.id}-${option.id}`}>
+                  {option.label}
+                </label>
+              </div>
+            ))}
+          </RadioGroup>
+        );
+      
       default:
         return (
-          <Input
-            type="text"
-            name={column.id}
-            value={value || ''}
-            onChange={onChange}
-            onBlur={handleBlur}
-            placeholder={column.placeholder}
-            required={column.is_required}
+          <Input 
+            id={column.id} 
+            placeholder={column.placeholder} 
+            value={value || ''} 
+            onChange={onChange} 
             disabled={isDisabled}
-            className={cn(
-              "w-full",
-              !validationResult.valid && "border-destructive"
-            )}
           />
         );
     }
   };
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor={column.id} className={cn(!validationResult.valid && "text-destructive")}>
+    <div className="space-y-1">
+      <label className="text-sm font-medium" htmlFor={column.id}>
         {column.name}
-        {column.is_required && <span className="text-destructive ml-1">*</span>}
-      </Label>
-      
+        {column.is_required && <span className="text-red-500 ml-1">*</span>}
+      </label>
       {renderField()}
-      
-      {column.help_text && (
-        <p className="text-xs text-muted-foreground">{column.help_text}</p>
-      )}
-      
-      {!validationResult.valid && validationResult.message && (
-        <p className="text-xs text-destructive mt-1">{validationResult.message}</p>
-      )}
+      {column.help_text && <p className="text-xs text-gray-500">{column.help_text}</p>}
+    </div>
+  );
+};
+
+// Main component to render a collection of form fields
+const FormFields: React.FC<FormFieldsProps> = ({ columns, disabled = false }) => {
+  const { control, formState: { errors } } = useFormContext();
+
+  return (
+    <div className="space-y-6">
+      {columns.map((column) => (
+        <FormField
+          key={column.id}
+          control={control}
+          name={column.id}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {column.name}
+                {column.is_required && <span className="text-red-500 ml-1">*</span>}
+              </FormLabel>
+              <FormControl>
+                <FormField
+                  column={column}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onValueChange={field.onChange}
+                  isDisabled={disabled}
+                />
+              </FormControl>
+              {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ))}
     </div>
   );
 };
