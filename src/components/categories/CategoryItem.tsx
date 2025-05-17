@@ -52,7 +52,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({ category, onCategorySelect 
               <p className="text-sm text-muted-foreground mt-1">{category.description}</p>
             )}
           </div>
-          <Badge variant={getBadgeVariant(category.status || 'draft')}>
+          <Badge variant={getBadgeVariant(category.status)}>
             {category.status}
           </Badge>
         </div>

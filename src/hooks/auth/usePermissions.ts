@@ -22,6 +22,12 @@ export interface UsePermissionsResult {
   isTeacher: boolean;
   isUser: boolean;
   userEntityId: string | undefined;
+  userRole: string | undefined;
+  regionId: string | undefined;
+  sectorId: string | undefined;
+  schoolId: string | undefined;
+  canManageCategories: boolean;
+  canApproveData: boolean;
 }
 
 export const usePermissions = (): UsePermissionsResult => {
@@ -88,6 +94,10 @@ export const usePermissions = (): UsePermissionsResult => {
   const isTeacher = hasRole('teacher');
   const isUser = hasRole('user');
   
+  // Additional permissions based on roles
+  const canManageCategories = isSuperAdmin || isRegionAdmin;
+  const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
+  
   // Entity ID based on user role
   const userEntityId = getUserEntityId();
   
@@ -101,7 +111,13 @@ export const usePermissions = (): UsePermissionsResult => {
     isSchoolAdmin,
     isTeacher,
     isUser,
-    userEntityId
+    userEntityId,
+    userRole,
+    regionId: userRegionId,
+    sectorId: userSectorId,
+    schoolId: userSchoolId,
+    canManageCategories,
+    canApproveData
   };
 };
 

@@ -58,8 +58,8 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="truncate">{category.name}</CardTitle>
-          <Badge variant={getBadgeVariant(category.status || 'active')}>
-            {t(category.status || 'active')}
+          <Badge variant={getBadgeVariant(category.status)}>
+            {t(category.status)}
           </Badge>
         </div>
       </CardHeader>

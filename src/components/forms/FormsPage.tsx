@@ -1,119 +1,132 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus } from 'lucide-react';
+import { Category, CategoryStatus } from '@/types/category';
+import { useCategories } from '@/hooks/categories';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { Category, CategoryStatus } from '@/types/category';
-import { Grid } from '@/components/ui/grid';
 import CategoryCard from './CategoryCard';
-import { Filter, Plus, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Container } from '@/components/ui/container';
+import CreateCategoryDialog from '@/components/categories/CreateCategoryDialog';
+import CategoryFilterCard from '@/components/categories/CategoryFilterCard';
 
-interface FormsPageProps {
-  categories?: Category[];
-  onAddCategory?: () => void;
-}
-
-export const FormsPage: React.FC<FormsPageProps> = ({ categories = [], onAddCategory }) => {
+const FormsPage: React.FC = () => {
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const { canManageCategories } = usePermissions();
-  const [activeTab, setActiveTab] = useState<string>('active');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    search: '',
+    status: 'active' as CategoryStatus,
+    assignment: ''
+  });
 
-  useEffect(() => {
-    console.log('FormsPage categories:', categories);
-  }, [categories]);
-
-  // Function to check if a category matches the current active tab
-  const isActive = (category: Category, tab: string): boolean => {
-    const status = category.status as CategoryStatus || 'active';
-    
-    if (tab === 'active' && status === 'active') return true;
-    if (tab === 'approved' && status === 'approved') return true;
-    if (tab === 'draft' && status === 'draft') return true;
-    if (tab === 'archived' && (status === 'archived' || status === 'inactive')) return true;
-    return false;
-  };
-
-  const filteredCategories = categories?.filter(category =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    isActive(category, activeTab)
+  const { categories, isLoading, refetch } = useCategories(
+    filters.status ? { status: filters.status } : undefined
   );
 
+  const filteredCategories = categories.filter(category => {
+    // Filter by search term in name or description
+    if (filters.search && !category.name.toLowerCase().includes(filters.search.toLowerCase()) && 
+        (!category.description || !category.description.toLowerCase().includes(filters.search.toLowerCase()))) {
+      return false;
+    }
+
+    // Filter by status (active, inactive, etc.)
+    if (filters.status && category.status !== filters.status) {
+      return false;
+    }
+
+    // Filter by assignment (schools, sectors, all)
+    if (filters.assignment && category.assignment !== filters.assignment) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const handleCreateCategory = async () => {
+    await refetch();
+    setDialogOpen(false);
+  };
+
+  const navigateToDataEntry = (categoryId: string) => {
+    navigate(`/data-entry/${categoryId}`);
+  };
+
+  const navigateToDetails = (categoryId: string) => {
+    navigate(`/categories/${categoryId}`);
+  };
+
   return (
-    <Container>
-      <div className="md:flex items-center justify-between mb-4">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold">{t('forms')}</h1>
-          <p className="text-muted-foreground">{t('manageForms')}</p>
+    <div className="container mx-auto py-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">{t('dataForms')}</h1>
+          <p className="text-muted-foreground">{t('dataFormsDescription')}</p>
         </div>
-        <div className="flex items-center space-x-2 mt-2 md:mt-0">
-          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
-            <Filter className="w-4 h-4 mr-2" />
-            {t('filter')}
+
+        {canManageCategories && (
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            {t('createForm')}
           </Button>
-          {canManageCategories && (
-            <Button size="sm" onClick={onAddCategory}>
-              <Plus className="w-4 h-4 mr-2" />
-              {t('addCategory')}
-            </Button>
+        )}
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-4">
+        <div className="md:col-span-1">
+          <CategoryFilterCard 
+            filters={filters}
+            onChange={setFilters}
+            showAssignmentFilter={true}
+          />
+        </div>
+
+        <div className="md:col-span-3">
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-48 bg-muted animate-pulse rounded-md" />
+              ))}
+            </div>
+          ) : filteredCategories.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredCategories.map((category) => (
+                <CategoryCard 
+                  key={category.id} 
+                  category={category} 
+                  onSubmit={navigateToDataEntry}
+                  onView={navigateToDetails}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center p-8 bg-muted/10 rounded-lg border border-dashed">
+              <h3 className="font-medium text-lg mb-2">{t('noFormsFound')}</h3>
+              <p className="text-muted-foreground text-center mb-4">
+                {filters.search || filters.status !== 'active' || filters.assignment
+                  ? t('noMatchingForms')
+                  : t('noFormsAvailable')}
+              </p>
+              {canManageCategories && (
+                <Button onClick={() => setDialogOpen(true)} variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('createForm')}
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
 
-      {showFilters && (
-        <div className="bg-muted p-4 rounded-md mb-4">
-          <Input
-            type="search"
-            placeholder={t('searchCategories')}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-md"
-          />
-        </div>
-      )}
-
-      <Tabs defaultValue="active" className="space-y-4" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
-        <TabsList>
-          <TabsTrigger value="active">{t('active')}</TabsTrigger>
-          <TabsTrigger value="approved">{t('approved')}</TabsTrigger>
-          <TabsTrigger value="draft">{t('draft')}</TabsTrigger>
-          <TabsTrigger value="archived">{t('archived')}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="active">
-          <Grid columns={3}>
-            {filteredCategories?.filter(category => (category.status as CategoryStatus) === 'active').map(category => (
-              <CategoryCard key={category.id} category={category} />
-            ))}
-          </Grid>
-        </TabsContent>
-        <TabsContent value="approved">
-          <Grid columns={3}>
-            {filteredCategories?.filter(category => (category.status as CategoryStatus) === 'approved').map(category => (
-              <CategoryCard key={category.id} category={category} />
-            ))}
-          </Grid>
-        </TabsContent>
-        <TabsContent value="draft">
-          <Grid columns={3}>
-            {filteredCategories?.filter(category => (category.status as CategoryStatus) === 'draft').map(category => (
-              <CategoryCard key={category.id} category={category} />
-            ))}
-          </Grid>
-        </TabsContent>
-        <TabsContent value="archived">
-          <Grid columns={3}>
-            {filteredCategories?.filter(category => 
-              (category.status as CategoryStatus) === 'archived' || (category.status as CategoryStatus) === 'inactive'
-            ).map(category => (
-              <CategoryCard key={category.id} category={category} />
-            ))}
-          </Grid>
-        </TabsContent>
-      </Tabs>
-    </Container>
+      <CreateCategoryDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onCategoryCreated={handleCreateCategory}
+      />
+    </div>
   );
 };
 

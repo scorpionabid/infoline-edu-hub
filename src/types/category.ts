@@ -1,18 +1,21 @@
 
-export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived';
+export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived' | 'approved' | 'pending';
+
+export type CategoryAssignment = 'all' | 'sectors' | 'schools';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  status?: CategoryStatus;
+  status: CategoryStatus;
   priority?: number;
   deadline?: string | Date;
   column_count?: number;
   created_at?: string;
   updated_at?: string;
   archived?: boolean;
-  assignment?: string;
+  assignment?: CategoryAssignment | string;
+  completionRate?: number;
 }
 
 export interface CategoryWithColumns extends Category {
@@ -28,4 +31,26 @@ export function normalizeCategoryStatus(status: string | string[] | undefined): 
   }
   
   return status as CategoryStatus[];
+}
+
+export interface TabDefinition {
+  id: string;
+  title: string;
+  label?: string;
+  columns?: any[];
+}
+
+export interface CategoryFilter {
+  search: string;
+  status: CategoryStatus | '';
+  assignment: CategoryAssignment | '';
+}
+
+export interface AddCategoryFormData {
+  name: string;
+  description?: string;
+  assignment: CategoryAssignment;
+  status: CategoryStatus;
+  priority: number;
+  deadline?: string | null;
 }

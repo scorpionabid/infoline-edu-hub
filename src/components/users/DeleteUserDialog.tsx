@@ -32,13 +32,16 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
     onDelete();
   };
 
+  // Get user name from full_name, name, or email with fallback to "unknown user"
+  const userName = user.full_name || user.name || user.email || t('unknownUser');
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('deleteUserConfirmation')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteUserWarning', { name: user.name || user.full_name || user.email || t('unknownUser') })}
+            {t('deleteUserWarning', { name: userName })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

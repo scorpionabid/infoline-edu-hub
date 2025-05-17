@@ -22,6 +22,7 @@ export interface User {
   region_name?: string;
   sector_name?: string;
   school_name?: string;
+  name?: string;
 }
 
 export interface FullUserData extends User {
@@ -42,6 +43,28 @@ export interface FullUserData extends User {
   createdAt?: string;
   updatedAt?: string;
   notification_settings?: any;
+}
+
+export interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  sms: boolean;
+  inApp: boolean;
+  deadlineReminders: boolean;
+  statusUpdates: boolean;
+  weeklyReports: boolean;
+}
+
+export interface UserFormData {
+  email: string;
+  password: string;
+  full_name: string;
+  phone?: string;
+  position?: string;
+  role?: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
 }
 
 // Helper function to normalize FullUserData between different sources
