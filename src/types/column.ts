@@ -21,12 +21,15 @@ export interface Column {
   status?: string;
   description?: string;
   section?: string;
+  color?: string;
 }
 
 export interface ColumnOption {
   id: string;
   label: string;
   value: string;
+  color?: string;
+  description?: string;
 }
 
 export interface ColumnValidation {
@@ -63,13 +66,19 @@ export interface ColumnTypeInfo {
   description: string;
 }
 
-// Add the missing BasicColumnFieldsProps interface
+// Updated to match the actual component parameters
 export interface BasicColumnFieldsProps {
-  register: any;
-  errors: any;
-  columnType: ColumnType;
-  setValue: (name: string, value: any) => void;
-  getValues: (name?: string) => any;
+  form?: any;
+  control: any;
+  register?: any;
+  errors?: Record<string, any>;
+  isSubmitting?: boolean;
+  isEditMode: boolean;
+  categories: any[];
+  columns?: any[];
+  editColumn?: Column | null;
+  selectedType: ColumnType;
+  onTypeChange: (type: ColumnType) => void;
 }
 
 // Make columnTypes both a Record and have a find method by using an interface extension

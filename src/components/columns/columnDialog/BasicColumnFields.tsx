@@ -9,6 +9,7 @@ import { ColumnTypeSelector } from './ColumnTypeSelector';
 import { useLanguage } from '@/context/LanguageContext';
 
 const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
+  form,
   control,
   categories,
   columns,

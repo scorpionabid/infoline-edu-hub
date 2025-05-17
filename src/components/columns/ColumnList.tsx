@@ -28,6 +28,7 @@ import { Column, ColumnType, columnTypes } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 import { Icons } from '@/components/ui/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import EmptyState from '@/components/ui/empty-state';
 
 interface ColumnListProps {
   columns: Column[];
@@ -119,7 +120,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
       };
     }
     
-    const typeInfo = (columnTypes as any)[type];
+    const typeInfo = columnTypes.find(type);
     if (typeInfo) {
       return typeInfo;
     }
@@ -148,6 +149,42 @@ const ColumnList: React.FC<ColumnListProps> = ({
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('columns')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EmptyState 
+            title={t('error')} 
+            description={t('errorFetchingColumns')} 
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!columns || columns.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('columns')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EmptyState 
+            title={t('noColumnsFound')}
+            description={t('noColumnsFoundDescription')}
+            action={canManageColumns ? {
+              label: t('addColumn'),
+              onClick: () => {} // This should be connected to add column functionality
+            } : undefined}
+          />
         </CardContent>
       </Card>
     );
@@ -203,7 +240,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
                         : <Badge variant="outline">{t('no')}</Badge>
                       }
                     </TableCell>
-                    <TableCell>{getStatusBadge(column.status)}</TableCell>
+                    <TableCell>{getStatusBadge(column.status || 'draft')}</TableCell>
                     <TableCell className="text-right">
                       {canManageColumns ? (
                         <DropdownMenu>

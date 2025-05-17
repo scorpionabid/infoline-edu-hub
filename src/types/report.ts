@@ -3,7 +3,7 @@ export interface Report {
   id: string;
   title: string;
   description?: string;
-  type: keyof typeof ReportTypeValues;
+  type: keyof typeof ReportTypeValues | string;
   content: any;
   filters?: any;
   created_at: string;
@@ -18,12 +18,18 @@ export interface Report {
 
 export type ReportStatus = 'draft' | 'published' | 'archived';
 
+// Updated to handle both uppercase and lowercase values in match statements
 export const ReportTypeValues = {
   BAR: 'bar',
   PIE: 'pie',
   LINE: 'line',
   TABLE: 'table',
-  SUMMARY: 'summary'
+  SUMMARY: 'summary',
+  bar: 'BAR',
+  pie: 'PIE', 
+  line: 'LINE',
+  table: 'TABLE',
+  summary: 'SUMMARY'
 } as const;
 
 export interface ReportFilter {
@@ -39,7 +45,7 @@ export interface ReportFilter {
 export interface CreateReportFormValues {
   title: string;
   description?: string;
-  type: keyof typeof ReportTypeValues;
+  type: keyof typeof ReportTypeValues | string;
   content: any;
   filters?: any;
 }
@@ -74,7 +80,7 @@ export interface ReportChartProps {
 export interface ReportHeaderProps {
   title?: string;
   description?: string;
-  onCreateReport?: (data?: any) => void;
+  onCreateReport?: () => void;
   onCategorySelect?: (categoryId: string) => void;
   isLoading?: boolean;
 }

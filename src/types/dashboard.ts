@@ -53,6 +53,7 @@ export interface SchoolStat {
   totalForms?: number;
   lastUpdate?: string;
   status?: string;
+  principalName?: string; // Added for compatibility
 }
 
 // Sector in dashboard context
@@ -62,7 +63,7 @@ export interface SectorStat {
   // Both are used in the codebase
   completionRate?: number;
   completion?: number;
-  schoolCount?: number;
+  schoolCount: number;
   pendingCount?: number;
 }
 
@@ -71,10 +72,20 @@ export interface RegionStat {
   id: string;
   name: string;
   // Both are used in the codebase
-  completionRate?: number; 
+  completionRate: number; // Changed to required
   completion?: number;
-  sectorCount?: number;
-  schoolCount?: number;
+  sectorCount: number;
+  schoolCount: number;
+}
+
+// Same as RegionStat but with completionRate optional for compatibility
+export interface Region {
+  id: string;
+  name: string;
+  completionRate?: number;
+  completion?: number;
+  sectorCount: number;
+  schoolCount: number;
 }
 
 // Pending approval
@@ -116,9 +127,9 @@ export interface FormItem {
     name: string;
   };
   dueDate?: string;
+  deadline?: string;
   status: string;
   progress?: number;
-  deadline?: string;
 }
 
 // Deadline item

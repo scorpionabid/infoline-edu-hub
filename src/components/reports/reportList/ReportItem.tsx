@@ -1,82 +1,136 @@
 
 import React from 'react';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Report, ReportTypeValues } from '@/types/report';
-import { Eye, BarChart, PieChart, LineChart, Table as TableIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Eye, Edit, Trash, BarChart, PieChart, LineChart, Table as TableIcon } from 'lucide-react';
+import { Report, ReportTypeValues } from '@/types/report';
 
 interface ReportItemProps {
   report: Report;
-  onView: () => void;
+  onView: (reportId: string) => void;
+  onEdit?: (report: Report) => void;
+  onDelete?: (reportId: string) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
-const ReportItem: React.FC<ReportItemProps> = ({ report, onView }) => {
+const ReportItem: React.FC<ReportItemProps> = ({
+  report,
+  onView,
+  onEdit,
+  onDelete,
+  canEdit = true,
+  canDelete = true,
+}) => {
+  const getBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'published':
+        return 'success';
+      case 'archived':
+        return 'secondary';
+      case 'draft':
+        return 'outline';
+      default:
+        return 'outline';
+    }
+  };
+
+  const ReportIcon = () => {
+    // Normalize the report type to uppercase for comparison
+    const normalizedType = report.type.toUpperCase() as keyof typeof ReportTypeValues;
+    
+    switch (normalizedType) {
+      case 'BAR':
+        return <BarChart className="h-8 w-8 text-primary" />;
+      case 'PIE':
+        return <PieChart className="h-8 w-8 text-primary" />;
+      case 'LINE':
+        return <LineChart className="h-8 w-8 text-primary" />;
+      case 'TABLE':
+        return <TableIcon className="h-8 w-8 text-primary" />;
+      default:
+        return <BarChart className="h-8 w-8 text-primary" />;
+    }
+  };
+
   const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), 'MMM d, yyyy');
-    } catch (e) {
-      return dateString;
-    }
+    return new Date(dateString).toLocaleDateString();
   };
 
-  const getReportTypeIcon = () => {
-    switch (report.type) {
-      case "BAR":
-        return <BarChart size={36} className="text-primary/50" />;
-      case "PIE":
-        return <PieChart size={36} className="text-primary/50" />;
-      case "LINE":
-        return <LineChart size={36} className="text-primary/50" />;
-      case "TABLE":
-        return <TableIcon size={36} className="text-primary/50" />;
+  const getTypeLabel = (type: string) => {
+    // Normalize the report type to uppercase for comparison
+    const normalizedType = type.toUpperCase() as keyof typeof ReportTypeValues;
+    
+    switch (normalizedType) {
+      case 'BAR':
+        return 'Bar Chart';
+      case 'PIE':
+        return 'Pie Chart';
+      case 'LINE':
+        return 'Line Chart';
+      case 'TABLE':
+        return 'Table Report';
       default:
-        return null;
-    }
-  };
-
-  const getStatusBadgeVariant = () => {
-    switch (report.status) {
-      case "published":
-        return "bg-green-100 text-green-800";
-      case "draft":
-        return "bg-amber-100 text-amber-800";
-      case "archived":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-blue-100 text-blue-800";
+        return type;
     }
   };
 
   return (
-    <Card className="overflow-hidden">
-      <div className="relative p-6 pb-2">
+    <Card className="h-full flex flex-col">
+      <CardHeader>
         <div className="flex justify-between items-start">
-          <h3 className="font-medium text-lg">{report.title}</h3>
-          <div className="flex gap-1">
-            <Badge variant="outline" className={getStatusBadgeVariant()}>
-              {report.status}
-            </Badge>
+          <div className="flex items-start space-x-2">
+            <div className="p-2 rounded-lg bg-muted">
+              <ReportIcon />
+            </div>
+            <div>
+              <CardTitle className="text-lg">{report.title}</CardTitle>
+              <CardDescription className="line-clamp-2">{report.description}</CardDescription>
+            </div>
+          </div>
+          <Badge variant={getBadgeVariant(report.status)}>
+            {report.status}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <div className="flex justify-between">
+            <span>Type:</span>
+            <span className="font-medium">{getTypeLabel(report.type)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Created:</span>
+            <span className="font-medium">{formatDate(report.created_at)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Updated:</span>
+            <span className="font-medium">{formatDate(report.updated_at)}</span>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-          {report.description || "No description provided"}
-        </p>
-        <div className="text-xs text-muted-foreground mt-3">
-          Created: {formatDate(report.created_at)}
-        </div>
-      </div>
-
-      <CardContent className="flex items-center justify-center py-4 border-t border-b">
-        {getReportTypeIcon()}
       </CardContent>
-      
-      <CardFooter className="p-4">
-        <Button onClick={onView} className="w-full" variant="outline">
-          <Eye className="mr-2 h-4 w-4" />
-          View Report
-        </Button>
+      <CardFooter className="border-t pt-4">
+        <div className="flex justify-between w-full">
+          <Button variant="outline" size="sm" onClick={() => onView(report.id)}>
+            <Eye className="h-4 w-4 mr-1" />
+            View
+          </Button>
+          <div className="space-x-2">
+            {canEdit && (
+              <Button variant="secondary" size="sm" onClick={() => onEdit && onEdit(report)}>
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+            )}
+            {canDelete && (
+              <Button variant="destructive" size="sm" onClick={() => onDelete && onDelete(report.id)}>
+                <Trash className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+            )}
+          </div>
+        </div>
       </CardFooter>
     </Card>
   );

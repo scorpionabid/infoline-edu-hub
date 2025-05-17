@@ -11,7 +11,7 @@ export interface Category {
   assignment?: CategoryAssignment;
   archived?: boolean;
   column_count?: number;
-  completionRate?: number; // Add this property to match component usage
+  completionRate?: number;
 }
 
 export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived' | 'approved';
@@ -24,6 +24,7 @@ export interface CategoryFilter {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   archived?: boolean;
+  assignment?: CategoryAssignment | string;
 }
 
 export interface AddCategoryFormData {
@@ -42,7 +43,7 @@ export interface CategoryWithColumns extends Category {
 export interface TabDefinition {
   id: string;
   title: string;
-  label: string;
+  label?: string;
   columns: Column[];
 }
 

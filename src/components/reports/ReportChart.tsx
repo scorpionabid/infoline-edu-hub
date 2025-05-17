@@ -6,7 +6,10 @@ import { Report, ReportChartProps, ReportTypeValues } from '@/types/report';
 
 export const ReportChart: React.FC<ReportChartProps> = ({ report, height = 400, width = 600 }) => {
   const renderChart = () => {
-    switch (report.type) {
+    // Normalize the report type to uppercase for comparison
+    const normalizedType = report.type.toUpperCase() as keyof typeof ReportTypeValues;
+    
+    switch (normalizedType) {
       case "BAR":
         return <div className="flex items-center justify-center h-full"><BarChart size={64} className="text-muted-foreground" /></div>;
       case "LINE":

@@ -40,7 +40,7 @@ export interface DataEntryForm {
   categoryId: string;
   schoolId: string;
   entries: EntryValue[];
-  isModified: boolean;
+  isModified?: boolean;
 }
 
 export interface EntryValue {
