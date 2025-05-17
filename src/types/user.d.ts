@@ -1,4 +1,5 @@
 
+
 export type UserRoleType = 
   | 'superadmin'
   | 'regionadmin' 
@@ -27,6 +28,8 @@ export interface NotificationSettings {
   deadline: boolean;
   sms?: boolean;
   deadlineReminders?: boolean;
+  statusUpdates?: boolean;
+  weeklyReports?: boolean;
 }
 
 export interface FullUserData {

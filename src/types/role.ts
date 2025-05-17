@@ -1,45 +1,42 @@
 
-export type UserRole = 
-  | 'superadmin'
-  | 'regionadmin' 
-  | 'sectoradmin' 
-  | 'schooladmin' 
-  | 'user';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user' | string;
 
-export interface RoleDefinition {
-  value: UserRole;
-  label: string;
-  description?: string;
+export function normalizeRole(role: string): UserRole {
+  const validRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin', 'user'];
+  
+  if (validRoles.includes(role as UserRole)) {
+    return role as UserRole;
+  }
+  
+  return 'user';
 }
 
-export const USER_ROLES: Record<UserRole, string> = {
-  superadmin: 'Super Admin',
-  regionadmin: 'Region Admin',
-  sectoradmin: 'Sector Admin',
-  schooladmin: 'School Admin',
-  user: 'User'
+export interface UserRoleEntity {
+  id: string;
+  user_id: string;
+  role: UserRole;
+  created_at?: string;
+  updated_at?: string;
+  school_id?: string;
+  sector_id?: string;
+  region_id?: string;
+}
+
+export interface RoleAssignment {
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+}
+
+export const RoleHierarchy = {
+  'superadmin': 100,
+  'regionadmin': 80,
+  'sectoradmin': 60,
+  'schooladmin': 40,
+  'user': 20
 };
 
-export const normalizeRole = (role: string): UserRole => {
-  switch (role.toLowerCase()) {
-    case 'superadmin':
-    case 'super_admin':
-    case 'super-admin':
-    case 'admin':
-      return 'superadmin';
-    case 'regionadmin':
-    case 'region_admin':
-    case 'region-admin':
-      return 'regionadmin';
-    case 'sectoradmin':
-    case 'sector_admin':
-    case 'sector-admin':
-      return 'sectoradmin';
-    case 'schooladmin':
-    case 'school_admin':
-    case 'school-admin':
-      return 'schooladmin';
-    default:
-      return 'user';
-  }
-};
+export function getRoleLevel(role: UserRole): number {
+  return RoleHierarchy[role as keyof typeof RoleHierarchy] || 0;
+}

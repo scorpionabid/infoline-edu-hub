@@ -67,6 +67,10 @@ export interface UserFormData {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  status?: string;
+  language?: string;
+  notification_settings?: NotificationSettings;
+  notificationSettings?: NotificationSettings;
 }
 
 // Helper function to normalize FullUserData between different sources

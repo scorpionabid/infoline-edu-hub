@@ -36,10 +36,11 @@ export interface NotificationSettings {
   push: boolean;
   inApp: boolean;
   system: boolean;
+  deadline: boolean;
+  sms?: boolean;
   deadlineReminders?: boolean;
   statusUpdates?: boolean;
   weeklyReports?: boolean;
-  sms?: boolean;
 }
 
 export function adaptDashboardNotificationToApp(notification: any): AppNotification {
