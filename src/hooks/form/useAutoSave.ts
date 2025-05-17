@@ -1,60 +1,67 @@
-
-import { useCallback, useEffect } from 'react';
-import { DataEntryForm } from '@/types/dataEntry';
-import { toast } from '@/components/ui/use-toast';
-import { useLanguage } from '@/context/LanguageContext';
+import { useState, useEffect, useRef } from 'react';
+import { useFormContext } from 'react-hook-form';
+import { toast } from 'sonner';
 
 interface UseAutoSaveProps {
-  formData: DataEntryForm;
-  isAutoSaving: boolean;
-  setIsAutoSaving: React.Dispatch<React.SetStateAction<boolean>>;
-  lastOperationTimeRef: React.RefObject<number>;
+  save: () => Promise<boolean>;
+  interval?: number;
+  successMessage?: string;
 }
 
-/**
- * Avtomatik saxlama funksionallığını idarə edən hook
- */
-export const useAutoSave = ({
-  formData,
-  isAutoSaving,
-  setIsAutoSaving,
-  lastOperationTimeRef
-}: UseAutoSaveProps) => {
-  const { t } = useLanguage();
-  
-  // Auto saxlama simulyasiyası
-  const setupAutoSave = useCallback((validateFn: () => boolean) => {
-    if (isAutoSaving) {
-      // Yalnız son əməliyyatdan 1.5 saniyə keçibsə avtomatik saxlayaq
-      const timer = setTimeout(() => {
-        const currentTime = Date.now();
-        const timeSinceLastOperation = currentTime - lastOperationTimeRef.current;
-        
-        // Əgər istifadəçi son 1.5 saniyədə yeni dəyişiklik etməyibsə
-        if (timeSinceLastOperation >= 1500) {
-          // Burada real API çağırışı olmalıdır
-          console.log("Məlumatlar avtomatik saxlanıldı:", formData);
-          
-          // LocalStorage-də saxlayaq
-          localStorage.setItem('infolineFormData', JSON.stringify(formData));
-          
-          setIsAutoSaving(false);
-          
-          toast({
-            title: t('changesAutoSaved'),
-            variant: "default",
-          });
-          
-          // Məlumatları saxladıqdan sonra validasiya etmək
-          validateFn();
-        }
-      }, 1500);
-      
-      return () => clearTimeout(timer);
+export const useAutoSave = ({ save, interval = 30000, successMessage }: UseAutoSaveProps) => {
+  const { formState } = useFormContext();
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const saveTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Clear any existing timeout
+    if (saveTimeout.current) {
+      clearTimeout(saveTimeout.current);
     }
-  }, [formData, isAutoSaving, t, setIsAutoSaving, lastOperationTimeRef]);
-  
-  return {
-    setupAutoSave
+
+    // Set a new timeout if the form is dirty
+    if (formState.isDirty) {
+      saveTimeout.current = setTimeout(() => {
+        saveForm();
+      }, interval);
+    }
+
+    // Cleanup function to clear timeout on unmount or when dependencies change
+    return () => {
+      if (saveTimeout.current) {
+        clearTimeout(saveTimeout.current);
+      }
+    };
+  }, [formState.isDirty, interval, save]);
+
+  const saveForm = async () => {
+    if (isSaving) return;
+
+    setIsSaving(true);
+    setErrorMessage(null);
+    let savedSuccessfully = false;
+
+    try {
+      savedSuccessfully = await save();
+    } catch (error: any) {
+      console.error("Auto-save failed:", error);
+      setErrorMessage(error.message || "An unexpected error occurred during auto-save.");
+    } finally {
+      setIsSaving(false);
+    }
+
+    // Use toast properly
+    if (savedSuccessfully) {
+      toast.success(successMessage || "Form auto-saved successfully", {
+        description: "Your changes have been saved automatically."
+      });
+    } else if (errorMessage) {
+      toast.error("Failed to auto-save form", {
+        description: errorMessage
+      });
+    }
   };
+
+  return { isSaving, errorMessage };
 };

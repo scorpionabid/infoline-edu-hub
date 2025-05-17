@@ -1,104 +1,71 @@
-
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Category, CategoryWithColumns } from '@/types/category';
-import { Column, ColumnOption } from '@/types/column';
+import { CategoryWithColumns } from '@/types/category';
 
-export function useCategoryData(schoolId?: string) {
-  const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [loading, setLoading] = useState(true);
+interface UseCategoryDataResult {
+  category: CategoryWithColumns | null;
+  loading: boolean;
+  error: Error | null;
+}
+
+export const useCategoryData = (categoryId: string | undefined): UseCategoryDataResult => {
+  const [category, setCategory] = useState<CategoryWithColumns | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchCategories = async (): Promise<CategoryWithColumns[]> => {
-    try {
-      setLoading(true);
-      
-      // Fetch all categories
-      const { data: categoryData, error: categoryError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('status', 'active')
-        .order('priority', { ascending: true });
-
-      if (categoryError) throw categoryError;
-      if (!categoryData) return [];
-
-      // Get category IDs to fetch columns
-      const categoryIds = categoryData.map(category => category.id);
-      
-      // Fetch columns for all categories
-      const { data: columnsData, error: columnsError } = await supabase
-        .from('columns')
-        .select('*')
-        .in('category_id', categoryIds)
-        .order('order_index', { ascending: true });
-
-      if (columnsError) throw columnsError;
-      
-      // Group columns by category
-      const columnsByCategory = columnsData?.reduce((acc, column) => {
-        // Process the column to match the Column type
-        const processedColumn = {
-          ...column,
-          options: Array.isArray(column.options) 
-            ? column.options 
-            : typeof column.options === 'string' 
-              ? JSON.parse(column.options)
-              : column.options || [],
-          validation: typeof column.validation === 'string' 
-            ? JSON.parse(column.validation) 
-            : column.validation || {},
-          type: column.type as Column['type'],
-          color: column.color || undefined,
-          description: column.description || ''
-        } as unknown as Column;
-        
-        if (!acc[column.category_id]) {
-          acc[column.category_id] = [];
-        }
-        acc[column.category_id].push(processedColumn);
-        return acc;
-      }, {} as Record<string, Column[]>) || {};
-
-      // Combine categories with their columns
-      const categoriesWithColumns = categoryData.map(category => {
-        return {
-          ...category,
-          columns: columnsByCategory[category.id] || [],
-          columnCount: columnsByCategory[category.id]?.length || 0,
-          status: category.status as Category['status']
-        } as CategoryWithColumns;
-      });
-      
-      setCategories(categoriesWithColumns);
-      return categoriesWithColumns;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to fetch categories');
-      setError(error);
-      console.error('Error fetching categories:', error);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const { data, refetch } = useQuery({
-    queryKey: ['categories', schoolId],
-    queryFn: fetchCategories,
-    enabled: true
-  });
-
   useEffect(() => {
-    if (data) {
-      setCategories(data);
+    if (!categoryId) {
+      setLoading(false);
+      return;
     }
-  }, [data]);
 
-  return {
-    categories,
-    loading,
-    error,
-    refetch
-  };
-}
+    const fetchCategoryData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { data: categoryData, error: categoryError } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('id', categoryId)
+          .single();
+
+        if (categoryError) throw categoryError;
+
+        const { data: columnsData, error: columnsError } = await supabase
+          .from('columns')
+          .select('*')
+          .eq('category_id', categoryId)
+          .order('order_index');
+
+        if (columnsError) throw columnsError;
+
+        // Process columns to include additional UI properties
+        const processedColumns = (columnsData || []).map(column => ({
+          ...column,
+          options: column.options || [],
+          validation: column.validation || {},
+          // Add missing properties needed by some components
+          color: column.color || '#6b7280',
+          description: column.description || '',
+        }));
+
+        setCategory({
+          ...categoryData,
+          columns: processedColumns,
+        });
+      } catch (err: any) {
+        setError(err);
+        console.error('Error fetching category data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategoryData();
+  }, [categoryId]);
+
+  return { category, loading, error };
+};
+
+export default useCategoryData;

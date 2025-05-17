@@ -1,120 +1,44 @@
-
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
 
-export interface Region {
+interface Region {
   id: string;
   name: string;
-  description: string | null;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  admin_id: string | null;
-  admin_email: string | null;
+  description?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export const useRegions = () => {
+interface UseRegionsResult {
+  regions: Region[];
+  loading: boolean;
+  error: Error | null;
+  createRegion: (region: { name: string; description?: string; status?: string }) => Promise<{ success: boolean; data?: Region; error?: any }>;
+  createRegions: (regions: { name: string; description?: string; status?: string }[]) => Promise<{ success: boolean; data?: any; error?: any }>;
+  updateRegion: (regionId: string, updates: Partial<Region>) => Promise<{ success: boolean; data?: Region; error?: any }>;
+  deleteRegion: (regionId: string) => Promise<{ success: boolean; error?: any }>;
+  fetchRegions: () => Promise<void>;
+}
+
+export const useRegions = (): UseRegionsResult => {
   const [regions, setRegions] = useState<Region[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const { t } = useLanguage();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchRegions = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-      
       const { data, error } = await supabase
         .from('regions')
         .select('*')
         .order('name');
-      
-      if (error) {
-        throw error;
-      }
-      
+
+      if (error) throw error;
       setRegions(data || []);
     } catch (err: any) {
-      console.error('Error fetching regions:', err);
-      setError(err.message || t('errorFetchingRegions'));
-      toast.error(t('errorFetchingRegions'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createRegion = async (regionData: Partial<Region>) => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('regions')
-        .insert([regionData])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      setRegions(prev => [...prev, data]);
-      toast.success(t('regionCreatedSuccessfully'));
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error creating region:', err);
-      toast.error(t('errorCreatingRegion'));
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateRegion = async (id: string, regionData: Partial<Region>) => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('regions')
-        .update(regionData)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      setRegions(prev => prev.map(region => (region.id === id ? data : region)));
-      toast.success(t('regionUpdatedSuccessfully'));
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error updating region:', err);
-      toast.error(t('errorUpdatingRegion'));
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteRegion = async (id: string) => {
-    try {
-      setLoading(true);
-      
-      const { error } = await supabase
-        .from('regions')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      setRegions(prev => prev.filter(region => region.id !== id));
-      toast.success(t('regionDeletedSuccessfully'));
-      
-      return true;
-    } catch (err: any) {
-      console.error('Error deleting region:', err);
-      toast.error(t('errorDeletingRegion'));
-      throw err;
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -124,13 +48,96 @@ export const useRegions = () => {
     fetchRegions();
   }, []);
 
+  const createRegion = async (region: { name: string; description?: string; status?: string }): Promise<{ success: boolean; data?: Region; error?: any }> => {
+    try {
+      const { data, error } = await supabase
+        .from('regions')
+        .insert([{ ...region, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      setRegions(prevRegions => [...prevRegions, data]);
+      return { success: true, data };
+    } catch (err: any) {
+      setError(err);
+      return { success: false, error: err };
+    }
+  };
+
+const createRegions = async (regions: { name: string; description?: string; status?: string }[]) => {
+  try {
+    // Validate the regions array
+    const validRegions = regions.filter(region => !!region.name);
+    
+    if (validRegions.length === 0) {
+      throw new Error('At least one region with a valid name is required');
+    }
+    
+    // Add timestamps to each region
+    const regionsWithTimestamps = validRegions.map(region => ({
+      ...region,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+    
+    const { data, error } = await supabase
+      .from('regions')
+      .insert(regionsWithTimestamps)
+      .select();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error creating regions:', error);
+    return { success: false, error };
+  }
+};
+
+  const updateRegion = async (regionId: string, updates: Partial<Region>): Promise<{ success: boolean; data?: Region; error?: any }> => {
+    try {
+      const { data, error } = await supabase
+        .from('regions')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', regionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setRegions(prevRegions =>
+        prevRegions.map(region => (region.id === regionId ? { ...region, ...updates } : region))
+      );
+      return { success: true, data };
+    } catch (err: any) {
+      setError(err);
+      return { success: false, error: err };
+    }
+  };
+
+  const deleteRegion = async (regionId: string): Promise<{ success: boolean; error?: any }> => {
+    try {
+      const { error } = await supabase
+        .from('regions')
+        .delete()
+        .eq('id', regionId);
+
+      if (error) throw error;
+      setRegions(prevRegions => prevRegions.filter(region => region.id !== regionId));
+      return { success: true };
+    } catch (err: any) {
+      setError(err);
+      return { success: false, error: err };
+    }
+  };
+
   return {
     regions,
     loading,
     error,
-    fetchRegions,
     createRegion,
+    createRegions,
     updateRegion,
-    deleteRegion
+    deleteRegion,
+    fetchRegions
   };
 };

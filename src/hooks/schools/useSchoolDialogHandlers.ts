@@ -134,12 +134,24 @@ export const useSchoolDialogHandlers = () => {
           description: t('schoolUpdatedDesc', { name: data.name }),
         });
       } else {
-        // Create new school
+        // Create new school with required name field
         const { data: newSchool, error } = await supabase
           .from('schools')
           .insert({
-            ...schoolData,
+            name: data.name, // Explicitly include required name field
+            region_id: data.region_id,
+            sector_id: data.sector_id,
+            code: data.code || null,
+            address: data.address || null,
+            phone: data.phone || null,
+            email: data.email || null,
+            website: data.website || null,
+            description: data.description || null,
+            status: data.status || 'active',
+            admin_id: data.admin_id || null,
+            admin_email: data.admin_email || null,
             created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           })
           .select()
           .single();

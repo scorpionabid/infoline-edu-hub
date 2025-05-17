@@ -1,92 +1,109 @@
+import { useState, useEffect, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Category } from '@/types/category';
+import { useDebounce } from '../common/useDebounce';
+import { normalizeCategoryStatus } from '@/types/category';
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { Category, CategoryFilter } from '@/types/category';
-import apiClient from '@/lib/api-client';
-import logger from '@/lib/logger';
+interface UseCategoriesEnhancedOptions {
+  initialCategories?: Category[];
+  searchTerm?: string;
+  statusFilter?: string | string[];
+  enabled?: boolean;
+}
 
-/**
- * Enhanced hook for fetching categories with better caching and error handling
- */
-export const useCategoriesEnhanced = (initialFilter?: CategoryFilter) => {
-  const [filter, setFilter] = useState<CategoryFilter>(initialFilter || {
-    search: '',
-    status: ['active'],
-    archived: false,
-    sortBy: 'name',
-    sortOrder: 'asc'
-  });
-  
-  // Fetch categories with React Query
-  const {
-    data: categories,
-    isLoading,
-    isError,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['categories', filter],
-    queryFn: async () => {
-      logger.debug('Fetching categories with filter', { 
-        context: 'useCategoriesEnhanced',
-        data: { filter } 
-      });
-      
-      // Start with the base query
+interface UseCategoriesEnhancedResult {
+  categories: Category[];
+  loading: boolean;
+  error: Error | null;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  statusFilter: string | string[];
+  setStatusFilter: (status: string | string[]) => void;
+  refetch: () => Promise<void>;
+}
+
+export const useCategoriesEnhanced = ({
+  initialCategories = [],
+  searchTerm: initialSearchTerm = '',
+  statusFilter: initialStatusFilter = 'active',
+  enabled = true,
+}: UseCategoriesEnhancedOptions): UseCategoriesEnhancedResult => {
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [loading, setLoading] = useState<boolean>(!initialCategories && enabled);
+  const [error, setError] = useState<Error | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>(initialSearchTerm);
+  const [statusFilter, setStatusFilter] = useState<string | string[]>(initialStatusFilter);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  useEffect(() => {
+    if (initialCategories && initialCategories.length > 0) {
+      setCategories(initialCategories);
+    }
+  }, [initialCategories]);
+
+  const fetchCategories = async () => {
+    if (!enabled) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
       let query = supabase
         .from('categories')
-        .select('*');
-      
-      // Apply filters
-      if (filter.search) {
-        query = query.ilike('name', `%${filter.search}%`);
+        .select('*')
+        .order('priority', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
       }
-      
-      if (filter.status && filter.status.length > 0) {
-        query = query.in('status', filter.status);
-      }
-      
-      // Handle archived filter
-      if (filter.archived !== undefined) {
-        query = query.eq('archived', filter.archived);
-      }
-      
-      // Apply sorting
-      if (filter.sortBy) {
-        query = query.order(filter.sortBy, {
-          ascending: filter.sortOrder === 'asc'
-        });
-      }
-      
-      // Execute the query with our enhanced client
-      const result = await apiClient.fetch<Category[]>('categories', query, {
-        tags: ['categories']
-      });
-      
-      if (result.error) {
-        throw result.error;
-      }
-      
-      return result.data || [];
-    },
-    refetchOnWindowFocus: false
-  });
-  
-  // Function to update filter
-  const updateFilter = (newFilter: Partial<CategoryFilter>) => {
-    setFilter(prev => ({ ...prev, ...newFilter }));
+
+      setCategories(data || []);
+    } catch (err: any) {
+      console.error('Error fetching categories:', err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  return {
-    categories,
-    isLoading,
-    isError,
+
+  useEffect(() => {
+    if (enabled) {
+      fetchCategories();
+    }
+  }, [enabled]);
+
+  // Filter categories based on search and status
+  const filteredCategories = useMemo(() => {
+    if (!categories) return [];
+    
+    return categories.filter(category => {
+      // Text search filter
+      const matchesSearch = !searchTerm || 
+        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+      // Status filter
+      const statusArray = normalizeCategoryStatus(statusFilter);
+      const matchesStatus = statusArray.includes(category.status as any);
+    
+      return matchesSearch && matchesStatus;
+    });
+  }, [categories, searchTerm, statusFilter]);
+
+  const memoizedValue = useMemo(() => ({
+    categories: filteredCategories,
+    loading,
     error,
-    filter,
-    updateFilter,
-    refetch
-  };
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    refetch: fetchCategories,
+  }), [filteredCategories, loading, error, searchTerm, statusFilter, fetchCategories]);
+
+  return memoizedValue;
 };
 
 export default useCategoriesEnhanced;

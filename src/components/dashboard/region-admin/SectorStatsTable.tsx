@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Table, 
@@ -13,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, BarChart } from 'lucide-react';
 import { SectorStat } from '@/types/dashboard';
 import { useLanguage } from '@/context/LanguageContext';
-import { useNavigate } from '@/hooks/useRouter';
+import { useNavigate } from 'react-router-dom';  // Fixed import
 
 interface SectorStatsTableProps {
   sectors: SectorStat[];

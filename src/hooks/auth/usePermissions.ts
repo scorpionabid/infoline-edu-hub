@@ -1,138 +1,108 @@
 
-import { useMemo } from 'react';
-import { useAuthStore, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore'; 
-import { UserRole, normalizeRole, hasMinimumRole } from '@/types/role';
+import { useAuthStore } from './useAuthStore';
+
+// Define role hierarchy from lowest to highest permission level
+const roleHierarchy = [
+  'user',
+  'teacher',
+  'schooladmin',
+  'sectoradmin',
+  'regionadmin',
+  'superadmin'
+];
 
 export interface UsePermissionsResult {
-  userRole: UserRole;
-  hasRole: (role: UserRole | UserRole[]) => boolean;
-  hasMinimumRole: (role: UserRole) => boolean;
-  canViewRegion: (regionId?: string) => boolean;
-  canViewSector: (sectorId?: string) => boolean;
-  canViewSchool: (schoolId?: string) => boolean;
-  canManageUsers: boolean;
-  canManageRegions: boolean;
-  canManageSectors: boolean;
-  canManageSchools: boolean;
-  canManageCategories: boolean;
-  canApproveData: boolean;
-  canEnterData: boolean;
-  regionId: string | null;
-  sectorId: string | null;
-  schoolId: string | null;
-  // For backwards compatibility
+  hasRole: (role: string | string[]) => boolean;
+  hasRoleAtLeast: (minimumRole: string) => boolean;
+  canAccessRoute: (allowedRoles: string[]) => boolean;
   isSuperAdmin: boolean;
   isRegionAdmin: boolean;
   isSectorAdmin: boolean;
   isSchoolAdmin: boolean;
+  isTeacher: boolean;
+  isUser: boolean;
+  userEntityId: string | undefined;
 }
 
-/**
- * Enhanced hook to check user permissions based on role and entity IDs
- * with improved null/undefined handling and type safety
- */
 export const usePermissions = (): UsePermissionsResult => {
-  // Get user data directly from the store using selectors
-  const user = useAuthStore(selectUser);
+  const userRole = useAuthStore(state => state.user?.role);
+  const userRegionId = useAuthStore(state => state.user?.region_id);
+  const userSectorId = useAuthStore(state => state.user?.sector_id);
+  const userSchoolId = useAuthStore(state => state.user?.school_id);
   
-  // Get user role with proper fallback and cast to UserRole type
-  const rawUserRole = useAuthStore(selectUserRole);
+  // Determine if user has a specific role or any of multiple roles
+  const hasRole = (role: string | string[]): boolean => {
+    if (!userRole) return false;
+    
+    if (Array.isArray(role)) {
+      return role.includes(userRole);
+    }
+    
+    return userRole === role;
+  };
   
-  return useMemo(() => {
-    console.log("[usePermissions] Raw user role from store:", rawUserRole);
-    console.log("[usePermissions] User data:", user);
+  // Determine if user has at least a minimum role in the hierarchy
+  const hasRoleAtLeast = (minimumRole: string): boolean => {
+    if (!userRole || !minimumRole) return false;
     
-    // Normalize role to ensure type safety
-    const userRole = normalizeRole(rawUserRole || user?.role);
-    console.log("[usePermissions] Normalized role:", userRole);
+    const userRoleIndex = roleHierarchy.indexOf(userRole);
+    const minimumRoleIndex = roleHierarchy.indexOf(minimumRole);
     
-    // Ensure we have values for region, sector, and school IDs
-    const regionId = user?.region_id || null;
-    const sectorId = user?.sector_id || null;
-    const schoolId = user?.school_id || null;
+    // If either role isn't found in the hierarchy, return false
+    if (userRoleIndex === -1 || minimumRoleIndex === -1) return false;
     
-    const hasRole = (roleToCheck: UserRole | UserRole[]): boolean => {
-      if (!userRole) return false;
-      
-      if (Array.isArray(roleToCheck)) {
-        return roleToCheck.includes(userRole);
-      }
-      
-      return userRole === roleToCheck;
-    };
-
-    const checkMinimumRole = (minRole: UserRole): boolean => {
-      return hasMinimumRole(userRole, minRole);
-    };
-
-    const canViewRegion = (regionId?: string): boolean => {
-      if (!userRole) return false;
-      if (userRole === 'superadmin') return true;
-      if (userRole === 'regionadmin' && user?.region_id && (!regionId || user.region_id === regionId)) return true;
-      return false;
-    };
-
-    const canViewSector = (sectorId?: string): boolean => {
-      if (!userRole) return false;
-      if (userRole === 'superadmin' || userRole === 'regionadmin') return true;
-      if (userRole === 'sectoradmin' && user?.sector_id && (!sectorId || user.sector_id === sectorId)) return true;
-      return false;
-    };
-
-    const canViewSchool = (schoolId?: string): boolean => {
-      if (!userRole) return false;
-      if (['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole)) return true;
-      if (userRole === 'schooladmin' && user?.school_id && (!schoolId || user.school_id === schoolId)) return true;
-      return false;
-    };
-
-    // Define permissions based on roles
-    const canManageUsers = Boolean(userRole && ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole));
-    const canManageRegions = userRole === 'superadmin';
-    const canManageSectors = Boolean(userRole && ['superadmin', 'regionadmin'].includes(userRole));
-    const canManageSchools = Boolean(userRole && ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole));
-    const canManageCategories = Boolean(userRole && ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole));
-    const canApproveData = Boolean(userRole && ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole));
-    const canEnterData = Boolean(userRole && ['superadmin', 'sectoradmin', 'schooladmin'].includes(userRole));
-
-    // For backwards compatibility
-    const isSuperAdmin = userRole === 'superadmin';
-    const isRegionAdmin = userRole === 'regionadmin';
-    const isSectorAdmin = userRole === 'sectoradmin';
-    const isSchoolAdmin = userRole === 'schooladmin';
-
-    return {
-      userRole,
-      hasRole,
-      hasMinimumRole: checkMinimumRole,
-      canViewRegion,
-      canViewSector,
-      canViewSchool,
-      canManageUsers,
-      canManageRegions,
-      canManageSectors,
-      canManageSchools,
-      canManageCategories,
-      canApproveData,
-      canEnterData,
-      regionId,
-      sectorId,
-      schoolId,
-      isSuperAdmin,
-      isRegionAdmin,
-      isSectorAdmin,
-      isSchoolAdmin
-    };
-  }, [user, rawUserRole]); // Only depend on user and rawUserRole
+    // User's role is at least the minimum required role
+    return userRoleIndex >= minimumRoleIndex;
+  };
+  
+  // Determine if user can access a route with specific allowed roles
+  const canAccessRoute = (allowedRoles: string[]): boolean => {
+    if (!userRole) return false;
+    if (allowedRoles.length === 0) return true; // No restrictions
+    return allowedRoles.includes(userRole);
+  };
+  
+  // Get the ID of the entity the user is associated with based on role
+  const getUserEntityId = (): string | undefined => {
+    if (!userRole) return undefined;
+    
+    switch (userRole) {
+      case 'superadmin':
+        return 'all';
+      case 'regionadmin':
+        return userRegionId;
+      case 'sectoradmin':
+        return userSectorId;
+      case 'schooladmin':
+        return userSchoolId;
+      default:
+        return undefined;
+    }
+  };
+  
+  // Check specific role types
+  const isSuperAdmin = hasRole('superadmin');
+  const isRegionAdmin = hasRole('regionadmin');
+  const isSectorAdmin = hasRole('sectoradmin');
+  const isSchoolAdmin = hasRole('schooladmin');
+  const isTeacher = hasRole('teacher');
+  const isUser = hasRole('user');
+  
+  // Entity ID based on user role
+  const userEntityId = getUserEntityId();
+  
+  return {
+    hasRole,
+    hasRoleAtLeast,
+    canAccessRoute,
+    isSuperAdmin,
+    isRegionAdmin,
+    isSectorAdmin,
+    isSchoolAdmin,
+    isTeacher,
+    isUser,
+    userEntityId
+  };
 };
 
-// Export a simple non-hook version for utils that need role checks
-export function checkPermission(role: UserRole | undefined | null, requiredRole: UserRole | UserRole[]): boolean {
-  if (!role) return false;
-  
-  if (Array.isArray(requiredRole)) {
-    return requiredRole.includes(role);
-  }
-  
-  return hasMinimumRole(role, requiredRole);
-}
+export default usePermissions;

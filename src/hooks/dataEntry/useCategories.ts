@@ -1,95 +1,80 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns } from '@/types/category';
-import { Column } from '@/types/column';
 
-interface UsePermissionsResult {
-  hasRegionAccess?: boolean;
-  hasSectorAccess?: boolean;
-  hasRoleAtLeast?: (role: string) => boolean;
+interface UseCategoriesResult {
+  categories: CategoryWithColumns[];
+  loading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
 }
 
-// Mock permissions hook - replace with your actual permissions hook
-const usePermissions = (): UsePermissionsResult => {
-  return {
-    hasRegionAccess: true,
-    hasSectorAccess: true,
-    hasRoleAtLeast: (role: string) => true,
-  };
-};
+export const useCategories = (initialCategories?: CategoryWithColumns[]): UseCategoriesResult => {
+  const [categories, setCategories] = useState<CategoryWithColumns[]>(initialCategories || []);
+  const [loading, setLoading] = useState<boolean>(!initialCategories);
+  const [error, setError] = useState<Error | null>(null);
 
-// Mock auth store - replace with your actual auth store
-const useAuthStore = () => {
-  return {
-    user: { id: '1', region_id: '1', sector_id: '1', role: 'admin' }
-  };
-};
-
-export const useCategories = () => {
-  const permissions = usePermissions();
-  const authStore = useAuthStore();
-  const { user } = authStore;
-
-  return useQuery({
-    queryKey: ['categories', user?.id],
-    queryFn: async (): Promise<CategoryWithColumns[]> => {
-      let query = supabase.from('categories').select(`
-        *,
-        columns (*)
-      `);
-
-      // Apply role-based filters based on the user's role
-      if (user?.role === 'superadmin') {
-        // Super admin sees all categories
-      } else if (user?.role === 'regionadmin') {
-        if (user?.region_id) {
-          query = query.eq('region_id', user.region_id)
-            .or(`region_id.is.null,assignment.eq.region`);
-        }
-      } else if (user?.role === 'sectoradmin') {
-        if (user?.sector_id) {
-          query = query.eq('sector_id', user.sector_id)
-            .or(`sector_id.is.null,assignment.eq.sector`);
-        }
-      } else {
-        // School admin or regular user
-        query = query.eq('assignment', 'school');
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
+  const fetchCategories = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('status', 'active')
+        .order('priority', { ascending: false });
 
       if (error) throw error;
 
-      // Transform the data to ensure type safety
-      return data.map(category => {
-        const typedColumns = (category.columns || []).map((col: any) => {
-          // Parse JSON fields if they're stored as strings
-          const options = col.options 
-            ? (typeof col.options === 'string' ? JSON.parse(col.options) : col.options)
-            : [];
+      // Fetch columns for each category
+      const categoriesWithColumns: CategoryWithColumns[] = [];
+      
+      for (const category of data) {
+        try {
+          const { data: columns, error: columnsError } = await supabase
+            .from('columns')
+            .select('*')
+            .eq('category_id', category.id)
+            .order('order_index');
             
-          const validation = col.validation
-            ? (typeof col.validation === 'string' ? JSON.parse(col.validation) : col.validation)
-            : {};
+          if (columnsError) throw columnsError;
 
-          return {
-            ...col,
-            options,
-            validation
-          } as Column;
-        });
-        
-        return {
-          ...category,
-          columns: typedColumns,
-          columnCount: typedColumns.length,
-        } as CategoryWithColumns;
-      });
-    },
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
+          const processedColumns = columns.map((column: any) => ({
+            ...column,
+            options: column.options ? JSON.parse(JSON.stringify(column.options)) : [],
+            validation: column.validation ? JSON.parse(JSON.stringify(column.validation)) : {}
+          }));
+
+          categoriesWithColumns.push({
+            ...category,
+            columns: processedColumns
+          });
+        } catch (columnsErr) {
+          console.error('Error fetching columns for category:', category.id, columnsErr);
+          categoriesWithColumns.push({
+            ...category,
+            columns: []
+          });
+        }
+      }
+
+      setCategories(categoriesWithColumns);
+    } catch (err: any) {
+      console.error('Error fetching categories:', err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!initialCategories) {
+      fetchCategories();
+    }
+  }, []);
+
+  return { categories, loading, error, refetch: fetchCategories };
 };
 
 export default useCategories;

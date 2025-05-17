@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Category, CategoryStatus } from '@/types/category';
@@ -129,11 +128,41 @@ export const useCategoryActions = () => {
     }
   };
 
+  const createCategories = async (categories: AddCategoryFormData[]) => {
+    try {
+      // Ensure each category has the required 'name' field
+      const validCategories = categories.filter(cat => !!cat.name);
+      
+      if (validCategories.length === 0) {
+        throw new Error('At least one category with a valid name is required');
+      }
+      
+      // Add timestamps to each category
+      const categoriesWithTimestamps = validCategories.map(cat => ({
+        ...cat,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .insert(categoriesWithTimestamps)
+        .select();
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error creating categories:', error);
+      return { success: false, error };
+    }
+  };
+
   return {
     createCategory,
     updateCategory,
     updateCategoryStatus,
     deleteCategory,
+    createCategories,
     isLoading,
     error
   };
@@ -144,8 +173,8 @@ export default useCategoryActions;
 export interface AddCategoryFormData {
   name: string;
   description?: string;
-  assignment?: string;
-  status?: string;
+  deadline?: string | Date;
+  status?: CategoryStatus;
   priority?: number;
-  deadline?: string | null;
+  assignment?: string;
 }

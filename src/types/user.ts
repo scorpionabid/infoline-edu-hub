@@ -1,113 +1,67 @@
 
-import { UserRole, UserStatus } from './role';
+import { UserRole } from './role';
 
-export interface NotificationSettings {
-  email: boolean;
-  inApp: boolean;
-  push: boolean;
-  system: boolean;
-  deadline: boolean;
-  sms?: boolean;
-  app?: boolean;
-  deadlineReminders?: boolean;
-}
+export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | string;
 
 export interface User {
   id: string;
-  email: string;
   full_name?: string;
-  fullName?: string;
+  email?: string;
+  avatar?: string;
   role?: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
   status?: UserStatus;
+  created_at?: string;
+  updated_at?: string;
+  last_login?: string;
+  position?: string;
   phone?: string;
   language?: string;
-  position?: string;
-  created_at?: string;
-  createdAt?: string;
-  updated_at?: string;
-  updatedAt?: string;
-  last_login?: string;
-  lastLogin?: string;
-  region_id?: string;
-  regionId?: string;
-  sector_id?: string;
-  sectorId?: string;
-  school_id?: string;
-  schoolId?: string;
-  notificationSettings?: NotificationSettings;
-  notification_settings?: NotificationSettings;
-  name?: string;
-  avatar?: string;
+  region_name?: string;
+  sector_name?: string;
+  school_name?: string;
 }
 
 export interface FullUserData extends User {
-  avatar?: string;
-  region_id?: string;
+  // Additional properties specific to the application
+  notificationSettings?: any;
+  entityTypes?: string[];
+  entityName?: any;
+  adminEntity?: any;
+  // Aliases for compatibility
   regionId?: string;
-  region_name?: string;
-  regionName?: string;
-  sector_id?: string;
   sectorId?: string;
-  sector_name?: string;
-  sectorName?: string;
-  school_id?: string;
   schoolId?: string;
-  school_name?: string;
+  regionName?: string;
+  sectorName?: string;
   schoolName?: string;
   name?: string;
-  entityName?: {
-    region?: string;
-    sector?: string;
-    school?: string;
-  } | string;
-  notificationSettings?: NotificationSettings;
-  notification_settings?: NotificationSettings;
-  adminEntity?: {
-    type?: string;
-    name?: string;
-    schoolName?: string;
-    sectorName?: string;
-    regionName?: string;
+  lastLogin?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  notification_settings?: any;
+}
+
+// Helper function to normalize FullUserData between different sources
+export function normalizeUserData(userData: any): FullUserData {
+  return {
+    ...userData,
+    // Ensure status is compatible with UserStatus type
+    status: userData.status || 'active',
+    // Normalize role if needed
+    role: userData.role || 'user',
+    // Ensure all required fields are present
+    id: userData.id || '',
+    // Add aliases
+    regionId: userData.region_id || userData.regionId,
+    sectorId: userData.sector_id || userData.sectorId, 
+    schoolId: userData.school_id || userData.schoolId,
+    name: userData.full_name || userData.name,
+    lastLogin: userData.last_login || userData.lastLogin,
+    createdAt: userData.created_at || userData.createdAt,
+    updatedAt: userData.updated_at || userData.updatedAt,
+    notification_settings: userData.notificationSettings || userData.notification_settings
   };
-  entityTypes?: string[];
 }
-
-export interface UserFilter {
-  role?: UserRole[];
-  status?: string[];
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-}
-
-export interface UserFormData {
-  id?: string;
-  email: string;
-  password?: string;
-  full_name?: string;
-  fullName?: string;
-  name?: string;
-  role: string;
-  region_id?: string | null;
-  sector_id?: string | null;
-  school_id?: string | null;
-  phone?: string | null;
-  position?: string | null;
-  language?: string;
-  avatar?: string | null;
-  status?: string;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  notification_settings?: NotificationSettings;
-  notificationSettings?: NotificationSettings;
-}
-
-// Re-export UserRole and UserStatus for backward compatibility
-export { UserRole, UserStatus } from './role';

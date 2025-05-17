@@ -1,13 +1,12 @@
-
 export type ColumnType = 
-  'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 
-  'date' | 'file' | 'radio' | 'email' | 'url' | 'richtext' | 
-  'range' | 'datetime' | 'phone' | 'tel' | 'password';
+  'text' | 'textarea' | 'number' | 'select' | 'multiselect' | 'checkbox' | 
+  'radio' | 'date' | 'time' | 'file' | 'image' | 'email' | 'phone' | 'url' | 'password' | 
+  'color' | 'range';
 
 export interface Column {
   id: string;
-  name: string;
   category_id: string;
+  name: string;
   type: ColumnType;
   is_required: boolean;
   help_text?: string;
@@ -16,8 +15,8 @@ export interface Column {
   options?: ColumnOption[];
   validation?: ColumnValidation;
   order_index: number;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   status?: string;
   description?: string;
   section?: string;
@@ -88,18 +87,20 @@ const columnTypesObj: Record<ColumnType, ColumnTypeInfo> = {
   textarea: { label: 'Text Area', description: 'Multiple line text input', icon: 'textAlignLeft' },
   number: { label: 'Number', description: 'Numeric value input', icon: 'hash' },
   select: { label: 'Select', description: 'Dropdown selection', icon: 'listBox' },
+  multiselect: { label: 'Multi Select', description: 'Multiple dropdown selection', icon: 'listBox' },
   checkbox: { label: 'Checkbox', description: 'Multiple selection', icon: 'check' },
+  radio: { label: 'Radio', description: 'Single selection', icon: 'circle' },
   date: { label: 'Date', description: 'Date picker', icon: 'calendar' },
+  time: { label: 'Time', description: 'Time picker', icon: 'clock' },
   datetime: { label: 'Date & Time', description: 'Date and time picker', icon: 'calendarClock' },
   file: { label: 'File', description: 'File upload', icon: 'file' },
-  radio: { label: 'Radio', description: 'Single selection', icon: 'circle' },
+  image: { label: 'Image', description: 'Image upload', icon: 'image' },
   email: { label: 'Email', description: 'Email address input', icon: 'mail' },
-  url: { label: 'URL', description: 'URL input', icon: 'link' },
-  richtext: { label: 'Rich Text', description: 'Formatted text editor', icon: 'formattingTwo' },
-  range: { label: 'Range', description: 'Value within a range', icon: 'sliders' },
   phone: { label: 'Phone', description: 'Phone number input', icon: 'phone' },
   tel: { label: 'Telephone', description: 'Telephone number input', icon: 'phone' },
   password: { label: 'Password', description: 'Password input field', icon: 'lock' },
+  color: { label: 'Color', description: 'Color selection', icon: 'color' },
+  range: { label: 'Range', description: 'Value within a range', icon: 'sliders' },
 };
 
 // Export columnTypes with find method

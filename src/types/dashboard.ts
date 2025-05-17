@@ -1,4 +1,3 @@
-
 import { Category } from './category';
 
 // Basic dashboard statistics
@@ -42,18 +41,17 @@ export interface CategoryItem {
 export interface SchoolStat {
   id: string;
   name: string;
-  // Both are used in the codebase
-  completionRate?: number;
+  status?: string;
   completion?: number;
-  pendingCount?: number;
-  pendingEntries?: number;
-  totalEntries?: number;
+  completionRate?: number;
+  lastUpdate?: string;
   pendingForms?: number;
   formsCompleted?: number;
   totalForms?: number;
-  lastUpdate?: string;
-  status?: string;
-  principalName?: string; // Added for compatibility
+  principalName?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
 }
 
 // Sector in dashboard context

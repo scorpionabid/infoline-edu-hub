@@ -1,51 +1,31 @@
 
+export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived';
+
 export interface Category {
   id: string;
   name: string;
   description?: string;
   status?: CategoryStatus;
-  deadline?: string;
   priority?: number;
-  created_at: string;
-  updated_at: string;
-  assignment?: CategoryAssignment;
-  archived?: boolean;
+  deadline?: string | Date;
   column_count?: number;
-  completionRate?: number;
-}
-
-export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived' | 'approved';
-
-export type CategoryAssignment = 'all' | 'sectors' | 'regions';
-
-export interface CategoryFilter {
-  search?: string;
-  status?: CategoryStatus[] | string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  created_at?: string;
+  updated_at?: string;
   archived?: boolean;
-  assignment?: CategoryAssignment | string;
-}
-
-export interface AddCategoryFormData {
-  name: string;
-  description?: string;
-  status?: CategoryStatus;
-  deadline?: string;
-  assignment?: CategoryAssignment;
-  priority?: number;
+  assignment?: string;
 }
 
 export interface CategoryWithColumns extends Category {
-  columns?: Column[];
+  columns?: any[];
 }
 
-export interface TabDefinition {
-  id: string;
-  title: string;
-  label?: string;
-  columns: Column[];
+// Function to normalize category status
+export function normalizeCategoryStatus(status: string | string[] | undefined): CategoryStatus[] {
+  if (!status) return ['active'];
+  
+  if (typeof status === 'string') {
+    return [status as CategoryStatus];
+  }
+  
+  return status as CategoryStatus[];
 }
-
-// Import Column type for CategoryWithColumns
-import { Column } from './column';

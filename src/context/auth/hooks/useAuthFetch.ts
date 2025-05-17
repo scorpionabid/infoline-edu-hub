@@ -1,7 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import { User, FullUserData } from '@/types/user';
+import { User, FullUserData, normalizeUserData } from '@/types/user';
 import { fetchUserData, updateUserProfile } from '@/services/userDataService';
 import { toast } from 'sonner';
 import { useRouter } from '@/hooks/useRouter';
@@ -41,7 +42,8 @@ export const useAuthFetch = (): UseAuthFetchResult => {
       const userData = await fetchUserData(sessionData.user.id, sessionData);
       
       if (userData) {
-        setUser(userData);
+        // Use the normalizeUserData helper to ensure type compatibility
+        setUser(normalizeUserData(userData));
       } else {
         console.warn('No user data returned from fetchUserData');
         setUser(null);
@@ -136,13 +138,15 @@ export const useAuthFetch = (): UseAuthFetchResult => {
     
     try {
       setLoading(true);
-      const success = await updateUserProfile(user.id, updates);
+      // Normalize the updates before sending them
+      const normalizedUpdates = normalizeUserData({ ...user, ...updates });
+      const success = await updateUserProfile(user.id, normalizedUpdates);
       
       if (success) {
         // Update local user state with new values
         setUser(prevUser => {
           if (!prevUser) return null;
-          return { ...prevUser, ...updates };
+          return normalizeUserData({ ...prevUser, ...updates });
         });
         return true;
       }
