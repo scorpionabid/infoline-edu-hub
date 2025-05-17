@@ -1,34 +1,43 @@
-
 import React, { createContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { FullUserData, AuthContextType } from '@/types/auth';
+import { AuthContextType, FullUserData } from '@/types/auth';
 import { useAuth2 } from '@/hooks/auth/useAuth2';
 import { AuthService } from '@/services/auth/AuthService';
 
+// Use the AuthContextType from @/types/auth.ts instead of redefining it
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   isAuthenticated: false,
   authenticated: false,
   loading: true,
-  error: '',
-  logIn: async () => null,
+  error: null,
+  logIn: async () => ({ data: null, error: null }),
+  login: async () => false,
   register: async () => null,
   logOut: async () => {},
+  logout: async () => {},
   resetPassword: async () => null,
-  updatePassword: async () => null,
+  updatePassword: async () => ({ data: null, error: null }),
   sendPasswordResetEmail: async () => null,
-  refreshSession: async () => null,
+  refreshSession: async () => {},
   getSession: async () => null,
   setSession: () => {},
-  updateProfile: async () => null,
+  updateProfile: async () => ({ data: null, error: null }),
   fetchUserData: async () => null,
   clearErrors: () => {},
   setUser: () => {},
   setLoading: () => {},
   setError: () => {},
-  updateUserData: async () => null
+  updateUserData: async () => ({ data: null, error: null }),
+  clearError: () => {},
+  refreshProfile: async () => null,
+  updateUser: () => {},
+  updateUserProfile: async () => ({ data: null, error: null }),
+  signOut: async () => {},
+  createUser: async () => ({ data: null, error: null }),
+  signup: async () => ({ user: null, error: null })
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -42,12 +51,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: auth.isAuthenticated,
     authenticated: auth.isAuthenticated, // For backwards compatibility
     loading: auth.isLoading,
-    error: error || (auth.error ? auth.error.message : ''),
+    error: error || (auth.error ? auth.error.message : null),
     
     logIn: async (email, password) => {
       const success = await auth.login(email, password);
       return success ? { data: auth.session, error: null } : { data: null, error: new Error('Login failed') };
     },
+    
+    login: auth.login,
     
     register: async (userData) => {
       // This is just a compatibility layer, use proper register in real code
@@ -56,6 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     },
     
     logOut: auth.logout,
+    logout: auth.logout,
+    signOut: auth.logout,
     
     resetPassword: async (email) => {
       try {
@@ -84,10 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     },
     
-    refreshSession: async () => {
-      await auth.refreshSession();
-      return { data: auth.session, error: null };
-    },
+    refreshSession: auth.refreshSession,
     
     getSession: async () => {
       const { session } = await AuthService.getSession();
@@ -109,8 +119,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     },
     
-    fetchUserData: async () => auth.refreshUserData(),
-    
+    fetchUserData: auth.refreshUserData,
+    clearError: auth.clearError,
     clearErrors: auth.clearError,
     
     setUser: (userData) => {
@@ -130,6 +140,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { data: null, error: null };
       } catch (err: any) {
         return { data: null, error: err };
+      }
+    },
+    
+    updateUser: (userData) => {
+      // In a real implementation, this would update the user data
+      console.warn('updateUser needs proper implementation');
+    },
+    
+    updateUserProfile: async (userData) => {
+      try {
+        // This needs to be replaced with a real implementation
+        console.warn('updateUserProfile needs proper implementation');
+        return { data: null, error: null };
+      } catch (err: any) {
+        return { data: null, error: err };
+      }
+    },
+    
+    createUser: async (userData) => {
+      try {
+        // This needs to be replaced with a real implementation
+        console.warn('createUser needs proper implementation');
+        return { data: null, error: null };
+      } catch (err: any) {
+        return { data: null, error: err };
+      }
+    },
+    
+    signup: async (email, password, options) => {
+      try {
+        // This needs to be replaced with a real implementation
+        console.warn('signup needs proper implementation');
+        return { user: null, error: null };
+      } catch (err: any) {
+        return { user: null, error: err };
       }
     }
   };

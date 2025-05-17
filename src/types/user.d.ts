@@ -1,4 +1,5 @@
 
+export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | string;
 
 export type UserRoleType = 
   | 'superadmin'
@@ -18,6 +19,9 @@ export interface User {
   status?: 'active' | 'inactive' | 'pending';
   name?: string;
   entityName?: string;
+  // Adding support for notification settings
+  notification_settings?: NotificationSettings;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface NotificationSettings {
@@ -59,6 +63,7 @@ export interface FullUserData {
   notification_settings?: NotificationSettings;
   notificationSettings?: NotificationSettings;
   preferences?: any;
+  avatar?: string;
 }
 
 export interface UserFormData {

@@ -7,7 +7,7 @@ export interface AppNotification {
   isRead?: boolean;
   createdAt: string;
   date?: string;
-  priority?: NotificationPriority;
+  priority?: NotificationPriority | string;  // Fixed to accept both string and enum
   link?: string;
   relatedEntityId?: string;
   relatedEntityType?: string;

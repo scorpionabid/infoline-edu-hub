@@ -1,5 +1,4 @@
 
-
 // Basic dashboard statistics
 export interface DashboardStatus {
   pending: number;
@@ -238,4 +237,3 @@ export interface FormTabsProps {
   navigateToDataEntry?: () => void;
   handleFormClick?: (id: string) => void;
 }
-

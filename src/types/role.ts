@@ -1,42 +1,98 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user' | string;
+export type UserRoleType = 
+  | 'superadmin'
+  | 'regionadmin' 
+  | 'sectoradmin' 
+  | 'schooladmin' 
+  | 'user';
 
-export function normalizeRole(role: string): UserRole {
-  const validRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin', 'user'];
-  
-  if (validRoles.includes(role as UserRole)) {
-    return role as UserRole;
+export type UserRole = UserRoleType | string;
+
+export interface RolePermissions {
+  canViewUsers: boolean;
+  canManageUsers: boolean;
+  canViewRegions: boolean;
+  canManageRegions: boolean;
+  canViewSectors: boolean;
+  canManageSectors: boolean;
+  canViewSchools: boolean;
+  canManageSchools: boolean;
+  canViewCategories: boolean;
+  canManageCategories: boolean;
+  canApproveData: boolean;
+}
+
+export const getRolePermissions = (role: UserRole): RolePermissions => {
+  switch (role) {
+    case 'superadmin':
+      return {
+        canViewUsers: true,
+        canManageUsers: true,
+        canViewRegions: true,
+        canManageRegions: true,
+        canViewSectors: true,
+        canManageSectors: true,
+        canViewSchools: true,
+        canManageSchools: true,
+        canViewCategories: true,
+        canManageCategories: true,
+        canApproveData: true
+      };
+    case 'regionadmin':
+      return {
+        canViewUsers: true,
+        canManageUsers: true,
+        canViewRegions: true,
+        canManageRegions: false,
+        canViewSectors: true,
+        canManageSectors: true,
+        canViewSchools: true,
+        canManageSchools: false,
+        canViewCategories: true,
+        canManageCategories: false,
+        canApproveData: true
+      };
+    case 'sectoradmin':
+      return {
+        canViewUsers: true,
+        canManageUsers: false,
+        canViewRegions: true,
+        canManageRegions: false,
+        canViewSectors: true,
+        canManageSectors: false,
+        canViewSchools: true,
+        canManageSchools: true,
+        canViewCategories: true,
+        canManageCategories: false,
+        canApproveData: true
+      };
+    case 'schooladmin':
+      return {
+        canViewUsers: false,
+        canManageUsers: false,
+        canViewRegions: false,
+        canManageRegions: false,
+        canViewSectors: false,
+        canManageSectors: false,
+        canViewSchools: true,
+        canManageSchools: false,
+        canViewCategories: true,
+        canManageCategories: false,
+        canApproveData: false
+      };
+    default:
+      return {
+        canViewUsers: false,
+        canManageUsers: false,
+        canViewRegions: false,
+        canManageRegions: false,
+        canViewSectors: false,
+        canManageSectors: false,
+        canViewSchools: false,
+        canManageSchools: false,
+        canViewCategories: true,
+        canManageCategories: false,
+        canApproveData: false
+      };
   }
-  
-  return 'user';
-}
-
-export interface UserRoleEntity {
-  id: string;
-  user_id: string;
-  role: UserRole;
-  created_at?: string;
-  updated_at?: string;
-  school_id?: string;
-  sector_id?: string;
-  region_id?: string;
-}
-
-export interface RoleAssignment {
-  role: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-}
-
-export const RoleHierarchy = {
-  'superadmin': 100,
-  'regionadmin': 80,
-  'sectoradmin': 60,
-  'schooladmin': 40,
-  'user': 20
 };
-
-export function getRoleLevel(role: UserRole): number {
-  return RoleHierarchy[role as keyof typeof RoleHierarchy] || 0;
-}

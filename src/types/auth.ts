@@ -14,7 +14,8 @@ export interface FullUserData {
   full_name?: string;
   email: string;
   avatar_url?: string;
-  role?: UserRole;
+  avatar?: string; // For backwards compatibility
+  role?: UserRole | string;
   school_id?: string;
   sector_id?: string;
   region_id?: string;
@@ -23,7 +24,7 @@ export interface FullUserData {
   sectorId?: string;
   schoolId?: string;
   // Status
-  status?: UserStatus;
+  status?: UserStatus | string;
   // Time fields
   created_at?: string;
   updated_at?: string;
@@ -58,7 +59,7 @@ export interface RegistrationData {
   email: string;
   password: string;
   full_name: string;
-  role?: UserRole;
+  role?: UserRole | string;
   school_id?: string;
   sector_id?: string;
   region_id?: string;
@@ -71,4 +72,38 @@ export interface AuthFormState {
   full_name?: string;
   error?: string;
   success?: string;
+}
+
+export interface AuthContextType {
+  user: FullUserData | null;
+  session: any | null;
+  isAuthenticated: boolean;
+  authenticated: boolean; // Alias for isAuthenticated
+  loading: boolean;
+  error: string | null;
+  logIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
+  login: (email: string, password: string) => Promise<boolean>;
+  logOut: () => Promise<void>;
+  logout: () => Promise<void>; // Alias for logOut
+  signOut: () => Promise<void>; // Alias for logOut
+  updateUser: (data: Partial<FullUserData>) => void;
+  updateUserData: (data: Partial<FullUserData>) => Promise<{data: any; error: any}>;
+  clearError: () => void;
+  refreshProfile: () => Promise<FullUserData | null>;
+  refreshSession: () => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<{ data: any; error: any }>;
+  updateProfile: (data: Partial<FullUserData>) => Promise<{ data: any; error: any }>;
+  updateUserProfile: (data: Partial<FullUserData>) => Promise<{ data: any; error: any }>;
+  resetPassword: (email: string) => Promise<any>;
+  register: (userData: any) => Promise<any>;
+  setError: (error: string | null) => void;
+  createUser: (userData: any) => Promise<{ data: any; error: any }>;
+  signup: (email: string, password: string, options?: any) => Promise<{ user: any; error: any }>;
+  getSession?: () => Promise<any>;
+  setSession?: (session: any | null) => void;
+  fetchUserData?: () => Promise<FullUserData | null>;
+  clearErrors?: () => void;
+  setUser?: (userData: FullUserData | null) => void;
+  setLoading?: (loading: boolean) => void;
+  sendPasswordResetEmail?: (email: string) => Promise<any>;
 }

@@ -1,3 +1,4 @@
+
 export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved' | 'pending' | string;
 
 export type CategoryAssignment = 'all' | 'sectors' | 'schools';
@@ -13,6 +14,7 @@ export interface Category {
   deadline?: string;
   archived?: boolean;
   column_count?: number;
+  columnCount?: number; // Alias for compatibility
   assignment?: CategoryAssignment | string;
   completionRate?: number;
 }
