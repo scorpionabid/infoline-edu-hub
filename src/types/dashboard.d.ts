@@ -129,6 +129,18 @@ export interface SchoolStat {
     rejected: number;
     draft: number;
   };
+  completionRate?: number;
+  lastUpdate?: string;
+  pendingCount?: number;
+  pendingEntries?: number;
+  totalEntries?: number;
+  pendingForms?: number;
+  formsCompleted?: number;
+  totalForms?: number;
+  principalName?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface SectorStat {

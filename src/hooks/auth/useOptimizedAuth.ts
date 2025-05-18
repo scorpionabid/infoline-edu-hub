@@ -1,150 +1,294 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { useAuthStore } from './useAuthStore';
-import { FullUserData, UserStatus } from '@/types/auth';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { UserRole, normalizeRole } from '@/types/role';
+import { FullUserData } from '@/types/user';
+import { Session } from '@supabase/supabase-js';
 
-const useOptimizedAuth = () => {
-  const { 
-    user, 
-    loading, 
-    error, 
-    isAuthenticated,
-    setUser, 
-    setSession, 
-    setLoading, 
-    setError,
-    clearError
-  } = useAuthStore();
-  const [session, setLocalSession] = useState<any>(null);
+/**
+ * Optimized auth hook with improved state management
+ */
+export const useOptimizedAuth = () => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<FullUserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load initial session
-  useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
+  /**
+   * Initialize auth state
+   */
+  const initializeAuth = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Update state based on session
+      if (session) {
+        // Fetch user profile
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+          
         if (error) throw error;
         
-        if (data?.session) {
-          setLocalSession(data.session);
-          setSession(data.session);
+        // Get user role
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
           
-          // Fetch user data if we have a session but no user
-          if (!user) {
-            fetchUserData(data.session.user.id);
-          }
-        } else {
-          setLoading(false);
+        if (roleError && roleError.code !== 'PGRST116') {
+          console.error('Error fetching role:', roleError);
         }
-      } catch (err: any) {
-        console.error("Auth error:", err);
-        setError(err.message);
-        setLoading(false);
+        
+        // Set user state
+        setUser({
+          ...data,
+          role: roleData?.role || 'user',
+          id: session.user.id,
+          email: session.user.email || '',
+          lastSignIn: session.user.last_sign_in_at,
+        });
+        setSession(session);
+      } else {
+        // No session, clear state
+        setUser(null);
+        setSession(null);
       }
-    };
-
-    fetchSession();
+    } catch (err: any) {
+      console.error('Auth initialization error:', err);
+      setError(err.message || 'Failed to initialize auth');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // Set up auth state change listener
+  /**
+   * Handle auth state changes
+   */
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setLocalSession(session);
-        setSession(session);
-        
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          if (session?.user) {
-            fetchUserData(session.user.id);
+    initializeAuth();
+    
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        if (event === 'SIGNED_IN' && newSession) {
+          // Update session and fetch user profile
+          setSession(newSession);
+          
+          // Fetch user profile
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', newSession.user.id)
+            .single();
+            
+          if (error) {
+            console.error('Error fetching user profile:', error);
+            return;
           }
+          
+          // Get user role
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('*')
+            .eq('user_id', newSession.user.id)
+            .single();
+            
+          if (roleError && roleError.code !== 'PGRST116') {
+            console.error('Error fetching role:', roleError);
+          }
+          
+          // Set user state
+          setUser({
+            ...data,
+            role: roleData?.role || 'user',
+            id: newSession.user.id,
+            email: newSession.user.email || '',
+            lastSignIn: newSession.user.last_sign_in_at,
+          });
         } else if (event === 'SIGNED_OUT') {
+          // Clear state on signout
           setUser(null);
-          setLoading(false);
-          clearError();
+          setSession(null);
         }
       }
     );
-
+    
+    // Cleanup subscription
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
+  }, [initializeAuth]);
+
+  /**
+   * Login handler
+   */
+  const login = useCallback(async (email: string, password: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (err: any) {
+      setError(err.message || 'Failed to log in');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // Fetch user data from Supabase
-  const fetchUserData = useCallback(async (userId: string) => {
+  /**
+   * Logout handler
+   */
+  const logout = useCallback(async () => {
+    setIsLoading(true);
+    
     try {
-      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setUser(null);
+      setSession(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to log out');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-      // Fetch user profile data
+  /**
+   * Update user handler
+   */
+  const updateUser = useCallback((userData: FullUserData) => {
+    setUser(userData);
+  }, []);
+
+  /**
+   * Clear error handler
+   */
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  /**
+   * Refresh session handler
+   */
+  const refreshSession = useCallback(async () => {
+    setIsLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) throw error;
+      
+      setSession(data.session);
+      
+      // Update user data if we have a session
+      if (data.session) {
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.session.user.id)
+          .single();
+          
+        if (userError) throw userError;
+        
+        // Get user role
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('*')
+          .eq('user_id', data.session.user.id)
+          .single();
+          
+        if (roleError && roleError.code !== 'PGRST116') {
+          console.error('Error fetching role:', roleError);
+        }
+        
+        // Set user state
+        setUser({
+          ...userData,
+          role: roleData?.role || 'user',
+          id: data.session.user.id,
+          email: data.session.user.email || '',
+          last_sign_in_at: data.session.user.last_sign_in_at,
+        });
+      }
+      
+      return true;
+    } catch (err: any) {
+      setError(err.message || 'Failed to refresh session');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /**
+   * Refresh user data handler
+   */
+  const refreshUserData = useCallback(async () => {
+    if (!user?.id) return null;
+    
+    try {
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles:user_roles(role, region_id, sector_id, school_id)
-        `)
-        .eq('id', userId)
+        .select('*')
+        .eq('id', user.id)
         .single();
-
+        
       if (error) throw error;
-
-      // Extract role info from user_roles
-      const role = Array.isArray(data.user_roles) && data.user_roles.length 
-        ? data.user_roles[0]?.role
-        : 'user';
       
-      const region_id = Array.isArray(data.user_roles) && data.user_roles.length 
-        ? data.user_roles[0]?.region_id 
-        : null;
+      // Get user role
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (roleError && roleError.code !== 'PGRST116') {
+        console.error('Error fetching role:', roleError);
+      }
       
-      const sector_id = Array.isArray(data.user_roles) && data.user_roles.length 
-        ? data.user_roles[0]?.sector_id 
-        : null;
-      
-      const school_id = Array.isArray(data.user_roles) && data.user_roles.length 
-        ? data.user_roles[0]?.school_id 
-        : null;
-
-      // Create the full user data
-      const userData: FullUserData = {
-        id: userId,
-        email: data.email,
-        full_name: data.full_name || '',
-        phone: data.phone,
-        role: normalizeRole(role),
-        region_id: region_id,
-        sector_id: sector_id,
-        school_id: school_id,
-        position: data.position,
-        avatar: data.avatar,
-        language: data.language || 'az',
-        status: (data.status as UserStatus) || 'active',
-        last_login: data.last_login,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        // Add compatibility fields
-        regionId: region_id,
-        sectorId: sector_id,
-        schoolId: school_id,
+      // Update user state
+      const updatedUser = {
+        ...data,
+        role: roleData?.role || 'user',
+        id: user.id,
+        email: user.email || '',
       };
-
-      setUser(userData);
-    } catch (err: any) {
-      console.error('Error fetching user data:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      
+      setUser(updatedUser);
+      return updatedUser;
+    } catch (err) {
+      console.error('Error refreshing user data:', err);
+      return null;
     }
-  }, [setUser, setLoading, setError]);
+  }, [user]);
 
   return {
-    isAuthenticated,
     user,
     session,
-    loading,
+    isAuthenticated: !!session,
+    isLoading,
     error,
-    setError,
+    login,
+    logout,
+    updateUser,
+    clearError,
+    refreshSession,
+    refreshUserData,
+    initializeAuth,
   };
 };
-
-export default useOptimizedAuth;

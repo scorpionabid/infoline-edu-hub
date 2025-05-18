@@ -1,171 +1,174 @@
-import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserStatus } from '@/types/auth';
 
-// Login with email and password
-export const loginWithEmail = async (email: string, password: string) => {
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    
-    if (error) throw error;
-    
-    return { data, error: null };
-  } catch (err) {
-    console.error('Login error:', err);
-    return { data: null, error: err };
-  }
+import { UserStatus } from '@/types/user';
+import { UserRole } from '@/types/role';
+
+// Define auth action types
+export const AUTH_ACTIONS = {
+  INITIALIZE_START: 'auth/initializeStart',
+  INITIALIZE_SUCCESS: 'auth/initializeSuccess',
+  INITIALIZE_ERROR: 'auth/initializeError',
+  LOGIN_START: 'auth/loginStart',
+  LOGIN_SUCCESS: 'auth/loginSuccess',
+  LOGIN_ERROR: 'auth/loginError',
+  LOGOUT_START: 'auth/logoutStart',
+  LOGOUT_SUCCESS: 'auth/logoutSuccess',
+  LOGOUT_ERROR: 'auth/logoutError',
+  UPDATE_USER: 'auth/updateUser',
+  CLEAR_ERROR: 'auth/clearError',
+  REFRESH_SESSION_START: 'auth/refreshSessionStart',
+  REFRESH_SESSION_SUCCESS: 'auth/refreshSessionSuccess',
+  REFRESH_SESSION_ERROR: 'auth/refreshSessionError',
+} as const;
+
+// Action creators
+export const initializeStart = () => ({
+  type: AUTH_ACTIONS.INITIALIZE_START,
+});
+
+export const initializeSuccess = (payload: { user: any; session: any }) => ({
+  type: AUTH_ACTIONS.INITIALIZE_SUCCESS,
+  payload,
+});
+
+export const initializeError = (error: Error | string) => ({
+  type: AUTH_ACTIONS.INITIALIZE_ERROR,
+  payload: typeof error === 'string' ? error : error.message,
+});
+
+export const loginStart = () => ({
+  type: AUTH_ACTIONS.LOGIN_START,
+});
+
+export const loginSuccess = (payload: { user: any; session: any }) => ({
+  type: AUTH_ACTIONS.LOGIN_SUCCESS,
+  payload,
+});
+
+export const loginError = (error: Error | string) => ({
+  type: AUTH_ACTIONS.LOGIN_ERROR,
+  payload: typeof error === 'string' ? error : error.message,
+});
+
+export const logoutStart = () => ({
+  type: AUTH_ACTIONS.LOGOUT_START,
+});
+
+export const logoutSuccess = () => ({
+  type: AUTH_ACTIONS.LOGOUT_SUCCESS,
+});
+
+export const logoutError = (error: Error | string) => ({
+  type: AUTH_ACTIONS.LOGOUT_ERROR,
+  payload: typeof error === 'string' ? error : error.message,
+});
+
+export const updateUser = (user: any) => ({
+  type: AUTH_ACTIONS.UPDATE_USER,
+  payload: user,
+});
+
+export const clearError = () => ({
+  type: AUTH_ACTIONS.CLEAR_ERROR,
+});
+
+export const refreshSessionStart = () => ({
+  type: AUTH_ACTIONS.REFRESH_SESSION_START,
+});
+
+export const refreshSessionSuccess = (payload: { user: any; session: any }) => ({
+  type: AUTH_ACTIONS.REFRESH_SESSION_SUCCESS,
+  payload,
+});
+
+export const refreshSessionError = (error: Error | string) => ({
+  type: AUTH_ACTIONS.REFRESH_SESSION_ERROR,
+  payload: typeof error === 'string' ? error : error.message,
+});
+
+// Type definitions
+export type AuthAction =
+  | ReturnType<typeof initializeStart>
+  | ReturnType<typeof initializeSuccess>
+  | ReturnType<typeof initializeError>
+  | ReturnType<typeof loginStart>
+  | ReturnType<typeof loginSuccess>
+  | ReturnType<typeof loginError>
+  | ReturnType<typeof logoutStart>
+  | ReturnType<typeof logoutSuccess>
+  | ReturnType<typeof logoutError>
+  | ReturnType<typeof updateUser>
+  | ReturnType<typeof clearError>
+  | ReturnType<typeof refreshSessionStart>
+  | ReturnType<typeof refreshSessionSuccess>
+  | ReturnType<typeof refreshSessionError>;
+
+export interface AuthState {
+  user: any | null;
+  session: any | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export const initialState: AuthState = {
+  user: null,
+  session: null,
+  isAuthenticated: false,
+  isLoading: true,
+  error: null,
 };
 
-// Register a new user
-export const registerUser = async (email: string, password: string, userData: any) => {
-  try {
-    // Register user with Supabase
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: userData.full_name,
-          role: userData.role
-        }
-      }
-    });
-    
-    if (error) throw error;
-    
-    // Create user profile
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          full_name: userData.full_name,
-          email: email,
-          phone: userData.phone,
-          position: userData.position,
-          language: userData.language || 'az',
-          status: userData.status as UserStatus || 'active',
-          notification_settings: {
-            email: true,
-            push: true,
-            app: true
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        
-      if (profileError) {
-        console.error('Error creating profile:', profileError);
-      }
-      
-      // Create user role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: data.user.id,
-          role: userData.role,
-          region_id: userData.region_id,
-          sector_id: userData.sector_id,
-          school_id: userData.school_id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        
-      if (roleError) {
-        console.error('Error creating user role:', roleError);
-      }
-    }
-    
-    return { data, error: null };
-  } catch (err) {
-    console.error('Registration error:', err);
-    return { data: null, error: err };
+// Reducer
+export const authReducer = (state: AuthState = initialState, action: AuthAction): AuthState => {
+  switch (action.type) {
+    case AUTH_ACTIONS.INITIALIZE_START:
+    case AUTH_ACTIONS.LOGIN_START:
+    case AUTH_ACTIONS.LOGOUT_START:
+    case AUTH_ACTIONS.REFRESH_SESSION_START:
+      return {
+        ...state,
+        isLoading: true,
+      };
+    case AUTH_ACTIONS.INITIALIZE_SUCCESS:
+    case AUTH_ACTIONS.LOGIN_SUCCESS:
+    case AUTH_ACTIONS.REFRESH_SESSION_SUCCESS:
+      return {
+        ...state,
+        user: action.payload.user,
+        session: action.payload.session,
+        isAuthenticated: !!action.payload.session,
+        isLoading: false,
+        error: null,
+      };
+    case AUTH_ACTIONS.LOGOUT_SUCCESS:
+      return {
+        ...state,
+        user: null,
+        session: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+      };
+    case AUTH_ACTIONS.INITIALIZE_ERROR:
+    case AUTH_ACTIONS.LOGIN_ERROR:
+    case AUTH_ACTIONS.LOGOUT_ERROR:
+    case AUTH_ACTIONS.REFRESH_SESSION_ERROR:
+      return {
+        ...state,
+        isLoading: false,
+        error: action.payload,
+      };
+    case AUTH_ACTIONS.UPDATE_USER:
+      return {
+        ...state,
+        user: action.payload,
+      };
+    case AUTH_ACTIONS.CLEAR_ERROR:
+      return {
+        ...state,
+        error: null,
+      };
+    default:
+      return state;
   }
-};
-
-// Update user profile
-export const updateUserProfile = async (userId: string, profileData: Partial<FullUserData>) => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: profileData.full_name,
-        phone: profileData.phone,
-        position: profileData.position,
-        language: profileData.language,
-        avatar: profileData.avatar,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', userId)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    return { data, error: null };
-  } catch (err) {
-    console.error('Update profile error:', err);
-    return { data: null, error: err };
-  }
-};
-
-// Get user profile
-export const getUserProfile = async (userId: string): Promise<FullUserData | null> => {
-  try {
-    // Get user profile
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    
-    if (profileError) throw profileError;
-    
-    // Get user role
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    
-    if (roleError) {
-      console.error('Error fetching user role:', roleError);
-    }
-    
-    // Combine data
-    const userData: FullUserData = {
-      id: profileData.id,
-      email: profileData.email,
-      full_name: profileData.full_name,
-      role: roleData?.role || 'schooladmin',
-      region_id: roleData?.region_id,
-      sector_id: roleData?.sector_id,
-      school_id: roleData?.school_id,
-      phone: profileData.phone,
-      position: profileData.position,
-      language: profileData.language,
-      avatar: profileData.avatar,
-      status: profileData.status as UserStatus,
-      last_login: profileData.last_login,
-      created_at: profileData.created_at,
-      updated_at: profileData.updated_at,
-      notification_settings: {
-        email: true,
-        push: true,
-        app: true
-      }
-    };
-    
-    return userData;
-  } catch (err) {
-    console.error('Get profile error:', err);
-    return null;
-  }
-};
-
-// Export the fetchUserData function that's being imported in useAuthStore.ts
-export const fetchUserData = async (userId: string): Promise<FullUserData | null> => {
-  return getUserProfile(userId);
 };

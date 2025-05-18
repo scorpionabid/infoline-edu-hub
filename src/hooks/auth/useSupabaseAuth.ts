@@ -1,271 +1,286 @@
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserStatus } from '@/types/auth';
+import { Session } from '@supabase/supabase-js';
+import { FullUserData, NotificationSettings } from '@/types/user';
+import { UserRole } from '@/types/role';
 
+/**
+ * Hook for Supabase authentication operations
+ */
 export const useSupabaseAuth = () => {
-  const [loading, setLoading] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<FullUserData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const login = async (email: string, password: string) => {
+  // Initialize authentication
+  const initializeAuth = useCallback(async () => {
+    try {
+      // Get current session
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      
+      // Set session state
+      setSession(data.session);
+      
+      // If session exists, fetch user data
+      if (data.session) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.session.user.id)
+          .single();
+        
+        if (profileError) throw profileError;
+        
+        // Get user role
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('*')
+          .eq('user_id', data.session.user.id)
+          .single();
+        
+        if (roleError && roleError.code !== 'PGRST116') {
+          console.error('Error fetching role:', roleError);
+        }
+        
+        // Set user state with complete data
+        setUser({
+          id: data.session.user.id,
+          email: data.session.user.email || '',
+          role: (roleData?.role as UserRole) || 'user',
+          ...profileData,
+        });
+      }
+    } catch (e: any) {
+      console.error('Error initializing auth:', e);
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Setup auth state change listener
+  useEffect(() => {
+    initializeAuth();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        // Update session state
+        setSession(currentSession);
+        
+        if (event === 'SIGNED_IN' && currentSession) {
+          setLoading(true);
+          
+          try {
+            // Fetch user profile
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', currentSession.user.id)
+              .single();
+            
+            if (profileError) throw profileError;
+            
+            // Get user role
+            const { data: roleData, error: roleError } = await supabase
+              .from('user_roles')
+              .select('*')
+              .eq('user_id', currentSession.user.id)
+              .single();
+            
+            if (roleError && roleError.code !== 'PGRST116') {
+              console.error('Error fetching role:', roleError);
+            }
+            
+            // Set user state with complete data
+            setUser({
+              id: currentSession.user.id,
+              email: currentSession.user.email || '',
+              role: (roleData?.role as UserRole) || 'user',
+              ...profileData,
+            });
+          } catch (e: any) {
+            console.error('Error fetching profile:', e);
+            setError(e.message);
+          } finally {
+            setLoading(false);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          // Clear user state on sign out
+          setUser(null);
+        }
+      }
+    );
+    
+    // Clean up subscription
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [initializeAuth]);
+
+  // Sign in with email and password
+  const signIn = useCallback(async (email: string, password: string) => {
     try {
       setLoading(true);
+      setError(null);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
-      });
-
-      if (error) throw error;
-
-      // Get user data from profiles
-      const userData = await fetchUserData();
-      
-      return { data, error: null, userData };
-    } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.message || 'Login failed');
-      return { data: null, error: err };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (email: string, password: string, metadata?: any) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.signUp({
-        email,
         password,
-        options: {
-          data: metadata
-        }
       });
-
+      
       if (error) throw error;
-      return { data, error: null };
-    } catch (err: any) {
-      console.error('Registration error:', err);
-      setError(err.message || 'Registration failed');
-      return { data: null, error: err };
+      return { success: true, session: data.session, user: data.user };
+    } catch (e: any) {
+      console.error('Error signing in:', e);
+      setError(e.message);
+      return { success: false, error: e.message };
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  // Sign out
+  const signOut = useCallback(async () => {
     try {
       setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-    } catch (err: any) {
-      console.error('Logout error:', err);
-      setError(err.message || 'Logout failed');
+      
+      setUser(null);
+      setSession(null);
+      return { success: true };
+    } catch (e: any) {
+      console.error('Error signing out:', e);
+      setError(e.message);
+      return { success: false, error: e.message };
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const resetPassword = async (email: string) => {
+  // Reset password
+  const resetPassword = useCallback(async (email: string) => {
     try {
       setLoading(true);
+      setError(null);
+      
       const { data, error } = await supabase.auth.resetPasswordForEmail(email);
       if (error) throw error;
-      return { data, error: null };
-    } catch (err: any) {
-      console.error('Reset password error:', err);
-      setError(err.message || 'Reset password failed');
-      return { data: null, error: err };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updatePassword = async (password: string) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.updateUser({
-        password
-      });
-      if (error) throw error;
-      return { data, error: null };
-    } catch (err: any) {
-      console.error('Update password error:', err);
-      setError(err.message || 'Update password failed');
-      return { data: null, error: err };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const sendPasswordResetEmail = async (email: string) => {
-    return resetPassword(email);
-  };
-
-  const refreshSession = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.refreshSession();
-      if (error) throw error;
-      return { data, error: null };
-    } catch (err: any) {
-      console.error('Refresh session error:', err);
-      setError(err.message || 'Refresh session failed');
-      return { data: null, error: err };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getSession = async () => {
-    try {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) throw error;
-      return data.session;
-    } catch (err: any) {
-      console.error('Get session error:', err);
-      return null;
-    }
-  };
-
-  const updateProfile = async (profileData: Partial<FullUserData>) => {
-    try {
-      setLoading(true);
       
-      // Update profiles table
+      return { success: true };
+    } catch (e: any) {
+      console.error('Error resetting password:', e);
+      setError(e.message);
+      return { success: false, error: e.message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Update user password
+  const updatePassword = useCallback(async (newPassword: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      
+      if (error) throw error;
+      return { success: true };
+    } catch (e: any) {
+      console.error('Error updating password:', e);
+      setError(e.message);
+      return { success: false, error: e.message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Update user profile
+  const updateProfile = useCallback(async (profileData: Partial<FullUserData>) => {
+    if (!user) {
+      setError('No authenticated user');
+      return { success: false, error: 'No authenticated user' };
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Update profile in the profiles table
       const { data, error } = await supabase
         .from('profiles')
         .update({
           full_name: profileData.full_name,
+          avatar_url: profileData.avatar_url,
           phone: profileData.phone,
           position: profileData.position,
-          avatar: profileData.avatar,
           language: profileData.language,
-          updated_at: new Date().toISOString()
+          status: profileData.status,
         })
-        .eq('id', profileData.id)
-        .select()
-        .single();
-
+        .eq('id', user.id);
+      
       if (error) throw error;
       
-      return { data, error: null };
-    } catch (err: any) {
-      console.error('Update profile error:', err);
-      setError(err.message || 'Update profile failed');
-      return { data: null, error: err };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUserData = async (): Promise<FullUserData | null> => {
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) return null;
-      
-      // Get user role and profile data
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-        
-      if (roleError && roleError.code !== 'PGRST116') {
-        console.error('Error fetching user role:', roleError);
-      }
-      
-      // Get user profile data
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-        
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Error fetching profile:', profileError);
-      }
-      
-      if (!profileData) {
-        console.warn('No profile data found for user:', user.id);
-      }
-      
-      // Combine data
-      const userData: FullUserData = {
-        id: user.id,
-        email: user.email || '',
-        full_name: profileData?.full_name || user.email?.split('@')[0] || 'User',
-        role: roleData?.role || 'schooladmin',
-        region_id: roleData?.region_id,
-        sector_id: roleData?.sector_id,
-        school_id: roleData?.school_id,
-        phone: profileData?.phone,
-        position: profileData?.position,
-        language: profileData?.language || 'az',
-        avatar: profileData?.avatar,
-        status: (profileData?.status as UserStatus) || 'active',
-        last_login: profileData?.last_login,
-        created_at: profileData?.created_at,
-        updated_at: profileData?.updated_at,
-        notification_settings: {
+      // Update notification settings if provided
+      if (profileData.notificationSettings || profileData.notification_settings) {
+        const notificationSettings: NotificationSettings = profileData.notificationSettings || profileData.notification_settings || {
           email: true,
-          push: true,
-          app: true
-        }
-      };
-      
-      return userData;
-    } catch (err: any) {
-      console.error('Error fetching user data:', err);
-      return null;
-    }
-  };
-
-  const updateUserData = async (userData: Partial<FullUserData>) => {
-    try {
-      setLoading(true);
-      
-      // Update profile data
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: userData.full_name,
-          phone: userData.phone,
-          position: userData.position,
-          language: userData.language,
-          avatar: userData.avatar,
-          status: userData.status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userData.id);
+          push: false,
+          inApp: true,
+          system: true,
+          deadline: true,
+          sms: false,
+          deadlineReminders: true,
+          statusUpdates: true,
+          weeklyReports: false,
+        };
         
-      if (error) throw error;
+        // Store notification settings in user metadata
+        const { data: metaData, error: metaError } = await supabase.auth.updateUser({
+          data: { notification_settings: notificationSettings }
+        });
+        
+        if (metaError) throw metaError;
+      }
       
-      return { success: true, error: null };
-    } catch (err: any) {
-      console.error('Update user data error:', err);
-      setError(err.message || 'Update user data failed');
-      return { success: false, error: err };
+      // Update user state
+      setUser({
+        ...user,
+        ...profileData,
+      });
+      
+      return { success: true };
+    } catch (e: any) {
+      console.error('Error updating profile:', e);
+      setError(e.message);
+      return { success: false, error: e.message };
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  // Clear error state
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
 
   return {
-    login,
-    register,
-    logout,
-    resetPassword,
-    updatePassword,
-    sendPasswordResetEmail,
-    refreshSession,
-    getSession,
-    updateProfile,
-    fetchUserData,
-    updateUserData,
+    user,
+    session,
     loading,
     error,
-    setError
+    signIn,
+    signOut,
+    resetPassword,
+    updatePassword,
+    updateProfile,
+    clearError,
+    initializeAuth,
   };
 };

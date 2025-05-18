@@ -46,6 +46,7 @@ export interface FullUserData {
   created_at?: string;
   updated_at?: string;
   last_sign_in_at?: string;
+  last_login?: string;
   name?: string;
   entityName?: {
     region?: string;
@@ -57,6 +58,8 @@ export interface FullUserData {
   notificationSettings?: NotificationSettings;
   preferences?: any;
   avatar?: string;
+  phone?: string;
+  position?: string;
 }
 
 export interface UserFormData {

@@ -63,7 +63,7 @@ export async function updateUserProfile(userId: string, data: Partial<FullUserDa
         .from('user_roles')
         .upsert({
           user_id: userId,
-          role: normalizedRole,
+          role: normalizedRole as "superadmin" | "regionadmin" | "sectoradmin" | "schooladmin", // Type cast to match the expected enum
         });
       
       if (roleError) throw roleError;

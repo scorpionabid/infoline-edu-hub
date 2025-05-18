@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from 'react';
 
-// Generic debounce hook for any value type
-function useDebounce<T>(value: T, delay: number): T {
+function useDebounce<T>(value: T, delay: number = 500): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
@@ -19,3 +18,4 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default useDebounce;
+export { useDebounce };
