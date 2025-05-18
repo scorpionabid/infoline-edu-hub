@@ -1,73 +1,45 @@
 
-import { Column } from './column';
-
-export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved' | 'pending' | string;
-export type CategoryAssignment = 'all' | 'sectors' | 'schools' | 'regions';
+export type CategoryStatus = 'active' | 'draft' | 'archived';
+export type CategoryAssignment = 'all' | 'region' | 'sector' | 'school';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  status: CategoryStatus | string;
-  priority?: number;
+  status?: CategoryStatus;
   created_at?: string;
   updated_at?: string;
-  deadline?: string;
+  deadline?: string | Date;
+  column_count?: number;
+  priority?: number;
   archived?: boolean;
-  column_count?: number;
-  columnCount?: number; // Alias for compatibility
-  assignment?: CategoryAssignment | string;
+  assignment?: CategoryAssignment;
   completionRate?: number;
-}
-
-export interface CategoryItem {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-  completionRate: number;
-  deadline?: string;
-  daysLeft?: number;
-  columnCount?: number;
-}
-
-export interface CategoryWithColumns extends Category {
-  columns: Column[];
-  columnCount?: number;
-  column_count?: number;
-  completionRate?: number;
-}
-
-export interface TabDefinition {
-  id: string;
-  title: string;
-  label?: string;
-  columns?: any[];
 }
 
 export interface CategoryFilter {
   search: string;
   status: CategoryStatus | '';
   assignment: CategoryAssignment | '';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface CategoryFilterProps {
-  filters: CategoryFilter;
-  onChange: (filters: CategoryFilter) => void;
-  showAssignmentFilter?: boolean;
+  filter: CategoryFilter;
+  onFilterChange: (filter: Partial<CategoryFilter>) => void;
 }
 
 export interface CreateCategoryDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCategoryCreated: () => Promise<void>;
+  onClose: () => void;
+  onSuccess?: (category: Category) => void;
 }
 
 export interface AddCategoryFormData {
   name: string;
   description?: string;
-  assignment: CategoryAssignment;
+  deadline?: Date | null;
   status: CategoryStatus;
-  priority: number;
-  deadline?: string | null;
+  assignment: CategoryAssignment;
 }

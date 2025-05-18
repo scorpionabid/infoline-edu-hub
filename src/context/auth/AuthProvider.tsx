@@ -1,44 +1,13 @@
+
 import React, { createContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { AuthContextType, FullUserData } from '@/types/auth';
+import { AuthContextType } from '@/types/auth';
 import { useAuth2 } from '@/hooks/auth/useAuth2';
 import { AuthService } from '@/services/auth/AuthService';
 
-// Use the AuthContextType from @/types/auth.ts instead of redefining it
-export const AuthContext = createContext<AuthContextType>({
-  user: null,
-  session: null,
-  isAuthenticated: false,
-  authenticated: false,
-  loading: true,
-  error: null,
-  logIn: async () => ({ data: null, error: null }),
-  login: async () => false,
-  register: async () => null,
-  logOut: async () => {},
-  logout: async () => {},
-  resetPassword: async () => null,
-  updatePassword: async () => ({ data: null, error: null }),
-  sendPasswordResetEmail: async () => null,
-  refreshSession: async () => {},
-  getSession: async () => null,
-  setSession: () => {},
-  updateProfile: async () => ({ data: null, error: null }),
-  fetchUserData: async () => null,
-  clearErrors: () => {},
-  setUser: () => {},
-  setLoading: () => {},
-  setError: () => {},
-  updateUserData: async () => ({ data: null, error: null }),
-  clearError: () => {},
-  refreshProfile: async () => null,
-  updateUser: () => {},
-  updateUserProfile: async () => ({ data: null, error: null }),
-  signOut: async () => {},
-  createUser: async () => ({ data: null, error: null }),
-  signup: async () => ({ user: null, error: null })
-});
+// Use the existing AuthContext from context.ts instead of creating a new one
+import { AuthContext } from './context';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuth2();
@@ -178,7 +147,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     },
     
-    // Add the missing refreshProfile method
     refreshProfile: async () => {
       try {
         if (!auth.user?.id) {
