@@ -3,11 +3,11 @@ import { User } from '@/types/user';
 export const mockUsers: User[] = [
   {
     id: '1',
-    email: 'admin@example.com',
-    full_name: 'Super Admin',
+    full_name: 'John Doe',
+    email: 'john@example.com',
+    avatar_url: 'https://i.pravatar.cc/150?img=1',
     role: 'superadmin',
     status: 'active',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
     notificationSettings: {
       email: true,
       inApp: true,
@@ -17,20 +17,20 @@ export const mockUsers: User[] = [
       deadline: true,
       deadlineReminders: true,
       statusUpdates: true,
-      weeklyReports: false
+      weeklyReports: true
     }
   },
   {
     id: '2',
-    email: 'region@example.com',
-    full_name: 'Region Admin',
+    full_name: 'Jane Smith',
+    email: 'jane@example.com',
+    avatar_url: 'https://i.pravatar.cc/150?img=2',
     role: 'regionadmin',
     status: 'active',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=region',
     notificationSettings: {
-      email: true,
+      email: false,
       inApp: true,
-      push: true,
+      push: false,
       sms: false,
       system: true,
       deadline: true,
@@ -41,124 +41,61 @@ export const mockUsers: User[] = [
   },
   {
     id: '3',
-    email: 'sector@example.com',
-    full_name: 'Sector Admin',
+    full_name: 'Alice Johnson',
+    email: 'alice@example.com',
+    avatar_url: 'https://i.pravatar.cc/150?img=3',
     role: 'sectoradmin',
-    status: 'active',
-    region_id: 'reg1',
-    sector_id: 'sec1',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sector',
+    status: 'inactive',
     notificationSettings: {
       email: true,
-      inApp: true,
+      inApp: false,
       push: true,
       sms: false,
-      system: true,
-      deadline: true,
-      deadlineReminders: true,
+      system: false,
+      deadline: false,
+      deadlineReminders: false,
       statusUpdates: true,
-      weeklyReports: false
+      weeklyReports: true
     }
   },
   {
     id: '4',
-    email: 'school@example.com',
-    full_name: 'School Admin',
+    full_name: 'Bob Williams',
+    email: 'bob@example.com',
+    avatar_url: 'https://i.pravatar.cc/150?img=4',
     role: 'schooladmin',
-    status: 'active',
-    region_id: 'reg1',
-    sector_id: 'sec1',
-    school_id: 'sch1',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=school',
+    status: 'pending',
     notificationSettings: {
       email: true,
       inApp: true,
       push: true,
-      sms: false,
+      sms: true,
       system: true,
       deadline: true,
       deadlineReminders: true,
       statusUpdates: true,
-      weeklyReports: false
+      weeklyReports: true
     }
   },
   {
     id: '5',
-    email: 'user@example.com',
-    full_name: 'Regular User',
+    full_name: 'Charlie Brown',
+    email: 'charlie@example.com',
+    avatar_url: 'https://i.pravatar.cc/150?img=5',
     role: 'user',
     status: 'active',
-    region_id: 'reg1',
-    sector_id: 'sec1',
-    school_id: 'sch1',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user',
     notificationSettings: {
-      email: true,
-      inApp: true,
-      push: true,
+      email: false,
+      inApp: false,
+      push: false,
       sms: false,
-      system: true,
-      deadline: true,
-      deadlineReminders: true,
-      statusUpdates: true,
+      system: false,
+      deadline: false,
+      deadlineReminders: false,
+      statusUpdates: false,
       weeklyReports: false
     }
   },
-  {
-    id: '6',
-    email: 'inactive@example.com',
-    full_name: 'Inactive User',
-    role: 'user',
-    status: 'inactive',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=inactive',
-    notificationSettings: {
-      email: true,
-      inApp: true,
-      push: true,
-      sms: false,
-      system: true,
-      deadline: true,
-      deadlineReminders: true,
-      statusUpdates: true,
-      weeklyReports: false
-    }
-  },
-  {
-    id: '7',
-    email: 'pending@example.com',
-    full_name: 'Pending User',
-    role: 'user',
-    status: 'pending',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=pending',
-    notificationSettings: {
-      email: true,
-      inApp: true,
-      push: true,
-      sms: false,
-      system: true,
-      deadline: true,
-      deadlineReminders: true,
-      statusUpdates: true,
-      weeklyReports: false
-    }
-  },
-  {
-    id: '8',
-    email: 'suspended@example.com',
-    full_name: 'Suspended User',
-    role: 'user',
-    status: 'suspended',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=suspended',
-    notificationSettings: {
-      email: true,
-      inApp: true,
-      push: true,
-      sms: false,
-      system: true,
-      deadline: true,
-      deadlineReminders: true,
-      statusUpdates: true,
-      weeklyReports: false
-    }
-  }
 ];
+
+export default mockUsers;

@@ -63,7 +63,7 @@ export async function updateUserProfile(userId: string, data: Partial<FullUserDa
         .from('user_roles')
         .upsert({
           user_id: userId,
-          role: normalizedRole
+          role: normalizedRole,
         });
       
       if (roleError) throw roleError;

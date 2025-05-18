@@ -29,14 +29,14 @@ function App() {
   }, [initializeAuth]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light">
+    <ThemeProvider defaultTheme="light">
+      <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Toaster position="top-right" />
           <AppRoutes />
         </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
