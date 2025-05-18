@@ -2,7 +2,6 @@
 import React, { useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { AppRoutes } from '@/routes/AppRoutes';
-import { AuthProvider } from '@/context/auth/AuthProvider';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
 function App() {
@@ -25,10 +24,10 @@ function App() {
   }, [initializeAuth]);
 
   return (
-    <AuthProvider>
+    <>
       <Toaster position="top-right" />
       <AppRoutes />
-    </AuthProvider>
+    </>
   );
 }
 

@@ -46,6 +46,8 @@ export interface FullUserData extends User {
   createdAt?: string;
   updatedAt?: string;
   notification_settings?: NotificationSettings;
+  lastSignIn?: string;
+  last_sign_in_at?: string;
 }
 
 export interface NotificationSettings {
@@ -109,6 +111,11 @@ export function normalizeUserData(userData: any): FullUserData {
     avatar_url: userData.avatar_url || userData.avatar,
     avatar: userData.avatar_url || userData.avatar,
     notificationSettings: userData.notification_settings || userData.notificationSettings || defaultNotificationSettings,
-    notification_settings: userData.notification_settings || userData.notificationSettings || defaultNotificationSettings
+    notification_settings: userData.notification_settings || userData.notificationSettings || defaultNotificationSettings,
+    lastSignIn: userData.last_sign_in_at || userData.lastSignIn,
+    last_sign_in_at: userData.last_sign_in_at || userData.lastSignIn
   };
 }
+
+// Re-export UserRole here for backwards compatibility
+export type { UserRole };

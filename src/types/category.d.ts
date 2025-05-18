@@ -1,6 +1,6 @@
 
-export type CategoryStatus = 'active' | 'draft' | 'archived';
-export type CategoryAssignment = 'all' | 'region' | 'sector' | 'school';
+export type CategoryStatus = 'active' | 'draft' | 'archived' | 'inactive' | 'approved' | 'pending' | string;
+export type CategoryAssignment = 'all' | 'region' | 'sector' | 'school' | 'sectors' | 'schools' | 'regions' | string;
 
 export interface Category {
   id: string;
@@ -19,8 +19,8 @@ export interface Category {
 
 export interface CategoryFilter {
   search: string;
-  status: CategoryStatus | '';
-  assignment: CategoryAssignment | '';
+  status: CategoryStatus | string | null;
+  assignment: CategoryAssignment | string | null;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -32,14 +32,27 @@ export interface CategoryFilterProps {
 
 export interface CreateCategoryDialogProps {
   open: boolean;
-  onClose: () => void;
-  onSuccess?: (category: Category) => void;
+  onOpenChange: (open: boolean) => void;
+  onCategoryCreated: () => Promise<void>;
 }
 
 export interface AddCategoryFormData {
   name: string;
   description?: string;
-  deadline?: Date | null;
-  status: CategoryStatus;
-  assignment: CategoryAssignment;
+  deadline?: Date | null | string;
+  status?: CategoryStatus;
+  assignment?: CategoryAssignment;
+  priority?: number;
+}
+
+export interface CategoryWithColumns extends Category {
+  columns: any[];
+}
+
+// Additional type definitions to ensure compatibility
+export interface TabDefinition {
+  id: string;
+  title: string;
+  label?: string;
+  columns?: any[];
 }

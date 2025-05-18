@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguage } from '@/hooks/useTranslation';
 import { 
   Dialog, 
   DialogContent, 
@@ -37,7 +36,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { az } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { AddCategoryFormData } from '@/hooks/categories/useCategoryOperations';
+import { AddCategoryFormData } from '@/types/category';
 
 // Form validation schema
 const formSchema = z.object({

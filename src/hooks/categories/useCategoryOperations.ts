@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Category } from '@/types/category';
+import { Category, AddCategoryFormData } from '@/types/category';
 
 export const useCategoryOperations = () => {
   const [loading, setLoading] = useState(false);
@@ -91,4 +91,5 @@ export const useCategoryOperations = () => {
   };
 };
 
+export type { AddCategoryFormData };
 export default useCategoryOperations;
