@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../navigation/Navbar';
 import Sidebar from './Sidebar';
 import UserProfile from '../auth/UserProfile';
-import { useAuth } from '@/context/auth';
-import { usePermissions } from '@/hooks/auth';
+import { useAuth } from '@/context/auth/useAuth';  // Make sure this path is correct
+import { usePermissions } from '@/hooks/auth/usePermissions';
 import { cn } from '@/lib/utils';
 
 interface SidebarLayoutProps {

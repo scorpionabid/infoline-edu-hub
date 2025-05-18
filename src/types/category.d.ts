@@ -1,6 +1,7 @@
 
-export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved' | 'pending' | string;
+import { Column } from './column';
 
+export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved' | 'pending' | string;
 export type CategoryAssignment = 'all' | 'sectors' | 'schools' | 'regions';
 
 export interface Category {
@@ -31,7 +32,7 @@ export interface CategoryItem {
 }
 
 export interface CategoryWithColumns extends Category {
-  columns: import('./column').Column[];
+  columns: Column[];
   columnCount?: number;
   column_count?: number;
   completionRate?: number;
