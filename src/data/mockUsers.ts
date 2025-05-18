@@ -1,5 +1,5 @@
 
-import { User } from '@/types/user';
+import { User, UserRole } from '@/types/user';
 
 export const mockUsers: User[] = [
   {

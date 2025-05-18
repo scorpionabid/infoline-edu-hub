@@ -1,5 +1,6 @@
 
-import { UserRole } from './role';
+// Define UserRole type and export it directly
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user' | string;
 
 export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | string;
 
@@ -9,7 +10,7 @@ export interface User {
   email: string;
   avatar_url?: string;
   role?: UserRole;
-  status?: 'active' | 'inactive' | 'pending' | string;
+  status?: UserStatus | string;
   name?: string;
   entityName?: string;
   // Adding support for notification settings
@@ -82,13 +83,10 @@ export interface UserFormData {
 export interface UserRoleData {
   id: string;
   user_id: string;
-  role: string;
+  role: UserRole;
   created_at?: string;
   updated_at?: string;
   school_id?: string;
   sector_id?: string;
   region_id?: string;
 }
-
-// Export UserRole explicitly from here for backward compatibility
-export { UserRole };

@@ -1,25 +1,36 @@
 
+export type ColumnType = 
+  'text' | 'textarea' | 'number' | 'select' | 'multiselect' | 'checkbox' | 
+  'radio' | 'date' | 'time' | 'datetime' | 'file' | 'image' | 'email' | 'phone' | 'tel' | 'url' | 'password' | 
+  'color' | 'range' | 'richtext';
+
 export interface Column {
   id: string;
-  category_id?: string;
+  category_id: string;  // This should be required for consistency
   name: string;
-  type: string;
-  status?: string;
-  is_required?: boolean;
-  default_value?: string;
+  type: ColumnType | string;
+  is_required: boolean;
   help_text?: string;
   placeholder?: string;
-  order_index?: number;
-  options?: any;
-  validation?: any;
+  default_value?: string;
+  options?: ColumnOption[];
+  validation?: ColumnValidation;
+  order_index: number;
   created_at?: string;
   updated_at?: string;
+  status?: string;
   section?: string;
+  description?: string;
+  color?: string;
 }
 
 export interface ColumnOption {
-  value: string;
+  id?: string;
   label: string;
+  value: string;
+  color?: string;
+  description?: string;
+  disabled?: boolean;
 }
 
 export interface ColumnValidation {
@@ -29,21 +40,15 @@ export interface ColumnValidation {
   required?: boolean;
   minLength?: number;
   maxLength?: number;
+  minValue?: number;
+  maxValue?: number;
+  errorMessage?: string;
+  patternMessage?: string;
 }
-
-export type ColumnType = 
-  | 'text'
-  | 'number' 
-  | 'select'
-  | 'multiselect'
-  | 'date'
-  | 'textarea'
-  | 'checkbox'
-  | 'radio';
 
 export interface ColumnFormData {
   id?: string;
-  category_id?: string;
+  category_id: string;
   name: string;
   type: ColumnType;
   status?: string;

@@ -93,6 +93,12 @@ export interface DataEntrySaveBarProps {
   onSave: () => Promise<any>;
   errors: boolean;
   isPendingApproval: boolean;
+  lastSaved?: string;
+  completionPercentage?: number;
+  onSubmit?: () => void;
+  onDownloadTemplate?: () => void;
+  onUploadData?: (file: File) => void;
+  readOnly?: boolean;
 }
 
 export interface DataEntryRecord extends DataEntry {

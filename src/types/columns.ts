@@ -5,12 +5,12 @@ export interface Column {
   id: string;
   category_id: string;
   name: string;
-  type: ColumnType; // string yerinə ColumnType istifadə edirik
+  type: ColumnType;
   is_required: boolean;
   placeholder?: string;
   help_text?: string;
   order_index?: number;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | string;
   validation?: {
     min?: number;
     max?: number;
@@ -24,10 +24,11 @@ export interface Column {
   created_at?: string;
   updated_at?: string;
   deadline?: Date;
+  section?: string;
 }
 
 export interface ColumnOption {
-  id?: string; // id əlavə edirik
+  id?: string;
   label: string;
   value: string;
   color?: string;
@@ -54,4 +55,5 @@ export interface CategoryWithColumns {
   columns: Column[];
   created_at?: string;
   updated_at?: string;
+  completionRate?: number;
 }

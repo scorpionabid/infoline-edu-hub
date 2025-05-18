@@ -1,16 +1,25 @@
 
+// Import the required types from column.d.ts
+import { Column, ColumnType } from './column';
+
+export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved' | 'pending' | string;
+
+export type CategoryAssignment = 'all' | 'sectors' | 'schools' | 'regions';
+
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  archived?: boolean;
-  status?: string;
-  assignment?: string;
-  deadline?: string | Date;
+  status?: CategoryStatus | string;
   priority?: number;
-  column_count?: number;
   created_at?: string;
   updated_at?: string;
+  deadline?: string | Date;
+  archived?: boolean;
+  column_count?: number;
+  columnCount?: number; // Alias for compatibility
+  assignment?: CategoryAssignment | string;
+  completionRate?: number;
 }
 
 export interface CategoryFilter {
@@ -23,20 +32,13 @@ export interface CategoryWithColumns extends Category {
   columns: Column[];
 }
 
-export interface Column {
+// Additional type definitions to ensure compatibility
+export interface TabDefinition {
   id: string;
-  name: string;
-  type: string;
-  category_id?: string;
-  is_required?: boolean;
-  help_text?: string;
-  placeholder?: string;
-  options?: any;
-  validation?: any;
-  default_value?: string;
-  order_index?: number;
-  status?: string;
-  section?: string;
-  created_at?: string;
-  updated_at?: string;
+  title: string;
+  label?: string;
+  columns?: any[];
 }
+
+// Export all the interfaces to ensure they're available
+export { ColumnType, Column };
