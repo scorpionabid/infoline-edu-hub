@@ -1,8 +1,9 @@
 
+import { useContext } from 'react';
 import { useLanguageSafe } from '@/context/LanguageContext';
 
 export const useTranslation = () => {
-  return useLanguageSafe();
+  return useLanguageSafe(); 
 };
 
 export { useLanguageSafe as useLanguage };

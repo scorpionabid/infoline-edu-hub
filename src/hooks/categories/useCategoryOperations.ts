@@ -1,15 +1,17 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Category, AddCategoryFormData } from '@/types/category';
+import { Category, AddCategoryFormData, CategoryStatus } from '@/types/category';
 
 export const useCategoryOperations = () => {
   const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const createCategory = async (category: Omit<Category, 'id'>) => {
     try {
       setLoading(true);
+      setIsLoading(true);
       setError(null);
       
       const { data, error } = await supabase
@@ -27,12 +29,18 @@ export const useCategoryOperations = () => {
       return { data: null, error: err.message };
     } finally {
       setLoading(false);
+      setIsLoading(false);
     }
+  };
+
+  const addCategory = async (category: Omit<Category, 'id'>) => {
+    return createCategory(category);
   };
 
   const updateCategory = async (id: string, updates: Partial<Category>) => {
     try {
       setLoading(true);
+      setIsLoading(true);
       setError(null);
       
       const { data, error } = await supabase
@@ -51,12 +59,14 @@ export const useCategoryOperations = () => {
       return { data: null, error: err.message };
     } finally {
       setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const deleteCategory = async (id: string) => {
     try {
       setLoading(true);
+      setIsLoading(true);
       setError(null);
       
       const { error } = await supabase
@@ -74,6 +84,7 @@ export const useCategoryOperations = () => {
       return { success: false, error: err.message };
     } finally {
       setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -81,15 +92,22 @@ export const useCategoryOperations = () => {
     return updateCategory(id, { status: 'archived', archived: true });
   };
 
+  const updateCategoryStatus = async (id: string, status: CategoryStatus) => {
+    return updateCategory(id, { status });
+  };
+
   return {
     loading,
+    isLoading,
     error,
     createCategory,
+    addCategory,
     updateCategory,
+    updateCategoryStatus,
     deleteCategory,
     archiveCategory,
   };
 };
 
-export type { AddCategoryFormData };
+export type { AddCategoryFormData, CategoryStatus };
 export default useCategoryOperations;

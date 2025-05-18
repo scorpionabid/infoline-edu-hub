@@ -28,6 +28,26 @@ export interface CategoryFilter {
   assignment: string | null;
 }
 
+export interface CategoryFilterProps {
+  filter: CategoryFilter;
+  onFilterChange: (filter: Partial<CategoryFilter>) => void;
+}
+
+export interface AddCategoryFormData {
+  name: string;
+  description?: string;
+  deadline?: Date | null | string;
+  status?: CategoryStatus;
+  assignment?: CategoryAssignment;
+  priority?: number;
+}
+
+export interface CreateCategoryDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCategoryCreated: () => Promise<void>;
+}
+
 export interface CategoryWithColumns extends Category {
   columns: Column[];
 }
