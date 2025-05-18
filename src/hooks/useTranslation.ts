@@ -1,10 +1,10 @@
 
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 
 export const useTranslation = () => {
-  return useLanguage();
+  return useLanguageSafe();
 };
 
-export { useLanguage };
+export { useLanguageSafe as useLanguage };
 
 export default useTranslation;

@@ -9,7 +9,7 @@ export interface LanguageInfo {
 }
 
 // Translate funksiyasının interfeysi
-export type TranslateFunction = (key: string) => string;
+export type TranslateFunction = (key: string, options?: any) => string;
 
 // Context tipi
 export interface LanguageContextType {
@@ -18,4 +18,8 @@ export interface LanguageContextType {
   t: TranslateFunction;
   languages: Record<Language, LanguageInfo>;
   currentLanguage?: Language; // NavigationMenu.tsx üçün əlavə edildi
+  i18n?: any;
+  isRtl?: boolean;
+  availableLanguages?: string[];
+  supportedLanguages?: string[];
 }

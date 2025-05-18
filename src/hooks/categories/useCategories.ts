@@ -1,204 +1,161 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Category, CategoryFilter, CategoryStatus } from '@/types/category';
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config/environment';
-
-// Enhanced fetch utility to prevent request loops and handle authentication
-async function fetchWithControlledRetry<T>(
-  url: string, 
-  options: RequestInit = {}, 
-  maxRetries = 3
-): Promise<T | null> {
-  const authStore = useAuthStore.getState();
-  const session = authStore.session;
-
-  const defaultHeaders: Record<string, string> = {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-    'Accept-Profile': 'public',
-    'apikey': SUPABASE_ANON_KEY
-  };
-
-  // Add authentication headers if session exists
-  if (session?.access_token) {
-    defaultHeaders['Authorization'] = `Bearer ${session.access_token}`;
-  }
-
-  const fetchOptions: RequestInit = {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options.headers,
-    },
-    mode: 'cors',
-    credentials: 'include',
-  };
-
-  let retries = 0;
-  const baseDelay = 1000; // 1 second base delay
-
-  while (retries < maxRetries) {
-    try {
-      // Check if session is valid before making the request
-      if (!session) {
-        console.warn('No active session, skipping fetch');
-        return null;
-      }
-
-      const response = await fetch(url, fetchOptions);
-
-      if (!response.ok) {
-        // Handle specific authentication-related errors
-        if (response.status === 401) {
-          console.warn('Unauthorized access, attempting to refresh session');
-          await authStore.refreshSession();
-          return null;
-        }
-
-        console.warn(`Fetch error (attempt ${retries + 1}):`, {
-          status: response.status,
-          statusText: response.statusText,
-          url
-        });
-
-        // Specific handling for different status codes
-        if (response.status === 429) {
-          // Too Many Requests - use longer backoff
-          await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, retries)));
-        } else if (response.status >= 500) {
-          // Server errors - retry with exponential backoff
-          await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, retries)));
-        } else {
-          // For other errors, break the retry loop
-          break;
-        }
-
-        retries++;
-        continue;
-      }
-
-      const data = await response.json();
-      return data as T;
-    } catch (error) {
-      console.error(`Network error (attempt ${retries + 1}):`, error);
-      
-      // Network errors or parsing errors
-      await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, retries)));
-      retries++;
-    }
-  }
-
-  toast.error('Failed to fetch data after multiple attempts');
-  return null;
-}
+import { useState, useEffect, useMemo } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Category, CategoryFilter } from '@/types/category';
 
 export const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
-  const [totalCount, setTotalCount] = useState(0);
+  const [filter, setFilter] = useState<CategoryFilter>({
+    search: '',
+    status: '',
+    assignment: ''
+  });
 
-  const { session, user } = useAuthStore();
-
-  const fetchCategories = useCallback(async (filter: CategoryFilter = {}) => {
-    // Only fetch if authenticated
-    if (!session || !user) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
+  // Fetch categories from Supabase
+  const fetchCategories = async () => {
     try {
-      // Construct Supabase REST API URL with filters
-      const baseUrl = `${SUPABASE_URL}/rest/v1/categories`;
-      const queryParams = new URLSearchParams({
-        select: '*',
-        order: 'name.asc',
-        ...(filter.status ? { status: Array.isArray(filter.status) ? filter.status.join(',') : filter.status } : {}),
-        ...(filter.search ? { name: `ilike.%${filter.search}%` } : {}),
-        offset: String((currentPage - 1) * pageSize),
-        limit: String(pageSize)
-      });
+      setLoading(true);
+      setError(null);
 
-      const url = `${baseUrl}?${queryParams}`;
+      let query = supabase
+        .from('categories')
+        .select('*');
 
-      const data = await fetchWithControlledRetry<Category[]>(url);
-
-      if (data) {
-        setCategories(data);
-        setTotalCount(data.length);
+      // Apply filters if they exist
+      if (filter.status) {
+        query = query.eq('status', filter.status);
       }
-    } catch (error: any) {
-      setError(error.message);
-      toast.error('Kateqoriyalar yüklənərkən xəta baş verdi');
+
+      if (filter.assignment) {
+        query = query.eq('assignment', filter.assignment);
+      }
+
+      if (filter.search) {
+        query = query.ilike('name', `%${filter.search}%`);
+      }
+
+      // Add sorting if specified
+      if (filter.sortBy) {
+        const order = filter.sortOrder || 'asc';
+        query = query.order(filter.sortBy, { ascending: order === 'asc' });
+      } else {
+        // Default sorting
+        query = query.order('created_at', { ascending: false });
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      setCategories(data || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch categories');
+      console.error('Error fetching categories:', err);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, session, user]);
+  };
 
+  // Update filter and refetch
+  const updateFilter = (newFilter: Partial<CategoryFilter>) => {
+    setFilter(prev => ({
+      ...prev,
+      ...newFilter
+    }));
+  };
+
+  // Effect to fetch categories when the filter changes
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+  }, [filter]);
 
-  const createCategory = async (category: {
-    name: string;
-    description: string;
-    deadline: string | Date;  
-    status: CategoryStatus;
-    priority: number;
-    assignment: string;
-    archived: boolean;
-  }) => {
-    // Only create if authenticated
-    if (!session || !user) {
-      toast.error('Autentifikasiya tələb olunur');
-      return null;
-    }
-
+  // Create, update and delete functions
+  const createCategory = async (category: Omit<Category, 'id'>) => {
     try {
-      const baseUrl = `${SUPABASE_URL}/rest/v1/categories`;
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([category])
+        .select();
+
+      if (error) throw error;
       
-      const processedCategory = {
-        ...category,
-        deadline: typeof category.deadline === 'object' && category.deadline instanceof Date 
-          ? category.deadline.toISOString().split('T')[0] 
-          : category.deadline
-      };
-
-      const data = await fetchWithControlledRetry<Category[]>(baseUrl, {
-        method: 'POST',
-        body: JSON.stringify(processedCategory)
-      });
-
-      if (data && data.length > 0) {
-        const newCategory = data[0];
-        setCategories(prev => [...prev, newCategory]);
-        toast.success('Kateqoriya uğurla yaradıldı');
-        return newCategory;
-      }
-      return null;
-    } catch (error) {
-      console.error('Unexpected error creating category:', error);
-      toast.error('Kateqoriya yaradılarkən xəta baş verdi');
-      return null;
+      setCategories(prev => [...prev, data[0]]);
+      return { data: data[0], error: null };
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error creating category:', err);
+      return { data: null, error: err };
+    } finally {
+      setLoading(false);
     }
   };
+
+  const updateCategory = async (id: string, updates: Partial<Category>) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('categories')
+        .update(updates)
+        .eq('id', id)
+        .select();
+
+      if (error) throw error;
+      
+      setCategories(prev => 
+        prev.map(cat => cat.id === id ? { ...cat, ...updates } : cat)
+      );
+      return { data: data[0], error: null };
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error updating category:', err);
+      return { data: null, error: err };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteCategory = async (id: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setCategories(prev => prev.filter(cat => cat.id !== id));
+      return { error: null };
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error deleting category:', err);
+      return { error: err };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filtered categories memo
+  const filteredCategories = useMemo(() => {
+    return categories;
+  }, [categories]);
 
   return {
-    categories,
+    categories: filteredCategories,
     loading,
     error,
-    fetchCategories,
+    filter,
+    updateFilter,
     createCategory,
-    currentPage,
-    setCurrentPage,
-    totalCount
+    updateCategory,
+    deleteCategory,
+    refetch: fetchCategories
   };
 };
+
+export default useCategories;

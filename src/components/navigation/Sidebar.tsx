@@ -15,7 +15,7 @@ import {
   Building,
   Building2
 } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { UserRole, normalizeRole } from '@/types/role';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -26,7 +26,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ userRole: rawUserRole, isOpen, onToggle }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   
   // Normalize role to handle different type inputs
   const userRole = normalizeRole(rawUserRole);
