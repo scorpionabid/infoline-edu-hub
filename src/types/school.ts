@@ -17,13 +17,15 @@ export interface School {
   address?: string;
   student_count?: number;
   teacher_count?: number;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string; // Changed to required to match Supabase type
+  updated_at: string; // Changed to required to match Supabase type
   completion_rate?: number;
   completionRate?: number;
   type?: string;
   language?: string;
   logo?: string;
+  // Properties for compatibility with different versions
+  principalName?: string;
 }
 
 // Statistics for schools
@@ -63,9 +65,9 @@ export interface Region {
   description?: string;
   admin_id?: string;
   admin_email?: string;
-  created_at?: string;
-  updated_at?: string;
-  status: string;
+  created_at: string; // Changed to required to match Supabase type
+  updated_at: string; // Changed to required to match Supabase type
+  status: string; // Changed to required to match Supabase type
 }
 
 // EnhancedRegion extends Region
@@ -91,9 +93,9 @@ export interface Sector {
   name: string;
   description?: string;
   region_id: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
+  status: string; // Required to match Supabase type
+  created_at: string; // Required to match Supabase type
+  updated_at: string; // Required to match Supabase type
   admin_id?: string;
   admin_email?: string;
   completion_rate?: number;
@@ -120,7 +122,7 @@ export interface SchoolStat {
   formsCompleted?: number;
   totalForms?: number;
   principalName?: string;
-  principal_name?: string;
+  principal_name?: string; // Added to fix type errors
   address?: string;
   phone?: string;
   email?: string;
@@ -163,6 +165,17 @@ export function adaptSchoolFromSupabase(school: any): School {
   return {
     ...school,
     completionRate: school.completion_rate,
+    principalName: school.principal_name || school.principalName,
     principal_name: school.principal_name || school.principalName
   } as School;
+}
+
+// Adapter function for SchoolStat
+export function adaptToSchoolStat(data: any): SchoolStat {
+  return {
+    ...data,
+    completionRate: data.completionRate || data.completion_rate || data.completion || 0,
+    principal_name: data.principal_name || data.principalName,
+    principalName: data.principalName || data.principal_name
+  };
 }

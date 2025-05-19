@@ -1,8 +1,22 @@
 
-export type ColumnType = 
-  'text' | 'textarea' | 'number' | 'select' | 'multiselect' | 'checkbox' | 
-  'radio' | 'date' | 'time' | 'datetime' | 'file' | 'image' | 'email' | 'phone' | 'tel' | 'url' | 'password' | 
-  'color' | 'range' | 'richtext';
+// Define types for columns
+export interface ColumnOption {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface ColumnValidation {
+  required?: boolean;
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  message?: string;
+}
+
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'multiselect' | 'textarea' | 'checkbox' | 'radio' | 'file' | 'image' | string;
 
 export interface Column {
   id: string;
@@ -10,105 +24,26 @@ export interface Column {
   name: string;
   type: ColumnType;
   is_required: boolean;
-  help_text?: string;
   placeholder?: string;
+  help_text?: string;
+  order_index: number;
+  status?: string;
+  validation?: ColumnValidation | null;
   default_value?: string;
   options?: ColumnOption[];
-  validation?: ColumnValidation;
-  order_index: number;
-  created_at?: string;
-  updated_at?: string;
-  status?: string;
-  description?: string;
-  section?: string;
-  color?: string;
-}
-
-export interface ColumnOption {
-  id: string;
-  label: string;
-  value: string;
-  color?: string;
+  created_at: string;
+  updated_at: string;
   description?: string;
 }
 
-export interface ColumnValidation {
-  minLength?: number;
-  maxLength?: number;
-  minValue?: number;
-  maxValue?: number;
-  pattern?: string;
-  errorMessage?: string;
-  patternMessage?: string;
-  min?: number; // For backward compatibility
-  max?: number; // For backward compatibility
-}
-
-export interface ColumnFormValues {
+export interface ColumnFormData {
   name: string;
   type: ColumnType;
-  category_id: string;
   is_required: boolean;
-  help_text?: string;
   placeholder?: string;
+  help_text?: string;
+  validation?: ColumnValidation;
   default_value?: string;
   options?: ColumnOption[];
-  validation?: ColumnValidation;
-  order_index?: number;
-  status?: string;
   description?: string;
-  section?: string;
-  color?: string;
 }
-
-export interface ColumnTypeInfo {
-  label: string;
-  icon?: string;
-  description: string;
-}
-
-// Updated to match the actual component parameters
-export interface BasicColumnFieldsProps {
-  form?: any;
-  control: any;
-  register?: any;
-  errors?: Record<string, any>;
-  isSubmitting?: boolean;
-  isEditMode: boolean;
-  categories: any[];
-  columns?: any[];
-  editColumn?: Column | null;
-  selectedType: ColumnType;
-  onTypeChange: (type: ColumnType) => void;
-}
-
-// Updated columnTypes definition with proper type and find method
-const columnTypesObj: Record<string, ColumnTypeInfo> = {
-  text: { label: 'Text', description: 'Single line text input', icon: 'text' },
-  textarea: { label: 'Text Area', description: 'Multiple line text input', icon: 'textAlignLeft' },
-  number: { label: 'Number', description: 'Numeric value input', icon: 'hash' },
-  select: { label: 'Select', description: 'Dropdown selection', icon: 'listBox' },
-  multiselect: { label: 'Multi Select', description: 'Multiple dropdown selection', icon: 'listBox' },
-  checkbox: { label: 'Checkbox', description: 'Multiple selection', icon: 'check' },
-  radio: { label: 'Radio', description: 'Single selection', icon: 'circle' },
-  date: { label: 'Date', description: 'Date picker', icon: 'calendar' },
-  time: { label: 'Time', description: 'Time picker', icon: 'clock' },
-  datetime: { label: 'Date & Time', description: 'Date and time picker', icon: 'calendarClock' },
-  file: { label: 'File', description: 'File upload', icon: 'file' },
-  image: { label: 'Image', description: 'Image upload', icon: 'image' },
-  email: { label: 'Email', description: 'Email address input', icon: 'mail' },
-  phone: { label: 'Phone', description: 'Phone number input', icon: 'phone' },
-  tel: { label: 'Telephone', description: 'Telephone number input', icon: 'phone' },
-  password: { label: 'Password', description: 'Password input field', icon: 'lock' },
-  color: { label: 'Color', description: 'Color selection', icon: 'color' },
-  range: { label: 'Range', description: 'Value within a range', icon: 'sliders' },
-  richtext: { label: 'Rich Text', description: 'Formatted text editor', icon: 'textAlignLeft' },
-};
-
-// Export columnTypes with find method
-export const columnTypes = {
-  ...columnTypesObj,
-  find: function(type: string): ColumnTypeInfo | undefined {
-    return columnTypesObj[type];
-  }
-};

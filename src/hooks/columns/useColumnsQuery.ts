@@ -61,7 +61,7 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
           options: formattedOptions,
           created_at: column.created_at,
           updated_at: column.updated_at,
-          description: column.description || '',
+          description: column.description || '', // Add default value if missing
         } as Column;
       });
     }

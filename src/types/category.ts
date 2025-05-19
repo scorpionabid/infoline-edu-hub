@@ -8,7 +8,7 @@ export interface Category {
   id: string;
   name: string;
   description?: string;
-  status?: CategoryStatus | string;
+  status?: CategoryStatus;
   priority?: number;
   created_at?: string;
   updated_at?: string;
@@ -16,7 +16,7 @@ export interface Category {
   archived?: boolean;
   column_count?: number;
   columnCount?: number; // Alias for compatibility
-  assignment?: CategoryAssignment | string;
+  assignment?: CategoryAssignment;
   completionRate?: number;
   completion_rate?: number;
 }
@@ -39,7 +39,7 @@ export interface CategoryFilterProps {
 export interface AddCategoryFormData {
   name: string;
   description?: string;
-  deadline?: string | Date | null;
+  deadline?: string | null;
   status?: CategoryStatus;
   assignment?: CategoryAssignment;
   priority?: number;

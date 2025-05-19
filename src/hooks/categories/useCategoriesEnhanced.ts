@@ -13,7 +13,7 @@ export function useCategoriesEnhanced() {
     return data.map((category: Category) => ({
       ...category,
       columnCount: category.column_count,
-      completionRate: category.completionRate || 0
+      completionRate: category.completion_rate || category.completionRate || 0
     }));
   }, [data]);
   

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Region, Sector, EnhancedSector } from '@/types/supabase';
+import { Sector, EnhancedSector } from '@/types/supabase'; // Import from supabase types directly
+import { Region } from '@/types/supabase'; // Import from supabase types directly
 import { useRegions } from '@/hooks/regions/useRegions';
 import { useSectors } from '@/hooks/sectors/useSectors';
 import { toast } from 'sonner';

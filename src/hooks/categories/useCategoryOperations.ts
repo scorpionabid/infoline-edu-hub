@@ -1,123 +1,110 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Category, AddCategoryFormData, CategoryStatus } from '@/types/category';
+import { Category, AddCategoryFormData, formatDeadlineForApi } from '@/types/category';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
 
+/**
+ * Hook for category CRUD operations
+ */
 export const useCategoryOperations = () => {
-  const [loading, setLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { t } = useLanguage();
 
-  const createCategory = async (category: Omit<Category, 'id'>) => {
+  const addCategory = async (categoryData: AddCategoryFormData): Promise<Category | null> => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      setIsLoading(true);
-      setError(null);
+      // Ensure name is required
+      if (!categoryData.name) {
+        toast.error(t('nameRequired'));
+        return null;
+      }
       
-      // Convert the deadline to string if it's a Date object
-      const processedCategory = {
-        ...category,
-        deadline: category.deadline ? String(category.deadline) : null
-      };
+      // Format deadline for API
+      const deadline = formatDeadlineForApi(categoryData.deadline);
       
       const { data, error } = await supabase
         .from('categories')
-        .insert([processedCategory])
-        .select();
+        .insert({
+          name: categoryData.name,
+          description: categoryData.description || '',
+          status: categoryData.status || 'active',
+          assignment: categoryData.assignment || 'all',
+          priority: categoryData.priority || 0,
+          deadline: deadline,
+        })
+        .select()
+        .single();
       
-      if (error) {
-        throw new Error(error.message);
-      }
+      if (error) throw error;
       
-      return { data: data?.[0], error: null };
-    } catch (err: any) {
-      setError(err.message);
-      return { data: null, error: err.message };
+      toast.success(t('categoryAdded'));
+      return data as Category;
+    } catch (error: any) {
+      console.error('Failed to add category:', error);
+      toast.error(t('categoryAddError'));
+      return null;
     } finally {
-      setLoading(false);
       setIsLoading(false);
     }
   };
-
-  const addCategory = async (category: Omit<Category, 'id'>) => {
-    return createCategory(category);
-  };
-
-  const updateCategory = async (id: string, updates: Partial<Category>) => {
+  
+  const updateCategory = async (id: string, categoryData: Partial<Category>): Promise<Category | null> => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      setIsLoading(true);
-      setError(null);
-      
-      // Convert the deadline to string if it's a Date object
-      const processedUpdates = {
-        ...updates,
-        deadline: updates.deadline ? String(updates.deadline) : null
-      };
+      // Format deadline for API if present
+      const deadline = categoryData.deadline ? formatDeadlineForApi(categoryData.deadline) : undefined;
       
       const { data, error } = await supabase
         .from('categories')
-        .update(processedUpdates)
+        .update({ 
+          ...categoryData, 
+          deadline: deadline
+        })
         .eq('id', id)
-        .select();
+        .select()
+        .single();
       
-      if (error) {
-        throw new Error(error.message);
-      }
+      if (error) throw error;
       
-      return { data: data?.[0], error: null };
-    } catch (err: any) {
-      setError(err.message);
-      return { data: null, error: err.message };
+      toast.success(t('categoryUpdated'));
+      return data as Category;
+    } catch (error: any) {
+      console.error('Failed to update category:', error);
+      toast.error(t('categoryUpdateError'));
+      return null;
     } finally {
-      setLoading(false);
       setIsLoading(false);
     }
   };
-
-  const deleteCategory = async (id: string) => {
+  
+  const deleteCategory = async (id: string): Promise<boolean> => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      setIsLoading(true);
-      setError(null);
-      
       const { error } = await supabase
         .from('categories')
         .delete()
         .eq('id', id);
       
-      if (error) {
-        throw new Error(error.message);
-      }
+      if (error) throw error;
       
-      return { success: true, error: null };
-    } catch (err: any) {
-      setError(err.message);
-      return { success: false, error: err.message };
+      toast.success(t('categoryDeleted'));
+      return true;
+    } catch (error: any) {
+      console.error('Failed to delete category:', error);
+      toast.error(t('categoryDeleteError'));
+      return false;
     } finally {
-      setLoading(false);
       setIsLoading(false);
     }
   };
-
-  const archiveCategory = async (id: string) => {
-    return updateCategory(id, { status: 'archived', archived: true });
-  };
-
-  const updateCategoryStatus = async (id: string, status: CategoryStatus) => {
-    return updateCategory(id, { status });
-  };
-
+  
   return {
-    loading,
     isLoading,
-    error,
-    createCategory,
     addCategory,
     updateCategory,
-    updateCategoryStatus,
-    deleteCategory,
-    archiveCategory,
+    deleteCategory
   };
 };
 

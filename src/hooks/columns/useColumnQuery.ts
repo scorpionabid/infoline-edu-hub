@@ -60,7 +60,7 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
         options: formattedOptions,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        description: data.description || '',
+        description: data.description || '',  // Add default value if missing
       } as Column;
     }
     

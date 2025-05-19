@@ -1,7 +1,8 @@
+
 import React from 'react';
-import { School } from '@/types/school'; // School tipini school.ts-dən götürək
-import { Region } from '@/types/school';
-import { Sector } from '@/types/school';
+import { School, adaptSchoolFromSupabase } from '@/types/school'; 
+import { Region } from '@/types/supabase'; // Import from supabase types
+import { Sector } from '@/types/supabase'; // Import from supabase types
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -334,7 +335,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
                 <TableCell>{school.name}</TableCell>
                 <TableCell>{regionNames[school.region_id] || ''}</TableCell>
                 <TableCell>{sectorNames[school.sector_id] || ''}</TableCell>
-                <TableCell>{school.principalName || school.principal_name || '-'}</TableCell>
+                <TableCell>{school.principal_name || '-'}</TableCell>
                 <TableCell>{school.status}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

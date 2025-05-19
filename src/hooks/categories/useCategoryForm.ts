@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { AddCategoryFormData, Category } from "@/types/category";
+import { AddCategoryFormData, Category, formatDeadlineForApi } from "@/types/category";
 import { useToast } from "@/components/ui/use-toast";
 
 /**
@@ -15,16 +15,19 @@ const useCategoryForm = () => {
     setIsLoading(true);
     
     try {
+      // Always convert deadline to string format
+      const deadline = formatDeadlineForApi(data.deadline);
+      
       const { data: newCategory, error } = await supabase
         .from('categories')
-        .insert([{
+        .insert({
           name: data.name,
           description: data.description,
           assignment: data.assignment,
           status: data.status,
           priority: data.priority,
-          deadline: data.deadline,
-        }])
+          deadline: deadline,
+        })
         .select()
         .single();
       

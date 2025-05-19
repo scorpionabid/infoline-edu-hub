@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +12,7 @@ import UpcomingDeadlinesList from '../UpcomingDeadlinesList';
 import PendingFormsList from '../PendingFormsList';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
-import { SchoolStat } from '@/types/school';
+import { SchoolStat, adaptToSchoolStat } from '@/types/school';
 
 interface SectorAdminDashboardProps {
   data: SectorAdminDashboardData;
@@ -79,22 +78,8 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
     ? data.completion.percentage
     : (typeof data.completion === 'number' ? data.completion : data.completionRate || 0);
 
-  // Convert school stats to the correct format
-  const schoolStats: SchoolStat[] = (data.schoolStats || []).map(school => ({
-    id: school.id,
-    name: school.name,
-    completionRate: school.completionRate || school.completion || 0,
-    status: school.status,
-    // Include other properties that might be used
-    lastUpdate: school.lastUpdate,
-    pendingForms: school.pendingForms,
-    formsCompleted: school.formsCompleted,
-    totalForms: school.totalForms,
-    principalName: school.principalName || school.principal_name,
-    address: school.address,
-    phone: school.phone,
-    email: school.email
-  }));
+  // Convert school stats to the correct format and ensure property consistency
+  const schoolStats: SchoolStat[] = (data.schoolStats || []).map(school => adaptToSchoolStat(school));
 
   return (
     <div className="space-y-4">

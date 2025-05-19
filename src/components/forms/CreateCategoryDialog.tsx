@@ -19,7 +19,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { CreateCategoryDialogProps, AddCategoryFormData } from '@/types/category';
+import { CreateCategoryDialogProps, AddCategoryFormData, formatDeadlineForApi } from '@/types/category';
 
 const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
   open,
