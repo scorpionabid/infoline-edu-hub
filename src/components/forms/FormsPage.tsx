@@ -24,6 +24,10 @@ const FormsPage: React.FC = () => {
     assignment: ''
   });
 
+  const handleFilterChange = (newFilters: Partial<CategoryFilter>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
+
   const fetchCategories = async () => {
     setIsLoading(true);
     try {
@@ -101,7 +105,7 @@ const FormsPage: React.FC = () => {
         <CardContent className="pt-6">
           <CategoryFilterComponent 
             filters={filters}
-            onChange={setFilters}
+            onChange={handleFilterChange}
             showAssignmentFilter={true}
           />
         </CardContent>

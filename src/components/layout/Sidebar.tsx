@@ -22,6 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const { userRole } = usePermissions();
   
   console.log("[Layout Sidebar] Rendering with user role:", userRole);
+  console.log("[Layout Sidebar] isOpen state:", isOpen);
 
   return (
     <div

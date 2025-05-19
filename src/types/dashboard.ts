@@ -79,6 +79,7 @@ export interface DeadlineItem {
   days_remaining?: number;
   daysLeft?: number;
   completion_percentage?: number;
+  status?: string;
 }
 
 // Status for dashboard components
@@ -104,6 +105,8 @@ export interface StatusCardsProps {
     rejected?: number;
     completion_percentage: number;
   };
+  completion?: number | { percentage: number; total: number; completed: number };
+  formStats?: DashboardFormStats;
 }
 
 // Tab definition for form tabs
@@ -134,11 +137,11 @@ export interface SectorStat {
   name: string;
   completion_rate?: number;
   completionRate?: number;
+  completion?: number;
   total_schools?: number;
   submitted_forms?: number;
   total_forms?: number;
   schoolCount?: number;
-  completion?: number;
 }
 
 // School Stats
@@ -146,6 +149,7 @@ export interface SchoolStat {
   id: string;
   name: string;
   completionRate: number;
+  completion?: number;
   status?: string;
   lastUpdate?: string;
   pendingCount?: number;
@@ -204,6 +208,14 @@ export interface RegionAdminDashboardData {
   status?: DashboardStatus;
   formStats?: DashboardFormStats;
   sectorStats?: SectorStat[];
+  schoolStats?: SchoolStat[];
+  pendingApprovals?: PendingApproval[];
+  completionRate?: number;
+  completion?: {
+    percentage: number;
+    total: number;
+    completed: number;
+  } | number;
 }
 
 // Super Admin Dashboard Data

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../navigation/Navbar';
 import Sidebar from './Sidebar';
 import UserProfile from '../auth/UserProfile';
-import { useAuth } from '@/context/auth/useAuth';  // Make sure this path is correct
+import { useAuth } from '@/context/auth/useAuth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { cn } from '@/lib/utils';
 
@@ -25,9 +25,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       // Auto collapse sidebar on mobile
-      if (mobile && sidebarOpen) {
+      if (mobile) {
         setSidebarOpen(false);
-      } else if (!mobile && !sidebarOpen) {
+      } else {
         setSidebarOpen(true);
       }
     };
@@ -40,7 +40,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
     
     // Clean up
     return () => window.removeEventListener('resize', checkSize);
-  }, [sidebarOpen]);
+  }, []);
   
   // Make sure the user is logged in
   if (!isAuthenticated || !user) {
@@ -48,7 +48,10 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = tr
     return null;
   }
   
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  const toggleSidebar = () => {
+    console.log("Toggling sidebar. Current state:", sidebarOpen, "New state:", !sidebarOpen);
+    setSidebarOpen(!sidebarOpen);
+  };
   
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">

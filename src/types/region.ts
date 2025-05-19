@@ -14,10 +14,11 @@ export interface EnhancedRegion extends Region {
   id: string; // Ensuring id is required
   school_count?: number;
   sector_count?: number;
-  admin_name?: string;
-  schools_count?: number; 
+  schools_count?: number;
   sectors_count?: number;
+  admin_name?: string;
   completion_rate?: number;
+  completionRate?: number;
   admin?: {
     id: string;
     full_name: string;

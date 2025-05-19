@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -12,11 +12,12 @@ interface NavigationMenuProps {
 }
 
 const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarOpen }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   const location = useLocation();
   const { userRole } = usePermissions();
   
   console.log("NavigationMenu rendering with user role:", userRole);
+  console.log("NavigationMenu sidebar open state:", isSidebarOpen);
 
   const activeItem = location.pathname.split('/')[1] || 'dashboard';
 
@@ -46,13 +47,19 @@ const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarO
               "transition-colors text-muted-foreground hover:text-primary focus:text-primary",
               activeItem === item.id && "text-primary font-medium"
             )}
+            onClick={() => onMenuClick && onMenuClick()}
           >
             {item.label}
           </Link>
         ))}
 
       <div className="md:hidden mt-4">
-        <Button variant="outline" size="sm" onClick={() => onMenuClick && onMenuClick()}>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => onMenuClick && onMenuClick()}
+          className="w-full"
+        >
           {isSidebarOpen ? t('closeSidebar') : t('openSidebar')}
         </Button>
       </div>

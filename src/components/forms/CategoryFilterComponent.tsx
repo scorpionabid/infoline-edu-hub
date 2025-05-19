@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
-import { CategoryFilter, CategoryFilterProps } from '@/types/category';
+import { CategoryFilter } from '@/types/category';
 
 interface ExtendedCategoryFilterProps {
   filters: CategoryFilter;
@@ -29,11 +29,11 @@ const CategoryFilterComponent: React.FC<ExtendedCategoryFilterProps> = ({
   };
 
   const handleStatusChange = (value: string) => {
-    onChange({ ...filters, status: value as any });
+    onChange({ ...filters, status: value });
   };
 
   const handleAssignmentChange = (value: string) => {
-    onChange({ ...filters, assignment: value as any });
+    onChange({ ...filters, assignment: value });
   };
 
   return (
@@ -41,14 +41,14 @@ const CategoryFilterComponent: React.FC<ExtendedCategoryFilterProps> = ({
       <div className="flex-1">
         <Input
           placeholder={t('searchCategories')}
-          value={filters.search}
+          value={filters.search || ''}
           onChange={handleSearchChange}
           className="w-full"
         />
       </div>
       <div className="w-full md:w-48">
         <Select
-          value={filters.status}
+          value={filters.status || ''}
           onValueChange={handleStatusChange}
         >
           <SelectTrigger>
@@ -66,7 +66,7 @@ const CategoryFilterComponent: React.FC<ExtendedCategoryFilterProps> = ({
       {showAssignmentFilter && (
         <div className="w-full md:w-48">
           <Select
-            value={filters.assignment}
+            value={filters.assignment || ''}
             onValueChange={handleAssignmentChange}
           >
             <SelectTrigger>
