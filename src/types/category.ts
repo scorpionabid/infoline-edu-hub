@@ -39,7 +39,7 @@ export interface CategoryFilterProps {
 export interface AddCategoryFormData {
   name: string;
   description?: string;
-  deadline?: string | null;
+  deadline?: string | Date | null;
   status?: CategoryStatus;
   assignment?: CategoryAssignment;
   priority?: number;

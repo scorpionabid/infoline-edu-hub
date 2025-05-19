@@ -61,6 +61,7 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
         created_at: data.created_at,
         updated_at: data.updated_at,
         description: data.description || '',  // Add default value if missing
+        section: data.section || '',  // Add section property with default value
       } as Column;
     }
     

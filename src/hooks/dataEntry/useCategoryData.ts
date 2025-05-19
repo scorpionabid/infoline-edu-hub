@@ -1,78 +1,128 @@
-
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns } from '@/types/category';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+import { useAuth } from '@/context/auth';
 
-export interface UseCategoryDataResult {
-  category: CategoryWithColumns | null;
-  loading: boolean;
-  error: Error | null;
-  refetch: () => Promise<void>;
+interface CategoryData {
+  id: string;
+  name: string;
+  columns: any[];
 }
 
-export const useCategoryData = (categoryId: string | undefined): UseCategoryDataResult => {
-  const [category, setCategory] = useState<CategoryWithColumns | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
+interface UseCategoryDataProps {
+  categoryId?: string;
+}
 
-  const fetchCategoryData = async () => {
+export const useCategoryData = ({ categoryId }: UseCategoryDataProps) => {
+  const [category, setCategory] = useState<CategoryData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
     if (!categoryId) {
-      setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    const fetchCategoryData = async () => {
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const { data: categoryData, error: categoryError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('id', categoryId)
-        .single();
+      try {
+        // Fetch category details
+        const { data: categoryData, error: categoryError } = await supabase
+          .from('categories')
+          .select('id, name')
+          .eq('id', categoryId)
+          .single();
 
-      if (categoryError) throw categoryError;
+        if (categoryError) {
+          throw new Error(`Error fetching category: ${categoryError.message}`);
+        }
 
-      const { data: columnsData, error: columnsError } = await supabase
-        .from('columns')
-        .select('*')
-        .eq('category_id', categoryId)
-        .order('order_index');
+        if (!categoryData) {
+          throw new Error('Category not found');
+        }
 
-      if (columnsError) throw columnsError;
+        // Fetch columns for the category
+        const { data: columnsData, error: columnsError } = await supabase
+          .from('columns')
+          .select('*')
+          .eq('category_id', categoryId)
+          .order('order_index', { ascending: true });
 
-      // Process columns to include additional UI properties
-      const processedColumns = (columnsData || []).map(column => ({
-        ...column,
-        options: column.options || [],
-        validation: column.validation || {},
-        // Add missing properties needed by some components
-        color: column.color || '#6b7280',
-        description: column.description || '',
-      }));
+        if (columnsError) {
+          throw new Error(`Error fetching columns: ${columnsError.message}`);
+        }
 
-      setCategory({
-        ...categoryData,
-        columns: processedColumns,
-      });
-    } catch (err: any) {
-      setError(err);
-      console.error('Error fetching category data:', err);
-    } finally {
-      setLoading(false);
+        // Transform column data
+        const transformedColumns = columnsData.map(transformColumnData);
+
+        setCategory({
+          id: categoryData.id,
+          name: categoryData.name,
+          columns: transformedColumns,
+        });
+      } catch (err: any) {
+        setError(err.message);
+        toast.error(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategoryData();
+  }, [categoryId, user]);
+
+  // Add support for 'section', 'color', and 'description' fields when fetching column data
+  const transformColumnData = (column: any) => {
+    let optionsArray = [];
+    let validationObj = {};
+
+    // Process options
+    if (column.options) {
+      try {
+        optionsArray = typeof column.options === 'string' ? JSON.parse(column.options) : column.options;
+        if (!Array.isArray(optionsArray)) {
+          optionsArray = []; // Ensure it's always an array
+        }
+      } catch (e) {
+        console.error('Failed to parse options:', e);
+        optionsArray = [];
+      }
     }
+
+    // Process validation
+    if (column.validation) {
+      try {
+        validationObj = typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation;
+      } catch (e) {
+        console.error('Failed to parse validation:', e);
+        validationObj = {};
+      }
+    }
+
+    return {
+      id: column.id,
+      category_id: column.category_id,
+      name: column.name,
+      type: column.type,
+      is_required: column.is_required,
+      placeholder: column.placeholder || '',
+      help_text: column.help_text || '',
+      order_index: column.order_index,
+      validation: validationObj,
+      options: optionsArray,
+      default_value: column.default_value || '',
+      status: column.status || 'active',
+      created_at: column.created_at,
+      updated_at: column.updated_at,
+    };
   };
 
-  useEffect(() => {
-    fetchCategoryData();
-  }, [categoryId]);
-
-  return { 
-    category, 
-    loading, 
-    error, 
-    refetch: fetchCategoryData 
+  return {
+    category,
+    isLoading,
+    error,
   };
 };
-
-export default useCategoryData;

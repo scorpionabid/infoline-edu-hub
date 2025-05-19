@@ -56,6 +56,7 @@ const useCategoryColumns = (categoryId: string | undefined) => {
           created_at: item.created_at,
           updated_at: item.updated_at,
           description: item.description || '',
+          section: item.section || '',
         };
       });
     },

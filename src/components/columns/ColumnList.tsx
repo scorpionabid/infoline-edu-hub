@@ -54,13 +54,13 @@ const ColumnList: React.FC<ColumnListProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  // Kateqoriya adını ID əsasında tap
+  // Get category name by ID
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : t('unknownCategory');
   };
 
-  // Sütunun tipinə uyğun badge rəngini təyin et
+  // Determine badge color based on column type
   const getTypeBadgeColor = (type: string) => {
     switch (type) {
       case 'text':
@@ -93,7 +93,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
     }
   };
 
-  // Status badge rəngini təyin et
+  // Get status badge for column
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -107,13 +107,13 @@ const ColumnList: React.FC<ColumnListProps> = ({
     }
   };
 
-  // İkon komponenti əldə et
+  // Get icon component
   const getIconComponent = (iconName: string | undefined) => {
     if (!iconName) return Edit;
     return iconComponents[iconName] || Edit;
   };
 
-  // Column tipinə görə ətraflı məlumat əldə et
+  // Get column type info
   const getColumnTypeInfo = (type: string) => {
     if (!type) {
       return {
