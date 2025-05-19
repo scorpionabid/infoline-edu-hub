@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -14,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -54,13 +53,16 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
   const handleSubmit = async (data: AddCategoryFormData) => {
     setIsSubmitting(true);
     try {
+      // Convert deadline to string if it's a Date object
+      const deadline = data.deadline ? String(data.deadline) : null;
+      
       const { error } = await supabase.from('categories').insert({
         name: data.name,
         description: data.description,
         assignment: data.assignment,
         status: data.status,
         priority: data.priority,
-        deadline: data.deadline,
+        deadline: deadline,
       });
 
       if (error) throw error;
@@ -205,8 +207,8 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
                     <FormControl>
                       <Input
                         type="date"
-                        {...field}
                         value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value)}
                       />
                     </FormControl>
                     <FormMessage />

@@ -1,5 +1,147 @@
 
-// This is a simplified version of the dashboard types file just to add the missing properties
+import { Category } from '@/types/category';
+import { School } from '@/types/school';
+import { Sector } from '@/types/sector';
+import { Region } from '@/types/region';
+import { UserRole } from '@/types/role';
+
+// Basic interface for approval items
+export interface PendingApproval {
+  id: string;
+  schoolId?: string;
+  schoolName: string;
+  categoryId?: string;
+  categoryName: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  submittedAt?: string;
+  updatedAt?: string;
+  submitterName?: string;
+  submitterId?: string;
+  createdAt?: string;
+  title?: string;
+  count?: number;
+  date?: string;
+}
+
+// Dashboard form statistics
+export interface DashboardFormStats {
+  total: number;
+  completed: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  completion_rate?: number;
+  draft?: number;
+  dueSoon?: number;
+  overdue?: number;
+  percentage?: number;
+}
+
+// Category list items
+export interface CategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  deadline?: string;
+  completionRate?: number;
+  column_count?: number;
+  columnCount?: number;
+  status: 'active' | 'draft' | 'archived' | string;
+}
+
+// Form list items
+export interface FormItem {
+  id: string;
+  name?: string;
+  title?: string;
+  category?: {
+    name: string;
+  };
+  categoryId?: string;
+  categoryName?: string;
+  schoolId?: string;
+  status: 'draft' | 'pending' | 'approved' | 'rejected' | string;
+  lastUpdate?: string;
+  deadline?: string;
+  dueDate?: string;
+  completion_percentage?: number;
+}
+
+// Deadline items
+export interface DeadlineItem {
+  id: string;
+  name?: string;
+  title?: string;
+  category?: string;
+  categoryId?: string;
+  categoryName?: string;
+  deadline: string;
+  days_remaining?: number;
+  daysLeft?: number;
+  completion_percentage?: number;
+}
+
+// Status for dashboard components
+export interface DashboardStatus {
+  total: number;
+  completed?: number;
+  pending?: number;
+  approved?: number;
+  rejected?: number;
+  draft?: number;
+  active?: number;
+  inactive?: number;
+  completion_percentage?: number;
+}
+
+// Props for StatusCards component
+export interface StatusCardsProps {
+  status: {
+    total: number;
+    completed: number;
+    pending: number;
+    approved?: number;
+    rejected?: number;
+    completion_percentage: number;
+  };
+}
+
+// Tab definition for form tabs
+export interface TabDefinition {
+  id: string;
+  label?: string;
+  value?: string;
+  count?: number;
+  title?: string;
+  columns?: any[];
+}
+
+// Props for form tabs component
+export interface FormTabsProps {
+  categories: CategoryItem[];
+  upcoming?: DeadlineItem[];
+  pendingForms?: FormItem[];
+  deadlines?: DeadlineItem[];
+  forms?: FormItem[];
+  onTabChange?: (value: string) => void;
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (id: string) => void;
+}
+
+// Sector statistics
+export interface SectorStat {
+  id: string;
+  name: string;
+  completion_rate?: number;
+  completionRate?: number;
+  total_schools?: number;
+  submitted_forms?: number;
+  total_forms?: number;
+  schoolCount?: number;
+  completion?: number;
+}
+
+// School Stats
 export interface SchoolStat {
   id: string;
   name: string;
@@ -16,4 +158,85 @@ export interface SchoolStat {
   address?: string;
   phone?: string;
   email?: string;
+}
+
+// School Admin Dashboard Data
+export interface SchoolAdminDashboardData {
+  categories?: CategoryItem[];
+  forms?: FormItem[];
+  deadlines?: DeadlineItem[];
+  status?: DashboardStatus;
+  formStats?: DashboardFormStats;
+  notifications?: any[];
+  upcoming?: DeadlineItem[];
+  pendingForms?: FormItem[];
+  completion?: {
+    percentage: number;
+    total: number;
+    completed: number;
+  } | number;
+  completionRate?: number;
+}
+
+// Sector Admin Dashboard Data
+export interface SectorAdminDashboardData {
+  schools?: School[];
+  schoolStats?: SchoolStat[];
+  categories?: CategoryItem[];
+  status?: DashboardStatus;
+  formStats?: DashboardFormStats;
+  pendingApprovals?: PendingApproval[];
+  upcoming?: DeadlineItem[];
+  pendingForms?: FormItem[];
+  completion?: {
+    percentage: number;
+    total: number;
+    completed: number;
+  } | number;
+  completionRate?: number;
+}
+
+// Region Admin Dashboard Data
+export interface RegionAdminDashboardData {
+  sectors?: Sector[];
+  schools?: School[];
+  categories?: CategoryItem[];
+  status?: DashboardStatus;
+  formStats?: DashboardFormStats;
+  sectorStats?: SectorStat[];
+}
+
+// Super Admin Dashboard Data
+export interface SuperAdminDashboardData {
+  regions?: Region[];
+  regionData?: any[];
+  sectors?: Sector[];
+  schools?: School[];
+  schoolData?: any[];
+  categories?: CategoryItem[];
+  categoryData?: CategoryItem[];
+  status?: DashboardStatus;
+  formStats?: DashboardFormStats;
+  users?: {
+    active: number;
+    total: number;
+  };
+  regionCount?: number;
+  sectorCount?: number;
+  schoolCount?: number;
+  entryCount?: {
+    total: number;
+    approved: number;
+    pending: number;
+    rejected: number;
+    dueSoon: number;
+    overdue: number;
+    draft: number;
+  };
+  completion?: {
+    percentage: number;
+    total: number;
+    completed: number;
+  } | number;
+  completionRate?: number;
 }

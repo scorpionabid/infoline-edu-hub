@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -47,9 +46,19 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
+      // Ensure name is not missing
+      if (!data.name || data.name.trim() === '') {
+        toast.error(t("nameRequired"));
+        return;
+      }
+
       await addCategory({
-        ...data,
+        name: data.name,
+        description: data.description,
+        deadline: data.deadline,
         status: data.status as CategoryStatus,
+        assignment: data.assignment,
+        priority: data.priority,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });

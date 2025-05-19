@@ -11,7 +11,13 @@ import {
 import { useLanguage } from '@/context/LanguageContext';
 import { CategoryFilter, CategoryFilterProps } from '@/types/category';
 
-const CategoryFilterComponent: React.FC<CategoryFilterProps> = ({ 
+interface ExtendedCategoryFilterProps {
+  filters: CategoryFilter;
+  onChange: (filters: Partial<CategoryFilter>) => void;
+  showAssignmentFilter?: boolean;
+}
+
+const CategoryFilterComponent: React.FC<ExtendedCategoryFilterProps> = ({ 
   filters, 
   onChange, 
   showAssignmentFilter = false 
