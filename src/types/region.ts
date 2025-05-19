@@ -7,7 +7,7 @@ export interface Region {
   admin_email?: string;
   created_at?: string;
   updated_at?: string;
-  status: string;
+  status?: string;
 }
 
 export interface EnhancedRegion extends Region {

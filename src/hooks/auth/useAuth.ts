@@ -11,7 +11,7 @@ export const useAuth = () => {
     user,
     session,
     isAuthenticated,
-    isLoading: loading,
+    loading: isLoading,
     error,
     login,
     logout,
@@ -47,8 +47,8 @@ export const useAuth = () => {
     session,
     isAuthenticated,
     authenticated: isAuthenticated, // Alias for compatibility
-    loading,
-    isLoading: loading,
+    loading: isLoading,
+    isLoading,
     error,
     
     // Core actions

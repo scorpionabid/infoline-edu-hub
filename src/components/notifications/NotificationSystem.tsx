@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Bell, BellOff, Check } from 'lucide-react';
 import { 
@@ -21,7 +22,7 @@ const NotificationSystem = () => {
     markAsRead = () => {}, 
     markAllAsRead = () => {}, 
     clearAll = () => {} 
-  } = useNotifications() || {};
+  } = useNotifications();
   
   return (
     <Popover>

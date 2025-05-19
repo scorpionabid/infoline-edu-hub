@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { EnhancedRegion } from '@/hooks/useRegionsStore';
+import { EnhancedRegion } from '@/types/region';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
@@ -85,7 +85,7 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
   };
 
   const assignAdmin = async (userId: string) => {
-    if (!region) {
+    if (!region || !region.id) {
       toast.error(t('regionNotFound'));
       return;
     }

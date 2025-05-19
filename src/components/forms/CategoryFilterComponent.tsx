@@ -36,6 +36,20 @@ const CategoryFilterComponent: React.FC<ExtendedCategoryFilterProps> = ({
     onChange({ ...filters, assignment: value });
   };
 
+  const handleSortChange = (field: string) => {
+    // Only add if filters supports sortBy
+    if ('sortBy' in filters) {
+      const currentSortOrder = filters.sortOrder || 'asc';
+      const newSortOrder = filters.sortBy === field && currentSortOrder === 'asc' ? 'desc' : 'asc';
+      
+      onChange({ 
+        ...filters, 
+        sortBy: field,
+        sortOrder: newSortOrder
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col md:flex-row gap-4">
       <div className="flex-1">

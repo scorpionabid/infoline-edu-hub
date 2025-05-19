@@ -1,71 +1,58 @@
 
-import { SchoolStat, Region, Sector } from './supabase';
-
-export interface SchoolFilter {
-  regionId?: string;
-  sectorId?: string;
-  status?: string[];
-  search?: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface SchoolFormData {
-  id?: string;
+export interface School {
+  id: string;
   name: string;
-  region_id: string;
-  sector_id: string;
-  address?: string;
+  status?: string;
+  region_id?: string;
+  region_name?: string;
+  sector_id?: string;
+  sector_name?: string;
+  admin_id?: string;
+  admin_name?: string;
+  admin_email?: string;
+  principal_name?: string;
   phone?: string;
   email?: string;
-  principal_name?: string;
-  principalName?: string; // Added for compatibility
+  address?: string;
   student_count?: number;
   teacher_count?: number;
-  type?: string;
-  status?: string;
-  admin_id?: string;
-  admin_email?: string;
-  language?: string;
-  created_at?: string; // Added to match supabase.School
-  updated_at?: string; // Added to match supabase.School
-}
-
-export interface SchoolFormProps {
-  initialData?: SchoolFormData;
-  onSubmit: (data: SchoolFormData) => void;
-  regions: Array<Region>;
-  sectors?: Array<Sector>;
-  isLoading?: boolean;
-  isSubmitting?: boolean;
-  submitButtonText?: string;
-}
-
-export interface EnhancedSchoolFormProps extends SchoolFormProps {
-  regionNames?: Record<string, string>;
-  sectorNames?: Record<string, string>;
-}
-
-// Re-export from supabase types to avoid circular dependencies
-export { SchoolStat, Region, Sector } from './supabase';
-
-// School interface for backwards compatibility
-export interface School extends SchoolFormData {
-  id: string;
-  created_at: string; 
-  updated_at: string; 
+  created_at?: string;
+  updated_at?: string;
   completion_rate?: number;
   completionRate?: number;
-  region_name?: string;
-  sector_name?: string;
 }
 
-// Define SectorSchool for compatibility
-export interface SectorSchool {
-  id: string;
-  name: string;
-  status?: string;
-  completionRate: number;
-  principal_name?: string;
-  principalName?: string;
+export interface SchoolsStatistics {
+  total: number;
+  active: number;
+  inactive: number;
+  archived?: number;
+  count?: number;
+  draft?: number;
 }
+
+export interface SchoolWithStats extends School {
+  stats?: SchoolsStatistics;
+}
+
+export interface EnhancedSchool extends School {
+  region?: {
+    id: string;
+    name: string;
+  };
+  sector?: {
+    id: string;
+    name: string;
+  };
+  admin?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+// Type conversions
+export type SchoolStatus = 'active' | 'inactive' | 'archived' | string;
+
+// For backward compatibility
+export type { School as SchoolProfile };

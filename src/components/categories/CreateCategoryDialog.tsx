@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -52,10 +53,13 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
         return;
       }
 
+      // Convert deadline to string if it exists
+      const deadline = data.deadline ? String(data.deadline) : null;
+
       await addCategory({
         name: data.name,
         description: data.description,
-        deadline: data.deadline,
+        deadline: deadline,
         status: data.status as CategoryStatus,
         assignment: data.assignment,
         priority: data.priority,
@@ -196,6 +200,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
                         type="date" 
                         {...field} 
                         value={field.value || ''} 
+                        onChange={(e) => field.onChange(e.target.value)}
                       />
                     </FormControl>
                     <FormMessage />

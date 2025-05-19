@@ -37,8 +37,8 @@ export const useCategories = () => {
       }
 
       // Add sorting if specified
-      if (filter.sortBy) {
-        const order = filter.sortOrder || 'asc';
+      if ('sortBy' in filter && filter.sortBy) {
+        const order = (filter.sortOrder as 'asc' | 'desc') || 'asc';
         query = query.order(filter.sortBy, { ascending: order === 'asc' });
       } else {
         // Default sorting
@@ -77,9 +77,16 @@ export const useCategories = () => {
   const createCategory = async (category: Omit<Category, 'id'>) => {
     try {
       setLoading(true);
+      
+      // Convert the deadline to string if it's a Date object
+      const processedCategory = {
+        ...category,
+        deadline: category.deadline ? String(category.deadline) : null
+      };
+
       const { data, error } = await supabase
         .from('categories')
-        .insert([category])
+        .insert(processedCategory)
         .select();
 
       if (error) throw error;
@@ -98,9 +105,16 @@ export const useCategories = () => {
   const updateCategory = async (id: string, updates: Partial<Category>) => {
     try {
       setLoading(true);
+      
+      // Convert the deadline to string if it's a Date object
+      const processedUpdates = {
+        ...updates,
+        deadline: updates.deadline ? String(updates.deadline) : null
+      };
+      
       const { data, error } = await supabase
         .from('categories')
-        .update(updates)
+        .update(processedUpdates)
         .eq('id', id)
         .select();
 

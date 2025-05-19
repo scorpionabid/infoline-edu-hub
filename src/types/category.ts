@@ -14,7 +14,7 @@ export interface Category {
   priority?: number;
   created_at?: string;
   updated_at?: string;
-  deadline?: string | Date;
+  deadline?: string;
   archived?: boolean;
   column_count?: number;
   columnCount?: number; // Alias for compatibility
@@ -26,6 +26,8 @@ export interface CategoryFilter {
   search: string;
   status: string | null;
   assignment: string | null;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface CategoryFilterProps {
@@ -36,7 +38,7 @@ export interface CategoryFilterProps {
 export interface AddCategoryFormData {
   name: string;
   description?: string;
-  deadline?: Date | null | string;
+  deadline?: string | null;
   status?: CategoryStatus;
   assignment?: CategoryAssignment;
   priority?: number;

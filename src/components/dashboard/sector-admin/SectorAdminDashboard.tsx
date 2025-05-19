@@ -36,20 +36,27 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
     );
   }
   
+  // Get statistics data from the correct property
   const statsData = [
     { 
       title: t('totalSchools'), 
-      value: data.status?.total || (data.schools ? data.schools.total : 0), 
+      value: data.status?.total || 
+        (data.schools && 'total' in data.schools ? data.schools.total : 
+         (data.schools ? data.schools.length : 0)),
       color: 'bg-blue-100' 
     },
     { 
       title: t('activeSchools'), 
-      value: data.status?.active || (data.schools ? data.schools.active : 0), 
+      value: data.status?.active || 
+        (data.schools && 'active' in data.schools ? data.schools.active : 
+         (data.schools ? data.schools.filter(s => s.status === 'active').length : 0)),  
       color: 'bg-green-100' 
     },
     { 
       title: t('inactiveSchools'), 
-      value: data.status?.inactive || (data.schools ? data.schools.inactive : 0), 
+      value: data.status?.inactive || 
+        (data.schools && 'inactive' in data.schools ? data.schools.inactive : 
+         (data.schools ? data.schools.filter(s => s.status === 'inactive').length : 0)),
       color: 'bg-gray-100' 
     },
   ];

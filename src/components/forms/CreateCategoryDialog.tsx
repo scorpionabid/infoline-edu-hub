@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -53,7 +54,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
   const handleSubmit = async (data: AddCategoryFormData) => {
     setIsSubmitting(true);
     try {
-      // Convert deadline to string if it's a Date object
+      // Convert deadline to string if it exists
       const deadline = data.deadline ? String(data.deadline) : null;
       
       const { error } = await supabase.from('categories').insert({

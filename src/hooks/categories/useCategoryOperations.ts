@@ -14,9 +14,15 @@ export const useCategoryOperations = () => {
       setIsLoading(true);
       setError(null);
       
+      // Convert the deadline to string if it's a Date object
+      const processedCategory = {
+        ...category,
+        deadline: category.deadline ? String(category.deadline) : null
+      };
+      
       const { data, error } = await supabase
         .from('categories')
-        .insert([category])
+        .insert([processedCategory])
         .select();
       
       if (error) {
@@ -43,9 +49,15 @@ export const useCategoryOperations = () => {
       setIsLoading(true);
       setError(null);
       
+      // Convert the deadline to string if it's a Date object
+      const processedUpdates = {
+        ...updates,
+        deadline: updates.deadline ? String(updates.deadline) : null
+      };
+      
       const { data, error } = await supabase
         .from('categories')
-        .update(updates)
+        .update(processedUpdates)
         .eq('id', id)
         .select();
       
@@ -109,5 +121,4 @@ export const useCategoryOperations = () => {
   };
 };
 
-export type { AddCategoryFormData, CategoryStatus };
 export default useCategoryOperations;

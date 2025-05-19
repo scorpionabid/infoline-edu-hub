@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Category, CategoryStatus } from '@/types/category';
+import { Category, CategoryStatus, AddCategoryFormData } from '@/types/category';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -14,9 +15,15 @@ export const useCategoryActions = () => {
       setIsLoading(true);
       setError(null);
 
+      // Convert the deadline to string if it's a Date object
+      const processedCategory = {
+        ...categoryData,
+        deadline: categoryData.deadline ? String(categoryData.deadline) : null
+      };
+
       const { data, error: createError } = await supabase
         .from('categories')
-        .insert([categoryData])
+        .insert([processedCategory])
         .select()
         .single();
 
@@ -44,9 +51,15 @@ export const useCategoryActions = () => {
       setIsLoading(true);
       setError(null);
 
+      // Convert the deadline to string if it's a Date object
+      const processedUpdates = {
+        ...categoryData,
+        deadline: categoryData.deadline ? String(categoryData.deadline) : null
+      };
+
       const { data, error: updateError } = await supabase
         .from('categories')
-        .update(categoryData)
+        .update(processedUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -137,16 +150,17 @@ export const useCategoryActions = () => {
         throw new Error('At least one category with a valid name is required');
       }
       
-      // Add timestamps to each category
-      const categoriesWithTimestamps = validCategories.map(cat => ({
+      // Add timestamps to each category and convert Date objects to strings
+      const processedCategories = validCategories.map(cat => ({
         ...cat,
+        deadline: cat.deadline ? String(cat.deadline) : null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }));
       
       const { data, error } = await supabase
         .from('categories')
-        .insert(categoriesWithTimestamps)
+        .insert(processedCategories)
         .select();
 
       if (error) throw error;
@@ -169,12 +183,3 @@ export const useCategoryActions = () => {
 };
 
 export default useCategoryActions;
-
-export interface AddCategoryFormData {
-  name: string;
-  description?: string;
-  deadline?: string | Date;
-  status?: CategoryStatus;
-  priority?: number;
-  assignment?: string;
-}
