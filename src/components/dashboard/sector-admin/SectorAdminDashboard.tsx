@@ -13,6 +13,7 @@ import UpcomingDeadlinesList from '../UpcomingDeadlinesList';
 import PendingFormsList from '../PendingFormsList';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
+import { SchoolStat } from '@/types/school';
 
 interface SectorAdminDashboardProps {
   data: SectorAdminDashboardData;
@@ -36,27 +37,27 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
     );
   }
   
-  // Get statistics data from the correct property
+  // Get statistics data from the correct property with proper type casting
   const statsData = [
     { 
       title: t('totalSchools'), 
-      value: data.status?.total || 
+      value: (data.status?.total || 
         (data.schools && 'total' in data.schools ? data.schools.total : 
-         (data.schools ? data.schools.length : 0)),
+         (data.schools ? data.schools.length : 0))) as number,
       color: 'bg-blue-100' 
     },
     { 
       title: t('activeSchools'), 
-      value: data.status?.active || 
+      value: (data.status?.active || 
         (data.schools && 'active' in data.schools ? data.schools.active : 
-         (data.schools ? data.schools.filter(s => s.status === 'active').length : 0)),  
+         (data.schools ? data.schools.filter(s => s.status === 'active').length : 0))) as number,
       color: 'bg-green-100' 
     },
     { 
       title: t('inactiveSchools'), 
-      value: data.status?.inactive || 
+      value: (data.status?.inactive || 
         (data.schools && 'inactive' in data.schools ? data.schools.inactive : 
-         (data.schools ? data.schools.filter(s => s.status === 'inactive').length : 0)),
+         (data.schools ? data.schools.filter(s => s.status === 'inactive').length : 0))) as number,
       color: 'bg-gray-100' 
     },
   ];
@@ -77,6 +78,23 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
   const completionPercentage = typeof data.completion === 'object' && data.completion
     ? data.completion.percentage
     : (typeof data.completion === 'number' ? data.completion : data.completionRate || 0);
+
+  // Convert school stats to the correct format
+  const schoolStats: SchoolStat[] = (data.schoolStats || []).map(school => ({
+    id: school.id,
+    name: school.name,
+    completionRate: school.completionRate || school.completion || 0,
+    status: school.status,
+    // Include other properties that might be used
+    lastUpdate: school.lastUpdate,
+    pendingForms: school.pendingForms,
+    formsCompleted: school.formsCompleted,
+    totalForms: school.totalForms,
+    principalName: school.principalName || school.principal_name,
+    address: school.address,
+    phone: school.phone,
+    email: school.email
+  }));
 
   return (
     <div className="space-y-4">
@@ -110,7 +128,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
             <CardDescription>{t('schoolsProgressDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <SchoolsCompletionList schools={data.schoolStats || []} />
+            <SchoolsCompletionList schools={schoolStats} />
           </CardContent>
         </Card>
       </div>

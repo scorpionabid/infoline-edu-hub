@@ -48,7 +48,7 @@ const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
           <SchoolForm
             initialData={school}
             onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
+            isSubmitting={isSubmitting || false}
             regions={regions}
             sectors={sectors}
             regionNames={regionNames}

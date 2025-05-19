@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -36,7 +37,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { az } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { AddCategoryFormData } from '@/types/category';
+import { AddCategoryFormData, formatDeadlineForApi } from '@/types/category';
 
 // Form validation schema
 const formSchema = z.object({
@@ -78,7 +79,16 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   });
   
   const handleSubmit = async (data: FormValues) => {
-    await onSubmit(data as AddCategoryFormData);
+    // Create a new object with the deadline converted to string
+    const categoryData: AddCategoryFormData = {
+      name: data.name,
+      description: data.description,
+      assignment: data.assignment,
+      priority: data.priority,
+      deadline: data.deadline ? formatDeadlineForApi(data.deadline) : null,
+    };
+    
+    await onSubmit(categoryData);
   };
   
   const handleClose = () => {

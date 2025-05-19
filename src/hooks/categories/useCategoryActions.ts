@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Category, CategoryStatus, AddCategoryFormData } from '@/types/category';
+import { Category, CategoryStatus, AddCategoryFormData, formatDeadlineForApi } from '@/types/category';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -15,15 +15,21 @@ export const useCategoryActions = () => {
       setIsLoading(true);
       setError(null);
 
+      // Ensure required properties
+      if (!categoryData.name) {
+        throw new Error('Category name is required');
+      }
+
       // Convert the deadline to string if it's a Date object
       const processedCategory = {
         ...categoryData,
         deadline: categoryData.deadline ? String(categoryData.deadline) : null
       };
 
+      // Insert single object
       const { data, error: createError } = await supabase
         .from('categories')
-        .insert([processedCategory])
+        .insert(processedCategory)
         .select()
         .single();
 
@@ -153,7 +159,7 @@ export const useCategoryActions = () => {
       // Add timestamps to each category and convert Date objects to strings
       const processedCategories = validCategories.map(cat => ({
         ...cat,
-        deadline: cat.deadline ? String(cat.deadline) : null,
+        deadline: cat.deadline ? formatDeadlineForApi(cat.deadline) : null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }));

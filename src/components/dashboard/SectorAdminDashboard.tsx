@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DashboardFormStats, SectorAdminDashboardData, SchoolStat } from '@/types/dashboard';
+import { DashboardFormStats, SectorAdminDashboardData } from '@/types/dashboard';
 import StatsGrid from './StatsGrid';
 import DashboardChart from './DashboardChart';
 import PendingApprovalsCard from './PendingApprovalsCard';
@@ -12,7 +13,7 @@ import UpcomingDeadlinesList from './UpcomingDeadlinesList';
 import PendingFormsList from './PendingFormsList';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
-import { SchoolsStatistics } from '@/types/school';
+import { SchoolStat } from '@/types/school';
 
 interface SectorAdminDashboardProps {
   data: SectorAdminDashboardData;
@@ -36,27 +37,27 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
     );
   }
   
-  // Get statistics data from the correct property
+  // Get statistics data from the correct property with proper type casting
   const statsData = [
     { 
       title: t('totalSchools'), 
-      value: data.status?.total || 
+      value: (data.status?.total || 
         (data.schools && 'total' in data.schools ? data.schools.total : 
-         (data.schools ? data.schools.length : 0)),
+         (data.schools ? data.schools.length : 0))) as number,
       color: 'bg-blue-100' 
     },
     { 
       title: t('activeSchools'), 
-      value: data.status?.active || 
+      value: (data.status?.active || 
         (data.schools && 'active' in data.schools ? data.schools.active : 
-         (data.schools ? data.schools.filter(s => s.status === 'active').length : 0)), 
+         (data.schools ? data.schools.filter(s => s.status === 'active').length : 0))) as number,
       color: 'bg-green-100' 
     },
     { 
       title: t('inactiveSchools'), 
-      value: data.status?.inactive || 
+      value: (data.status?.inactive || 
         (data.schools && 'inactive' in data.schools ? data.schools.inactive : 
-         (data.schools ? data.schools.filter(s => s.status === 'inactive').length : 0)), 
+         (data.schools ? data.schools.filter(s => s.status === 'inactive').length : 0))) as number,
       color: 'bg-gray-100' 
     },
   ];
@@ -78,10 +79,11 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
     ? data.completion.percentage
     : (typeof data.completion === 'number' ? data.completion : data.completionRate || 0);
 
-  const schoolStats: SchoolStat[] = data.schoolStats?.map(school => ({
+  // Convert school stats to the correct format
+  const schoolStats: SchoolStat[] = (data.schoolStats || []).map(school => ({
     ...school,
     completionRate: school.completionRate || school.completion || 0
-  })) || [];
+  }));
 
   return (
     <div className="space-y-4">

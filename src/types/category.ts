@@ -1,11 +1,9 @@
 
-// Import the required types from column.d.ts
-import { Column, ColumnType } from './column';
-
+// Type definitions
 export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved' | 'pending' | string;
+export type CategoryAssignment = 'all' | 'sectors' | 'schools' | 'regions' | string;
 
-export type CategoryAssignment = 'all' | 'sectors' | 'schools' | 'regions';
-
+// Main Category interface
 export interface Category {
   id: string;
   name: string;
@@ -20,8 +18,10 @@ export interface Category {
   columnCount?: number; // Alias for compatibility
   assignment?: CategoryAssignment | string;
   completionRate?: number;
+  completion_rate?: number;
 }
 
+// Filtering
 export interface CategoryFilter {
   search: string;
   status: string | null;
@@ -35,32 +35,41 @@ export interface CategoryFilterProps {
   onFilterChange: (filter: Partial<CategoryFilter>) => void;
 }
 
+// Form data for creating/editing categories
 export interface AddCategoryFormData {
   name: string;
   description?: string;
-  deadline?: string | null;
+  deadline?: string | Date | null;
   status?: CategoryStatus;
   assignment?: CategoryAssignment;
   priority?: number;
 }
 
+// Dialog props
 export interface CreateCategoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCategoryCreated: () => Promise<void>;
 }
 
+// Category with columns
 export interface CategoryWithColumns extends Category {
-  columns: Column[];
+  columns: any[];
 }
 
-// Additional type definitions to ensure compatibility
+// Tab definition
 export interface TabDefinition {
   id: string;
   title: string;
   label?: string;
   columns?: any[];
+  value?: string;
+  count?: number;
 }
 
-// Export all the interfaces to ensure they're available
-export { ColumnType, Column };
+// Helper function to convert Date to string for API
+export function formatDeadlineForApi(deadline: Date | string | null | undefined): string | null {
+  if (!deadline) return null;
+  if (typeof deadline === 'string') return deadline;
+  return deadline.toISOString();
+}

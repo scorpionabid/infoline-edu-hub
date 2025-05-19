@@ -13,16 +13,22 @@ import { NotificationItem } from './NotificationItem';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/LanguageContext';
 import { useNotifications } from '@/context/NotificationContext';
+import { adaptDashboardNotificationToApp, AppNotification } from '@/types/notification';
 
 const NotificationSystem = () => {
   const { t } = useLanguage();
   const { 
-    notifications = [], 
+    notifications: rawNotifications = [], 
     unreadCount = 0, 
     markAsRead = () => {}, 
     markAllAsRead = () => {}, 
     clearAll = () => {} 
   } = useNotifications();
+  
+  // Ensure notifications are normalized to the AppNotification type
+  const notifications: AppNotification[] = rawNotifications.map(notification => 
+    'isRead' in notification ? notification : adaptDashboardNotificationToApp(notification)
+  );
   
   return (
     <Popover>
@@ -79,7 +85,7 @@ const NotificationSystem = () => {
                   key={notification.id} 
                   className={cn(
                     "hover:bg-muted transition-colors",
-                    !notification.isRead ? "bg-muted/50" : ""
+                    !(notification.isRead || notification.is_read) ? "bg-muted/50" : ""
                   )}
                 >
                   <NotificationItem 

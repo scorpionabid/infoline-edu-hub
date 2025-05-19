@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
-import { CategoryFilter } from '@/types/category';
+import { CategoryFilter, CategoryFilterProps } from '@/types/category';
 
 interface ExtendedCategoryFilterProps {
   filters: CategoryFilter;
@@ -29,11 +29,11 @@ const CategoryFilterComponent: React.FC<ExtendedCategoryFilterProps> = ({
   };
 
   const handleStatusChange = (value: string) => {
-    onChange({ ...filters, status: value });
+    onChange({ ...filters, status: value || null });
   };
 
   const handleAssignmentChange = (value: string) => {
-    onChange({ ...filters, assignment: value });
+    onChange({ ...filters, assignment: value || null });
   };
 
   const handleSortChange = (field: string) => {
