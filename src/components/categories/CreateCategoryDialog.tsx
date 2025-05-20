@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCategoryOperations } from "@/hooks/categories/useCategoryOperations";
 import { toast } from "sonner";
 import { useLanguage } from "@/context/LanguageContext";
-import { CategoryStatus } from "@/types/category";
+import { CategoryStatus, AddCategoryFormData } from "@/types/category";
 
 interface CreateCategoryDialogProps {
   open: boolean;
@@ -55,16 +56,16 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
       // Convert deadline to string if it exists
       const deadline = values.deadline ? String(values.deadline) : null;
 
-      await addCategory({
+      const categoryData: AddCategoryFormData = {
         name: values.name,
         description: values.description,
         deadline: deadline,
         status: values.status as CategoryStatus,
         assignment: values.assignment,
         priority: values.priority,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+      };
+
+      await addCategory(categoryData);
       
       setOpen(false);
       form.reset();

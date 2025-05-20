@@ -43,6 +43,8 @@ export interface AddCategoryFormData {
   status?: CategoryStatus;
   assignment?: CategoryAssignment;
   priority?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Dialog props

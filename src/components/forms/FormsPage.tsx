@@ -65,6 +65,14 @@ const FormsPage: React.FC = () => {
             
             // Process columns to ensure JSON fields are parsed
             const columns = (columnsData || []).map(column => {
+              // Add missing fields to match interface requirements
+              const columnWithExtendedFields = {
+                ...column,
+                description: column.description !== undefined ? column.description : '',
+                section: column.section !== undefined ? column.section : '',
+                color: column.color !== undefined ? column.color : '',
+              };
+              
               const processedOptions = column.options ? 
                 (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
                 [];
@@ -74,11 +82,9 @@ const FormsPage: React.FC = () => {
                 null;
                 
               return {
-                ...column,
+                ...columnWithExtendedFields,
                 options: processedOptions,
-                validation: processedValidation,
-                description: column.description || '',
-                section: column.section || ''
+                validation: processedValidation
               };
             });
             

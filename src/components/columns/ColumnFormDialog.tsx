@@ -143,7 +143,12 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
                     <OptionsField 
                       control={form.control}
                       options={options}
-                      newOption={newOption}
+                      newOption={{
+                        id: '', 
+                        ...newOption, 
+                        label: newOption.label || '',
+                        value: newOption.value || ''
+                      }}
                       setNewOption={setNewOption}
                       addOption={addOption}
                       removeOption={removeOption}

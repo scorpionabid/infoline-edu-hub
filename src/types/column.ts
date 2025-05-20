@@ -55,6 +55,7 @@ export interface ColumnFormData {
   options?: ColumnOption[];
   description?: string;
   section?: string;
+  color?: string;
 }
 
 // Interface for column form values used in components
@@ -70,6 +71,7 @@ export interface ColumnFormValues {
   category_id: string;
   description?: string;
   section?: string;
+  color?: string;
   order_index?: number;
 }
 
@@ -85,6 +87,13 @@ export interface BasicColumnFieldsProps {
   selectedType?: string;
   onTypeChange?: (type: string) => void;
   isEditMode?: boolean;
+}
+
+// Column type definition with icon and description
+export interface ColumnTypeDefinition {
+  label: string;
+  description: string;
+  icon?: string;
 }
 
 // Export column types with their details for UI display
@@ -186,8 +195,8 @@ export const columnTypes = {
   },
   
   // Helper function to find a column type by name
-  find: function(type: string) {
-    return this[type as keyof typeof this] || {
+  find: function(type: string): ColumnTypeDefinition {
+    return (this[type as keyof typeof this] as ColumnTypeDefinition) || {
       label: type,
       description: 'Custom field type',
       icon: 'edit'
@@ -216,4 +225,20 @@ export interface ColumnTypeSelectorProps {
   value: string;
   onValueChange: (value: string) => void;
   disabled?: boolean;
+}
+
+// Types for Report chart types
+export enum ReportTypeValues {
+  BAR = 'BAR',
+  PIE = 'PIE',
+  LINE = 'LINE',
+  TABLE = 'TABLE',
+  CARD = 'CARD'
+}
+
+export interface ReportChartProps {
+  type: ReportTypeValues;
+  data: any[];
+  title?: string;
+  description?: string;
 }

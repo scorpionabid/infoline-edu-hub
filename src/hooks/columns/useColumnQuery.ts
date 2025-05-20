@@ -44,6 +44,11 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
           }))
         : undefined;
 
+      // Use column field extensions
+      const description = data.description || '';
+      const section = data.section || '';
+      const color = data.color || '';
+
       // Convert database column to our Column type
       return {
         id: data.id,
@@ -60,9 +65,9 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
         options: formattedOptions,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        description: data.description || '',
-        section: data.section || '',
-        color: data.color || '',
+        description: description,
+        section: section,
+        color: color,
       } as Column;
     }
     

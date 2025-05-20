@@ -15,9 +15,11 @@ export interface UseCategoryDataProps {
   categoryId?: string;
 }
 
-export const useCategoryData = ({ categoryId }: UseCategoryDataProps) => {
+export const useCategoryData = (categoryId?: string) => {
   const [category, setCategory] = useState<CategoryData | null>(null);
+  const [categories, setCategories] = useState<CategoryData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // alias for backward compatibility
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
@@ -27,6 +29,7 @@ export const useCategoryData = ({ categoryId }: UseCategoryDataProps) => {
     }
 
     setIsLoading(true);
+    setLoading(true);
     setError(null);
 
     try {
@@ -59,11 +62,14 @@ export const useCategoryData = ({ categoryId }: UseCategoryDataProps) => {
       // Transform column data
       const transformedColumns = columnsData.map(transformColumnData);
 
-      setCategory({
+      const categoryWithColumns = {
         id: categoryData.id,
         name: categoryData.name,
         columns: transformedColumns,
-      });
+      };
+
+      setCategory(categoryWithColumns);
+      setCategories([categoryWithColumns]);
     } catch (err: any) {
       const errorMessage = err.message || 'Unknown error occurred';
       setError(errorMessage);
@@ -71,6 +77,7 @@ export const useCategoryData = ({ categoryId }: UseCategoryDataProps) => {
       console.error('Error in useCategoryData:', err);
     } finally {
       setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -131,7 +138,9 @@ export const useCategoryData = ({ categoryId }: UseCategoryDataProps) => {
 
   return {
     category,
+    categories,
     isLoading,
+    loading,
     error,
     refetch: fetchCategoryData
   };
