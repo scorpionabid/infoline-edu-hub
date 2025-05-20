@@ -19,111 +19,112 @@ import {
   Palette, 
   Lock, 
   Clock, 
-  Edit
+  Edit,
+  HelpCircle
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { ColumnTypeSelectorProps } from '@/types/column';
+import { ColumnType, ColumnTypeSelectorProps } from '@/types/column';
 
 const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ 
   value, 
-  onValueChange,
+  onChange,
   disabled = false 
 }) => {
   const { t } = useLanguage();
 
   const columnTypes = [
     {
-      value: 'text',
+      value: 'text' as ColumnType,
       label: t('text'),
       description: t('textDescription'),
       icon: <Type className="mr-2 h-4 w-4" />
     },
     {
-      value: 'textarea',
+      value: 'textarea' as ColumnType,
       label: t('textarea'),
       description: t('textareaDescription'),
       icon: <AlignLeft className="mr-2 h-4 w-4" />
     },
     {
-      value: 'number',
+      value: 'number' as ColumnType,
       label: t('number'),
       description: t('numberDescription'),
       icon: <BarChart className="mr-2 h-4 w-4" />
     },
     {
-      value: 'date',
+      value: 'date' as ColumnType,
       label: t('date'),
       description: t('dateDescription'),
       icon: <CalendarDays className="mr-2 h-4 w-4" />
     },
     {
-      value: 'select',
+      value: 'select' as ColumnType,
       label: t('select'),
       description: t('selectDescription'),
       icon: <ChevronsUpDown className="mr-2 h-4 w-4" />
     },
     {
-      value: 'checkbox',
+      value: 'checkbox' as ColumnType,
       label: t('checkbox'),
       description: t('checkboxDescription'),
       icon: <CheckSquare className="mr-2 h-4 w-4" />
     },
     {
-      value: 'radio',
+      value: 'radio' as ColumnType,
       label: t('radio'),
       description: t('radioDescription'),
       icon: <Circle className="mr-2 h-4 w-4" />
     },
     {
-      value: 'file',
+      value: 'file' as ColumnType,
       label: t('file'),
       description: t('fileDescription'),
       icon: <FileUp className="mr-2 h-4 w-4" />
     },
     {
-      value: 'image',
+      value: 'image' as ColumnType,
       label: t('image'),
       description: t('imageDescription'),
       icon: <Image className="mr-2 h-4 w-4" />
     },
     {
-      value: 'email',
+      value: 'email' as ColumnType,
       label: t('email'),
       description: t('emailDescription'),
       icon: <Mail className="mr-2 h-4 w-4" />
     },
     {
-      value: 'url',
+      value: 'url' as ColumnType,
       label: t('url'),
       description: t('urlDescription'),
       icon: <Link className="mr-2 h-4 w-4" />
     },
     {
-      value: 'phone',
+      value: 'phone' as ColumnType,
       label: t('phone'),
       description: t('phoneDescription'),
       icon: <Phone className="mr-2 h-4 w-4" />
     },
     {
-      value: 'range',
+      value: 'range' as ColumnType,
       label: t('range'),
       description: t('rangeDescription'),
       icon: <Sliders className="mr-2 h-4 w-4" />
     },
     {
-      value: 'color',
+      value: 'color' as ColumnType,
       label: t('color'),
       description: t('colorDescription'),
       icon: <Palette className="mr-2 h-4 w-4" />
     },
     {
-      value: 'password',
+      value: 'password' as ColumnType,
       label: t('password'),
       description: t('passwordDescription'),
       icon: <Lock className="mr-2 h-4 w-4" />
     },
     {
-      value: 'time',
+      value: 'time' as ColumnType,
       label: t('time'),
       description: t('timeDescription'),
       icon: <Clock className="mr-2 h-4 w-4" />
@@ -133,7 +134,7 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({
   return (
     <RadioGroup 
       value={value} 
-      onValueChange={onValueChange}
+      onValueChange={(val) => onChange(val as ColumnType)}
       className="grid grid-cols-2 gap-2"
       disabled={disabled}
     >

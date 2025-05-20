@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Column, ColumnOption, ColumnType } from '@/types/column';
+import { ensureJson } from '@/types/json';
 
 interface UseColumnQueryOptions {
   columnId?: string;
@@ -68,7 +69,7 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
         description: description,
         section: section,
         color: color,
-      } as Column;
+      };
     }
     
     return null;

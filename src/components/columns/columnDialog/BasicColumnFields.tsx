@@ -6,12 +6,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
-import { BasicColumnFieldsProps } from '@/types/column';
+import { BasicColumnFieldsProps, ColumnType } from '@/types/column';
 import ColumnTypeSelector from './ColumnTypeSelector';
 
 const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
   control,
-  errors,
   categories = [],
   form,
   columns = [],
@@ -22,7 +21,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
 }) => {
   const { t } = useLanguage();
   
-  const handleTypeChange = (value: string) => {
+  const handleTypeChange = (value: ColumnType) => {
     if (onTypeChange) {
       onTypeChange(value);
     }
@@ -75,8 +74,8 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
             <FormLabel>{t("columnType")}</FormLabel>
             <FormControl>
               <ColumnTypeSelector 
-                value={field.value} 
-                onValueChange={(value) => {
+                value={field.value as ColumnType} 
+                onChange={(value: ColumnType) => {
                   field.onChange(value);
                   handleTypeChange(value);
                 }}

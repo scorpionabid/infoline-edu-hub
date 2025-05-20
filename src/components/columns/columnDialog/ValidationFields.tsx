@@ -15,7 +15,7 @@ export interface ValidationFieldsProps {
 const ValidationFields: React.FC<ValidationFieldsProps> = ({ type, control }) => {
   const { t } = useLanguage();
   
-  // Sütun tipinə görə validasiya sahələri
+  // Column type based validation fields
   if (type === 'text' || type === 'textarea' || type === 'email' || type === 'url' || type === 'richtext') {
     return (
       <div className="space-y-4">
@@ -186,7 +186,7 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({ type, control }) =>
     );
   }
   
-  if (type === 'phone' || type === 'tel') {
+  if (type === 'phone') {
     return (
       <div className="space-y-4">
         <FormField

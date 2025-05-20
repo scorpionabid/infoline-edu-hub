@@ -39,7 +39,10 @@ export interface ColumnOption {
   id?: string;
   label: string;
   value: string;
-  [key: string]: string | undefined; // Add index signature for Json compatibility
+  color?: string;
+  disabled?: boolean;
+  description?: string;
+  [key: string]: string | boolean | undefined; // Add index signature for Json compatibility
 }
 
 // Main column interface
@@ -59,10 +62,10 @@ export interface Column {
   parent_column_id?: string;
   created_at?: string;
   updated_at?: string;
-  description?: string; // Added missing field
-  section?: string; // Added missing field
-  color?: string; // Added missing field
-  version?: number; // Added for versioning support
+  description?: string; 
+  section?: string; 
+  color?: string; 
+  version?: number; 
 }
 
 // Form values for creating/editing columns
@@ -114,7 +117,7 @@ export interface BasicColumnFieldsProps {
 // Column types definition with lookup function
 export const columnTypes: {
   types: ColumnTypeDefinition[];
-  find: (type: string) => ColumnTypeDefinition | { label: string; description: string };
+  find: (type: string) => ColumnTypeDefinition | { label: string; description: string; icon?: string };
 } = {
   types: [
     {
@@ -252,11 +255,12 @@ export const columnTypes: {
   ],
   
   // Helper function to find a column type by value
-  find: function(type: string): ColumnTypeDefinition | { label: string; description: string } {
+  find: function(type: string): ColumnTypeDefinition | { label: string; description: string; icon?: string } {
     const foundType = this.types.find(t => t.value === type);
     return foundType || {
       label: type || 'Unknown',
-      description: 'Custom column type'
+      description: 'Custom column type',
+      icon: 'help'
     };
   }
 };

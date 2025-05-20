@@ -1,378 +1,250 @@
+
+// DataEntryForm.tsx
+
+// Import proper components and hooks
 import React, { useEffect, useState } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { useAutoSave } from '@/hooks/form/useAutoSave';
-import { SaveIcon, CheckCircleIcon, CircleIcon } from 'lucide-react';
-import DataEntryStatus from './DataEntryStatus';
+import { FormProvider, useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useParams } from 'react-router-dom';
 import FormFields from './FormFields';
-import DataEntrySaveBar from './DataEntrySaveBar';
-import { supabase } from '@/integrations/supabase/client';
-import { Column } from '@/types/column';
-import { CategoryWithColumns, TabDefinition } from '@/types/category';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useDataEntryState } from '@/hooks/dataEntry/useDataEntryState';
 import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/context/LanguageContext';
-import { FormFieldsProps } from '@/types/dataEntry';
 
-// Helper to group columns by section
-const groupColumnsBySection = (columns: Column[]): { [key: string]: Column[] } => {
-  return columns.reduce((acc: { [key: string]: Column[] }, column) => {
-    const section = column.section || 'default';
-    if (!acc[section]) {
-      acc[section] = [];
-    }
-    acc[section].push(column);
-    return acc;
-  }, {});
-};
-
-// Convert grouped columns to tabs
-const getTabsFromColumns = (columns: Column[]): TabDefinition[] => {
-  const grouped = groupColumnsBySection(columns);
-  
-  return Object.keys(grouped).map((section, index) => ({
-    id: section === 'default' ? 'general' : section,
-    title: section === 'default' ? 'General' : section,
-    columns: grouped[section]
-  }));
-};
-
-// Create schema dynamically based on columns
-const createSchema = (columns: Column[]): z.ZodObject<any> => {
-  const shape: { [key: string]: z.ZodType<any> } = {};
-  
-  columns.forEach(column => {
-    let field: z.ZodType<any> = z.any();
-    
-    if (column.is_required) {
-      switch (column.type) {
-        case 'text':
-        case 'textarea':
-          field = z.string().nonempty('This field is required');
-          break;
-        case 'number':
-          field = z.number().or(z.string().transform(val => Number(val) || 0));
-          break;
-        case 'select':
-          field = z.string().nonempty('Please select an option');
-          break;
-        case 'checkbox':
-          field = z.boolean();
-          break;
-        case 'date':
-          field = z.string().or(z.date());
-          break;
-        default:
-          field = z.any();
-      }
-    } else {
-      switch (column.type) {
-        case 'text':
-        case 'textarea':
-        case 'select':
-          field = z.string().optional();
-          break;
-        case 'number':
-          field = z.number().optional().or(z.string().transform(val => val ? Number(val) : undefined));
-          break;
-        case 'checkbox':
-          field = z.boolean().optional();
-          break;
-        case 'date':
-          field = z.string().optional().or(z.date().optional());
-          break;
-        default:
-          field = z.any().optional();
-      }
-    }
-    
-    shape[column.id] = field;
-  });
-  
-  return z.object(shape);
-};
-
+// Define the component props
 interface DataEntryFormProps {
   schoolId?: string;
   categoryId?: string;
-  onSaved?: () => void;
-  onSubmitted?: () => void;
+  readOnly?: boolean;
+  onSave?: (data: any) => Promise<boolean>;
+  onCancel?: () => void;
 }
 
-const DataEntryForm: React.FC<DataEntryFormProps> = ({ 
-  schoolId: propSchoolId, 
+// The main component
+const DataEntryForm: React.FC<DataEntryFormProps> = ({
+  schoolId,
   categoryId: propCategoryId,
-  onSaved,
-  onSubmitted
+  readOnly = false,
+  onSave,
+  onCancel
 }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const params = useParams();
-  const user = useAuthStore(state => state.user);
+  const resolvedCategoryId = propCategoryId || params.categoryId || '';
+  const resolvedSchoolId = schoolId || params.schoolId || '';
   
-  // Use props or URL params
-  const categoryId = propCategoryId || params.categoryId;
-  const schoolId = propSchoolId || user?.school_id;
+  // State for active tab
+  const [activeTab, setActiveTab] = useState('general');
   
-  const { category, isLoading, error, refetch } = useCategoryData(categoryId ? { categoryId } : { });
-  
-  const [activeTab, setActiveTab] = useState<string>('general');
-  const [tabs, setTabs] = useState<TabDefinition[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [existingData, setExistingData] = useState<Record<string, any>>({});
-  const [hasPendingSubmission, setHasPendingSubmission] = useState(false);
-  
-  // Create dynamic form schema
-  const schema = category?.columns ? createSchema(category.columns) : z.object({});
-  
+  // Setup form
   const methods = useForm({
-    resolver: zodResolver(schema),
-    defaultValues: existingData
+    defaultValues: {},
+    mode: 'onChange'
   });
   
-  const { reset, formState, handleSubmit } = methods;
-  const { isDirty } = formState;
+  const { handleSubmit, formState: { isSubmitting, isDirty }, reset } = methods;
+
+  // Get category data and entries
+  const { 
+    category, 
+    isLoading: categoryLoading, 
+    error: categoryError 
+  } = useCategoryData({
+    categoryId: resolvedCategoryId
+  });
   
-  // Setup tabs when category is loaded
-  useEffect(() => {
-    if (category?.columns) {
-      const newTabs = getTabsFromColumns(category.columns);
-      setTabs(newTabs);
-      
-      // Set active tab to the first tab
-      if (newTabs.length > 0) {
-        setActiveTab(newTabs[0].id);
-      }
-    }
+  const {
+    dataEntries,
+    isLoading: entriesLoading,
+    error: entriesError,
+    saveDataEntries,
+    fetchDataEntries
+  } = useDataEntryState({
+    categoryId: resolvedCategoryId,
+    schoolId: resolvedSchoolId
+  });
+  
+  // Group columns by section
+  const sections = React.useMemo(() => {
+    if (!category || !category.columns) return { general: [] };
+    
+    return category.columns.reduce((acc: Record<string, any[]>, column) => {
+      const section = column.section || 'general';
+      if (!acc[section]) acc[section] = [];
+      acc[section].push(column);
+      return acc;
+    }, { general: [] });
   }, [category]);
   
-  // Load existing data
+  // Set form values from data entries
   useEffect(() => {
-    const loadExistingData = async () => {
-      if (!categoryId || !schoolId) return;
+    if (dataEntries && Array.isArray(dataEntries)) {
+      const values = dataEntries.reduce((acc, entry) => {
+        acc[entry.column_id] = entry.value || '';
+        return acc;
+      }, {} as Record<string, string>);
       
-      try {
-        const { data, error } = await supabase
-          .from('data_entries')
-          .select('*')
-          .eq('category_id', categoryId)
-          .eq('school_id', schoolId);
-        
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          // Format data as { columnId: value }
-          const formattedData: Record<string, any> = {};
-          data.forEach(entry => {
-            formattedData[entry.column_id] = entry.value;
-          });
-          
-          setExistingData(formattedData);
-          reset(formattedData);
-          
-          // Check if there's a pending submission
-          const hasPending = data.some(entry => entry.status === 'pending');
-          setHasPendingSubmission(hasPending);
-        }
-      } catch (err) {
-        console.error('Error loading existing data:', err);
-        toast.error('Mövcud məlumatları yükləyərkən xəta yarandı');
-      }
-    };
-    
-    loadExistingData();
-  }, [categoryId, schoolId, reset]);
-  
-  const saveData = async () => {
-    if (!categoryId || !schoolId) {
-      toast.error('Məlumatları saxlamaq üçün tələb olunan məlumat əksikdir');
-      return false;
+      reset(values);
     }
-    
-    const formData = methods.getValues();
-    setSaving(true);
-    
+  }, [dataEntries, reset]);
+  
+  // Handle save
+  const onSubmitForm = async (data: any) => {
     try {
-      // Process each field
-      for (const columnId in formData) {
-        const value = formData[columnId];
+      if (onSave) {
+        // Use custom save handler
+        const result = await onSave(data);
+        if (result) {
+          toast.success(t('dataSaved'));
+          if (onCancel) onCancel();
+        }
+      } else {
+        // Use default save handler
+        const formattedData = Object.keys(data).map(columnId => ({
+          column_id: columnId,
+          value: data[columnId],
+          category_id: resolvedCategoryId,
+          school_id: resolvedSchoolId,
+        }));
         
-        // Skip undefined values
-        if (value === undefined) continue;
-        
-        // Find if entry already exists
-        const { data: existingEntries } = await supabase
-          .from('data_entries')
-          .select('id')
-          .eq('category_id', categoryId)
-          .eq('school_id', schoolId)
-          .eq('column_id', columnId)
-          .maybeSingle();
-        
-        if (existingEntries) {
-          // Update existing entry
-          await supabase
-            .from('data_entries')
-            .update({ 
-              value: value !== null ? String(value) : null,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingEntries.id);
-        } else {
-          // Create new entry
-          await supabase
-            .from('data_entries')
-            .insert({
-              category_id: categoryId,
-              school_id: schoolId,
-              column_id: columnId,
-              value: value !== null ? String(value) : null,
-              status: 'pending',
-              created_by: user?.id
-            });
+        const result = await saveDataEntries(formattedData);
+        if (result) {
+          toast.success(t('dataSaved'));
+          navigate(-1);
         }
       }
-      
-      onSaved?.();
-      return true;
     } catch (error) {
       console.error('Error saving data:', error);
-      toast.error('Məlumatları saxlayarkən xəta yarandı');
-      return false;
-    } finally {
-      setSaving(false);
+      toast.error(t('errorSavingData'));
     }
   };
   
-  // Set up auto-save
-  const { isSaving, errorMessage } = useAutoSave({
-    save: saveData,
-    interval: 30000,
-    successMessage: 'Məlumatlar avtomatik saxlandı'
-  });
-  
-  const onSubmit = async (data: any) => {
-    const saveResult = await saveData();
-    if (!saveResult) return;
-    
-    setSubmitting(true);
-    
-    try {
-      // Mark all entries for this category as pending
-      await supabase
-        .from('data_entries')
-        .update({ status: 'pending' })
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId);
-      
-      toast.success('Məlumatlar təsdiqlənmə üçün göndərildi');
-      onSubmitted?.();
-      setHasPendingSubmission(true);
-    } catch (error) {
-      console.error('Error submitting data:', error);
-      toast.error('Məlumatları göndərərkən xəta yarandı');
-    } finally {
-      setSubmitting(false);
+  // Handle cancel
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      navigate(-1);
     }
   };
   
-  // Handle API errors
-  if (error) {
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+  
+  // Loading state
+  if (categoryLoading || entriesLoading) {
     return (
-      <Alert variant="destructive">
-        <AlertDescription>
-          Kateqoriya məlumatlarını yükləyərkən xəta yarandı: {error}
-        </AlertDescription>
-      </Alert>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('loading')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
   
-  if (isLoading) {
+  // Error state
+  if (categoryError || entriesError) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-1/3" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <Skeleton className="h-4 w-1/2 mb-2" />
-                <Skeleton className="h-8 w-full" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('error')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-destructive">
+            {categoryError || entriesError}
+          </div>
+          <Button onClick={() => navigate(-1)} className="mt-4">{t('goBack')}</Button>
+        </CardContent>
+      </Card>
     );
   }
   
+  // If category doesn't exist
   if (!category) {
     return (
-      <Alert>
-        <AlertDescription>
-          Kateqoriya tapılmadı
-        </AlertDescription>
-      </Alert>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('notFound')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div>{t('categoryNotFound')}</div>
+          <Button onClick={() => navigate(-1)} className="mt-4">{t('goBack')}</Button>
+        </CardContent>
+      </Card>
     );
   }
   
+  // Render sections as tabs if multiple sections exist
+  const hasSections = Object.keys(sections).length > 1;
+
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        <div className="flex flex-col space-y-4">
-          {hasPendingSubmission && (
-            <DataEntryStatus status="pending" />
-          )}
+      <form onSubmit={handleSubmit(onSubmitForm)}>
+        <Card>
+          <CardHeader>
+            <CardTitle>{category.name}</CardTitle>
+            {category.description && <p className="text-sm text-muted-foreground">{category.description}</p>}
+          </CardHeader>
           
-          {tabs.length > 1 ? (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full md:w-auto mb-4">
-                {tabs.map(tab => (
-                  <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
-                    {formState.errors && 
-                     tab.columns?.some(column => formState.errors[column.id]) ? (
-                      <CircleIcon className="h-4 w-4 text-destructive" />
-                    ) : (
-                      <CheckCircleIcon className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    {tab.title}
-                  </TabsTrigger>
+          <CardContent>
+            {hasSections ? (
+              <Tabs value={activeTab} onValueChange={handleTabChange}>
+                <TabsList className="mb-4">
+                  {Object.keys(sections).map(section => (
+                    <TabsTrigger key={section} value={section}>
+                      {section === 'general' ? t('generalInfo') : section}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                
+                {Object.entries(sections).map(([section, columns]) => (
+                  <TabsContent key={section} value={section} className="space-y-4">
+                    <FormFields 
+                      columns={columns} 
+                      readOnly={readOnly} 
+                    />
+                  </TabsContent>
                 ))}
-              </TabsList>
-              
-              {tabs.map(tab => (
-                <TabsContent key={tab.id} value={tab.id} className="space-y-4">
-                  <FormFields 
-                    columns={tab.columns || []} 
-                    disabled={submitting || saving || isSaving}
-                  />
-                </TabsContent>
-              ))}
-            </Tabs>
-          ) : (
-            <FormFields 
-              columns={category.columns || []} 
-              disabled={submitting || saving || isSaving}
-            />
-          )}
-        </div>
-        
-        <DataEntrySaveBar 
-          isDirty={isDirty}
-          isSubmitting={submitting}
-          isSaving={saving || isSaving}
-          onSave={saveData}
-          errors={!!Object.keys(formState.errors).length}
-          isPendingApproval={hasPendingSubmission}
-        />
+              </Tabs>
+            ) : (
+              <div className="space-y-4">
+                <FormFields 
+                  columns={category.columns || []} 
+                  readOnly={readOnly} 
+                />
+              </div>
+            )}
+            
+            <Separator className="my-6" />
+            
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={handleCancel}>
+                {t('cancel')}
+              </Button>
+              {!readOnly && (
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || !isDirty}
+                >
+                  {isSubmitting ? t('saving') : t('save')}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </form>
     </FormProvider>
   );

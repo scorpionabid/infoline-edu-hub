@@ -1,238 +1,283 @@
 
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useLanguage } from '@/context/LanguageContext';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { CreateCategoryDialogProps, AddCategoryFormData, formatDeadlineForApi } from '@/types/category';
+import React, { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useLanguage } from "@/context/LanguageContext";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+
+interface CreateCategoryDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCategoryCreated?: () => void;
+  onSuccess?: (categoryId: string) => void;
+}
+
+// Form schema for create category
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  assignment: z.enum(["all", "region", "sector", "school"]).default("all"),
+  deadline: z.date().optional().nullable(),
+  status: z.enum(["active", "inactive", "draft", "archived"]).default("draft"),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
   open,
   onOpenChange,
   onCategoryCreated,
+  onSuccess,
 }) => {
   const { t } = useLanguage();
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const formSchema = z.object({
-    name: z.string().min(1, { message: t('nameRequired') }),
-    description: z.string().optional(),
-    assignment: z.string(),
-    status: z.string(),
-    priority: z.number().min(0),
-    deadline: z.string().optional().nullable(),
-  });
-
-  const form = useForm<AddCategoryFormData>({
+  // Initialize form
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      description: '',
-      assignment: 'all',
-      status: 'active',
-      priority: 0,
+      name: "",
+      description: "",
+      assignment: "all",
       deadline: null,
+      status: "draft",
     },
   });
 
-  const handleSubmit = async (data: AddCategoryFormData) => {
+  // Handle form submission
+  const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
-      // Convert deadline to string if it exists
-      const deadline = formatDeadlineForApi(data.deadline);
-      
-      const { error } = await supabase.from('categories').insert({
-        name: data.name,
-        description: data.description,
-        assignment: data.assignment,
-        status: data.status,
-        priority: data.priority,
-        deadline: deadline
-      });
+      // Format deadline as an ISO string if it exists
+      const formattedValues = {
+        ...values,
+        deadline: values.deadline ? values.deadline.toISOString() : null,
+      };
+
+      const { data, error } = await supabase
+        .from("categories")
+        .insert([formattedValues])
+        .select("id")
+        .single();
 
       if (error) throw error;
 
-      toast({
-        title: t('success'),
-        description: t('categoryCreated'),
-      });
-
+      toast.success(t("categoryCreated"));
+      
+      // Reset form
       form.reset();
+      
+      // Close dialog
       onOpenChange(false);
-      await onCategoryCreated();
+      
+      // Refresh categories list
+      if (onCategoryCreated) {
+        onCategoryCreated();
+      }
+      
+      // Call success callback
+      if (onSuccess && data?.id) {
+        onSuccess(data.id);
+      }
     } catch (error: any) {
-      console.error('Error creating category:', error);
-      toast({
-        title: t('error'),
-        description: error.message || t('errorCreatingCategory'),
-        variant: 'destructive',
-      });
+      console.error("Error creating category:", error);
+      toast.error(error.message || t("errorCreatingCategory"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Reset form when dialog closes
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      form.reset();
+    }
+    onOpenChange(open);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t('addCategory')}</DialogTitle>
-          <DialogDescription>{t('fillCategoryDetails')}</DialogDescription>
+          <DialogTitle>{t("createCategory")}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Name field */}
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('name')}</FormLabel>
+                  <FormLabel>{t("name")}</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input placeholder={t("enterCategoryName")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Description field */}
             <FormField
               control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('description')}</FormLabel>
+                  <FormLabel>{t("description")}</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea
+                      placeholder={t("enterCategoryDescription")}
+                      {...field}
+                      value={field.value || ""}
+                    />
                   </FormControl>
+                  <FormDescription>
+                    {t("categoryDescriptionHelp")}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="assignment"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('assignment')}</FormLabel>
+            {/* Assignment field */}
+            <FormField
+              control={form.control}
+              name="assignment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assignment")}</FormLabel>
+                  <FormControl>
                     <Select
-                      value={field.value}
                       onValueChange={field.onChange}
+                      value={field.value}
+                      defaultValue={field.value}
                     >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('selectAssignment')} />
-                        </SelectTrigger>
-                      </FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("selectAssignment")} />
+                      </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">{t('allEntities')}</SelectItem>
-                        <SelectItem value="sectors">{t('sectors')}</SelectItem>
-                        <SelectItem value="schools">{t('schools')}</SelectItem>
+                        <SelectItem value="all">{t("allSchools")}</SelectItem>
+                        <SelectItem value="region">{t("byRegion")}</SelectItem>
+                        <SelectItem value="sector">{t("bySector")}</SelectItem>
+                        <SelectItem value="school">{t("bySchool")}</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormControl>
+                  <FormDescription>
+                    {t("assignmentHelp")}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('status')}</FormLabel>
+            {/* Deadline field */}
+            <FormField
+              control={form.control}
+              name="deadline"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("deadline")}</FormLabel>
+                  <FormControl>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>{t("selectDeadline")}</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </FormControl>
+                  <FormDescription>
+                    {t("deadlineHelp")}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Status field */}
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("status")}</FormLabel>
+                  <FormControl>
                     <Select
-                      value={field.value}
                       onValueChange={field.onChange}
+                      value={field.value}
+                      defaultValue={field.value}
                     >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('selectStatus')} />
-                        </SelectTrigger>
-                      </FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("selectStatus")} />
+                      </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="active">{t('active')}</SelectItem>
-                        <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                        <SelectItem value="draft">{t('draft')}</SelectItem>
+                        <SelectItem value="draft">{t("draft")}</SelectItem>
+                        <SelectItem value="active">{t("active")}</SelectItem>
+                        <SelectItem value="inactive">{t("inactive")}</SelectItem>
+                        <SelectItem value="archived">{t("archived")}</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('priority')}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="deadline"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('deadline')}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        value={field.value || ''}
-                        onChange={(e) => field.onChange(e.target.value || null)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <DialogFooter className="mt-6">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                {t('cancel')}
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('creating') : t('create')}
-              </Button>
-            </DialogFooter>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </form>
         </Form>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            {t("cancel")}
+          </Button>
+          <Button
+            onClick={form.handleSubmit(onSubmit)}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <span className="animate-spin mr-2">⊙</span>
+                {t("creating")}
+              </>
+            ) : (
+              t("create")
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

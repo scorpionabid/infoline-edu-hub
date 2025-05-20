@@ -66,11 +66,11 @@ const FormsPage: React.FC = () => {
             // Process columns to ensure JSON fields are parsed
             const columns = (columnsData || []).map(column => {
               // Add missing fields to match interface requirements
-              const columnWithExtendedFields = {
+              const processedColumn = {
                 ...column,
-                description: column.description !== undefined ? column.description : '',
-                section: column.section !== undefined ? column.section : '',
-                color: column.color !== undefined ? column.color : '',
+                description: column.description || '',
+                section: column.section || '',
+                color: column.color || '',
               };
               
               const processedOptions = column.options ? 
@@ -82,7 +82,7 @@ const FormsPage: React.FC = () => {
                 null;
                 
               return {
-                ...columnWithExtendedFields,
+                ...processedColumn,
                 options: processedOptions,
                 validation: processedValidation
               };
