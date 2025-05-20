@@ -7,7 +7,9 @@ export type ReportTypeValues =
   | 'area' 
   | 'table' 
   | 'summary' 
-  | 'comparison';
+  | 'comparison'
+  | 'metrics'
+  | 'custom';
 
 // Create a constant for easy reference in components
 export const REPORT_TYPE_VALUES = {
@@ -18,10 +20,18 @@ export const REPORT_TYPE_VALUES = {
   TABLE: 'table' as ReportTypeValues,
   SUMMARY: 'summary' as ReportTypeValues,
   COMPARISON: 'comparison' as ReportTypeValues,
+  METRICS: 'metrics' as ReportTypeValues,
+  CUSTOM: 'custom' as ReportTypeValues,
 };
 
+// Define ReportStatus as an enum for consistent usage
+export enum ReportStatus {
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  ARCHIVED = 'archived'
+}
+
 export type ReportType = 'bar' | 'line' | 'pie' | 'table';
-export type ReportStatus = 'draft' | 'published' | 'archived';
 
 export interface Report {
   id: string;
@@ -68,22 +78,30 @@ export interface ReportEmptyStateProps {
   message?: string;
   action?: () => void;
   actionLabel?: string;
+  onCreateReport?: () => void;
 }
 
 export interface ReportHeaderProps {
   onCategorySelect?: (id: string) => void;
   onCreateReport?: () => void;
   showFilters?: boolean;
+  title?: string;
+  description?: string;
 }
 
 export interface ReportPreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
   report?: Report;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export interface CreateReportDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSave?: (report: Report) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onCreate?: (report: any) => Promise<void>;
 }
