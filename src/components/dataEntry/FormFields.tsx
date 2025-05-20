@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -13,10 +12,10 @@ import { useFormContext } from 'react-hook-form';
 // Individual form field renderer component
 const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, onValueChange, isDisabled = false }) => {
   const renderField = () => {
-    switch (column.type) {
+    switch (column.type as ColumnType) {
       case 'text':
       case 'email':
-      case 'tel':
+      case 'phone':
       case 'url':
       case 'password':
         return (

@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnOption } from '@/types/column';
+import { Column, ColumnOption, ColumnType } from '@/types/column';
 
 interface UseColumnQueryOptions {
   columnId?: string;
@@ -54,7 +54,7 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
         id: data.id,
         category_id: data.category_id,
         name: data.name,
-        type: data.type as Column['type'],
+        type: data.type as ColumnType,
         is_required: data.is_required,
         placeholder: data.placeholder || '',
         help_text: data.help_text || '',

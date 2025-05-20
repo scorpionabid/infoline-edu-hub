@@ -39,6 +39,7 @@ export interface ColumnOption {
   id?: string;
   label: string;
   value: string;
+  [key: string]: string | undefined; // Add index signature for Json compatibility
 }
 
 // Main column interface
@@ -67,7 +68,7 @@ export interface Column {
 // Form values for creating/editing columns
 export interface ColumnFormValues {
   name: string;
-  type: string;
+  type: ColumnType;
   category_id: string;
   is_required?: boolean;
   placeholder?: string;
@@ -91,8 +92,30 @@ export interface ColumnTypeDefinition {
   supportsValidation?: boolean;
 }
 
+// Props for column type selector component
+export interface ColumnTypeSelectorProps {
+  value?: ColumnType;
+  onChange: (value: ColumnType) => void;
+  disabled?: boolean;
+}
+
+// Props for column fields component
+export interface BasicColumnFieldsProps {
+  form: any;
+  control: any;
+  categories: { id: string; name: string }[];
+  columns?: Column[];
+  editColumn?: Column | null;
+  selectedType: string;
+  onTypeChange: (type: ColumnType) => void;
+  isEditMode: boolean;
+}
+
 // Column types definition with lookup function
-export const columnTypes = {
+export const columnTypes: {
+  types: ColumnTypeDefinition[];
+  find: (type: string) => ColumnTypeDefinition | { label: string; description: string };
+} = {
   types: [
     {
       value: 'text',

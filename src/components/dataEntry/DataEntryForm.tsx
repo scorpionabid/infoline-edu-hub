@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -123,7 +122,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const categoryId = propCategoryId || params.categoryId;
   const schoolId = propSchoolId || user?.school_id;
   
-  const { category, isLoading, error, refetch } = useCategoryData({ categoryId });
+  const { category, isLoading, error, refetch } = useCategoryData(categoryId ? { categoryId } : { });
   
   const [activeTab, setActiveTab] = useState<string>('general');
   const [tabs, setTabs] = useState<TabDefinition[]>([]);

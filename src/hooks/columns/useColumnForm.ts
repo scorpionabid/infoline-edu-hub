@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ColumnFormValues, ColumnOption, Column } from '@/types/column';
+import { ColumnFormValues, ColumnOption, Column, ColumnType } from '@/types/column';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ensureJson } from '@/types/json';
 
 interface UseColumnFormProps {
   column?: Column | null;
@@ -38,7 +39,7 @@ const formSchema = z.object({
 
 export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedType, setSelectedType] = useState<string>(column?.type || 'text');
+  const [selectedType, setSelectedType] = useState<ColumnType>(column?.type || 'text');
   const [isEditMode, setIsEditMode] = useState<boolean>(!!column);
   const [options, setOptions] = useState<ColumnOption[]>(column?.options || []);
   const [newOption, setNewOption] = useState<Partial<ColumnOption>>({ label: '', value: '' });
@@ -75,7 +76,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
   }, [selectedType, form]);
 
   // Handle type change
-  const onTypeChange = (type: string) => {
+  const onTypeChange = (type: ColumnType) => {
     setSelectedType(type);
   };
 
@@ -135,8 +136,8 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
             description: data.description,
             section: data.section,
             color: data.color,
-            validation: data.validation || {},
-            options: data.options || [],
+            validation: ensureJson(data.validation || {}),
+            options: ensureJson(data.options || []),
             order_index: data.order_index || 0,
             updated_at: new Date().toISOString(),
           })
@@ -149,7 +150,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
         // Create new column
         const { error } = await supabase
           .from('columns')
-          .insert([{
+          .insert({
             name: data.name,
             type: data.type,
             category_id: data.category_id,
@@ -160,10 +161,10 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
             description: data.description,
             section: data.section,
             color: data.color,
-            validation: data.validation || {},
-            options: data.options || [],
+            validation: ensureJson(data.validation || {}),
+            options: ensureJson(data.options || []),
             order_index: data.order_index || 0,
-          }]);
+          });
 
         if (error) throw error;
         toast.success('Column created successfully');
