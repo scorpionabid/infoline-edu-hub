@@ -70,6 +70,6 @@ export interface TabDefinition {
 // Helper function to convert Date to string for API
 export function formatDeadlineForApi(deadline: Date | string | null | undefined): string | null {
   if (!deadline) return null;
-  if (typeof deadline === 'string') return deadline;
-  return deadline.toISOString();
+  if (deadline instanceof Date) return deadline.toISOString();
+  return deadline;
 }

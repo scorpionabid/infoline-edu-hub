@@ -28,13 +28,13 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
           ? (typeof column.options === 'string' 
               ? JSON.parse(column.options) 
               : column.options)
-          : undefined;
+          : [];
         
         const validation = column.validation 
           ? (typeof column.validation === 'string'
               ? JSON.parse(column.validation)
               : column.validation)
-          : undefined;
+          : {};
         
         // Ensure options is properly formatted as ColumnOption[]
         const formattedOptions = Array.isArray(options) 
@@ -43,7 +43,7 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
               label: opt.label || '',
               value: opt.value || ''
             }))
-          : undefined;
+          : [];
 
         // Convert database column to our Column type
         return {
@@ -52,16 +52,18 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
           name: column.name,
           type: column.type as Column['type'],
           is_required: column.is_required,
-          placeholder: column.placeholder,
-          help_text: column.help_text,
+          placeholder: column.placeholder || '',
+          help_text: column.help_text || '',
           order_index: column.order_index,
-          status: column.status,
+          status: column.status || 'active',
           validation: validation,
-          default_value: column.default_value,
+          default_value: column.default_value || '',
           options: formattedOptions,
           created_at: column.created_at,
           updated_at: column.updated_at,
-          description: column.description || '', // Add default value if missing
+          description: column.description || '',
+          section: column.section || '',
+          color: column.color || '',
         } as Column;
       });
     }

@@ -51,17 +51,18 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
         name: data.name,
         type: data.type as Column['type'],
         is_required: data.is_required,
-        placeholder: data.placeholder,
-        help_text: data.help_text,
+        placeholder: data.placeholder || '',
+        help_text: data.help_text || '',
         order_index: data.order_index,
-        status: data.status,
+        status: data.status || 'active',
         validation: validation,
-        default_value: data.default_value,
+        default_value: data.default_value || '',
         options: formattedOptions,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        description: data.description || '',  // Add default value if missing
-        section: data.section || '',  // Add section property with default value
+        description: data.description || '',
+        section: data.section || '',
+        color: data.color || '',
       } as Column;
     }
     

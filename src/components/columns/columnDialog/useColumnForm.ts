@@ -1,11 +1,17 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ColumnFormValues } from '@/types/column';
+import { ColumnFormValues, ColumnOption, Column } from '@/types/column';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+
+interface UseColumnFormProps {
+  column?: Column | null;
+  categoryId?: string;
+  onSave?: (data: any) => Promise<boolean>;
+}
 
 // Form validation schema
 const formSchema = z.object({
@@ -29,33 +35,91 @@ const formSchema = z.object({
   order_index: z.number().optional(),
 });
 
-export const useColumnForm = (initialData?: Partial<ColumnFormValues>, onComplete?: () => void) => {
+export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedType, setSelectedType] = useState<string>(column?.type || 'text');
+  const [isEditMode, setIsEditMode] = useState<boolean>(!!column);
+  const [options, setOptions] = useState<ColumnOption[]>(column?.options || []);
+  const [newOption, setNewOption] = useState<Partial<ColumnOption>>({ label: '', value: '' });
   
   // Form setup
   const form = useForm<ColumnFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: initialData?.name || '',
-      type: initialData?.type || 'text',
-      category_id: initialData?.category_id || '',
-      is_required: initialData?.is_required !== undefined ? initialData.is_required : true,
-      placeholder: initialData?.placeholder || '',
-      help_text: initialData?.help_text || '',
-      default_value: initialData?.default_value || '',
-      description: initialData?.description || '',
-      section: initialData?.section || '',
-      validation: initialData?.validation || {},
-      options: initialData?.options || [],
-      order_index: initialData?.order_index || 0,
+      name: column?.name || '',
+      type: column?.type || 'text',
+      category_id: column?.category_id || categoryId || '',
+      is_required: column?.is_required !== undefined ? column.is_required : true,
+      placeholder: column?.placeholder || '',
+      help_text: column?.help_text || '',
+      default_value: column?.default_value || '',
+      description: column?.description || '',
+      section: column?.section || '',
+      validation: column?.validation || {},
+      options: column?.options || [],
+      order_index: column?.order_index || 0,
     },
   });
 
+  // Update form when column type changes
+  useEffect(() => {
+    form.setValue('type', selectedType);
+    
+    // Clear options when switching to a non-option type
+    if (!['select', 'radio', 'checkbox', 'multiselect'].includes(selectedType)) {
+      setOptions([]);
+      form.setValue('options', []);
+    }
+  }, [selectedType, form]);
+
+  // Handle type change
+  const onTypeChange = (type: string) => {
+    setSelectedType(type);
+  };
+
+  // Add a new option
+  const addOption = () => {
+    if (!newOption.label || !newOption.value) return;
+    
+    const newOptionWithId: ColumnOption = {
+      id: crypto.randomUUID(),
+      label: newOption.label,
+      value: newOption.value,
+    };
+    
+    const updatedOptions = [...options, newOptionWithId];
+    setOptions(updatedOptions);
+    form.setValue('options', updatedOptions);
+    setNewOption({ label: '', value: '' });
+  };
+
+  // Remove an option
+  const removeOption = (optionId: string) => {
+    const updatedOptions = options.filter(opt => opt.id !== optionId);
+    setOptions(updatedOptions);
+    form.setValue('options', updatedOptions);
+  };
+
   // Form submission handler
-  const handleSubmit = async (data: ColumnFormValues) => {
+  const onSubmit = async (data: ColumnFormValues): Promise<boolean> => {
     setIsLoading(true);
     try {
-      if (initialData?.id) {
+      // Ensure options are set for types that need them
+      if (['select', 'radio', 'checkbox', 'multiselect'].includes(data.type) && (!data.options || data.options.length === 0)) {
+        toast.error('This field type requires at least one option');
+        setIsLoading(false);
+        return false;
+      }
+
+      if (onSave) {
+        // Use the provided save function
+        const result = await onSave(data);
+        setIsLoading(false);
+        return result;
+      }
+      
+      // Default database logic
+      if (column?.id) {
         // Update existing column
         const { error } = await supabase
           .from('columns')
@@ -68,15 +132,16 @@ export const useColumnForm = (initialData?: Partial<ColumnFormValues>, onComplet
             default_value: data.default_value,
             description: data.description,
             section: data.section,
-            validation: data.validation,
-            options: data.options,
+            validation: data.validation || {},
+            options: data.options || [],
             order_index: data.order_index || 0,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', initialData.id);
+          .eq('id', column.id);
 
         if (error) throw error;
         toast.success('Column updated successfully');
+        return true;
       } else {
         // Create new column
         const { error } = await supabase
@@ -91,19 +156,19 @@ export const useColumnForm = (initialData?: Partial<ColumnFormValues>, onComplet
             default_value: data.default_value,
             description: data.description,
             section: data.section,
-            validation: data.validation,
-            options: data.options,
+            validation: data.validation || {},
+            options: data.options || [],
             order_index: data.order_index || 0,
           });
 
         if (error) throw error;
         toast.success('Column created successfully');
+        return true;
       }
-
-      if (onComplete) onComplete();
     } catch (error: any) {
       console.error('Error saving column:', error);
       toast.error(error.message || 'Error saving column');
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -112,6 +177,16 @@ export const useColumnForm = (initialData?: Partial<ColumnFormValues>, onComplet
   return {
     form,
     isLoading,
-    handleSubmit: form.handleSubmit(handleSubmit),
+    handleSubmit: form.handleSubmit(onSubmit),
+    selectedType,
+    onTypeChange,
+    options,
+    addOption,
+    removeOption,
+    newOption, 
+    setNewOption,
+    onSubmit,
+    isEditMode,
+    setOptions
   };
 };

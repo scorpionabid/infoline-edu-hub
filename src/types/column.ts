@@ -17,7 +17,7 @@ export interface ColumnValidation {
   maxLength?: number;
   pattern?: string;
   message?: string;
-  patternMessage?: string; // Add patternMessage property
+  patternMessage?: string;
 }
 
 export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'multiselect' | 'textarea' | 'checkbox' | 'radio' | 'file' | 'image' | 'email' | 'phone' | 'url' | 'password' | 'color' | 'range' | 'richtext' | string;
@@ -39,7 +39,7 @@ export interface Column {
   updated_at: string;
   description?: string;
   color?: string;
-  section?: string; // Added section property
+  section?: string;
   parent_column_id?: string;
   version?: number;
 }
@@ -54,7 +54,7 @@ export interface ColumnFormData {
   default_value?: string;
   options?: ColumnOption[];
   description?: string;
-  section?: string; // Added section property
+  section?: string;
 }
 
 // Interface for column form values used in components
@@ -76,9 +76,15 @@ export interface ColumnFormValues {
 // Interface for BasicColumnFields props
 export interface BasicColumnFieldsProps {
   control: any;
-  errors: any;
-  categories: { id: string; name: string }[];
+  errors?: any;
+  categories?: { id: string; name: string }[];
   isSubmitting?: boolean;
+  form?: any;
+  columns?: Column[];
+  editColumn?: Column | null;
+  selectedType?: string;
+  onTypeChange?: (type: string) => void;
+  isEditMode?: boolean;
 }
 
 // Export column types with their details for UI display
@@ -181,7 +187,7 @@ export const columnTypes = {
   
   // Helper function to find a column type by name
   find: function(type: string) {
-    return this[type] || {
+    return this[type as keyof typeof this] || {
       label: type,
       description: 'Custom field type',
       icon: 'edit'
@@ -205,3 +211,9 @@ export interface ValidationRules {
   custom?: string;
 }
 
+// Interface for column type selector component
+export interface ColumnTypeSelectorProps {
+  value: string;
+  onValueChange: (value: string) => void;
+  disabled?: boolean;
+}

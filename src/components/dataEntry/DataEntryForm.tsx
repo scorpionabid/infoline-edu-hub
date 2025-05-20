@@ -123,7 +123,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const categoryId = propCategoryId || params.categoryId;
   const schoolId = propSchoolId || user?.school_id;
   
-  const { category, loading, error, refetch } = useCategoryData(categoryId);
+  const { category, isLoading, error, refetch } = useCategoryData({ categoryId });
   
   const [activeTab, setActiveTab] = useState<string>('general');
   const [tabs, setTabs] = useState<TabDefinition[]>([]);
@@ -291,13 +291,13 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     return (
       <Alert variant="destructive">
         <AlertDescription>
-          Kateqoriya məlumatlarını yükləyərkən xəta yarandı: {error.message}
+          Kateqoriya məlumatlarını yükləyərkən xəta yarandı: {error}
         </AlertDescription>
       </Alert>
     );
   }
   
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-1/3" />

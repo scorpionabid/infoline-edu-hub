@@ -31,29 +31,84 @@ const FormsPage: React.FC = () => {
   const fetchCategories = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      console.log('Fetching categories...');
+      // First, get all categories
+      const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
-        .select(`
-          *,
-          columns:category_columns(*)
-        `)
+        .select('*')
         .order('priority', { ascending: false });
 
-      if (error) throw error;
+      if (categoriesError) {
+        console.error('Error fetching categories:', categoriesError);
+        throw categoriesError;
+      }
+
+      console.log('Categories fetched:', categoriesData?.length);
 
       // Process data to match CategoryWithColumns type
-      const processedCategories: CategoryWithColumns[] = data.map(category => ({
-        ...category,
-        status: category.status as CategoryStatus,
-        assignment: category.assignment as CategoryAssignment,
-        column_count: category.columns ? category.columns.length : 0,
-        columnCount: category.columns ? category.columns.length : 0,
-        columns: Array.isArray(category.columns) ? category.columns : []
-      }));
+      const processedCategories: CategoryWithColumns[] = [];
+      
+      if (categoriesData) {
+        for (const category of categoriesData) {
+          try {
+            // For each category, fetch its columns
+            const { data: columnsData, error: columnsError } = await supabase
+              .from('columns')
+              .select('*')
+              .eq('category_id', category.id)
+              .order('order_index', { ascending: true });
+            
+            if (columnsError) {
+              console.error('Error fetching columns for category:', category.id, columnsError);
+              throw columnsError;
+            }
+            
+            // Process columns to ensure JSON fields are parsed
+            const columns = (columnsData || []).map(column => {
+              const processedOptions = column.options ? 
+                (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
+                [];
+                
+              const processedValidation = column.validation ? 
+                (typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation) : 
+                null;
+                
+              return {
+                ...column,
+                options: processedOptions,
+                validation: processedValidation,
+                description: column.description || '',
+                section: column.section || ''
+              };
+            });
+            
+            processedCategories.push({
+              ...category,
+              status: category.status as CategoryStatus,
+              assignment: category.assignment as CategoryAssignment,
+              column_count: columns.length,
+              columnCount: columns.length, // Add alias for compatibility
+              columns: columns
+            });
+          } catch (error) {
+            console.error('Error processing category:', category.id, error);
+            // Still add the category even if there was an error fetching its columns
+            processedCategories.push({
+              ...category,
+              status: category.status as CategoryStatus,
+              assignment: category.assignment as CategoryAssignment,
+              column_count: 0,
+              columnCount: 0,
+              columns: []
+            });
+          }
+        }
+      }
 
+      console.log('Categories processed:', processedCategories.length);
       setCategories(processedCategories);
     } catch (error: any) {
-      console.error('Error fetching categories:', error);
+      console.error('Error in fetchCategories:', error);
       toast({
         title: t('error'),
         description: t('errorFetchingCategories'),
@@ -115,6 +170,39 @@ const FormsPage: React.FC = () => {
         categories={filteredCategories} 
         isLoading={isLoading} 
         onRefresh={refreshCategories}
+        onEditCategory={(category) => {
+          // Navigate to category edit page
+          window.location.href = `/categories/${category.id}/edit`;
+        }}
+        onDeleteCategory={async (category) => {
+          if (window.confirm(t('confirmDeleteCategory'))) {
+            try {
+              const { error } = await supabase
+                .from('categories')
+                .delete()
+                .eq('id', category.id);
+              
+              if (error) throw error;
+              
+              toast({
+                title: t('success'),
+                description: t('categoryDeleted'),
+              });
+              
+              refreshCategories();
+            } catch (error: any) {
+              toast({
+                title: t('error'),
+                description: error.message || t('errorDeletingCategory'),
+                variant: 'destructive',
+              });
+            }
+          }
+        }}
+        onViewDetails={(category) => {
+          // Navigate to category details page
+          window.location.href = `/categories/${category.id}`;
+        }}
       />
       
       <CreateCategoryDialog

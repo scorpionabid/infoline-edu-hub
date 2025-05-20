@@ -44,7 +44,7 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
   const {
     form, 
     selectedType,
-    onTypeChange: handleTypeChange,
+    onTypeChange,
     options,
     addOption,
     removeOption,
@@ -52,24 +52,24 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
     setNewOption,
     onSubmit,
     isEditMode,
-    setOptions
+    setOptions,
+    isLoading,
   } = useColumnForm({
     column: editColumn,
     categoryId: editColumn?.category_id,
     onSave: onSaveColumn
   });
 
-  // Dialog açıldıqda və ya bağlandıqda log edirik
+  // Log when dialog is opened or closed
   useEffect(() => {
-    console.log(`Dialog ${isOpen ? 'açıldı' : 'bağlandı'}`, { editColumn });
+    console.log(`Dialog ${isOpen ? 'opened' : 'closed'}`, { editColumn });
   }, [isOpen, editColumn]);
 
-  // Form təqdim etmə funksiyası
+  // Form submission handler
   const handleSubmit = async (values: any) => {
-    console.log("Form təqdim edildi:", values);
+    console.log("Form submitted:", values);
     
     try {
-      // onSubmit funksiyasını çağırırıq
       const result = await onSubmit(values);
       
       if (result) {
@@ -79,7 +79,7 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
         toast.error(t("errorOccurred"));
       }
     } catch (error) {
-      console.error("Form təqdim etmə xətası:", error);
+      console.error("Form submission error:", error);
       toast.error(t("errorOccurred"));
     }
   };
@@ -119,7 +119,7 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
                     columns={columns}
                     editColumn={editColumn}
                     selectedType={selectedType}
-                    onTypeChange={handleTypeChange}
+                    onTypeChange={onTypeChange}
                     isEditMode={isEditMode}
                   />
                 </TabsContent>
@@ -148,7 +148,6 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
                       addOption={addOption}
                       removeOption={removeOption}
                       updateOption={(oldOption, newOption) => {
-                        // Köhnə option-u tapıb yenisi ilə əvəz edirik
                         const index = options.findIndex(opt => opt.id === oldOption.id);
                         
                         if (index !== -1) {
@@ -177,16 +176,16 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
               type="button" 
               variant="outline" 
               onClick={onClose}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLoading}
             >
               {t("cancel")}
             </Button>
             <Button 
               type="submit"
               onClick={form.handleSubmit(handleSubmit)}
-              disabled={form.formState.isSubmitting || isSubmitting}
+              disabled={form.formState.isSubmitting || isSubmitting || isLoading}
             >
-              {form.formState.isSubmitting || isSubmitting ? (
+              {form.formState.isSubmitting || isSubmitting || isLoading ? (
                 <span className="flex items-center">
                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

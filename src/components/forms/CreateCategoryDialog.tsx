@@ -55,7 +55,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
     setIsSubmitting(true);
     try {
       // Convert deadline to string if it exists
-      const deadline = data.deadline ? String(data.deadline) : null;
+      const deadline = formatDeadlineForApi(data.deadline);
       
       const { error } = await supabase.from('categories').insert({
         name: data.name,
@@ -63,7 +63,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
         assignment: data.assignment,
         status: data.status,
         priority: data.priority,
-        deadline: deadline,
+        deadline: deadline
       });
 
       if (error) throw error;
@@ -209,7 +209,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
                       <Input
                         type="date"
                         value={field.value || ''}
-                        onChange={(e) => field.onChange(e.target.value)}
+                        onChange={(e) => field.onChange(e.target.value || null)}
                       />
                     </FormControl>
                     <FormMessage />
