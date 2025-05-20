@@ -9,13 +9,14 @@ interface CategoryData {
   id: string;
   name: string;
   columns: Column[];
+  description?: string; // Add description property
 }
 
 export interface UseCategoryDataProps {
   categoryId?: string;
 }
 
-export const useCategoryData = (categoryId?: string) => {
+export const useCategoryData = ({ categoryId }: UseCategoryDataProps) => {
   const [category, setCategory] = useState<CategoryData | null>(null);
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,105 +37,92 @@ export const useCategoryData = (categoryId?: string) => {
       // Fetch category details
       const { data: categoryData, error: categoryError } = await supabase
         .from('categories')
-        .select('id, name')
+        .select('id, name, description')
         .eq('id', categoryId)
         .single();
 
       if (categoryError) {
-        throw new Error(`Error fetching category: ${categoryError.message}`);
+        throw new Error(`Error fetching category data: ${categoryError.message}`);
       }
 
-      if (!categoryData) {
-        throw new Error('Category not found');
-      }
-
-      // Fetch columns for the category
+      // Fetch columns for this category
       const { data: columnsData, error: columnsError } = await supabase
         .from('columns')
         .select('*')
         .eq('category_id', categoryId)
-        .order('order_index', { ascending: true });
+        .order('order_index');
 
       if (columnsError) {
-        throw new Error(`Error fetching columns: ${columnsError.message}`);
+        throw new Error(`Error fetching column data: ${columnsError.message}`);
       }
 
-      // Transform column data
-      const transformedColumns = columnsData.map(transformColumnData);
+      // Process column data
+      const processedColumns = columnsData.map(column => {
+        // Parse options and validation if needed
+        let options = [];
+        if (column.options) {
+          try {
+            options = typeof column.options === 'string' 
+              ? JSON.parse(column.options) 
+              : column.options;
+          } catch (e) {
+            console.error('Failed to parse column options:', e);
+            options = [];
+          }
+        }
 
-      const categoryWithColumns = {
+        let validation = {};
+        if (column.validation) {
+          try {
+            validation = typeof column.validation === 'string'
+              ? JSON.parse(column.validation)
+              : column.validation;
+          } catch (e) {
+            console.error('Failed to parse column validation:', e);
+            validation = {};
+          }
+        }
+
+        // Return the processed column
+        return {
+          ...column,
+          options,
+          validation,
+        };
+      });
+
+      // Create the category object with columns
+      const category: CategoryData = {
         id: categoryData.id,
         name: categoryData.name,
-        columns: transformedColumns,
+        description: categoryData.description || '',
+        columns: processedColumns,
       };
 
-      setCategory(categoryWithColumns);
-      setCategories([categoryWithColumns]);
-    } catch (err: any) {
-      const errorMessage = err.message || 'Unknown error occurred';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      setCategory(category);
+    } catch (err) {
       console.error('Error in useCategoryData:', err);
+      setError(err.message || 'Failed to fetch category data');
+      toast.error('Failed to fetch category data');
     } finally {
       setIsLoading(false);
       setLoading(false);
     }
   };
 
-  // Add support for 'section', 'color', and 'description' fields when fetching column data
-  const transformColumnData = (column: any): Column => {
-    let optionsArray = [];
-    let validationObj = {};
-
-    // Process options
-    if (column.options) {
-      try {
-        optionsArray = typeof column.options === 'string' ? JSON.parse(column.options) : column.options;
-        if (!Array.isArray(optionsArray)) {
-          optionsArray = []; // Ensure it's always an array
-        }
-      } catch (e) {
-        console.error('Failed to parse options:', e);
-        optionsArray = [];
-      }
-    }
-
-    // Process validation
-    if (column.validation) {
-      try {
-        validationObj = typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation;
-      } catch (e) {
-        console.error('Failed to parse validation:', e);
-        validationObj = {};
-      }
-    }
-
-    return {
-      id: column.id,
-      category_id: column.category_id,
-      name: column.name,
-      type: column.type,
-      is_required: column.is_required,
-      placeholder: column.placeholder || '',
-      help_text: column.help_text || '',
-      order_index: column.order_index,
-      validation: validationObj,
-      options: optionsArray,
-      default_value: column.default_value || '',
-      status: column.status || 'active',
-      created_at: column.created_at,
-      updated_at: column.updated_at,
-      description: column.description || '',
-      section: column.section || '',
-      color: column.color || '',
-    };
-  };
-
+  // Fetch data on mount or categoryId change
   useEffect(() => {
     if (categoryId) {
       fetchCategoryData();
     }
-  }, [categoryId, user]);
+  }, [categoryId]);
+
+  // Add a refetch function
+  const refetch = () => {
+    if (categoryId) {
+      fetchCategoryData();
+    }
+  };
 
   return {
     category,
@@ -142,6 +130,6 @@ export const useCategoryData = (categoryId?: string) => {
     isLoading,
     loading,
     error,
-    refetch: fetchCategoryData
+    refetch
   };
 };

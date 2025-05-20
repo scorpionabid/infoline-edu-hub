@@ -23,7 +23,13 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { ColumnType, ColumnTypeSelectorProps } from '@/types/column';
+import { ColumnType } from '@/types/column';
+
+export interface ColumnTypeSelectorProps {
+  value?: ColumnType;
+  onChange: (value: ColumnType) => void;
+  disabled?: boolean;
+}
 
 const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ 
   value, 

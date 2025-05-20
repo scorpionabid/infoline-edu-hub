@@ -63,6 +63,7 @@ export interface ValidationResult {
 export interface FormFieldsProps {
   columns: Column[];
   disabled?: boolean;
+  readOnly?: boolean;
 }
 
 export interface FormFieldProps {
