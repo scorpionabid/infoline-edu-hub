@@ -72,6 +72,7 @@ export interface FormFieldProps {
   onChange?: (e: React.ChangeEvent<any>) => void;
   onValueChange?: (value: any) => void;
   isDisabled?: boolean;
+  readOnly?: boolean;
   field?: {
     id: any;
     name: any;

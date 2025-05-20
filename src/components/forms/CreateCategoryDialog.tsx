@@ -1,10 +1,18 @@
 
-// Fix the part where we insert a new category without a required name field
-// Assuming there's a form submission function that needs fixing
-// This is a partial update of the file
+import React, { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
 
-// Update the onSubmit handler to ensure name is provided
-const handleCreateCategory = async (data) => {
+interface CreateCategoryDialogProps {
+  onClose: () => void;
+  onCategoryCreated?: () => void;
+}
+
+export const handleCreateCategory = async (data: any, { onClose, onCategoryCreated }: CreateCategoryDialogProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useLanguage();
+  
   setIsSubmitting(true);
   
   try {
@@ -31,10 +39,12 @@ const handleCreateCategory = async (data) => {
     if (onCategoryCreated) {
       onCategoryCreated();
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to create category:', error);
     toast.error(t('categoryCreateError'));
   } finally {
     setIsSubmitting(false);
   }
 };
+
+export default handleCreateCategory;

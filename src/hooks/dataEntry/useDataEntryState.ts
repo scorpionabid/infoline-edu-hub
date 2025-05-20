@@ -33,7 +33,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       if (error) throw error;
 
       setDataEntries(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching data entries:', err);
       setError(err.message);
       toast.error(`Failed to fetch data entries: ${err.message}`);
@@ -74,7 +74,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       await fetchDataEntries(); // Refresh data
       toast.success('Data saved successfully');
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving data entries:', err);
       toast.error(`Failed to save data: ${err.message}`);
       return false;
