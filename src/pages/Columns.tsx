@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -19,7 +20,7 @@ import ColumnFormDialog from '@/components/columns/ColumnFormDialog';
 import { useColumns } from '@/hooks/columns';
 import ColumnList from '@/components/columns/ColumnList';
 import EmptyState from '@/components/common/EmptyState';
-import { useCategories } from '@/hooks/categories/useCategories';
+import { useCategories } from '@/hooks/useCategories';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useColumnMutations } from '@/hooks/columns/useColumnMutations';
@@ -36,11 +37,13 @@ const Columns: React.FC = () => {
   const [loadingRetries, setLoadingRetries] = useState(0);
   
   const { columns, isLoading: columnsLoading, isError, error: columnsError, refetch: refetchColumns } = useColumns();
+  
+  // Use the correct hook API for categories
   const { 
     categories, 
-    loading: categoriesLoading, 
-    error: categoriesError, 
-    fetchCategories 
+    isLoading: categoriesLoading, 
+    error: categoriesError,
+    refetch: refetchCategories
   } = useCategories();
   
   const { userRole } = usePermissions();
@@ -65,9 +68,9 @@ const Columns: React.FC = () => {
   // Load categories and columns with retry logic
   const loadData = useCallback(() => {
     console.log('Loading categories and columns data');
-    fetchCategories({ archived: false });
+    refetchCategories();
     refetchColumns();
-  }, [fetchCategories, refetchColumns]);
+  }, [refetchCategories, refetchColumns]);
 
   // Retry if data loading fails
   useEffect(() => {

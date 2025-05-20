@@ -45,6 +45,11 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
             }))
           : [];
 
+        // Extract additional column field data
+        const description = column.description || '';
+        const section = column.section || '';
+        const color = column.color || '';
+
         // Convert database column to our Column type
         return {
           id: column.id,
@@ -61,9 +66,9 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryO
           options: formattedOptions,
           created_at: column.created_at,
           updated_at: column.updated_at,
-          description: column.description || '',
-          section: column.section || '',
-          color: column.color || '',
+          description: description,
+          section: section,
+          color: color,
         } as Column;
       });
     }

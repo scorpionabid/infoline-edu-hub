@@ -44,11 +44,11 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
           }))
         : undefined;
 
-      // Use column field extensions
+      // Extract additional column field data (with fallbacks)
       const description = data.description || '';
       const section = data.section || '';
       const color = data.color || '';
-
+      
       // Convert database column to our Column type
       return {
         id: data.id,

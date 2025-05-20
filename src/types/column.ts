@@ -1,244 +1,239 @@
 
-// Define types for columns
-export interface ColumnOption {
-  id: string;
-  label: string;
-  value: string;
-  color?: string;
-  disabled?: boolean;
-  description?: string;
-}
+import { Json } from './json';
 
+// Basic column types that are supported
+export type ColumnType = 
+  | 'text' 
+  | 'textarea' 
+  | 'number' 
+  | 'date' 
+  | 'time'
+  | 'datetime'
+  | 'select'
+  | 'multiselect'
+  | 'radio'
+  | 'checkbox'
+  | 'email'
+  | 'phone'
+  | 'url'
+  | 'password'
+  | 'color'
+  | 'file'
+  | 'image'
+  | 'richtext'
+  | 'range';
+
+// Type definition for column validation rules
 export interface ColumnValidation {
   required?: boolean;
-  min?: number;
-  max?: number;
   minLength?: number;
   maxLength?: number;
+  min?: number;
+  max?: number;
   pattern?: string;
-  message?: string;
-  patternMessage?: string;
+  [key: string]: any; // Allow additional validation rules
 }
 
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'multiselect' | 'textarea' | 'checkbox' | 'radio' | 'file' | 'image' | 'email' | 'phone' | 'url' | 'password' | 'color' | 'range' | 'richtext' | string;
+// Options for select, radio, etc.
+export interface ColumnOption {
+  id?: string;
+  label: string;
+  value: string;
+}
 
+// Main column interface
 export interface Column {
   id: string;
   category_id: string;
   name: string;
   type: ColumnType;
-  is_required: boolean;
+  is_required?: boolean;
   placeholder?: string;
   help_text?: string;
-  order_index: number;
+  order_index?: number;
   status?: string;
-  validation?: ColumnValidation | null;
-  default_value?: string;
-  options?: ColumnOption[];
-  created_at: string;
-  updated_at: string;
-  description?: string;
-  color?: string;
-  section?: string;
-  parent_column_id?: string;
-  version?: number;
-}
-
-export interface ColumnFormData {
-  name: string;
-  type: ColumnType;
-  is_required: boolean;
-  placeholder?: string;
-  help_text?: string;
   validation?: ColumnValidation;
-  default_value?: string;
   options?: ColumnOption[];
-  description?: string;
-  section?: string;
-  color?: string;
+  default_value?: string;
+  parent_column_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  description?: string; // Added missing field
+  section?: string; // Added missing field
+  color?: string; // Added missing field
+  version?: number; // Added for versioning support
 }
 
-// Interface for column form values used in components
+// Form values for creating/editing columns
 export interface ColumnFormValues {
   name: string;
-  type: ColumnType;
-  is_required: boolean;
+  type: string;
+  category_id: string;
+  is_required?: boolean;
   placeholder?: string;
   help_text?: string;
+  default_value?: string;
   validation?: ColumnValidation;
   options?: ColumnOption[];
-  default_value?: string;
-  category_id: string;
+  order_index?: number;
   description?: string;
   section?: string;
   color?: string;
-  order_index?: number;
 }
 
-// Interface for BasicColumnFields props
-export interface BasicColumnFieldsProps {
-  control: any;
-  errors?: any;
-  categories?: { id: string; name: string }[];
-  isSubmitting?: boolean;
-  form?: any;
-  columns?: Column[];
-  editColumn?: Column | null;
-  selectedType?: string;
-  onTypeChange?: (type: string) => void;
-  isEditMode?: boolean;
-}
-
-// Column type definition with icon and description
+// Column with complete definition (including type-specific information)
 export interface ColumnTypeDefinition {
+  value: ColumnType;
   label: string;
-  description: string;
   icon?: string;
+  description: string;
+  supportsOptions?: boolean;
+  supportsValidation?: boolean;
 }
 
-// Export column types with their details for UI display
+// Column types definition with lookup function
 export const columnTypes = {
-  text: {
-    label: 'Text',
-    description: 'Single-line text input',
-    icon: 'text'
-  },
-  textarea: {
-    label: 'Text Area',
-    description: 'Multi-line text input',
-    icon: 'textAlignLeft'
-  },
-  number: {
-    label: 'Number',
-    description: 'Numeric input field',
-    icon: 'hash'
-  },
-  date: {
-    label: 'Date',
-    description: 'Date selection field',
-    icon: 'calendar'
-  },
-  select: {
-    label: 'Select',
-    description: 'Dropdown selection',
-    icon: 'listBox'
-  },
-  multiselect: {
-    label: 'Multi-select',
-    description: 'Multiple selection dropdown',
-    icon: 'listBox'
-  },
-  checkbox: {
-    label: 'Checkbox',
-    description: 'Boolean (yes/no) input',
-    icon: 'check'
-  },
-  radio: {
-    label: 'Radio',
-    description: 'Single selection from multiple options',
-    icon: 'circle'
-  },
-  file: {
-    label: 'File',
-    description: 'File upload field',
-    icon: 'file'
-  },
-  image: {
-    label: 'Image',
-    description: 'Image upload field',
-    icon: 'image'
-  },
-  email: {
-    label: 'Email',
-    description: 'Email address input',
-    icon: 'mail'
-  },
-  url: {
-    label: 'URL',
-    description: 'Web address input',
-    icon: 'link'
-  },
-  phone: {
-    label: 'Phone',
-    description: 'Phone number input',
-    icon: 'phone'
-  },
-  range: {
-    label: 'Range',
-    description: 'Slider for selecting a range value',
-    icon: 'sliders'
-  },
-  color: {
-    label: 'Color',
-    description: 'Color picker field',
-    icon: 'palette'
-  },
-  password: {
-    label: 'Password',
-    description: 'Secure password input',
-    icon: 'lock'
-  },
-  time: {
-    label: 'Time',
-    description: 'Time selection field',
-    icon: 'clock'
-  },
-  datetime: {
-    label: 'Date & Time',
-    description: 'Date and time selection field',
-    icon: 'calendarClock'
-  },
-  richtext: {
-    label: 'Rich Text',
-    description: 'Formatted text editor',
-    icon: 'formattingTwo'
-  },
+  types: [
+    {
+      value: 'text',
+      label: 'Text',
+      icon: 'text',
+      description: 'Single line text input',
+      supportsValidation: true
+    },
+    {
+      value: 'textarea',
+      label: 'Text Area',
+      icon: 'textAlignLeft',
+      description: 'Multiple line text input',
+      supportsValidation: true
+    },
+    {
+      value: 'number',
+      label: 'Number',
+      icon: 'hash',
+      description: 'Numeric input',
+      supportsValidation: true
+    },
+    {
+      value: 'date',
+      label: 'Date',
+      icon: 'calendar',
+      description: 'Date picker',
+      supportsValidation: true
+    },
+    {
+      value: 'time',
+      label: 'Time',
+      icon: 'clock',
+      description: 'Time picker',
+      supportsValidation: true
+    },
+    {
+      value: 'datetime',
+      label: 'Date & Time',
+      icon: 'calendarClock',
+      description: 'Date and time picker',
+      supportsValidation: true
+    },
+    {
+      value: 'select',
+      label: 'Select',
+      icon: 'listBox',
+      description: 'Dropdown select',
+      supportsOptions: true
+    },
+    {
+      value: 'multiselect',
+      label: 'Multi Select',
+      icon: 'listBox',
+      description: 'Multiple selection dropdown',
+      supportsOptions: true
+    },
+    {
+      value: 'checkbox',
+      label: 'Checkbox',
+      icon: 'check',
+      description: 'Multiple options selection',
+      supportsOptions: true
+    },
+    {
+      value: 'radio',
+      label: 'Radio',
+      icon: 'circle',
+      description: 'Single option selection',
+      supportsOptions: true
+    },
+    {
+      value: 'email',
+      label: 'Email',
+      icon: 'mail',
+      description: 'Email input with validation',
+      supportsValidation: true
+    },
+    {
+      value: 'url',
+      label: 'URL',
+      icon: 'link',
+      description: 'URL input with validation',
+      supportsValidation: true
+    },
+    {
+      value: 'phone',
+      label: 'Phone',
+      icon: 'phone',
+      description: 'Phone number input',
+      supportsValidation: true
+    },
+    {
+      value: 'file',
+      label: 'File Upload',
+      icon: 'file',
+      description: 'File upload field',
+      supportsValidation: true
+    },
+    {
+      value: 'image',
+      label: 'Image Upload',
+      icon: 'image',
+      description: 'Image upload with preview',
+      supportsValidation: true
+    },
+    {
+      value: 'range',
+      label: 'Range',
+      icon: 'sliders',
+      description: 'Range slider',
+      supportsValidation: true
+    },
+    {
+      value: 'color',
+      label: 'Color',
+      icon: 'palette',
+      description: 'Color picker',
+    },
+    {
+      value: 'password',
+      label: 'Password',
+      icon: 'lock',
+      description: 'Password input with masking',
+      supportsValidation: true
+    },
+    {
+      value: 'richtext',
+      label: 'Rich Text',
+      icon: 'formattingTwo',
+      description: 'Rich text editor',
+      supportsValidation: true
+    }
+  ],
   
-  // Helper function to find a column type by name
-  find: function(type: string): ColumnTypeDefinition {
-    return (this[type as keyof typeof this] as ColumnTypeDefinition) || {
-      label: type,
-      description: 'Custom field type',
-      icon: 'edit'
+  // Helper function to find a column type by value
+  find: function(type: string): ColumnTypeDefinition | { label: string; description: string } {
+    const foundType = this.types.find(t => t.value === type);
+    return foundType || {
+      label: type || 'Unknown',
+      description: 'Custom column type'
     };
   }
 };
-
-// Type definition for column validation rules
-export interface ValidationRules {
-  required?: boolean;
-  min?: number;
-  max?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  email?: boolean;
-  url?: boolean;
-  numeric?: boolean;
-  integer?: boolean;
-  date?: boolean;
-  custom?: string;
-}
-
-// Interface for column type selector component
-export interface ColumnTypeSelectorProps {
-  value: string;
-  onValueChange: (value: string) => void;
-  disabled?: boolean;
-}
-
-// Types for Report chart types
-export enum ReportTypeValues {
-  BAR = 'BAR',
-  PIE = 'PIE',
-  LINE = 'LINE',
-  TABLE = 'TABLE',
-  CARD = 'CARD'
-}
-
-export interface ReportChartProps {
-  type: ReportTypeValues;
-  data: any[];
-  title?: string;
-  description?: string;
-}
