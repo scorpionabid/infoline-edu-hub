@@ -186,6 +186,7 @@ Aşağıdakı test sənədləşdirmələri hazırlanıb və `public/documents/te
 | Kateqoriya və Sütun İdarəetməsi | `kateqoriya-test-sənədləşdirmə.md` | Kateqoriya və sütun idarəetməsi testlərinin ətraflı təsviri və texniki detalları |
 | Məlumat Daxiletmə və Təsdiqləmə | `data-test-sənədləşdirmə.md` | Məlumat daxiletmə/import və təsdiqləmə testlərinin ətraflı təsviri |
 | İstifadəçi İdarəetməsi | `istifadeci-idareetme-test-sənədləşdirmə.md` | İstifadəçi yaratma, rol təyin etmə, redaktə, silmə və filtrasiya testlərinin təsviri |
+| İnteqrasiya Testləri | `inteqrasiya-test-strategiyasi.md` | İnteqrasiya test ssenarilerləri, yanaşmalar və test implementasiya planı
 
 ## İmplementasiya Plan və Status Cədvəli
 
@@ -199,4 +200,4 @@ Aşağıdakı test sənədləşdirmələri hazırlanıb və `public/documents/te
 | Məlumat daxiletmə və import testləri | Yüksək | **Tamamlanmış** | `data-entry.test.tsx` | - |
 | Məlumat təsdiqi və toplama testləri | Orta | **Tamamlanmış** | `data-approval.test.tsx` | - |
 | Hesabat və statistika testləri | Aşağı | Başlanmayıb | - | Bütün testlər planlanmalıdır |
-| İnteqrasiya testləri | Yüksək | Başlanmayıb | - | Bütün testlər planlanmalıdır |
+| İnteqrasiya testləri | Yüksək | **Planlanmış** | `integration/data-flow-integration.test.tsx` | Test ssenarilərinin implementasiyası 
