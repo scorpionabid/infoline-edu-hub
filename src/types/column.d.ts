@@ -1,68 +1,72 @@
 
-import { 
-  ColumnType, 
-  Column as CoreColumn, 
-  ColumnOption, 
-  ColumnValidation, 
-  ColumnFormValues,
-  BaseColumn
+import {
+  ColumnType,
+  ColumnOption,
+  ColumnValidation,
+  BaseColumn,
+  Column,
+  ColumnFormValues
 } from './core/column';
 
 // Re-export core types
-export type { 
-  ColumnType, 
-  ColumnOption, 
-  ColumnValidation, 
-  ColumnFormValues,
-  BaseColumn
+export type {
+  ColumnType,
+  ColumnOption,
+  ColumnValidation,
+  BaseColumn,
+  Column,
+  ColumnFormValues
 };
 
-// We need to re-export Column with the is_required field as optional to maintain compatibility with existing code
-export interface Column extends Omit<CoreColumn, 'is_required'> {
-  is_required?: boolean;
-}
-
-// Additional UI-specific types for columns
-export interface ColumnTypeDefinition {
-  value: ColumnType;
-  label: string;
-  icon?: string;
-  description: string;
-  supportsOptions?: boolean;
-  supportsValidation?: boolean;
-}
-
+// Column type selector component props
 export interface ColumnTypeSelectorProps {
-  value?: ColumnType;
+  value: ColumnType;
   onChange: (value: ColumnType) => void;
-  disabled?: boolean;
 }
 
-export interface BasicColumnFieldsProps {
-  form: any;
-  control: any;
-  categories: { id: string; name: string }[];
-  columns?: Column[];
-  editColumn?: Column | null;
-  selectedType: string;
-  onTypeChange: (type: ColumnType) => void;
-  isEditMode: boolean;
+// Column form props
+export interface ColumnFormProps {
+  initialValues?: Partial<Column>;
+  onSubmit: (values: ColumnFormValues) => void;
+  onCancel: () => void;
+  categoryId: string;
+  isSubmitting?: boolean;
 }
 
-export interface ColumnFormData {
-  id?: string;
-  category_id: string;
+// Column dialog props
+export interface ColumnDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  categoryId: string;
+  column?: Column;
+  onColumnCreated?: () => void;
+  onColumnUpdated?: () => void;
+}
+
+// Column list props
+export interface ColumnListProps {
+  columns: Column[];
+  categoryId?: string;
+  onEdit?: (column: Column) => void;
+  onDelete?: (columnId: string) => void;
+  isLoading?: boolean;
+}
+
+// Column type definition
+export interface ColumnTypeDefinition {
+  id: ColumnType;
   name: string;
-  type: ColumnType;
-  status?: string;
-  is_required: boolean;
-  default_value?: string;
-  help_text?: string;
-  placeholder?: string;
-  order_index?: number;
-  options?: ColumnOption[];
-  validation?: ColumnValidation;
-  section?: string;
-  description?: string;
-  color?: string;
+  description: string;
+  icon?: React.ReactNode;
+  validations?: ColumnValidation[];
+  hasOptions?: boolean;
+}
+
+// Additional column-specific types
+export interface ColumnHeaderProps {
+  categoryId?: string;
+  onAddColumn?: () => void;
+  onImportColumns?: () => void;
+  columnsCount?: number;
+  isLoading?: boolean;
 }

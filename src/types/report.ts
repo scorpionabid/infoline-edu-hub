@@ -5,9 +5,6 @@ import { Report, ReportStatus, ReportTypeValues, REPORT_TYPE_VALUES, ReportChart
 export { ReportStatus, REPORT_TYPE_VALUES, ReportTypeValues };
 export type { Report, ReportChartProps, ReportFilter };
 
-// Additional UI-specific types for reports
-export type ReportType = ReportTypeValues;
-
 // Empty state component props
 export interface ReportEmptyStateProps {
   message?: string;

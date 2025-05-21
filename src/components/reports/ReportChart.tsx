@@ -6,7 +6,7 @@ import { ReportChartProps, REPORT_TYPE_VALUES } from '@/types/report';
 
 export const ReportChart: React.FC<ReportChartProps> = ({ 
   type, 
-  data, 
+  data = [], 
   config, 
   title, 
   description, 

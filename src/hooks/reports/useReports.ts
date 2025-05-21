@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Report } from '@/types/report';
+import { Report, REPORT_TYPE_VALUES } from '@/types/report';
 
 export function useReports() {
   const [reports, setReports] = useState<Report[]>([
@@ -8,7 +8,7 @@ export function useReports() {
       id: '1',
       title: 'School Performance Overview',
       description: 'Overview of school performance metrics',
-      type: 'bar',
+      type: REPORT_TYPE_VALUES.BAR,
       content: {},
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -19,7 +19,7 @@ export function useReports() {
       id: '2',
       title: 'Completion Rates by Region',
       description: 'Comparison of completion rates across regions',
-      type: 'pie',
+      type: REPORT_TYPE_VALUES.PIE,
       content: {},
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -30,7 +30,7 @@ export function useReports() {
       id: '3',
       title: 'Quarterly Comparison',
       description: 'Comparison of metrics across quarters',
-      type: 'line',
+      type: REPORT_TYPE_VALUES.LINE,
       content: {},
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

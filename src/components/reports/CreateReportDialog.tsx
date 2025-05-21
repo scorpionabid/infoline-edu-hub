@@ -19,17 +19,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
-import { CreateReportDialogProps } from '@/types/report';
+import { CreateReportDialogProps, REPORT_TYPE_VALUES } from '@/types/report';
 
 const CreateReportDialog: React.FC<CreateReportDialogProps> = ({ 
   open, 
+  onOpenChange,
+  onCreate,
   onClose,
-  onCreate 
+  isOpen 
 }) => {
   const { t } = useLanguage();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [type, setType] = useState('standard');
+  const [type, setType] = useState(REPORT_TYPE_VALUES.BAR);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -41,7 +43,7 @@ const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
         await onCreate({ title, description, type });
       }
       resetForm();
-      onClose();
+      handleClose();
     } catch (error) {
       console.error('Error creating report:', error);
     } finally {
@@ -49,14 +51,25 @@ const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
     }
   };
 
+  const handleClose = () => {
+    if (onOpenChange) {
+      onOpenChange(false);
+    }
+    if (onClose) {
+      onClose();
+    }
+  };
+
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setType('standard');
+    setType(REPORT_TYPE_VALUES.BAR);
   };
 
+  const dialogOpen = open !== undefined ? open : isOpen;
+
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={dialogOpen} onOpenChange={(newOpen) => !newOpen && handleClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{t('createNewReport')}</DialogTitle>
@@ -94,17 +107,19 @@ const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
                 <SelectValue placeholder={t('selectReportType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="standard">{t('standardReport')}</SelectItem>
-                <SelectItem value="analytics">{t('analyticsReport')}</SelectItem>
-                <SelectItem value="summary">{t('summaryReport')}</SelectItem>
-                <SelectItem value="custom">{t('customReport')}</SelectItem>
+                <SelectItem value={REPORT_TYPE_VALUES.BAR}>{t('barChart')}</SelectItem>
+                <SelectItem value={REPORT_TYPE_VALUES.LINE}>{t('lineChart')}</SelectItem>
+                <SelectItem value={REPORT_TYPE_VALUES.PIE}>{t('pieChart')}</SelectItem>
+                <SelectItem value={REPORT_TYPE_VALUES.TABLE}>{t('tableReport')}</SelectItem>
+                <SelectItem value={REPORT_TYPE_VALUES.METRICS}>{t('metricsReport')}</SelectItem>
+                <SelectItem value={REPORT_TYPE_VALUES.CUSTOM}>{t('customReport')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={handleClose}>
             {t('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={!title.trim() || isSubmitting}>

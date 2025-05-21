@@ -54,8 +54,8 @@ export interface Report extends BaseEntity {
 
 // Report chart component props
 export interface ReportChartProps {
-  type: ReportTypeValues;
-  data: any[];
+  type?: ReportTypeValues;
+  data?: any[];
   config?: any;
   title?: string;
   description?: string;
