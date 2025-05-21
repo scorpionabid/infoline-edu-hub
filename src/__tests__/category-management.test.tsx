@@ -54,7 +54,7 @@ const mockCallEdgeFunction = vi.fn().mockImplementation((funcName, options) => {
 });
 
 // Kateqoriya və sütun hook-larını mockla
-vi.mock('@/hooks/useCategories', () => ({
+vi.mock('@/hooks/categories/useCategories', () => ({
   useCategories: () => ({
     categories: [
       { id: 'category-1', name: 'Ümumi Məlumatlar', description: 'Məktəbin ümumi məlumatları', status: 'active' },
@@ -70,7 +70,7 @@ vi.mock('@/hooks/useCategories', () => ({
   })
 }));
 
-vi.mock('@/hooks/useColumns', () => ({
+vi.mock('@/hooks/columns/useColumns', () => ({
   useColumns: () => ({
     columns: [
       { 
@@ -184,7 +184,7 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
   describe('CAT-01: Kateqoriya yaratma', () => {
     it('yeni kateqoriya yaratma prosesi', async () => {
       // useCategories hook-undakı funksiyaları al
-      const { useCategories } = await import('@/hooks/useCategories');
+      const { useCategories } = await import('@/hooks/categories/useCategories');
       const { add } = useCategories();
 
       // CategoryForm komponentini render et
@@ -223,7 +223,7 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
   describe('CAT-02: Kateqoriya redaktə', () => {
     it('mövcud kateqoriyanı redaktə prosesi', async () => {
       // useCategories hook-undakı funksiyaları al
-      const { useCategories } = await import('@/hooks/useCategories');
+      const { useCategories } = await import('@/hooks/categories/useCategories');
       const { update } = useCategories();
 
       // İlkin məlumatları təyin et
@@ -275,7 +275,7 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
   describe('CAT-03: Sütun yaratma', () => {
     it('yeni sütun yaratma prosesi', async () => {
       // useColumns hook-undakı funksiyaları al
-      const { useColumns } = await import('@/hooks/useColumns');
+      const { useColumns } = await import('@/hooks/columns/useColumns');
       const { add } = useColumns();
 
       // ColumnForm komponentini render et
@@ -323,7 +323,7 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
   describe('CAT-04: Sütun redaktə', () => {
     it('mövcud sütunu redaktə prosesi', async () => {
       // useColumns hook-undakı funksiyaları al
-      const { useColumns } = await import('@/hooks/useColumns');
+      const { useColumns } = await import('@/hooks/columns/useColumns');
       const { update } = useColumns();
 
       // İlkin məlumatları təyin et
@@ -380,7 +380,7 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
   describe('CAT-05: Sütun tipləri və validasiya', () => {
     it('müxtəlif tip sütunların düzgün işləməsini yoxlama', async () => {
       // useColumns hook-undakı funksiyaları al
-      const { useColumns } = await import('@/hooks/useColumns');
+      const { useColumns } = await import('@/hooks/columns/useColumns');
       const { columns } = useColumns();
 
       // Sütun tiplərini yoxla
@@ -409,8 +409,8 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
   describe('CAT-06: Kateqoriya-Sütun əlaqələri', () => {
     it('sütunların kateqoriyalara düzgün bağlanmasının yoxlanması', async () => {
       // useCategories və useColumns hook-larını al
-      const { useCategories } = await import('@/hooks/useCategories');
-      const { useColumns } = await import('@/hooks/useColumns');
+      const { useCategories } = await import('@/hooks/categories/useCategories');
+      const { useColumns } = await import('@/hooks/columns/useColumns');
       
       // Verilənləri al
       const { categories } = useCategories();

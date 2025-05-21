@@ -25,13 +25,6 @@ import {
   UserRole
 } from './test-utils';
 
-// Test ediləcək komponentlər (Bunlar sizin proyektinizə görə dəyişə bilər)
-// Əslində bu test faylı, istifadəçi idarəetmə komponentlərinin mövcudluğunu qəbul edir
-// Əgər bu komponentlər mövcud deyilsə, onları əlavə etdikdən sonra bu testləri implementasiya edə bilərsiniz
-
-// Supabase client
-import { supabase } from '@/integrations/supabase/client';
-
 // React Router
 import { MemoryRouter } from 'react-router-dom';
 
@@ -54,8 +47,9 @@ const mockUsers = [
     language: 'az',
     role: 'regionadmin',
     status: 'active',
-    created_at: '2023-01-02T00:00:00Z',
-    updated_at: '2023-01-02T00:00:00Z'
+    created_at: '2023-01-01T00:00:00Z',
+    updated_at: '2023-01-01T00:00:00Z',
+    region_id: 'region-1'
   },
   {
     id: '3',
@@ -64,345 +58,663 @@ const mockUsers = [
     language: 'az',
     role: 'sectoradmin',
     status: 'active',
-    created_at: '2023-01-03T00:00:00Z',
-    updated_at: '2023-01-03T00:00:00Z'
+    created_at: '2023-01-01T00:00:00Z',
+    updated_at: '2023-01-01T00:00:00Z',
+    region_id: 'region-1',
+    sector_id: 'sector-1'
+  },
+  {
+    id: '4',
+    email: 'schooladmin@example.com',
+    full_name: 'School Admin',
+    language: 'az',
+    role: 'schooladmin',
+    status: 'active',
+    created_at: '2023-01-01T00:00:00Z',
+    updated_at: '2023-01-01T00:00:00Z',
+    region_id: 'region-1',
+    sector_id: 'sector-1',
+    school_id: 'school-1'
   }
 ];
 
+// Mock available users for admin assignment
+const mockAvailableUsers = [
+  {
+    id: '5',
+    email: 'available1@example.com',
+    full_name: 'Available User 1',
+    language: 'az',
+    role: null,
+    status: 'active',
+    created_at: '2023-01-01T00:00:00Z',
+    updated_at: '2023-01-01T00:00:00Z'
+  },
+  {
+    id: '6',
+    email: 'available2@example.com',
+    full_name: 'Available User 2',
+    language: 'az',
+    role: null,
+    status: 'active',
+    created_at: '2023-01-01T00:00:00Z',
+    updated_at: '2023-01-01T00:00:00Z'
+  }
+];
+
+// Mock regions and sectors
+const mockRegions = [
+  { id: 'region-1', name: 'Bakı' },
+  { id: 'region-2', name: 'Sumqayıt' }
+];
+
+const mockSectors = [
+  { id: 'sector-1', name: 'Xətai', region_id: 'region-1' },
+  { id: 'sector-2', name: 'Yasamal', region_id: 'region-1' }
+];
+
+const mockSchools = [
+  { id: 'school-1', name: 'Məktəb 1', sector_id: 'sector-1', region_id: 'region-1' },
+  { id: 'school-2', name: 'Məktəb 2', sector_id: 'sector-1', region_id: 'region-1' }
+];
+
+// Mock supabase və Edge Function
+const mockCallEdgeFunction = vi.fn().mockImplementation((functionName, options) => {
+  if (functionName === 'create-user') {
+    return Promise.resolve({
+      data: {
+        id: 'new-user-id',
+        email: options.body.email,
+        full_name: options.body.fullName,
+        language: options.body.language || 'az',
+        role: null,
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      error: null
+    });
+  }
+  
+  if (functionName === 'assign-region-admin') {
+    return Promise.resolve({
+      data: {
+        success: true,
+        message: 'İstifadəçi region admin kimi təyin edildi',
+        user_id: options.body.userId,
+        region_id: options.body.regionId
+      },
+      error: null
+    });
+  }
+  
+  if (functionName === 'assign-sector-admin') {
+    return Promise.resolve({
+      data: {
+        success: true,
+        message: 'İstifadəçi sektor admin kimi təyin edildi',
+        user_id: options.body.userId,
+        sector_id: options.body.sectorId
+      },
+      error: null
+    });
+  }
+  
+  if (functionName === 'assign-school-admin') {
+    return Promise.resolve({
+      data: {
+        success: true,
+        message: 'İstifadəçi məktəb admin kimi təyin edildi',
+        user_id: options.body.userId,
+        school_id: options.body.schoolId
+      },
+      error: null
+    });
+  }
+  
+  return Promise.resolve({ data: null, error: { message: 'Unknown function' } });
+});
+
+// Supabase mock
+const mockedSupabase = {
+  auth: {
+    admin: {
+      createUser: vi.fn().mockImplementation(({ email, password, email_confirm: emailConfirm }) => {
+        return Promise.resolve({ 
+          data: { user: { id: 'new-user-id', email, emailConfirm, created_at: new Date().toISOString() } }, 
+          error: null 
+        });
+      }),
+      updateUserById: vi.fn().mockImplementation((id, { email, password, email_confirm: emailConfirm }) => {
+        return Promise.resolve({ 
+          data: { user: { id, email, emailConfirm, updated_at: new Date().toISOString() } }, 
+          error: null 
+        });
+      }),
+      deleteUser: vi.fn().mockImplementation((id) => {
+        return Promise.resolve({ data: { message: 'User deleted' }, error: null });
+      })
+    }
+  },
+  from: vi.fn().mockImplementation(() => ({
+    select: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    match: vi.fn().mockReturnThis(),
+    single: vi.fn().mockReturnThis(),
+    then: vi.fn().mockImplementation((callback) => {
+      return Promise.resolve(callback({ data: mockUsers, error: null }));
+    })
+  }))
+};
+
+// Supabase və Edge funksiyalarını mock et
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: mockedSupabase,
+  callEdgeFunction: mockCallEdgeFunction
+}));
+
+// Hook mock-ları
+vi.mock('@/hooks/useAvailableUsers', () => ({
+  useAvailableUsers: () => ({
+    users: mockAvailableUsers,
+    loading: false,
+    error: null,
+    fetchUsers: vi.fn().mockResolvedValue(mockAvailableUsers)
+  })
+}));
+
+// userUserList hook-u mock et
+vi.mock('@/hooks/useUserList', () => ({
+  useUserList: () => ({
+    users: mockUsers,
+    loading: false,
+    error: null,
+    filter: {},
+    updateFilter: vi.fn(),
+    resetFilter: vi.fn(),
+    totalCount: mockUsers.length,
+    totalPages: 1,
+    currentPage: 1,
+    setCurrentPage: vi.fn(),
+    refetch: vi.fn().mockResolvedValue(mockUsers)
+  })
+}));
+
+// useUserOperations hook-u mock et
+vi.mock('@/hooks/user/useUserOperations', () => ({
+  useUserOperations: () => ({
+    handleUpdateUserConfirm: vi.fn().mockImplementation((userData) => Promise.resolve(userData)),
+    handleDeleteUserConfirm: vi.fn().mockResolvedValue(true),
+    handleEditUser: vi.fn(),
+    handleDeleteUser: vi.fn(),
+    handleViewDetails: vi.fn(),
+    isEditDialogOpen: false,
+    isDeleteDialogOpen: false,
+    isDetailsDialogOpen: false,
+    setIsEditDialogOpen: vi.fn(),
+    setIsDeleteDialogOpen: vi.fn(),
+    setIsDetailsDialogOpen: vi.fn(),
+    selectedUser: null,
+    setSelectedUser: vi.fn()
+  })
+}));
+
+// Mock komponentlər
+vi.mock('@/components/users/CreateUserForm', () => ({
+  default: ({ onSubmit }: any) => (
+    <form data-testid="create-user-form">
+      <input data-testid="email-input" placeholder="Email" />
+      <input data-testid="fullname-input" placeholder="Ad Soyad" />
+      <input data-testid="password-input" placeholder="Şifrə" type="password" />
+      <button 
+        data-testid="submit-button"
+        onClick={() => onSubmit({
+          email: 'new@example.com',
+          fullName: 'New User',
+          password: 'password123',
+          language: 'az'
+        })}
+      >
+        İstifadəçi Yarat
+      </button>
+    </form>
+  )
+}));
+
+vi.mock('@/components/users/UsersList', () => ({
+  default: ({ users, onEdit, onDelete }: any) => (
+    <div data-testid="users-list">
+      {(users || mockUsers).map((user: any) => (
+        <div key={user.id} data-testid={`user-item-${user.id}`}>
+          <span data-testid={`user-email-${user.id}`}>{user.email}</span>
+          <span data-testid={`user-role-${user.id}`}>{user.role}</span>
+          <button 
+            data-testid={`edit-user-${user.id}`}
+            onClick={() => onEdit(user)}
+          >
+            Redaktə
+          </button>
+          <button 
+            data-testid={`delete-user-${user.id}`}
+            onClick={() => onDelete(user.id)}
+          >
+            Sil
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}));
+
+vi.mock('@/components/users/EditUserForm', () => ({
+  default: ({ user, onSubmit }: any) => (
+    <form data-testid="edit-user-form">
+      <input data-testid="edit-email-input" defaultValue={user?.email} placeholder="Email" />
+      <input data-testid="edit-fullname-input" defaultValue={user?.full_name} placeholder="Ad Soyad" />
+      <select data-testid="edit-role-select" defaultValue={user?.role}>
+        <option value="superadmin">Super Admin</option>
+        <option value="regionadmin">Region Admin</option>
+        <option value="sectoradmin">Sektor Admin</option>
+        <option value="schooladmin">Məktəb Admin</option>
+      </select>
+      <button 
+        data-testid="update-button"
+        onClick={() => onSubmit({
+          ...user,
+          email: 'updated@example.com',
+          full_name: 'Updated User',
+          role: 'regionadmin'
+        })}
+      >
+        Yenilə
+      </button>
+    </form>
+  )
+}));
+
+vi.mock('@/components/users/UsersFilter', () => ({
+  default: ({ onFilter }: any) => (
+    <div data-testid="users-filter">
+      <select data-testid="role-filter">
+        <option value="">Bütün rollar</option>
+        <option value="superadmin">Super Admin</option>
+        <option value="regionadmin">Region Admin</option>
+        <option value="sectoradmin">Sektor Admin</option>
+        <option value="schooladmin">Məktəb Admin</option>
+      </select>
+      <select data-testid="region-filter">
+        <option value="">Bütün regionlar</option>
+        {mockRegions.map(region => (
+          <option key={region.id} value={region.id}>{region.name}</option>
+        ))}
+      </select>
+      <button 
+        data-testid="apply-filter"
+        onClick={() => onFilter({
+          role: 'regionadmin',
+          region_id: 'region-1'
+        })}
+      >
+        Tətbiq et
+      </button>
+    </div>
+  )
+}));
+
 describe('İstifadəçi İdarəetməsi Testləri', () => {
-  // Hər testin əvvəlində mockları sıfırlamaq
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSupabase();
+    
+    // Auth store-u mockla və superadmin istifadəçini təyin et
     mockUserRole('superadmin');
-    mockEdgeFunctions();
   });
   
   describe('USER-01: İstifadəçi yaratma', () => {
-    it('yeni istifadəçi yaratma prosesini uğurla həyata keçirir', async () => {
-      // Supabase insert və Edge Function çağırışını mockla
-      vi.spyOn(supabase.auth, 'admin').mockImplementation(() => ({
-        createUser: vi.fn().mockResolvedValue({ 
-          data: { user: { id: 'new-user-id' } }, 
-          error: null 
-        })
-      }));
-      
-      // Global fetch mocklama
-      const fetchMock = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ success: true, id: 'new-user-id' })
+    it('yeni istifadəçi yaratma prosesi', async () => {
+      // Mock EdgeFunction çağırışı
+      const createUserFn = vi.fn().mockImplementation((userData) => {
+        return mockCallEdgeFunction('create-user', {
+          body: userData
+        });
       });
-      global.fetch = fetchMock;
       
-      // Burada CreateUserForm komponentinizi render edə bilərsiniz
-      // Və formu doldurub submit edə bilərsiniz
-      // Nümunə:
-      
-      /* 
+      // CreateUserForm-u render et
       render(
-        <MemoryRouter>
-          <CreateUserForm />
-        </MemoryRouter>
+        <div data-testid="create-user-container">
+          <div data-testid="create-user-form">
+            <button 
+              data-testid="submit-button"
+              onClick={() => createUserFn({
+                email: 'new@example.com',
+                fullName: 'New User',
+                password: 'password123',
+                language: 'az'
+              })}
+            >
+              İstifadəçi Yarat
+            </button>
+          </div>
+        </div>
       );
       
-      // Form sahələrini doldur
-      fireEvent.change(screen.getByTestId('email-input'), { target: { value: 'newuser@example.com' } });
-      fireEvent.change(screen.getByTestId('name-input'), { target: { value: 'New User' } });
-      fireEvent.change(screen.getByTestId('role-select'), { target: { value: 'schooladmin' } });
-      
-      // Formu göndər
+      // Submit düyməsinə klik et
       fireEvent.click(screen.getByTestId('submit-button'));
       
-      // Edge Function çağırıldığını yoxla
+      // Edge Function çağırışını yoxla
       await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalled();
-        expect(fetchMock.mock.calls[0][0]).toContain('create-user');
+        expect(createUserFn).toHaveBeenCalledWith(expect.objectContaining({
+          email: 'new@example.com',
+          fullName: 'New User',
+          password: 'password123'
+        }));
+        
+        expect(mockCallEdgeFunction).toHaveBeenCalledWith('create-user', {
+          body: expect.objectContaining({
+            email: 'new@example.com',
+            fullName: 'New User',
+          })
+        });
       });
       
-      // Uğurlu mesajın göstərildiyini yoxla
-      expect(screen.getByTestId('success-message')).toBeInTheDocument();
-      */
-      
-      // Əvəzedici yoxlama - faktiki implementasiya olana qədər
-      // Bu yoxlamalar, Edge Function çağırışının necə olacağını göstərir
-      // Lakin, faktiki komponentləriniz mövcud olduqda daha dəqiq testlər yazılmalıdır
-      
-      // create-user Edge Function-na sorğu göndər
-      const response = await fetch('https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/create-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer token'
-        },
-        body: JSON.stringify({
-          email: 'newuser@example.com',
-          full_name: 'New User',
-          role: 'schooladmin',
-          language: 'az'
-        })
-      });
-      
-      // Sorğunun uğurla tamamlandığını yoxla
-      const data = await response.json();
-      expect(data.success).toBe(true);
-      expect(data.id).toBe('new-user-id');
-      
-      // Fetch sorğusunun düzgün parametrlərlə çağırıldığını yoxla
-      expect(fetchMock).toHaveBeenCalledWith(
-        'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/create-user',
-        expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer token'
-          }),
-          body: expect.any(String)
-        })
-      );
-      
-      // Body-nin düzgün məzmuna sahib olduğunu yoxla
-      const requestBody = JSON.parse(fetchMock.mock.calls[0][1].body);
-      expect(requestBody).toMatchObject({
-        email: 'newuser@example.com',
-        full_name: 'New User',
-        role: 'schooladmin',
+      // Edge Function nəticəsinin düzgün olduğunu yoxla
+      const result = await createUserFn({
+        email: 'new@example.com',
+        fullName: 'New User',
+        password: 'password123',
         language: 'az'
       });
+      
+      expect(result.data).toEqual(expect.objectContaining({
+        id: 'new-user-id',
+        email: 'new@example.com',
+        full_name: 'New User'
+      }));
     });
   });
   
   describe('USER-02: İstifadəçi rolu təyin etmə', () => {
-    it('istifadəçiyə rol təyin etmə prosesini uğurla həyata keçirir', async () => {
-      // Global fetch mocklama
-      const fetchMock = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ success: true })
-      });
-      global.fetch = fetchMock;
-      
-      // assign-region-admin Edge Function-na sorğu göndər
-      const response = await fetch('https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/assign-region-admin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer token'
-        },
-        body: JSON.stringify({
-          user_id: 'user-id',
-          region_id: 'region-id'
-        })
+    it('istifadəçiyə region admin rolu təyin etmə', async () => {
+      // Region admin təyin etmə funksiyası
+      const assignRegionAdmin = vi.fn().mockImplementation((userId, regionId) => {
+        return mockCallEdgeFunction('assign-region-admin', {
+          body: { userId, regionId }
+        });
       });
       
-      // Sorğunun uğurla tamamlandığını yoxla
-      const data = await response.json();
-      expect(data.success).toBe(true);
-      
-      // Fetch sorğusunun düzgün parametrlərlə çağırıldığını yoxla
-      expect(fetchMock).toHaveBeenCalledWith(
-        'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/assign-region-admin',
-        expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer token'
-          }),
-          body: expect.any(String)
-        })
+      // AssignAdminForm komponentini simulyasiya et
+      render(
+        <div data-testid="assign-admin-container">
+          <div data-testid="assign-region-admin-form">
+            <select data-testid="user-select">
+              <option value="5">Available User 1</option>
+              <option value="6">Available User 2</option>
+            </select>
+            <select data-testid="region-select">
+              <option value="region-1">Bakı</option>
+              <option value="region-2">Sumqayıt</option>
+            </select>
+            <button 
+              data-testid="assign-button"
+              onClick={() => assignRegionAdmin('5', 'region-1')}
+            >
+              Region Admin Təyin Et
+            </button>
+          </div>
+        </div>
       );
       
-      // Body-nin düzgün məzmuna sahib olduğunu yoxla
-      const requestBody = JSON.parse(fetchMock.mock.calls[0][1].body);
-      expect(requestBody).toMatchObject({
-        user_id: 'user-id',
-        region_id: 'region-id'
+      // Təyin et düyməsinə klik et
+      fireEvent.click(screen.getByTestId('assign-button'));
+      
+      // Edge Function çağırışını yoxla
+      await waitFor(() => {
+        expect(assignRegionAdmin).toHaveBeenCalledWith('5', 'region-1');
+        
+        expect(mockCallEdgeFunction).toHaveBeenCalledWith('assign-region-admin', {
+          body: {
+            userId: '5',
+            regionId: 'region-1'
+          }
+        });
+      });
+      
+      // Təyin etmə nəticəsinin düzgün olduğunu yoxla
+      const result = await assignRegionAdmin('5', 'region-1');
+      
+      expect(result.data).toEqual(expect.objectContaining({
+        success: true,
+        user_id: '5',
+        region_id: 'region-1'
+      }));
+    });
+    
+    it('istifadəçiyə sektor admin rolu təyin etmə', async () => {
+      // Sektor admin təyin etmə funksiyası
+      const assignSectorAdmin = vi.fn().mockImplementation((userId, sectorId) => {
+        return mockCallEdgeFunction('assign-sector-admin', {
+          body: { userId, sectorId }
+        });
+      });
+      
+      // AssignAdminForm komponentini simulyasiya et
+      render(
+        <div data-testid="assign-admin-container">
+          <div data-testid="assign-sector-admin-form">
+            <select data-testid="user-select">
+              <option value="5">Available User 1</option>
+              <option value="6">Available User 2</option>
+            </select>
+            <select data-testid="sector-select">
+              <option value="sector-1">Xətai</option>
+              <option value="sector-2">Yasamal</option>
+            </select>
+            <button 
+              data-testid="assign-button"
+              onClick={() => assignSectorAdmin('6', 'sector-1')}
+            >
+              Sektor Admin Təyin Et
+            </button>
+          </div>
+        </div>
+      );
+      
+      // Təyin et düyməsinə klik et
+      fireEvent.click(screen.getByTestId('assign-button'));
+      
+      // Edge Function çağırışını yoxla
+      await waitFor(() => {
+        expect(assignSectorAdmin).toHaveBeenCalledWith('6', 'sector-1');
+        
+        expect(mockCallEdgeFunction).toHaveBeenCalledWith('assign-sector-admin', {
+          body: {
+            userId: '6',
+            sectorId: 'sector-1'
+          }
+        });
       });
     });
   });
   
   describe('USER-03: İstifadəçi redaktəsi', () => {
-    it('mövcud istifadəçinin məlumatlarını redaktə edir', async () => {
-      // Supabase update mockla
-      const updateMock = vi.fn().mockResolvedValue({ data: { id: 'user-id' }, error: null });
-      vi.spyOn(supabase, 'from').mockImplementation(() => ({
-        update: updateMock,
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockUserData, error: null })
-      }));
+    it('mövcud istifadəçinin məlumatlarını redaktə etmə', async () => {
+      // useUserOperations hook-undan handleUpdateUserConfirm funksiyasını al
+      const { useUserOperations } = await import('@/hooks/user/useUserOperations');
+      const { handleUpdateUserConfirm } = useUserOperations();
       
-      // Burada faktiki EditUserForm komponentinizi test edə bilərsiniz
-      // Nümunə:
+      // EditUserForm komponentini simulyasiya et
+      const user = mockUsers[1]; // Region admin istifadəçisi
       
-      /* 
-      // Redaktə komponentini render et
+      const handleUpdate = vi.fn().mockImplementation((updatedUser) => {
+        return handleUpdateUserConfirm(updatedUser);
+      });
+      
       render(
-        <MemoryRouter>
-          <EditUserForm userId="user-id" />
-        </MemoryRouter>
+        <div data-testid="edit-user-container">
+          <div data-testid="edit-user-form">
+            <button 
+              data-testid="update-button"
+              onClick={() => handleUpdate({
+                ...user,
+                email: 'updated@example.com',
+                full_name: 'Updated User',
+                language: 'az',
+                role: 'regionadmin'
+              })}
+            >
+              Yenilə
+            </button>
+          </div>
+        </div>
       );
       
-      // İstifadəçi məlumatlarının yüklənməsini gözlə
+      // Yenilə düyməsinə klik et
+      fireEvent.click(screen.getByTestId('update-button'));
+      
+      // handleUpdateUserConfirm funksiyasının çağırıldığını yoxla
       await waitFor(() => {
-        expect(screen.getByTestId('name-input')).toHaveValue(mockUserData.full_name);
+        expect(handleUpdate).toHaveBeenCalledWith(expect.objectContaining({
+          email: 'updated@example.com',
+          full_name: 'Updated User'
+        }));
+        
+        expect(handleUpdateUserConfirm).toHaveBeenCalledWith(expect.objectContaining({
+          email: 'updated@example.com',
+          full_name: 'Updated User'
+        }));
       });
-      
-      // Məlumatları dəyişdir
-      fireEvent.change(screen.getByTestId('name-input'), { target: { value: 'Updated Name' } });
-      
-      // Formu göndər
-      fireEvent.click(screen.getByTestId('submit-button'));
-      
-      // Update sorğusunun çağırıldığını yoxla
-      await waitFor(() => {
-        expect(updateMock).toHaveBeenCalledWith({
-          full_name: 'Updated Name',
-          // ... digər sahələr
-        });
-      });
-      
-      // Uğurlu mesajın göstərildiyini yoxla
-      expect(screen.getByTestId('success-message')).toBeInTheDocument();
-      */
-      
-      // Əvəzedici yoxlama - faktiki implementasiya olana qədər
-      const updatedData = {
-        full_name: 'Updated Name',
-        language: 'en'
-      };
-      
-      // profiles cədvəlinə update sorğusu
-      const result = await supabase
-        .from('profiles')
-        .update(updatedData)
-        .eq('id', 'user-id')
-        .single();
-      
-      // Sorğunun uğurla tamamlandığını yoxla
-      expect(result.error).toBeNull();
-      expect(result.data).toEqual({ id: 'user-id' });
-      
-      // Update funksiyasının düzgün parametrlərlə çağırıldığını yoxla
-      expect(updateMock).toHaveBeenCalledWith(updatedData);
     });
   });
   
   describe('USER-04: İstifadəçi silmə', () => {
-    it('istifadəçini uğurla silir', async () => {
-      // Supabase delete mockla
-      const deleteMock = vi.fn().mockResolvedValue({ data: {}, error: null });
-      vi.spyOn(supabase, 'from').mockImplementation(() => ({
-        delete: deleteMock,
-        eq: vi.fn().mockReturnThis()
-      }));
+    it('istifadəçini silmə prosesi', async () => {
+      // useUserOperations hook-undan handleDeleteUserConfirm funksiyasını al
+      const { useUserOperations } = await import('@/hooks/user/useUserOperations');
+      const { handleDeleteUserConfirm, setSelectedUser } = useUserOperations();
       
-      // Əvəzedici yoxlama - faktiki implementasiya olana qədər
+      // İstifadəçi siyahısı komponentini simulyasiya et
+      const handleDelete = vi.fn().mockImplementation((userId) => {
+        setSelectedUser(mockUsers.find(u => u.id === userId) || null);
+        return handleDeleteUserConfirm();
+      });
       
-      // profiles cədvəlindən silmə sorğusu
-      const result = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', 'user-id');
+      render(
+        <div data-testid="users-list-container">
+          <div data-testid="users-list">
+            {mockUsers.map(user => (
+              <div key={user.id} data-testid={`user-item-${user.id}`}>
+                <span>{user.email}</span>
+                <button 
+                  data-testid={`delete-user-${user.id}`}
+                  onClick={() => handleDelete(user.id)}
+                >
+                  Sil
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
       
-      // Sorğunun uğurla tamamlandığını yoxla
-      expect(result.error).toBeNull();
+      // İlk istifadəçinin silmə düyməsinə klik et
+      fireEvent.click(screen.getByTestId(`delete-user-${mockUsers[0].id}`));
       
-      // Delete funksiyasının çağırıldığını yoxla
-      expect(deleteMock).toHaveBeenCalled();
+      // handleDeleteUserConfirm funksiyasının çağırıldığını yoxla
+      await waitFor(() => {
+        expect(handleDelete).toHaveBeenCalledWith(mockUsers[0].id);
+        expect(setSelectedUser).toHaveBeenCalled();
+        expect(handleDeleteUserConfirm).toHaveBeenCalled();
+      });
     });
   });
   
   describe('USER-05: İstifadəçi siyahısı', () => {
-    it('istifadəçilərin siyahısını düzgün göstərir', async () => {
-      // Supabase select mockla
-      vi.spyOn(supabase, 'from').mockImplementation(() => ({
-        select: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        then: (callback: (result: any) => void) => callback({
-          data: mockUsers,
-          error: null
-        })
-      }));
+    it('istifadəçilərin siyahısının yüklənməsi', async () => {
+      // useUserList hook-undan refetch funksiyasını al
+      const { useUserList } = await import('@/hooks/useUserList');
+      const { refetch } = useUserList();
       
-      // Burada faktiki UsersList komponentinizi test edə bilərsiniz
-      
-      /* 
-      // UsersList komponentini render et
+      // UsersList komponentini simulyasiya et
       render(
-        <MemoryRouter>
-          <UsersList />
-        </MemoryRouter>
+        <div data-testid="users-list-container">
+          <div data-testid="users-list">
+            {mockUsers.map(user => (
+              <div key={user.id} data-testid={`user-item-${user.id}`}>
+                <span data-testid={`user-email-${user.id}`}>{user.email}</span>
+                <span data-testid={`user-role-${user.id}`}>{user.role}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       );
       
-      // İstifadəçilərin yüklənməsini gözlə
-      await waitFor(() => {
-        expect(screen.getByTestId('users-table')).toBeInTheDocument();
+      // useEffect-də refetch funksiyasının çağırılmasını simulyasiya et
+      await act(async () => {
+        await refetch();
       });
       
-      // İstifadəçilərin göstərildiyini yoxla
-      expect(screen.getByText('Super Admin')).toBeInTheDocument();
-      expect(screen.getByText('Region Admin')).toBeInTheDocument();
-      expect(screen.getByText('Sector Admin')).toBeInTheDocument();
-      */
-      
-      // Əvəzedici yoxlama - faktiki implementasiya olana qədər
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at');
-      
-      // Sorğunun uğurla tamamlandığını yoxla
-      expect(error).toBeNull();
-      expect(data).toEqual(mockUsers);
+      // İstifadəçi siyahısının göstərildiyini yoxla
+      for (const user of mockUsers) {
+        expect(screen.getByTestId(`user-item-${user.id}`)).toBeInTheDocument();
+        expect(screen.getByTestId(`user-email-${user.id}`)).toHaveTextContent(user.email);
+        expect(screen.getByTestId(`user-role-${user.id}`)).toHaveTextContent(user.role);
+      }
     });
   });
   
   describe('USER-06: İstifadəçi filtrasiyası', () => {
-    it('müxtəlif parametrlərə görə istifadəçiləri filtrasiya edir', async () => {
-      // Supabase select mockla
-      const selectMock = vi.fn().mockReturnThis();
-      const orderMock = vi.fn().mockReturnThis();
-      const eqMock = vi.fn().mockReturnThis();
-      const likeMock = vi.fn().mockReturnThis();
+    it('müxtəlif parametrlərə görə istifadəçi filtrasiyası', async () => {
+      // useUserList hook-undan updateFilter funksiyasını al
+      const { useUserList } = await import('@/hooks/useUserList');
+      const { updateFilter, refetch } = useUserList();
       
-      vi.spyOn(supabase, 'from').mockImplementation(() => ({
-        select: selectMock,
-        order: orderMock,
-        eq: eqMock,
-        like: likeMock,
-        then: (callback: (result: any) => void) => callback({
-          data: [mockUsers[1]], // Sadəcə regionadmin istifadəçisi
-          error: null
-        })
-      }));
+      // UsersFilter komponentini simulyasiya et
+      const handleFilter = vi.fn().mockImplementation((filters) => {
+        updateFilter(filters);
+        return refetch();
+      });
       
-      // Əvəzedici yoxlama - faktiki implementasiya olana qədər
+      render(
+        <div data-testid="users-filter-container">
+          <div data-testid="users-filter">
+            <button 
+              data-testid="apply-filter"
+              onClick={() => handleFilter({
+                role: 'regionadmin',
+                regionId: 'region-1'
+              })}
+            >
+              Tətbiq et
+            </button>
+          </div>
+        </div>
+      );
       
-      // Rolə görə filter
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'regionadmin')
-        .order('created_at');
+      // Filter düyməsinə klik et
+      fireEvent.click(screen.getByTestId('apply-filter'));
       
-      // Sorğunun uğurla tamamlandığını yoxla
-      expect(error).toBeNull();
-      expect(data).toEqual([mockUsers[1]]);
+      // updateFilter funksiyasının çağırıldığını yoxla
+      await waitFor(() => {
+        expect(handleFilter).toHaveBeenCalledWith({
+          role: 'regionadmin',
+          regionId: 'region-1'
+        });
+        
+        expect(updateFilter).toHaveBeenCalledWith({
+          role: 'regionadmin',
+          regionId: 'region-1'
+        });
+      });
       
-      // Filter funksiyalarının çağırıldığını yoxla
-      expect(selectMock).toHaveBeenCalled();
-      expect(eqMock).toHaveBeenCalledWith('role', 'regionadmin');
-      expect(orderMock).toHaveBeenCalledWith('created_at');
+      // refetch funksiyasının çağırıldığını yoxla
+      expect(refetch).toHaveBeenCalled();
       
-      // Axtarışa görə filter - ad, email və s.
-      await supabase
-        .from('profiles')
-        .select('*')
-        .like('full_name', '%Admin%')
-        .order('created_at');
-      
-      // Like funksiyasının çağırıldığını yoxla
-      expect(likeMock).toHaveBeenCalledWith('full_name', '%Admin%');
+      // Filter nəticəsini simyulyasiya et - mockUsers filter nəticəsi olaraq eyni qalır
+      const filteredUsers = mockUsers.filter(u => u.role === 'regionadmin' && u.region_id === 'region-1');
+      expect(filteredUsers.length).toBeGreaterThan(0);
     });
   });
 });

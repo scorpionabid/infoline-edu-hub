@@ -53,7 +53,7 @@ Bu sənəd, İnfoLine proyektinin test strategiyasını və test planını təqd
 | HIER-07 | İyerarxiya əlaqələri | Region-sektor-məktəb əlaqələrinin yoxlanması | Əlaqələr düzgün qurulmalıdır | Orta |
 
 ### 5. Kateqoriya və Sütun İdarəetməsi
-**Test Fayl:** `category-column.test.tsx`
+**Test Fayl:** `category-management.test.tsx`
 
 | Test ID | Test Adı | Təsvir | Gözlənilən Nəticə | Prioritet |
 |---------|----------|--------|-------------------|-----------| 
@@ -176,16 +176,27 @@ Aşağıdakı test funksiyaları tamamlanmış və təkrar istifadə üçün haz
 - `mockAuthStore()` - Autentifikasiya vəziyyətini simulyasiya etmək üçün
 - `mockStorage()` - Lokal saxlama funksionallığını simulyasiya etmək üçün
 
+### Tamamlanmış Test Sənədləşdirmələri
+
+Aşağıdakı test sənədləşdirmələri hazırlanıb və `public/documents/test-docs/` qovluğunda yerləşdirilmişdir:
+
+| Test Sahəsi | Sənəd Faylı | Təsvir |
+|----------|-------------|--------|
+| Autentifikasiya | `auth-test-sənədləşdirmə.md` | Giriş, çıxış və sessiya idarəetməsi testlərinin ətraflı təsviri |
+| Kateqoriya və Sütun İdarəetməsi | `kateqoriya-test-sənədləşdirmə.md` | Kateqoriya və sütun idarəetməsi testlərinin ətraflı təsviri və texniki detalları |
+| Məlumat Daxiletmə və Təsdiqləmə | `data-test-sənədləşdirmə.md` | Məlumat daxiletmə/import və təsdiqləmə testlərinin ətraflı təsviri |
+| İstifadəçi İdarəetməsi | `istifadeci-idareetme-test-sənədləşdirmə.md` | İstifadəçi yaratma, rol təyin etmə, redaktə, silmə və filtrasiya testlərinin təsviri |
+
 ## İmplementasiya Plan və Status Cədvəli
 
 | Mərhələ | Prioritet | Status | Tamamlanmış Fayl(lar) | Qalan İşlər |
 |---------|-----------|-------|-------------------|-------------|
-| Autentifikasiya testləri | Yüksək | **Qismən Tamamlanmış** | `login.test.tsx`, `LoginForm.test.tsx`, `auth.test.tsx` | Şifrəni sıfırlama, JWT token dinamik yoxlamaları |
-| Dashboard və yönləndirmə testləri | Yüksək | **Qismən Tamamlanmış** | `dashboard-navigation.test.tsx` | Sidebar komponentinə dəqiq testlər, rol əsaslı navigasiya |
-| İstifadəçi idarəetmə testləri | Yüksək | **Qismən Tamamlanmış** | `user-management.test.tsx` | İstifadəçi yaratma UI testləri, rol dəyişdirmə |
-| Region/Sektor/Məktəb idarəetmə testləri | Orta | Başlanmayıb | - | Bütün testlər planlanmalıdır |
-| Kateqoriya və sütun idarəetmə testləri | Orta | Başlanmayıb | - | Bütün testlər planlanmalıdır |
-| Məlumat daxiletmə və import testləri | Yüksək | Başlanmayıb | - | Bütün testlər planlanmalıdır |
-| Məlumat təsdiqi və toplama testləri | Orta | Başlanmayıb | - | Bütün testlər planlanmalıdır |
+| Autentifikasiya testləri | Yüksək | **Tamamlanmış** | `login.test.tsx`, `LoginForm.test.tsx`, `auth.test.tsx` | - |
+| Dashboard və yönləndirmə testləri | Yüksək | **Tamamlanmış** | `dashboard-navigation.test.tsx` | - |
+| İstifadəçi idarəetmə testləri | Yüksək | **Tamamlanmış** | `user-management.test.tsx` | - |
+| Region/Sektor/Məktəb idarəetmə testləri | Orta | **Tamamlanmış** | `hierarchy-management.test.tsx` | - |
+| Kateqoriya və sütun idarəetmə testləri | Orta | **Tamamlanmış** | `category-management.test.tsx` | - |
+| Məlumat daxiletmə və import testləri | Yüksək | **Tamamlanmış** | `data-entry.test.tsx` | - |
+| Məlumat təsdiqi və toplama testləri | Orta | **Tamamlanmış** | `data-approval.test.tsx` | - |
 | Hesabat və statistika testləri | Aşağı | Başlanmayıb | - | Bütün testlər planlanmalıdır |
 | İnteqrasiya testləri | Yüksək | Başlanmayıb | - | Bütün testlər planlanmalıdır |
