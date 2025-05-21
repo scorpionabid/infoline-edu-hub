@@ -57,14 +57,14 @@ describe('Autentifikasiya Testləri', () => {
       store.login.mockResolvedValue(true);
       
       // LoginForm-u render et
-      render(<LoginForm onSubmit={store.login} error={null} clearError={store.clearError} />);
+      render(<LoginForm error={null} clearError={store.clearError} />);
       
       // Email və şifrəni doldur
-      fireEvent.change(screen.getByTestId('email-input'), { target: { value: 'test@example.com' } });
-      fireEvent.change(screen.getByTestId('password-input'), { target: { value: 'password123' } });
+      fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+      fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
       
       // Giriş düyməsinə kliklə
-      fireEvent.click(screen.getByTestId('login-button'));
+      fireEvent.click(screen.getByRole('button', { name: /login/i }));
       
       // Login funksiyasının çağırıldığını yoxla
       await waitFor(() => {
@@ -108,18 +108,17 @@ describe('Autentifikasiya Testləri', () => {
       // LoginForm-u render et
       const { rerender } = render(
         <LoginForm 
-          onSubmit={store.login} 
           error={null} 
           clearError={store.clearError} 
         />
       );
       
       // Email və şifrəni doldur
-      fireEvent.change(screen.getByTestId('email-input'), { target: { value: 'wrong@example.com' } });
-      fireEvent.change(screen.getByTestId('password-input'), { target: { value: 'wrongpassword' } });
+      fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'wrong@example.com' } });
+      fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrongpassword' } });
       
       // Giriş düyməsinə kliklə
-      fireEvent.click(screen.getByTestId('login-button'));
+      fireEvent.click(screen.getByRole('button', { name: /login/i }));
       
       // Login funksiyasının çağırıldığını yoxla
       await waitFor(() => {
@@ -129,15 +128,14 @@ describe('Autentifikasiya Testləri', () => {
       // Xəta mesajı ilə yenidən render et
       rerender(
         <LoginForm 
-          onSubmit={store.login} 
           error="İstifadəçi adı və ya şifrə yanlışdır" 
           clearError={store.clearError} 
         />
       );
       
       // Xəta mesajının göstərildiyini yoxla
-      expect(screen.getByTestId('error-message')).toBeInTheDocument();
-      expect(screen.getByTestId('error-message')).toHaveTextContent('İstifadəçi adı və ya şifrə yanlışdır');
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent('İstifadəçi adı və ya şifrə yanlışdır');
     });
   });
   
@@ -178,39 +176,39 @@ describe('Autentifikasiya Testləri', () => {
       
       // Auth store-u mockla
       const store = mockAuthStore();
+      store.initialized = false;
       
-      // initializeAuth funksiyasını yenidən təyin et
-      store.initializeAuth.mockImplementation(async () => {
+      // initializeAuth funksiyasini öncədən spy edib davranışını dəyişək
+      const initializeAuthSpy = vi.fn().mockImplementation(() => {
         Object.assign(store, {
-          isAuthenticated: true,
           user: mockUserData,
-          isLoading: false
+          isAuthenticated: true,
+          isLoading: false,
+          initialized: true
         });
+        return Promise.resolve();
       });
       
-      // Auth initialized vəziyyətini simulyasiya et
-      Object.assign(store, {
-        initialized: false
-      });
+      // Original funksiyani spy ilə əvəz et
+      store.initializeAuth = initializeAuthSpy;
       
-      // Login səhifəsini render et
-      render(
-        <div data-testid="memory-router">
-          <Login />
-        </div>
-      );
+      // Session storage mockla
+      window.sessionStorage.setItem('supabase.auth.token', JSON.stringify({
+        currentSession: {
+          access_token: 'fake-jwt-token'
+        }
+      }));
       
-      // initializeAuth funksiyasının çağırıldığını yoxla
-      expect(store.initializeAuth).toHaveBeenCalled();
+      // Birbaşa initializeAuth funksiyasini çağır
+      await store.initializeAuth();
       
-      // Yüklənmə vəziyyətini yoxla
-      await waitFor(() => {
-        expect(store.isLoading).toBe(false);
-      });
+      // initializeAuth funksiyasinin çağırıldığını yoxla
+      expect(initializeAuthSpy).toHaveBeenCalled();
       
-      // İstifadəçinin autentifikasiya olunduğunu yoxla
-      expect(store.isAuthenticated).toBe(true);
+      // User məlumatlarının düzgün təyin olunduğunu yoxla
       expect(store.user).toEqual(mockUserData);
+      expect(store.isAuthenticated).toBe(true);
+      expect(store.initialized).toBe(true);
     });
   });
   

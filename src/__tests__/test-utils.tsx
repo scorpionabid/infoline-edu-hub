@@ -146,14 +146,20 @@ export const globalMockStore = {
 };
 
 // Language context-i mockla
-vi.mock('@/context/LanguageContext', () => ({
-  useLanguage: () => ({
+vi.mock('@/context/LanguageContext', () => {
+  const mockLanguageContext = {
     language: 'az',
+    currentLanguage: 'az',
     setLanguage: vi.fn(),
     t: (key: string) => key, // basit tərcümə funk. qaytaraq
-  }),
-  LanguageProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+  };
+  
+  return {
+    useLanguage: () => mockLanguageContext,
+    useLanguageSafe: () => mockLanguageContext,
+    LanguageProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  };
+});
 
 // useAuthStore hook-unu əvvəlcədən mockla
 const useAuthStoreMock = ((selector: any) => {

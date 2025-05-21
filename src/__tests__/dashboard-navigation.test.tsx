@@ -32,13 +32,59 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 // Navigate mock
 const mockNavigate = vi.fn();
-vi.mock('react-router-dom', () => {
-  const actual = vi.importActual('react-router-dom');
+
+// React Router mockla - geriçağırım axanı üçün əvəllədimə
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
   return {
-    ...actual,
+    ...actual as any, // bütün actual exports-i əlavə et
     useNavigate: () => mockNavigate
   };
 });
+
+// Sidebar mockla
+vi.mock('@/components/layout/Sidebar', () => ({
+  default: () => (
+    <aside data-testid="sidebar">
+      <nav>
+        <ul>
+          <li>
+            <button data-testid="nav-dashboard" onClick={() => mockNavigate('/dashboard')}>
+              Dashboard
+            </button>
+          </li>
+          <li>
+            <button data-testid="nav-users" onClick={() => mockNavigate('/users')}>
+              İstifadəçilər
+            </button>
+          </li>
+          <li>
+            <button data-testid="nav-regions" onClick={() => mockNavigate('/regions')}>
+              Regionlar
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+  )
+}));
+
+// SidebarLayout mockla
+vi.mock('@/components/layout/SidebarLayout', () => ({
+  default: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="sidebar-layout">
+      {/* Sidebar komponentini çağır */}
+      <div data-testid="sidebar-container">
+        {/* import Sidebar from '@/components/layout/Sidebar' - bu avtomatik olaraq mock edilmiş versiyanı istifadə edəcək */}
+        {/* @ts-ignore */}
+        <Sidebar />
+      </div>
+      <main data-testid="main-content">
+        {children}
+      </main>
+    </div>
+  )
+}));
 
 // Mock komponentlər
 const mockRestricted = ({ requiredRole }: { requiredRole: UserRole }) => (
@@ -118,33 +164,6 @@ describe('Dashboard Yönləndirmə Testləri', () => {
     it('yan paneldən müxtəlif bölmələrə keçidlər düzgün işləyir', async () => {
       // superadmin rolunu mockla
       mockUserRole('superadmin');
-      
-      // Yan panel komponentini mock et
-      vi.mock('@/components/layout/Sidebar', () => ({
-        default: () => (
-          <aside data-testid="sidebar">
-            <nav>
-              <ul>
-                <li>
-                  <button data-testid="nav-dashboard" onClick={() => mockNavigate('/dashboard')}>
-                    Dashboard
-                  </button>
-                </li>
-                <li>
-                  <button data-testid="nav-users" onClick={() => mockNavigate('/users')}>
-                    İstifadəçilər
-                  </button>
-                </li>
-                <li>
-                  <button data-testid="nav-regions" onClick={() => mockNavigate('/regions')}>
-                    Regionlar
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </aside>
-        )
-      }));
       
       // SidebarLayout komponentini render et
       render(
