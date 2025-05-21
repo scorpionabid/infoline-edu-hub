@@ -13,7 +13,10 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:debug": "vitest --inspect-brk --threads=false",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run src/__tests__/integration",
+    "test:integration:watch": "vitest src/__tests__/integration",
+    "test:all": "vitest run"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

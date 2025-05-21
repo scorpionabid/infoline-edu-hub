@@ -32,6 +32,12 @@ export default defineConfig(({ mode }) => ({
     threads: false,
     environmentOptions: {
       jest: true
+    },
+    // Alias paths konfiqurasyonunun testlər içində düzgün işləməsi üçün
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src')
+      }
     }
   }
 }));
