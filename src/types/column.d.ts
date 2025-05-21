@@ -1,7 +1,7 @@
 
 import { 
   ColumnType, 
-  Column, 
+  Column as CoreColumn, 
   ColumnOption, 
   ColumnValidation, 
   ColumnFormValues,
@@ -11,12 +11,16 @@ import {
 // Re-export core types
 export type { 
   ColumnType, 
-  Column, 
   ColumnOption, 
   ColumnValidation, 
   ColumnFormValues,
   BaseColumn
 };
+
+// We need to re-export Column with the is_required field as optional to maintain compatibility with existing code
+export interface Column extends Omit<CoreColumn, 'is_required'> {
+  is_required?: boolean;
+}
 
 // Additional UI-specific types for columns
 export interface ColumnTypeDefinition {

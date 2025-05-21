@@ -1,90 +1,78 @@
 
-import { BaseEntity, JsonObject, JsonArray } from './index';
+import { BaseEntity } from './index';
 
-/**
- * Core Column type definitions
- */
-
+// Column type options
 export type ColumnType = 
-  | 'text' 
-  | 'textarea' 
-  | 'number' 
-  | 'date' 
-  | 'time'
-  | 'datetime'
+  | 'text'
+  | 'number'
+  | 'date'
   | 'select'
   | 'multiselect'
-  | 'radio'
   | 'checkbox'
-  | 'email'
-  | 'phone'
-  | 'url'
-  | 'password'
-  | 'color'
+  | 'textarea'
   | 'file'
   | 'image'
-  | 'richtext'
-  | 'range';
+  | 'boolean';
 
-// Common interface for column options
+// Option for select-type columns
 export interface ColumnOption {
-  id?: string;
-  label: string;
   value: string;
+  label: string;
   color?: string;
-  disabled?: boolean;
-  description?: string;
 }
 
-// Validation rules that can be applied to columns
+// Validation rules for columns
 export interface ColumnValidation {
   required?: boolean;
-  minLength?: number;
-  maxLength?: number;
   min?: number;
   max?: number;
   pattern?: string;
-  minValue?: number;
-  maxValue?: number;
-  errorMessage?: string;
-  patternMessage?: string;
-  [key: string]: any; // Allow additional validation rules
+  patternError?: string;
+  maxLength?: number;
+  minLength?: number;
+  dateMin?: string;
+  dateMax?: string;
 }
 
-// Base column interface - the core properties that all column implementations must have
-export interface BaseColumn extends BaseEntity {
+// Base column properties shared across the app
+export interface BaseColumn {
+  id: string;
   name: string;
   type: ColumnType;
   category_id: string;
-  is_required: boolean;
-  order_index: number;
-  status?: string;
-}
-
-// A complete column with all optional fields
-export interface Column extends BaseColumn {
-  placeholder?: string;
-  help_text?: string;
+  is_required: boolean;  // This is NOT optional in the core Column type
   default_value?: string;
-  options?: ColumnOption[];
-  validation?: ColumnValidation;
+  help_text?: string;
+  placeholder?: string;
+  order_index?: number;
+  options?: ColumnOption[] | any;
+  validation?: ColumnValidation | any;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
   description?: string;
   section?: string;
   color?: string;
 }
 
-// Form data for creating/editing columns
+// Main Column interface used throughout the app
+export interface Column extends BaseColumn {
+  // Any column-specific extensions
+}
+
+// Form data structure for column operations
 export interface ColumnFormValues {
   name: string;
   type: ColumnType;
+  is_required: boolean;
   category_id: string;
-  is_required?: boolean;
-  placeholder?: string;
   help_text?: string;
-  default_value?: string;
-  validation?: ColumnValidation;
-  options?: ColumnOption[];
+  placeholder?: string;
   order_index?: number;
+  options?: ColumnOption[];
+  validation?: ColumnValidation;
+  default_value?: string;
+  status?: string;
   description?: string;
   section?: string;
   color?: string;
