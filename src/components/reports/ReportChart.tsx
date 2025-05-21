@@ -2,7 +2,7 @@
 import React from 'react';
 import { BarChart, LineChart, PieChart } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { ReportChartProps, ReportTypeValues, REPORT_TYPE_VALUES } from '@/types/report';
+import { ReportChartProps, REPORT_TYPE_VALUES } from '@/types/report';
 
 export const ReportChart: React.FC<ReportChartProps> = ({ 
   type, 

@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Report, ReportType } from '@/types/report';
+import { Report, ReportTypeValues, REPORT_TYPE_VALUES } from '@/types/report';
 
 export const useReports = () => {
   const [reports, setReports] = useState<Report[]>([
@@ -9,21 +9,23 @@ export const useReports = () => {
       id: 'report-1',
       title: 'School Performance Overview',
       description: 'Annual performance metrics for all schools',
-      type: 'school' as ReportType,
+      type: REPORT_TYPE_VALUES.BAR,
       status: 'published',
-      createdAt: '2023-04-15T10:30:00Z',
-      updatedAt: '2023-04-15T10:30:00Z',
-      createdBy: 'admin'
+      created_at: '2023-04-15T10:30:00Z',
+      updated_at: '2023-04-15T10:30:00Z',
+      created_by: 'admin',
+      content: {}
     },
     {
       id: 'report-2',
       title: 'Regional Comparison',
       description: 'Comparing data across different regions',
-      type: 'comparison' as ReportType,
+      type: REPORT_TYPE_VALUES.COMPARISON,
       status: 'draft',
-      createdAt: '2023-04-10T14:20:00Z',
-      updatedAt: '2023-04-12T09:15:00Z',
-      createdBy: 'user1'
+      created_at: '2023-04-10T14:20:00Z',
+      updated_at: '2023-04-12T09:15:00Z',
+      created_by: 'user1',
+      content: {}
     }
   ]);
 
@@ -52,13 +54,15 @@ export const useReports = () => {
     return report;
   }, [reports]);
 
-  const createReport = useCallback((reportData: Omit<Report, 'id' | 'createdAt' | 'updatedAt'>): Report => {
+  const createReport = useCallback((reportData: Partial<Report>): Report => {
     const newReport: Report = {
       id: uuidv4(),
       ...reportData,
-      type: reportData.type || 'basic' as ReportType,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      type: reportData.type || REPORT_TYPE_VALUES.BAR,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      title: reportData.title || 'New Report',
+      content: reportData.content || {}
     };
     
     setReports(prev => [...prev, newReport]);
@@ -74,7 +78,7 @@ export const useReports = () => {
           updatedReport = {
             ...report,
             ...reportData,
-            updatedAt: new Date().toISOString()
+            updated_at: new Date().toISOString()
           };
           return updatedReport;
         }
@@ -114,3 +118,5 @@ export const useReports = () => {
     deleteReport
   };
 };
+
+export default useReports;

@@ -9,7 +9,8 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
   onClose, 
   onCategoryCreated,
   open,
-  onOpenChange 
+  onOpenChange,
+  isOpen 
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useLanguage();

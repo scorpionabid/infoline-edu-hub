@@ -33,6 +33,7 @@ export interface CreateCategoryDialogProps {
   onOpenChange?: (open: boolean) => void;
   onCategoryCreated?: () => void;
   onClose?: () => void;
+  isOpen?: boolean;
 }
 
 export interface AddCategoryFormData {

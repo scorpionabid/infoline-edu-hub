@@ -12,7 +12,9 @@ export type ColumnType =
   | 'textarea'
   | 'file'
   | 'image'
-  | 'boolean';
+  | 'boolean'
+  | 'time'
+  | 'password';
 
 // Option for select-type columns
 export interface ColumnOption {
