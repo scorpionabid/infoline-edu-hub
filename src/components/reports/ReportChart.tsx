@@ -4,7 +4,16 @@ import { BarChart, LineChart, PieChart } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { ReportChartProps, ReportTypeValues, REPORT_TYPE_VALUES } from '@/types/report';
 
-export const ReportChart: React.FC<ReportChartProps> = ({ type, data, config, title, description, report, height = 400, width = 600 }) => {
+export const ReportChart: React.FC<ReportChartProps> = ({ 
+  type, 
+  data, 
+  config, 
+  title, 
+  description, 
+  report, 
+  height = 400, 
+  width = 600 
+}) => {
   const renderChart = () => {
     // Use the type prop if provided, otherwise try to get it from the report
     const chartType = type || (report?.type || REPORT_TYPE_VALUES.BAR);

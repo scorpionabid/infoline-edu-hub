@@ -1,49 +1,48 @@
 
-export type ColumnType = 
-  'text' | 'textarea' | 'number' | 'select' | 'multiselect' | 'checkbox' | 
-  'radio' | 'date' | 'time' | 'datetime' | 'file' | 'image' | 'email' | 'phone' | 'tel' | 'url' | 'password' | 
-  'color' | 'range' | 'richtext';
+import { 
+  ColumnType, 
+  Column, 
+  ColumnOption, 
+  ColumnValidation, 
+  ColumnFormValues,
+  BaseColumn
+} from './core/column';
 
-export interface Column {
-  id: string;
-  category_id: string;  // This should be required for consistency
-  name: string;
-  type: ColumnType | string;
-  is_required: boolean;
-  help_text?: string;
-  placeholder?: string;
-  default_value?: string;
-  options?: ColumnOption[];
-  validation?: ColumnValidation;
-  order_index: number;
-  created_at?: string;
-  updated_at?: string;
-  status?: string;
-  section?: string;
-  description?: string;
-  color?: string;
+// Re-export core types
+export type { 
+  ColumnType, 
+  Column, 
+  ColumnOption, 
+  ColumnValidation, 
+  ColumnFormValues,
+  BaseColumn
+};
+
+// Additional UI-specific types for columns
+export interface ColumnTypeDefinition {
+  value: ColumnType;
+  label: string;
+  icon?: string;
+  description: string;
+  supportsOptions?: boolean;
+  supportsValidation?: boolean;
 }
 
-export interface ColumnOption {
-  id?: string;
-  label: string;
-  value: string;
-  color?: string;
-  description?: string;
+export interface ColumnTypeSelectorProps {
+  value?: ColumnType;
+  onChange: (value: ColumnType) => void;
   disabled?: boolean;
 }
 
-export interface ColumnValidation {
-  min?: number;
-  max?: number;
-  pattern?: string;
-  required?: boolean;
-  minLength?: number;
-  maxLength?: number;
-  minValue?: number;
-  maxValue?: number;
-  errorMessage?: string;
-  patternMessage?: string;
+export interface BasicColumnFieldsProps {
+  form: any;
+  control: any;
+  categories: { id: string; name: string }[];
+  columns?: Column[];
+  editColumn?: Column | null;
+  selectedType: string;
+  onTypeChange: (type: ColumnType) => void;
+  isEditMode: boolean;
 }
 
 export interface ColumnFormData {

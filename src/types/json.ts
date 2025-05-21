@@ -1,37 +1,38 @@
 
 /**
- * Supabase PostgreSQL JSON compatible types
- * This helps ensure that types stored in JSON fields
- * are compatible with the database schema
+ * Type definitions for JSON handling
  */
 
 // Basic JSON value types
 export type JsonPrimitive = string | number | boolean | null;
-export type JsonObject = { [key: string]: Json };
-export type JsonArray = Json[];
+export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+export type JsonArray = JsonValue[];
+export interface JsonObject { [key: string]: JsonValue }
 
-// Main JSON type for Supabase
-export type Json = JsonPrimitive | JsonObject | JsonArray;
+// Generic JSON type
+export type Json = JsonValue;
 
-// Helper type to convert any type to a JSON-compatible type
-export type JsonCompatible<T> = {
-  [P in keyof T]: T[P] extends JsonPrimitive ? T[P] :
-                  T[P] extends Array<infer U> ? JsonCompatible<U>[] :
-                  T[P] extends object ? JsonCompatible<T[P]> : JsonPrimitive;
-};
-
-// Helper function to check if a value is a valid JSON
-export function isValidJson(value: any): boolean {
-  try {
-    // Try to stringify and parse the value to check if it's valid JSON
-    JSON.parse(JSON.stringify(value));
-    return true;
-  } catch (e) {
-    return false;
+/**
+ * Ensures a value can be safely stored as JSON in Supabase
+ */
+export function ensureJson<T>(value: T): T {
+  if (value === null || value === undefined) {
+    return value;
   }
-}
-
-// Helper function to ensure any object conforms to JSON structure
-export function ensureJson<T>(value: T): Json {
-  return JSON.parse(JSON.stringify(value));
+  
+  // For objects and arrays, ensure they're JSON-compatible
+  if (typeof value === 'object') {
+    try {
+      // Test if value can be serialized
+      JSON.stringify(value);
+      return value;
+    } catch (e) {
+      console.error('Error converting to JSON:', e);
+      // Return empty object or array if serialization fails
+      if (Array.isArray(value)) return [] as unknown as T;
+      return {} as T;
+    }
+  }
+  
+  return value;
 }

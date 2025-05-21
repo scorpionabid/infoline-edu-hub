@@ -3,13 +3,14 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth';
-import { Column } from '@/types/column';
+import { Column, ColumnType } from '@/types/column';
+import { parseJsonSafe } from '@/utils/json-utils';
 
 interface CategoryData {
   id: string;
   name: string;
   columns: Column[];
-  description?: string; // Add description property
+  description?: string;
 }
 
 export interface UseCategoryDataProps {
@@ -57,38 +58,28 @@ export const useCategoryData = ({ categoryId }: UseCategoryDataProps) => {
       }
 
       // Process column data
-      const processedColumns = columnsData.map(column => {
+      const processedColumns: Column[] = columnsData.map(column => {
         // Parse options and validation if needed
-        let options = [];
-        if (column.options) {
-          try {
-            options = typeof column.options === 'string' 
-              ? JSON.parse(column.options) 
-              : column.options;
-          } catch (e) {
-            console.error('Failed to parse column options:', e);
-            options = [];
-          }
-        }
+        const options = parseJsonSafe(
+          typeof column.options === 'string' ? column.options : JSON.stringify(column.options), 
+          []
+        );
 
-        let validation = {};
-        if (column.validation) {
-          try {
-            validation = typeof column.validation === 'string'
-              ? JSON.parse(column.validation)
-              : column.validation;
-          } catch (e) {
-            console.error('Failed to parse column validation:', e);
-            validation = {};
-          }
-        }
+        const validation = parseJsonSafe(
+          typeof column.validation === 'string' ? column.validation : JSON.stringify(column.validation), 
+          {}
+        );
 
-        // Return the processed column
+        // Return the processed column with correct type
         return {
           ...column,
+          type: column.type as ColumnType,
           options,
           validation,
-        };
+          description: column.description || '',
+          section: column.section || '',
+          color: column.color || '',
+        } as Column;
       });
 
       // Create the category object with columns
@@ -100,7 +91,7 @@ export const useCategoryData = ({ categoryId }: UseCategoryDataProps) => {
       };
 
       setCategory(category);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error in useCategoryData:', err);
       setError(err.message || 'Failed to fetch category data');
       toast.error('Failed to fetch category data');

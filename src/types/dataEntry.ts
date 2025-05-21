@@ -1,120 +1,57 @@
 
-import { Column } from './column';
+import {
+  DataEntry,
+  DataEntryRecord,
+  DataEntryStatus,
+  DataEntrySaveStatus,
+  DataEntryForm,
+  EntryValue,
+  DataEntryTableData,
+  ValidationResult,
+  FormFieldsProps,
+  FormFieldProps,
+  DataEntrySaveBarProps
+} from './core/dataEntry';
 
-export enum DataEntryStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected'
-}
+// Re-export core types
+export {
+  DataEntryStatus,
+  DataEntrySaveStatus
+};
 
-export enum DataEntrySaveStatus {
-  IDLE = 'idle',
-  SAVING = 'saving',
-  SAVED = 'saved',
-  SUBMITTING = 'submitting',
-  SUBMITTED = 'submitted',
-  ERROR = 'error'
-}
+export type {
+  DataEntry,
+  DataEntryRecord,
+  DataEntryForm,
+  EntryValue,
+  DataEntryTableData,
+  ValidationResult,
+  FormFieldsProps,
+  FormFieldProps,
+  DataEntrySaveBarProps
+};
 
+// Additional UI-specific types
 export interface TabDefinition {
   id: string;
   title: string;
   label?: string;
   columns?: any[];
-}
-
-export interface DataEntry {
-  id: string;
-  school_id: string;
-  category_id: string;
-  column_id: string;
   value?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: string;
+  count?: number;
 }
 
-export interface DataEntryForm {
-  categoryId: string;
-  schoolId: string;
-  entries: EntryValue[];
-  isModified?: boolean;
-}
-
-export interface EntryValue {
-  id?: string;
-  columnId: string;
+export interface FormField {
+  id: string;
+  name: string;
+  type: string;
   value: any;
-  status?: DataEntryStatus;
-}
-
-export interface DataEntryTableData {
-  columns: Column[];
-  values: Record<string, any>;
-}
-
-export interface ValidationResult {
-  valid: boolean;
-  message?: string;
-}
-
-export interface FormFieldsProps {
-  columns: Column[];
-  disabled?: boolean;
-  readOnly?: boolean;
-}
-
-export interface FormFieldProps {
-  column: Column;
-  value: any;
-  onChange?: (e: React.ChangeEvent<any>) => void;
-  onValueChange?: (value: any) => void;
-  isDisabled?: boolean;
-  readOnly?: boolean;
-  field?: {
-    id: any;
-    name: any;
-    type: any;
-    value: any;
-    required: any;
-    placeholder: any;
-    helpText: any;
-    options: any;
-    validation: any;
-    onChange: (value: any) => void;
-    error: string;
-  };
-}
-
-export interface DataEntrySaveBarProps {
-  isDirty: boolean;
-  isSubmitting: boolean;
-  isSaving: boolean;
-  onSave: () => Promise<any>;
-  errors: boolean;
-  isPendingApproval: boolean;
-  lastSaved?: string;
-  completionPercentage?: number;
-  onSubmit?: () => void;
-  onDownloadTemplate?: () => void;
-  onUploadData?: (file: File) => void;
-  readOnly?: boolean;
-}
-
-export interface DataEntryRecord extends DataEntry {
-  columns?: {
-    name: string;
-  };
-  categories?: {
-    name: string;
-  };
-  schools?: {
-    name: string;
-  };
-  schoolName?: string;
-  categoryName?: string;
-  columnName?: string;
-  createdAt?: string;
+  required: boolean;
+  placeholder?: string;
+  helpText?: string;
+  options?: Array<{ id: string; label: string; value: string }>;
+  validation?: Record<string, any>;
+  onChange: (value: any) => void;
+  onBlur?: () => void;
+  error?: string;
 }

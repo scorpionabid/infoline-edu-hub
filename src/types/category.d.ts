@@ -1,39 +1,38 @@
 
-export type CategoryStatus = 'active' | 'draft' | 'archived' | 'inactive' | 'approved' | 'pending' | string;
-export type CategoryAssignment = 'all' | 'region' | 'sector' | 'school' | 'sectors' | 'schools' | 'regions' | string;
+import {
+  CategoryStatus,
+  CategoryAssignment,
+  Category,
+  CategoryWithColumns,
+  CategoryFormData,
+  CategoryFilter,
+  formatDeadlineForApi
+} from './core/category';
+import { TabDefinition } from './dataEntry';
 
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  status?: CategoryStatus;
-  created_at?: string;
-  updated_at?: string;
-  deadline?: string | Date;
-  column_count?: number;
-  priority?: number;
-  archived?: boolean;
-  assignment?: CategoryAssignment;
-  completionRate?: number;
-}
+// Re-export core types
+export type {
+  CategoryStatus,
+  CategoryAssignment,
+  Category,
+  CategoryWithColumns,
+  CategoryFilter,
+  TabDefinition
+};
 
-export interface CategoryFilter {
-  search: string;
-  status: CategoryStatus | string | null;
-  assignment: CategoryAssignment | string | null;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
+export { formatDeadlineForApi };
 
+// UI-specific types
 export interface CategoryFilterProps {
   filter: CategoryFilter;
   onFilterChange: (filter: Partial<CategoryFilter>) => void;
 }
 
 export interface CreateCategoryDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCategoryCreated: () => Promise<void>;
+  onClose: () => void;
+  onCategoryCreated?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export interface AddCategoryFormData {
@@ -43,16 +42,4 @@ export interface AddCategoryFormData {
   status?: CategoryStatus;
   assignment?: CategoryAssignment;
   priority?: number;
-}
-
-export interface CategoryWithColumns extends Category {
-  columns: any[];
-}
-
-// Additional type definitions to ensure compatibility
-export interface TabDefinition {
-  id: string;
-  title: string;
-  label?: string;
-  columns?: any[];
 }

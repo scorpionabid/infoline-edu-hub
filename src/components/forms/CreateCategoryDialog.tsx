@@ -3,15 +3,26 @@ import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
+import { CreateCategoryDialogProps } from '@/types/category';
 
-interface CreateCategoryDialogProps {
-  onClose: () => void;
-  onCategoryCreated?: () => void;
-}
-
-const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ onClose, onCategoryCreated }) => {
+const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ 
+  onClose, 
+  onCategoryCreated,
+  open,
+  onOpenChange 
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useLanguage();
+  
+  // Support both controlled (open/onOpenChange) and simple (onClose) patterns
+  const handleClose = () => {
+    if (onOpenChange) {
+      onOpenChange(false);
+    }
+    if (onClose) {
+      onClose();
+    }
+  };
   
   const handleCreateCategory = async (data: any) => {
     setIsSubmitting(true);
@@ -36,7 +47,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ onClose, on
       }
       
       toast.success(t('categoryCreatedSuccess'));
-      onClose();
+      handleClose();
       if (onCategoryCreated) {
         onCategoryCreated();
       }
@@ -53,7 +64,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ onClose, on
       {/* Your dialog UI components here */}
       <h2>{t('createCategory')}</h2>
       {/* Add form fields for category creation */}
-      <button onClick={onClose} disabled={isSubmitting}>
+      <button onClick={handleClose} disabled={isSubmitting}>
         {t('cancel')}
       </button>
       <button onClick={() => handleCreateCategory({name: 'New Category'})} disabled={isSubmitting}>

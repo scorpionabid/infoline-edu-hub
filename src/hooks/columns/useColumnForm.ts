@@ -6,7 +6,7 @@ import * as z from 'zod';
 import { ColumnFormValues, ColumnOption, Column, ColumnType } from '@/types/column';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ensureJson } from '@/types/json';
+import { ensureJson } from '@/utils/json-utils';
 
 interface UseColumnFormProps {
   column?: Column | null;
