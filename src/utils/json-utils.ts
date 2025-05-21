@@ -1,37 +1,48 @@
 
 /**
- * Utility functions for handling JSON data consistently
- * particularly for interactions with Supabase
+ * Utility functions for handling JSON data
  */
 
-import { JsonValue, JsonObject, JsonArray } from '@/types/core';
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+export type JsonArray = JsonValue[];
+export interface JsonObject { [key: string]: JsonValue }
 
 /**
- * Ensures a value is safe to be stored as JSON in Supabase
- * Handles conversion of JS objects/arrays to JSON-compatible format
+ * Type guard to check if a value is a valid JSON object
+ */
+export function isJsonObject(value: unknown): value is JsonObject {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Type guard to check if a value is a valid JSON array
+ */
+export function isJsonArray(value: unknown): value is JsonArray {
+  return Array.isArray(value);
+}
+
+/**
+ * Ensures a value can be safely stored as JSON in Supabase
+ * @param value The value to ensure is JSON compatible
+ * @returns A JSON-safe version of the value
  */
 export function ensureJson<T>(value: T): T {
   if (value === null || value === undefined) {
     return value;
   }
   
-  // If it's already a string (like from DB), don't process further
-  if (typeof value === 'string') {
-    return value;
-  }
-  
   // For objects and arrays, ensure they're JSON-compatible
   if (typeof value === 'object') {
-    // For arrays of objects, process each item
-    if (Array.isArray(value)) {
-      return value.map(item => 
-        typeof item === 'object' && item !== null ? cleanObject(item) : item
-      ) as unknown as T;
-    }
-    
-    // For regular objects
-    if (value !== null) {
-      return cleanObject(value) as unknown as T;
+    try {
+      // Test if value can be serialized
+      JSON.stringify(value);
+      return value;
+    } catch (e) {
+      console.error('Error converting to JSON:', e);
+      // Return empty object or array if serialization fails
+      if (Array.isArray(value)) return [] as unknown as T;
+      return {} as T;
     }
   }
   
@@ -39,83 +50,50 @@ export function ensureJson<T>(value: T): T {
 }
 
 /**
- * Safely parses JSON string to object/array
- * @param jsonString - The JSON string to parse
- * @param defaultValue - Default value if parsing fails
+ * Safely parse a JSON string with fallback to default value
+ * @param value The JSON string to parse
+ * @param defaultValue Default value to return if parsing fails
+ * @returns Parsed object or default value
  */
-export function parseJsonSafe<T>(jsonString: string | null | undefined, defaultValue: T): T {
-  if (!jsonString) return defaultValue;
-  
+export function parseJsonSafe<T>(value: string | null | undefined, defaultValue: T): T {
+  if (!value) return defaultValue;
   try {
-    return JSON.parse(jsonString) as T;
-  } catch (e) {
-    console.error('Error parsing JSON:', e);
+    return JSON.parse(value) as T;
+  } catch (error) {
+    console.error('Error parsing JSON:', error);
     return defaultValue;
   }
 }
 
 /**
- * Clean an object to ensure it's JSON-compatible
- * Removes functions, converts dates to ISO strings, etc.
+ * Convert data to JSON string if it isn't already a string
+ * @param data Data to stringify
+ * @returns JSON string
  */
-function cleanObject(obj: Record<string, any>): JsonObject {
-  const result: Record<string, JsonValue> = {};
-  
-  for (const [key, value] of Object.entries(obj)) {
-    // Skip functions
-    if (typeof value === 'function') continue;
-    
-    // Handle null
-    if (value === null) {
-      result[key] = null;
-      continue;
-    }
-    
-    // Handle dates
-    if (value instanceof Date) {
-      result[key] = value.toISOString();
-      continue;
-    }
-    
-    // Recursive handling for objects
-    if (typeof value === 'object' && !Array.isArray(value)) {
-      result[key] = cleanObject(value);
-      continue;
-    }
-    
-    // Handle arrays
-    if (Array.isArray(value)) {
-      result[key] = value.map(item => 
-        typeof item === 'object' && item !== null 
-          ? cleanObject(item) 
-          : item as JsonValue
-      );
-      continue;
-    }
-    
-    // Handle primitive values
-    if (['string', 'number', 'boolean'].includes(typeof value)) {
-      result[key] = value as JsonValue;
-      continue;
-    }
-    
-    // Skip other types
+export function toJsonString(data: any): string | null {
+  if (data === null || data === undefined) return null;
+  if (typeof data === 'string') return data;
+  try {
+    return JSON.stringify(data);
+  } catch (e) {
+    console.error('Error converting to JSON string:', e);
+    return null;
   }
-  
-  return result;
 }
 
 /**
- * Type guard to check if a value can be safely stored as JSON
+ * Parse JSON data from database
+ * If it's already an object, return it directly
+ * If it's a string, parse it
+ * @param data Data from database
+ * @returns Parsed object
  */
-export function isJsonSerializable(value: unknown): boolean {
-  if (value === null || value === undefined) return true;
-  if (['string', 'number', 'boolean'].includes(typeof value)) return true;
-  
+export function parseDbJson<T>(data: string | T): T {
+  if (typeof data !== 'string') return data;
   try {
-    JSON.stringify(value);
-    return true;
-  } catch {
-    return false;
+    return JSON.parse(data) as T;
+  } catch (e) {
+    console.error('Error parsing database JSON:', e);
+    return {} as T;
   }
 }

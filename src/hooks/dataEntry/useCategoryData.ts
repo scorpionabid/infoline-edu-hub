@@ -58,7 +58,7 @@ export const useCategoryData = ({ categoryId }: UseCategoryDataProps) => {
       }
 
       // Process column data
-      const processedColumns: Column[] = columnsData.map(column => {
+      const processedColumns: Column[] = columnsData.map((column: any) => {
         // Parse options and validation if needed
         const options = parseJsonSafe(
           typeof column.options === 'string' ? column.options : JSON.stringify(column.options), 
@@ -72,13 +72,23 @@ export const useCategoryData = ({ categoryId }: UseCategoryDataProps) => {
 
         // Return the processed column with correct type
         return {
-          ...column,
+          id: column.id,
+          category_id: column.category_id,
+          name: column.name,
           type: column.type as ColumnType,
+          is_required: Boolean(column.is_required),
+          placeholder: column.placeholder || '',
+          help_text: column.help_text || '',
+          default_value: column.default_value || '',
+          order_index: column.order_index || 0,
+          status: column.status || 'active',
           options,
           validation,
           description: column.description || '',
           section: column.section || '',
           color: column.color || '',
+          created_at: column.created_at,
+          updated_at: column.updated_at
         } as Column;
       });
 

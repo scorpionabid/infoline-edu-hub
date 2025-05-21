@@ -20,10 +20,10 @@ export const useSchoolOperations = () => {
       
       const { data, error: apiError } = await supabase
         .from('schools')
-        .insert([{ 
+        .insert({ 
           ...schoolData,
           status: schoolData.status || 'active'
-        }])
+        })
         .select()
         .single();
         

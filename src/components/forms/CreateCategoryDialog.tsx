@@ -37,10 +37,10 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
         status: data.status || 'active'
       };
       
-      // Use insert with a single object, not an array
+      // Use insert with a single object
       const { error } = await supabase
         .from('categories')
-        .insert(formattedData); // Pass a single object, not an array
+        .insert(formattedData);
 
       if (error) {
         throw new Error(error.message);

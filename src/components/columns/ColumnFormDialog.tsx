@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { Column } from "@/types/column";
+import { Column, ColumnType } from "@/types/column";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { useLanguage } from "@/context/LanguageContext";
-import { useColumnForm } from './columnDialog/useColumnForm';
+import { useColumnForm } from '@/hooks/columns/useColumnForm';
 import BasicColumnFields from './columnDialog/BasicColumnFields';
 import ValidationFields from './columnDialog/ValidationFields';
 import OptionsField from './columnDialog/OptionsField';

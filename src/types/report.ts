@@ -27,19 +27,19 @@ export interface ReportHeaderProps {
 
 // Preview dialog props - supports both controlled and uncontrolled
 export interface ReportPreviewDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
   report?: Report;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 // Create dialog props - supports both controlled and uncontrolled
 export interface CreateReportDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave?: (report: Report) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onSave?: (report: Report) => void;
   onCreate?: (report: any) => Promise<void>;
+  isOpen?: boolean;
+  onClose?: () => void;
 }

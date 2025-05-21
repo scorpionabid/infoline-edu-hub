@@ -29,10 +29,10 @@ export interface CategoryFilterProps {
 }
 
 export interface CreateCategoryDialogProps {
-  onClose: () => void;
-  onCategoryCreated?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onCategoryCreated?: () => void;
+  onClose?: () => void;
 }
 
 export interface AddCategoryFormData {

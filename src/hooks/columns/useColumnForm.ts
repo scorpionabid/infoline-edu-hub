@@ -6,7 +6,7 @@ import * as z from 'zod';
 import { ColumnFormValues, ColumnOption, Column, ColumnType } from '@/types/column';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ensureJson } from '@/utils/json-utils';
+import { ensureJson } from '@/types/json';
 
 interface UseColumnFormProps {
   column?: Column | null;
@@ -39,7 +39,7 @@ const formSchema = z.object({
 
 export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedType, setSelectedType] = useState<ColumnType>(column?.type as ColumnType || 'text');
+  const [selectedType, setSelectedType] = useState<ColumnType>(column?.type || 'text');
   const [isEditMode, setIsEditMode] = useState<boolean>(!!column);
   const [options, setOptions] = useState<ColumnOption[]>(column?.options || []);
   const [newOption, setNewOption] = useState<Partial<ColumnOption>>({ label: '', value: '' });

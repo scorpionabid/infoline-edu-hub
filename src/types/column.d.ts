@@ -59,4 +59,6 @@ export interface ColumnFormData {
   options?: ColumnOption[];
   validation?: ColumnValidation;
   section?: string;
+  description?: string;
+  color?: string;
 }

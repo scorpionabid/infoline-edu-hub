@@ -10,6 +10,7 @@ import { CategoryWithColumns, CategoryStatus, CategoryAssignment, CategoryFilter
 import CategoryFilterComponent from './CategoryFilterComponent';
 import CategoryList from './CategoryList';
 import CreateCategoryDialog from './CreateCategoryDialog';
+import { parseJsonSafe } from '@/utils/json-utils';
 
 const FormsPage: React.FC = () => {
   const { t } = useLanguage();
@@ -64,27 +65,27 @@ const FormsPage: React.FC = () => {
             }
             
             // Process columns to ensure JSON fields are parsed
-            const columns = (columnsData || []).map(column => {
-              // Add missing fields to match interface requirements
-              const processedColumn = {
+            const columns = (columnsData || []).map((column: any) => {
+              // Process options and validation to ensure they're properly parsed
+              const options = parseJsonSafe(
+                typeof column.options === 'string' ? column.options : JSON.stringify(column.options),
+                []
+              );
+              
+              const validation = parseJsonSafe(
+                typeof column.validation === 'string' ? column.validation : JSON.stringify(column.validation),
+                {}
+              );
+              
+              // Add missing fields or use defaults for required fields
+              return {
                 ...column,
+                is_required: column.is_required ?? true,
                 description: column.description || '',
                 section: column.section || '',
                 color: column.color || '',
-              };
-              
-              const processedOptions = column.options ? 
-                (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
-                [];
-                
-              const processedValidation = column.validation ? 
-                (typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation) : 
-                null;
-                
-              return {
-                ...processedColumn,
-                options: processedOptions,
-                validation: processedValidation
+                options,
+                validation
               };
             });
             
@@ -93,7 +94,6 @@ const FormsPage: React.FC = () => {
               status: category.status as CategoryStatus,
               assignment: category.assignment as CategoryAssignment,
               column_count: columns.length,
-              columnCount: columns.length, // Add alias for compatibility
               columns: columns
             });
           } catch (error) {
@@ -104,7 +104,6 @@ const FormsPage: React.FC = () => {
               status: category.status as CategoryStatus,
               assignment: category.assignment as CategoryAssignment,
               column_count: 0,
-              columnCount: 0,
               columns: []
             });
           }
