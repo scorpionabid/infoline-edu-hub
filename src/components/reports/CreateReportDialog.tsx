@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
-import { CreateReportDialogProps, REPORT_TYPE_VALUES } from '@/types/report';
+import { CreateReportDialogProps, REPORT_TYPE_VALUES, ReportTypeValues } from '@/types/report';
 
 const CreateReportDialog: React.FC<CreateReportDialogProps> = ({ 
   open, 
@@ -31,7 +31,7 @@ const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
   const { t } = useLanguage();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [type, setType] = useState(REPORT_TYPE_VALUES.BAR);
+  const [type, setType] = useState<ReportTypeValues>(REPORT_TYPE_VALUES.BAR);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -102,7 +102,10 @@ const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
           
           <div className="grid gap-2">
             <label htmlFor="type" className="text-sm font-medium">{t('reportType')}</label>
-            <Select value={type} onValueChange={setType}>
+            <Select 
+              value={type} 
+              onValueChange={(value: ReportTypeValues) => setType(value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder={t('selectReportType')} />
               </SelectTrigger>

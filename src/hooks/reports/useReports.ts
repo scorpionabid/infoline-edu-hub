@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Report, REPORT_TYPE_VALUES } from '@/types/report';
+import { Report, REPORT_TYPE_VALUES, ReportTypeValues } from '@/types/report';
 
 export function useReports() {
   const [reports, setReports] = useState<Report[]>([
@@ -40,13 +40,13 @@ export function useReports() {
   ]);
   
   // Create a new report
-  const createReport = async (reportData: { title: string; description: string; type: string }) => {
+  const createReport = async (reportData: { title: string; description: string; type: ReportTypeValues }) => {
     try {
       const newReport: Report = {
         id: Math.random().toString(36).substring(2, 9),
         title: reportData.title,
         description: reportData.description,
-        type: reportData.type as any,
+        type: reportData.type,
         content: {},
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

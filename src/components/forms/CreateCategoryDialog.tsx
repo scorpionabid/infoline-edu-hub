@@ -8,13 +8,12 @@ import { CreateCategoryDialogProps } from '@/types/category';
 const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ 
   onOpenChange, 
   onCategoryCreated,
-  open,
-  isOpen 
+  open
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useLanguage();
   
-  // Support both controlled (open/onOpenChange) and simple (isOpen/onClose) patterns
+  // Support controlled (open/onOpenChange) pattern
   const handleClose = () => {
     if (onOpenChange) {
       onOpenChange(false);
