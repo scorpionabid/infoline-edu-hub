@@ -9,8 +9,8 @@ import {
 } from './core/report';
 
 // Re-export core types
-export { ReportStatus, REPORT_TYPE_VALUES, ReportTypeValues };
-export type { Report, ReportChartProps, ReportFilter };
+export { REPORT_TYPE_VALUES };
+export type { Report, ReportTypeValues, ReportChartProps, ReportFilter };
 
 // Empty state component props
 export interface ReportEmptyStateProps {

@@ -1,79 +1,36 @@
 
-import { BaseEntity } from './index';
+// Core report type definitions
+export type ReportTypeValues = 'bar' | 'pie' | 'line';
 
-/**
- * Core Report type definitions
- */
-
-// All supported report types
-export type ReportTypeValues = 
-  | 'bar' 
-  | 'pie' 
-  | 'line' 
-  | 'area' 
-  | 'table' 
-  | 'summary' 
-  | 'comparison'
-  | 'metrics'
-  | 'custom';
-
-// Enum for consistent report status values
-export enum ReportStatus {
-  DRAFT = 'draft',
-  PUBLISHED = 'published',
-  ARCHIVED = 'archived'
-}
-
-// Constants for type-safe report type references
 export const REPORT_TYPE_VALUES = {
   BAR: 'bar' as ReportTypeValues,
   PIE: 'pie' as ReportTypeValues,
-  LINE: 'line' as ReportTypeValues,
-  AREA: 'area' as ReportTypeValues,
-  TABLE: 'table' as ReportTypeValues,
-  SUMMARY: 'summary' as ReportTypeValues,
-  COMPARISON: 'comparison' as ReportTypeValues,
-  METRICS: 'metrics' as ReportTypeValues,
-  CUSTOM: 'custom' as ReportTypeValues,
+  LINE: 'line' as ReportTypeValues
 };
 
-// Core report interface
-export interface Report extends BaseEntity {
+export interface Report {
+  id: string;
   title: string;
   description?: string;
   type: ReportTypeValues;
-  content: any;
-  filters?: any;
-  shared_with?: string[] | any;
-  status?: ReportStatus | string;
+  status?: string;
+  content?: any;
+  created_at?: string;
+  updated_at?: string;
   created_by?: string;
-  insights?: string[] | any;
-  recommendations?: string[] | any;
-  is_template?: boolean;
+  shared_with?: string[];
 }
 
-// Report chart component props
 export interface ReportChartProps {
-  type?: ReportTypeValues;
+  report: Report;
   data?: any[];
-  config?: any;
-  title?: string;
-  description?: string;
-  report?: Report;
   height?: number;
   width?: number;
+  className?: string;
 }
 
-// Filter properties for reports
 export interface ReportFilter {
   search?: string;
-  type?: string[];
-  status?: string[];
-  date_from?: string;
-  date_to?: string;
-  shared_with?: string[];
-  created_by?: string;
-  is_template?: boolean;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  type?: ReportTypeValues | string;
+  status?: string;
 }

@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCategoryOperations } from '@/hooks/categories/useCategoryOperations';
-import { useCategoryFilters } from '@/hooks/categories/useCategoryFilters';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,28 +18,25 @@ import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
 import CategoryCard from '@/components/categories/CategoryCard';
 import { toast } from 'sonner';
 import { Category } from '@/types/category';
+import CategoryList from '@/components/categories/CategoryList';
 
 const Categories = () => {
   const { t } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const { fetchCategories, addCategory, error } = useCategoryOperations();
-  const { 
-    filters,
-    updateFilter,
-    resetFilters,
-    searchQuery,
-    handleSearchChange,
-    date,
-    handleDateChange
-  } = useCategoryFilters();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState({
+    status: '',
+    assignment: '',
+  });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const {
     data: categories = [],
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: ['categories', filters],
+    queryKey: ['categories', { searchQuery, ...filters }],
     queryFn: () => fetchCategories(searchQuery || '', filters),
   });
 
@@ -48,6 +44,9 @@ const Categories = () => {
     try {
       await addCategory(categoryData);
       setIsDialogOpen(false);
+      toast.success(t('categoryAdded'), {
+        description: t('categoryAddedSuccess')
+      });
       refetch();
     } catch (err: any) {
       toast.error(t('errorAddingCategory'), {
@@ -55,6 +54,24 @@ const Categories = () => {
       });
     }
   };
+
+  const updateFilter = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setFilters({ status: '', assignment: '' });
+  };
+
+  const handleCategorySelect = (categoryId: string) => {
+    // Navigate to category details page
+    window.location.href = `/categories/${categoryId}`;
+  };
+
+  useEffect(() => {
+    console.log("Categories component rendered");
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -77,7 +94,7 @@ const Categories = () => {
                   placeholder={t('search')}
                   className="w-[200px] pl-8"
                   value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <Button
@@ -94,43 +111,33 @@ const Categories = () => {
           {isFilterOpen && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <Select
-                value={filters.status || 'all'}
+                value={filters.status}
                 onValueChange={(value) => updateFilter('status', value)}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder={t('status')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('all')}</SelectItem>
+                  <SelectItem value="">{t('all')}</SelectItem>
                   <SelectItem value="active">{t('active')}</SelectItem>
                   <SelectItem value="inactive">{t('inactive')}</SelectItem>
+                  <SelectItem value="draft">{t('draft')}</SelectItem>
+                  <SelectItem value="archived">{t('archived')}</SelectItem>
                 </SelectContent>
               </Select>
               
               <Select
-                value={filters.assignment || 'all'}
+                value={filters.assignment}
                 onValueChange={(value) => updateFilter('assignment', value)}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder={t('assignment')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('allAssignments')}</SelectItem>
+                  <SelectItem value="">{t('allAssignments')}</SelectItem>
+                  <SelectItem value="all">{t('allEntities')}</SelectItem>
                   <SelectItem value="sectors">{t('sectorsOnly')}</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select
-                value={filters.deadline || 'all'}
-                onValueChange={(value) => updateFilter('deadline', value)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder={t('deadline')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('allDeadlines')}</SelectItem>
-                  <SelectItem value="upcoming">{t('upcoming')}</SelectItem>
-                  <SelectItem value="past">{t('past')}</SelectItem>
+                  <SelectItem value="schools">{t('schoolsOnly')}</SelectItem>
                 </SelectContent>
               </Select>
               
@@ -147,38 +154,7 @@ const Categories = () => {
           )}
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : categories.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                {searchQuery ? t('noSearchResults') : t('noCategories')}
-              </p>
-              {searchQuery && (
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSearchChange('')}
-                  className="mt-2"
-                >
-                  {t('clearSearch')}
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {categories.map((category: Category) => (
-                <CategoryCard 
-                  key={category.id} 
-                  category={category}
-                  onView={() => {}}
-                  onEdit={() => {}}
-                  onDelete={() => {}}
-                />
-              ))}
-            </div>
-          )}
+          <CategoryList onCategorySelect={handleCategorySelect} />
         </CardContent>
       </Card>
 

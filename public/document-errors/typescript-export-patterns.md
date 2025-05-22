@@ -31,9 +31,13 @@ export enum ReportStatus {
 
 // Constant with type assertion
 export const REPORT_TYPE_VALUES = {
-  BAR: 'bar' as ReportTypeValues,
-  PIE: 'pie' as ReportTypeValues
+  BAR: 'bar' as const,
+  PIE: 'pie' as const,
+  LINE: 'line' as const
 };
+
+// Exported type derived from constant values
+export type ReportTypeValues = typeof REPORT_TYPE_VALUES[keyof typeof REPORT_TYPE_VALUES];
 ```
 
 ### 2. Yenidən İxrac / Re-exporting
@@ -64,10 +68,10 @@ export { ReportStatus, REPORT_TYPE_VALUES };
 ```typescript
 // Preferred pattern - separate type and value imports
 import { REPORT_TYPE_VALUES } from '@/types/report';
-import type { Report, ReportChartProps } from '@/types/report';
+import type { Report, ReportTypeValues } from '@/types/report';
 
 // Alternative pattern
-import { REPORT_TYPE_VALUES, type Report } from '@/types/report';
+import { REPORT_TYPE_VALUES, type Report, type ReportTypeValues } from '@/types/report';
 ```
 
 ### 4. Xəta Nümunələri və Həlləri / Error Examples and Solutions
@@ -94,3 +98,46 @@ TypeError: Cannot read properties of undefined (reading 'X')
 **Həll / Solution:**
 - Core tip tərifləri və törəmə tiplər arasında dairəvi asılılıqlardan qaçının
 - Interface extends istifadə edin və ya kompozisiya tətbiq edin
+
+### 5. Tipin Düzgün Olmasını Təmin Edən Üsullar / Ways to Ensure Type Correctness
+
+#### 5.1. Sabitlərdən Tip Düzəltmək / Deriving Types from Constants
+
+```typescript
+// Define constant first
+export const CategoryStatuses = {
+  ACTIVE: 'active',
+  DRAFT: 'draft',
+  ARCHIVED: 'archived'
+} as const;
+
+// Then derive type from it
+export type CategoryStatus = typeof CategoryStatuses[keyof typeof CategoryStatuses];
+```
+
+#### 5.2. Tip və Dəyər Uyğunluğunu Təmin Etmək / Ensuring Type and Value Consistency
+
+```typescript
+// When both constants and types are needed:
+export const REPORT_TYPES = ['bar', 'pie', 'line'] as const;
+export type ReportType = typeof REPORT_TYPES[number];
+```
+
+### 6. Imports və Re-exports Yaxşı Təcrübəsi / Best Practices for Imports and Re-exports
+
+#### 6.1. Barrel Exports (index.ts)
+
+```typescript
+// Re-exporting from a central file
+export * from './types';
+export * from './constants';
+export * from './interfaces';
+```
+
+#### 6.2. Seçmə Re-export / Selective Re-export
+
+```typescript
+// Only re-export what's needed
+export { UserRole, UserStatus } from './user-types';
+export type { User, UserProfile } from './user-interfaces';
+```
