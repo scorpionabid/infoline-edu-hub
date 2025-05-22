@@ -15,10 +15,10 @@ interface CategoryData {
 
 export interface UseCategoryDataProps {
   categoryId?: string;
-  schoolId?: string; // Added schoolId as optional parameter
+  schoolId?: string; // School ID parameter
 }
 
-export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps) => {
+export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps = {}) => {
   const [category, setCategory] = useState<CategoryData | null>(null);
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +28,14 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps) 
 
   // Fetch all categories for a school
   const fetchSchoolCategories = async (schoolId: string) => {
+    if (!schoolId) {
+      console.log('No schoolId provided to fetchSchoolCategories');
+      setCategories([]);
+      setIsLoading(false);
+      setLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setLoading(true);
     setError(null);

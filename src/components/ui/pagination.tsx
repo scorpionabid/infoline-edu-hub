@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from "react";
+
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -21,43 +22,54 @@ export function Pagination({
 }: PaginationProps) {
   // Keep track of last rendered page to prevent unnecessary re-renders
   const lastPageRef = useRef(currentPage);
+  const [internalPage, setInternalPage] = useState(currentPage);
+  const pageChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Göstəriləcək səhifə nömrələrini müəyyən et
+  // Sync with external changes to currentPage
+  useEffect(() => {
+    if (currentPage !== internalPage) {
+      console.log(`Pagination: External page change detected from ${internalPage} to ${currentPage}`);
+      setInternalPage(currentPage);
+      lastPageRef.current = currentPage;
+    }
+  }, [currentPage, internalPage]);
+  
+  // Compute page numbers to show based on current page
   const getPageNumbers = () => {
-    const delta = 1; // Cari səhifənin hər iki tərəfindən göstəriləcək səhifə sayı
+    const delta = 1; // Number of pages to show on either side of current page
     const pages = [];
     
-    // Əvvəldən əlavə ediləcək səhifələr
-    for (let i = Math.max(2, currentPage - delta); i < currentPage; i++) {
+    // Pages before current page
+    for (let i = Math.max(2, internalPage - delta); i < internalPage; i++) {
       pages.push(i);
     }
     
-    // Cari səhifə
-    if (currentPage > 1 && currentPage < totalPages) {
-      pages.push(currentPage);
+    // Current page (only if not first or last)
+    if (internalPage > 1 && internalPage < totalPages) {
+      pages.push(internalPage);
     }
     
-    // Sondan əlavə ediləcək səhifələr
-    for (let i = currentPage + 1; i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+    // Pages after current page
+    for (let i = internalPage + 1; i <= Math.min(totalPages - 1, internalPage + delta); i++) {
       pages.push(i);
     }
     
-    // Əvvəldə boşluq
-    if (pages[0] > 2) {
+    // Add ellipsis if needed before
+    if (pages.length > 0 && pages[0] > 2) {
       pages.unshift("...");
     }
     
-    // İlk səhifə
+    // Always add first page if there are pages
     if (totalPages > 1) {
       pages.unshift(1);
     }
     
-    // Sonda boşluq
-    if (pages[pages.length - 1] < totalPages - 1) {
+    // Add ellipsis if needed after
+    if (pages.length > 0 && pages[pages.length - 1] < totalPages - 1) {
       pages.push("...");
     }
     
-    // Son səhifə
+    // Always add last page if there are multiple pages
     if (totalPages > 1 && !pages.includes(totalPages)) {
       pages.push(totalPages);
     }
@@ -67,40 +79,49 @@ export function Pagination({
 
   const pages = getPageNumbers();
   
-  // Sync with external changes to currentPage
-  useEffect(() => {
-    lastPageRef.current = currentPage;
-  }, [currentPage]);
-  
-  // Handle page navigation with button clicks
+  // Handle page navigation with button clicks, with debounce to prevent multiple rapid clicks
   const handlePageClick = (page: number) => {
     // Prevent unnecessary state updates
-    if (page === currentPage) return;
+    if (page === internalPage || page < 1 || page > totalPages) return;
     
-    // Call the onPageChange callback with the new page
-    if (page >= 1 && page <= totalPages) {
-      lastPageRef.current = page;
+    // Clear any pending timeouts
+    if (pageChangeTimeoutRef.current) {
+      clearTimeout(pageChangeTimeoutRef.current);
+    }
+    
+    // Update internal state immediately for responsive UI
+    setInternalPage(page);
+    lastPageRef.current = page;
+    
+    // Debounce the actual parent callback to prevent multiple rapid changes
+    pageChangeTimeoutRef.current = setTimeout(() => {
       console.log(`Pagination: switching to page ${page}`);
       onPageChange(page);
-    }
+      pageChangeTimeoutRef.current = null;
+    }, 50);
   };
   
   // Handle previous/next buttons
   const handlePrevious = () => {
-    if (currentPage > 1) {
-      const newPage = currentPage - 1;
-      lastPageRef.current = newPage;
-      onPageChange(newPage);
+    if (internalPage > 1) {
+      handlePageClick(internalPage - 1);
     }
   };
   
   const handleNext = () => {
-    if (currentPage < totalPages) {
-      const newPage = currentPage + 1;
-      lastPageRef.current = newPage;
-      onPageChange(newPage);
+    if (internalPage < totalPages) {
+      handlePageClick(internalPage + 1);
     }
   };
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (pageChangeTimeoutRef.current) {
+        clearTimeout(pageChangeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="flex items-center justify-center space-x-2">
@@ -108,7 +129,7 @@ export function Pagination({
         variant="outline"
         size="icon"
         onClick={handlePrevious}
-        disabled={currentPage <= 1}
+        disabled={internalPage <= 1}
         type="button"
       >
         <ChevronLeft className="h-4 w-4" />
@@ -128,7 +149,7 @@ export function Pagination({
         return (
           <Button
             key={pageNum}
-            variant={pageNum === currentPage ? "default" : "outline"}
+            variant={pageNum === internalPage ? "default" : "outline"}
             onClick={() => handlePageClick(pageNum)}
             className="hidden sm:inline-flex"
             type="button"
@@ -139,14 +160,14 @@ export function Pagination({
       })}
       
       <div className="flex items-center text-sm sm:hidden">
-        {pageLabel(currentPage)}
+        {pageLabel(internalPage)}
       </div>
       
       <Button
         variant="outline"
         size="icon"
         onClick={handleNext}
-        disabled={currentPage >= totalPages}
+        disabled={internalPage >= totalPages}
         type="button"
       >
         <ChevronRight className="h-4 w-4" />

@@ -21,20 +21,35 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<CategoryStatus>("active");
   
-  // Add a ref to prevent excessive refetches
+  // Add refs to prevent excessive refetches and track mount state
   const didMountRef = useRef(false);
   const lastRefetchTime = useRef(Date.now());
+  const refetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Optimize refetch with useCallback and time limiting
+  // Optimize refetch with useCallback and debounce
   const safeRefetch = useCallback(() => {
     const now = Date.now();
+    
+    // Clear any pending timeout
+    if (refetchTimeoutRef.current) {
+      clearTimeout(refetchTimeoutRef.current);
+      refetchTimeoutRef.current = null;
+    }
+    
     // Only refetch if 2 seconds have passed since the last refetch
     if (now - lastRefetchTime.current > 2000) {
       lastRefetchTime.current = now;
       console.log("Refetching categories...");
       refetch();
     } else {
-      console.log("Skipping refetch - too soon");
+      // Schedule a delayed refetch
+      console.log("Delaying refetch - too soon after last one");
+      refetchTimeoutRef.current = setTimeout(() => {
+        lastRefetchTime.current = Date.now();
+        console.log("Executing delayed refetch of categories...");
+        refetch();
+        refetchTimeoutRef.current = null;
+      }, 2000);
     }
   }, [refetch]);
 
@@ -45,6 +60,13 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
       refetch();
       didMountRef.current = true;
     }
+    
+    // Clean up any pending timeout on unmount
+    return () => {
+      if (refetchTimeoutRef.current) {
+        clearTimeout(refetchTimeoutRef.current);
+      }
+    };
   }, [refetch]);
 
   const handleTabChange = (tab: CategoryStatus) => {
@@ -121,7 +143,7 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
       </Tabs>
 
       {/* Use the safeRefetch callback for dialog success */}
-      <CreateCategoryDialog open={open} setOpen={setOpen} onSuccess={() => safeRefetch()} />
+      <CreateCategoryDialog open={open} setOpen={setOpen} onSuccess={safeRefetch} />
     </>
   );
 };
