@@ -21,6 +21,7 @@ export const useUserFetch = (
   const isMounted = useRef(true);
   const prevFilterRef = useRef<string>('');
   const fetchInProgressRef = useRef(false);
+  const lastPageRef = useRef(currentPage);
   
   const fetchUsers = useCallback(async () => {
     // Skip if a fetch is already in progress
@@ -28,13 +29,17 @@ export const useUserFetch = (
       return;
     }
     
-    // Convert filter to string for comparison
-    const filterString = JSON.stringify({ filter, currentPage, pageSize });
+    // Convert filter and pagination to string for comparison
+    const filterString = JSON.stringify({ filter, page: currentPage, pageSize });
     
-    // Skip if filter hasn't changed
+    // Skip if filter and pagination haven't changed
     if (filterString === prevFilterRef.current) {
       return;
     }
+    
+    // Remember if only page changed without filter changing
+    const onlyPageChanged = JSON.stringify({ filter, pageSize }) === 
+      JSON.stringify({ filter: JSON.parse(prevFilterRef.current || '{}').filter, pageSize: JSON.parse(prevFilterRef.current || '{}').pageSize });
     
     // Update the previous filter
     prevFilterRef.current = filterString;
@@ -42,10 +47,16 @@ export const useUserFetch = (
     try {
       // Set fetch in progress flag
       fetchInProgressRef.current = true;
-      setLoading(true);
-      setError(null);
       
-      console.log('Fetching users with filter:', filter);
+      // Only show loading state for full data reloads, not just page changes
+      if (!onlyPageChanged) {
+        setLoading(true);
+      }
+      
+      setError(null);
+      lastPageRef.current = currentPage;
+      
+      console.log('Fetching users with filter:', filter, 'page:', currentPage);
       
       // Ensure filter is not undefined
       const safeFilter = filter || {};
@@ -226,6 +237,7 @@ export const useUserFetch = (
     loading,
     error,
     totalCount,
-    refetch
+    refetch,
+    currentPage: lastPageRef.current
   };
 };

@@ -84,9 +84,11 @@ const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = 
     updateFilter({ ...filter, search: searchTerm });
   };
   
-  const handlePageChange = (page: number) => {
+  // Handle page change - now works directly with the pagination component
+  const handlePageChange = useCallback((page: number) => {
+    console.log('Changing to page:', page);
     setCurrentPage(page);
-  };
+  }, [setCurrentPage]);
   
   const handleReset = useCallback(() => {
     setSearchTerm('');

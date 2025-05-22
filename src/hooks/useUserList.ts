@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { FullUserData } from '@/types/supabase';
 import { useUserFetch } from '@/hooks/user/useUserFetch';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -16,8 +16,8 @@ export interface UserFilter {
 export const useUserList = (initialFilter: UserFilter = {}) => {
   const { regionId, sectorId, isSectorAdmin, isRegionAdmin } = usePermissions();
   
-  // Ensure filter properties are correctly initialized
-  const defaultFilter: UserFilter = {
+  // Ensure filter properties are correctly initialized with useMemo to prevent recreation
+  const defaultFilter = useMemo(() => ({
     search: '',
     role: '',
     status: '',
@@ -25,7 +25,7 @@ export const useUserList = (initialFilter: UserFilter = {}) => {
     sectorId: isSectorAdmin ? sectorId : '',
     schoolId: '',
     ...initialFilter
-  };
+  }), [regionId, sectorId, isRegionAdmin, isSectorAdmin, initialFilter]);
   
   const [filter, setFilter] = useState<UserFilter>(defaultFilter);
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,11 +33,20 @@ export const useUserList = (initialFilter: UserFilter = {}) => {
   
   // Track if filter updates are from internal or external sources
   const isFilterUpdating = useRef(false);
+  const skipNextPageReset = useRef(false);
   
   // Use the optimized fetch hook
   const { users, loading, error, totalCount, refetch } = useUserFetch(filter, currentPage, pageSize);
   
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  
+  // Handle page change separately to avoid resetting page on filter changes
+  const handlePageChange = useCallback((page: number) => {
+    if (page < 1 || page > totalPages) return;
+    
+    skipNextPageReset.current = true;
+    setCurrentPage(page);
+  }, [totalPages]);
   
   // Memoized update filter function to prevent unnecessary filter changes
   const updateFilter = useCallback((newFilter: UserFilter) => {
@@ -57,7 +66,11 @@ export const useUserList = (initialFilter: UserFilter = {}) => {
       return filterChanged ? { ...prev, ...safeFilter } : prev;
     });
     
-    setCurrentPage(1); // Reset to first page when filter changes
+    // Only reset to first page if filter is changing (not for page navigation)
+    if (!skipNextPageReset.current) {
+      setCurrentPage(1);
+    }
+    skipNextPageReset.current = false;
     
     // Reset flag after state updates
     setTimeout(() => {
@@ -88,7 +101,7 @@ export const useUserList = (initialFilter: UserFilter = {}) => {
     totalCount,
     totalPages,
     currentPage,
-    setCurrentPage,
+    setCurrentPage: handlePageChange,
     refetch
   };
 };

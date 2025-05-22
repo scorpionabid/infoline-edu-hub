@@ -64,14 +64,40 @@ export function Pagination({
   };
 
   const pages = getPageNumbers();
+  
+  // Handle page navigation with button clicks
+  const handlePageClick = (page: number) => {
+    // Prevent unnecessary state updates
+    if (page === currentPage) return;
+    
+    // Call the onPageChange callback with the new page
+    if (page >= 1 && page <= totalPages) {
+      console.log(`Pagination: switching to page ${page}`);
+      onPageChange(page);
+    }
+  };
+  
+  // Handle previous/next buttons
+  const handlePrevious = () => {
+    if (currentPage > 1) {
+      onPageChange(currentPage - 1);
+    }
+  };
+  
+  const handleNext = () => {
+    if (currentPage < totalPages) {
+      onPageChange(currentPage + 1);
+    }
+  };
 
   return (
     <div className="flex items-center justify-center space-x-2">
       <Button
         variant="outline"
         size="icon"
-        onClick={() => onPageChange(currentPage - 1)}
+        onClick={handlePrevious}
         disabled={currentPage <= 1}
+        type="button"
       >
         <ChevronLeft className="h-4 w-4" />
         <span className="sr-only">{previousLabel}</span>
@@ -80,7 +106,7 @@ export function Pagination({
       {pages.map((page, i) => {
         if (page === "...") {
           return (
-            <Button key={`ellipsis-${i}`} variant="outline" size="icon" disabled>
+            <Button key={`ellipsis-${i}`} variant="outline" size="icon" disabled type="button">
               ...
             </Button>
           );
@@ -91,8 +117,9 @@ export function Pagination({
           <Button
             key={pageNum}
             variant={pageNum === currentPage ? "default" : "outline"}
-            onClick={() => onPageChange(pageNum)}
+            onClick={() => handlePageClick(pageNum)}
             className="hidden sm:inline-flex"
+            type="button"
           >
             {pageNum}
           </Button>
@@ -106,8 +133,9 @@ export function Pagination({
       <Button
         variant="outline"
         size="icon"
-        onClick={() => onPageChange(currentPage + 1)}
+        onClick={handleNext}
         disabled={currentPage >= totalPages}
+        type="button"
       >
         <ChevronRight className="h-4 w-4" />
         <span className="sr-only">{nextLabel}</span>
