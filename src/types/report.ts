@@ -9,7 +9,7 @@ import {
 } from './core/report';
 
 // Re-export core types
-export { REPORT_TYPE_VALUES };
+export { REPORT_TYPE_VALUES, ReportStatus };
 export type { Report, ReportTypeValues, ReportChartProps, ReportFilter };
 
 // Empty state component props
