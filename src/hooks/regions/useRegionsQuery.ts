@@ -92,6 +92,8 @@ export const useRegionsQuery = (options = {}, initialPageSize = 10): UseRegionsQ
           sector_count: sectors_count,
           school_count: schools_count,
           admin_name: region.admin?.full_name,
+          adminName: region.admin?.full_name,
+          adminEmail: region.admin?.email,
           admin: region.admin ? {
             id: region.admin.id,
             full_name: region.admin.full_name,

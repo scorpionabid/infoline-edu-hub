@@ -3,6 +3,8 @@ import { useEffect } from 'react';
 import { useRegionsQuery } from './regions/useRegionsQuery';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
+import { EnhancedRegion } from '@/types/region';
 
 /**
  * @deprecated Please use useRegionsQuery or useRegionsStore instead.
@@ -89,5 +91,4 @@ export const useRegions = () => {
   };
 };
 
-// Re-import for compatibility in this file
-import { supabase } from '@/integrations/supabase/client';
+export * from './regions/useRegionsQuery';
