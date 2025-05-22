@@ -35,8 +35,25 @@ export const useUserList = (initialFilter: UserFilter = {}) => {
   const isFilterUpdating = useRef(false);
   const skipNextPageReset = useRef(false);
   
+  // Add a ref for storing the last page request
+  const lastPageChangeRef = useRef<number | null>(null);
+  
   // Use the optimized fetch hook
-  const { users, loading, error, totalCount, refetch } = useUserFetch(filter, currentPage, pageSize);
+  const { 
+    users, 
+    loading, 
+    error, 
+    totalCount, 
+    refetch,
+    currentPage: fetchedPage 
+  } = useUserFetch(filter, currentPage, pageSize);
+  
+  // Synchronize the current page with the page in useUserFetch if it differs
+  useEffect(() => {
+    if (fetchedPage && fetchedPage !== currentPage && !skipNextPageReset.current) {
+      setCurrentPage(fetchedPage);
+    }
+  }, [fetchedPage]);
   
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   
@@ -44,8 +61,19 @@ export const useUserList = (initialFilter: UserFilter = {}) => {
   const handlePageChange = useCallback((page: number) => {
     if (page < 1 || page > totalPages) return;
     
+    // Store the requested page
+    lastPageChangeRef.current = page;
+    
+    // Set flag to skip automatic page reset when filter changes
     skipNextPageReset.current = true;
+    
+    console.log('useUserList: Changing to page:', page);
     setCurrentPage(page);
+    
+    // Reset the flag after a short delay to handle any race conditions
+    setTimeout(() => {
+      skipNextPageReset.current = false;
+    }, 100);
   }, [totalPages]);
   
   // Memoized update filter function to prevent unnecessary filter changes
@@ -70,7 +98,6 @@ export const useUserList = (initialFilter: UserFilter = {}) => {
     if (!skipNextPageReset.current) {
       setCurrentPage(1);
     }
-    skipNextPageReset.current = false;
     
     // Reset flag after state updates
     setTimeout(() => {

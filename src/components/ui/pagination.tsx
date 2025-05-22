@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -20,6 +19,9 @@ export function Pagination({
   nextLabel = "Next",
   pageLabel = (page) => `Page ${page}`
 }: PaginationProps) {
+  // Keep track of last rendered page to prevent unnecessary re-renders
+  const lastPageRef = useRef(currentPage);
+  
   // Göstəriləcək səhifə nömrələrini müəyyən et
   const getPageNumbers = () => {
     const delta = 1; // Cari səhifənin hər iki tərəfindən göstəriləcək səhifə sayı
@@ -65,6 +67,11 @@ export function Pagination({
 
   const pages = getPageNumbers();
   
+  // Sync with external changes to currentPage
+  useEffect(() => {
+    lastPageRef.current = currentPage;
+  }, [currentPage]);
+  
   // Handle page navigation with button clicks
   const handlePageClick = (page: number) => {
     // Prevent unnecessary state updates
@@ -72,6 +79,7 @@ export function Pagination({
     
     // Call the onPageChange callback with the new page
     if (page >= 1 && page <= totalPages) {
+      lastPageRef.current = page;
       console.log(`Pagination: switching to page ${page}`);
       onPageChange(page);
     }
@@ -80,13 +88,17 @@ export function Pagination({
   // Handle previous/next buttons
   const handlePrevious = () => {
     if (currentPage > 1) {
-      onPageChange(currentPage - 1);
+      const newPage = currentPage - 1;
+      lastPageRef.current = newPage;
+      onPageChange(newPage);
     }
   };
   
   const handleNext = () => {
     if (currentPage < totalPages) {
-      onPageChange(currentPage + 1);
+      const newPage = currentPage + 1;
+      lastPageRef.current = newPage;
+      onPageChange(newPage);
     }
   };
 

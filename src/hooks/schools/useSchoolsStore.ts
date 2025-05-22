@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/supabase';
 import { useRegions } from '@/hooks/regions/useRegions';
@@ -30,12 +29,45 @@ export const useSchoolsStore = () => {
   const { userRole, sectorId, regionId } = usePermissions();
   const [isOperationComplete, setIsOperationComplete] = useState(false);
   
+  // Add refs to prevent fetch loops
+  const isFetchingRef = useRef(false);
+  const prevFiltersRef = useRef({
+    region: '',
+    sector: '',
+    status: ''
+  });
+  
   // Regionları və sektorları əldə etmək üçün hookları istifadə edirik
   const { regions = [], loading: regionsLoading } = useRegions() || {};
   const { sectors = [], loading: sectorsLoading } = useSectors(selectedRegion) || {};
 
   // Məktəbləri yükləmək metodu
   const fetchSchools = useCallback(async () => {
+    // Skip if already fetching
+    if (isFetchingRef.current) {
+      console.log("Məktəblər hələ yüklənir, yeni sorğu edilmədi");
+      return;
+    }
+    
+    // Check if filters have actually changed
+    const currentFilters = {
+      region: selectedRegion,
+      sector: selectedSector,
+      status: selectedStatus
+    };
+    
+    // Compare with previous filters
+    if (JSON.stringify(currentFilters) === JSON.stringify(prevFiltersRef.current)) {
+      console.log("Filtrlər dəyişməyib, yeni sorğu edilmədi");
+      return;
+    }
+    
+    // Update previous filters
+    prevFiltersRef.current = { ...currentFilters };
+    
+    // Set fetching flag
+    isFetchingRef.current = true;
+    
     setLoading(true);
     setError(null);
     
@@ -83,6 +115,10 @@ export const useSchoolsStore = () => {
       setSchools([]);
     } finally {
       setLoading(false);
+      // Reset fetching flag after a small delay to prevent rapid re-fetches
+      setTimeout(() => {
+        isFetchingRef.current = false;
+      }, 300);
     }
   }, [selectedRegion, selectedSector, selectedStatus, t, userRole, sectorId]);
 
@@ -131,6 +167,9 @@ export const useSchoolsStore = () => {
 
   // Sektoradmin roluna əsasən region və sektor filtrini avtomatik təyin etmək
   useEffect(() => {
+    // Prevent this effect from triggering fetchSchools directly
+    const shouldFetch = userRole === 'sectoradmin' && sectorId && !isFetchingRef.current;
+    
     if (userRole === 'sectoradmin' && sectorId) {
       // Sektoradmin üçün sektor ID filtrini təyin edirik
       setSelectedSector(sectorId);
@@ -144,7 +183,20 @@ export const useSchoolsStore = () => {
       // RegionAdmin üçün region filtri avtomatik təyin edilir
       setSelectedRegion(regionId);
     }
+    
   }, [userRole, sectorId, sectors, regionId]);
+
+  // Initial fetch only when component mounts
+  useEffect(() => {
+    fetchSchools();
+    // Empty dependency array to run only once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch when filters change
+  useEffect(() => {
+    fetchSchools();
+  }, [selectedRegion, selectedSector, selectedStatus, fetchSchools]);
 
   // Event handlers
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -210,7 +262,7 @@ export const useSchoolsStore = () => {
     selectedSector,
     selectedStatus,
     sortConfig,
-    currentPage: adjustedCurrentPage,
+    currentPage: currentPage,
     itemsPerPage,
     filteredSchools,
     sortedSchools,

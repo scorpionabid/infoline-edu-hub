@@ -386,7 +386,9 @@ const DataEntryPage: React.FC = () => {
     categories: allCategories, 
     loading: loadingAllCategories, 
     error: categoriesError 
-  } = useCategoryData(isSchoolAdmin ? user?.school_id : null);
+  } = useCategoryData({ 
+    schoolId: isSchoolAdmin ? user?.school_id : null 
+  });
   
   // Sektoradmin üçün məktəbləri yükləyirik
   useEffect(() => {

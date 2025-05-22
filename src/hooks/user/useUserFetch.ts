@@ -23,9 +23,13 @@ export const useUserFetch = (
   const fetchInProgressRef = useRef(false);
   const lastPageRef = useRef(currentPage);
   
+  // Track the last requested page number for external consumers
+  const [actualPage, setActualPage] = useState(currentPage);
+  
   const fetchUsers = useCallback(async () => {
     // Skip if a fetch is already in progress
     if (fetchInProgressRef.current) {
+      console.log("useUserFetch: Skipping fetch because another one is in progress");
       return;
     }
     
@@ -34,12 +38,15 @@ export const useUserFetch = (
     
     // Skip if filter and pagination haven't changed
     if (filterString === prevFilterRef.current) {
+      console.log("useUserFetch: Skipping fetch because filter and page haven't changed");
       return;
     }
     
     // Remember if only page changed without filter changing
-    const onlyPageChanged = JSON.stringify({ filter, pageSize }) === 
-      JSON.stringify({ filter: JSON.parse(prevFilterRef.current || '{}').filter, pageSize: JSON.parse(prevFilterRef.current || '{}').pageSize });
+    const previousFilter = prevFilterRef.current ? JSON.parse(prevFilterRef.current) : null;
+    const onlyPageChanged = previousFilter && 
+      JSON.stringify(filter) === JSON.stringify(previousFilter.filter) && 
+      pageSize === previousFilter.pageSize;
     
     // Update the previous filter
     prevFilterRef.current = filterString;
@@ -55,8 +62,9 @@ export const useUserFetch = (
       
       setError(null);
       lastPageRef.current = currentPage;
+      setActualPage(currentPage);
       
-      console.log('Fetching users with filter:', filter, 'page:', currentPage);
+      console.log('useUserFetch: Fetching users with filter:', filter, 'page:', currentPage);
       
       // Ensure filter is not undefined
       const safeFilter = filter || {};
@@ -86,7 +94,7 @@ export const useUserFetch = (
       
       filterParams.p_search = safeFilter.search || null;
       
-      console.log('Sending filter params to DB:', filterParams);
+      console.log('useUserFetch: Sending filter params to DB:', filterParams);
       
       // Database funksiyası ilə istifadəçiləri əldə edirik
       const { data: userData, error: fetchError } = await supabase.rpc(
@@ -99,7 +107,7 @@ export const useUserFetch = (
         throw new Error(`İstifadəçilər əldə edilərkən xəta: ${fetchError.message}`);
       }
       
-      console.log('Users fetched:', userData?.length || 0, userData);
+      console.log('useUserFetch: Users fetched:', userData?.length || 0, userData);
       
       // Count-u da əldə edirik
       const { data: countData, error: countError } = await supabase.rpc(
@@ -118,7 +126,7 @@ export const useUserFetch = (
         console.error('Error getting user count:', countError);
       } else {
         setTotalCount(countData || 0);
-        console.log('Total user count:', countData);
+        console.log('useUserFetch: Total user count:', countData);
       }
       
       // Don't update state if component unmounted
@@ -210,7 +218,10 @@ export const useUserFetch = (
       if (isMounted.current) {
         setLoading(false);
       }
-      fetchInProgressRef.current = false;
+      // Add a small delay before resetting fetchInProgress to prevent immediate re-fetches
+      setTimeout(() => {
+        fetchInProgressRef.current = false;
+      }, 100);
     }
   }, [filter, currentPage, pageSize, session]);
   
@@ -238,6 +249,6 @@ export const useUserFetch = (
     error,
     totalCount,
     refetch,
-    currentPage: lastPageRef.current
+    currentPage: actualPage
   };
 };

@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CategoryItem from "./CategoryItem";
@@ -20,16 +20,38 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
   const [open, setOpen] = useState(false);
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<CategoryStatus>("active");
+  
+  // Add a ref to prevent excessive refetches
+  const didMountRef = useRef(false);
+  const lastRefetchTime = useRef(Date.now());
 
+  // Optimize refetch with useCallback and time limiting
+  const safeRefetch = useCallback(() => {
+    const now = Date.now();
+    // Only refetch if 2 seconds have passed since the last refetch
+    if (now - lastRefetchTime.current > 2000) {
+      lastRefetchTime.current = now;
+      console.log("Refetching categories...");
+      refetch();
+    } else {
+      console.log("Skipping refetch - too soon");
+    }
+  }, [refetch]);
+
+  // Initial fetch only on mount
   useEffect(() => {
-    console.log("Fetching categories in CategoryList...");
-    refetch();
+    if (!didMountRef.current) {
+      console.log("Initial fetch of categories...");
+      refetch();
+      didMountRef.current = true;
+    }
   }, [refetch]);
 
   const handleTabChange = (tab: CategoryStatus) => {
     setActiveTab(tab);
   };
 
+  // Handle errors in a separate effect
   useEffect(() => {
     if (error) {
       toast.error("Failed to load categories", {
@@ -98,7 +120,8 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
         </TabsContent>
       </Tabs>
 
-      <CreateCategoryDialog open={open} setOpen={setOpen} onSuccess={() => refetch()} />
+      {/* Use the safeRefetch callback for dialog success */}
+      <CreateCategoryDialog open={open} setOpen={setOpen} onSuccess={() => safeRefetch()} />
     </>
   );
 };
