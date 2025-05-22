@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useUserList, UserFilter } from '@/hooks/useUserList';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
@@ -12,6 +13,7 @@ import UserActions from './UserActions';
 import { useLanguage } from '@/context/LanguageContext';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useDebounceCallback } from '@/hooks/useDebounceCallback';
 
 interface UserListProps {
   refreshTrigger?: number;
@@ -60,15 +62,16 @@ const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = 
     }
   };
 
-  // Debounce search to prevent too many requests
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      updateFilter({ ...filter, search: searchTerm });
-    }, 300);
-    
-    return () => clearTimeout(handler);
-  }, [searchTerm, updateFilter, filter]);
+  // Debounce search to prevent too many requests (300ms delay)
+  const debouncedUpdateFilter = useDebounceCallback((newFilter: UserFilter) => {
+    updateFilter(newFilter);
+  }, 300);
   
+  // Effect for search term updates
+  useEffect(() => {
+    debouncedUpdateFilter({ ...filter, search: searchTerm });
+  }, [searchTerm, debouncedUpdateFilter, filter]);
+
   // Handle refresh trigger from parent
   useEffect(() => {
     if (refreshTrigger > 0) {
@@ -84,6 +87,11 @@ const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
+  
+  const handleReset = useCallback(() => {
+    setSearchTerm('');
+    resetFilter();
+  }, [resetFilter]);
   
   if (error) {
     console.error("Error loading users:", error);
@@ -107,10 +115,7 @@ const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = 
         </div>
         <Button type="submit">{t('search')}</Button>
         {(searchTerm || Object.values(filter).some(Boolean)) && (
-          <Button variant="outline" onClick={() => {
-            setSearchTerm('');
-            resetFilter();
-          }}>{t('reset')}</Button>
+          <Button variant="outline" onClick={handleReset}>{t('reset')}</Button>
         )}
       </form>
       

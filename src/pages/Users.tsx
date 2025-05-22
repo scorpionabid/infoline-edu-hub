@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import UserList from '@/components/users/UserList';
 import UserHeader from '@/components/users/UserHeader';
 import { useAuth } from '@/context/auth';
@@ -16,7 +16,7 @@ const Users = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  // User list refresh trigger state
+  // User list refresh trigger state - incrementing this will refresh the list
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // Redirect if not allowed to access this page
@@ -39,9 +39,9 @@ const Users = () => {
         : ['school'];
 
   // Refresh user list when a user is added or edited
-  const handleUserAddedOrEdited = () => {
+  const handleUserAddedOrEdited = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
-  };
+  }, []);
 
   // Filter parameters for sector and region admins - ensure all fields are initialized
   const filterParams: UserFilter = {

@@ -1,16 +1,15 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth';
-import { usePermissions } from '@/hooks/auth/usePermissions';
 import { UserFilter } from '@/hooks/useUserList';
 
 export const useUserFetch = (
-  filter: UserFilter = {}, // Provide default empty object
-  currentPage: number = 1, // Provide default value
-  pageSize: number = 10    // Provide default value
+  filter: UserFilter = {}, 
+  currentPage: number = 1,
+  pageSize: number = 10
 ) => {
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -18,8 +17,31 @@ export const useUserFetch = (
   const [totalCount, setTotalCount] = useState(0);
   const { session } = useAuth();
   
+  // Add these refs to prevent fetch loops
+  const isMounted = useRef(true);
+  const prevFilterRef = useRef<string>('');
+  const fetchInProgressRef = useRef(false);
+  
   const fetchUsers = useCallback(async () => {
+    // Skip if a fetch is already in progress
+    if (fetchInProgressRef.current) {
+      return;
+    }
+    
+    // Convert filter to string for comparison
+    const filterString = JSON.stringify({ filter, currentPage, pageSize });
+    
+    // Skip if filter hasn't changed
+    if (filterString === prevFilterRef.current) {
+      return;
+    }
+    
+    // Update the previous filter
+    prevFilterRef.current = filterString;
+    
     try {
+      // Set fetch in progress flag
+      fetchInProgressRef.current = true;
       setLoading(true);
       setError(null);
       
@@ -87,6 +109,9 @@ export const useUserFetch = (
         setTotalCount(countData || 0);
         console.log('Total user count:', countData);
       }
+      
+      // Don't update state if component unmounted
+      if (!isMounted.current) return;
       
       // Verilənləri FullUserData formatına çeviririk
       const formattedUsers: FullUserData[] = (userData || []).map((item: any) => {
@@ -160,19 +185,40 @@ export const useUserFetch = (
         }
       });
       
-      setUsers(formattedUsers);
+      if (isMounted.current) {
+        setUsers(formattedUsers);
+      }
       
     } catch (err) {
       console.error('Error in useUserFetch:', err);
-      setError(err instanceof Error ? err : new Error('İstifadəçilər əldə edilərkən xəta baş verdi'));
-      toast.error('İstifadəçilər əldə edilərkən xəta baş verdi');
+      if (isMounted.current) {
+        setError(err instanceof Error ? err : new Error('İstifadəçilər əldə edilərkən xəta baş verdi'));
+        toast.error('İstifadəçilər əldə edilərkən xəta baş verdi');
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
+      fetchInProgressRef.current = false;
     }
   }, [filter, currentPage, pageSize, session]);
   
+  // Effect to handle cleanup and initial fetch
   useEffect(() => {
+    isMounted.current = true;
+    
     fetchUsers();
+    
+    return () => {
+      isMounted.current = false;
+    };
+  }, [fetchUsers]);
+  
+  // Manually trigger refetch function that forces a new fetch
+  const refetch = useCallback(() => {
+    // Clear the previous filter to force refetch
+    prevFilterRef.current = '';
+    return fetchUsers();
   }, [fetchUsers]);
   
   return {
@@ -180,6 +226,6 @@ export const useUserFetch = (
     loading,
     error,
     totalCount,
-    refetch: fetchUsers
+    refetch
   };
 };
