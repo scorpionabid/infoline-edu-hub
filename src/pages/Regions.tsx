@@ -1,22 +1,21 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { useRegionsStore } from '@/hooks/useRegionsStore';
+import { useRegionsStore } from '@/hooks/regions/useRegionsStore';
 import { RegionDialog } from '@/components/regions/RegionDialog';
 import { RegionAdminDialog } from '@/components/regions/RegionAdminDialog';
 import { ExistingUserAdminDialog } from '@/components/regions/ExistingUserAdminDialog'; 
 import RegionHeader from '@/components/regions/RegionHeader';
 import RegionTable from '@/components/regions/RegionTable';
-import { EnhancedRegion } from '@/hooks/useRegionsStore';
+import { EnhancedRegion } from '@/types/region';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet';
 import { Pagination } from '@/components/ui/pagination';
-import { useRegions } from '@/hooks/regions/useRegions';
 
 const Regions = () => {
   const { t } = useLanguage();
   const {
-    regions: storeRegions,
-    loading: storeLoading,
+    regions,
+    loading,
     searchTerm,
     selectedStatus,
     currentPage,
@@ -28,19 +27,8 @@ const Regions = () => {
     handleAddRegion,
     handleUpdateRegion,
     handleDeleteRegion,
-    fetchRegions: fetchRegionsStore
+    fetchRegions
   } = useRegionsStore();
-
-  // Əlavə olaraq birbaşa useRegions hook-dan istifadə edək
-  const { regions: directRegions, loading: directLoading, error: directError, fetchRegions: directFetchRegions } = useRegions();
-  
-  // DirectRegions var ama storeRegions yoxdursa, store regions-u yeniləyək
-  useEffect(() => {
-    if (directRegions?.length > 0 && (!storeRegions || storeRegions.length === 0)) {
-      console.log('Direct regions var, store regions-u yeniləyirəm...');
-      fetchRegionsStore();
-    }
-  }, [directRegions, storeRegions, fetchRegionsStore]);
 
   const [openRegionDialog, setOpenRegionDialog] = useState(false);
   const [openAdminDialog, setOpenAdminDialog] = useState(false);
@@ -49,54 +37,51 @@ const Regions = () => {
   const [createdRegion, setCreatedRegion] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
-  // DirectRegions və ya storeRegions istifadə edək - hangisi daha məlumatldırsa
-  const regions = storeRegions?.length > 0 ? storeRegions : directRegions || [];
-  const loading = storeLoading || directLoading;
-  
-  // Yeniləmə triggerini izlə
+  // Initial fetch and refresh listener
   useEffect(() => {
-    if (refreshTrigger > 0) {
-      console.log('Regionlar siyahısı yenilənir...');
-      fetchRegionsStore();
-      directFetchRegions();
-    }
-  }, [refreshTrigger, fetchRegionsStore, directFetchRegions]);
-
-  useEffect(() => {
-    // Component yükləndikdə regionları yükləyək
-    try {
-      directFetchRegions();
-    } catch (error) {
-      console.error('Regions yüklənərkən xəta baş verdi:', error);
-      toast.error('Regionlar yüklənərkən xəta baş verdi');
-    }
-  }, [directFetchRegions]);
-  
-  // Document event ilə yeniləmə trigger
-  useEffect(() => {
+    // Initial data fetch
+    const initFetch = async () => {
+      console.log('Initial fetch of regions...');
+      try {
+        await fetchRegions();
+      } catch (error) {
+        console.error('Error fetching regions:', error);
+        toast.error(t('errorFetchingRegions'));
+      }
+    };
+    
+    initFetch();
+    
+    // Listen for refresh events
     const handleRefreshRegions = () => {
-      console.log('refresh-regions event alındı, regionlar yenilənir...');
+      console.log('refresh-regions event received, refreshing regions...');
       setRefreshTrigger(prev => prev + 1);
     };
     
     document.addEventListener('refresh-regions', handleRefreshRegions);
-    
     return () => {
       document.removeEventListener('refresh-regions', handleRefreshRegions);
     };
-  }, []);
+  }, [fetchRegions, t]);
+  
+  // Handle refresh trigger
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      console.log(`Refreshing regions due to trigger change (${refreshTrigger})...`);
+      fetchRegions();
+    }
+  }, [refreshTrigger, fetchRegions]);
 
   const handleOpenRegionDialog = useCallback((region: EnhancedRegion | null) => {
     setSelectedRegion(region);
     setOpenRegionDialog(true);
   }, []);
 
-  // Admin təyin etmə dialoqlarını açmaq
+  // Open admin assignment dialogs
   const handleOpenAdminDialog = useCallback((region: EnhancedRegion, method: 'new' | 'existing' = 'existing') => {
-    console.log('Admin təyin etmə, Region:', region, 'Method:', method);
+    console.log('Opening admin dialog for region:', region.name, 'Method:', method);
     setSelectedRegion(region);
     
-    // Metoda görə fərqli dialoqları aç
     if (method === 'existing') {
       setOpenExistingUserDialog(true);
     } else {
@@ -105,15 +90,14 @@ const Regions = () => {
   }, []);
 
   const handleRegionCreated = (region: any) => {
-    console.log('Region yaradıldı:', region);
+    console.log('Region created:', region);
     setCreatedRegion(region);
-    setOpenExistingUserDialog(true); // Mövcud istifadəçilərdən seçim
+    setOpenExistingUserDialog(true); // Choose existing user as admin
   };
 
-  const handleAdminAssigned = () => {
-    console.log('Admin təyin edildi, regionları yeniləyirəm');
-    fetchRegionsStore();
-    directFetchRegions();
+  const handleAdminAssigned = async () => {
+    console.log('Admin assigned, refreshing regions...');
+    await fetchRegions();
     setCreatedRegion(null);
     setRefreshTrigger(prev => prev + 1);
   };
@@ -121,8 +105,8 @@ const Regions = () => {
   const handleFormSubmit = async (values: any) => {
     try {
       if (selectedRegion) {
-        // Region güncelleme
-        console.log('Region yenilənir:', values);
+        // Update existing region
+        console.log('Updating region:', values);
         await handleUpdateRegion(selectedRegion.id, {
           name: values.name,
           description: values.description,
@@ -130,8 +114,8 @@ const Regions = () => {
         });
         toast.success(t('regionUpdated'));
       } else {
-        // Yeni region oluşturma
-        console.log('Yeni region yaradılır:', values);
+        // Create new region
+        console.log('Creating new region:', values);
         const newRegion = await handleAddRegion({
           name: values.name,
           description: values.description,
@@ -139,7 +123,7 @@ const Regions = () => {
         });
         toast.success(t('regionCreated'));
         
-        // Admin əlavə etmək istəyirsə
+        // If admin should be added
         if (values.addAdmin) {
           handleRegionCreated(newRegion);
           return;
@@ -148,24 +132,14 @@ const Regions = () => {
       
       setOpenRegionDialog(false);
       setSelectedRegion(null);
-      // Hər iki məlumat mənbəyini yeniləyək
       setRefreshTrigger(prev => prev + 1);
     } catch (error: any) {
-      console.error('Region yaradılarkən/yenilənərkən xəta:', error);
+      console.error('Error with region operation:', error);
       toast.error(t('errorOccurred'), {
         description: error.message || t('unexpectedError')
       });
     }
   };
-
-  if (directError) {
-    console.error('Direct regions yükləyərkən xəta:', directError);
-  }
-
-  // Əgər hər iki mənbə boş nəticə qaytarırsa və yükləmə başa çatıbsa
-  if (!loading && regions.length === 0) {
-    console.warn('Regionlar boşdur! Supabase-də region məlumatlarını və RLS siyasətlərini yoxlayın.');
-  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -203,17 +177,17 @@ const Regions = () => {
         </div>
       )}
       
-      {openRegionDialog && selectedRegion && (
+      {openRegionDialog && (
         <RegionDialog
           open={openRegionDialog}
           onOpenChange={setOpenRegionDialog}
           initialData={{
-            name: selectedRegion.name || '',
-            description: selectedRegion.description || '',
-            status: selectedRegion.status || 'active',
+            name: selectedRegion?.name || '',
+            description: selectedRegion?.description || '',
+            status: selectedRegion?.status || 'active',
           }}
           onSave={handleFormSubmit}
-          title={selectedRegion.id ? t('edit_region') : t('add_region')}
+          title={selectedRegion ? t('edit_region') : t('add_region')}
         />
       )}
 

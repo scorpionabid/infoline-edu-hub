@@ -1,50 +1,44 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Region } from '@/types/region';
+
+import { useEffect } from 'react';
+import { useRegionsQuery } from './regions/useRegionsQuery';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
+/**
+ * @deprecated Please use useRegionsQuery or useRegionsStore instead.
+ * This hook is maintained for backwards compatibility.
+ */
 export const useRegions = () => {
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const { t } = useLanguage();
+  console.warn('useRegions hook is deprecated, please use useRegionsQuery or useRegionsStore instead');
+  
+  // Use the new implementation internally
+  const {
+    regions,
+    isLoading: loading,
+    error: queryError,
+    refetch,
+  } = useRegionsQuery();
+  
+  // Format error to match the old API
+  const error = queryError ? (queryError as Error).message : '';
 
-  const fetchRegions = useCallback(async () => {
+  // Create compatible API with the old hook
+  const fetchRegions = async () => {
     try {
-      setLoading(true);
-      setError('');
-
-      const { data, error } = await supabase
-        .from('regions')
-        .select('*')
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-
-      setRegions(data || []);
+      await refetch();
     } catch (err: any) {
-      console.error('Regionları yükləyərkən xəta:', err);
-      setError(err.message || 'Regionları yükləmək mümkün olmadı');
+      console.error('Error fetching regions:', err);
       toast.error(t('errorLoadingRegions'));
-    } finally {
-      setLoading(false);
     }
-  }, [t]);
+  };
 
   useEffect(() => {
     fetchRegions();
-  }, [fetchRegions]);
+  }, []);
 
-  // Bu funksiyanı regionu yeniləmək üçün əlavə edirik
-  const refresh = async () => {
-    await fetchRegions();
-  };
-
-  // Region əlavə etmək funksiyası
-  const addRegion = async (regionData: Partial<Region>) => {
+  const addRegion = async (regionData: any) => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('regions')
         .insert([regionData])
@@ -52,21 +46,19 @@ export const useRegions = () => {
 
       if (error) throw error;
       
-      setRegions(prev => [...prev, ...(data || [])]);
+      // Refresh data
+      await refetch();
+      
       return { success: true, data };
     } catch (err: any) {
-      console.error('Region əlavə edərkən xəta:', err);
+      console.error('Error adding region:', err);
       toast.error(t('errorAddingRegion'));
       return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Region adminini təyin etmə funksiyası
   const assignRegionAdmin = async (regionId: string, userId: string) => {
     try {
-      setLoading(true);
       const { error } = await supabase.rpc('assign_region_admin', {
         p_region_id: regionId,
         p_user_id: userId
@@ -74,24 +66,28 @@ export const useRegions = () => {
 
       if (error) throw error;
       
-      await fetchRegions(); // Yeni məlumatları yüklə
+      // Refresh data
+      await refetch();
+      
       return { success: true };
     } catch (err: any) {
-      console.error('Region admini təyin edərkən xəta:', err);
+      console.error('Error assigning region admin:', err);
       toast.error(t('errorAssigningRegionAdmin'));
       return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
     }
   };
 
+  // Preserve the original API
   return {
     regions,
     loading,
     error,
     fetchRegions,
-    refresh,
+    refresh: fetchRegions,
     addRegion,
     assignRegionAdmin,
   };
 };
+
+// Re-import for compatibility in this file
+import { supabase } from '@/integrations/supabase/client';
