@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Report, ReportType } from '@/types/report';
+import { Report, ReportTypeValues } from '@/types/report';
 import { 
   getReportTableName, 
   getReportTemplateTableName, 
@@ -130,13 +130,13 @@ export const addReport = async (report: Partial<Report>): Promise<Report> => {
         {
           title: report.title || 'Yeni hesabat',
           description: report.description || '',
-          type: report.type || 'custom',
+          type: report.type || 'custom' as ReportTypeValues,
           status: report.status || 'draft',
           content: report.content || {},
           filters: report.filters || {},
-          created_by: report.createdBy || null,
-          is_template: report.isTemplate || false,
-          shared_with: report.sharedWith || [],
+          created_by: report.created_by || null,
+          is_template: report.is_template || false,
+          shared_with: report.shared_with || [],
           insights: report.insights || [],
           recommendations: report.recommendations || []
         }

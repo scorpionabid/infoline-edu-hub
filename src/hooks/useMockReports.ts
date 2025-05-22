@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Report, ReportType } from '@/types/report';
+import { Report, ReportTypeValues } from '@/types/report';
 
 export const useMockReports = () => {
   const [reports, setReports] = useState<Report[]>([]);
@@ -13,12 +12,12 @@ export const useMockReports = () => {
         id: uuidv4(),
         title: 'Regional Completion Statistics Report',
         description: 'Overview of completion rates across all regions',
-        type: 'statistics' as ReportType,
+        type: 'statistics' as ReportTypeValues,
         status: 'published',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'system',
-        parameters: {
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'system',
+        content: {
           includeCharts: true
         }
       },
@@ -26,12 +25,12 @@ export const useMockReports = () => {
         id: uuidv4(),
         title: 'School Completion Report',
         description: 'Detailed analysis of form completion by schools',
-        type: 'completion' as ReportType,
+        type: 'completion' as ReportTypeValues,
         status: 'published',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'system',
-        parameters: {
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'system',
+        content: {
           includeCharts: true
         }
       },
@@ -39,12 +38,12 @@ export const useMockReports = () => {
         id: uuidv4(),
         title: 'Sector Comparison Report',
         description: 'Comparison between different sectors',
-        type: 'comparison' as ReportType,
+        type: 'comparison' as ReportTypeValues,
         status: 'draft',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'system',
-        parameters: {
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'system',
+        content: {
           includeCharts: true
         }
       },
@@ -52,12 +51,12 @@ export const useMockReports = () => {
         id: uuidv4(),
         title: 'Custom Analytics Report',
         description: 'User defined custom analytics',
-        type: 'custom' as ReportType,
+        type: 'custom' as ReportTypeValues,
         status: 'archived',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'user123',
-        parameters: {
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'user123',
+        content: {
           includeCharts: true
         }
       },
@@ -65,12 +64,12 @@ export const useMockReports = () => {
         id: uuidv4(),
         title: 'Individual School Report',
         description: 'Detailed report for a specific school',
-        type: 'school' as ReportType,
+        type: 'school' as ReportTypeValues,
         status: 'published',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'user456',
-        parameters: {
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'user456',
+        content: {
           includeCharts: true,
           schoolId: 'school123'
         }
@@ -79,12 +78,12 @@ export const useMockReports = () => {
         id: uuidv4(),
         title: 'Category Performance Report',
         description: 'Performance metrics by category',
-        type: 'category' as ReportType,
+        type: 'category' as ReportTypeValues,
         status: 'published',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'system',
-        parameters: {
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'system',
+        content: {
           includeCharts: false,
           categoryId: 'cat123'
         }
@@ -93,12 +92,12 @@ export const useMockReports = () => {
         id: uuidv4(),
         title: 'Basic Analysis Report',
         description: 'Simple analysis of the current data',
-        type: 'basic' as ReportType,
+        type: 'basic' as ReportTypeValues,
         status: 'draft',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'user789',
-        parameters: {
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'user789',
+        content: {
           includeCharts: true
         }
       }
@@ -112,12 +111,12 @@ export const useMockReports = () => {
       id: uuidv4(),
       title: reportData.title || 'New Report',
       description: reportData.description || '',
-      type: reportData.type || 'basic' as ReportType,
+      type: reportData.type || 'basic' as ReportTypeValues,
       status: 'draft',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: 'current-user',
-      ...reportData
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      created_by: 'current-user',
+      content: reportData.content || {},
     };
     
     setReports(prev => [...prev, newReport]);
@@ -133,7 +132,7 @@ export const useMockReports = () => {
           updatedReport = {
             ...report,
             ...reportData,
-            updatedAt: new Date().toISOString()
+            updated_at: new Date().toISOString()
           };
           return updatedReport;
         }
