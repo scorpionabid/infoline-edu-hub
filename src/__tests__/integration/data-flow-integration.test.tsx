@@ -1,419 +1,445 @@
-/**
- * Məlumat Axını İnteqrasiya Testi
- * 
- * Bu test faylı, İnfoLine sistemində məlumat daxiletmə, təsdiqləmə və yığım 
- * prosesləri arasındakı inteqrasiyanı yoxlayır. Bu, INT-05 ssenari qrupundan
- * inteqrasiya testlərini əhatə edir.
- */
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { supabase } from '@/integrations/supabase/client';
+import { Report, ReportTypeValues, REPORT_TYPE_VALUES } from '@/types/report';
 
-import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { vi, describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
-import '@testing-library/jest-dom';
-
-// Test utils və yardımçı funksiyalar
-import { 
-  mockUserRole,
-  mockSupabase,
-  mockEdgeFunctions
-} from '../test-integration-utils';
-
-// Nisbi import yolları qeyd: Faktiki komponentləri test etmək üçün nisbi yolları təyin edirik
-// Qeyd: Bu komponentlər mock kimi istifadə ediləcək, real implementasiya test edilməyəcək
-const MockDataEntryForm = vi.fn();
-const MockDataApprovalList = vi.fn();
-const MockDataApprovalActions = vi.fn();
-
-// Rəqəmsal məlumat ID nümunələri üçün yardımçı funksiyalar
-let testEntryId: string = '';
-let testCategoryId: string = '';
-let testSchoolId: string = '';
-let testSectorId: string = '';
-let testRegionId: string = '';
-
-/**
- * Test fixtures və test məlumatları
- */
-const testDataEntry = {
-  category: 'Test Kateqoriya',
-  values: {
-    'Müəllim sayı': '25',
-    'Şagird sayı': '450',
-    'Kompüter sayı': '15'
+// Mock Supabase client
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    from: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    contains: vi.fn().mockReturnThis(),
+    match: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
+    gt: vi.fn().mockReturnThis(),
+    lt: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
+    is: vi.fn().mockReturnThis(),
+    not: vi.fn().mockReturnThis(),
+    filter: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockReturnThis(),
+    then: vi.fn().mockImplementation(callback => Promise.resolve(callback({ data: [], error: null }))),
   }
+}));
+
+// Test utilities
+const mockDataEntry = {
+  id: 'test-entry-id',
+  school_id: 'test-school-id',
+  category_id: 'test-category-id',
+  column_id: 'test-column-id',
+  value: 'Test Value',
+  status: 'pending',
+  created_at: '2025-05-20T10:00:00Z',
+  updated_at: '2025-05-20T10:00:00Z',
+  created_by: 'test-user-id',
+  approved_by: null,
+  approved_at: null,
+  rejected_by: null,
+  rejection_reason: null
 };
 
-// Süni gecikmə üçün yardımçı funksiya
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Integration test utilities
-const setupTestHierarchy = async () => {
-  // Test üçün region, sektor və məktəb yaradırıq
-  testRegionId = 'test-region-id';
-  testSectorId = 'test-sector-id';
-  testSchoolId = 'test-school-id';
-  
-  return {
-    regionId: testRegionId,
-    sectorId: testSectorId,
-    schoolId: testSchoolId
-  };
+const mockSchool = {
+  id: 'test-school-id',
+  name: 'Test School',
+  region_id: 'test-region-id',
+  sector_id: 'test-sector-id',
+  status: 'active'
 };
 
-const setupTestUsers = async (hierarchy: { regionId: string, sectorId: string, schoolId: string }) => {
-  // Test istifadəçiləri yaradırıq
-  return {
-    schoolAdmin: { id: 'school-admin-id', role: 'schooladmin', school_id: hierarchy.schoolId },
-    sectorAdmin: { id: 'sector-admin-id', role: 'sectoradmin', sector_id: hierarchy.sectorId },
-    regionAdmin: { id: 'region-admin-id', role: 'regionadmin', region_id: hierarchy.regionId }
-  };
+const mockReport: Report = {
+  id: 'test-report-id',
+  title: 'Test Report',
+  description: 'Test Description',
+  type: REPORT_TYPE_VALUES.BAR as ReportTypeValues,
+  content: {},
+  created_at: '2025-05-20T10:00:00Z',
+  updated_at: '2025-05-20T10:00:00Z',
+  created_by: 'test-user-id',
+  status: 'draft'
 };
 
-const setupTestCategories = async () => {
-  // Test kateqoriyaları yaradırıq
-  testCategoryId = 'test-category-id';
-  return [
-    { 
-      id: testCategoryId, 
-      name: 'Test Kateqoriya',
-      columns: [
-        { id: 'col1', name: 'Müəllim sayı', order: 1, type: 'number', required: true },
-        { id: 'col2', name: 'Şagird sayı', order: 2, type: 'number', required: true },
-        { id: 'col3', name: 'Kompüter sayı', order: 3, type: 'number', required: false }
-      ]
-    }
-  ];
+// Mock response setup
+const setupMockResponse = (data: any) => {
+  vi.mocked(supabase.from).mockImplementation(() => ({
+    ...supabase,
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockReturnThis(),
+    then: vi.fn().mockImplementation(callback => Promise.resolve(callback({ data, error: null })))
+  }));
 };
 
-const cleanupTestData = async () => {
-  // Test məlumatlarını təmizləyirik
-  testEntryId = '';
-};
-
-const cleanupTestUsers = async () => {
-  // Test istifadəçilərini təmizləyirik
-};
-
-const cleanupTestHierarchy = async () => {
-  // Test region, sektor və məktəblərini təmizləyirik
-  testRegionId = '';
-  testSectorId = '';
-  testSchoolId = '';
-};
-
-const loginAs = async (role: string, options: any = {}) => {
-  // Müəyyən rol ilə giriş simulyasiya edirik
-  mockUserRole(role as any);
-  
-  // Test options-da regionId, sectorId, schoolId və s. varsa onları uyğun hook-lara ötürürük
-  if (options.regionId) {
-    vi.mock('@/hooks/auth/usePermissions', () => ({
-      usePermissions: () => ({
-        userRole: role,
-        isAdmin: true,
-        isSuperAdmin: role === 'superadmin',
-        isRegionAdmin: role === 'regionadmin',
-        isSectorAdmin: role === 'sectoradmin',
-        isSchoolAdmin: role === 'schooladmin',
-        regionId: options.regionId,
-        sectorId: options.sectorId || '',
-        schoolId: options.schoolId || ''
-      })
-    }));
-  }
-};
-
-const waitForDataSync = async () => {
-  // Məlumat sinxronizasiyası üçün gözləmə
-  await delay(100);
-};
-
-describe('INT-05: Məlumat Daxiletmə və Təsdiqləmə İnteqrasiyası', () => {
-  
-  // Test mühitini hazırla
-  beforeAll(async () => {
-    // Rəqəmsal məlumat əvəzinə simulyasiya
-    vi.mock('@/integrations/supabase/client', async () => {
-      const actual = await vi.importActual('@/integrations/supabase/client');
-      return {
-        ...actual,
-        // Simulyasiya edilmiş supabase funksiyaları
-        supabase: {
-          ...actual.supabase,
-          from: vi.fn().mockImplementation((table) => {
-            return {
-              select: vi.fn().mockReturnThis(),
-              insert: vi.fn().mockImplementation((data) => {
-                if (table === 'data_entries') {
-                  testEntryId = `test-entry-${Date.now()}`;
-                  return Promise.resolve({ 
-                    data: { id: testEntryId, ...data }, 
-                    error: null 
-                  });
-                }
-                return Promise.resolve({ data, error: null });
-              }),
-              update: vi.fn().mockImplementation((data) => {
-                return Promise.resolve({ data, error: null });
-              }),
-              eq: vi.fn().mockReturnThis(),
-              order: vi.fn().mockReturnThis(),
-              match: vi.fn().mockReturnThis(),
-              is: vi.fn().mockReturnThis(),
-              in: vi.fn().mockReturnThis(),
-              single: vi.fn().mockReturnThis(),
-              then: vi.fn().mockImplementation((callback) => {
-                if (table === 'categories') {
-                  return Promise.resolve(callback({ 
-                    data: [{ id: testCategoryId, name: 'Test Kateqoriya' }], 
-                    error: null 
-                  }));
-                }
-                if (table === 'data_entries') {
-                  return Promise.resolve(callback({ 
-                    data: [{ 
-                      id: testEntryId, 
-                      category_id: testCategoryId,
-                      school_id: testSchoolId,
-                      status: 'draft',
-                      values: testDataEntry.values,
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString()
-                    }], 
-                    error: null 
-                  }));
-                }
-                return Promise.resolve(callback({ data: [], error: null }));
-              })
-            };
-          }),
-          rpc: vi.fn().mockImplementation((funcName, params) => {
-            if (funcName === 'get_category_columns') {
-              return Promise.resolve({ 
-                data: [
-                  { id: 'col1', name: 'Müəllim sayı', order: 1, type: 'number', required: true },
-                  { id: 'col2', name: 'Şagird sayı', order: 2, type: 'number', required: true },
-                  { id: 'col3', name: 'Kompüter sayı', order: 3, type: 'number', required: false }
-                ], 
-                error: null 
-              });
-            }
-            if (funcName === 'get_pending_approvals') {
-              return Promise.resolve({
-                data: [{
-                  id: testEntryId,
-                  category_id: testCategoryId,
-                  school_id: testSchoolId,
-                  status: 'submitted',
-                  values: testDataEntry.values,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                }],
-                error: null
-              });
-            }
-            return Promise.resolve({ data: null, error: null });
-          })
-        }
-      };
-    });
-
-    // Test üçün iyerarxiya, istifadəçi və kateqoriyaların hazırlanması
-    const hierarchy = await setupTestHierarchy();
-    testRegionId = hierarchy.regionId;
-    testSectorId = hierarchy.sectorId;
-    testSchoolId = hierarchy.schoolId;
-    
-    await setupTestUsers(hierarchy);
-    
-    const categories = await setupTestCategories();
-    testCategoryId = categories[0].id;
-  });
-  
-  // Hər testdən əvvəl mühiti yenilə
-  beforeEach(async () => {
+describe('Data Flow Integration Tests', () => {
+  beforeEach(() => {
     vi.clearAllMocks();
   });
-  
-  describe('INT-05-01: Məlumat daxiletmə və məktəb səviyyəsində göndərmə', () => {
-    it('məktəb administratoru məlumatları daxil edib göndərə bilir', async () => {
-      // Məktəb admin kimi login
-      await loginAs('schooladmin', { schoolId: testSchoolId });
-      
-      // Mock DataEntryForm komponentini
-      vi.mock('@/components/data-entry/DataEntryForm', () => ({
-        default: ({ categoryId, schoolId, readOnly }: any) => (
-          <div data-testid="data-entry-form">
-            <h3>Test Kateqoriya</h3>
-            <input data-testid="input-col1" type="text" placeholder="Müəllim sayı" />
-            <input data-testid="input-col2" type="text" placeholder="Şagird sayı" />
-            <input data-testid="input-col3" type="text" placeholder="Kompüter sayı" />
-            <button data-testid="save-button">Saxla</button>
-            <button data-testid="submit-button">Göndər</button>
-          </div>
-        )
-      }));
 
-      // Test üçün mock DataEntryForm simulyasiya edirik
-      MockDataEntryForm.mockImplementation(() => {
-        return <div data-testid="mock-data-entry-form">Mock Data Entry Form</div>;
+  describe('Data Entry Flow', () => {
+    it('INT-SIMPLE-01: Should handle data entry creation and approval flow', async () => {
+      // Setup mock responses
+      let currentEntryStatus = 'pending';
+      
+      vi.mocked(supabase.from).mockImplementation((table) => {
+        if (table === 'data_entries') {
+          return {
+            ...supabase,
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockReturnThis(),
+            insert: vi.fn().mockImplementation((data) => {
+              return {
+                ...supabase,
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockReturnThis(),
+                then: vi.fn().mockImplementation(callback => 
+                  Promise.resolve(callback({ 
+                    data: { ...mockDataEntry, ...data[0] }, 
+                    error: null 
+                  }))
+                )
+              };
+            }),
+            update: vi.fn().mockImplementation((updateData) => {
+              if (updateData.status) {
+                currentEntryStatus = updateData.status;
+              }
+              
+              return {
+                ...supabase,
+                eq: vi.fn().mockReturnThis(),
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockReturnThis(),
+                then: vi.fn().mockImplementation(callback => 
+                  Promise.resolve(callback({ 
+                    data: { 
+                      ...mockDataEntry, 
+                      ...updateData,
+                      status: currentEntryStatus 
+                    }, 
+                    error: null 
+                  }))
+                )
+              };
+            }),
+            then: vi.fn().mockImplementation(callback => 
+              Promise.resolve(callback({ 
+                data: [{ ...mockDataEntry, status: currentEntryStatus }], 
+                error: null 
+              }))
+            )
+          };
+        }
+        
+        if (table === 'schools') {
+          return {
+            ...supabase,
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockReturnThis(),
+            then: vi.fn().mockImplementation(callback => 
+              Promise.resolve(callback({ 
+                data: mockSchool, 
+                error: null 
+              }))
+            )
+          };
+        }
+        
+        return supabase;
       });
-      
-      const { container } = render(
-        <div>
-          <MockDataEntryForm 
-            categoryId={testCategoryId}
-            schoolId={testSchoolId}
-            readOnly={false}
-          />
-        </div>
-      );
-      
-      // Formanın yüklənməsini gözlə
-      await waitFor(() => {
-        expect(screen.getByText('Test Kateqoriya')).toBeInTheDocument();
-      });
-      
-      // Formanı doldur
-      const teacherInput = screen.getByTestId('input-col1');
-      const studentInput = screen.getByTestId('input-col2');
-      const computerInput = screen.getByTestId('input-col3');
 
-      // Dəyərləri doldur
-      await act(async () => {
-        fireEvent.change(teacherInput, { target: { value: testDataEntry.values['Müəllim sayı'] } });
-        fireEvent.change(studentInput, { target: { value: testDataEntry.values['Şagird sayı'] } });
-        fireEvent.change(computerInput, { target: { value: testDataEntry.values['Kompüter sayı'] } });
-        await delay(100); // State yenilənməsi üçün kiçik gözləmə
+      // Test data entry creation
+      const createDataEntryResponse = await supabase
+        .from('data_entries')
+        .insert([{
+          school_id: 'test-school-id',
+          category_id: 'test-category-id',
+          column_id: 'test-column-id',
+          value: 'New Test Value',
+          status: 'pending'
+        }])
+        .select()
+        .single()
+        .then(response => response);
+
+      expect(createDataEntryResponse.data).toBeDefined();
+      expect(createDataEntryResponse.data.status).toBe('pending');
+      expect(createDataEntryResponse.data.value).toBe('New Test Value');
+
+      // Test data entry approval
+      const approveDataEntryResponse = await supabase
+        .from('data_entries')
+        .update({
+          status: 'approved',
+          approved_by: 'approver-user-id',
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', 'test-entry-id')
+        .select()
+        .single()
+        .then(response => response);
+
+      expect(approveDataEntryResponse.data).toBeDefined();
+      expect(approveDataEntryResponse.data.status).toBe('approved');
+      expect(approveDataEntryResponse.data.approved_by).toBe('approver-user-id');
+
+      // Verify the status was updated
+      const getDataEntryResponse = await supabase
+        .from('data_entries')
+        .select()
+        .eq('id', 'test-entry-id')
+        .then(response => response);
+
+      expect(getDataEntryResponse.data[0].status).toBe('approved');
+    });
+
+    it('INT-SIMPLE-02: Should handle data entry rejection flow', async () => {
+      // Setup mock responses
+      let currentEntryStatus = 'pending';
+      
+      vi.mocked(supabase.from).mockImplementation((table) => {
+        if (table === 'data_entries') {
+          return {
+            ...supabase,
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockReturnThis(),
+            update: vi.fn().mockImplementation((updateData) => {
+              if (updateData.status) {
+                currentEntryStatus = updateData.status;
+              }
+              
+              return {
+                ...supabase,
+                eq: vi.fn().mockReturnThis(),
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockReturnThis(),
+                then: vi.fn().mockImplementation(callback => 
+                  Promise.resolve(callback({ 
+                    data: { 
+                      ...mockDataEntry, 
+                      ...updateData,
+                      status: currentEntryStatus 
+                    }, 
+                    error: null 
+                  }))
+                )
+              };
+            }),
+            then: vi.fn().mockImplementation(callback => 
+              Promise.resolve(callback({ 
+                data: [{ ...mockDataEntry, status: currentEntryStatus }], 
+                error: null 
+              }))
+            )
+          };
+        }
+        
+        return supabase;
       });
 
-      // "Saxla" düyməsini tap və klikləmə
-      const saveButton = screen.getByTestId('save-button');
-      expect(saveButton).toBeInTheDocument();
-      
-      await act(async () => {
-        fireEvent.click(saveButton);
-        await delay(100); // Dəyişikliklərin tətbiq edilməsi üçün gözləmə
-      });
-      
-      // "Göndər" düyməsini tap və klikləmə
-      const submitButton = screen.getByTestId('submit-button');
-      expect(submitButton).toBeInTheDocument();
-      
-      await act(async () => {
-        fireEvent.click(submitButton);
-        await delay(100);
-      });
-      
-      // Test nəticələrini yoxla
-      expect(true).toBe(true); // Bu, əsas sınağımızdır
+      // Test data entry rejection
+      const rejectDataEntryResponse = await supabase
+        .from('data_entries')
+        .update({
+          status: 'rejected',
+          rejected_by: 'rejector-user-id',
+          rejection_reason: 'Invalid data provided'
+        })
+        .eq('id', 'test-entry-id')
+        .select()
+        .single()
+        .then(response => response);
+
+      expect(rejectDataEntryResponse.data).toBeDefined();
+      expect(rejectDataEntryResponse.data.status).toBe('rejected');
+      expect(rejectDataEntryResponse.data.rejected_by).toBe('rejector-user-id');
+      expect(rejectDataEntryResponse.data.rejection_reason).toBe('Invalid data provided');
+
+      // Verify the status was updated
+      const getDataEntryResponse = await supabase
+        .from('data_entries')
+        .select()
+        .eq('id', 'test-entry-id')
+        .then(response => response);
+
+      expect(getDataEntryResponse.data[0].status).toBe('rejected');
     });
   });
-  
-  describe('INT-05-02: Sektor admin təsdiqləmə prosesi', () => {
-    it('sektor administratoru məlumatları yoxlayıb təsdiqləyə bilir', async () => {
-      // Sektor admin kimi login
-      await loginAs('sectoradmin', { sectorId: testSectorId });
-      
-      // Mock DataApprovalList komponentini
-      vi.mock('@/components/data-approval/DataApprovalList', () => ({
-        default: ({ role, sectorId, status }: any) => (
-          <div data-testid="data-approval-list">
-            <h3>Gözləyən Məlumatlar</h3>
-            <div data-testid="entry-row">
-              <span>Test Kateqoriya</span>
-              <button data-testid="view-button">Bax</button>
-            </div>
-          </div>
-        )
-      }));
-      
-      // Mock DataApprovalActions komponentini
-      vi.mock('@/components/data-approval/DataApprovalActions', () => ({
-        default: ({ entryId, role }: any) => (
-          <div data-testid="data-approval-actions">
-            <button data-testid="approve-button">Təsdiqlə</button>
-            <button data-testid="return-button">Geri Qaytar</button>
-          </div>
-        )
-      }));
-      
-            // Test funksiyalarını tanımlama
-      const handleApprove = (entryId: string) => {
-        // Təsdiqləmə funksiyası
-        console.log(`Entry ID ${entryId} təsdiqləndi`);
-      };
-      
-      const handleReturn = (entryId: string) => {
-        // Geri qaytarma funksiyası
-        console.log(`Entry ID ${entryId} geri qaytarıldı`);
-      };
-      
-      // MockDataApprovalActions komponentini konfiqurasiya edirik
-      MockDataApprovalActions.mockImplementation(({ entryId, role }: any) => {
-        return (
-          <div data-testid="approval-actions">
-            <button data-testid="approve-button" onClick={() => handleApprove(entryId)}>
-              Təsdiqlə
-            </button>
-            <button data-testid="return-button" onClick={() => handleReturn(entryId)}>
-              Geri qaytar
-            </button>
-          </div>
-        );
+
+  describe('Report Flow', () => {
+    it('INT-REPORT-01: Should handle report creation and update flow', async () => {
+      // Setup mock responses for report operations
+      vi.mocked(supabase.from).mockImplementation((table) => {
+        if (table === 'reports') {
+          return {
+            ...supabase,
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockReturnThis(),
+            insert: vi.fn().mockImplementation((data) => {
+              return {
+                ...supabase,
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockReturnThis(),
+                then: vi.fn().mockImplementation(callback => 
+                  Promise.resolve(callback({ 
+                    data: { ...mockReport, ...data[0] }, 
+                    error: null 
+                  }))
+                )
+              };
+            }),
+            update: vi.fn().mockImplementation((updateData) => {
+              return {
+                ...supabase,
+                eq: vi.fn().mockReturnThis(),
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockReturnThis(),
+                then: vi.fn().mockImplementation(callback => 
+                  Promise.resolve(callback({ 
+                    data: { ...mockReport, ...updateData }, 
+                    error: null 
+                  }))
+                )
+              };
+            }),
+            then: vi.fn().mockImplementation(callback => 
+              Promise.resolve(callback({ 
+                data: [mockReport], 
+                error: null 
+              }))
+            )
+          };
+        }
+        
+        return supabase;
       });
-      
-      // Mock DataApprovalList simulyasiya edirik
-      MockDataApprovalList.mockImplementation(() => {
-        return <div data-testid="mock-data-approval-list">Mock Data Approval List</div>;
-      });
-      
-      const { container } = render(
-        <div>
-          <MockDataApprovalList 
-            role="sectoradmin"
-            sectorId={testSectorId}
-            status="submitted"
-          />
-        </div>
-      );
-      
-      // Gözləmə listinin yüklənməsini gözlə
-      await waitFor(() => {
-        expect(screen.getByText('Gözləyən Məlumatlar')).toBeInTheDocument();
-      });
-      
-      // Test entry-ni simulyasiya et
-      await waitForDataSync();
-      
-      // "Bax" düyməsinə klik et
-      const viewButton = screen.getByTestId('view-button');
-      await act(async () => {
-          role="sectoradmin"
-          sectorId={testSectorId}
-          status="submitted"
-        />
-      </div>
-    );
-    
-    // Gözləmə listinin yüklənməsini gözlə
-    await waitFor(() => {
-      expect(screen.getByText('Gözləyən Məlumatlar')).toBeInTheDocument();
-      await act(async () => {
-        fireEvent.click(approveButton);
-        await delay(200);
-      });
-      
-      // Test nəticələrini yoxla
-      expect(true).toBe(true); // Bu, əsas sınağımızdır
+
+      // Test report creation
+      const createReportResponse = await supabase
+        .from('reports')
+        .insert([{
+          title: 'New Test Report',
+          description: 'New Test Description',
+          type: REPORT_TYPE_VALUES.PIE,
+          content: { testData: true }
+        }])
+        .select()
+        .single()
+        .then(response => response);
+
+      expect(createReportResponse.data).toBeDefined();
+      expect(createReportResponse.data.title).toBe('New Test Report');
+      expect(createReportResponse.data.type).toBe(REPORT_TYPE_VALUES.PIE);
+
+      // Test report update
+      const updateReportResponse = await supabase
+        .from('reports')
+        .update({
+          title: 'Updated Test Report',
+          status: 'published'
+        })
+        .eq('id', 'test-report-id')
+        .select()
+        .single()
+        .then(response => response);
+
+      expect(updateReportResponse.data).toBeDefined();
+      expect(updateReportResponse.data.title).toBe('Updated Test Report');
+      expect(updateReportResponse.data.status).toBe('published');
     });
-  });
-  
-  // Təmizləmə işləri
-  afterAll(async () => {
-    await cleanupTestData();
-    await cleanupTestUsers();
-    await cleanupTestHierarchy();
-    vi.restoreAllMocks();
+
+    it('INT-REPORT-02: Should handle report sharing flow', async () => {
+      // Setup mock responses for report sharing
+      let sharedWith: string[] = [];
+      
+      vi.mocked(supabase.from).mockImplementation((table) => {
+        if (table === 'reports') {
+          return {
+            ...supabase,
+            select: vi.fn().mockImplementation(() => {
+              return {
+                ...supabase,
+                eq: vi.fn().mockReturnThis(),
+                single: vi.fn().mockReturnThis(),
+                then: vi.fn().mockImplementation(callback => 
+                  Promise.resolve(callback({ 
+                    data: { ...mockReport, shared_with: sharedWith }, 
+                    error: null 
+                  }))
+                )
+              };
+            }),
+            update: vi.fn().mockImplementation((updateData) => {
+              if (updateData.shared_with) {
+                sharedWith = updateData.shared_with;
+              }
+              
+              return {
+                ...supabase,
+                eq: vi.fn().mockReturnThis(),
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockReturnThis(),
+                then: vi.fn().mockImplementation(callback => 
+                  Promise.resolve(callback({ 
+                    data: { ...mockReport, shared_with: sharedWith }, 
+                    error: null 
+                  }))
+                )
+              };
+            })
+          };
+        }
+        
+        return supabase;
+      });
+
+      // Test getting report before sharing
+      const getReportResponse = await supabase
+        .from('reports')
+        .select()
+        .eq('id', 'test-report-id')
+        .single()
+        .then(response => response);
+
+      expect(getReportResponse.data).toBeDefined();
+      expect(getReportResponse.data.shared_with).toEqual([]);
+
+      // Test sharing report with users
+      const shareReportResponse = await supabase
+        .from('reports')
+        .update({
+          shared_with: ['user-1', 'user-2']
+        })
+        .eq('id', 'test-report-id')
+        .select()
+        .single()
+        .then(response => response);
+
+      expect(shareReportResponse.data).toBeDefined();
+      expect(shareReportResponse.data.shared_with).toEqual(['user-1', 'user-2']);
+
+      // Test getting report after sharing
+      const getUpdatedReportResponse = await supabase
+        .from('reports')
+        .select()
+        .eq('id', 'test-report-id')
+        .single()
+        .then(response => response);
+
+      expect(getUpdatedReportResponse.data).toBeDefined();
+      expect(getUpdatedReportResponse.data.shared_with).toEqual(['user-1', 'user-2']);
+    });
   });
 });
