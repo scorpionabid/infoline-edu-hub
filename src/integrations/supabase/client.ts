@@ -59,30 +59,52 @@ type ServiceResponse<T> = {
 /**
  * Supabase Edge Functions handler
  */
-export async function callEdgeFunction<T = any>(
+export const callEdgeFunction = async <T = any>(
   functionName: string,
   options?: {
     body?: object;
     headers?: Record<string, string>;
   }
-): Promise<ServiceResponse<T>> {
+): Promise<ServiceResponse<T>> => {
   try {
-    const { data, error } = await supabase.functions.invoke<T>(functionName, {
-      body: options?.body,
-      headers: options?.headers,
-    });
-
-    if (error) {
-      console.error(`Error invoking ${functionName}:`, error);
-      return { data: null, error: error as Error };
+    // Check if we have a valid session
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('Session error:', sessionError);
+      return { data: null, error: sessionError };
     }
-
+    
+    // Get the JWT token
+    const token = sessionData?.session?.access_token;
+    
+    // Supabase URL - hərə kodlanmış
+    const url = `https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/${functionName}`;
+    
+    // Birbaşa fetch API istifadə edərək CORS xətalarını aradan qaldırırıq
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : '',
+        // 'x-application-name' CORS xətasına səbəb olduğu üçün silindi
+        ...options?.headers,
+      },
+      body: options?.body ? JSON.stringify(options.body) : undefined,
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Edge function error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
     return { data, error: null };
-  } catch (error: any) {
-    console.error(`Exception in ${functionName}:`, error);
-    return { data: null, error };
+  } catch (error) {
+    console.error(`Error calling edge function ${functionName}:`, error);
+    return { data: null, error: error as Error };
   }
-}
+};
 
 /**
  * Profile services
