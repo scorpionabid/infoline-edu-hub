@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDataEntry } from '@/hooks/dataEntry/useDataEntry';
 import { useLanguage } from '@/context/LanguageContext';
@@ -54,7 +53,7 @@ export const Alert = React.forwardRef<
 });
 Alert.displayName = "Alert";
 
-// Məlumat daxiletmə komponenti
+// Məlumat daxiletmə komponenti - Enhanced with null safety
 const DataEntryForm = ({ 
   schoolId, 
   categories, 
@@ -71,7 +70,7 @@ const DataEntryForm = ({
   const safeCategories = Array.isArray(categories) ? categories : [];
   
   const {
-    formData,
+    formData = {}, // Default to empty object to prevent undefined access
     isAutoSaving,
     isSubmitting,
     handleInputChange,
@@ -88,6 +87,15 @@ const DataEntryForm = ({
     schoolId,
     initialCategoryId
   });
+
+  // Safe formData access function
+  const getFormValue = useCallback((columnId: string): string => {
+    if (!formData || typeof formData !== 'object') {
+      return '';
+    }
+    const value = formData[columnId];
+    return value !== undefined && value !== null ? String(value) : '';
+  }, [formData]);
   
   // Kateqoriya dəyişdikdə URL-i yeniləyirik
   useEffect(() => {
@@ -233,13 +241,13 @@ const DataEntryForm = ({
                           {column.is_required && <span className="text-red-500 ml-1">*</span>}
                         </label>
                         
-                        {/* Sütun tipinə görə input */}
+                        {/* Sütun tipinə görə input - Using safe formData access */}
                         {column.type === 'text' && (
                           <input
                             type="text"
                             id={column.id}
                             name={column.id}
-                            value={formData[column.id] || ''}
+                            value={getFormValue(column.id)}
                             onChange={handleInputChange}
                             placeholder={column.placeholder || ''}
                             className="w-full p-2 border rounded-md"
@@ -251,7 +259,7 @@ const DataEntryForm = ({
                           <textarea
                             id={column.id}
                             name={column.id}
-                            value={formData[column.id] || ''}
+                            value={getFormValue(column.id)}
                             onChange={handleInputChange}
                             placeholder={column.placeholder || ''}
                             className="w-full p-2 border rounded-md min-h-[100px]"
@@ -264,7 +272,7 @@ const DataEntryForm = ({
                             type="number"
                             id={column.id}
                             name={column.id}
-                            value={formData[column.id] || ''}
+                            value={getFormValue(column.id)}
                             onChange={handleInputChange}
                             placeholder={column.placeholder || ''}
                             className="w-full p-2 border rounded-md"
@@ -276,7 +284,7 @@ const DataEntryForm = ({
                           <select
                             id={column.id}
                             name={column.id}
-                            value={formData[column.id] || ''}
+                            value={getFormValue(column.id)}
                             onChange={handleInputChange}
                             className="w-full p-2 border rounded-md"
                             required={column.is_required}
@@ -306,7 +314,7 @@ const DataEntryForm = ({
                             type="date"
                             id={column.id}
                             name={column.id}
-                            value={formData[column.id] || ''}
+                            value={getFormValue(column.id)}
                             onChange={handleInputChange}
                             className="w-full p-2 border rounded-md"
                             required={column.is_required}
@@ -319,7 +327,7 @@ const DataEntryForm = ({
                               type="checkbox"
                               id={column.id}
                               name={column.id}
-                              checked={formData[column.id] === 'true'}
+                              checked={getFormValue(column.id) === 'true'}
                               onChange={(e) => handleInputChange({
                                 target: {
                                   name: column.id,

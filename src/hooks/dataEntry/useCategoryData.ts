@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -26,10 +25,25 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
+  // UUID validation helper
+  const isValidUUID = (uuid: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  };
+
   // Fetch all categories for a school
   const fetchSchoolCategories = async (schoolId: string) => {
     if (!schoolId) {
       console.log('No schoolId provided to fetchSchoolCategories');
+      setCategories([]);
+      setIsLoading(false);
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidUUID(schoolId)) {
+      console.error('Invalid schoolId format:', schoolId);
+      setError('Invalid school ID format');
       setCategories([]);
       setIsLoading(false);
       setLoading(false);
@@ -59,9 +73,9 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
         return;
       }
       
-      // Safety check for valid category data
+      // Safety check for valid category data with UUID validation
       const validCategoryIds = categoriesData
-        .filter(cat => cat && cat.id)
+        .filter(cat => cat && cat.id && isValidUUID(cat.id))
         .map(cat => cat.id);
         
       if (validCategoryIds.length === 0) {
@@ -84,10 +98,10 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
       
       // Process categories with their columns
       const categoriesWithColumns: CategoryData[] = categoriesData
-        .filter(category => category && category.id) // Filter out invalid categories
+        .filter(category => category && category.id && isValidUUID(category.id)) // Filter out invalid categories
         .map(category => {
           const categoryColumns = columnsData
-            ? columnsData.filter(col => col && col.category_id === category.id)
+            ? columnsData.filter(col => col && col.category_id === category.id && isValidUUID(col.id || ''))
             : [];
           
           // Process column data
@@ -148,6 +162,15 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
 
   const fetchCategoryData = async () => {
     if (!categoryId) {
+      setCategory(null);
+      setIsLoading(false);
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidUUID(categoryId)) {
+      console.error('Invalid categoryId format:', categoryId);
+      setError('Invalid category ID format');
       setCategory(null);
       setIsLoading(false);
       setLoading(false);
