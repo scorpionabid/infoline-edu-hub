@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
-import { useValidation } from './validation';
-import { CategoryWithColumns } from '@/types/column';
+import { useValidation } from '../validation';
+import { CategoryWithColumns } from '@/types/category';
 import { DataEntry, DataEntryStatus, DataEntrySaveStatus } from '@/types/dataEntry';
 
 // Props for useDataEntry hook

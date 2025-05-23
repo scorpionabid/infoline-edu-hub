@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { FormFields } from '@/components/dataEntry/FormFields';
+import FormFields from '@/components/dataEntry/FormFields';
 
 // Alert komponenti
 export const Alert = React.forwardRef<
@@ -307,7 +307,7 @@ const DataEntryPage: React.FC = () => {
   const queryParams = new URLSearchParams(location.search);
   const initialCategoryId = queryParams.get('categoryId');
   const statusFilter = queryParams.get('status');
-  const { isSchoolAdmin, isSectorAdmin, canViewSectorCategories, sectorId } = usePermissions();
+  const { isSchoolAdmin, isSectorAdmin, sectorId } = usePermissions();
   
   // Tab seçimi
   const [activeTab, setActiveTab] = useState(isSchoolAdmin ? 'school' : 'sector');

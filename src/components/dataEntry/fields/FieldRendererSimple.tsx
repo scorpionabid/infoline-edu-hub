@@ -116,7 +116,7 @@ const FieldRendererSimple: React.FC<FieldRendererSimpleProps> = ({
             <SelectValue placeholder={placeholder || 'Select an option'} />
           </SelectTrigger>
           <SelectContent>
-            {options.map((option, index) => {
+            {Array.isArray(options) ? options.map((option, index) => {
               const optionValue = typeof option === 'object' ? option.value : option;
               const optionLabel = typeof option === 'object' ? option.label : option;
               
@@ -125,7 +125,7 @@ const FieldRendererSimple: React.FC<FieldRendererSimpleProps> = ({
                   {optionLabel}
                 </SelectItem>
               );
-            })}
+            }) : null}
           </SelectContent>
         </Select>
       );
