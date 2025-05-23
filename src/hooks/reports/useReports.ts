@@ -1,72 +1,69 @@
 
-import { useState } from 'react';
-import { Report, REPORT_TYPE_VALUES, ReportTypeValues } from '@/types/report';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Report, ReportTypeValues } from '@/types/report';
+import { toast } from 'sonner';
 
-export function useReports() {
-  const [reports, setReports] = useState<Report[]>([
-    {
-      id: '1',
-      title: 'School Performance Overview',
-      description: 'Overview of school performance metrics',
-      type: REPORT_TYPE_VALUES.BAR,
-      content: {},
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      created_by: 'System',
-      status: 'draft'
-    },
-    {
-      id: '2',
-      title: 'Completion Rates by Region',
-      description: 'Comparison of completion rates across regions',
-      type: REPORT_TYPE_VALUES.PIE,
-      content: {},
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      created_by: 'System',
-      status: 'draft'
-    },
-    {
-      id: '3',
-      title: 'Quarterly Comparison',
-      description: 'Comparison of metrics across quarters',
-      type: REPORT_TYPE_VALUES.LINE,
-      content: {},
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      created_by: 'System',
-      status: 'draft'
-    }
-  ]);
-  
-  // Create a new report
-  const createReport = async (reportData: { title: string; description: string; type: ReportTypeValues }) => {
+export const useReports = () => {
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchReports = async () => {
     try {
-      const newReport: Report = {
-        id: Math.random().toString(36).substring(2, 9),
-        title: reportData.title,
-        description: reportData.description,
-        type: reportData.type,
-        content: {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        created_by: 'current-user',
-        status: 'draft'
-      };
-      
-      // In a real app, this would make an API call
-      setReports(prev => [...prev, newReport]);
-      return newReport;
-    } catch (error) {
-      console.error('Error creating report:', error);
-      throw error;
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setReports(data || []);
+    } catch (err: any) {
+      setError(err.message);
+      toast.error('Failed to fetch reports');
+    } finally {
+      setLoading(false);
     }
   };
-  
-  return { 
-    reports,
-    createReport
-  };
-}
 
-export default useReports;
+  const createReport = async (reportData: {
+    title: string;
+    description: string;
+    type: ReportTypeValues;
+  }) => {
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .insert({
+          title: reportData.title,
+          description: reportData.description,
+          type: reportData.type,
+          status: 'draft'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setReports(prev => [data, ...prev]);
+      toast.success('Report created successfully');
+      return data;
+    } catch (err: any) {
+      toast.error('Failed to create report');
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  return {
+    reports,
+    loading,
+    error,
+    createReport,
+    refetch: fetchReports
+  };
+};

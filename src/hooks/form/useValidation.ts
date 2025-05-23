@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { validateRequired, validateMinMax, ValidationResult } from './validationUtils';
@@ -279,5 +280,6 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
     hasWarnings: warnings.length > 0,
     isValid: errors.length === 0
   };
+};
 
 export default useValidation;

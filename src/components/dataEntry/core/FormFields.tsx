@@ -3,7 +3,6 @@ import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessa
 import { Column } from '@/types/column';
 import { useFormContext } from 'react-hook-form';
 import FieldRendererSimple from '../fields/FieldRendererSimple';
-import { safeArrayFind } from '@/utils/dataIndexing';
 
 // Define proper types
 interface FormFieldsProps {

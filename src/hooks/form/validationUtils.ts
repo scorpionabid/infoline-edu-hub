@@ -1,50 +1,22 @@
-// This is just a helper file to define types and utilities for validation
-import { ColumnValidationError } from '@/types/dataEntry';
 
-export type ValidationResult = {
+export interface ValidationResult {
   valid: boolean;
-  errors: ColumnValidationError[];
-};
+  message?: string;
+}
 
-export const validateRequired = (value: any, columnId: string, columnName: string): ColumnValidationError | null => {
-  if (value === undefined || value === null || value === '') {
-    return {
-      columnId,
-      columnName,
-      message: `${columnName} is required`,
-      severity: 'error'
-    };
+export const validateRequired = (value: any): ValidationResult => {
+  if (value === null || value === undefined || value === '') {
+    return { valid: false, message: 'This field is required' };
   }
-  return null;
+  return { valid: true };
 };
 
-export const validateMinMax = (
-  value: number,
-  min: number | undefined,
-  max: number | undefined,
-  columnId: string,
-  columnName: string
-): ColumnValidationError | null => {
+export const validateMinMax = (value: number, min?: number, max?: number): ValidationResult => {
   if (min !== undefined && value < min) {
-    return {
-      columnId,
-      columnName,
-      message: `${columnName} must be at least ${min}`,
-      severity: 'error'
-    };
+    return { valid: false, message: `Value must be at least ${min}` };
   }
   if (max !== undefined && value > max) {
-    return {
-      columnId,
-      columnName,
-      message: `${columnName} must be at most ${max}`,
-      severity: 'error'
-    };
+    return { valid: false, message: `Value must be at most ${max}` };
   }
-  return null;
-};
-
-export default {
-  validateRequired,
-  validateMinMax
+  return { valid: true };
 };
