@@ -144,57 +144,79 @@ const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, 
 };
 
 // Main component to render a collection of form fields
-const FormFields: React.FC<FormFieldsProps> = ({ columns, disabled = false }) => {
-  const form = useFormContext();
-
-  if (!form) {
-    // Standalone mode - no form context
+const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false, readOnly = false }) => {
+  // Xətaları önləmək üçün defensive programming
+  const safeColumns = Array.isArray(columns) ? columns : [];
+  const formContext = useFormContext();
+  
+  // Form konteksti olmadıqda statik render
+  if (!formContext) {
     return (
       <div className="space-y-6">
-        {columns.map((column) => (
-          <FormFieldRenderer
-            key={column.id}
-            column={column}
-            value=""
-            onChange={() => {}}
-            onValueChange={() => {}}
-            isDisabled={disabled}
-          />
-        ))}
+        {safeColumns.map((column) => {
+          // Sütun mövcud deyilsə, keç
+          if (!column || !column.id) return null;
+          
+          return (
+            <FormFieldRenderer
+              key={column.id}
+              column={column}
+              value=""
+              onChange={() => {}}
+              onValueChange={() => {}}
+              isDisabled={disabled || readOnly}
+            />
+          );
+        })}
       </div>
     );
   }
 
-  // With form context
+  // Form konteksti ilə render
+  const { control } = formContext;
+  
   return (
     <div className="space-y-6">
-      {columns.map((column) => (
-        <FormField
-          key={column.id}
-          name={column.id}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {column.name}
-                {column.is_required && <span className="text-red-500 ml-1">*</span>}
-              </FormLabel>
-              <FormControl>
-                <FormFieldRenderer
-                  column={column}
-                  value={field.value}
-                  onChange={field.onChange}
-                  onValueChange={field.onChange}
-                  isDisabled={disabled}
-                />
-              </FormControl>
-              {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      ))}
+      {safeColumns.map((column) => {
+        // Sütun və ya sütun ID null-dırsa, keç
+        if (!column || !column.id) {
+          console.warn('Invalid column or column.id is undefined', column);
+          return null;
+        }
+        
+        return (
+          <FormField
+            key={column.id}
+            control={control}
+            name={column.id}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  {column.name || 'Unnamed Field'}
+                  {column.is_required && <span className="text-destructive ml-1">*</span>}
+                </FormLabel>
+                <FormControl>
+                  <FormFieldRenderer
+                    column={column}
+                    value={field?.value}
+                    onChange={field?.onChange}
+                    onValueChange={field?.onChange}
+                    isDisabled={disabled || readOnly}
+                  />
+                </FormControl>
+                {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
+                {column.description && !column.help_text && (
+                  <FormDescription>{column.description}</FormDescription>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        );
+      })}
     </div>
   );
 };
 
+// Default export əlavə edirik ki, import problemləri həll olunsun
 export default FormFields;

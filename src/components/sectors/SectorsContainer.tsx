@@ -218,17 +218,50 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: external
     }
   };
 
+  // Yalnız komponent qurulduğunda və asılı olan məlumatlar dəyişdikdə verilənləri yükləyirik
+  // fetchSectors və fetchRegions asılılıq massivindən çıxarılıb
+  // bu, sonsuz dövrəni aradan qaldırır
   useEffect(() => {
-    if (user && userRole === 'regionadmin' && regionId) {
-      fetchSectors(regionId);
-    } else {
-      fetchSectors();
-    }
-  }, [fetchSectors, regionId, user, userRole]);
-
+    // Yükləmə bayraqı - qaçılmaz yükləmələrin qarşısını almaq üçün
+    let isActive = true;
+    
+    const loadData = async () => {
+      try {
+        // Regionları çağırırıq
+        fetchRegions();
+        
+        // Sektorları çağırırıq
+        if (user && userRole === 'regionadmin' && regionId && isActive) {
+          fetchSectors(regionId);
+        } else if (isActive) {
+          fetchSectors();
+        }
+      } catch (error) {
+        console.error('Data loading error:', error);
+      }
+    };
+    
+    loadData();
+    
+    // Təmizləmə funksiya - komponent sönürsə
+    return () => {
+      isActive = false;
+    };
+  }, [regionId, user, userRole]);
+  
+  // Filter dəyişdikdə sektorları təkrar yükləyirik
+  // Lakin, bunu 300ms gecikmə ilə edirik ki, hər dəyişiklikdə yükləmə olmamasın
   useEffect(() => {
-    fetchRegions();
-  }, [fetchRegions]);
+    const timeoutId = setTimeout(() => {
+      if (user && userRole === 'regionadmin' && regionId) {
+        fetchSectors(regionId);
+      } else {
+        fetchSectors();
+      }
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+  }, [regionFilter, statusFilter]);
 
   return (
     <div className="space-y-6">

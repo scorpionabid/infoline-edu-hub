@@ -42,6 +42,9 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   // State for active tab
   const [activeTab, setActiveTab] = useState('general');
   
+  // State to track data loading
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  
   // Setup form
   const methods = useForm({
     defaultValues: {},
