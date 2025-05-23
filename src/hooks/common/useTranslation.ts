@@ -1,10 +1,3 @@
-import { useContext } from 'react';
-import { useLanguageSafe } from '@/context/LanguageContext';
 
-export const useTranslation = () => {
-  return useLanguageSafe(); 
-};
-
-export { useLanguageSafe as useLanguage };
-
-export default useTranslation;
+// Re-export from LanguageContext for convenience
+export { useLanguage as useTranslation } from '@/context/LanguageContext';
