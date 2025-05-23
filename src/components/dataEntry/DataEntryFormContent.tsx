@@ -21,20 +21,54 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
   const [activeTab, setActiveTab] = useState('general');
   
   // Safely handle category and columns
-  if (!category || !category.id) {
+  if (!category) {
+    console.warn('DataEntryFormContent received undefined category');
     return (
       <div className="p-4 text-center text-muted-foreground">
         {t('categoryNotFound')}
       </div>
     );
   }
+
+  if (!category.id) {
+    console.warn('DataEntryFormContent received category without ID:', category);
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        {t('invalidCategory')}
+      </div>
+    );
+  }
   
   // Ensure columns is an array and filter out any invalid entries
-  const safeColumns = Array.isArray(category.columns) 
-    ? category.columns.filter(column => column && column.id)
-    : [];
+  const safeColumns = React.useMemo(() => {
+    try {
+      if (!Array.isArray(category.columns)) {
+        console.warn('Category columns is not an array:', category.columns);
+        return [];
+      }
+      
+      // Filter out invalid columns with detailed warnings
+      return category.columns.filter(column => {
+        if (!column) {
+          console.warn(`Found null/undefined column in category ${category.id}`);
+          return false;
+        }
+        
+        if (!column.id) {
+          console.warn(`Found column without ID in category ${category.id}:`, column);
+          return false;
+        }
+        
+        return true;
+      });
+    } catch (err) {
+      console.error(`Error processing columns for category ${category.id}:`, err);
+      return [];
+    }
+  }, [category]);
   
   if (safeColumns.length === 0) {
+    console.log(`No valid columns found for category ${category.id}`);
     return (
       <div className="p-4 text-center text-muted-foreground">
         {t('noColumnsAvailable')}
@@ -42,35 +76,72 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
     );
   }
   
-  // Group columns by section
+  // Group columns by section with extensive safety checks
   const sections = React.useMemo(() => {
-    // Start with an empty general section
-    const sectionMap: Record<string, Column[]> = { general: [] };
-    
-    // Add each column to its section, defaulting to 'general'
-    safeColumns.forEach(column => {
-      if (!column) return; // Skip invalid columns
+    try {
+      // Start with an empty general section
+      const sectionMap: Record<string, Column[]> = { general: [] };
       
-      const section = column.section 
-        ? String(column.section).trim() || 'general'
-        : 'general';
+      // Add each column to its section, defaulting to 'general'
+      safeColumns.forEach(column => {
+        if (!column || !column.id) {
+          console.warn('Skipping invalid column in section mapping');
+          return; // Skip invalid columns
+        }
+        
+        // Safely determine section with fallback to general
+        const sectionKey = 'general'; // Default to general initially
+        
+        let section = column.section;
+        if (section !== undefined && section !== null) {
+          // Convert to string safely and trim
+          section = String(section).trim();
+          // Only use non-empty strings
+          if (section) {
+            // Create section if it doesn't exist
+            if (!sectionMap[section]) {
+              sectionMap[section] = [];
+            }
+            
+            // Add column to the section
+            sectionMap[section].push(column);
+            return; // Skip adding to general section
+          }
+        }
+        
+        // Add to general section if no valid section is specified
+        sectionMap[sectionKey].push(column);
+      });
       
-      if (!sectionMap[section]) {
-        sectionMap[section] = [];
-      }
-      
-      sectionMap[section].push(column);
-    });
-    
-    return sectionMap;
-  }, [safeColumns]);
+      // Clean up any empty sections
+      return Object.fromEntries(
+        Object.entries(sectionMap)
+          .filter(([_, columns]) => columns.length > 0)
+      );
+    } catch (err) {
+      console.error(`Error grouping columns by section for category ${category.id}:`, err);
+      // Fall back to all columns in general section if error
+      return { general: safeColumns };
+    }
+  }, [safeColumns, category.id]);
   
-  // Check if we have multiple valid sections
+  // Safely get section entries and check for valid sections
   const sectionEntries = Object.entries(sections);
   const hasSections = sectionEntries.length > 1;
 
-  // Handle tab change
+  // Handle tab change with safety check
   const handleTabChange = (value: string) => {
+    if (!value) {
+      console.warn('Attempted to set tab to empty value');
+      return;
+    }
+    
+    // Verify the tab exists before setting
+    if (!sections[value]) {
+      console.warn(`Attempted to set tab to non-existent section: ${value}`);
+      return;
+    }
+    
     setActiveTab(value);
   };
 

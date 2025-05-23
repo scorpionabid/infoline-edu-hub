@@ -22,38 +22,85 @@ const RadioField: React.FC<RadioFieldProps> = ({
     return null;
   }
 
-  // Safe parsing of options - handle any potential format to prevent errors
-  let options: Array<{id: string, value: string, label?: string}> = [];
-  
-  try {
-    if (Array.isArray(column.options)) {
-      options = column.options
-        .filter(option => option && (option.id || option.value)) // Filter out invalid options
-        .map((option, index) => {
-          // Ensure each option has an id and value
-          const id = option.id || `option-${index}-${Date.now()}`;
-          const value = option.value || id;
-          return {
-            id,
-            value,
-            label: option.label || value
-          };
-        });
+  // Safe parsing of options with extensive error handling
+  const options = React.useMemo(() => {
+    try {
+      if (!column.options) {
+        return [];
+      }
+      
+      if (Array.isArray(column.options)) {
+        return column.options
+          .filter(option => option !== null && option !== undefined) // Filter out invalid options
+          .map((option, index) => {
+            // Handle different option formats
+            if (typeof option === 'string') {
+              return {
+                id: `option-${index}-${Date.now()}`,
+                value: option,
+                label: option
+              };
+            } 
+            
+            if (typeof option === 'object' && option !== null) {
+              // Ensure all required properties exist
+              const id = option.id || `option-${index}-${Date.now()}`;
+              const value = String(option.value || id);
+              return {
+                id,
+                value,
+                label: option.label || value
+              };
+            }
+            
+            // Fallback for unexpected option types
+            return {
+              id: `option-${index}-${Date.now()}`,
+              value: String(option || ''),
+              label: String(option || '')
+            };
+          });
+      }
+      
+      // Handle string-formatted options (parse JSON)
+      if (typeof column.options === 'string') {
+        try {
+          const parsedOptions = JSON.parse(column.options);
+          if (Array.isArray(parsedOptions)) {
+            return parsedOptions.map((option, index) => ({
+              id: option.id || `option-${index}-${Date.now()}`,
+              value: String(option.value || `option-${index}`),
+              label: option.label || String(option.value || `Option ${index}`)
+            }));
+          }
+        } catch (parseErr) {
+          console.warn(`Failed to parse options string for column ${column.id}:`, parseErr);
+        }
+      }
+      
+      return [];
+    } catch (err) {
+      console.warn(`Failed to process options for column ${column.id}:`, err);
+      return [];
     }
-  } catch (err) {
-    console.warn(`Failed to parse options for column ${column.id}:`, err);
-  }
+  }, [column.id, column.options]);
+
+  // Handle undefined or empty value
+  const safeValue = value !== undefined && value !== null ? String(value) : '';
 
   return (
     <RadioGroup 
-      value={value || ''} 
+      value={safeValue} 
       onValueChange={onValueChange}
       disabled={isDisabled}
     >
       {options.length > 0 ? (
         options.map((option) => (
           <div key={option.id} className="flex items-center space-x-2">
-            <RadioGroupItem value={option.value} id={`${column.id}-${option.id}`} />
+            <RadioGroupItem 
+              value={option.value || ''} 
+              id={`${column.id}-${option.id}`} 
+            />
             <label className="text-sm" htmlFor={`${column.id}-${option.id}`}>
               {option.label || option.value || ''}
             </label>

@@ -32,41 +32,62 @@ const DateField: React.FC<DateFieldProps> = ({
     return null;
   }
 
-  // Safely parse the date value
-  let currentDate;
-  let validDate;
-  
-  try {
-    if (value) {
-      currentDate = new Date(value);
-      // Check if date is valid
-      validDate = currentDate instanceof Date && !isNaN(currentDate.getTime()) ? currentDate : undefined;
-    } else {
-      validDate = undefined;
+  // Safely parse the date value with extensive error handling
+  const validDate = React.useMemo(() => {
+    try {
+      if (!value) return undefined;
+      
+      // Handle different date formats
+      let date: Date | undefined;
+      
+      if (typeof value === 'string') {
+        date = new Date(value);
+      } else if (value instanceof Date) {
+        date = value;
+      } else {
+        console.warn(`Unexpected date value type for column ${column.id}:`, typeof value);
+        return undefined;
+      }
+      
+      // Verify the date is valid
+      if (date instanceof Date && !isNaN(date.getTime())) {
+        return date;
+      }
+      
+      console.warn(`Invalid date value for column ${column.id}:`, value);
+      return undefined;
+    } catch (err) {
+      console.error(`Failed to parse date value for column ${column.id}:`, err);
+      return undefined;
     }
-  } catch (err) {
-    console.warn(`Failed to parse date value for column ${column.id}:`, err);
-    validDate = undefined;
-  }
+  }, [column.id, value]);
 
   // Handle date selection with safety checks
   const handleSelect = (date: Date | undefined) => {
-    if (!date) return;
+    if (!date) {
+      console.log(`No date selected for column ${column.id}`);
+      return;
+    }
     
-    const isoString = date.toISOString();
-    
-    // Use onValueChange if available, otherwise fallback to onChange
-    if (typeof onValueChange === 'function') {
-      onValueChange(isoString);
-    } else if (typeof onChange === 'function') {
-      const fakeEvent = {
-        target: {
-          name: column.id,
-          value: isoString
-        }
-      } as React.ChangeEvent<HTMLInputElement>;
+    try {
+      const isoString = date.toISOString();
+      console.log(`Date selected for column ${column.id}:`, isoString);
       
-      onChange(fakeEvent);
+      // Use onValueChange if available, otherwise fallback to onChange
+      if (typeof onValueChange === 'function') {
+        onValueChange(isoString);
+      } else if (typeof onChange === 'function') {
+        const fakeEvent = {
+          target: {
+            name: column.id,
+            value: isoString
+          }
+        } as React.ChangeEvent<HTMLInputElement>;
+        
+        onChange(fakeEvent);
+      }
+    } catch (err) {
+      console.error(`Error handling date selection for column ${column.id}:`, err);
     }
   };
 

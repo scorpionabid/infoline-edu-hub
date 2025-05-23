@@ -23,28 +23,50 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
   onValueChange,
   isDisabled = false
 }) => {
-  // Safely guard against undefined or invalid column
-  if (!column || !column.id) {
-    console.warn('FieldRenderer received invalid column', column);
+  // Safely guard against undefined or invalid column with detailed logging
+  if (!column) {
+    console.warn('FieldRenderer received undefined column');
+    return null;
+  }
+  
+  if (!column.id) {
+    console.warn('FieldRenderer received column without ID', column);
     return null;
   }
 
-  // Create a safe onValueChange function to prevent null exceptions
-  const safeOnValueChange = (newValue: any) => {
-    if (typeof onValueChange === 'function') {
-      onValueChange(newValue);
+  // Create safe handlers with error boundaries
+  const safeOnValueChange = React.useCallback((newValue: any) => {
+    try {
+      if (typeof onValueChange === 'function') {
+        onValueChange(newValue);
+      }
+    } catch (err) {
+      console.error(`Error in onValueChange for column ${column.id}:`, err);
     }
-  };
+  }, [onValueChange, column.id]);
 
-  // Create a safe onChange function to prevent null exceptions
-  const safeOnChange = (e: React.ChangeEvent<any>) => {
-    if (typeof onChange === 'function') {
-      onChange(e);
+  const safeOnChange = React.useCallback((e: React.ChangeEvent<any>) => {
+    try {
+      if (typeof onChange === 'function') {
+        onChange(e);
+      }
+    } catch (err) {
+      console.error(`Error in onChange for column ${column.id}:`, err);
     }
-  };
+  }, [onChange, column.id]);
 
-  const columnType = ((column.type as string) || 'text') as ColumnType;
+  // Ensure column type is valid with fallback
+  const columnType = React.useMemo(() => {
+    try {
+      if (!column.type) return 'text';
+      return (column.type as string) as ColumnType;
+    } catch (err) {
+      console.warn(`Invalid column type for ${column.id}, defaulting to text`, err);
+      return 'text';
+    }
+  }, [column.id, column.type]);
   
+  // Implement safe rendering with error boundaries for each field type
   switch (columnType) {
     case 'text':
     case 'email':
@@ -55,7 +77,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <InputField 
           column={column} 
-          value={value} 
+          value={value !== undefined ? value : ''} 
           onChange={safeOnChange} 
           isDisabled={isDisabled} 
           type={columnType === 'number' ? 'number' : columnType === 'password' ? 'password' : 'text'} 
@@ -66,7 +88,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <TextAreaField 
           column={column} 
-          value={value} 
+          value={value !== undefined ? value : ''} 
           onChange={safeOnChange} 
           isDisabled={isDisabled} 
         />
@@ -76,7 +98,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <SelectField 
           column={column} 
-          value={value} 
+          value={value !== undefined ? value : ''} 
           onValueChange={safeOnValueChange} 
           isDisabled={isDisabled} 
         />
@@ -86,7 +108,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <CheckboxField 
           column={column} 
-          value={value} 
+          value={value !== undefined ? value : false} 
           onValueChange={safeOnValueChange} 
           isDisabled={isDisabled} 
         />
@@ -96,7 +118,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <RadioField 
           column={column} 
-          value={value} 
+          value={value !== undefined ? value : ''} 
           onValueChange={safeOnValueChange} 
           isDisabled={isDisabled} 
         />
@@ -106,7 +128,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <DateField
           column={column}
-          value={value}
+          value={value !== undefined ? value : ''}
           onChange={safeOnChange}
           onValueChange={safeOnValueChange}
           isDisabled={isDisabled}
@@ -114,11 +136,11 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       );
       
     default:
-      console.warn(`Unknown column type: ${columnType}, defaulting to text input`);
+      console.warn(`Unknown column type: ${columnType} for column ${column.id}, defaulting to text input`);
       return (
         <InputField 
           column={column} 
-          value={value} 
+          value={value !== undefined ? value : ''} 
           onChange={safeOnChange} 
           isDisabled={isDisabled} 
         />

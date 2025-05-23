@@ -28,45 +28,92 @@ const SelectField: React.FC<SelectFieldProps> = ({
     return null;
   }
 
-  // Safe parsing of options - handle any potential format to prevent errors
-  let options: Array<{id?: string, value: string, label?: string}> = [];
-  
-  try {
-    if (Array.isArray(column.options)) {
-      options = column.options
-        .filter(option => option !== null && option !== undefined) // Filter out null/undefined options
-        .map((option, index) => {
-          if (typeof option === 'string') {
-            return { 
-              id: `option-${index}-${Date.now()}`,
-              value: option,
-              label: option
-            };
-          } else if (typeof option === 'object' && option !== null) {
-            const id = option.id || `option-${index}-${Date.now()}`;
-            const value = option.value?.toString() || id;
-            return {
-              id,
-              value,
-              label: option.label || value
-            };
-          } else {
-            // Fallback for unexpected option types
-            return {
-              id: `option-${index}-${Date.now()}`,
-              value: String(option || ''),
-              label: String(option || '')
-            };
+  // Safe parsing of options with robust error handling
+  const options = React.useMemo(() => {
+    try {
+      if (!column.options) {
+        return [];
+      }
+      
+      // Handle array of options
+      if (Array.isArray(column.options)) {
+        return column.options
+          .filter(option => option !== null && option !== undefined) // Filter out null/undefined options
+          .map((option, index) => {
+            const uniqueKey = `option-${index}-${Date.now()}`;
+            
+            // Handle string options
+            if (typeof option === 'string') {
+              return { 
+                id: uniqueKey,
+                value: option,
+                label: option
+              };
+            } 
+            
+            // Handle object options
+            else if (typeof option === 'object' && option !== null) {
+              const id = option.id || uniqueKey;
+              const value = String(option.value !== undefined ? option.value : id);
+              return {
+                id,
+                value,
+                label: option.label || value
+              };
+            } 
+            
+            // Fallback for unexpected types
+            else {
+              return {
+                id: uniqueKey,
+                value: String(option || ''),
+                label: String(option || '')
+              };
+            }
+          });
+      }
+      
+      // Handle string-formatted options (JSON)
+      if (typeof column.options === 'string') {
+        try {
+          const parsedOptions = JSON.parse(column.options);
+          if (Array.isArray(parsedOptions)) {
+            return parsedOptions.map((option, index) => {
+              const uniqueKey = `option-${index}-${Date.now()}`;
+              if (typeof option === 'string') {
+                return { id: uniqueKey, value: option, label: option };
+              } else {
+                return { 
+                  id: option.id || uniqueKey,
+                  value: String(option.value || uniqueKey), 
+                  label: option.label || String(option.value || `Option ${index}`)
+                };
+              }
+            });
           }
-        });
+          return [];
+        } catch (parseErr) {
+          console.warn(`Failed to parse options string for column ${column.id}:`, parseErr);
+          return [];
+        }
+      }
+      
+      return [];
+    } catch (err) {
+      console.warn(`Failed to process options for column ${column.id}:`, err);
+      return [];
     }
-  } catch (err) {
-    console.warn(`Failed to parse options for column ${column.id}:`, err);
-  }
+  }, [column.id, column.options]);
+
+  // Ensure value is always a valid string
+  const safeValue = React.useMemo(() => {
+    if (value === undefined || value === null) return '';
+    return String(value);
+  }, [value]);
 
   return (
     <Select 
-      value={value || ''} 
+      value={safeValue} 
       onValueChange={onValueChange} 
       disabled={isDisabled}
     >

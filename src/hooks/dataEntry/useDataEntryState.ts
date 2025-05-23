@@ -27,6 +27,8 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
     setError(null);
 
     try {
+      console.log(`Fetching data entries for category ${categoryId} and school ${schoolId}`);
+      
       const { data, error } = await supabase
         .from('data_entries')
         .select('*')
@@ -34,28 +36,47 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
         .eq('school_id', schoolId)
         .is('deleted_at', null);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching data entries:', error);
+        throw error;
+      }
 
       // Defensive handling for data
-      if (!data || !Array.isArray(data)) {
-        console.log('No data entries found or invalid response format');
+      if (!data) {
+        console.log('No data received from data_entries query');
+        setDataEntries([]);
+        return;
+      }
+      
+      if (!Array.isArray(data)) {
+        console.error('Expected array from data_entries query but got:', typeof data);
         setDataEntries([]);
         return;
       }
 
       // Filter out any potentially invalid entries and clean the data
       const safeEntries = data
-        .filter(entry => entry && entry.column_id) // Ensure required fields exist
+        .filter(entry => {
+          if (!entry) {
+            console.warn('Null or undefined entry found in data_entries result');
+            return false;
+          }
+          if (!entry.column_id) {
+            console.warn('Entry without column_id found:', entry);
+            return false;
+          }
+          return true;
+        })
         .map(entry => ({
           ...entry,
-          value: entry.value || '', // Ensure value is never null/undefined
+          value: entry.value !== undefined && entry.value !== null ? entry.value : '', // Ensure value is never null/undefined
           status: entry.status || 'draft' // Ensure status is never null/undefined
         }));
       
       setDataEntries(safeEntries);
       
       // Log the result for debugging
-      console.log(`Fetched ${safeEntries.length} data entries for category ${categoryId} and school ${schoolId}`);
+      console.log(`Successfully fetched ${safeEntries.length} data entries for category ${categoryId} and school ${schoolId}`);
     } catch (err: any) {
       console.error('Error fetching data entries:', err);
       setError(err.message || 'Failed to fetch data entries');
@@ -78,6 +99,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
   const saveDataEntries = async (entries: any[]): Promise<boolean> => {
     // Early return if IDs are missing
     if (!categoryId || !schoolId) {
+      console.error('Missing required IDs for saving entries:', { categoryId, schoolId });
       toast.error('Missing category or school ID');
       return false;
     }
@@ -89,10 +111,26 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       return false;
     }
 
+    console.log('About to save data entries:', { 
+      categoryId, 
+      schoolId, 
+      entriesCount: entries.length
+    });
+    
     setIsLoading(true);
     try {
       // Filter out entries that don't have valid column_id
-      const validEntries = entries.filter(entry => entry && entry.column_id);
+      const validEntries = entries.filter(entry => {
+        if (!entry) {
+          console.warn('Null or undefined entry found in entries to save');
+          return false;
+        }
+        if (!entry.column_id) {
+          console.warn('Entry without column_id found:', entry);
+          return false;
+        }
+        return true;
+      });
       
       if (validEntries.length === 0) {
         console.warn('No valid entries to save');
@@ -102,23 +140,30 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       
       // Process entries to ensure they have proper category and school IDs
       const processedEntries = validEntries.map(entry => {
-        // Remove any undefined or null values that could cause issues
+        // Create a clean entry with required fields and ensuring no undefined values
         const cleanEntry = { 
-          ...entry,
+          column_id: entry.column_id,
           category_id: categoryId,
           school_id: schoolId,
           value: entry.value ?? '',  // Ensure value is never null or undefined
           updated_at: new Date().toISOString()
         };
         
-        // Filter out any undefined/null values that could cause DB issues
-        return Object.fromEntries(
-          Object.entries(cleanEntry).filter(([_, value]) => value !== undefined && value !== null)
-        );
+        // Add id if present
+        if (entry.id) {
+          cleanEntry['id'] = entry.id;
+        }
+        
+        // Add status if present
+        if (entry.status) {
+          cleanEntry['status'] = entry.status;
+        }
+        
+        return cleanEntry;
       });
 
       // Log the entries we're about to save
-      console.log('Saving data entries:', processedEntries);
+      console.log('Saving processed data entries:', processedEntries);
 
       // Upsert entries (insert or update)
       const { error } = await supabase
@@ -128,7 +173,10 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
           ignoreDuplicates: false,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error saving data entries:', error);
+        throw error;
+      }
 
       await fetchDataEntries(); // Refresh data
       toast.success('Data saved successfully');
