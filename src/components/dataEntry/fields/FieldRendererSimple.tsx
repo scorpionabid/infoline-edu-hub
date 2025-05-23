@@ -1,21 +1,20 @@
-import React from 'react';
-import { ColumnType, ColumnOption } from '@/types/column';
-import InputFieldAdapter from './adapters/InputFieldAdapter';
-import TextAreaAdapter from './adapters/TextAreaAdapter';
-import SelectAdapter from './adapters/SelectAdapter';
-import CheckboxAdapter from './adapters/CheckboxAdapter';
-import RadioAdapter from './adapters/RadioAdapter';
-import DateAdapter from './adapters/DateAdapter';
 
-// Sadələşdirilmiş FieldRenderer prop interfeysi, FormFields komponentinə uyğun
-export interface FieldRendererSimpleProps {
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ColumnType } from '@/types/column';
+
+interface FieldRendererSimpleProps {
   type: ColumnType;
-  value: any;
-  onChange: (...event: any[]) => void;
+  value: string;
+  onChange: (value: string) => void;
   disabled?: boolean;
-  readOnly?: boolean;
   required?: boolean;
-  options?: ColumnOption[];
+  readOnly?: boolean;
+  options?: any[];
+  placeholder?: string;
 }
 
 const FieldRendererSimple: React.FC<FieldRendererSimpleProps> = ({
@@ -23,109 +22,150 @@ const FieldRendererSimple: React.FC<FieldRendererSimpleProps> = ({
   value,
   onChange,
   disabled = false,
-  readOnly = false,
   required = false,
-  options = []
+  readOnly = false,
+  options = [],
+  placeholder = ''
 }) => {
-  // TypeScript-nin düzgün işləməsi üçün type dəyərinin ColumnType-a uyğunluğunu yoxlayırıq
-  const safeType = (type && typeof type === 'string') 
-    ? (type as ColumnType) 
-    : 'text'; // Əgər tip yoxdursa və ya string deyilsə, default olaraq 'text' istifadə edirik
-  
-  // Type-a uyğun sahə komponentini render edirik
-  switch (safeType) {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    onChange(e.target.value);
+  };
+
+  const handleSelectChange = (newValue: string) => {
+    onChange(newValue);
+  };
+
+  const handleCheckboxChange = (checked: boolean) => {
+    onChange(checked ? 'true' : 'false');
+  };
+
+  switch (type) {
+    case 'text':
+      return (
+        <Input
+          type="text"
+          value={value}
+          onChange={handleInputChange}
+          disabled={disabled}
+          readOnly={readOnly}
+          required={required}
+          placeholder={placeholder}
+        />
+      );
+
     case 'textarea':
       return (
-        <TextAreaAdapter 
-          value={value || ''} 
-          onChange={onChange}
+        <Textarea
+          value={value}
+          onChange={handleInputChange}
           disabled={disabled}
           readOnly={readOnly}
           required={required}
+          placeholder={placeholder}
+          rows={4}
         />
       );
-    
-    case 'select':
+
+    case 'number':
       return (
-        <SelectAdapter 
-          value={value || ''} 
-          onChange={onChange}
-          options={options || []}
+        <Input
+          type="number"
+          value={value}
+          onChange={handleInputChange}
           disabled={disabled}
           readOnly={readOnly}
           required={required}
+          placeholder={placeholder}
         />
       );
-    
-    case 'checkbox':
+
+    case 'email':
       return (
-        <CheckboxAdapter 
-          value={value === 'true' || value === true}
-          onChange={onChange}
+        <Input
+          type="email"
+          value={value}
+          onChange={handleInputChange}
           disabled={disabled}
           readOnly={readOnly}
           required={required}
+          placeholder={placeholder}
         />
       );
-    
-    case 'radio':
-      return (
-        <RadioAdapter 
-          value={value || ''} 
-          onChange={onChange}
-          options={options || []}
-          disabled={disabled}
-          readOnly={readOnly}
-          required={required}
-        />
-      );
-    
+
     case 'date':
       return (
-        <DateAdapter 
-          value={value || ''} 
-          onChange={onChange}
+        <Input
+          type="date"
+          value={value}
+          onChange={handleInputChange}
           disabled={disabled}
           readOnly={readOnly}
           required={required}
-          dateType="date"
         />
       );
 
-    case 'time':
+    case 'select':
       return (
-        <DateAdapter 
-          value={value || ''} 
-          onChange={onChange}
+        <Select
+          value={value}
+          onValueChange={handleSelectChange}
+          disabled={disabled}
+          required={required}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={placeholder || 'Select an option'} />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option, index) => {
+              const optionValue = typeof option === 'object' ? option.value : option;
+              const optionLabel = typeof option === 'object' ? option.label : option;
+              
+              return (
+                <SelectItem key={`${index}-${optionValue}`} value={String(optionValue)}>
+                  {optionLabel}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      );
+
+    case 'checkbox':
+      return (
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            checked={value === 'true'}
+            onCheckedChange={handleCheckboxChange}
+            disabled={disabled}
+            required={required}
+          />
+          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            {placeholder}
+          </label>
+        </div>
+      );
+
+    case 'file':
+      return (
+        <Input
+          type="file"
+          onChange={handleInputChange}
           disabled={disabled}
           readOnly={readOnly}
           required={required}
-          dateType="time"
         />
       );
 
-    case 'datetime':
-      return (
-        <DateAdapter 
-          value={value || ''} 
-          onChange={onChange}
-          disabled={disabled}
-          readOnly={readOnly}
-          required={required}
-          dateType="datetime-local"
-        />
-      );
-    
-    // Default: input field (text, number, email, etc.)
     default:
       return (
-        <InputFieldAdapter 
-          type={safeType} 
-          value={value || ''} 
-          onChange={onChange}
+        <Input
+          type="text"
+          value={value}
+          onChange={handleInputChange}
           disabled={disabled}
           readOnly={readOnly}
           required={required}
+          placeholder={placeholder}
         />
       );
   }
