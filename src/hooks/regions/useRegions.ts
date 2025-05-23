@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface Region {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import { Region as SupabaseRegion } from '@/types/supabase';
+
+// Reexport the Region type from supabase types
+export type Region = SupabaseRegion;
 
 interface UseRegionsResult {
   regions: Region[];

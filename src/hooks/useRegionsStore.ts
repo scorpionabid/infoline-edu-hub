@@ -1,14 +1,7 @@
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { Region } from '@/hooks/regions/useRegions';
-
-export interface EnhancedRegion extends Region {
-  adminName?: string;
-  adminEmail?: string;
-  sectorCount?: number;
-  schoolCount?: number;
-}
+import { Region, EnhancedRegion } from '@/types/region';
 
 interface RegionsState {
   regions: EnhancedRegion[];
@@ -91,20 +84,20 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
       const enhancedRegions: EnhancedRegion[] = await Promise.all(
         (regionsData || []).map(async (region) => {
           // Sektorların sayını əldə etmək
-          const { count: sectorCount } = await supabase
+          const { count: sector_count } = await supabase
             .from('sectors')
             .select('id', { count: 'exact' })
             .eq('region_id', region.id);
             
           // Məktəblərin sayını əldə etmək
-          const { count: schoolCount } = await supabase
+          const { count: school_count } = await supabase
             .from('schools')
             .select('id', { count: 'exact' })
             .eq('region_id', region.id);
             
           // Admin məlumatlarını əldə etmək
-          let adminName;
-          let adminEmail;
+          let admin_name;
+          let admin_email;
           
           if (region.admin_id) {
             const { data: adminData } = await supabase
@@ -114,17 +107,17 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
               .single();
               
             if (adminData) {
-              adminName = adminData.full_name;
-              adminEmail = adminData.email;
+              admin_name = adminData.full_name;
+              admin_email = adminData.email;
             }
           }
           
           return {
             ...region,
-            adminName,
-            adminEmail,
-            sectorCount: sectorCount || 0,
-            schoolCount: schoolCount || 0
+            admin_name,
+            admin_email,
+            sector_count: sector_count || 0,
+            school_count: school_count || 0
           };
         })
       );
@@ -156,7 +149,7 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
   },
   
   // Region yaratmaq
-  handleAddRegion: async (regionData: Partial<Region>, t) => {
+  handleAddRegion: async (regionData: Omit<Partial<Region>, 'name'> & { name: string }, t) => {
     try {
       set({ loading: true });
       
@@ -171,10 +164,10 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
       // Yeni yaradılan regionu əlavə məlumatları ilə birlikdə geri qaytarırıq
       const enhancedRegion: EnhancedRegion = {
         ...data,
-        adminName: undefined,
-        adminEmail: undefined,
-        sectorCount: 0,
-        schoolCount: 0
+        admin_name: undefined,
+        admin_email: undefined,
+        sector_count: 0,
+        school_count: 0
       };
       
       // State'i yeniləyirik
@@ -219,10 +212,10 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
       const existingRegion = get().regions.find(r => r.id === id);
       const enhancedRegion: EnhancedRegion = {
         ...data,
-        adminName: existingRegion?.adminName,
-        adminEmail: existingRegion?.adminEmail,
-        sectorCount: existingRegion?.sectorCount || 0,
-        schoolCount: existingRegion?.schoolCount || 0
+        admin_name: existingRegion?.admin_name,
+        admin_email: existingRegion?.admin_email,
+        sector_count: existingRegion?.sector_count || 0,
+        school_count: existingRegion?.school_count || 0
       };
       
       // State'i yeniləyirik
@@ -292,8 +285,8 @@ function applyFilters(regions: EnhancedRegion[], searchTerm = '', selectedStatus
     const matchesSearch = searchTerm
       ? region.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         region.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        region.adminEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        region.adminName?.toLowerCase().includes(searchTerm.toLowerCase())
+        region.admin_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        region.admin_name?.toLowerCase().includes(searchTerm.toLowerCase())
       : true;
 
     const matchesStatus = selectedStatus
