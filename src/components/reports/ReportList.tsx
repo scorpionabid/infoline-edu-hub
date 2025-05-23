@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -101,14 +100,14 @@ const ReportList: React.FC = () => {
       </Card>
 
       <CreateReportDialog
-        open={isCreateDialogOpen}
+        isOpen={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onCreate={handleCreateReport}
       />
 
       {selectedReport && (
         <ReportPreviewDialog
-          open={isPreviewDialogOpen}
+          isOpen={isPreviewDialogOpen}
           onOpenChange={setIsPreviewDialogOpen}
           report={selectedReport}
         />

@@ -9,7 +9,8 @@ export const useToast = () => {
       } else {
         toast(message);
       }
-    }
+    },
+    toasts: []
   };
 };
 

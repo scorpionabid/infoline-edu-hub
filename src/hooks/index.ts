@@ -21,9 +21,13 @@ export { useAssignExistingUserAsSchoolAdmin } from './useAssignExistingUserAsSch
 export { useAvailableUsers } from './useAvailableUsers';
 export { useDebounceCallback } from './useDebounceCallback';
 
+// Common hooks
+export { useTranslation } from './common/useTranslation';
+export { useToast } from './common/useToast';
+export { useRouter } from './common/useRouter';
+
 // Legacy compatibility exports
 export { useCategories } from './categories';
 export { useDataEntry } from './dataEntry';
 export { useAuth } from './auth';
 export { useValidation } from './form';
-export { useTranslation } from './common/useTranslation';

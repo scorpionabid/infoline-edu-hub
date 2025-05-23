@@ -1,24 +1,16 @@
-import { useRouter as useNextRouter } from 'next/router';
-import { useCallback } from 'react';
+
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 
 export const useRouter = () => {
-  const router = useNextRouter();
-
-  const navigate = useCallback((path: string) => {
-    router.push(path);
-  }, [router]);
-
-  const navigateWithQuery = useCallback((path: string, query: Record<string, string>) => {
-    router.push({
-      pathname: path,
-      query
-    });
-  }, [router]);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams();
 
   return {
-    ...router,
-    navigate,
-    navigateWithQuery
+    push: navigate,
+    pathname: location.pathname,
+    query: params,
+    back: () => window.history.back()
   };
 };
 

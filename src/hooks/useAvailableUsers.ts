@@ -29,6 +29,8 @@ export const useAvailableUsers = () => {
     }
   };
 
+  const fetchAvailableUsers = fetchUsers;
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -37,6 +39,7 @@ export const useAvailableUsers = () => {
     users,
     loading,
     error,
-    fetchUsers
+    fetchUsers,
+    fetchAvailableUsers
   };
 };

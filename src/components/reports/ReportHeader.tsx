@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
@@ -6,7 +5,14 @@ import { Plus, Filter } from 'lucide-react';
 import CreateReportDialog from './CreateReportDialog';
 import { ReportHeaderProps } from '@/types/report';
 
-export const ReportHeader: React.FC<ReportHeaderProps> = ({ onCreateReport, title, description }) => {
+export const ReportHeader: React.FC<ReportHeaderProps> = ({ 
+  report,
+  title, 
+  description, 
+  onCreateReport,
+  onEdit,
+  onDelete 
+}) => {
   const { t } = useLanguage();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
@@ -41,7 +47,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({ onCreateReport, titl
       </div>
 
       <CreateReportDialog
-        open={isCreateDialogOpen}
+        isOpen={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onCreate={handleCreate}
       />

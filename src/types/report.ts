@@ -27,6 +27,14 @@ export enum REPORT_TYPE_VALUES {
 
 export type ReportTypeValues = 'bar' | 'line' | 'pie' | 'table' | 'metrics' | 'custom';
 
+export const ReportStatus = {
+  DRAFT: 'draft',
+  PUBLISHED: 'published',
+  ARCHIVED: 'archived'
+} as const;
+
+export type ReportStatusType = typeof ReportStatus[keyof typeof ReportStatus];
+
 export interface ReportChartProps {
   type?: ReportTypeValues;
   data?: any[];
@@ -51,9 +59,12 @@ export interface ReportFilter {
 }
 
 export interface CreateReportDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: any) => void;
+  open?: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onOpenChange?: (open: boolean) => void;
+  onSubmit?: (data: any) => void;
+  onCreate?: (data: any) => void;
 }
 
 export interface ReportEmptyStateProps {
@@ -61,15 +72,18 @@ export interface ReportEmptyStateProps {
 }
 
 export interface ReportHeaderProps {
-  report: Report;
+  report?: Report;
+  title?: string;
+  description?: string;
   onEdit?: () => void;
   onDelete?: () => void;
+  onCreateReport?: () => void;
 }
 
 export interface ReportPreviewDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open?: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onOpenChange?: (open: boolean) => void;
   report: Report;
 }
-
-export type ReportStatus = 'draft' | 'published' | 'archived';

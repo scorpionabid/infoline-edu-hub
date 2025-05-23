@@ -11,15 +11,18 @@ import { format } from 'date-fns';
 export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({ 
   report,
   open,
+  isOpen,
   onOpenChange,
   onClose
 }) => {
   const { t } = useLanguage();
   
+  const dialogOpen = open !== undefined ? open : isOpen;
+  
   const handleClose = () => {
     if (onClose) {
       onClose();
-    } else {
+    } else if (onOpenChange) {
       onOpenChange(false);
     }
   };
@@ -58,11 +61,11 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
 
   const getStatusBadge = (status?: string) => {
     switch (status) {
-      case ReportStatus.DRAFT:
+      case 'draft':
         return <Badge variant="outline" className="bg-gray-100">{t('draft')}</Badge>;
-      case ReportStatus.PUBLISHED:
+      case 'published':
         return <Badge variant="outline" className="bg-green-100 text-green-800">{t('published')}</Badge>;
-      case ReportStatus.ARCHIVED:
+      case 'archived':
         return <Badge variant="outline" className="bg-amber-100 text-amber-800">{t('archived')}</Badge>;
       default:
         return null;
@@ -70,7 +73,7 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={dialogOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="flex flex-row justify-between items-start">
           <div>

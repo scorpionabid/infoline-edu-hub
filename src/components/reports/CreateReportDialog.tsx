@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -23,10 +22,11 @@ import { CreateReportDialogProps, REPORT_TYPE_VALUES, ReportTypeValues } from '@
 
 const CreateReportDialog: React.FC<CreateReportDialogProps> = ({ 
   open, 
+  isOpen,
   onOpenChange,
   onCreate,
-  onClose,
-  isOpen 
+  onSubmit,
+  onClose
 }) => {
   const { t } = useLanguage();
   const [title, setTitle] = useState('');
@@ -34,13 +34,18 @@ const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
   const [type, setType] = useState<ReportTypeValues>(REPORT_TYPE_VALUES.BAR);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const dialogOpen = open !== undefined ? open : isOpen;
+
   const handleSubmit = async () => {
     if (!title.trim()) return;
     
     setIsSubmitting(true);
     try {
+      const reportData = { title, description, type };
       if (onCreate) {
-        await onCreate({ title, description, type });
+        await onCreate(reportData);
+      } else if (onSubmit) {
+        await onSubmit(reportData);
       }
       resetForm();
       handleClose();
@@ -65,8 +70,6 @@ const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
     setDescription('');
     setType(REPORT_TYPE_VALUES.BAR);
   };
-
-  const dialogOpen = open !== undefined ? open : isOpen;
 
   return (
     <Dialog open={dialogOpen} onOpenChange={(newOpen) => !newOpen && handleClose()}>
