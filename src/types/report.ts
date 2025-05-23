@@ -20,10 +20,12 @@ export enum REPORT_TYPE_VALUES {
   BAR = 'bar',
   LINE = 'line',
   PIE = 'pie',
-  TABLE = 'table'
+  TABLE = 'table',
+  METRICS = 'metrics',
+  CUSTOM = 'custom'
 }
 
-export type ReportTypeValues = 'bar' | 'line' | 'pie' | 'table';
+export type ReportTypeValues = 'bar' | 'line' | 'pie' | 'table' | 'metrics' | 'custom';
 
 export interface ReportChartProps {
   type?: ReportTypeValues;
@@ -47,3 +49,27 @@ export interface ReportFilter {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
+
+export interface CreateReportDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: any) => void;
+}
+
+export interface ReportEmptyStateProps {
+  onCreateReport: () => void;
+}
+
+export interface ReportHeaderProps {
+  report: Report;
+  onEdit?: () => void;
+  onDelete?: () => void;
+}
+
+export interface ReportPreviewDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  report: Report;
+}
+
+export type ReportStatus = 'draft' | 'published' | 'archived';

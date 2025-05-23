@@ -248,7 +248,7 @@ vi.mock('@/hooks/useUserList', () => ({
 vi.mock('@/hooks/user/useUserOperations', () => ({
   useUserOperations: () => ({
     handleUpdateUserConfirm: vi.fn().mockImplementation((userData) => Promise.resolve(userData)),
-    handleDeleteUserConfirm: vi.fn().mockResolvedValue(true),
+    handleDeleteUserConfirm: vi.fn().mockImplementation((userId) => Promise.resolve(true)),
     handleEditUser: vi.fn(),
     handleDeleteUser: vi.fn(),
     handleViewDetails: vi.fn(),
@@ -375,12 +375,12 @@ vi.mock('@/hooks/user/useUserDialogs', () => ({
     setIsEditDialogOpen: vi.fn(),
     setIsDeleteDialogOpen: vi.fn(),
     setIsDetailsDialogOpen: vi.fn(),
-    setSelectedUser: vi.fn(), // Add this missing function
+    setSelectedUser: vi.fn(),
     handleEditUser: vi.fn(),
     handleDeleteUser: vi.fn(),
     handleViewUserDetails: vi.fn(),
     handleEditUserConfirm: vi.fn().mockResolvedValue(true),
-    handleDeleteUserConfirm: vi.fn().mockResolvedValue(true)
+    handleDeleteUserConfirm: vi.fn().mockImplementation((userId) => Promise.resolve(true))
   })
 }));
 
@@ -617,7 +617,7 @@ describe('İstifadəçi İdarəetməsi Testləri', () => {
       // İstifadəçi siyahısı komponentini simulyasiya et
       const handleDelete = vi.fn().mockImplementation((userId) => {
         setSelectedUser(mockUsers.find(u => u.id === userId) || null);
-        return handleDeleteUserConfirm();
+        return handleDeleteUserConfirm(userId);
       });
       
       render(
@@ -645,7 +645,7 @@ describe('İstifadəçi İdarəetməsi Testləri', () => {
       await waitFor(() => {
         expect(handleDelete).toHaveBeenCalledWith(mockUsers[0].id);
         expect(setSelectedUser).toHaveBeenCalled();
-        expect(handleDeleteUserConfirm).toHaveBeenCalled();
+        expect(handleDeleteUserConfirm).toHaveBeenCalledWith(mockUsers[0].id);
       });
     });
   });

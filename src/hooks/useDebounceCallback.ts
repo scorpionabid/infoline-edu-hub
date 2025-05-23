@@ -17,5 +17,3 @@ export const useDebounceCallback = <T extends (...args: any[]) => any>(
     }, delay);
   }, [callback, delay]) as T;
 };
-
-export default useDebounceCallback;

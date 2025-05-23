@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLanguage } from '@/hooks/useTranslation';
+import { useTranslation } from '@/hooks/common/useTranslation';
 import { 
   Dialog, 
   DialogContent, 
@@ -65,7 +64,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   onSubmit,
   isSubmitting = false,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
