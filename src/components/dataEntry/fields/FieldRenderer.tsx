@@ -88,6 +88,17 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
         />
       );
       
+    case 'date':
+      return (
+        <DateField
+          column={column}
+          value={value}
+          onChange={onChange}
+          onValueChange={onValueChange}
+          isDisabled={isDisabled}
+        />
+      );
+      
     default:
       return (
         <InputField 

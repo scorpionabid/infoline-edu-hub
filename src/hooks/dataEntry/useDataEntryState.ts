@@ -56,7 +56,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       fetchDataEntries();
     } else {
       setDataEntries([]);
-      setError('Missing category or school ID');
+      setError(categoryId ? 'Missing school ID' : 'Missing category ID');
     }
   }, [fetchDataEntries, categoryId, schoolId]);
 
