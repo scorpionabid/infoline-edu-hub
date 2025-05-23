@@ -14,7 +14,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Use a ref to store the lookup object
+  // Use a ref to store the lookup object and ensure it's always initialized 
   const entriesLookupRef = useRef<Record<string, DataEntry>>({});
   
   const fetchDataEntries = useCallback(async () => {
@@ -23,6 +23,8 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       console.log('Missing required IDs for data entry fetch:', { categoryId, schoolId });
       setDataEntries([]);
       setError('Missing category or school ID');
+      // Even on error, ensure entriesLookup is a valid empty object
+      entriesLookupRef.current = {};
       return;
     }
 
@@ -48,12 +50,14 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       if (!data) {
         console.log('No data received from data_entries query');
         setDataEntries([]);
+        entriesLookupRef.current = {}; // Reset to empty object
         return;
       }
       
       if (!Array.isArray(data)) {
         console.error('Expected array from data_entries query but got:', typeof data);
         setDataEntries([]);
+        entriesLookupRef.current = {}; // Reset to empty object
         return;
       }
 
@@ -79,9 +83,14 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       // Create a lookup object to prevent "Cannot read properties of undefined" errors
       // This is crucial for handling UUIDs like '3d5f36f0-f689-40d6-a0e5-0d6420623551'
       const entriesLookup: Record<string, DataEntry> = {};
+      
+      // Always initialize with a valid object
       safeEntries.forEach(entry => {
-        if (entry && entry.column_id) {
+        if (entry && typeof entry === 'object' && entry.column_id && typeof entry.column_id === 'string') {
           entriesLookup[entry.column_id] = entry;
+        } else {
+          // Log the invalid entry for debugging
+          console.warn('Invalid entry skipped in lookup creation:', entry);
         }
       });
       
@@ -93,10 +102,14 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       
       // Log the result for debugging
       console.log(`Successfully fetched ${safeEntries.length} data entries for category ${categoryId} and school ${schoolId}`);
+      console.log('entriesLookup created with keys:', Object.keys(entriesLookup).length);
     } catch (err: any) {
       console.error('Error fetching data entries:', err);
       setError(err.message || 'Failed to fetch data entries');
       toast.error(`Failed to fetch data entries: ${err.message || 'Unknown error'}`);
+      
+      // Ensure entriesLookup is always a valid object even on error
+      entriesLookupRef.current = {};
     } finally {
       setIsLoading(false);
     }
@@ -107,8 +120,10 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
     if (categoryId && schoolId) {
       fetchDataEntries();
     } else {
+      // Reset to safe defaults if IDs are missing
       setDataEntries([]);
       setError(categoryId ? 'Missing school ID' : 'Missing category ID');
+      entriesLookupRef.current = {}; // Reset to empty object
     }
   }, [fetchDataEntries, categoryId, schoolId]);
 
@@ -194,6 +209,18 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
         throw error;
       }
 
+      // Update the local entriesLookup with newly saved entries
+      const updatedLookup = { ...entriesLookupRef.current };
+      
+      // Update our lookup with the new entries (preventing stale data)
+      processedEntries.forEach(entry => {
+        if (entry && entry.column_id) {
+          updatedLookup[entry.column_id] = entry as DataEntry;
+        }
+      });
+      
+      entriesLookupRef.current = updatedLookup;
+      
       await fetchDataEntries(); // Refresh data
       toast.success('Data saved successfully');
       return true;
@@ -208,7 +235,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
 
   return {
     dataEntries,
-    entriesLookup: entriesLookupRef.current, // Return the lookup object
+    entriesLookup: entriesLookupRef.current, // Return the lookup object, guaranteed to be initialized
     isLoading,
     error,
     saveDataEntries,

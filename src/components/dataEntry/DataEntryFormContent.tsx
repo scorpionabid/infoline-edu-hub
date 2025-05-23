@@ -59,6 +59,12 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
           return false;
         }
         
+        // Validate UUID format
+        if (typeof column.id !== 'string' || column.id.trim() === '') {
+          console.warn(`Found column with invalid ID format in category ${category.id}:`, column.id);
+          return false;
+        }
+        
         return true;
       });
     } catch (err) {
@@ -89,8 +95,11 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
           return; // Skip invalid columns
         }
         
+        // Generate a stable ID to use as key
+        const stableKey = `${column.id}`;
+        
         // Safely determine section with fallback to general
-        const sectionKey = 'general'; // Default to general initially
+        let sectionKey = 'general'; // Default to general initially
         
         let section = column.section;
         if (section !== undefined && section !== null) {
@@ -98,19 +107,20 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
           section = String(section).trim();
           // Only use non-empty strings
           if (section) {
+            sectionKey = section;
             // Create section if it doesn't exist
-            if (!sectionMap[section]) {
-              sectionMap[section] = [];
+            if (!sectionMap[sectionKey]) {
+              sectionMap[sectionKey] = [];
             }
-            
-            // Add column to the section
-            sectionMap[section].push(column);
-            return; // Skip adding to general section
           }
         }
-        
-        // Add to general section if no valid section is specified
-        sectionMap[sectionKey].push(column);
+            
+        // Add column to the appropriate section
+        sectionMap[sectionKey].push({
+          ...column,
+          // Ensure ID is preserved correctly
+          id: stableKey
+        });
       });
       
       // Clean up any empty sections
@@ -145,26 +155,36 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
     setActiveTab(value);
   };
 
+  // Generate stable IDs for sections and tabs
+  const categoryStableId = category.id || 'unknown-category';
+
   return (
     <>
       {hasSections ? (
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <Tabs value={activeTab} onValueChange={handleTabChange} defaultValue="general">
           <TabsList className="mb-4">
-            {sectionEntries.map(([section]) => (
-              <TabsTrigger key={`tab-${section}-${category.id}`} value={section}>
-                {section === 'general' ? t('generalInfo') : section}
-              </TabsTrigger>
-            ))}
+            {sectionEntries.map(([section]) => {
+              const stableTabId = `tab-${section}-${categoryStableId}`;
+              return (
+                <TabsTrigger key={stableTabId} value={section}>
+                  {section === 'general' ? t('generalInfo') : section}
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
           
-          {sectionEntries.map(([section, columns]) => (
-            <TabsContent key={`content-${section}-${category.id}`} value={section} className="space-y-4">
-              <FormFields 
-                columns={columns || []} 
-                readOnly={readOnly} 
-              />
-            </TabsContent>
-          ))}
+          {sectionEntries.map(([section, columns]) => {
+            // Generate a stable key for the tab content
+            const stableContentId = `content-${section}-${categoryStableId}`;
+            return (
+              <TabsContent key={stableContentId} value={section} className="space-y-4">
+                <FormFields 
+                  columns={columns || []} 
+                  readOnly={readOnly} 
+                />
+              </TabsContent>
+            );
+          })}
         </Tabs>
       ) : (
         <div className="space-y-4">

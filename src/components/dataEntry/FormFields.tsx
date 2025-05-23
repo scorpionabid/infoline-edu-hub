@@ -30,6 +30,11 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
           console.warn('FormFields found column without ID:', col);
           return false;
         }
+        // Additional UUID validation - checking if id is a valid string
+        if (typeof col.id !== 'string' || col.id.trim() === '') {
+          console.warn('FormFields found column with invalid ID format:', col.id);
+          return false;
+        }
         return true;
       });
     } catch (err) {
@@ -46,11 +51,19 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
       <div className="space-y-6">
         {safeColumns.length > 0 ? (
           safeColumns.map((column) => {
-            if (!column || !column.id) return null;
+            // Stronger columnId validation
+            const columnId = column?.id;
+            if (!columnId || typeof columnId !== 'string') {
+              console.warn('Invalid column ID in static render:', columnId);
+              return null;
+            }
+            
+            // Generate a stable key using column ID
+            const safeKey = `static-${columnId}`;
             
             return (
-              <div key={column.id} className="space-y-1">
-                <label className="text-sm font-medium" htmlFor={column.id}>
+              <div key={safeKey} className="space-y-1">
+                <label className="text-sm font-medium" htmlFor={columnId}>
                   {column.name || 'Unnamed Field'}
                   {column.is_required && <span className="text-red-500 ml-1">*</span>}
                 </label>
@@ -91,29 +104,36 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
           }
           
           // Strong validation for column.id to ensure it's a valid string
-          if (!column.id || typeof column.id !== 'string') {
+          const columnId = column.id;
+          if (!columnId || typeof columnId !== 'string') {
             console.warn('FormFields skipping column with invalid ID:', column);
             return null;
           }
           
+          // Fallback name for logging
+          const columnName = column.name || 'unnamed';
+          
           // For debugging - log important column info
           if (process.env.NODE_ENV === 'development') {
-            console.debug(`Rendering column: ${column.id}, name: ${column.name || 'unnamed'}`);
+            console.debug(`Rendering column: ${columnId}, name: ${columnName}`);
           }
+          
+          // Generate a stable key using UUID
+          const safeKey = `field-${columnId}`;
           
           try {
             return (
               <FormField
-                key={column.id}
+                key={safeKey}
                 control={control}
-                name={column.id}
+                name={columnId}
                 render={({ field }) => {
                 // Enhanced defensive check for field object
                 if (!field) {
-                  console.warn(`Field object is undefined for column ${column.id}`);
+                  console.warn(`Field object is undefined for column ${columnId}`);
                   return (
                     <FormItem>
-                      <FormLabel>{column.name || 'Unnamed Field'}</FormLabel>
+                      <FormLabel>{columnName}</FormLabel>
                       <FormControl>
                         <div className="text-red-500">Error loading field</div>
                       </FormControl>
@@ -131,14 +151,14 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
                   try {
                     field.onChange(value);
                   } catch (err) {
-                    console.error(`Error changing field ${column.id}:`, err);
+                    console.error(`Error changing field ${columnId}:`, err);
                   }
                 };
                 
                 return (
                   <FormItem>
                     <FormLabel>
-                      {column.name || 'Unnamed Field'}
+                      {columnName}
                       {column.is_required && <span className="text-destructive ml-1">*</span>}
                     </FormLabel>
                     <FormControl>
@@ -162,10 +182,10 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
           );
           } catch (error) {
             // Catch any render errors at the column level to prevent form crash
-            console.error(`Error rendering column ${column?.id || 'unknown'}:`, error);
+            console.error(`Error rendering column ${columnId || 'unknown'}:`, error);
             return (
-              <div key={column.id || Math.random().toString()} className="p-3 border border-red-200 rounded bg-red-50">
-                <p className="text-sm text-red-500">Error rendering field: {column.name || 'Unknown'}</p>
+              <div key={`error-${columnId || Math.random().toString()}`} className="p-3 border border-red-200 rounded bg-red-50">
+                <p className="text-sm text-red-500">Error rendering field: {columnName}</p>
               </div>
             );
           }

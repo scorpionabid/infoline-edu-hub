@@ -67,83 +67,98 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     schoolId: resolvedSchoolId
   });
   
-  // Log the actual data structure for debugging
+  // Add defensive console logs to help with debugging
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.debug('DataEntryForm received:', { 
-        rawDataEntries: Array.isArray(rawDataEntries) ? `Array[${rawDataEntries.length}]` : 'not an array', 
-        entriesLookup: entriesLookup ? `Object with ${Object.keys(entriesLookup).length} keys` : 'undefined',
-        categoryId: resolvedCategoryId,
-        schoolId: resolvedSchoolId
+      console.debug('DataEntryForm - IDs and state:', {
+        categoryId: resolvedCategoryId, 
+        schoolId: resolvedSchoolId,
+        entriesLookupAvailable: entriesLookup ? 'yes' : 'no', 
+        entriesLookupKeys: entriesLookup ? Object.keys(entriesLookup).length : 0,
+        rawDataEntriesCount: Array.isArray(rawDataEntries) ? rawDataEntries.length : 'not an array'
       });
     }
-  }, [rawDataEntries, entriesLookup, resolvedCategoryId, resolvedSchoolId]);
+  }, [resolvedCategoryId, resolvedSchoolId, entriesLookup, rawDataEntries]);
   
-  // Define a type for data entry objects - using the imported type
-  // If there's a type imported from '@/types/dataEntry', use that instead
-  
-  // We'll use the entriesLookup directly instead of formatting it ourselves
-  // This ensures we're using exactly what the hook provides, avoiding any mismatch
+  // Ensure we always have a valid entriesMap object, even if entriesLookup is undefined
   const entriesMap = React.useMemo(() => {
-    // If entriesLookup exists and is an object, use it
-    if (entriesLookup && typeof entriesLookup === 'object') {
-      return entriesLookup as Record<string, any>;
+    try {
+      // Ensure we always return a valid object
+      if (!entriesLookup || typeof entriesLookup !== 'object') {
+        console.warn('entriesLookup is invalid, creating empty map:', entriesLookup);
+        return {} as Record<string, any>;
+      }
+      
+      // Check if it's a proper Record object with keys
+      if (Object.keys(entriesLookup).length === 0) {
+        console.log('entriesLookup is empty, but valid object');
+      } else {
+        console.log(`entriesLookup has ${Object.keys(entriesLookup).length} entries`);
+      }
+      
+      return entriesLookup;
+    } catch (error) {
+      console.error('Error processing entriesLookup:', error);
+      return {} as Record<string, any>; // Return empty object on error
     }
-    
-    // If entriesLookup is not available, format the raw array as a fallback
-    if (Array.isArray(rawDataEntries)) {
-      return rawDataEntries.reduce((acc, entry) => {
-        if (entry && typeof entry === 'object' && entry.column_id && typeof entry.column_id === 'string') {
-          acc[entry.column_id] = entry;
-        }
-        return acc;
-      }, {} as Record<string, any>);
-    }
-    
-    // If all else fails, return empty object
-    return {} as Record<string, any>;
-  }, [entriesLookup, rawDataEntries]);
-  
-  // Helper function to safely get entry value
-  const safeGetEntryValue = (columnId: string): string => {
-    if (!columnId || typeof columnId !== 'string') return '';
-    if (!entriesMap || typeof entriesMap !== 'object') return '';
-    
-    const entry = entriesMap[columnId];
-    if (!entry) return '';
-    
-    return entry.value !== undefined && entry.value !== null ? String(entry.value) : '';
-  };
+  }, [entriesLookup]);
   
   // Set form values from data entries with enhanced safety
   useEffect(() => {
     try {
-      // We already have entriesMap as an object, just need to extract values
+      // First check if we have any entriesMap 
       if (!entriesMap || typeof entriesMap !== 'object') {
-        console.warn('entriesMap is not a valid object:', entriesMap);
+        console.warn('Cannot set form values: entriesMap is not a valid object');
         return;
       }
 
-      // Build values object from formatted entriesMap
-      const values = Object.entries(entriesMap).reduce((acc, [columnId, entry]) => {
-        if (entry && typeof entry === 'object') {
-          // Safe assignment with type checking
-          const entryValue = entry.value;
-          acc[columnId] = entryValue !== undefined && entryValue !== null ? String(entryValue) : '';
-        }
-        return acc;
-      }, {} as Record<string, string>);
+      // Now safely extract values with proper type checks
+      const formValues: Record<string, string> = {};
       
-      // Only reset the form if we have values
-      if (Object.keys(values).length > 0) {
-        reset(values);
-        if (process.env.NODE_ENV === 'development') {
-          console.debug('Form values set:', values);
+      Object.keys(entriesMap).forEach(columnId => {
+        try {
+          if (!columnId || typeof columnId !== 'string') {
+            console.warn('Invalid column ID in entriesMap:', columnId);
+            return;
+          }
+          
+          const entry = entriesMap[columnId];
+          
+          // Skip if entry is invalid
+          if (!entry || typeof entry !== 'object') {
+            console.warn(`Invalid entry for column ${columnId} in entriesMap:`, entry);
+            return;
+          }
+          
+          // Safe conversion to string for form value
+          const entryValue = entry.value;
+          const safeValue = entryValue !== undefined && entryValue !== null 
+            ? String(entryValue) 
+            : '';
+            
+          formValues[columnId] = safeValue;
+          
+        } catch (err) {
+          console.error(`Error processing entry for column ${columnId}:`, err);
         }
+      });
+      
+      // Only reset if we have values
+      if (Object.keys(formValues).length > 0) {
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('Setting form values:', formValues);
+        }
+        reset(formValues);
+      } else {
+        console.log('No form values to set - using empty object');
+        reset({});
       }
     } catch (error) {
-      console.error('Error setting form values from entries:', error);
+      console.error('Error setting form values:', error);
       toast.error(t('errorLoadingFormData'));
+      
+      // Reset to empty state on error
+      reset({});
     }
   }, [entriesMap, reset, t]);
   
@@ -258,12 +273,12 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
       );
     }
 
-    // Validate entriesMap object
-    if (!entriesMap || typeof entriesMap !== 'object') {
-      console.warn('Invalid entriesMap object:', entriesMap);
+    // Validate category object
+    if (!category || typeof category !== 'object') {
+      console.warn('Invalid category object:', category);
       return (
         <div className="py-8 text-center">
-          <p className="text-destructive font-medium">{t('dataLoadError')}</p>
+          <p className="text-destructive font-medium">{t('categoryLoadError')}</p>
           <p className="text-sm text-gray-500 mt-2">{t('pleaseTryAgainLater')}</p>
         </div>
       );

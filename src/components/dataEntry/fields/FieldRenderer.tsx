@@ -33,6 +33,12 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
     console.warn('FieldRenderer received column without ID', column);
     return null;
   }
+  
+  // Validate column ID is a proper string
+  if (typeof column.id !== 'string' || column.id.trim() === '') {
+    console.warn('FieldRenderer received column with invalid ID format:', column);
+    return null;
+  }
 
   // Create safe handlers with error boundaries
   const safeOnValueChange = React.useCallback((newValue: any) => {
@@ -80,85 +86,97 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
     return value !== undefined && value !== null ? value : '';
   }, [value, columnType]);
   
+  // Generate a unique and stable ID for this field
+  const fieldId = `field-${column.id}`;
+  
   // Implement safe rendering with error boundaries for each field type
-  switch (columnType) {
-    case 'text':
-    case 'email':
-    case 'phone':
-    case 'url':
-    case 'password':
-    case 'number':
-      return (
-        <InputField 
-          column={column} 
-          value={safeValue} 
-          onChange={safeOnChange} 
-          isDisabled={isDisabled} 
-          type={columnType === 'number' ? 'number' : columnType === 'password' ? 'password' : 'text'} 
-        />
-      );
-    
-    case 'textarea':
-      return (
-        <TextAreaField 
-          column={column} 
-          value={safeValue} 
-          onChange={safeOnChange} 
-          isDisabled={isDisabled} 
-        />
-      );
-    
-    case 'select':
-      return (
-        <SelectField 
-          column={column} 
-          value={safeValue} 
-          onValueChange={safeOnValueChange} 
-          isDisabled={isDisabled} 
-        />
-      );
-    
-    case 'checkbox':
-      return (
-        <CheckboxField 
-          column={column} 
-          value={safeValue}
-          onValueChange={safeOnValueChange} 
-          isDisabled={isDisabled} 
-        />
-      );
-    
-    case 'radio':
-      return (
-        <RadioField 
-          column={column} 
-          value={safeValue}
-          onValueChange={safeOnValueChange} 
-          isDisabled={isDisabled} 
-        />
-      );
+  try {
+    switch (columnType) {
+      case 'text':
+      case 'email':
+      case 'phone':
+      case 'url':
+      case 'password':
+      case 'number':
+        return (
+          <InputField 
+            column={column} 
+            value={safeValue} 
+            onChange={safeOnChange} 
+            isDisabled={isDisabled} 
+            type={columnType === 'number' ? 'number' : columnType === 'password' ? 'password' : 'text'} 
+          />
+        );
       
-    case 'date':
-      return (
-        <DateField
-          column={column}
-          value={safeValue}
-          onChange={safeOnChange}
-          onValueChange={safeOnValueChange}
-          isDisabled={isDisabled}
-        />
-      );
+      case 'textarea':
+        return (
+          <TextAreaField 
+            column={column} 
+            value={safeValue} 
+            onChange={safeOnChange} 
+            isDisabled={isDisabled} 
+          />
+        );
       
-    default:
-      console.warn(`Unknown column type: ${columnType} for column ${column.id}, defaulting to text input`);
-      return (
-        <InputField 
-          column={column} 
-          value={safeValue}
-          onChange={safeOnChange} 
-          isDisabled={isDisabled} 
-        />
-      );
+      case 'select':
+        return (
+          <SelectField 
+            column={column} 
+            value={safeValue} 
+            onValueChange={safeOnValueChange} 
+            isDisabled={isDisabled} 
+          />
+        );
+      
+      case 'checkbox':
+        return (
+          <CheckboxField 
+            column={column} 
+            value={safeValue}
+            onValueChange={safeOnValueChange} 
+            isDisabled={isDisabled} 
+          />
+        );
+      
+      case 'radio':
+        return (
+          <RadioField 
+            column={column} 
+            value={safeValue}
+            onValueChange={safeOnValueChange} 
+            isDisabled={isDisabled} 
+          />
+        );
+        
+      case 'date':
+        return (
+          <DateField
+            column={column}
+            value={safeValue}
+            onChange={safeOnChange}
+            onValueChange={safeOnValueChange}
+            isDisabled={isDisabled}
+          />
+        );
+        
+      default:
+        console.warn(`Unknown column type: ${columnType} for column ${column.id}, defaulting to text input`);
+        return (
+          <InputField 
+            column={column} 
+            value={safeValue}
+            onChange={safeOnChange} 
+            isDisabled={isDisabled} 
+          />
+        );
+    }
+  } catch (error) {
+    console.error(`Error rendering field ${column.id}:`, error);
+    return (
+      <div className="p-2 border border-red-300 rounded bg-red-50">
+        <p className="text-xs text-red-700">Error rendering field: {column.name || 'Unnamed'}</p>
+      </div>
+    );
   }
 };
 
