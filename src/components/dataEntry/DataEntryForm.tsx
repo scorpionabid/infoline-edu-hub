@@ -1,17 +1,17 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useParams } from 'react-router-dom';
-import FormFields from './FormFields';
 import { useDataEntryState } from '@/hooks/dataEntry/useDataEntryState';
 import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/context/LanguageContext';
+import DataEntryFormContent from './DataEntryFormContent';
+import DataEntryFormLoading from './DataEntryFormLoading';
+import DataEntryFormError from './DataEntryFormError';
+import { toast } from 'sonner';
 
 // Define the component props
 interface DataEntryFormProps {
@@ -36,16 +36,13 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const resolvedCategoryId = propCategoryId || params.categoryId || '';
   const resolvedSchoolId = schoolId || params.schoolId || '';
   
-  // State for active tab
-  const [activeTab, setActiveTab] = useState('general');
-  
   // Setup form
   const methods = useForm({
     defaultValues: {},
     mode: 'onChange'
   });
   
-  const { handleSubmit, formState: { isSubmitting, isDirty }, reset } = methods;
+  const { reset } = methods;
 
   // Get category data and entries - handle loading and error states properly
   const { 
@@ -66,25 +63,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     categoryId: resolvedCategoryId,
     schoolId: resolvedSchoolId
   });
-  
-  // Group columns by section
-  const sections = React.useMemo(() => {
-    if (!category || !category.columns || !Array.isArray(category.columns)) {
-      return { general: [] };
-    }
-    
-    // Filter out any null or undefined columns first
-    const validColumns = category.columns.filter(column => column != null);
-    
-    return validColumns.reduce((acc: Record<string, any[]>, column) => {
-      if (!column) return acc;  // Skip null/undefined columns
-      
-      const section = (column.section || 'general').toString();
-      if (!acc[section]) acc[section] = [];
-      acc[section].push(column);
-      return acc;
-    }, { general: [] });
-  }, [category]);
   
   // Set form values from data entries
   useEffect(() => {
@@ -147,70 +125,24 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     }
   };
   
-  // Handle tab change
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
-  
   // Loading state
   if (categoryLoading || entriesLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('loading')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <DataEntryFormLoading />;
   }
   
   // Error state
   if (categoryError || entriesError) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('error')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-destructive">
-            {categoryError || entriesError}
-          </div>
-          <Button onClick={() => navigate(-1)} className="mt-4">{t('goBack')}</Button>
-        </CardContent>
-      </Card>
-    );
+    return <DataEntryFormError error={categoryError || entriesError} onBack={() => navigate(-1)} />;
   }
   
   // If category doesn't exist
   if (!category) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('notFound')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div>{t('categoryNotFound')}</div>
-          <Button onClick={() => navigate(-1)} className="mt-4">{t('goBack')}</Button>
-        </CardContent>
-      </Card>
-    );
+    return <DataEntryFormError error={t('categoryNotFound')} onBack={() => navigate(-1)} />;
   }
   
-  // Check if section keys are valid strings
-  const validSections = Object.entries(sections).filter(
-    ([key]) => typeof key === 'string' && key.length > 0
-  );
-  
-  // Render sections as tabs if multiple valid sections exist
-  const hasSections = validSections.length > 1;
-
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmitForm)}>
+      <form onSubmit={methods.handleSubmit(onSubmitForm)}>
         <Card>
           <CardHeader>
             <CardTitle>{category.name || t('untitledCategory')}</CardTitle>
@@ -218,46 +150,21 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           </CardHeader>
           
           <CardContent>
-            {hasSections ? (
-              <Tabs value={activeTab} onValueChange={handleTabChange}>
-                <TabsList className="mb-4">
-                  {validSections.map(([section]) => (
-                    <TabsTrigger key={section} value={section}>
-                      {section === 'general' ? t('generalInfo') : section}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                
-                {validSections.map(([section, columns]) => (
-                  <TabsContent key={section} value={section} className="space-y-4">
-                    <FormFields 
-                      columns={columns || []} 
-                      readOnly={readOnly} 
-                    />
-                  </TabsContent>
-                ))}
-              </Tabs>
-            ) : (
-              <div className="space-y-4">
-                <FormFields 
-                  columns={(category.columns || []).filter(col => col != null)} 
-                  readOnly={readOnly} 
-                />
-              </div>
-            )}
+            <DataEntryFormContent 
+              category={category} 
+              readOnly={readOnly} 
+            />
             
-            <Separator className="my-6" />
-            
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2 mt-6">
               <Button type="button" variant="outline" onClick={handleCancel}>
                 {t('cancel')}
               </Button>
               {!readOnly && (
                 <Button 
                   type="submit" 
-                  disabled={isSubmitting || !isDirty}
+                  disabled={methods.formState.isSubmitting || !methods.formState.isDirty}
                 >
-                  {isSubmitting ? t('saving') : t('save')}
+                  {methods.formState.isSubmitting ? t('saving') : t('save')}
                 </Button>
               )}
             </div>

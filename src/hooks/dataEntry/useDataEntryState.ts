@@ -36,10 +36,11 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       if (error) throw error;
 
       // Ensure we handle the data safely, even if it's null
-      setDataEntries(Array.isArray(data) ? data : []);
+      const safeData = Array.isArray(data) ? data.filter(entry => entry && entry.column_id) : [];
+      setDataEntries(safeData);
       
       // Log the result for debugging
-      console.log(`Fetched ${Array.isArray(data) ? data.length : 0} data entries for category ${categoryId} and school ${schoolId}`);
+      console.log(`Fetched ${safeData.length} data entries for category ${categoryId} and school ${schoolId}`);
     } catch (err: any) {
       console.error('Error fetching data entries:', err);
       setError(err.message || 'Failed to fetch data entries');
@@ -51,8 +52,13 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
 
   // Fetch data when IDs change
   useEffect(() => {
-    fetchDataEntries();
-  }, [fetchDataEntries]);
+    if (categoryId && schoolId) {
+      fetchDataEntries();
+    } else {
+      setDataEntries([]);
+      setError('Missing category or school ID');
+    }
+  }, [fetchDataEntries, categoryId, schoolId]);
 
   const saveDataEntries = async (entries: any[]): Promise<boolean> => {
     // Early return if IDs are missing
