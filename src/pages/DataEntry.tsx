@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDataEntry } from '@/hooks/dataEntry/useDataEntry';
 import { useLanguage } from '@/context/LanguageContext';
@@ -203,106 +204,119 @@ const DataEntryForm = ({
           <CardContent>
             <ScrollArea className="h-[calc(100vh-15rem)]">
               <form onSubmit={handleSubmit} className="space-y-6 p-2">
-                {selectedCategory?.columns.map((column) => (
-                  <div key={column.id} className="space-y-2">
-                    <label htmlFor={column.id} className="text-sm font-medium">
-                      {column.name}
-                      {column.is_required && <span className="text-red-500 ml-1">*</span>}
-                    </label>
-                    
-                    {/* Sütun tipinə görə input */}
-                    {column.type === 'text' && (
-                      <input
-                        type="text"
-                        id={column.id}
-                        name={column.id}
-                        value={formData[column.id] || ''}
-                        onChange={handleInputChange}
-                        placeholder={column.placeholder || ''}
-                        className="w-full p-2 border rounded-md"
-                        required={column.is_required}
-                      />
-                    )}
-                    
-                    {column.type === 'textarea' && (
-                      <textarea
-                        id={column.id}
-                        name={column.id}
-                        value={formData[column.id] || ''}
-                        onChange={handleInputChange}
-                        placeholder={column.placeholder || ''}
-                        className="w-full p-2 border rounded-md min-h-[100px]"
-                        required={column.is_required}
-                      />
-                    )}
-                    
-                    {column.type === 'number' && (
-                      <input
-                        type="number"
-                        id={column.id}
-                        name={column.id}
-                        value={formData[column.id] || ''}
-                        onChange={handleInputChange}
-                        placeholder={column.placeholder || ''}
-                        className="w-full p-2 border rounded-md"
-                        required={column.is_required}
-                      />
-                    )}
-                    
-                    {column.type === 'select' && (
-                      <select
-                        id={column.id}
-                        name={column.id}
-                        value={formData[column.id] || ''}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border rounded-md"
-                        required={column.is_required}
-                      >
-                        <option value="">{t('select')}</option>
-                        {column.options && Array.isArray(column.options) && column.options.map((option: any, index: number) => (
-                          <option key={index} value={option.value || option}>
-                            {option.label || option}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                    
-                    {column.type === 'date' && (
-                      <input
-                        type="date"
-                        id={column.id}
-                        name={column.id}
-                        value={formData[column.id] || ''}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border rounded-md"
-                        required={column.is_required}
-                      />
-                    )}
-                    
-                    {column.type === 'checkbox' && (
-                      <div className="flex items-center">
+                {selectedCategory?.columns && Array.isArray(selectedCategory.columns) && selectedCategory.columns.map((column) => {
+                  // Add null check here to protect against undefined columns
+                  if (!column || !column.id) return null;
+                  
+                  return (
+                    <div key={column.id} className="space-y-2">
+                      <label htmlFor={column.id} className="text-sm font-medium">
+                        {column.name}
+                        {column.is_required && <span className="text-red-500 ml-1">*</span>}
+                      </label>
+                      
+                      {/* Sütun tipinə görə input */}
+                      {column.type === 'text' && (
                         <input
-                          type="checkbox"
+                          type="text"
                           id={column.id}
                           name={column.id}
-                          checked={formData[column.id] === 'true'}
-                          onChange={(e) => handleInputChange({
-                            target: {
-                              name: column.id,
-                              value: e.target.checked ? 'true' : 'false'
-                            }
-                          } as React.ChangeEvent<HTMLInputElement>)}
-                          className="mr-2"
+                          value={formData[column.id] || ''}
+                          onChange={handleInputChange}
+                          placeholder={column.placeholder || ''}
+                          className="w-full p-2 border rounded-md"
+                          required={column.is_required}
                         />
-                        <label htmlFor={column.id}>{column.placeholder || column.name}</label>
-                      </div>
-                    )}
-                    
-                    {column.help_text && (
-                      <p className="text-xs text-gray-500">{column.help_text}</p>
-                    )}
-                  </div>
-                ))}
+                      )}
+                      
+                      {column.type === 'textarea' && (
+                        <textarea
+                          id={column.id}
+                          name={column.id}
+                          value={formData[column.id] || ''}
+                          onChange={handleInputChange}
+                          placeholder={column.placeholder || ''}
+                          className="w-full p-2 border rounded-md min-h-[100px]"
+                          required={column.is_required}
+                        />
+                      )}
+                      
+                      {column.type === 'number' && (
+                        <input
+                          type="number"
+                          id={column.id}
+                          name={column.id}
+                          value={formData[column.id] || ''}
+                          onChange={handleInputChange}
+                          placeholder={column.placeholder || ''}
+                          className="w-full p-2 border rounded-md"
+                          required={column.is_required}
+                        />
+                      )}
+                      
+                      {column.type === 'select' && (
+                        <select
+                          id={column.id}
+                          name={column.id}
+                          value={formData[column.id] || ''}
+                          onChange={handleInputChange}
+                          className="w-full p-2 border rounded-md"
+                          required={column.is_required}
+                        >
+                          <option value="">{t('select')}</option>
+                          {column.options && Array.isArray(column.options) && column.options.map((option, index) => {
+                            // Add null check for option
+                            if (!option) return null;
+                            
+                            const value = typeof option === 'object' ? option.value || option : option;
+                            const label = typeof option === 'object' ? option.label || value : option;
+                            
+                            return (
+                              <option key={`${index}-${value}`} value={value}>
+                                {label}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      )}
+                      
+                      {column.type === 'date' && (
+                        <input
+                          type="date"
+                          id={column.id}
+                          name={column.id}
+                          value={formData[column.id] || ''}
+                          onChange={handleInputChange}
+                          className="w-full p-2 border rounded-md"
+                          required={column.is_required}
+                        />
+                      )}
+                      
+                      {column.type === 'checkbox' && (
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id={column.id}
+                            name={column.id}
+                            checked={formData[column.id] === 'true'}
+                            onChange={(e) => handleInputChange({
+                              target: {
+                                name: column.id,
+                                value: e.target.checked ? 'true' : 'false'
+                              }
+                            } as React.ChangeEvent<HTMLInputElement>)}
+                            className="mr-2"
+                          />
+                          <label htmlFor={column.id}>{column.placeholder || column.name}</label>
+                        </div>
+                      )}
+                      
+                      {column.help_text && (
+                        <p className="text-xs text-gray-500">{column.help_text}</p>
+                      )}
+                    </div>
+                  );
+                })}
                 
                 <div className="flex justify-between pt-4">
                   <div>
@@ -423,7 +437,7 @@ const DataEntryPage: React.FC = () => {
     };
     
     fetchSchools();
-  }, [isSectorAdmin, sectorId, t]);
+  }, [isSectorAdmin, sectorId, t, selectedSchoolId]);
   
   // Sektoradmin üçün kateqoriyaları yükləyirik
   useEffect(() => {
@@ -454,7 +468,7 @@ const DataEntryPage: React.FC = () => {
           const categoriesWithColumns = data.map(category => {
             return {
               ...category,
-              columns: columnsData.filter(col => col.category_id === category.id) || []
+              columns: columnsData.filter(col => col && col.category_id === category.id) || []
             };
           });
           
@@ -549,7 +563,7 @@ const DataEntryPage: React.FC = () => {
             
             {/* Sektor məlumatları */}
             <TabsContent value="sector" className="mt-4">
-              {sectorCategories.length > 0 ? (
+              {sectorCategories && sectorCategories.length > 0 ? (
                 <DataEntryForm 
                   schoolId={user?.sector_id} 
                   categories={sectorCategories} 
@@ -622,7 +636,7 @@ const DataEntryPage: React.FC = () => {
               {selectedSchoolId ? (
                 <DataEntryForm 
                   schoolId={selectedSchoolId} 
-                  categories={schoolCategories} 
+                  categories={schoolCategories || []} 
                   initialCategoryId={initialCategoryId}
                   isSectorAdmin={true}
                   schoolName={selectedSchoolName}
@@ -644,7 +658,7 @@ const DataEntryPage: React.FC = () => {
         {isSchoolAdmin && (
           <DataEntryForm 
             schoolId={user?.school_id} 
-            categories={schoolCategories} 
+            categories={schoolCategories || []} 
             initialCategoryId={initialCategoryId}
           />
         )}

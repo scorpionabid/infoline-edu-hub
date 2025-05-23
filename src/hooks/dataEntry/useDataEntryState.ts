@@ -37,6 +37,9 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
 
       // Ensure we handle the data safely, even if it's null
       setDataEntries(Array.isArray(data) ? data : []);
+      
+      // Log the result for debugging
+      console.log(`Fetched ${Array.isArray(data) ? data.length : 0} data entries for category ${categoryId} and school ${schoolId}`);
     } catch (err: any) {
       console.error('Error fetching data entries:', err);
       setError(err.message || 'Failed to fetch data entries');
@@ -67,12 +70,24 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
 
     setIsLoading(true);
     try {
+      // Filter out entries that don't have valid column_id
+      const validEntries = entries.filter(entry => entry && entry.column_id);
+      
+      if (validEntries.length === 0) {
+        console.warn('No valid entries to save');
+        toast.warning('No data to save');
+        return false;
+      }
+      
       // Process entries to ensure they have proper category and school IDs
-      const processedEntries = entries.map(entry => ({
+      const processedEntries = validEntries.map(entry => ({
         ...entry,
         category_id: categoryId,
         school_id: schoolId,
       }));
+
+      // Log the entries we're about to save
+      console.log('Saving data entries:', processedEntries);
 
       // Upsert entries (insert or update)
       const { error } = await supabase

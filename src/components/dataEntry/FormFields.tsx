@@ -72,14 +72,16 @@ const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, 
               <SelectValue placeholder={column.placeholder || 'Select an option'} />
             </SelectTrigger>
             <SelectContent>
-              {Array.isArray(column.options) && column.options.map((option) => (
+              {Array.isArray(column.options) ? column.options.map((option) => (
                 // Make sure we have a valid option before rendering
                 option && option.id ? (
                   <SelectItem key={option.id} value={option.value || ''}>
                     {option.label || ''}
                   </SelectItem>
                 ) : null
-              ))}
+              )) : (
+                <SelectItem value="no-options">No options available</SelectItem>
+              )}
             </SelectContent>
           </Select>
         );
@@ -87,7 +89,7 @@ const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, 
       case 'checkbox':
         return (
           <div className="flex flex-col space-y-2">
-            {Array.isArray(column.options) && column.options.map((option) => (
+            {Array.isArray(column.options) ? column.options.map((option) => (
               // Check if option exists before rendering
               option && option.id ? (
                 <div key={option.id} className="flex items-center space-x-2">
@@ -111,7 +113,9 @@ const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, 
                   </label>
                 </div>
               ) : null
-            ))}
+            )) : (
+              <div className="text-sm text-gray-500">No options available</div>
+            )}
           </div>
         );
       
@@ -122,7 +126,7 @@ const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, 
             onValueChange={onValueChange}
             disabled={isDisabled}
           >
-            {Array.isArray(column.options) && column.options.map((option) => (
+            {Array.isArray(column.options) ? column.options.map((option) => (
               // Check if option exists before rendering
               option && option.id ? (
                 <div key={option.id} className="flex items-center space-x-2">
@@ -132,7 +136,9 @@ const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, 
                   </label>
                 </div>
               ) : null
-            ))}
+            )) : (
+              <div className="text-sm text-gray-500">No options available</div>
+            )}
           </RadioGroup>
         );
       

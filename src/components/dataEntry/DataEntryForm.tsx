@@ -73,7 +73,10 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
       return { general: [] };
     }
     
-    return category.columns.reduce((acc: Record<string, any[]>, column) => {
+    // Filter out any null or undefined columns first
+    const validColumns = category.columns.filter(column => column != null);
+    
+    return validColumns.reduce((acc: Record<string, any[]>, column) => {
       if (!column) return acc;  // Skip null/undefined columns
       
       const section = (column.section || 'general').toString();
@@ -115,6 +118,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           return;
         }
         
+        // Convert form data to data entry format
         const formattedData = Object.keys(data).map(columnId => ({
           column_id: columnId,
           value: data[columnId],
@@ -236,7 +240,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
             ) : (
               <div className="space-y-4">
                 <FormFields 
-                  columns={category.columns || []} 
+                  columns={(category.columns || []).filter(col => col != null)} 
                   readOnly={readOnly} 
                 />
               </div>
