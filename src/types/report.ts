@@ -20,18 +20,10 @@ export enum REPORT_TYPE_VALUES {
   BAR = 'bar',
   LINE = 'line',
   PIE = 'pie',
-  TABLE = 'table',
-  METRICS = 'metrics',
-  CUSTOM = 'custom'
+  TABLE = 'table'
 }
 
-export enum ReportStatus {
-  DRAFT = 'draft',
-  PUBLISHED = 'published',
-  ARCHIVED = 'archived'
-}
-
-export type ReportTypeValues = 'bar' | 'line' | 'pie' | 'table' | 'metrics' | 'custom';
+export type ReportTypeValues = 'bar' | 'line' | 'pie' | 'table';
 
 export interface ReportChartProps {
   type?: ReportTypeValues;
@@ -54,27 +46,4 @@ export interface ReportFilter {
   is_template?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-}
-
-export interface CreateReportDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreate: (data: { title: string; description: string; type: string }) => Promise<void>;
-}
-
-export interface ReportEmptyStateProps {
-  onCreateReport: () => void;
-}
-
-export interface ReportHeaderProps {
-  onCreateReport?: () => void;
-  title?: string;
-  description?: string;
-}
-
-export interface ReportPreviewDialogProps {
-  report: Report | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onClose?: () => void;
 }
