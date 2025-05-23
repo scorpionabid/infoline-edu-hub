@@ -1,112 +1,132 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchCategories, createCategory, updateCategory, deleteCategory } from '@/services/api/categories';
-import { useErrorHandler } from '@/hooks/core/useErrorHandler';
-import { Category } from '@/types/category';
-import { useLanguage } from '@/context/LanguageContext';
-import { categoryKeys } from '@/services/api/queryKeys';
 
-/**
- * Kateqoriyaları əldə etmək üçün hook parametrləri
- */
-export interface UseCategoriesOptions {
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { CategoryWithColumns } from '@/types/category';
+
+interface CategoryFilter {
   status?: string;
   search?: string;
-  assignment?: string;
-  enabled?: boolean;
-  staleTime?: number;
-  refetchInterval?: number | false;
 }
 
-/**
- * Kateqoriyaları əldə etmək və idarə etmək üçün React Query əsaslı hook
- * 
- * Bu hook aşağıdakı funksionallığı təmin edir:
- * - Kateqoriyaları əldə etmək
- * - Kateqoriya yaratmaq
- * - Kateqoriya yeniləmək
- * - Kateqoriya silmək
- * 
- * @param options Kateqoriyaları əldə etmək üçün parametrlər
- * @returns Kateqoriyalar və əlaqədar funksiyalar
- */
-export function useCategoriesQuery(options?: UseCategoriesOptions) {
-  const { t } = useLanguage();
-  const { handleError } = useErrorHandler('Categories');
+export interface UseCategoriesQueryResult {
+  categories: CategoryWithColumns[];
+  loading: boolean;
+  error: string | null;
+  filter: CategoryFilter;
+  updateFilter: (newFilter: Partial<CategoryFilter>) => void;
+  createCategory: (category: Omit<CategoryWithColumns, 'id' | 'created_at' | 'updated_at'>) => Promise<CategoryWithColumns>;
+  updateCategory: (id: string, updates: Partial<CategoryWithColumns>) => Promise<CategoryWithColumns>;
+  deleteCategory: (id: string) => Promise<void>;
+  refetch: () => void;
+  // Deprecated compatibility functions
+  add: (data: any) => Promise<any>;
+  update: (id: string, data: any) => Promise<any>;
+  remove: (id: string) => Promise<any>;
+}
+
+export const useCategoriesQuery = (initialFilter: CategoryFilter = {}): UseCategoriesQueryResult => {
   const queryClient = useQueryClient();
-  
-  // Parametrləri hazırlayırıq
-  const { 
-    enabled = true, 
-    staleTime = 1000 * 60 * 5, // 5 dəqiqə
-    refetchInterval = false,
-    ...queryOptions
-  } = options || {};
-  
-  // Sorğu açarını standartlaşdırılmış şəkildə hazırlayırıq
-  const queryKey = categoryKeys.list(queryOptions);
-  
-  // Kateqoriyaları əldə etmək üçün sorğu
-  const query = useQuery({
-    queryKey,
-    queryFn: () => fetchCategories(queryOptions),
-    enabled,
-    staleTime,
-    refetchInterval,
-    gcTime: 1000 * 60 * 10, // 10 dəqiqə
-  });
-  
-  // Xəta baş verdikdə emal edirik
-  if (query.error) {
-    handleError(query.error, t('errorFetchingCategories'));
-  }
-  
-  // Kateqoriya yaratmaq üçün mutasiya
-  const createMutation = useMutation({
-    mutationFn: (newCategory: Partial<Category>) => createCategory(newCategory),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
-    onError: (error) => handleError(error as Error, t('errorCreatingCategory'))
-  });
-  
-  // Kateqoriya yeniləmək üçün mutasiya
-  const updateMutation = useMutation({
-    mutationFn: ({ id, category }: { id: string, category: Partial<Category> }) => 
-      updateCategory(id, category),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
-    onError: (error) => handleError(error as Error, t('errorUpdatingCategory'))
-  });
-  
-  // Kateqoriya silmək üçün mutasiya
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteCategory(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
-    onError: (error) => handleError(error as Error, t('errorDeletingCategory'))
-  });
-  
-  // Hook nəticələrini qaytarırıq
-  return {
-    // Sorğu nəticələri
-    data: query.data || [],
-    isLoading: query.isLoading,
-    isError: query.isError,
-    error: query.error,
-    refetch: query.refetch,
-    
-    // Mutasiya funksiyaları
-    createCategory: createMutation.mutate,
-    updateCategory: updateMutation.mutate,
-    deleteCategory: deleteMutation.mutate,
-    
-    // Mutasiya vəziyyətləri
-    isCreating: createMutation.isPending,
-    isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending,
-  };
-}
+  const [filter, setFilter] = useState<CategoryFilter>(initialFilter);
 
-export default useCategoriesQuery;
+  const { data: categories = [], isLoading: loading, error, refetch } = useQuery({
+    queryKey: ['categories', filter],
+    queryFn: async () => {
+      let query = supabase.from('categories').select('*, columns(*)');
+      
+      if (filter.status) {
+        query = query.eq('status', filter.status);
+      }
+      
+      if (filter.search) {
+        query = query.ilike('name', `%${filter.search}%`);
+      }
+      
+      const { data, error } = await query.order('priority', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (categoryData: Omit<CategoryWithColumns, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([categoryData])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      toast.success('Category created successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to create category: ${error.message}`);
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CategoryWithColumns> }) => {
+      const { data, error } = await supabase
+        .from('categories')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      toast.success('Category updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to update category: ${error.message}`);
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      toast.success('Category deleted successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete category: ${error.message}`);
+    }
+  });
+
+  const updateFilter = (newFilter: Partial<CategoryFilter>) => {
+    setFilter(prev => ({ ...prev, ...newFilter }));
+  };
+
+  return {
+    categories,
+    loading,
+    error: error?.message || null,
+    filter,
+    updateFilter,
+    createCategory: createMutation.mutateAsync,
+    updateCategory: (id: string, updates: Partial<CategoryWithColumns>) => 
+      updateMutation.mutateAsync({ id, updates }),
+    deleteCategory: deleteMutation.mutateAsync,
+    refetch,
+    // Deprecated compatibility functions
+    add: (data: any) => createMutation.mutateAsync(data),
+    update: (id: string, data: any) => updateMutation.mutateAsync({ id, updates: data }),
+    remove: (id: string) => deleteMutation.mutateAsync(id)
+  };
+};

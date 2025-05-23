@@ -53,59 +53,64 @@ const mockCallEdgeFunction = vi.fn().mockImplementation((funcName, options) => {
   return Promise.resolve({ data: null, error: { message: 'Unknown function' } });
 });
 
-// Kateqoriya və sütun hook-larını mockla
-vi.mock('@/hooks/categories/useCategories', () => ({
-  useCategories: () => ({
+// Categories və Columns hook-larını düzəlt
+vi.mock('@/hooks/api/categories/useCategoriesQuery', () => ({
+  useCategoriesQuery: () => ({
     categories: [
       { id: 'category-1', name: 'Ümumi Məlumatlar', description: 'Məktəbin ümumi məlumatları', status: 'active' },
       { id: 'category-2', name: 'Şagird Məlumatları', description: 'Şagirdlərlə bağlı məlumatlar', status: 'active' }
     ],
-    isLoading: false,
+    loading: false,
     error: null,
-    fetchCategories: vi.fn().mockResolvedValue(true),
-    refresh: vi.fn().mockResolvedValue(true),
+    filter: {},
+    updateFilter: vi.fn(),
+    createCategory: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-category-id', ...data })),
+    updateCategory: vi.fn().mockResolvedValue(true),
+    deleteCategory: vi.fn().mockResolvedValue(true),
+    refetch: vi.fn().mockResolvedValue(true),
+    // Deprecated compatibility functions
     add: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-category-id', ...data })),
     update: vi.fn().mockResolvedValue(true),
     remove: vi.fn().mockResolvedValue(true)
   })
 }));
 
-vi.mock('@/hooks/columns/useColumns', () => ({
-  useColumns: () => ({
+vi.mock('@/hooks/api/columns/useColumnsQuery', () => ({
+  useColumnsQuery: () => ({
     columns: [
       { 
         id: 'column-1', 
         name: 'Məktəb adı', 
         description: 'Məktəbin rəsmi adı', 
-        data_type: 'text', 
+        type: 'text', 
         category_id: 'category-1', 
-        required: true, 
+        is_required: true, 
         status: 'active' 
       },
       { 
         id: 'column-2', 
         name: 'Şagird sayı', 
         description: 'Ümumi şagird sayı', 
-        data_type: 'number', 
+        type: 'number', 
         category_id: 'category-1', 
-        required: true, 
+        is_required: true, 
         status: 'active' 
       },
       { 
         id: 'column-3', 
         name: 'Şagird siyahısı', 
         description: 'Excel formatında şagird siyahısı', 
-        data_type: 'file', 
+        type: 'file', 
         category_id: 'category-2', 
-        required: false, 
+        is_required: false, 
         status: 'active' 
       }
     ],
-    isLoading: false,
-    error: null,
-    fetchColumns: vi.fn().mockResolvedValue(true),
+    createColumn: vi.fn().mockImplementation((categoryId, data) => Promise.resolve({ id: 'new-column-id', category_id: categoryId, ...data })),
+    updateColumn: vi.fn().mockResolvedValue(true),
+    deleteColumn: vi.fn().mockResolvedValue(true),
     fetchColumnsByCategory: vi.fn().mockResolvedValue(true),
-    refresh: vi.fn().mockResolvedValue(true),
+    // Deprecated compatibility functions
     add: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-column-id', ...data })),
     update: vi.fn().mockResolvedValue(true),
     remove: vi.fn().mockResolvedValue(true)
@@ -183,14 +188,14 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
 
   describe('CAT-01: Kateqoriya yaratma', () => {
     it('yeni kateqoriya yaratma prosesi', async () => {
-      // useCategories hook-undakı funksiyaları al
-      const { useCategories } = await import('@/hooks/categories/useCategories');
-      const { add } = useCategories();
+      // useCategoriesQuery hook-undakı funksiyaları al
+      const { useCategoriesQuery } = await import('@/hooks/api/categories/useCategoriesQuery');
+      const { createCategory } = useCategoriesQuery();
 
       // CategoryForm komponentini render et
       const handleSubmit = vi.fn().mockImplementation((data) => {
-        // add funksiyasını çağır
-        return add(data);
+        // createCategory funksiyasını çağır
+        return createCategory(data);
       });
 
       render(
@@ -215,16 +220,16 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
           name: 'Test Kateqoriya',
           description: 'Test təsviri'
         }));
-        expect(add).toHaveBeenCalled();
+        expect(createCategory).toHaveBeenCalled();
       });
     });
   });
 
   describe('CAT-02: Kateqoriya redaktə', () => {
     it('mövcud kateqoriyanı redaktə prosesi', async () => {
-      // useCategories hook-undakı funksiyaları al
-      const { useCategories } = await import('@/hooks/categories/useCategories');
-      const { update } = useCategories();
+      // useCategoriesQuery hook-undakı funksiyaları al
+      const { useCategoriesQuery } = await import('@/hooks/api/categories/useCategoriesQuery');
+      const { updateCategory } = useCategoriesQuery();
 
       // İlkin məlumatları təyin et
       const initialData = { 
@@ -236,8 +241,8 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
 
       // CategoryForm komponentini render et
       const handleSubmit = vi.fn().mockImplementation((data) => {
-        // update funksiyasını çağır
-        return update(initialData.id, data);
+        // updateCategory funksiyasını çağır
+        return updateCategory(initialData.id, data);
       });
 
       render(
@@ -267,21 +272,21 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
           name: 'Yenilənmiş Ad',
           description: 'Yenilənmiş təsvir'
         }));
-        expect(update).toHaveBeenCalled();
+        expect(updateCategory).toHaveBeenCalled();
       });
     });
   });
 
   describe('CAT-03: Sütun yaratma', () => {
     it('yeni sütun yaratma prosesi', async () => {
-      // useColumns hook-undakı funksiyaları al
-      const { useColumns } = await import('@/hooks/columns/useColumns');
-      const { add } = useColumns();
+      // useColumnsQuery hook-undakı funksiyaları al
+      const { useColumnsQuery } = await import('@/hooks/api/columns/useColumnsQuery');
+      const { createColumn } = useColumnsQuery();
 
       // ColumnForm komponentini render et
       const handleSubmit = vi.fn().mockImplementation((data) => {
-        // add funksiyasını çağır
-        return add(data);
+        // createColumn funksiyasını çağır
+        return createColumn('category-1', data);
       });
 
       render(
@@ -315,16 +320,16 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
           data_type: 'text',
           category_id: 'category-1'
         }));
-        expect(add).toHaveBeenCalled();
+        expect(createColumn).toHaveBeenCalled();
       });
     });
   });
 
   describe('CAT-04: Sütun redaktə', () => {
     it('mövcud sütunu redaktə prosesi', async () => {
-      // useColumns hook-undakı funksiyaları al
-      const { useColumns } = await import('@/hooks/columns/useColumns');
-      const { update } = useColumns();
+      // useColumnsQuery hook-undakı funksiyaları al
+      const { useColumnsQuery } = await import('@/hooks/api/columns/useColumnsQuery');
+      const { updateColumn } = useColumnsQuery();
 
       // İlkin məlumatları təyin et
       const initialData = { 
@@ -339,8 +344,8 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
 
       // ColumnForm komponentini render et
       const handleSubmit = vi.fn().mockImplementation((data) => {
-        // update funksiyasını çağır
-        return update(initialData.id, data);
+        // updateColumn funksiyasını çağır
+        return updateColumn(initialData.id, data);
       });
 
       render(
@@ -372,21 +377,21 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
           description: 'Yenilənmiş təsvir',
           required: false
         }));
-        expect(update).toHaveBeenCalled();
+        expect(updateColumn).toHaveBeenCalled();
       });
     });
   });
 
   describe('CAT-05: Sütun tipləri və validasiya', () => {
     it('müxtəlif tip sütunların düzgün işləməsini yoxlama', async () => {
-      // useColumns hook-undakı funksiyaları al
-      const { useColumns } = await import('@/hooks/columns/useColumns');
-      const { columns } = useColumns();
+      // useColumnsQuery hook-undakı funksiyaları al
+      const { useColumnsQuery } = await import('@/hooks/api/columns/useColumnsQuery');
+      const { columns } = useColumnsQuery();
 
       // Sütun tiplərini yoxla
-      const textColumn = columns.find(c => c.data_type === 'text');
-      const numberColumn = columns.find(c => c.data_type === 'number');
-      const fileColumn = columns.find(c => c.data_type === 'file');
+      const textColumn = columns.find(c => c.type === 'text');
+      const numberColumn = columns.find(c => c.type === 'number');
+      const fileColumn = columns.find(c => c.type === 'file');
 
       expect(textColumn).toBeDefined();
       expect(numberColumn).toBeDefined();
@@ -394,27 +399,27 @@ describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
 
       // Text tipli sütunun xüsusiyyətlərini yoxla
       expect(textColumn?.name).toBe('Məktəb adı');
-      expect(textColumn?.required).toBe(true);
+      expect(textColumn?.is_required).toBe(true);
 
       // Number tipli sütunun xüsusiyyətlərini yoxla
       expect(numberColumn?.name).toBe('Şagird sayı');
-      expect(numberColumn?.required).toBe(true);
+      expect(numberColumn?.is_required).toBe(true);
 
       // File tipli sütunun xüsusiyyətlərini yoxla
       expect(fileColumn?.name).toBe('Şagird siyahısı');
-      expect(fileColumn?.required).toBe(false);
+      expect(fileColumn?.is_required).toBe(false);
     });
   });
 
   describe('CAT-06: Kateqoriya-Sütun əlaqələri', () => {
     it('sütunların kateqoriyalara düzgün bağlanmasının yoxlanması', async () => {
-      // useCategories və useColumns hook-larını al
-      const { useCategories } = await import('@/hooks/categories/useCategories');
-      const { useColumns } = await import('@/hooks/columns/useColumns');
+      // useCategoriesQuery və useColumnsQuery hook-larını al
+      const { useCategoriesQuery } = await import('@/hooks/api/categories/useCategoriesQuery');
+      const { useColumnsQuery } = await import('@/hooks/api/columns/useColumnsQuery');
       
       // Verilənləri al
-      const { categories } = useCategories();
-      const { columns } = useColumns();
+      const { categories } = useCategoriesQuery();
+      const { columns } = useColumnsQuery();
       
       // Əlaqələri yoxla - Kateqoriya 1
       const category1 = categories.find(c => c.id === 'category-1');

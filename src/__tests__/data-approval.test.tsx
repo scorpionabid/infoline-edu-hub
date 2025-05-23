@@ -147,11 +147,21 @@ const mockEntries = [
 ];
 
 // Mock hooks
-vi.mock('@/hooks/approval/useApprovalData', () => ({
-  useApprovalData: () => ({
-    entries: mockEntries,
-    isLoading: false,
+vi.mock('@/hooks/api/approval/useApprovalDataQuery', () => ({
+  useApprovalDataQuery: () => ({
+    data: {
+      entries: mockEntries,
+      schools: [],
+      sectors: [],
+      regions: []
+    },
+    loading: false,
     error: null,
+    getItemsById: vi.fn(),
+    getFilteredSchools: vi.fn(),
+    getFilteredRegions: vi.fn(),
+    getFilteredSectors: vi.fn(),
+    entries: mockEntries,
     fetchEntries: vi.fn().mockResolvedValue(mockEntries),
     fetchEntryById: vi.fn().mockImplementation((id) => 
       Promise.resolve(mockEntries.find(e => e.id === id))
@@ -291,9 +301,9 @@ describe('Məlumat Təsdiqi və Toplama Testləri', () => {
         user: { ...mockUserData, role: 'schooladmin' as UserRole }
       });
       
-      // useApprovalData hook-undan funksiyaları al
-      const { useApprovalData } = await import('@/hooks/approval/useApprovalData');
-      const { approveEntry } = useApprovalData();
+      // useApprovalDataQuery hook-undan funksiyaları al
+      const { useApprovalDataQuery } = await import('@/hooks/api/approval/useApprovalDataQuery');
+      const { approveEntry } = useApprovalDataQuery();
 
       // Təsdiq prosesini simulyasiya et
       const handleApprove = vi.fn().mockImplementation((id) => {
@@ -340,9 +350,9 @@ describe('Məlumat Təsdiqi və Toplama Testləri', () => {
         user: { ...mockUserData, role: 'sectoradmin' as UserRole }
       });
       
-      // useApprovalData hook-undan funksiyaları al
-      const { useApprovalData } = await import('@/hooks/approval/useApprovalData');
-      const { approveEntry } = useApprovalData();
+      // useApprovalDataQuery hook-undan funksiyaları al
+      const { useApprovalDataQuery } = await import('@/hooks/api/approval/useApprovalDataQuery');
+      const { approveEntry } = useApprovalDataQuery();
 
       // Təsdiq prosesini simulyasiya et
       const handleApprove = vi.fn().mockImplementation((id) => {
@@ -389,9 +399,9 @@ describe('Məlumat Təsdiqi və Toplama Testləri', () => {
         user: { ...mockUserData, role: 'regionadmin' as UserRole }
       });
       
-      // useApprovalData hook-undan funksiyaları al
-      const { useApprovalData } = await import('@/hooks/approval/useApprovalData');
-      const { approveEntry } = useApprovalData();
+      // useApprovalDataQuery hook-undan funksiyaları al
+      const { useApprovalDataQuery } = await import('@/hooks/api/approval/useApprovalDataQuery');
+      const { approveEntry } = useApprovalDataQuery();
 
       // Təsdiq prosesini simulyasiya et
       const handleApprove = vi.fn().mockImplementation((id) => {
@@ -438,9 +448,9 @@ describe('Məlumat Təsdiqi və Toplama Testləri', () => {
         user: { ...mockUserData, role: 'sectoradmin' as UserRole }
       });
       
-      // useApprovalData hook-undan funksiyaları al
-      const { useApprovalData } = await import('@/hooks/approval/useApprovalData');
-      const { returnEntry } = useApprovalData();
+      // useApprovalDataQuery hook-undan funksiyaları al
+      const { useApprovalDataQuery } = await import('@/hooks/api/approval/useApprovalDataQuery');
+      const { returnEntry } = useApprovalDataQuery();
 
       // Qaytarma prosesini simulyasiya et
       const handleReturn = vi.fn().mockImplementation((id, notes) => {
@@ -480,9 +490,9 @@ describe('Məlumat Təsdiqi və Toplama Testləri', () => {
 
   describe('APPR-05: Statuslar üzrə filtrasiya', () => {
     it('Müxtəlif təsdiq statusları üzrə filtrasiya prosesi', async () => {
-      // useApprovalData hook-undan funksiyaları al
-      const { useApprovalData } = await import('@/hooks/approval/useApprovalData');
-      const { filterByStatus } = useApprovalData();
+      // useApprovalDataQuery hook-undan funksiyaları al
+      const { useApprovalDataQuery } = await import('@/hooks/api/approval/useApprovalDataQuery');
+      const { filterByStatus } = useApprovalDataQuery();
       
       // ApprovalPage komponentini render et
       render(
@@ -542,9 +552,9 @@ describe('Məlumat Təsdiqi və Toplama Testləri', () => {
         user: { ...mockUserData, role: 'regionadmin' as UserRole }
       });
       
-      // useApprovalData hook-undan funksiyaları al
-      const { useApprovalData } = await import('@/hooks/approval/useApprovalData');
-      const { bulkApprove } = useApprovalData();
+      // useApprovalDataQuery hook-undan funksiyaları al
+      const { useApprovalDataQuery } = await import('@/hooks/api/approval/useApprovalDataQuery');
+      const { bulkApprove } = useApprovalDataQuery();
 
       // Toplu təsdiq prosesini simulyasiya et
       const handleBulkApprove = vi.fn().mockImplementation((ids) => {

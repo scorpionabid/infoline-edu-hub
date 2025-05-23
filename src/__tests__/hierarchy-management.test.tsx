@@ -61,53 +61,58 @@ const mockCallEdgeFunction = vi.fn().mockImplementation((funcName, options) => {
 });
 
 // Regions, Sectors və Schools hook və komponentlərini mockla
-vi.mock('@/hooks/useRegions', () => ({
-  useRegions: () => ({
+vi.mock('@/hooks/api/regions/useRegionsQuery', () => ({
+  useRegionsQuery: () => ({
     regions: [
-      { id: 'region-1', name: 'Bakı', code: 'BAK', status: 'active' },
-      { id: 'region-2', name: 'Sumqayıt', code: 'SMQ', status: 'active' }
+      { id: 'region-1', name: 'Bakı', description: 'Bakı şəhəri', status: 'active' },
+      { id: 'region-2', name: 'Sumqayıt', description: 'Sumqayıt şəhəri', status: 'active' }
     ],
-    isLoading: false,
+    loading: false,
     error: null,
     fetchRegions: vi.fn().mockResolvedValue(true),
     refresh: vi.fn().mockResolvedValue(true),
-    // Komponentdə istifadə edə bilmək üçün bu funksiyaları da əlavə edirik
+    addRegion: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-region-id', ...data })),
+    assignRegionAdmin: vi.fn().mockResolvedValue({ success: true, message: 'Region admin təyin edildi' }),
+    // Deprecated compatibility functions
     add: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-region-id', ...data })),
     update: vi.fn().mockResolvedValue(true),
     remove: vi.fn().mockResolvedValue(true)
   })
 }));
 
-vi.mock('@/hooks/useSectors', () => ({
-  useSectors: () => ({
+vi.mock('@/hooks/api/sectors/useSectorsQuery', () => ({
+  useSectorsQuery: () => ({
     sectors: [
-      { id: 'sector-1', name: 'Səbail', code: 'SBL', region_id: 'region-1', status: 'active' },
-      { id: 'sector-2', name: 'Xətai', code: 'XTI', region_id: 'region-1', status: 'active' }
+      { id: 'sector-1', name: 'Səbail', description: 'Səbail rayonu', region_id: 'region-1', status: 'active' },
+      { id: 'sector-2', name: 'Xətai', description: 'Xətai rayonu', region_id: 'region-1', status: 'active' }
     ],
-    isLoading: false,
+    loading: false,
     error: null,
     fetchSectors: vi.fn().mockResolvedValue(true),
     fetchSectorsByRegion: vi.fn().mockResolvedValue(true),
     refresh: vi.fn().mockResolvedValue(true),
-    // Komponentdə istifadə edə bilmək üçün bu funksiyaları da əlavə edirik
+    // Deprecated compatibility functions
     add: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-sector-id', ...data })),
     update: vi.fn().mockResolvedValue(true),
     remove: vi.fn().mockResolvedValue(true)
   })
 }));
 
-vi.mock('@/hooks/useSchools', () => ({
-  useSchools: () => ({
+vi.mock('@/hooks/api/schools/useSchoolsQuery', () => ({
+  useSchoolsQuery: () => ({
     schools: [
-      { id: 'school-1', name: 'Məktəb #1', code: 'SCH1', sector_id: 'sector-1', status: 'active' },
-      { id: 'school-2', name: 'Məktəb #2', code: 'SCH2', sector_id: 'sector-1', status: 'active' }
+      { id: 'school-1', name: 'Məktəb #1', sector_id: 'sector-1', status: 'active' },
+      { id: 'school-2', name: 'Məktəb #2', sector_id: 'sector-1', status: 'active' }
     ],
-    isLoading: false,
+    loading: false,
     error: null,
+    addSchool: vi.fn().mockImplementation((data) => Promise.resolve({ success: true, data: [{ id: 'new-school-id', ...data }] })),
+    updateSchool: vi.fn().mockResolvedValue(true),
+    deleteSchool: vi.fn().mockResolvedValue(true),
     fetchSchools: vi.fn().mockResolvedValue(true),
     fetchSchoolsBySector: vi.fn().mockResolvedValue(true),
     refresh: vi.fn().mockResolvedValue(true),
-    // Komponentdə istifadə edə bilmək üçün bu funksiyaları da əlavə edirik
+    // Deprecated compatibility functions
     add: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-school-id', ...data })),
     update: vi.fn().mockResolvedValue(true),
     remove: vi.fn().mockResolvedValue(true)
@@ -205,14 +210,14 @@ describe('Region/Sektor/Məktəb İdarəetməsi Testləri', () => {
 
   describe('HIER-01: Region yaratma', () => {
     it('yeni region yaratma prosesi', async () => {
-      // useRegions hook-undakı funksiyaları al
-      const { useRegions } = await import('@/hooks/useRegions');
-      const { add } = useRegions();
+      // useRegionsQuery hook-undakı funksiyaları al
+      const { useRegionsQuery } = await import('@/hooks/api/regions/useRegionsQuery');
+      const { addRegion } = useRegionsQuery();
 
       // RegionForm komponentini render et
       const handleSubmit = vi.fn().mockImplementation((data) => {
-        // add funksiyasını çağır
-        return add(data);
+        // addRegion funksiyasını çağır
+        return addRegion(data);
       });
 
       render(
@@ -238,16 +243,16 @@ describe('Region/Sektor/Məktəb İdarəetməsi Testləri', () => {
           name: 'Test Region',
           code: 'TST'
         }));
-        expect(add).toHaveBeenCalled();
+        expect(addRegion).toHaveBeenCalled();
       });
     });
   });
 
   describe('HIER-02: Sektor yaratma', () => {
     it('yeni sektor yaratma prosesi', async () => {
-      // useSectors hook-undakı funksiyaları al
-      const { useSectors } = await import('@/hooks/useSectors');
-      const { add } = useSectors();
+      // useSectorsQuery hook-undakı funksiyaları al
+      const { useSectorsQuery } = await import('@/hooks/api/sectors/useSectorsQuery');
+      const { add } = useSectorsQuery();
 
       // SectorForm komponentini render et
       const handleSubmit = vi.fn().mockImplementation((data) => {
@@ -286,14 +291,14 @@ describe('Region/Sektor/Məktəb İdarəetməsi Testləri', () => {
 
   describe('HIER-03: Məktəb yaratma', () => {
     it('yeni məktəb yaratma prosesi', async () => {
-      // useSchools hook-undakı funksiyaları al
-      const { useSchools } = await import('@/hooks/useSchools');
-      const { add } = useSchools();
+      // useSchoolsQuery hook-undakı funksiyaları al
+      const { useSchoolsQuery } = await import('@/hooks/api/schools/useSchoolsQuery');
+      const { addSchool } = useSchoolsQuery();
 
       // SchoolForm komponentini render et
       const handleSubmit = vi.fn().mockImplementation((data) => {
         // add funksiyasını çağır
-        return add(data);
+        return addSchool(data);
       });
 
       render(
@@ -320,7 +325,7 @@ describe('Region/Sektor/Məktəb İdarəetməsi Testləri', () => {
           code: 'TST',
           sector_id: 'sector-1'
         }));
-        expect(add).toHaveBeenCalled();
+        expect(addSchool).toHaveBeenCalled();
       });
     });
   });
@@ -418,14 +423,14 @@ describe('Region/Sektor/Məktəb İdarəetməsi Testləri', () => {
   describe('HIER-07: İyerarxiya əlaqələri', () => {
     it('region-sektor-məktəb əlaqələrinin yoxlanması', async () => {
       // useRegions, useSectors, useSchools hook-larını istifadə et
-      const { useRegions } = await import('@/hooks/useRegions');
-      const { useSectors } = await import('@/hooks/useSectors');
-      const { useSchools } = await import('@/hooks/useSchools');
+      const { useRegionsQuery } = await import('@/hooks/api/regions/useRegionsQuery');
+      const { useSectorsQuery } = await import('@/hooks/api/sectors/useSectorsQuery');
+      const { useSchoolsQuery } = await import('@/hooks/api/schools/useSchoolsQuery');
       
       // Verilənləri al
-      const { regions } = useRegions();
-      const { sectors } = useSectors();
-      const { schools } = useSchools();
+      const { regions } = useRegionsQuery();
+      const { sectors } = useSectorsQuery();
+      const { schools } = useSchoolsQuery();
       
       // İyerarxiyanı yoxla
       const region = regions.find(r => r.id === 'region-1');
