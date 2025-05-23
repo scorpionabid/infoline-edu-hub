@@ -33,16 +33,18 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const { t } = useLanguage();
   const navigate = useNavigate();
   const params = useParams();
+  
+  // Use provided IDs or fallback to URL params, with empty string as final fallback
   const resolvedCategoryId = propCategoryId || params.categoryId || '';
   const resolvedSchoolId = schoolId || params.schoolId || '';
   
-  // Setup form
+  // Setup form with safety measures
   const methods = useForm({
     defaultValues: {},
     mode: 'onChange'
   });
   
-  const { reset } = methods;
+  const { reset, formState } = methods;
 
   // Get category data and entries - handle loading and error states properly
   const { 
@@ -66,51 +68,67 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   
   // Set form values from data entries
   useEffect(() => {
-    if (dataEntries && Array.isArray(dataEntries) && dataEntries.length > 0) {
+    if (Array.isArray(dataEntries) && dataEntries.length > 0) {
+      // Build form values from entries with safety checks
       const values = dataEntries.reduce((acc, entry) => {
         if (entry && entry.column_id) {
-          acc[entry.column_id] = entry.value || '';
+          acc[entry.column_id] = entry.value !== undefined ? entry.value : '';
         }
         return acc;
       }, {} as Record<string, string>);
       
-      reset(values);
+      // Only reset the form if we have values
+      if (Object.keys(values).length > 0) {
+        reset(values);
+      }
     }
   }, [dataEntries, reset]);
   
-  // Handle save
+  // Handle save with proper error checking
   const onSubmitForm = async (data: any) => {
     try {
-      if (onSave) {
-        // Use custom save handler
+      // Safety check for data
+      if (!data || typeof data !== 'object') {
+        toast.error(t('invalidFormData'));
+        return;
+      }
+
+      // Use custom save handler if provided
+      if (typeof onSave === 'function') {
         const result = await onSave(data);
         if (result) {
           toast.success(t('dataSaved'));
-          if (onCancel) onCancel();
+          if (typeof onCancel === 'function') onCancel();
         }
-      } else {
-        // Use default save handler
-        // Make sure we have valid category and school IDs
-        if (!resolvedCategoryId || !resolvedSchoolId) {
-          toast.error(t('missingRequiredIds'));
-          return;
-        }
-        
-        // Convert form data to data entry format
-        const formattedData = Object.keys(data).map(columnId => ({
-          column_id: columnId,
-          value: data[columnId],
-          category_id: resolvedCategoryId,
-          school_id: resolvedSchoolId,
-        }));
-        
-        const result = await saveDataEntries(formattedData);
-        if (result) {
-          toast.success(t('dataSaved'));
-          navigate(-1);
-        }
+        return;
       }
-    } catch (error) {
+
+      // Use default save handler
+      if (!resolvedCategoryId || !resolvedSchoolId) {
+        toast.error(t('missingRequiredIds'));
+        return;
+      }
+      
+      // Convert form data to data entry format with safety checks
+      const formattedData = Object.entries(data).map(([columnId, value]) => ({
+        column_id: columnId,
+        value: value !== undefined ? value : '',
+        category_id: resolvedCategoryId,
+        school_id: resolvedSchoolId,
+      }));
+      
+      // Only proceed if we have data to save
+      if (formattedData.length === 0) {
+        toast.warning(t('noDataToSave'));
+        return;
+      }
+      
+      const result = await saveDataEntries(formattedData);
+      if (result) {
+        toast.success(t('dataSaved'));
+        navigate(-1);
+      }
+    } catch (error: any) {
       console.error('Error saving data:', error);
       toast.error(t('errorSavingData'));
     }
@@ -118,7 +136,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   
   // Handle cancel
   const handleCancel = () => {
-    if (onCancel) {
+    if (typeof onCancel === 'function') {
       onCancel();
     } else {
       navigate(-1);
@@ -135,8 +153,8 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     return <DataEntryFormError error={categoryError || entriesError} onBack={() => navigate(-1)} />;
   }
   
-  // If category doesn't exist
-  if (!category) {
+  // If category doesn't exist or is invalid
+  if (!category || !category.id) {
     return <DataEntryFormError error={t('categoryNotFound')} onBack={() => navigate(-1)} />;
   }
   
@@ -162,9 +180,9 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
               {!readOnly && (
                 <Button 
                   type="submit" 
-                  disabled={methods.formState.isSubmitting || !methods.formState.isDirty}
+                  disabled={formState.isSubmitting || !formState.isDirty}
                 >
-                  {methods.formState.isSubmitting ? t('saving') : t('save')}
+                  {formState.isSubmitting ? t('saving') : t('save')}
                 </Button>
               )}
             </div>

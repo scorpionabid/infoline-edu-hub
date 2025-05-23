@@ -16,10 +16,33 @@ const RadioField: React.FC<RadioFieldProps> = ({
   onValueChange = () => {}, 
   isDisabled = false 
 }) => {
-  // Ensure options is an array and filter out invalid options
-  const options = Array.isArray(column.options) 
-    ? column.options.filter(option => option && option.id && option.value) 
-    : [];
+  // Ensure column is valid before proceeding
+  if (!column || !column.id) {
+    console.warn('Invalid column provided to RadioField');
+    return null;
+  }
+
+  // Safe parsing of options - handle any potential format to prevent errors
+  let options: Array<{id: string, value: string, label?: string}> = [];
+  
+  try {
+    if (Array.isArray(column.options)) {
+      options = column.options
+        .filter(option => option && (option.id || option.value)) // Filter out invalid options
+        .map((option, index) => {
+          // Ensure each option has an id and value
+          const id = option.id || `option-${index}-${Date.now()}`;
+          const value = option.value || id;
+          return {
+            id,
+            value,
+            label: option.label || value
+          };
+        });
+    }
+  } catch (err) {
+    console.warn(`Failed to parse options for column ${column.id}:`, err);
+  }
 
   return (
     <RadioGroup 
@@ -30,7 +53,7 @@ const RadioField: React.FC<RadioFieldProps> = ({
       {options.length > 0 ? (
         options.map((option) => (
           <div key={option.id} className="flex items-center space-x-2">
-            <RadioGroupItem value={option.value || ''} id={`${column.id}-${option.id}`} />
+            <RadioGroupItem value={option.value} id={`${column.id}-${option.id}`} />
             <label className="text-sm" htmlFor={`${column.id}-${option.id}`}>
               {option.label || option.value || ''}
             </label>

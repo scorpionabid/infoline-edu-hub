@@ -16,6 +16,12 @@ const CheckboxField: React.FC<CheckboxFieldProps> = ({
   onValueChange = () => {}, 
   isDisabled = false 
 }) => {
+  // Ensure column is valid before proceeding
+  if (!column || !column.id) {
+    console.warn('Invalid column provided to CheckboxField');
+    return null;
+  }
+
   // Handle both string 'true'/'false' and boolean values
   const checked = value === true || value === 'true';
   

@@ -22,10 +22,47 @@ const SelectField: React.FC<SelectFieldProps> = ({
   onValueChange = () => {}, 
   isDisabled = false 
 }) => {
-  // Ensure options is an array and filter out invalid options
-  const options = Array.isArray(column.options) 
-    ? column.options.filter(option => option && (option.value !== undefined)) 
-    : [];
+  // Ensure column is valid before proceeding
+  if (!column || !column.id) {
+    console.warn('Invalid column provided to SelectField');
+    return null;
+  }
+
+  // Safe parsing of options - handle any potential format to prevent errors
+  let options: Array<{id?: string, value: string, label?: string}> = [];
+  
+  try {
+    if (Array.isArray(column.options)) {
+      options = column.options
+        .filter(option => option !== null && option !== undefined) // Filter out null/undefined options
+        .map((option, index) => {
+          if (typeof option === 'string') {
+            return { 
+              id: `option-${index}-${Date.now()}`,
+              value: option,
+              label: option
+            };
+          } else if (typeof option === 'object' && option !== null) {
+            const id = option.id || `option-${index}-${Date.now()}`;
+            const value = option.value?.toString() || id;
+            return {
+              id,
+              value,
+              label: option.label || value
+            };
+          } else {
+            // Fallback for unexpected option types
+            return {
+              id: `option-${index}-${Date.now()}`,
+              value: String(option || ''),
+              label: String(option || '')
+            };
+          }
+        });
+    }
+  } catch (err) {
+    console.warn(`Failed to parse options for column ${column.id}:`, err);
+  }
 
   return (
     <Select 

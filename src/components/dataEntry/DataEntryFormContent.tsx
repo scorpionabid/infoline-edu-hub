@@ -10,7 +10,7 @@ interface DataEntryFormContentProps {
   category: {
     id: string;
     name: string;
-    columns: Column[];
+    columns?: Column[];
     description?: string;
   };
   readOnly?: boolean;
@@ -21,7 +21,20 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
   const [activeTab, setActiveTab] = useState('general');
   
   // Safely handle category and columns
-  if (!category || !category.columns || !Array.isArray(category.columns)) {
+  if (!category || !category.id) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        {t('categoryNotFound')}
+      </div>
+    );
+  }
+  
+  // Ensure columns is an array and filter out any invalid entries
+  const safeColumns = Array.isArray(category.columns) 
+    ? category.columns.filter(column => column && column.id)
+    : [];
+  
+  if (safeColumns.length === 0) {
     return (
       <div className="p-4 text-center text-muted-foreground">
         {t('noColumnsAvailable')}
@@ -31,26 +44,30 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
   
   // Group columns by section
   const sections = React.useMemo(() => {
-    // Filter out any null or undefined columns first
-    const validColumns = category.columns.filter(column => column && column.id);
+    // Start with an empty general section
+    const sectionMap: Record<string, Column[]> = { general: [] };
     
-    return validColumns.reduce((acc: Record<string, Column[]>, column) => {
-      if (!column) return acc;  // Skip null/undefined columns
+    // Add each column to its section, defaulting to 'general'
+    safeColumns.forEach(column => {
+      if (!column) return; // Skip invalid columns
       
-      const section = (column.section || 'general').toString();
-      if (!acc[section]) acc[section] = [];
-      acc[section].push(column);
-      return acc;
-    }, { general: [] });
-  }, [category.columns]);
+      const section = column.section 
+        ? String(column.section).trim() || 'general'
+        : 'general';
+      
+      if (!sectionMap[section]) {
+        sectionMap[section] = [];
+      }
+      
+      sectionMap[section].push(column);
+    });
+    
+    return sectionMap;
+  }, [safeColumns]);
   
-  // Check if section keys are valid strings
-  const validSections = Object.entries(sections).filter(
-    ([key]) => typeof key === 'string' && key.length > 0
-  );
-  
-  // Render sections as tabs if multiple valid sections exist
-  const hasSections = validSections.length > 1;
+  // Check if we have multiple valid sections
+  const sectionEntries = Object.entries(sections);
+  const hasSections = sectionEntries.length > 1;
 
   // Handle tab change
   const handleTabChange = (value: string) => {
@@ -62,14 +79,14 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
       {hasSections ? (
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="mb-4">
-            {validSections.map(([section]) => (
+            {sectionEntries.map(([section]) => (
               <TabsTrigger key={section} value={section}>
                 {section === 'general' ? t('generalInfo') : section}
               </TabsTrigger>
             ))}
           </TabsList>
           
-          {validSections.map(([section, columns]) => (
+          {sectionEntries.map(([section, columns]) => (
             <TabsContent key={section} value={section} className="space-y-4">
               <FormFields 
                 columns={columns || []} 
@@ -81,7 +98,7 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
       ) : (
         <div className="space-y-4">
           <FormFields 
-            columns={(category.columns || []).filter(col => col != null)} 
+            columns={safeColumns} 
             readOnly={readOnly} 
           />
         </div>

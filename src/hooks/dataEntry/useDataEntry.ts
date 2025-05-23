@@ -43,21 +43,24 @@ export const useDataEntry = ({ categoryId, schoolId }: UseDataEntryProps) => {
   const isLoading = isCategoryLoading || isEntriesLoading;
   const error = categoryError || entriesError;
 
-  // Safely check for all data
-  const hasAllData = category && category.columns && Array.isArray(category.columns) && 
-    category.columns.every(column => {
-      return column && column.id && dataEntries && Array.isArray(dataEntries) && 
-        dataEntries.some(entry => entry && entry.column_id === column.id);
+  // Safely check for all data - handle potential null/undefined values
+  const safeCategory = category || { columns: [] };
+  const safeColumns = Array.isArray(safeCategory.columns) ? safeCategory.columns.filter(Boolean) : [];
+  const safeEntries = Array.isArray(dataEntries) ? dataEntries.filter(Boolean) : [];
+  
+  const hasAllData = safeColumns.length > 0 && 
+    safeColumns.every(column => {
+      return column && column.id && safeEntries.some(entry => entry && entry.column_id === column.id);
     });
 
   // Calculate completion percentage with safety checks
-  const completionPercentage = (category?.columns && Array.isArray(category.columns) && category.columns.length > 0)
-    ? Math.round(((dataEntries?.length || 0) / category.columns.length) * 100)
+  const completionPercentage = safeColumns.length > 0
+    ? Math.round((safeEntries.length / safeColumns.length) * 100)
     : 0;
 
   return {
-    category,
-    dataEntries,
+    category: safeCategory,
+    dataEntries: safeEntries,
     isLoading,
     error,
     hasAllData,

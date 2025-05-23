@@ -25,21 +25,44 @@ const DateField: React.FC<DateFieldProps> = ({
   isDisabled = false 
 }) => {
   const { t } = useLanguage();
-  const currentDate = value ? new Date(value) : undefined;
-  const validDate = currentDate instanceof Date && !isNaN(currentDate.getTime()) ? currentDate : undefined;
+  
+  // Ensure column is valid before proceeding
+  if (!column || !column.id) {
+    console.warn('Invalid column provided to DateField');
+    return null;
+  }
 
-  // Handle date selection
+  // Safely parse the date value
+  let currentDate;
+  let validDate;
+  
+  try {
+    if (value) {
+      currentDate = new Date(value);
+      // Check if date is valid
+      validDate = currentDate instanceof Date && !isNaN(currentDate.getTime()) ? currentDate : undefined;
+    } else {
+      validDate = undefined;
+    }
+  } catch (err) {
+    console.warn(`Failed to parse date value for column ${column.id}:`, err);
+    validDate = undefined;
+  }
+
+  // Handle date selection with safety checks
   const handleSelect = (date: Date | undefined) => {
     if (!date) return;
     
-    // Use onValueChange if available, otherwise fallback
-    if (onValueChange) {
-      onValueChange(date.toISOString());
-    } else if (onChange) {
+    const isoString = date.toISOString();
+    
+    // Use onValueChange if available, otherwise fallback to onChange
+    if (typeof onValueChange === 'function') {
+      onValueChange(isoString);
+    } else if (typeof onChange === 'function') {
       const fakeEvent = {
         target: {
           name: column.id,
-          value: date.toISOString()
+          value: isoString
         }
       } as React.ChangeEvent<HTMLInputElement>;
       

@@ -15,7 +15,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
   const [error, setError] = useState<string | null>(null);
   
   const fetchDataEntries = useCallback(async () => {
-    // Early return if IDs are missing
+    // Safety check for required IDs
     if (!categoryId || !schoolId) {
       console.log('Missing required IDs for data entry fetch:', { categoryId, schoolId });
       setDataEntries([]);
@@ -31,16 +31,31 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
         .from('data_entries')
         .select('*')
         .eq('category_id', categoryId)
-        .eq('school_id', schoolId);
+        .eq('school_id', schoolId)
+        .is('deleted_at', null);
 
       if (error) throw error;
 
-      // Ensure we handle the data safely, even if it's null
-      const safeData = Array.isArray(data) ? data.filter(entry => entry && entry.column_id) : [];
-      setDataEntries(safeData);
+      // Defensive handling for data
+      if (!data || !Array.isArray(data)) {
+        console.log('No data entries found or invalid response format');
+        setDataEntries([]);
+        return;
+      }
+
+      // Filter out any potentially invalid entries and clean the data
+      const safeEntries = data
+        .filter(entry => entry && entry.column_id) // Ensure required fields exist
+        .map(entry => ({
+          ...entry,
+          value: entry.value || '', // Ensure value is never null/undefined
+          status: entry.status || 'draft' // Ensure status is never null/undefined
+        }));
+      
+      setDataEntries(safeEntries);
       
       // Log the result for debugging
-      console.log(`Fetched ${safeData.length} data entries for category ${categoryId} and school ${schoolId}`);
+      console.log(`Fetched ${safeEntries.length} data entries for category ${categoryId} and school ${schoolId}`);
     } catch (err: any) {
       console.error('Error fetching data entries:', err);
       setError(err.message || 'Failed to fetch data entries');
@@ -86,11 +101,21 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       }
       
       // Process entries to ensure they have proper category and school IDs
-      const processedEntries = validEntries.map(entry => ({
-        ...entry,
-        category_id: categoryId,
-        school_id: schoolId,
-      }));
+      const processedEntries = validEntries.map(entry => {
+        // Remove any undefined or null values that could cause issues
+        const cleanEntry = { 
+          ...entry,
+          category_id: categoryId,
+          school_id: schoolId,
+          value: entry.value ?? '',  // Ensure value is never null or undefined
+          updated_at: new Date().toISOString()
+        };
+        
+        // Filter out any undefined/null values that could cause DB issues
+        return Object.fromEntries(
+          Object.entries(cleanEntry).filter(([_, value]) => value !== undefined && value !== null)
+        );
+      });
 
       // Log the entries we're about to save
       console.log('Saving data entries:', processedEntries);
