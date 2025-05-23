@@ -1,12 +1,17 @@
 
 import React from 'react';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { FormFieldProps, FormFieldsProps } from '@/types/dataEntry';
 import { Column } from '@/types/column';
 import { useFormContext } from 'react-hook-form';
 import FieldRenderer from './fields/FieldRenderer';
 
-// Main component to render a collection of form fields
+// Define proper types
+interface FormFieldsProps {
+  columns?: Column[];
+  disabled?: boolean;
+  readOnly?: boolean;
+}
+
 const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false, readOnly = false }) => {
   // Defensively filter columns to ensure all are valid
   const safeColumns = React.useMemo(() => {
@@ -40,22 +45,26 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
     return (
       <div className="space-y-6">
         {safeColumns.length > 0 ? (
-          safeColumns.map((column) => (
-            <div key={column.id} className="space-y-1">
-              <label className="text-sm font-medium" htmlFor={column.id}>
-                {column.name || 'Unnamed Field'}
-                {column.is_required && <span className="text-red-500 ml-1">*</span>}
-              </label>
-              <FieldRenderer
-                column={column}
-                value=""
-                onChange={() => {}}
-                onValueChange={() => {}}
-                isDisabled={disabled || readOnly}
-              />
-              {column.help_text && <p className="text-xs text-gray-500">{column.help_text}</p>}
-            </div>
-          ))
+          safeColumns.map((column) => {
+            if (!column || !column.id) return null;
+            
+            return (
+              <div key={column.id} className="space-y-1">
+                <label className="text-sm font-medium" htmlFor={column.id}>
+                  {column.name || 'Unnamed Field'}
+                  {column.is_required && <span className="text-red-500 ml-1">*</span>}
+                </label>
+                <FieldRenderer
+                  column={column}
+                  value=""
+                  onChange={() => {}}
+                  onValueChange={() => {}}
+                  isDisabled={disabled || readOnly}
+                />
+                {column.help_text && <p className="text-xs text-gray-500">{column.help_text}</p>}
+              </div>
+            );
+          })
         ) : (
           <div className="text-sm text-gray-500">No fields available</div>
         )}
@@ -74,50 +83,57 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
   return (
     <div className="space-y-6">
       {safeColumns.length > 0 ? (
-        safeColumns.map((column) => (
-          <FormField
-            key={column.id}
-            control={control}
-            name={column.id}
-            render={({ field }) => {
-              // Defensive check for field object
-              if (!field) {
-                console.warn(`Field object is undefined for column ${column.id}`);
+        safeColumns.map((column) => {
+          if (!column || !column.id) {
+            console.warn('FormFields skipping invalid column:', column);
+            return null;
+          }
+          
+          return (
+            <FormField
+              key={column.id}
+              control={control}
+              name={column.id}
+              render={({ field }) => {
+                // Defensive check for field object
+                if (!field) {
+                  console.warn(`Field object is undefined for column ${column.id}`);
+                  return (
+                    <FormItem>
+                      <FormLabel>{column.name || 'Unnamed Field'}</FormLabel>
+                      <FormControl>
+                        <div className="text-red-500">Error loading field</div>
+                      </FormControl>
+                    </FormItem>
+                  );
+                }
+                
                 return (
                   <FormItem>
-                    <FormLabel>{column.name || 'Unnamed Field'}</FormLabel>
+                    <FormLabel>
+                      {column.name || 'Unnamed Field'}
+                      {column.is_required && <span className="text-destructive ml-1">*</span>}
+                    </FormLabel>
                     <FormControl>
-                      <div className="text-red-500">Error loading field</div>
+                      <FieldRenderer
+                        column={column}
+                        value={field.value}
+                        onChange={field.onChange}
+                        onValueChange={field.onChange}
+                        isDisabled={disabled || readOnly}
+                      />
                     </FormControl>
+                    {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
+                    {column.description && !column.help_text && (
+                      <FormDescription>{column.description}</FormDescription>
+                    )}
+                    <FormMessage />
                   </FormItem>
                 );
-              }
-              
-              return (
-                <FormItem>
-                  <FormLabel>
-                    {column.name || 'Unnamed Field'}
-                    {column.is_required && <span className="text-destructive ml-1">*</span>}
-                  </FormLabel>
-                  <FormControl>
-                    <FieldRenderer
-                      column={column}
-                      value={field.value}
-                      onChange={field.onChange}
-                      onValueChange={field.onChange}
-                      isDisabled={disabled || readOnly}
-                    />
-                  </FormControl>
-                  {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
-                  {column.description && !column.help_text && (
-                    <FormDescription>{column.description}</FormDescription>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
-          />
-        ))
+              }}
+            />
+          );
+        })
       ) : (
         <div className="text-sm text-gray-500">No fields available</div>
       )}

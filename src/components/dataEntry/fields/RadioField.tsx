@@ -33,10 +33,13 @@ const RadioField: React.FC<RadioFieldProps> = ({
         return column.options
           .filter(option => option !== null && option !== undefined) // Filter out invalid options
           .map((option, index) => {
+            // Create a stable, unique ID that doesn't rely on Date.now()
+            const uniqueId = `option-${index}-${column.id}-${index}`;
+            
             // Handle different option formats
             if (typeof option === 'string') {
               return {
-                id: `option-${index}-${Date.now()}`,
+                id: uniqueId,
                 value: option,
                 label: option
               };
@@ -44,18 +47,16 @@ const RadioField: React.FC<RadioFieldProps> = ({
             
             if (typeof option === 'object' && option !== null) {
               // Ensure all required properties exist
-              const id = option.id || `option-${index}-${Date.now()}`;
-              const value = String(option.value || id);
               return {
-                id,
-                value,
-                label: option.label || value
+                id: option.id || uniqueId,
+                value: String(option.value || uniqueId),
+                label: option.label || String(option.value || `Option ${index}`)
               };
             }
             
             // Fallback for unexpected option types
             return {
-              id: `option-${index}-${Date.now()}`,
+              id: uniqueId,
               value: String(option || ''),
               label: String(option || '')
             };
@@ -67,11 +68,20 @@ const RadioField: React.FC<RadioFieldProps> = ({
         try {
           const parsedOptions = JSON.parse(column.options);
           if (Array.isArray(parsedOptions)) {
-            return parsedOptions.map((option, index) => ({
-              id: option.id || `option-${index}-${Date.now()}`,
-              value: String(option.value || `option-${index}`),
-              label: option.label || String(option.value || `Option ${index}`)
-            }));
+            return parsedOptions.map((option, index) => {
+              // Create a stable, unique ID
+              const uniqueId = `option-${index}-${column.id}-${index}`;
+              
+              if (typeof option === 'string') {
+                return { id: uniqueId, value: option, label: option };
+              } else {
+                return { 
+                  id: option.id || uniqueId,
+                  value: String(option.value || uniqueId), 
+                  label: option.label || String(option.value || `Option ${index}`)
+                };
+              }
+            });
           }
         } catch (parseErr) {
           console.warn(`Failed to parse options string for column ${column.id}:`, parseErr);
@@ -95,17 +105,27 @@ const RadioField: React.FC<RadioFieldProps> = ({
       disabled={isDisabled}
     >
       {options.length > 0 ? (
-        options.map((option) => (
-          <div key={option.id} className="flex items-center space-x-2">
-            <RadioGroupItem 
-              value={option.value || ''} 
-              id={`${column.id}-${option.id}`} 
-            />
-            <label className="text-sm" htmlFor={`${column.id}-${option.id}`}>
-              {option.label || option.value || ''}
-            </label>
-          </div>
-        ))
+        options.map((option) => {
+          // Safety check for option
+          if (!option || !option.id) {
+            return null;
+          }
+          
+          // Generate stable ID
+          const optionId = `${column.id}-${option.id}`;
+          
+          return (
+            <div key={optionId} className="flex items-center space-x-2">
+              <RadioGroupItem 
+                value={option.value || ''} 
+                id={optionId} 
+              />
+              <label className="text-sm" htmlFor={optionId}>
+                {option.label || option.value || ''}
+              </label>
+            </div>
+          );
+        })
       ) : (
         <div className="text-sm text-gray-500">No options available</div>
       )}

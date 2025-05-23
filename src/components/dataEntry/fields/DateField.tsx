@@ -91,10 +91,14 @@ const DateField: React.FC<DateFieldProps> = ({
     }
   };
 
+  // Generate a stable ID for the date field
+  const dateFieldId = `date-field-${column.id}`;
+
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          id={dateFieldId}
           variant="outline"
           className={cn(
             "w-full justify-start text-left font-normal",

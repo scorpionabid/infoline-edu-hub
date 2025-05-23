@@ -73,6 +73,15 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
           status: entry.status || 'draft' // Ensure status is never null/undefined
         }));
       
+      // Create a lookup object to prevent "Cannot read properties of undefined" errors
+      // This is crucial for handling UUIDs like '3d5f36f0-f689-40d6-a0e5-0d6420623551'
+      const entriesLookup: Record<string, DataEntry> = {};
+      safeEntries.forEach(entry => {
+        if (entry && entry.column_id) {
+          entriesLookup[entry.column_id] = entry;
+        }
+      });
+      
       setDataEntries(safeEntries);
       
       // Log the result for debugging

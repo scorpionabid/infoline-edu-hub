@@ -66,6 +66,20 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
     }
   }, [column.id, column.type]);
   
+  // Create a safe value that's never undefined
+  const safeValue = React.useMemo(() => {
+    // For checkboxes, convert to boolean or string representation
+    if (columnType === 'checkbox') {
+      if (value === true || value === 'true' || value === 1 || value === '1') {
+        return true;
+      }
+      return false;
+    }
+    
+    // For all other types, ensure we have a valid string
+    return value !== undefined && value !== null ? value : '';
+  }, [value, columnType]);
+  
   // Implement safe rendering with error boundaries for each field type
   switch (columnType) {
     case 'text':
@@ -77,7 +91,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <InputField 
           column={column} 
-          value={value !== undefined ? value : ''} 
+          value={safeValue} 
           onChange={safeOnChange} 
           isDisabled={isDisabled} 
           type={columnType === 'number' ? 'number' : columnType === 'password' ? 'password' : 'text'} 
@@ -88,7 +102,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <TextAreaField 
           column={column} 
-          value={value !== undefined ? value : ''} 
+          value={safeValue} 
           onChange={safeOnChange} 
           isDisabled={isDisabled} 
         />
@@ -98,7 +112,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <SelectField 
           column={column} 
-          value={value !== undefined ? value : ''} 
+          value={safeValue} 
           onValueChange={safeOnValueChange} 
           isDisabled={isDisabled} 
         />
@@ -108,7 +122,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <CheckboxField 
           column={column} 
-          value={value !== undefined ? value : false} 
+          value={safeValue}
           onValueChange={safeOnValueChange} 
           isDisabled={isDisabled} 
         />
@@ -118,7 +132,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <RadioField 
           column={column} 
-          value={value !== undefined ? value : ''} 
+          value={safeValue}
           onValueChange={safeOnValueChange} 
           isDisabled={isDisabled} 
         />
@@ -128,7 +142,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <DateField
           column={column}
-          value={value !== undefined ? value : ''}
+          value={safeValue}
           onChange={safeOnChange}
           onValueChange={safeOnValueChange}
           isDisabled={isDisabled}
@@ -140,7 +154,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       return (
         <InputField 
           column={column} 
-          value={value !== undefined ? value : ''} 
+          value={safeValue}
           onChange={safeOnChange} 
           isDisabled={isDisabled} 
         />

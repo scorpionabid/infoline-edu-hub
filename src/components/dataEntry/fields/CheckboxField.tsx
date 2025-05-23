@@ -43,16 +43,19 @@ const CheckboxField: React.FC<CheckboxFieldProps> = ({
     }
   };
   
+  // Generate a stable ID for the checkbox
+  const checkboxId = `checkbox-${column.id}`;
+  
   return (
     <div className="flex items-center space-x-2">
       <Checkbox 
-        id={column.id} 
+        id={checkboxId}
         checked={getCheckedState}
         onCheckedChange={handleChange}
         disabled={isDisabled}
       />
       <label 
-        htmlFor={column.id} 
+        htmlFor={checkboxId} 
         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
       >
         {column.placeholder || column.name || ''}

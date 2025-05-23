@@ -151,14 +151,14 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="mb-4">
             {sectionEntries.map(([section]) => (
-              <TabsTrigger key={section} value={section}>
+              <TabsTrigger key={`tab-${section}-${category.id}`} value={section}>
                 {section === 'general' ? t('generalInfo') : section}
               </TabsTrigger>
             ))}
           </TabsList>
           
           {sectionEntries.map(([section, columns]) => (
-            <TabsContent key={section} value={section} className="space-y-4">
+            <TabsContent key={`content-${section}-${category.id}`} value={section} className="space-y-4">
               <FormFields 
                 columns={columns || []} 
                 readOnly={readOnly} 

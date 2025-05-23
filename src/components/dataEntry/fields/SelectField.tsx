@@ -40,7 +40,8 @@ const SelectField: React.FC<SelectFieldProps> = ({
         return column.options
           .filter(option => option !== null && option !== undefined) // Filter out null/undefined options
           .map((option, index) => {
-            const uniqueKey = `option-${index}-${Date.now()}`;
+            // Create a stable, unique key that doesn't rely on Date.now()
+            const uniqueKey = `option-${index}-${column.id}-${index}`;
             
             // Handle string options
             if (typeof option === 'string') {
@@ -79,7 +80,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
           const parsedOptions = JSON.parse(column.options);
           if (Array.isArray(parsedOptions)) {
             return parsedOptions.map((option, index) => {
-              const uniqueKey = `option-${index}-${Date.now()}`;
+              const uniqueKey = `option-${index}-${column.id}-${index}`;
               if (typeof option === 'string') {
                 return { id: uniqueKey, value: option, label: option };
               } else {
@@ -122,14 +123,21 @@ const SelectField: React.FC<SelectFieldProps> = ({
       </SelectTrigger>
       <SelectContent>
         {options.length > 0 ? (
-          options.map((option) => (
-            <SelectItem 
-              key={option.id || `option-${option.value}`} 
-              value={option.value || ''}
-            >
-              {option.label || option.value || ''}
-            </SelectItem>
-          ))
+          options.map((option) => {
+            // Safety check for option
+            if (!option || !option.id || !option.value) {
+              return null;
+            }
+            
+            return (
+              <SelectItem 
+                key={`${column.id}-${option.id}`} 
+                value={option.value}
+              >
+                {option.label || option.value || ''}
+              </SelectItem>
+            );
+          })
         ) : (
           <SelectItem value="" disabled>No options available</SelectItem>
         )}
