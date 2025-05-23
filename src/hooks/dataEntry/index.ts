@@ -2,14 +2,13 @@
  * Data Entry ilə əlaqəli bütün hook-ları export edir
  * 
  * Bu fayl data entry ilə əlaqəli bütün hook-ları bir yerdən export etmək üçün istifadə olunur.
- * Bu, import-ları daha sadə və təmiz edir:
+ * 
+ * Eyi zamanda bu index faylı köhnə hook-ları yeni versiyalara yönləndirir (@/hooks/business/dataEntry).
+ * Bu, layihədə mövcud olan kodların işləməyə davam etməsini təmin edir, həmzaman da yeni hook-lara
+ * keçidi asanlaşdırır.
  * 
  * ```typescript
- * // Əvvəlki import üslubu
- * import { useDataEntry } from '@/hooks/dataEntry/useDataEntry';
- * import { useCategories } from '@/hooks/dataEntry/useCategories';
- * 
- * // Yeni import üslubu
+ * // Sadələşdirilmiş import
  * import { useDataEntry, useCategories } from '@/hooks/dataEntry';
  * ```
  */
@@ -25,9 +24,23 @@ export * from './useCategories';        // Bütün kateqoriyaları əldə etmək
 export * from './useSchool';            // Məktəb məlumatlarını əldə etmək üçün
 
 // Data entry ilə əlaqəli hook-lar
-// Bu hook-lar məlumat daxil etmə formasını idarə etmək üçün istifadə olunur
-export * from './useDataEntry';         // Məlumat daxil etmə formasını idarə etmək üçün
+// Aşağıdakı hook-ların yəni versiyaları @/hooks/business/dataEntry qovluğunda yerləşir
+// Lakin uyumluluq üçün onları burada da export edirik
 export * from './useDataEntries';       // Məlumat daxil etmə qeydlərini əldə etmək üçün
-export * from './useDataEntryState';    // Məlumat daxil etmə vəziyyətini idarə etmək üçün
+export * from './useDataEntry';         // Məlumat daxil etmə formasını idarə etmək üçün (köhnə versiya)
+export * from './useDataEntryState';    // Məlumat daxil etmə vəziyyətini idarə etmək üçün (köhnə versiya)
 export * from './useDataUpdates';       // Məlumat yeniləmələrini idarə etmək üçün
 export * from './useSectorDataEntry';   // Sektor məlumatlarını daxil etmək üçün
+
+// İndeksləmə və utilit hook-lar
+export * from './useIndexedData';       // Məlumatları indeksləmək üçün
+
+// Yeni optimizə edilmiş business hook-larını da ixrac edirik (köhnə adlarla)
+import { useDataEntryBusiness, useDataEntryStateBusiness } from '@/hooks';
+
+// Bu re-export-lar köhnə kodun işləməyə davam etməsini təmin edir
+// Eyni zamanda yeni hook-lara keçidi asanlaşdırır
+export {
+  useDataEntryBusiness as useDataEntryNew,
+  useDataEntryStateBusiness as useDataEntryStateNew
+};

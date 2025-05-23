@@ -117,5 +117,19 @@ export function normalizeUserData(userData: any): FullUserData {
   };
 }
 
+// User filtrasiyası üçün interfeys
+export interface UserFilter {
+  role?: string | string[];
+  status?: string | string[];
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+}
+
 // Re-export UserRole here for backwards compatibility
 export type { UserRole };
