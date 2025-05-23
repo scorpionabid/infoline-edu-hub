@@ -19,7 +19,7 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
         {safeColumns.map((column) => (
           <div key={column.id} className="space-y-1">
             <label className="text-sm font-medium" htmlFor={column.id}>
-              {column.name}
+              {column.name || 'Unnamed Field'}
               {column.is_required && <span className="text-red-500 ml-1">*</span>}
             </label>
             <FieldRenderer

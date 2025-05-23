@@ -20,14 +20,19 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('general');
   
+  // Safely handle category and columns
+  if (!category || !category.columns || !Array.isArray(category.columns)) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        {t('noColumnsAvailable')}
+      </div>
+    );
+  }
+  
   // Group columns by section
   const sections = React.useMemo(() => {
-    if (!category || !category.columns || !Array.isArray(category.columns)) {
-      return { general: [] };
-    }
-    
     // Filter out any null or undefined columns first
-    const validColumns = category.columns.filter(column => column != null);
+    const validColumns = category.columns.filter(column => column && column.id);
     
     return validColumns.reduce((acc: Record<string, Column[]>, column) => {
       if (!column) return acc;  // Skip null/undefined columns
@@ -37,7 +42,7 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
       acc[section].push(column);
       return acc;
     }, { general: [] });
-  }, [category]);
+  }, [category.columns]);
   
   // Check if section keys are valid strings
   const validSections = Object.entries(sections).filter(

@@ -24,12 +24,12 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
   isDisabled = false
 }) => {
   // Safely guard against undefined column
-  if (!column) {
-    console.warn('FieldRenderer received undefined column');
+  if (!column || !column.id) {
+    console.warn('FieldRenderer received invalid column', column);
     return null;
   }
 
-  const columnType = column.type as ColumnType;
+  const columnType = (column.type || 'text') as ColumnType;
   
   switch (columnType) {
     case 'text':
@@ -100,6 +100,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       );
       
     default:
+      console.warn(`Unknown column type: ${columnType}, defaulting to text input`);
       return (
         <InputField 
           column={column} 

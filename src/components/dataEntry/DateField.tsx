@@ -64,12 +64,13 @@ const DateField: React.FC<DateFieldProps> = ({
         </Button>
       </PopoverTrigger>
       {!isDisabled && (
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
           <Calendar
             mode="single"
             selected={validDate}
             onSelect={handleSelect}
             initialFocus
+            className="p-3"
           />
         </PopoverContent>
       )}

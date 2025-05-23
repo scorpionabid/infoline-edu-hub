@@ -18,8 +18,16 @@ export const useDataEntry = ({ categoryId, schoolId }: UseDataEntryProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const categoryDataProps: UseCategoryDataProps = { categoryId };
-  const { category, loading: isCategoryLoading, error: categoryError } = useCategoryData(categoryDataProps);
+  // Default to empty strings for IDs to prevent undefined errors
+  const safeCategoryId = categoryId || '';
+  const safeSchoolId = schoolId || '';
+
+  const categoryDataProps: UseCategoryDataProps = { categoryId: safeCategoryId };
+  const { 
+    category, 
+    loading: isCategoryLoading, 
+    error: categoryError 
+  } = useCategoryData(categoryDataProps);
   
   const { 
     dataEntries, 
@@ -28,21 +36,23 @@ export const useDataEntry = ({ categoryId, schoolId }: UseDataEntryProps) => {
     saveDataEntries,
     fetchDataEntries
   } = useDataEntryState({ 
-    categoryId: categoryId || '', 
-    schoolId: schoolId || '' 
+    categoryId: safeCategoryId, 
+    schoolId: safeSchoolId
   });
 
   const isLoading = isCategoryLoading || isEntriesLoading;
   const error = categoryError || entriesError;
 
-  // Check if we have data for all the columns
-  const hasAllData = category && category.columns && category.columns.every(column => {
-    return dataEntries.some(entry => entry.column_id === column.id);
-  });
+  // Safely check for all data
+  const hasAllData = category && category.columns && Array.isArray(category.columns) && 
+    category.columns.every(column => {
+      return column && column.id && dataEntries && Array.isArray(dataEntries) && 
+        dataEntries.some(entry => entry && entry.column_id === column.id);
+    });
 
-  // Calculate completion percentage
-  const completionPercentage = category && category.columns && category.columns.length > 0
-    ? Math.round((dataEntries.length / category.columns.length) * 100)
+  // Calculate completion percentage with safety checks
+  const completionPercentage = (category?.columns && Array.isArray(category.columns) && category.columns.length > 0)
+    ? Math.round(((dataEntries?.length || 0) / category.columns.length) * 100)
     : 0;
 
   return {

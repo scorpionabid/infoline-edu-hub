@@ -1,6 +1,12 @@
 
 import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { Column } from '@/types/column';
 
 interface SelectFieldProps {
@@ -16,8 +22,10 @@ const SelectField: React.FC<SelectFieldProps> = ({
   onValueChange = () => {}, 
   isDisabled = false 
 }) => {
-  // Ensure options is an array
-  const options = Array.isArray(column.options) ? column.options : [];
+  // Ensure options is an array and filter out invalid options
+  const options = Array.isArray(column.options) 
+    ? column.options.filter(option => option && (option.value !== undefined)) 
+    : [];
 
   return (
     <Select 
@@ -31,15 +39,15 @@ const SelectField: React.FC<SelectFieldProps> = ({
       <SelectContent>
         {options.length > 0 ? (
           options.map((option) => (
-            // Ensure the option is valid before rendering
-            option && option.id ? (
-              <SelectItem key={option.id} value={option.value || ''}>
-                {option.label || ''}
-              </SelectItem>
-            ) : null
+            <SelectItem 
+              key={option.id || `option-${option.value}`} 
+              value={option.value || ''}
+            >
+              {option.label || option.value || ''}
+            </SelectItem>
           ))
         ) : (
-          <SelectItem value="no-options">No options available</SelectItem>
+          <SelectItem value="" disabled>No options available</SelectItem>
         )}
       </SelectContent>
     </Select>

@@ -6,10 +6,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { CalendarIcon } from 'lucide-react';
 import { Column } from '@/types/column';
+import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface DateFieldProps {
   column: Column;
   value: any;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onValueChange?: (value: any) => void;
   isDisabled?: boolean;
 }
@@ -17,33 +20,60 @@ interface DateFieldProps {
 const DateField: React.FC<DateFieldProps> = ({ 
   column, 
   value, 
-  onValueChange = () => {}, 
+  onChange,
+  onValueChange,
   isDisabled = false 
 }) => {
+  const { t } = useLanguage();
+  const currentDate = value ? new Date(value) : undefined;
+  const validDate = currentDate instanceof Date && !isNaN(currentDate.getTime()) ? currentDate : undefined;
+
+  // Handle date selection
+  const handleSelect = (date: Date | undefined) => {
+    if (!date) return;
+    
+    // Use onValueChange if available, otherwise fallback
+    if (onValueChange) {
+      onValueChange(date.toISOString());
+    } else if (onChange) {
+      const fakeEvent = {
+        target: {
+          name: column.id,
+          value: date.toISOString()
+        }
+      } as React.ChangeEvent<HTMLInputElement>;
+      
+      onChange(fakeEvent);
+    }
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button
+        <Button
+          variant="outline"
           className={cn(
-            "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
-            "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-            "disabled:cursor-not-allowed disabled:opacity-50",
+            "w-full justify-start text-left font-normal",
+            !validDate && "text-muted-foreground",
+            isDisabled && "opacity-50 cursor-not-allowed"
           )}
           disabled={isDisabled}
-          type="button"
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? format(new Date(value), 'PP') : <span className="text-muted-foreground">{column.placeholder || 'Select date'}</span>}
-        </button>
+          {validDate ? format(validDate, "PPP") : <span>{column.placeholder || t('selectDate')}</span>}
+        </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={value ? new Date(value) : undefined}
-          onSelect={(date) => onValueChange(date ? date.toISOString() : null)}
-          initialFocus
-        />
-      </PopoverContent>
+      {!isDisabled && (
+        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+          <Calendar
+            mode="single"
+            selected={validDate}
+            onSelect={handleSelect}
+            initialFocus
+            className="p-3"
+          />
+        </PopoverContent>
+      )}
     </Popover>
   );
 };

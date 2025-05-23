@@ -16,38 +16,27 @@ const CheckboxField: React.FC<CheckboxFieldProps> = ({
   onValueChange = () => {}, 
   isDisabled = false 
 }) => {
-  // Ensure options is an array
-  const options = Array.isArray(column.options) ? column.options : [];
-
+  // Handle both string 'true'/'false' and boolean values
+  const checked = value === true || value === 'true';
+  
+  const handleChange = (checked: boolean) => {
+    onValueChange(checked.toString());
+  };
+  
   return (
-    <div className="flex flex-col space-y-2">
-      {options.length > 0 ? (
-        options.map((option) => (
-          // Check if option exists before rendering
-          option && option.id ? (
-            <div key={option.id} className="flex items-center space-x-2">
-              <Checkbox 
-                id={`${column.id}-${option.id}`}
-                checked={(value && Array.isArray(value) && value.includes(option.value)) || false}
-                onCheckedChange={(checked) => {
-                  const currentValue = Array.isArray(value) ? [...value] : [];
-                  if (checked) {
-                    onValueChange([...currentValue, option.value]);
-                  } else {
-                    onValueChange(currentValue.filter(val => val !== option.value));
-                  }
-                }}
-                disabled={isDisabled}
-              />
-              <label className="text-sm" htmlFor={`${column.id}-${option.id}`}>
-                {option.label || ''}
-              </label>
-            </div>
-          ) : null
-        ))
-      ) : (
-        <div className="text-sm text-gray-500">No options available</div>
-      )}
+    <div className="flex items-center space-x-2">
+      <Checkbox 
+        id={column.id} 
+        checked={checked}
+        onCheckedChange={handleChange}
+        disabled={isDisabled}
+      />
+      <label 
+        htmlFor={column.id} 
+        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+      >
+        {column.placeholder || column.name || ''}
+      </label>
     </div>
   );
 };
