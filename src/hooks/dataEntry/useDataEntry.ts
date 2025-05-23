@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
@@ -20,6 +19,7 @@ export const useDataEntry = ({
   categoryId,
   onComplete 
 }: UseDataEntryProps) => {
+  // Core state
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [entries, setEntries] = useState<DataEntry[]>([]);
@@ -43,19 +43,31 @@ export const useDataEntry = ({
   
   const validation = useValidation(categories, entries);
   
-  // Safe form data handling
+  // Safe form data handling with proper event type checking
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = event.target;
-    if (!name) return;
+    if (!event || !event.target) {
+      console.warn('handleInputChange: Invalid event object');
+      return;
+    }
     
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const { name, value } = event.target;
+    if (!name) {
+      console.warn('handleInputChange: Missing name attribute');
+      return;
+    }
+    
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: value
+      };
+      console.debug('Form data updated:', { name, value, newData });
+      return newData;
+    });
     setIsDataModified(true);
   }, []);
 
-  // Handle form submission
+  // Handle form submission with enhanced error handling
   const handleSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault();
     setIsSubmitting(true);
@@ -65,14 +77,30 @@ export const useDataEntry = ({
         throw new Error('Missing required school or category ID');
       }
 
-      // Convert form data to entries format
-      const entriesToSave = Object.entries(formData).map(([columnId, value]) => ({
-        column_id: columnId,
-        category_id: currentCategory.id,
-        school_id: schoolId,
-        value: String(value || ''),
-        status: 'pending' as DataEntryStatus
-      }));
+      // Validate that formData exists and is an object
+      if (!formData || typeof formData !== 'object') {
+        throw new Error('Invalid form data');
+      }
+
+      // Convert form data to entries format with safety checks
+      const entriesToSave = Object.entries(formData)
+        .filter(([columnId, value]) => columnId && columnId.trim() !== '')
+        .map(([columnId, value]) => ({
+          column_id: columnId,
+          category_id: currentCategory.id,
+          school_id: schoolId,
+          value: String(value || ''),
+          status: 'pending' as DataEntryStatus
+        }));
+
+      if (entriesToSave.length === 0) {
+        toast({
+          title: t('warning'),
+          description: t('noDataToSubmit'),
+          variant: 'destructive'
+        });
+        return;
+      }
 
       // Save to database
       const { error } = await supabase
@@ -102,7 +130,7 @@ export const useDataEntry = ({
     }
   }, [formData, schoolId, currentCategory, toast, t, onComplete]);
 
-  // Handle save as draft
+  // Handle save as draft with enhanced validation
   const handleSave = useCallback(async () => {
     setIsAutoSaving(true);
     
@@ -111,14 +139,27 @@ export const useDataEntry = ({
         throw new Error('Missing required school or category ID');
       }
 
+      // Validate formData
+      if (!formData || typeof formData !== 'object') {
+        console.warn('handleSave: Invalid form data, skipping save');
+        return;
+      }
+
       // Convert form data to entries format
-      const entriesToSave = Object.entries(formData).map(([columnId, value]) => ({
-        column_id: columnId,
-        category_id: currentCategory.id,
-        school_id: schoolId,
-        value: String(value || ''),
-        status: 'draft' as DataEntryStatus
-      }));
+      const entriesToSave = Object.entries(formData)
+        .filter(([columnId, value]) => columnId && columnId.trim() !== '')
+        .map(([columnId, value]) => ({
+          column_id: columnId,
+          category_id: currentCategory.id,
+          school_id: schoolId,
+          value: String(value || ''),
+          status: 'draft' as DataEntryStatus
+        }));
+
+      if (entriesToSave.length === 0) {
+        console.log('handleSave: No data to save');
+        return;
+      }
 
       // Save to database
       const { error } = await supabase
@@ -151,24 +192,36 @@ export const useDataEntry = ({
   const handleReset = useCallback(() => {
     setFormData({});
     setIsDataModified(false);
+    console.log('Form data reset');
   }, []);
 
-  // Handle category change
+  // Handle category change with enhanced safety
   const handleCategoryChange = useCallback((category: CategoryWithColumns) => {
+    if (!category || !category.id) {
+      console.warn('handleCategoryChange: Invalid category');
+      return;
+    }
+    
     setCurrentCategory(category);
     setSelectedCategory(category);
     
     // Reset form data when category changes
     setFormData({});
+    setIsDataModified(false);
     
     // Load existing data for this category
-    if (schoolId && category.id) {
+    if (schoolId) {
       loadDataForCategory(schoolId, category.id);
     }
   }, [schoolId]);
 
-  // Load data for specific category
+  // Load data for specific category with enhanced error handling
   const loadDataForCategory = useCallback(async (schoolId: string, categoryId: string) => {
+    if (!schoolId || !categoryId) {
+      console.warn('loadDataForCategory: Missing required parameters');
+      return;
+    }
+    
     setLoadingEntry(true);
     setEntryError(null);
     
@@ -181,18 +234,20 @@ export const useDataEntry = ({
 
       if (error) throw error;
 
-      // Convert entries to form data
+      // Convert entries to form data with proper validation
       const newFormData: Record<string, string> = {};
       if (data && Array.isArray(data)) {
         data.forEach(entry => {
-          if (entry.column_id && entry.value !== null) {
+          if (entry && entry.column_id && entry.value !== null && entry.value !== undefined) {
             newFormData[entry.column_id] = String(entry.value);
           }
         });
       }
 
+      console.debug('Loaded form data for category:', { categoryId, newFormData });
       setFormData(newFormData);
       setEntries(data || []);
+      setIsDataModified(false);
     } catch (err: any) {
       console.error('Error loading category data:', err);
       setEntryError(err.message || 'Failed to load data');
@@ -201,7 +256,74 @@ export const useDataEntry = ({
     }
   }, []);
   
-  // Functions expected by tests
+  // Load categories with enhanced error handling
+  const loadCategories = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('priority', { ascending: true });
+      
+      if (error) throw error;
+      
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        setCategories([]);
+        return;
+      }
+      
+      // Load columns for categories with proper error handling
+      const columnsPromises = data.map(async (category) => {
+        if (!category || !category.id) {
+          console.warn('loadCategories: Invalid category found:', category);
+          return null;
+        }
+        
+        try {
+          const { data: columns, error: columnsError } = await supabase
+            .from('columns')
+            .select('*')
+            .eq('category_id', category.id)
+            .order('order_index', { ascending: true });
+          
+          if (columnsError) throw columnsError;
+          
+          return {
+            ...category,
+            columns: columns || []
+          };
+        } catch (err) {
+          console.error(`Error loading columns for category ${category.id}:`, err);
+          return {
+            ...category,
+            columns: []
+          };
+        }
+      });
+      
+      const categoriesWithColumns = (await Promise.all(columnsPromises))
+        .filter(Boolean) as CategoryWithColumns[];
+      
+      setCategories(categoriesWithColumns);
+      
+      if (categoryId) {
+        const category = categoriesWithColumns.find(cat => cat.id === categoryId);
+        if (category) {
+          setCurrentCategory(category);
+          setSelectedCategory(category);
+        }
+      }
+      
+    } catch (err: any) {
+      console.error('Error loading categories:', err);
+      setError(err.message || 'Failed to load categories');
+    } finally {
+      setLoading(false);
+    }
+  }, [categoryId]);
+
+  // Functions expected by tests (keeping the same interface)
   const saveEntry = useCallback(async (data: any) => {
     try {
       const response = await supabase
@@ -266,145 +388,17 @@ export const useDataEntry = ({
     }
   }, []);
   
-  const loadCategories = async () => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('priority', { ascending: true });
-      
-      if (error) throw error;
-      
-      if (!data || !Array.isArray(data) || data.length === 0) {
-        setCategories([]);
-        setLoading(false);
-        return;
-      }
-      
-      // Kategoriler için sütunları yükle
-      const columnsPromises = data.map(async (category) => {
-        const { data: columns, error: columnsError } = await supabase
-          .from('columns')
-          .select('*')
-          .eq('category_id', category.id)
-          .order('order_index', { ascending: true });
-        
-        if (columnsError) throw columnsError;
-        
-        return {
-          ...category,
-          columns: columns || []
-        };
-      });
-      
-      const categoriesWithColumns = await Promise.all(columnsPromises);
-      setCategories(categoriesWithColumns);
-      
-      if (categoryId) {
-        setSelectedCategory(categoriesWithColumns.find(cat => cat.id === categoryId));
-      }
-      
-    } catch (err: any) {
-      console.error('Kategoriler yüklenirken hata:', err);
-      setError(err.message || 'Kategoriler yüklenirken hata oluştu');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Belirli bir okul için veri yükle
-  const loadDataForSchool = useCallback(async (schoolId: string) => {
-    try {
-      setLoading(true);
-      
-      // Önce kategorileri yükle
-      await loadCategories();
-      
-      // Sonra bu okul için verileri yükle
-      const { data, error } = await supabase
-        .from('data_entries')
-        .select('*')
-        .eq('school_id', schoolId);
-      
-      if (error) throw error;
-      
-      if (data && Array.isArray(data)) {
-        setEntries(data);
-      }
-      
-    } catch (err: any) {
-      console.error('Okul verileri yüklenirken hata:', err);
-      setError(err.message || 'Okul verileri yüklenirken hata oluştu');
-    } finally {
-      setLoading(false);
-    }
-  }, [loadCategories]);
-  
-  // İlk yükleme
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        setLoading(true);
-        
-        const { data, error } = await supabase
-          .from('categories')
-          .select('*')
-          .order('priority', { ascending: true });
-        
-        if (error) throw error;
-        
-        if (!data || !Array.isArray(data) || data.length === 0) {
-          setCategories([]);
-          setLoading(false);
-          return;
-        }
-        
-        // Load columns for categories
-        const columnsPromises = data.map(async (category) => {
-          const { data: columns, error: columnsError } = await supabase
-            .from('columns')
-            .select('*')
-            .eq('category_id', category.id)
-            .order('order_index', { ascending: true });
-          
-          if (columnsError) throw columnsError;
-          
-          return {
-            ...category,
-            columns: columns || []
-          };
-        });
-        
-        const categoriesWithColumns = await Promise.all(columnsPromises);
-        setCategories(categoriesWithColumns);
-        
-        if (categoryId) {
-          const category = categoriesWithColumns.find(cat => cat.id === categoryId);
-          if (category) {
-            setCurrentCategory(category);
-            setSelectedCategory(category);
-          }
-        }
-        
-      } catch (err: any) {
-        console.error('Error loading categories:', err);
-        setError(err.message || 'Failed to load categories');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCategories();
-  }, [categoryId]);
-
   // Load data when category and school are selected
   useEffect(() => {
     if (currentCategory && schoolId) {
       loadDataForCategory(schoolId, currentCategory.id);
     }
   }, [currentCategory, schoolId, loadDataForCategory]);
+  
+  // Initial loading
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
   
   return {
     formData,
@@ -422,7 +416,7 @@ export const useDataEntry = ({
     handleSave,
     handleReset,
     handleCategoryChange,
-    loadDataForSchool,
+    loadDataForSchool: loadCategories, // Alias for backward compatibility
     entries,
     submitForApproval: async () => Promise.resolve(),
     saveStatus,

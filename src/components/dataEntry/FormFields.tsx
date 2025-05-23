@@ -5,7 +5,6 @@ import { Column } from '@/types/column';
 import { useFormContext } from 'react-hook-form';
 import FieldRendererSimple from './fields/FieldRendererSimple';
 
-// Define proper types
 interface FormFieldsProps {
   columns?: Column[];
   disabled?: boolean;
@@ -13,7 +12,7 @@ interface FormFieldsProps {
 }
 
 const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false, readOnly = false }) => {
-  // Defensively filter columns to ensure all are valid
+  // Safe columns filtering with enhanced validation
   const safeColumns = React.useMemo(() => {
     try {
       if (!Array.isArray(columns)) {
@@ -44,13 +43,17 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
     
   const formContext = useFormContext();
   
-  // Form context not available - static render
+  // Form context not available - render static fields
   if (!formContext) {
+    console.warn('FormFields: No form context available, rendering static fields');
     return (
       <div className="space-y-6">
         {safeColumns.map(column => (
           <div key={column.id} className="grid gap-2">
-            <div className="font-medium">{column.name}</div>
+            <div className="font-medium">
+              {column.name}
+              {column.is_required && <span className="text-red-500 ml-1">*</span>}
+            </div>
             <FieldRendererSimple
               type={column.type}
               value=""
@@ -59,10 +62,11 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
               required={!!column.is_required}
               readOnly={true}
               options={column.options}
+              placeholder={column.placeholder}
             />
-            {column.description && (
+            {column.help_text && (
               <p className="text-sm text-muted-foreground">
-                {column.description}
+                {column.help_text}
               </p>
             )}
           </div>
@@ -76,6 +80,7 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
       {safeColumns.map(column => {
         // Skip columns with invalid IDs
         if (!column.id || typeof column.id !== 'string') {
+          console.warn('Skipping column with invalid ID:', column);
           return null;
         }
         
@@ -94,7 +99,18 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
                   <FieldRendererSimple
                     type={column.type}
                     value={field.value || ''}
-                    onChange={field.onChange}
+                    onChange={(value) => {
+                      // Enhanced onChange with proper validation
+                      try {
+                        if (typeof field.onChange === 'function') {
+                          field.onChange(value);
+                        } else {
+                          console.warn('FormFields: field.onChange is not a function for column:', column.id);
+                        }
+                      } catch (err) {
+                        console.error('FormFields: Error calling field.onChange:', err);
+                      }
+                    }}
                     disabled={disabled || readOnly}
                     required={!!column.is_required}
                     readOnly={readOnly}

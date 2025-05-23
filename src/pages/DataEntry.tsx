@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { FormFields } from '@/components/dataEntry/FormFields';
 
 // Alert komponenti
 export const Alert = React.forwardRef<
@@ -66,11 +67,17 @@ const DataEntryForm = ({
   const location = useLocation();
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   
-  // Ensuring categories is always an array, even if undefined is passed
-  const safeCategories = Array.isArray(categories) ? categories : [];
+  // Safe categories check
+  const safeCategories = React.useMemo(() => {
+    if (!Array.isArray(categories)) {
+      console.warn('DataEntryForm: categories is not an array:', categories);
+      return [];
+    }
+    return categories.filter(cat => cat && cat.id);
+  }, [categories]);
   
   const {
-    formData = {}, // Default to empty object to prevent undefined access
+    formData,
     isAutoSaving,
     isSubmitting,
     handleInputChange,
@@ -85,10 +92,10 @@ const DataEntryForm = ({
     entryId
   } = useDataEntry({
     schoolId,
-    initialCategoryId
+    categoryId: initialCategoryId
   });
 
-  // Safe formData access function
+  // Safe formData access with proper null checks
   const getFormValue = useCallback((columnId: string): string => {
     if (!formData || typeof formData !== 'object') {
       return '';
@@ -97,16 +104,16 @@ const DataEntryForm = ({
     return value !== undefined && value !== null ? String(value) : '';
   }, [formData]);
   
-  // Kateqoriya dəyişdikdə URL-i yeniləyirik
+  // Update URL when category changes
   useEffect(() => {
-    if (currentCategory) {
+    if (currentCategory && currentCategory.id) {
       const newParams = new URLSearchParams(location.search);
       newParams.set('categoryId', currentCategory.id);
       navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
     }
   }, [currentCategory, location.pathname, location.search, navigate]);
   
-  // Yüklənmə zamanı göstəriləcək komponent
+  // Loading state
   if (loadingEntry) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-15rem)]">
@@ -116,7 +123,7 @@ const DataEntryForm = ({
     );
   }
   
-  // Xəta zamanı göstəriləcək komponent
+  // Error state
   if (entryError) {
     return (
       <div className="p-4">
@@ -132,7 +139,7 @@ const DataEntryForm = ({
     );
   }
   
-  // Kateqoriya tapılmadıqda göstəriləcək komponent
+  // No categories state
   if (!safeCategories || safeCategories.length === 0) {
     return (
       <div className="p-4">
@@ -147,7 +154,7 @@ const DataEntryForm = ({
     );
   }
   
-  // Seçilmiş kateqoriya - safely get it
+  // Selected category with safety check
   const selectedCategory = currentCategory || (safeCategories.length > 0 ? safeCategories[0] : null);
   
   if (!selectedCategory) {
@@ -166,7 +173,7 @@ const DataEntryForm = ({
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      {/* Başlıq - Məktəb adından daxil edilirsə göstərilir */}
+      {/* School header for sector admin */}
       {isSectorAdmin && schoolName && (
         <div className="md:col-span-4 mb-2">
           <Alert variant="default" className="bg-blue-50">
@@ -178,7 +185,7 @@ const DataEntryForm = ({
         </div>
       )}
       
-      {/* Kateqoriyalar siyahısı */}
+      {/* Categories list */}
       <div className="md:col-span-1">
         <Card>
           <CardHeader>
@@ -220,7 +227,7 @@ const DataEntryForm = ({
         </Card>
       </div>
       
-      {/* Məlumat daxiletmə formu */}
+      {/* Data entry form */}
       <div className="md:col-span-3">
         <Card>
           <CardHeader>
@@ -229,128 +236,17 @@ const DataEntryForm = ({
           <CardContent>
             <ScrollArea className="h-[calc(100vh-15rem)]">
               <form onSubmit={handleSubmit} className="space-y-6 p-2">
-                {selectedCategory?.columns && Array.isArray(selectedCategory.columns) ? 
-                  selectedCategory.columns.map((column) => {
-                    // Add null check here to protect against undefined columns
-                    if (!column || !column.id) return null;
-                    
-                    return (
-                      <div key={column.id} className="space-y-2">
-                        <label htmlFor={column.id} className="text-sm font-medium">
-                          {column.name || 'Unnamed Field'}
-                          {column.is_required && <span className="text-red-500 ml-1">*</span>}
-                        </label>
-                        
-                        {/* Sütun tipinə görə input - Using safe formData access */}
-                        {column.type === 'text' && (
-                          <input
-                            type="text"
-                            id={column.id}
-                            name={column.id}
-                            value={getFormValue(column.id)}
-                            onChange={handleInputChange}
-                            placeholder={column.placeholder || ''}
-                            className="w-full p-2 border rounded-md"
-                            required={column.is_required}
-                          />
-                        )}
-                        
-                        {column.type === 'textarea' && (
-                          <textarea
-                            id={column.id}
-                            name={column.id}
-                            value={getFormValue(column.id)}
-                            onChange={handleInputChange}
-                            placeholder={column.placeholder || ''}
-                            className="w-full p-2 border rounded-md min-h-[100px]"
-                            required={column.is_required}
-                          />
-                        )}
-                        
-                        {column.type === 'number' && (
-                          <input
-                            type="number"
-                            id={column.id}
-                            name={column.id}
-                            value={getFormValue(column.id)}
-                            onChange={handleInputChange}
-                            placeholder={column.placeholder || ''}
-                            className="w-full p-2 border rounded-md"
-                            required={column.is_required}
-                          />
-                        )}
-                        
-                        {column.type === 'select' && (
-                          <select
-                            id={column.id}
-                            name={column.id}
-                            value={getFormValue(column.id)}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border rounded-md"
-                            required={column.is_required}
-                          >
-                            <option value="">{t('select')}</option>
-                            {column.options && Array.isArray(column.options) ? 
-                              column.options.map((option, index) => {
-                                // Add null check for option
-                                if (!option) return null;
-                                
-                                const value = typeof option === 'object' ? option.value || option : option;
-                                const label = typeof option === 'object' ? option.label || value : option;
-                                
-                                return (
-                                  <option key={`${index}-${value}`} value={value}>
-                                    {label}
-                                  </option>
-                                );
-                              })
-                              : <option disabled>{t('noOptionsAvailable')}</option>
-                            }
-                          </select>
-                        )}
-                        
-                        {column.type === 'date' && (
-                          <input
-                            type="date"
-                            id={column.id}
-                            name={column.id}
-                            value={getFormValue(column.id)}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border rounded-md"
-                            required={column.is_required}
-                          />
-                        )}
-                        
-                        {column.type === 'checkbox' && (
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id={column.id}
-                              name={column.id}
-                              checked={getFormValue(column.id) === 'true'}
-                              onChange={(e) => handleInputChange({
-                                target: {
-                                  name: column.id,
-                                  value: e.target.checked ? 'true' : 'false'
-                                }
-                              } as React.ChangeEvent<HTMLInputElement>)}
-                              className="mr-2"
-                            />
-                            <label htmlFor={column.id}>{column.placeholder || column.name}</label>
-                          </div>
-                        )}
-                        
-                        {column.help_text && (
-                          <p className="text-xs text-gray-500">{column.help_text}</p>
-                        )}
-                      </div>
-                    );
-                  })
-                  : 
+                {selectedCategory?.columns && Array.isArray(selectedCategory.columns) ? (
+                  <FormFields 
+                    columns={selectedCategory.columns}
+                    disabled={isSubmitting || isAutoSaving}
+                    readOnly={false}
+                  />
+                ) : (
                   <div className="text-center py-6 text-gray-500">
                     {t('noColumnsForCategory')}
                   </div>
-                }
+                )}
                 
                 <div className="flex justify-between pt-4">
                   <div>
