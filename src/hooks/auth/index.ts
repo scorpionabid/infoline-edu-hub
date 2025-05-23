@@ -22,7 +22,7 @@ export {
 // Export the useSupabaseAuth hook
 export { useSupabaseAuth } from './useSupabaseAuth';
 
-// Re-export from context for convenience
-export { useAuth } from '@/context/auth/useAuth';
+// Export the new combined useAuth hook - yerli implementasiya
+export { useAuth, type UseAuthResult } from './useAuth';
 export { useRole } from '@/context/auth/useRole';
 export type { PermissionLevel, PermissionChecker, PermissionResult } from './permissionTypes';

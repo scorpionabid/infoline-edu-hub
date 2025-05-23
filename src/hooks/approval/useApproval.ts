@@ -1,9 +1,34 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { DataEntryTableData } from '@/types/dataEntry';
+import { FullUserData } from '@/types/supabase';
 import { useToast } from '@/hooks/common/useToast';
 import { useLanguage } from '@/context/LanguageContext';
+
+// Tip xətalarını həll etmək üçün sadə bir interface yaradırıq
+// Bu, Supabase tipləri tam olaraq inteqrasiya edilənə qədər bir müvəqqəti həlldir
+interface ApprovalRecord {
+  id: string;
+  school_id: string;
+  category_id: string;
+  status: string;
+  rejection_reason?: string;
+  approved_by?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+// DataEntryTableData tipi üçün ara interface
+export interface ApprovalEntryData {
+  id: string;
+  columnId: string;
+  columnName: string;
+  type: string;
+  value: any;
+  status: string;
+  comments?: string;
+  isRequired: boolean;
+}
 
 export const useApproval = (schoolId?: string, categoryId?: string) => {
   const params = useParams();
@@ -14,7 +39,7 @@ export const useApproval = (schoolId?: string, categoryId?: string) => {
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<{ entries: DataEntryTableData[], status: string }>({ 
+  const [data, setData] = useState<{ entries: ApprovalEntryData[], status: string }>({ 
     entries: [], 
     status: 'pending'
   });
@@ -60,7 +85,8 @@ export const useApproval = (schoolId?: string, categoryId?: string) => {
         if (categoryError) throw categoryError;
         
         // Approval vəziyyətini əldə et
-        const { data: approval, error: approvalError } = await supabase
+        // Type-safe olmayan variant - müvəqqəti həll
+        const approvalResponse = await (supabase as any)
           .from('approvals')
           .select('status, rejection_reason')
           .eq('school_id', resolvedSchoolId)
@@ -68,6 +94,9 @@ export const useApproval = (schoolId?: string, categoryId?: string) => {
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+          
+        const approval = approvalResponse.data;
+        const approvalError = approvalResponse.error;
         
         if (approvalError) throw approvalError;
         
@@ -83,7 +112,7 @@ export const useApproval = (schoolId?: string, categoryId?: string) => {
         }));
         
         setData({
-          entries: formattedEntries, 
+          entries: formattedEntries as ApprovalEntryData[], 
           status: approval?.status || 'pending'
         });
         setSchoolName(school?.name || '');
@@ -92,11 +121,7 @@ export const useApproval = (schoolId?: string, categoryId?: string) => {
       } catch (err: any) {
         console.error('Error loading approval data:', err);
         setError(err.message);
-        toast({
-          title: t('error'),
-          description: t('errorLoadingData'),
-          variant: 'destructive',
-        });
+        toast(`${t('error')}: ${t('errorLoadingData')}`);
       } finally {
         setLoading(false);
       }
@@ -114,34 +139,29 @@ export const useApproval = (schoolId?: string, categoryId?: string) => {
       
       setLoading(true);
       // Təsdiqləmə yazısı əlavə et
-      const { error: approvalError } = await supabase
+      const user = (await supabase.auth.getUser()).data.user;
+      const approvalResponse = await (supabase as any)
         .from('approvals')
         .insert({
           school_id: resolvedSchoolId,
           category_id: resolvedCategoryId,
           status: 'approved',
-          approved_by: (await supabase.auth.getUser()).data.user?.id,
+          approved_by: user?.id
         });
+        
+      const error = approvalResponse.error;
       
-      if (approvalError) throw approvalError;
+      if (error) throw error;
       
       // Məlumatları yenilə
       setData(prev => ({ ...prev, status: 'approved' }));
       
-      toast({
-        title: t('success'),
-        description: t('dataApproveSuccess'),
-        variant: 'success',
-      });
+      toast(`${t('success')}: ${t('approvalSuccessful')}`);
       
       return true;
     } catch (err: any) {
       console.error('Error approving data:', err);
-      toast({
-        title: t('error'),
-        description: t('errorApprovingData'),
-        variant: 'destructive',
-      });
+      toast(`${t('error')}: ${t('errorApprovingSubmission')}`);
       return false;
     } finally {
       setLoading(false);
@@ -149,47 +169,42 @@ export const useApproval = (schoolId?: string, categoryId?: string) => {
   }, [resolvedSchoolId, resolvedCategoryId, toast, t]);
   
   // Məlumatı rədd et
-  const rejectData = useCallback(async (reason: string) => {
+  const rejectData = useCallback(async (rejectionReason: string) => {
     try {
       if (!resolvedSchoolId || !resolvedCategoryId) {
         throw new Error('School ID or Category ID is missing');
       }
       
-      if (!reason.trim()) {
+      if (!rejectionReason.trim()) {
         throw new Error('Rejection reason is required');
       }
       
       setLoading(true);
       // Təsdiqləmə yazısı əlavə et
-      const { error: approvalError } = await supabase
+      const user = (await supabase.auth.getUser()).data.user;
+      const approvalResponse = await (supabase as any)
         .from('approvals')
         .insert({
           school_id: resolvedSchoolId,
           category_id: resolvedCategoryId,
           status: 'rejected',
-          rejection_reason: reason,
-          approved_by: (await supabase.auth.getUser()).data.user?.id,
+          rejection_reason: rejectionReason,
+          approved_by: user?.id
         });
+        
+      const error = approvalResponse.error;
       
-      if (approvalError) throw approvalError;
+      if (error) throw error;
       
       // Məlumatları yenilə
       setData(prev => ({ ...prev, status: 'rejected' }));
       
-      toast({
-        title: t('success'),
-        description: t('dataRejectSuccess'),
-        variant: 'success',
-      });
+      toast(`${t('success')}: ${t('rejectionSuccessful')}`);
       
       return true;
     } catch (err: any) {
       console.error('Error rejecting data:', err);
-      toast({
-        title: t('error'),
-        description: t('errorRejectingData'),
-        variant: 'destructive',
-      });
+      toast(`${t('error')}: ${t('errorRejectingSubmission')}`);
       return false;
     } finally {
       setLoading(false);

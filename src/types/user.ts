@@ -34,6 +34,9 @@ export interface FullUserData extends User {
   entityTypes?: string[];
   entityName?: any;
   adminEntity?: any;
+  // İstifadəçi seçimləri
+  preferences?: Record<string, any>;
+  metadata?: Record<string, any>; // Əlavə metaverilənlər üçün
   // Aliases for compatibility
   regionId?: string;
   sectorId?: string;

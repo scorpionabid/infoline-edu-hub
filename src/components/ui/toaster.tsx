@@ -7,27 +7,16 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
-import { useToast } from "@/hooks/use-toast"
+// Sonner toast kitabxanası özü toasts-ları idarə edir, useToast-a ehtiyac yoxdur
+import { toast } from "sonner"
 
 export function Toaster() {
-  const { toasts } = useToast()
-
+  // Soner toast sistemindən gələn toasts array yoxdur
+  // Buna görə bu komponent boş bir provider təqdim edir
+  // Və soner öz UI-nı göstərəcək
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
-        return (
-          <Toast key={id} {...props}>
-            <div className="grid gap-1">
-              {title && <ToastTitle>{title}</ToastTitle>}
-              {description && (
-                <ToastDescription>{description}</ToastDescription>
-              )}
-            </div>
-            {action}
-            <ToastClose />
-          </Toast>
-        )
-      })}
+      {/* Soner toast sistemində xatırlanan toasts-ları məhz Soner özü idarə edir */}
       <ToastViewport />
     </ToastProvider>
   )

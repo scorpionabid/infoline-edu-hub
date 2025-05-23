@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 /**
  * Hook to handle category form operations
  */
-const useCategoryForm = () => {
+export const useCategoryForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
@@ -64,4 +64,4 @@ const useCategoryForm = () => {
   };
 };
 
-export default useCategoryForm;
+// Default export artıq istifadə edilmir - named export istifadə edirik

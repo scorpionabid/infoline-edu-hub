@@ -1,35 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
-import { AuthService } from '@/services/auth/AuthService';
-import { FullUserData } from '@/types/auth';
-import { Session } from '@supabase/supabase-js';
+import { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { AuthService } from '@/services/auth/AuthService';
+import { FullUserData } from '@/types/user';
 import { toast } from 'sonner';
+import { AuthActions, AuthState } from './authTypes';
 
-export interface UseAuthResult {
-  user: FullUserData | null;
-  session: Session | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: Error | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
-  refreshSession: () => Promise<void>;
-  refreshUserData: () => Promise<FullUserData | null>;
-  clearError: () => void;
-}
-
-export const useAuth2 = (): UseAuthResult => {
-  const [user, setUser] = useState<FullUserData | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [authInitialized, setAuthInitialized] = useState(false);
-
+/**
+ * useAuthActions - autentifikasiya əməliyyatlarını idarə edən hook
+ * 
+ * Bu hook, auth state-i üzərində əməliyyatlar yerinə yetirir və dəyişikliklər edir.
+ * Daxili state-i özündə saxlamır, onu useAuthState-dən alır.
+ */
+export const useAuthActions = (
+  state: AuthState,
+  setUser: (user: FullUserData | null) => void,
+  setSession: (session: any) => void,
+  setIsAuthenticated: (isAuth: boolean) => void,
+  setIsLoading: (isLoading: boolean) => void,
+  setError: (error: Error | null) => void
+) => {
   // Clear error
   const clearError = useCallback(() => {
     setError(null);
-  }, []);
+  }, [setError]);
 
   // Login with email and password
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
@@ -61,7 +54,7 @@ export const useAuth2 = (): UseAuthResult => {
     } finally {
       setIsLoading(false);
     }
-  }, [clearError]);
+  }, [clearError, setError, setIsAuthenticated, setIsLoading, setSession, setUser]);
 
   // Logout - fixed implementation to properly clear the state
   const logout = useCallback(async (): Promise<void> => {
@@ -108,11 +101,11 @@ export const useAuth2 = (): UseAuthResult => {
     } finally {
       setIsLoading(false);
     }
-  }, [clearError]);
+  }, [clearError, setIsAuthenticated, setIsLoading, setSession, setUser]);
 
   // Refresh session with debounce to prevent multiple simultaneous calls
   const refreshSession = useCallback(async (): Promise<void> => {
-    if (isLoading) return;
+    if (state.isLoading) return;
     
     setIsLoading(true);
     clearError();
@@ -152,14 +145,14 @@ export const useAuth2 = (): UseAuthResult => {
     } finally {
       setIsLoading(false);
     }
-  }, [clearError, isLoading]);
+  }, [clearError, setError, setIsAuthenticated, setIsLoading, setSession, setUser, state.isLoading]);
 
   // Refresh user data
   const refreshUserData = useCallback(async (): Promise<FullUserData | null> => {
-    if (!session || !isAuthenticated) return null;
+    if (!state.session || !state.isAuthenticated) return null;
     
     try {
-      const userData = await AuthService.fetchUserData(session);
+      const userData = await AuthService.fetchUserData(state.session);
       
       if (userData) {
         setUser(userData);
@@ -171,101 +164,13 @@ export const useAuth2 = (): UseAuthResult => {
       console.error('User refresh xətası:', err);
       return null;
     }
-  }, [session, isAuthenticated]);
-
-  // Initialize auth state using a one-time flag to prevent loops
-  useEffect(() => {
-    // Skip if already initialized
-    if (authInitialized) return;
-    
-    const initialize = async () => {
-      setIsLoading(true);
-      
-      try {
-        // Set up auth state listener first (before checking session)
-        // but use a variable to prevent multiple subscription setup
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-          console.log('Auth state change event:', event);
-          
-          if (event === 'SIGNED_IN') {
-            setSession(currentSession);
-            setIsAuthenticated(true);
-            
-            // Use setTimeout to avoid React state update deadlocks
-            setTimeout(async () => {
-              if (currentSession) {
-                const userData = await AuthService.fetchUserData(currentSession);
-                if (userData) {
-                  setUser(userData);
-                }
-              }
-            }, 0);
-          } 
-          else if (event === 'SIGNED_OUT') {
-            setUser(null);
-            setSession(null);
-            setIsAuthenticated(false);
-            // Clear cache on sign out
-            AuthService.clearCache();
-          } 
-          else if (event === 'TOKEN_REFRESHED') {
-            setSession(currentSession);
-            
-            // Refresh user data but use setTimeout to prevent React update deadlocks
-            setTimeout(async () => {
-              if (currentSession) {
-                const userData = await AuthService.fetchUserData(currentSession);
-                if (userData) {
-                  setUser(userData);
-                }
-              }
-            }, 0);
-          }
-        });
-        
-        // Check for existing session
-        const { session: currentSession } = await AuthService.getSession();
-        
-        if (currentSession) {
-          setSession(currentSession);
-          setIsAuthenticated(true);
-          
-          const userData = await AuthService.fetchUserData(currentSession);
-          
-          if (userData) {
-            setUser(userData);
-          }
-        }
-        
-        // Mark as initialized to prevent loops
-        setAuthInitialized(true);
-        
-        // Cleanup function to unsubscribe
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (err) {
-        console.error('Auth initialization error:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    initialize();
-  }, []);
+  }, [setUser, state.isAuthenticated, state.session]);
 
   return {
-    user,
-    session,
-    isAuthenticated,
-    isLoading,
-    error,
     login,
     logout,
     refreshSession,
     refreshUserData,
-    clearError,
-  };
+    clearError
+  } as Partial<AuthActions>;
 };
-
-export default useAuth2;

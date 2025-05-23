@@ -3,15 +3,13 @@ import React, { useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/layout/PageHeader';
-import { useApprovalData } from '@/hooks/useApprovalData';
+import { useApprovalData } from '@/hooks/approval/useApprovalData';
 import { DataEntryRecord } from '@/types/dataEntry';
 
 const Approval: React.FC = () => {
-  const { approvalData, loading, error, fetchApprovalData, approveEntry, rejectEntry } = useApprovalData();
+  const { data, loading, error } = useApprovalData();
   
-  useEffect(() => {
-    fetchApprovalData();
-  }, [fetchApprovalData]);
+  // Hook özü data-nı load edir, useEffect-ə ehtiyac yoxdur
 
   return (
     <div className="container mx-auto py-6">
@@ -28,48 +26,30 @@ const Approval: React.FC = () => {
               Error loading approval data: {error.message}
             </CardContent>
           </Card>
-        ) : approvalData.length === 0 ? (
+        ) : !data || data.schools.length === 0 ? (
           <Card>
             <CardContent className="p-6">
               <p className="text-center">No pending approvals found.</p>
             </CardContent>
           </Card>
         ) : (
-          approvalData.map((item: DataEntryRecord) => (
-            <Card key={item.id}>
+          <>
+            <Card className="shadow-md">
               <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-medium">
-                      {item.categories?.name || 'Undefined Category'}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      Column: {item.columns?.name || 'Unknown'} | 
-                      Value: {item.value?.toString() || 'N/A'}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      ID: {item.id} | Submitted: {new Date(item.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => rejectEntry(item.id)}
-                    >
-                      Reject
-                    </Button>
-                    <Button 
-                      size="sm"
-                      onClick={() => approveEntry(item.id)}
-                    >
-                      Approve
-                    </Button>
-                  </div>
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold">Təsdiqləmə məlumatları</h3>
+                  <p className="text-sm text-gray-500">
+                    Məktəblər: {data?.schools.length} | Regionlar: {data?.regions.length} | Sektorlar: {data?.sectors.length}
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-4 mb-4">
+                  <p>Təsdiqləmə məlumatları yükləndi, amma indilik tam funksionallıq tətbiq edilməyib.</p>
+                  <p>Refaktor prosesində bu səhifə yenilənəcək.</p>
                 </div>
               </CardContent>
             </Card>
-          ))
+          </>
         )}
       </div>
     </div>

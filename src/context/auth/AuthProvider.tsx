@@ -1,20 +1,22 @@
 import React, { createContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { AuthContextType } from '@/types/auth';
-import { useAuth2 } from '@/hooks/auth/useAuth2';
+import { AuthContextType, FullUserData as AuthFullUserData } from '@/types/auth';
+import { useAuth } from '@/hooks/auth/useAuth';
 import { AuthService } from '@/services/auth/AuthService';
+import { FullUserData as UserFullUserData } from '@/types/user';
 
 // Use the existing AuthContext from context.ts instead of creating a new one
 import { AuthContext } from './context';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const auth = useAuth2();
+  const auth = useAuth();
   const [error, setError] = useState<string>('');
 
   // Map our new auth hook to maintain backward compatibility
+  // Type uyğunsuzluğunu həll etmək üçün user obyektini AuthFullUserData tipinə çeviririk
   const value: AuthContextType = {
-    user: auth.user,
+    user: auth.user as unknown as AuthFullUserData,
     session: auth.session,
     isAuthenticated: auth.isAuthenticated,
     authenticated: auth.isAuthenticated, // For backwards compatibility
@@ -87,7 +89,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     },
     
-    fetchUserData: auth.refreshUserData,
+    fetchUserData: async () => {
+      await auth.refreshUserData();
+      return auth.user as unknown as AuthFullUserData;
+    },
     clearError: auth.clearError,
     clearErrors: auth.clearError,
     
@@ -147,18 +152,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     },
     
     refreshProfile: async () => {
-      try {
-        if (!auth.user?.id) {
-          return null;
-        }
-        
-        // In a real implementation, this would fetch user profile data
-        const userData = await auth.refreshUserData();
-        return userData;
-      } catch (err) {
-        console.error('Error refreshing profile:', err);
-        return null;
-      }
+      await auth.refreshUserData();
+      return auth.user as unknown as AuthFullUserData;
     }
   };
 

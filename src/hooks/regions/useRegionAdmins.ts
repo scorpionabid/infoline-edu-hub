@@ -47,4 +47,5 @@ export const useRegionAdmins = () => {
   };
 };
 
+// Refaktorinq zamanı həm named, həm də default export saxlayırıq
 export default useRegionAdmins;
