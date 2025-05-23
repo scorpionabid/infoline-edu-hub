@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
@@ -13,6 +13,9 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
   const [dataEntries, setDataEntries] = useState<DataEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use a ref to store the lookup object
+  const entriesLookupRef = useRef<Record<string, DataEntry>>({});
   
   const fetchDataEntries = useCallback(async () => {
     // Safety check for required IDs
@@ -82,7 +85,11 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
         }
       });
       
+      // Store both the array and lookup object
       setDataEntries(safeEntries);
+      
+      // Also store the lookup object in a ref for direct access
+      entriesLookupRef.current = entriesLookup;
       
       // Log the result for debugging
       console.log(`Successfully fetched ${safeEntries.length} data entries for category ${categoryId} and school ${schoolId}`);
@@ -201,6 +208,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
 
   return {
     dataEntries,
+    entriesLookup: entriesLookupRef.current, // Return the lookup object
     isLoading,
     error,
     saveDataEntries,

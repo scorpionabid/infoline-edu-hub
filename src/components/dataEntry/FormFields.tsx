@@ -84,18 +84,31 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
     <div className="space-y-6">
       {safeColumns.length > 0 ? (
         safeColumns.map((column) => {
-          if (!column || !column.id) {
-            console.warn('FormFields skipping invalid column:', column);
+          // Enhanced protection against invalid column objects
+          if (!column || typeof column !== 'object') {
+            console.warn('FormFields skipping non-object column:', column);
             return null;
           }
           
-          return (
-            <FormField
-              key={column.id}
-              control={control}
-              name={column.id}
-              render={({ field }) => {
-                // Defensive check for field object
+          // Strong validation for column.id to ensure it's a valid string
+          if (!column.id || typeof column.id !== 'string') {
+            console.warn('FormFields skipping column with invalid ID:', column);
+            return null;
+          }
+          
+          // For debugging - log important column info
+          if (process.env.NODE_ENV === 'development') {
+            console.debug(`Rendering column: ${column.id}, name: ${column.name || 'unnamed'}`);
+          }
+          
+          try {
+            return (
+              <FormField
+                key={column.id}
+                control={control}
+                name={column.id}
+                render={({ field }) => {
+                // Enhanced defensive check for field object
                 if (!field) {
                   console.warn(`Field object is undefined for column ${column.id}`);
                   return (
@@ -108,6 +121,20 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
                   );
                 }
                 
+                // Add safety for column value access
+                const safeValue = field.value !== undefined && field.value !== null
+                  ? field.value
+                  : '';
+                  
+                // Create a safe onChange handler that won't break on errors
+                const safeOnChange = (value: any) => {
+                  try {
+                    field.onChange(value);
+                  } catch (err) {
+                    console.error(`Error changing field ${column.id}:`, err);
+                  }
+                };
+                
                 return (
                   <FormItem>
                     <FormLabel>
@@ -117,9 +144,9 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
                     <FormControl>
                       <FieldRenderer
                         column={column}
-                        value={field.value}
-                        onChange={field.onChange}
-                        onValueChange={field.onChange}
+                        value={safeValue}
+                        onChange={safeOnChange}
+                        onValueChange={safeOnChange}
                         isDisabled={disabled || readOnly}
                       />
                     </FormControl>
@@ -133,6 +160,15 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
               }}
             />
           );
+          } catch (error) {
+            // Catch any render errors at the column level to prevent form crash
+            console.error(`Error rendering column ${column?.id || 'unknown'}:`, error);
+            return (
+              <div key={column.id || Math.random().toString()} className="p-3 border border-red-200 rounded bg-red-50">
+                <p className="text-sm text-red-500">Error rendering field: {column.name || 'Unknown'}</p>
+              </div>
+            );
+          }
         })
       ) : (
         <div className="text-sm text-gray-500">No fields available</div>
