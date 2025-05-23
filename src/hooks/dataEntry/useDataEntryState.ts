@@ -15,8 +15,11 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
   const [error, setError] = useState<string | null>(null);
   
   const fetchDataEntries = useCallback(async () => {
+    // Early return if IDs are missing
     if (!categoryId || !schoolId) {
+      console.log('Missing required IDs for data entry fetch:', { categoryId, schoolId });
       setDataEntries([]);
+      setError('Missing category or school ID');
       return;
     }
 
@@ -32,23 +35,33 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
 
       if (error) throw error;
 
-      setDataEntries(data || []);
+      // Ensure we handle the data safely, even if it's null
+      setDataEntries(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.error('Error fetching data entries:', err);
-      setError(err.message);
-      toast.error(`Failed to fetch data entries: ${err.message}`);
+      setError(err.message || 'Failed to fetch data entries');
+      toast.error(`Failed to fetch data entries: ${err.message || 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
   }, [categoryId, schoolId]);
 
+  // Fetch data when IDs change
   useEffect(() => {
     fetchDataEntries();
   }, [fetchDataEntries]);
 
   const saveDataEntries = async (entries: any[]): Promise<boolean> => {
+    // Early return if IDs are missing
     if (!categoryId || !schoolId) {
       toast.error('Missing category or school ID');
+      return false;
+    }
+
+    // Early return if entries is not an array
+    if (!Array.isArray(entries)) {
+      console.error('Entries is not an array:', entries);
+      toast.error('Invalid entries data format');
       return false;
     }
 
@@ -76,7 +89,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       return true;
     } catch (err: any) {
       console.error('Error saving data entries:', err);
-      toast.error(`Failed to save data: ${err.message}`);
+      toast.error(`Failed to save data: ${err.message || 'Unknown error'}`);
       return false;
     } finally {
       setIsLoading(false);
@@ -91,3 +104,5 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
     fetchDataEntries
   };
 };
+
+export default useDataEntryState;

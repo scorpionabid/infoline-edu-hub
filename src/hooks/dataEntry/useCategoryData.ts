@@ -59,11 +59,23 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
         return;
       }
       
+      // Safety check for valid category data
+      const validCategoryIds = categoriesData
+        .filter(cat => cat && cat.id)
+        .map(cat => cat.id);
+        
+      if (validCategoryIds.length === 0) {
+        setCategories([]);
+        setIsLoading(false);
+        setLoading(false);
+        return;
+      }
+      
       // Fetch columns for all categories
       const { data: columnsData, error: columnsError } = await supabase
         .from('columns')
         .select('*')
-        .in('category_id', categoriesData.map(cat => cat.id))
+        .in('category_id', validCategoryIds)
         .order('order_index');
       
       if (columnsError) {
@@ -71,53 +83,57 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
       }
       
       // Process categories with their columns
-      const categoriesWithColumns: CategoryData[] = categoriesData.map(category => {
-        const categoryColumns = columnsData
-          ? columnsData.filter(col => col.category_id === category.id)
-          : [];
-        
-        // Process column data
-        const processedColumns: Column[] = categoryColumns.map((column: any) => {
-          // Parse options and validation if needed
-          const options = parseJsonSafe(
-            typeof column.options === 'string' ? column.options : JSON.stringify(column.options), 
-            []
-          );
+      const categoriesWithColumns: CategoryData[] = categoriesData
+        .filter(category => category && category.id) // Filter out invalid categories
+        .map(category => {
+          const categoryColumns = columnsData
+            ? columnsData.filter(col => col && col.category_id === category.id)
+            : [];
+          
+          // Process column data
+          const processedColumns: Column[] = categoryColumns
+            .filter(column => column && column.id) // Filter out invalid columns
+            .map((column: any) => {
+              // Parse options and validation if needed
+              const options = parseJsonSafe(
+                typeof column.options === 'string' ? column.options : JSON.stringify(column.options || []), 
+                []
+              );
 
-          const validation = parseJsonSafe(
-            typeof column.validation === 'string' ? column.validation : JSON.stringify(column.validation), 
-            {}
-          );
+              const validation = parseJsonSafe(
+                typeof column.validation === 'string' ? column.validation : JSON.stringify(column.validation || {}), 
+                {}
+              );
 
-          // Return the processed column with correct type
+              // Return the processed column with correct type
+              return {
+                id: column.id,
+                category_id: column.category_id,
+                name: column.name || '',
+                type: column.type as ColumnType,
+                is_required: Boolean(column.is_required),
+                placeholder: column.placeholder || '',
+                help_text: column.help_text || '',
+                default_value: column.default_value || '',
+                order_index: column.order_index || 0,
+                status: column.status || 'active',
+                options,
+                validation,
+                description: column.description || '',
+                section: column.section || '',
+                color: column.color || '',
+                created_at: column.created_at,
+                updated_at: column.updated_at
+              } as Column;
+            });
+          
           return {
-            id: column.id,
-            category_id: column.category_id,
-            name: column.name,
-            type: column.type as ColumnType,
-            is_required: Boolean(column.is_required),
-            placeholder: column.placeholder || '',
-            help_text: column.help_text || '',
-            default_value: column.default_value || '',
-            order_index: column.order_index || 0,
-            status: column.status || 'active',
-            options,
-            validation,
-            description: column.description || '',
-            section: column.section || '',
-            color: column.color || '',
-            created_at: column.created_at,
-            updated_at: column.updated_at
-          } as Column;
+            id: category.id,
+            name: category.name || '',
+            description: category.description || '',
+            columns: processedColumns,
+          };
         });
-        
-        return {
-          id: category.id,
-          name: category.name,
-          description: category.description || '',
-          columns: processedColumns,
-        };
-      });
       
       setCategories(categoriesWithColumns);
     } catch (err: any) {
@@ -132,6 +148,9 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
 
   const fetchCategoryData = async () => {
     if (!categoryId) {
+      setCategory(null);
+      setIsLoading(false);
+      setLoading(false);
       return;
     }
 
@@ -151,6 +170,11 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
         throw new Error(`Error fetching category data: ${categoryError.message}`);
       }
 
+      if (!categoryData || !categoryData.id) {
+        setCategory(null);
+        throw new Error(`Category not found with ID: ${categoryId}`);
+      }
+
       // Fetch columns for this category
       const { data: columnsData, error: columnsError } = await supabase
         .from('columns')
@@ -162,45 +186,47 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
         throw new Error(`Error fetching column data: ${columnsError.message}`);
       }
 
-      // Process column data
-      const processedColumns: Column[] = columnsData.map((column: any) => {
-        // Parse options and validation if needed
-        const options = parseJsonSafe(
-          typeof column.options === 'string' ? column.options : JSON.stringify(column.options), 
-          []
-        );
+      // Process column data safely
+      const processedColumns: Column[] = Array.isArray(columnsData) ? columnsData
+        .filter(column => column && column.id) // Filter out invalid columns
+        .map((column: any) => {
+          // Parse options and validation if needed
+          const options = parseJsonSafe(
+            typeof column.options === 'string' ? column.options : JSON.stringify(column.options || []), 
+            []
+          );
 
-        const validation = parseJsonSafe(
-          typeof column.validation === 'string' ? column.validation : JSON.stringify(column.validation), 
-          {}
-        );
+          const validation = parseJsonSafe(
+            typeof column.validation === 'string' ? column.validation : JSON.stringify(column.validation || {}), 
+            {}
+          );
 
-        // Return the processed column with correct type
-        return {
-          id: column.id,
-          category_id: column.category_id,
-          name: column.name,
-          type: column.type as ColumnType,
-          is_required: Boolean(column.is_required),
-          placeholder: column.placeholder || '',
-          help_text: column.help_text || '',
-          default_value: column.default_value || '',
-          order_index: column.order_index || 0,
-          status: column.status || 'active',
-          options,
-          validation,
-          description: column.description || '',
-          section: column.section || '',
-          color: column.color || '',
-          created_at: column.created_at,
-          updated_at: column.updated_at
-        } as Column;
-      });
+          // Return the processed column with correct type
+          return {
+            id: column.id,
+            category_id: column.category_id,
+            name: column.name || '',
+            type: column.type as ColumnType,
+            is_required: Boolean(column.is_required),
+            placeholder: column.placeholder || '',
+            help_text: column.help_text || '',
+            default_value: column.default_value || '',
+            order_index: column.order_index || 0,
+            status: column.status || 'active',
+            options,
+            validation,
+            description: column.description || '',
+            section: column.section || '',
+            color: column.color || '',
+            created_at: column.created_at,
+            updated_at: column.updated_at
+          } as Column;
+        }) : [];
 
       // Create the category object with columns
       const category: CategoryData = {
         id: categoryData.id,
-        name: categoryData.name,
+        name: categoryData.name || '',
         description: categoryData.description || '',
         columns: processedColumns,
       };
@@ -210,6 +236,7 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
       console.error('Error in useCategoryData:', err);
       setError(err.message || 'Failed to fetch category data');
       toast.error('Failed to fetch category data');
+      setCategory(null);
     } finally {
       setIsLoading(false);
       setLoading(false);
@@ -243,3 +270,5 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
     refetch
   };
 };
+
+export default useCategoryData;

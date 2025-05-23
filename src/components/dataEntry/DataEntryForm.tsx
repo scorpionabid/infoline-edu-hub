@@ -1,7 +1,4 @@
 
-// DataEntryForm.tsx
-
-// Import proper components and hooks
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,9 +39,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   // State for active tab
   const [activeTab, setActiveTab] = useState('general');
   
-  // State to track data loading
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
-  
   // Setup form
   const methods = useForm({
     defaultValues: {},
@@ -53,7 +47,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   
   const { handleSubmit, formState: { isSubmitting, isDirty }, reset } = methods;
 
-  // Get category data and entries
+  // Get category data and entries - handle loading and error states properly
   const { 
     category, 
     isLoading: categoryLoading, 
@@ -75,10 +69,14 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   
   // Group columns by section
   const sections = React.useMemo(() => {
-    if (!category || !category.columns) return { general: [] };
+    if (!category || !category.columns || !Array.isArray(category.columns)) {
+      return { general: [] };
+    }
     
     return category.columns.reduce((acc: Record<string, any[]>, column) => {
-      const section = column.section || 'general';
+      if (!column) return acc;  // Skip null/undefined columns
+      
+      const section = (column.section || 'general').toString();
       if (!acc[section]) acc[section] = [];
       acc[section].push(column);
       return acc;
@@ -87,9 +85,11 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   
   // Set form values from data entries
   useEffect(() => {
-    if (dataEntries && Array.isArray(dataEntries)) {
+    if (dataEntries && Array.isArray(dataEntries) && dataEntries.length > 0) {
       const values = dataEntries.reduce((acc, entry) => {
-        acc[entry.column_id] = entry.value || '';
+        if (entry && entry.column_id) {
+          acc[entry.column_id] = entry.value || '';
+        }
         return acc;
       }, {} as Record<string, string>);
       
@@ -109,6 +109,12 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         }
       } else {
         // Use default save handler
+        // Make sure we have valid category and school IDs
+        if (!resolvedCategoryId || !resolvedSchoolId) {
+          toast.error(t('missingRequiredIds'));
+          return;
+        }
+        
         const formattedData = Object.keys(data).map(columnId => ({
           column_id: columnId,
           value: data[columnId],
@@ -190,15 +196,20 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     );
   }
   
-  // Render sections as tabs if multiple sections exist
-  const hasSections = Object.keys(sections).length > 1;
+  // Check if section keys are valid strings
+  const validSections = Object.entries(sections).filter(
+    ([key]) => typeof key === 'string' && key.length > 0
+  );
+  
+  // Render sections as tabs if multiple valid sections exist
+  const hasSections = validSections.length > 1;
 
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmitForm)}>
         <Card>
           <CardHeader>
-            <CardTitle>{category.name}</CardTitle>
+            <CardTitle>{category.name || t('untitledCategory')}</CardTitle>
             {category.description && <p className="text-sm text-muted-foreground">{category.description}</p>}
           </CardHeader>
           
@@ -206,17 +217,17 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
             {hasSections ? (
               <Tabs value={activeTab} onValueChange={handleTabChange}>
                 <TabsList className="mb-4">
-                  {Object.keys(sections).map(section => (
+                  {validSections.map(([section]) => (
                     <TabsTrigger key={section} value={section}>
                       {section === 'general' ? t('generalInfo') : section}
                     </TabsTrigger>
                   ))}
                 </TabsList>
                 
-                {Object.entries(sections).map(([section, columns]) => (
+                {validSections.map(([section, columns]) => (
                   <TabsContent key={section} value={section} className="space-y-4">
                     <FormFields 
-                      columns={columns} 
+                      columns={columns || []} 
                       readOnly={readOnly} 
                     />
                   </TabsContent>

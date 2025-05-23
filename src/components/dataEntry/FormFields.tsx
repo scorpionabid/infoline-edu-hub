@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -11,8 +12,16 @@ import { useFormContext } from 'react-hook-form';
 
 // Individual form field renderer component
 const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, onValueChange, isDisabled = false }) => {
+  // Safely guard against undefined column
+  if (!column) {
+    console.warn('FormFieldRenderer received undefined column');
+    return null;
+  }
+
   const renderField = () => {
-    switch (column.type as ColumnType) {
+    const columnType = column.type as ColumnType;
+    
+    switch (columnType) {
       case 'text':
       case 'email':
       case 'phone':
@@ -21,7 +30,7 @@ const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, 
         return (
           <Input 
             id={column.id} 
-            type={column.type === 'password' ? 'password' : 'text'} 
+            type={columnType === 'password' ? 'password' : 'text'} 
             placeholder={column.placeholder} 
             value={value || ''} 
             onChange={onChange} 
@@ -63,10 +72,13 @@ const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, 
               <SelectValue placeholder={column.placeholder || 'Select an option'} />
             </SelectTrigger>
             <SelectContent>
-              {column.options?.map((option) => (
-                <SelectItem key={option.id} value={option.value}>
-                  {option.label}
-                </SelectItem>
+              {Array.isArray(column.options) && column.options.map((option) => (
+                // Make sure we have a valid option before rendering
+                option && option.id ? (
+                  <SelectItem key={option.id} value={option.value || ''}>
+                    {option.label || ''}
+                  </SelectItem>
+                ) : null
               ))}
             </SelectContent>
           </Select>
@@ -75,27 +87,30 @@ const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, 
       case 'checkbox':
         return (
           <div className="flex flex-col space-y-2">
-            {column.options?.map((option) => (
-              <div key={option.id} className="flex items-center space-x-2">
-                <Checkbox 
-                  id={`${column.id}-${option.id}`}
-                  checked={(value && Array.isArray(value) && value.includes(option.value)) || false}
-                  onCheckedChange={(checked) => {
-                    if (!onValueChange) return;
-                    
-                    const currentValue = Array.isArray(value) ? [...value] : [];
-                    if (checked) {
-                      onValueChange([...currentValue, option.value]);
-                    } else {
-                      onValueChange(currentValue.filter(val => val !== option.value));
-                    }
-                  }}
-                  disabled={isDisabled}
-                />
-                <label className="text-sm" htmlFor={`${column.id}-${option.id}`}>
-                  {option.label}
-                </label>
-              </div>
+            {Array.isArray(column.options) && column.options.map((option) => (
+              // Check if option exists before rendering
+              option && option.id ? (
+                <div key={option.id} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`${column.id}-${option.id}`}
+                    checked={(value && Array.isArray(value) && value.includes(option.value)) || false}
+                    onCheckedChange={(checked) => {
+                      if (!onValueChange) return;
+                      
+                      const currentValue = Array.isArray(value) ? [...value] : [];
+                      if (checked) {
+                        onValueChange([...currentValue, option.value]);
+                      } else {
+                        onValueChange(currentValue.filter(val => val !== option.value));
+                      }
+                    }}
+                    disabled={isDisabled}
+                  />
+                  <label className="text-sm" htmlFor={`${column.id}-${option.id}`}>
+                    {option.label || ''}
+                  </label>
+                </div>
+              ) : null
             ))}
           </div>
         );
@@ -107,13 +122,16 @@ const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, 
             onValueChange={onValueChange}
             disabled={isDisabled}
           >
-            {column.options?.map((option) => (
-              <div key={option.id} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.value} id={`${column.id}-${option.id}`} />
-                <label className="text-sm" htmlFor={`${column.id}-${option.id}`}>
-                  {option.label}
-                </label>
-              </div>
+            {Array.isArray(column.options) && column.options.map((option) => (
+              // Check if option exists before rendering
+              option && option.id ? (
+                <div key={option.id} className="flex items-center space-x-2">
+                  <RadioGroupItem value={option.value || ''} id={`${column.id}-${option.id}`} />
+                  <label className="text-sm" htmlFor={`${column.id}-${option.id}`}>
+                    {option.label || ''}
+                  </label>
+                </div>
+              ) : null
             ))}
           </RadioGroup>
         );
@@ -145,78 +163,64 @@ const FormFieldRenderer: React.FC<FormFieldProps> = ({ column, value, onChange, 
 
 // Main component to render a collection of form fields
 const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false, readOnly = false }) => {
-  // Xətaları önləmək üçün defensive programming
-  const safeColumns = Array.isArray(columns) ? columns : [];
+  // Ensure columns is always an array with valid items
+  const safeColumns = Array.isArray(columns) ? columns.filter(col => col && col.id) : [];
   const formContext = useFormContext();
   
-  // Form konteksti olmadıqda statik render
+  // Form context not available - static render
   if (!formContext) {
     return (
       <div className="space-y-6">
-        {safeColumns.map((column) => {
-          // Sütun mövcud deyilsə, keç
-          if (!column || !column.id) return null;
-          
-          return (
-            <FormFieldRenderer
-              key={column.id}
-              column={column}
-              value=""
-              onChange={() => {}}
-              onValueChange={() => {}}
-              isDisabled={disabled || readOnly}
-            />
-          );
-        })}
+        {safeColumns.map((column) => (
+          <FormFieldRenderer
+            key={column.id}
+            column={column}
+            value=""
+            onChange={() => {}}
+            onValueChange={() => {}}
+            isDisabled={disabled || readOnly}
+          />
+        ))}
       </div>
     );
   }
 
-  // Form konteksti ilə render
+  // Form context available - render with form connection
   const { control } = formContext;
   
   return (
     <div className="space-y-6">
-      {safeColumns.map((column) => {
-        // Sütun və ya sütun ID null-dırsa, keç
-        if (!column || !column.id) {
-          console.warn('Invalid column or column.id is undefined', column);
-          return null;
-        }
-        
-        return (
-          <FormField
-            key={column.id}
-            control={control}
-            name={column.id}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {column.name || 'Unnamed Field'}
-                  {column.is_required && <span className="text-destructive ml-1">*</span>}
-                </FormLabel>
-                <FormControl>
-                  <FormFieldRenderer
-                    column={column}
-                    value={field?.value}
-                    onChange={field?.onChange}
-                    onValueChange={field?.onChange}
-                    isDisabled={disabled || readOnly}
-                  />
-                </FormControl>
-                {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
-                {column.description && !column.help_text && (
-                  <FormDescription>{column.description}</FormDescription>
-                )}
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        );
-      })}
+      {safeColumns.map((column) => (
+        <FormField
+          key={column.id}
+          control={control}
+          name={column.id}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {column.name || 'Unnamed Field'}
+                {column.is_required && <span className="text-destructive ml-1">*</span>}
+              </FormLabel>
+              <FormControl>
+                <FormFieldRenderer
+                  column={column}
+                  value={field?.value}
+                  onChange={field?.onChange}
+                  onValueChange={field?.onChange}
+                  isDisabled={disabled || readOnly}
+                />
+              </FormControl>
+              {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
+              {column.description && !column.help_text && (
+                <FormDescription>{column.description}</FormDescription>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ))}
     </div>
   );
 };
 
-// Default export əlavə edirik ki, import problemləri həll olunsun
 export default FormFields;
