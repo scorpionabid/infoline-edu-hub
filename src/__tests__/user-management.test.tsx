@@ -365,6 +365,25 @@ vi.mock('@/components/users/UsersFilter', () => ({
   )
 }));
 
+// Mock useUserDialogs hook
+vi.mock('@/hooks/user/useUserDialogs', () => ({
+  useUserDialogs: () => ({
+    selectedUser: mockUserData,
+    isEditDialogOpen: false,
+    isDeleteDialogOpen: false,
+    isDetailsDialogOpen: false,
+    setIsEditDialogOpen: vi.fn(),
+    setIsDeleteDialogOpen: vi.fn(),
+    setIsDetailsDialogOpen: vi.fn(),
+    setSelectedUser: vi.fn(), // Add this missing function
+    handleEditUser: vi.fn(),
+    handleDeleteUser: vi.fn(),
+    handleViewUserDetails: vi.fn(),
+    handleEditUserConfirm: vi.fn().mockResolvedValue(true),
+    handleDeleteUserConfirm: vi.fn().mockResolvedValue(true)
+  })
+}));
+
 describe('İstifadəçi İdarəetməsi Testləri', () => {
   beforeEach(() => {
     vi.clearAllMocks();

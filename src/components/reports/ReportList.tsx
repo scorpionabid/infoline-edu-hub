@@ -9,7 +9,7 @@ import ReportCard from './ReportCard';
 import CreateReportDialog from './CreateReportDialog';
 import ReportPreviewDialog from './ReportPreviewDialog';
 import ReportEmptyState from './ReportEmptyState';
-import { Report } from '@/types/report';
+import { Report, ReportTypeValues } from '@/types/report';
 
 const ReportList: React.FC = () => {
   const { reports, createReport } = useReports();
@@ -30,7 +30,7 @@ const ReportList: React.FC = () => {
   const handleCreateReport = async (reportData: { 
     title: string; 
     description: string; 
-    type: string;
+    type: ReportTypeValues;
   }) => {
     try {
       await createReport(reportData);

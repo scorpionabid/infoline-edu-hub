@@ -1,49 +1,49 @@
 
-import { 
-  Report, 
-  ReportStatus, 
-  ReportTypeValues, 
-  REPORT_TYPE_VALUES, 
-  ReportChartProps, 
-  ReportFilter 
-} from './core/report';
-
-// Re-export core types
-export { REPORT_TYPE_VALUES, ReportStatus };
-export type { Report, ReportTypeValues, ReportChartProps, ReportFilter };
-
-// Empty state component props
-export interface ReportEmptyStateProps {
-  message?: string;
-  action?: () => void;
-  actionLabel?: string;
-  onCreateReport?: () => void;
+export interface Report {
+  id: string;
+  title: string;
+  description?: string;
+  type: ReportTypeValues;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  content?: any;
+  filters?: any;
+  shared_with?: string[];
+  is_template?: boolean;
+  insights?: string[];
+  recommendations?: string[];
 }
 
-// Header component props
-export interface ReportHeaderProps {
-  onCategorySelect?: (id: string) => void;
-  onCreateReport?: () => void;
-  showFilters?: boolean;
+export enum REPORT_TYPE_VALUES {
+  BAR = 'bar',
+  LINE = 'line',
+  PIE = 'pie',
+  TABLE = 'table'
+}
+
+export type ReportTypeValues = 'bar' | 'line' | 'pie' | 'table';
+
+export interface ReportChartProps {
+  type?: ReportTypeValues;
+  data?: any[];
+  config?: any;
   title?: string;
   description?: string;
-}
-
-// Preview dialog props - supports both controlled and uncontrolled
-export interface ReportPreviewDialogProps {
   report?: Report;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  isOpen?: boolean;
-  onClose?: () => void;
+  height?: number;
+  width?: number;
 }
 
-// Create dialog props - supports both controlled and uncontrolled
-export interface CreateReportDialogProps {
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onSave?: (report: Report) => void;
-  onCreate?: (report: any) => Promise<void>;
-  isOpen?: boolean;
-  onClose?: () => void;
+export interface ReportFilter {
+  status?: string[];
+  type?: string[];
+  created_by?: string[];
+  date_from?: string;
+  date_to?: string;
+  shared_with?: string[];
+  is_template?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }

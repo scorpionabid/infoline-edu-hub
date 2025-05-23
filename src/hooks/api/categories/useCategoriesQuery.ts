@@ -1,103 +1,86 @@
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { CategoryWithColumns, Category } from '@/types/category';
 import { toast } from 'sonner';
-import { CategoryWithColumns } from '@/types/category';
 
-interface CategoryFilter {
-  status?: string;
-  search?: string;
-}
-
-export interface UseCategoriesQueryResult {
-  categories: CategoryWithColumns[];
-  loading: boolean;
-  error: string | null;
-  filter: CategoryFilter;
-  updateFilter: (newFilter: Partial<CategoryFilter>) => void;
-  createCategory: (category: Omit<CategoryWithColumns, 'id' | 'created_at' | 'updated_at'>) => Promise<CategoryWithColumns>;
-  updateCategory: (id: string, updates: Partial<CategoryWithColumns>) => Promise<CategoryWithColumns>;
-  deleteCategory: (id: string) => Promise<void>;
-  refetch: () => void;
-  // Deprecated compatibility functions
-  add: (data: any) => Promise<any>;
-  update: (id: string, data: any) => Promise<any>;
-  remove: (id: string) => Promise<any>;
-}
-
-export const useCategoriesQuery = (initialFilter: CategoryFilter = {}): UseCategoriesQueryResult => {
+export const useCategoriesQuery = () => {
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<CategoryFilter>(initialFilter);
 
-  const { data: categories = [], isLoading: loading, error, refetch } = useQuery({
-    queryKey: ['categories', filter],
-    queryFn: async () => {
-      let query = supabase.from('categories').select('*, columns(*)');
-      
-      if (filter.status) {
-        query = query.eq('status', filter.status);
-      }
-      
-      if (filter.search) {
-        query = query.ilike('name', `%${filter.search}%`);
-      }
-      
-      const { data, error } = await query.order('priority', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (categoryData: Omit<CategoryWithColumns, 'id' | 'created_at' | 'updated_at'>) => {
+  // Fetch categories
+  const { data: categories = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async (): Promise<CategoryWithColumns[]> => {
       const { data, error } = await supabase
         .from('categories')
-        .insert([categoryData])
-        .select()
-        .single();
-      
+        .select(`
+          *,
+          columns:columns(*)
+        `)
+        .order('priority', { ascending: true });
+
       if (error) throw error;
-      return data;
+      return data as CategoryWithColumns[];
+    },
+  });
+
+  // Create category mutation
+  const createCategoryMutation = useMutation({
+    mutationFn: async (category: Omit<Category, 'id' | 'created_at' | 'updated_at'>): Promise<CategoryWithColumns> => {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert(category)
+        .select(`
+          *,
+          columns:columns(*)
+        `)
+        .single();
+
+      if (error) throw error;
+      return data as CategoryWithColumns;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast.success('Category created successfully');
     },
     onError: (error: any) => {
-      toast.error(`Failed to create category: ${error.message}`);
-    }
+      toast.error(error.message || 'Failed to create category');
+    },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CategoryWithColumns> }) => {
+  // Update category mutation
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Category> }): Promise<CategoryWithColumns> => {
       const { data, error } = await supabase
         .from('categories')
         .update(updates)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          columns:columns(*)
+        `)
         .single();
-      
+
       if (error) throw error;
-      return data;
+      return data as CategoryWithColumns;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast.success('Category updated successfully');
     },
     onError: (error: any) => {
-      toast.error(`Failed to update category: ${error.message}`);
-    }
+      toast.error(error.message || 'Failed to update category');
+    },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+  // Delete category mutation
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: string): Promise<void> => {
       const { error } = await supabase
         .from('categories')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -105,28 +88,18 @@ export const useCategoriesQuery = (initialFilter: CategoryFilter = {}): UseCateg
       toast.success('Category deleted successfully');
     },
     onError: (error: any) => {
-      toast.error(`Failed to delete category: ${error.message}`);
-    }
+      toast.error(error.message || 'Failed to delete category');
+    },
   });
-
-  const updateFilter = (newFilter: Partial<CategoryFilter>) => {
-    setFilter(prev => ({ ...prev, ...newFilter }));
-  };
 
   return {
     categories,
-    loading,
+    loading: isLoading,
     error: error?.message || null,
-    filter,
-    updateFilter,
-    createCategory: createMutation.mutateAsync,
-    updateCategory: (id: string, updates: Partial<CategoryWithColumns>) => 
-      updateMutation.mutateAsync({ id, updates }),
-    deleteCategory: deleteMutation.mutateAsync,
     refetch,
-    // Deprecated compatibility functions
-    add: (data: any) => createMutation.mutateAsync(data),
-    update: (id: string, data: any) => updateMutation.mutateAsync({ id, updates: data }),
-    remove: (id: string) => deleteMutation.mutateAsync(id)
+    createCategory: createCategoryMutation.mutateAsync,
+    updateCategory: (id: string, updates: Partial<Category>) => 
+      updateCategoryMutation.mutateAsync({ id, updates }),
+    deleteCategory: deleteCategoryMutation.mutateAsync,
   };
 };

@@ -16,7 +16,7 @@ interface CategoryListProps {
 }
 
 const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
-  const { categories, isLoading, error, refetch } = useCategories();
+  const { categories, loading, error, refetch } = useCategories();
   const [open, setOpen] = useState(false);
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<CategoryStatus>("active");
@@ -76,8 +76,9 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
   // Handle errors in a separate effect
   useEffect(() => {
     if (error) {
+      const errorMessage = typeof error === 'string' ? error : 'An unknown error occurred';
       toast.error("Failed to load categories", {
-        description: error.message || "An unknown error occurred",
+        description: errorMessage,
       });
     }
   }, [error]);
@@ -115,13 +116,13 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
         </TabsList>
 
         <TabsContent value={activeTab}>
-          {isLoading ? (
+          {loading ? (
             <div className="p-8 text-center">
               <p>{t("loadingCategories")}</p>
             </div>
           ) : error ? (
             <div className="p-8 text-center text-red-500">
-              <p>{error.message || "Failed to load categories"}</p>
+              <p>{typeof error === 'string' ? error : "Failed to load categories"}</p>
             </div>
           ) : filteredCategories && filteredCategories.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
