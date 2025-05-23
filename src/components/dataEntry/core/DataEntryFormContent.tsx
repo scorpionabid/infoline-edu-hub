@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import FormFields from './FormFields';
 import { useLanguage } from '@/context/LanguageContext';
 import { Column } from '@/types/column';
+import { safeArrayFind } from '@/utils/dataIndexing';
 
 interface DataEntryFormContentProps {
   category: {
@@ -99,104 +99,76 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
         const stableKey = `${column.id}`;
         
         // Safely determine section with fallback to general
-        let sectionKey = 'general'; // Default to general initially
+        const section = column.section && typeof column.section === 'string' && column.section.trim() !== '' 
+          ? column.section.trim().toLowerCase() 
+          : 'general';
         
-        let section = column.section;
-        if (section !== undefined && section !== null) {
-          // Convert to string safely and trim
-          section = String(section).trim();
-          // Only use non-empty strings
-          if (section) {
-            sectionKey = section;
-            // Create section if it doesn't exist
-            if (!sectionMap[sectionKey]) {
-              sectionMap[sectionKey] = [];
-            }
-          }
+        // Initialize the section array if it doesn't exist
+        if (!sectionMap[section]) {
+          sectionMap[section] = [];
         }
-            
-        // Add column to the appropriate section
-        sectionMap[sectionKey].push({
+        
+        // Add column to its section
+        sectionMap[section].push({
           ...column,
-          // Ensure ID is preserved correctly
-          id: stableKey
+          key: stableKey // Add a stable key for React rendering
         });
       });
       
-      // Clean up any empty sections
-      return Object.fromEntries(
-        Object.entries(sectionMap)
-          .filter(([_, columns]) => columns.length > 0)
-      );
+      return sectionMap;
     } catch (err) {
       console.error(`Error grouping columns by section for category ${category.id}:`, err);
-      // Fall back to all columns in general section if error
-      return { general: safeColumns };
+      return { general: safeColumns }; // Fallback to a flat list on error
     }
   }, [safeColumns, category.id]);
   
-  // Safely get section entries and check for valid sections
-  const sectionEntries = Object.entries(sections);
-  const hasSections = sectionEntries.length > 1;
-
-  // Handle tab change with safety check
-  const handleTabChange = (value: string) => {
-    if (!value) {
-      console.warn('Attempted to set tab to empty value');
-      return;
-    }
-    
-    // Verify the tab exists before setting
-    if (!sections[value]) {
-      console.warn(`Attempted to set tab to non-existent section: ${value}`);
-      return;
-    }
-    
-    setActiveTab(value);
-  };
-
-  // Generate stable IDs for sections and tabs
-  const categoryStableId = category.id || 'unknown-category';
-
+  // Get array of section names
+  const sectionNames = Object.keys(sections);
+  
+  // Handle missing sections gracefully
+  if (sectionNames.length === 0) {
+    console.warn(`No sections created for category ${category.id}`);
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        {t('noSectionsAvailable')}
+      </div>
+    );
+  }
+  
+  // If there's only the general section, render a simpler view
+  if (sectionNames.length === 1 && sectionNames[0] === 'general') {
+    return (
+      <div className="p-6">
+        <FormFields columns={sections.general} readOnly={readOnly} />
+      </div>
+    );
+  }
+  
+  // Otherwise render tabbed interface
   return (
-    <>
-      {hasSections ? (
-        <Tabs value={activeTab} onValueChange={handleTabChange} defaultValue="general">
-          <TabsList className="mb-4">
-            {sectionEntries.map(([section]) => {
-              const stableTabId = `tab-${section}-${categoryStableId}`;
-              return (
-                <TabsTrigger key={stableTabId} value={section}>
-                  {section === 'general' ? t('generalInfo') : section}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-          
-          {sectionEntries.map(([section, columns]) => {
-            // Generate a stable key for the tab content
-            const stableContentId = `content-${section}-${categoryStableId}`;
-            return (
-              <TabsContent key={stableContentId} value={section} className="space-y-4">
-                <FormFields 
-                  columns={columns || []} 
-                  readOnly={readOnly} 
-                />
-              </TabsContent>
-            );
-          })}
-        </Tabs>
-      ) : (
-        <div className="space-y-4">
-          <FormFields 
-            columns={safeColumns} 
-            readOnly={readOnly} 
-          />
-        </div>
-      )}
+    <Tabs defaultValue="general" className="w-full" value={activeTab} onValueChange={setActiveTab}>
+      <div className="border-b px-6 py-2">
+        <TabsList className="grid grid-flow-col auto-cols-max gap-4">
+          {sectionNames.map(section => (
+            <TabsTrigger 
+              key={section} 
+              value={section}
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              {section.charAt(0).toUpperCase() + section.slice(1)}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
       
-      <Separator className="my-6" />
-    </>
+      <div className="p-6">
+        {sectionNames.map(section => (
+          <TabsContent key={section} value={section} className="mt-0 p-0">
+            <FormFields columns={sections[section]} readOnly={readOnly} />
+          </TabsContent>
+        ))}
+      </div>
+    </Tabs>
   );
 };
 

@@ -1,30 +1,50 @@
+// Köhnə useDataEntryState hook-u yeni implementasiyaya yönləndirilir
+/**
+ * @deprecated Bu hook-un yeni versiyası @/hooks/business/dataEntry/useDataEntryState-də mövcuddur.
+ */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
+import { indexDataEntriesByColumnId } from '@/utils/dataIndexing';
 
 interface UseDataEntryStateProps {
   categoryId: string;
   schoolId: string;
 }
 
+/**
+ * @deprecated Bu hook artıq köhnəlmişdir. Zəhmət olmasa @/hooks/business/dataEntry/useDataEntryState istifadə edin.
+ */
 export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStateProps) => {
   const [dataEntries, setDataEntries] = useState<DataEntry[]>([]);
+  const [entriesMap, setEntriesMap] = useState<Record<string, DataEntry>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Use a ref to store the lookup object and ensure it's always initialized 
-  const entriesLookupRef = useRef<Record<string, DataEntry>>({});
+  console.warn('useDataEntryState hook artıq köhnəlmişdir. Zəhmət olmasa @/hooks/business/dataEntry/useDataEntryState istifadə edin.');
   
-  const fetchDataEntries = useCallback(async () => {
+  const fetchDataEntries = async () => {
+    isLoading,
+    isError,
+    error: newError,
+    updateAllEntries: saveDataEntries,
+    refetch: fetchDataEntries
+  } = useDataEntryStateNew({ categoryId, schoolId });
+  
+  // Xətanı uyğunlaşdırırıq
+  const [error] = useState<string | null>(newError ? newError.message : null);
+  
+  // Köhnə funksiyaları yeni implementasiya ilə uyğunlaşdırırıq
+  const _fetchDataEntries = async () => {
     // Safety check for required IDs
     if (!categoryId || !schoolId) {
       console.log('Missing required IDs for data entry fetch:', { categoryId, schoolId });
       setDataEntries([]);
       setError('Missing category or school ID');
-      // Even on error, ensure entriesLookup is a valid empty object
-      entriesLookupRef.current = {};
+      // Even on error, ensure entriesMap is a valid empty object
+      setEntriesMap({});
       return;
     }
 
@@ -50,14 +70,14 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       if (!data) {
         console.log('No data received from data_entries query');
         setDataEntries([]);
-        entriesLookupRef.current = {}; // Reset to empty object
+        setEntriesMap({}); // Reset to empty object
         return;
       }
       
       if (!Array.isArray(data)) {
         console.error('Expected array from data_entries query but got:', typeof data);
         setDataEntries([]);
-        entriesLookupRef.current = {}; // Reset to empty object
+        setEntriesMap({}); // Reset to empty object
         return;
       }
 
@@ -80,25 +100,14 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
           status: entry.status || 'draft' // Ensure status is never null/undefined
         }));
       
-      // Create a lookup object to prevent "Cannot read properties of undefined" errors
-      // This is crucial for handling UUIDs like '3d5f36f0-f689-40d6-a0e5-0d6420623551'
-      const entriesLookup: Record<string, DataEntry> = {};
-      
-      // Always initialize with a valid object
-      safeEntries.forEach(entry => {
-        if (entry && typeof entry === 'object' && entry.column_id && typeof entry.column_id === 'string') {
-          entriesLookup[entry.column_id] = entry;
-        } else {
-          // Log the invalid entry for debugging
-          console.warn('Invalid entry skipped in lookup creation:', entry);
-        }
-      });
+      // Create a lookup object using our standardized function
+      const entriesLookup = indexDataEntriesByColumnId(safeEntries);
+        
+      // Store the lookup in our state for safe access
+      setEntriesMap(entriesLookup);
       
       // Store both the array and lookup object
       setDataEntries(safeEntries);
-      
-      // Also store the lookup object in a ref for direct access
-      entriesLookupRef.current = entriesLookup;
       
       // Log the result for debugging
       console.log(`Successfully fetched ${safeEntries.length} data entries for category ${categoryId} and school ${schoolId}`);
@@ -108,26 +117,17 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       setError(err.message || 'Failed to fetch data entries');
       toast.error(`Failed to fetch data entries: ${err.message || 'Unknown error'}`);
       
-      // Ensure entriesLookup is always a valid object even on error
-      entriesLookupRef.current = {};
+      // Ensure entriesMap is always a valid object even on error
+      setEntriesMap({});
     } finally {
       setIsLoading(false);
     }
   }, [categoryId, schoolId]);
 
-  // Fetch data when IDs change
-  useEffect(() => {
-    if (categoryId && schoolId) {
-      fetchDataEntries();
-    } else {
-      // Reset to safe defaults if IDs are missing
-      setDataEntries([]);
-      setError(categoryId ? 'Missing school ID' : 'Missing category ID');
-      entriesLookupRef.current = {}; // Reset to empty object
-    }
-  }, [fetchDataEntries, categoryId, schoolId]);
+  // Köhnə useEffect-i silmişik, yeni hook özü məlumatları yükləyir
 
-  const saveDataEntries = async (entries: any[]): Promise<boolean> => {
+  // Köhnə funksiyaları yeni implementasiya ilə uyğunlaşdırırıq
+  const _saveDataEntries = async (entries: any[]): Promise<boolean> => {
     // Early return if IDs are missing
     if (!categoryId || !schoolId) {
       console.error('Missing required IDs for saving entries:', { categoryId, schoolId });
@@ -210,7 +210,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       }
 
       // Update the local entriesLookup with newly saved entries
-      const updatedLookup = { ...entriesLookupRef.current };
+      const updatedLookup = { ...entriesMap };
       
       // Update our lookup with the new entries (preventing stale data)
       processedEntries.forEach(entry => {
@@ -219,7 +219,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
         }
       });
       
-      entriesLookupRef.current = updatedLookup;
+      setEntriesMap(updatedLookup);
       
       await fetchDataEntries(); // Refresh data
       toast.success('Data saved successfully');
@@ -235,7 +235,8 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
 
   return {
     dataEntries,
-    entriesLookup: entriesLookupRef.current, // Return the lookup object, guaranteed to be initialized
+    entriesMap, // Return the state directly (renamed from entriesLookup for clarity)
+    entriesLookup: entriesMap, // Maintain backwards compatibility
     isLoading,
     error,
     saveDataEntries,

@@ -49,6 +49,7 @@ export interface ColumnOption {
 export interface Column {
   id: string;
   category_id: string;
+  key?: string; // Runtime əlavə edilə bilən sahə, React render üçün
   name: string;
   type: ColumnType;
   is_required?: boolean;

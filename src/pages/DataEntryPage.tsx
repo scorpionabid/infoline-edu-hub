@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import DataEntryForm from '@/components/dataEntry/DataEntryForm';
+import { DataEntryForm } from '@/components/dataEntry';
 
 const DataEntryPage: React.FC = () => {
   const params = useParams();

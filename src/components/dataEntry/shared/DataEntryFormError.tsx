@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,10 +5,10 @@ import { useLanguage } from '@/context/LanguageContext';
 
 interface DataEntryFormErrorProps {
   error: string | null;
-  onBack: () => void;
+  onRetry?: () => void;
 }
 
-const DataEntryFormError: React.FC<DataEntryFormErrorProps> = ({ error, onBack }) => {
+const DataEntryFormError: React.FC<DataEntryFormErrorProps> = ({ error, onRetry }) => {
   const { t } = useLanguage();
   
   return (
@@ -19,9 +18,11 @@ const DataEntryFormError: React.FC<DataEntryFormErrorProps> = ({ error, onBack }
       </CardHeader>
       <CardContent>
         <div className="text-destructive">
-          {error}
+          {error || t('unknownError')}
         </div>
-        <Button onClick={onBack} className="mt-4">{t('goBack')}</Button>
+        {onRetry && (
+          <Button onClick={onRetry} className="mt-4">{t('retry')}</Button>
+        )}
       </CardContent>
     </Card>
   );
