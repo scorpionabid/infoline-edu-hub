@@ -1,3 +1,4 @@
+
 // Köhnə useDataEntryState hook-u yeni implementasiyaya yönləndirilir
 /**
  * @deprecated Bu hook-un yeni versiyası @/hooks/business/dataEntry/useDataEntryState-də mövcuddur.
@@ -8,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
 import { indexDataEntriesByColumnId } from '@/utils/dataIndexing';
+import { useDataEntryState as useDataEntryStateNew } from '@/hooks/business/dataEntry/useDataEntryState';
 
 interface UseDataEntryStateProps {
   categoryId: string;
@@ -25,8 +27,10 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
   
   console.warn('useDataEntryState hook artıq köhnəlmişdir. Zəhmət olmasa @/hooks/business/dataEntry/useDataEntryState istifadə edin.');
   
-  const fetchDataEntries = async () => {
-    isLoading,
+  // Yeni hook-dan dəyərləri alırıq
+  const {
+    entries,
+    isLoading: newIsLoading,
     isError,
     error: newError,
     updateAllEntries: saveDataEntries,
@@ -34,10 +38,10 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
   } = useDataEntryStateNew({ categoryId, schoolId });
   
   // Xətanı uyğunlaşdırırıq
-  const [error] = useState<string | null>(newError ? newError.message : null);
+  const adaptedError = useState<string | null>(newError ? newError.message : null)[0];
   
   // Köhnə funksiyaları yeni implementasiya ilə uyğunlaşdırırıq
-  const _fetchDataEntries = async () => {
+  const fetchDataEntriesFunc = async () => {
     // Safety check for required IDs
     if (!categoryId || !schoolId) {
       console.log('Missing required IDs for data entry fetch:', { categoryId, schoolId });
@@ -122,12 +126,15 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // İlk yüklənmə üçün useEffect
+  useEffect(() => {
+    fetchDataEntriesFunc();
   }, [categoryId, schoolId]);
 
-  // Köhnə useEffect-i silmişik, yeni hook özü məlumatları yükləyir
-
   // Köhnə funksiyaları yeni implementasiya ilə uyğunlaşdırırıq
-  const _saveDataEntries = async (entries: any[]): Promise<boolean> => {
+  const saveDataEntriesFunc = async (entries: any[]): Promise<boolean> => {
     // Early return if IDs are missing
     if (!categoryId || !schoolId) {
       console.error('Missing required IDs for saving entries:', { categoryId, schoolId });
@@ -172,7 +179,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       // Process entries to ensure they have proper category and school IDs
       const processedEntries = validEntries.map(entry => {
         // Create a clean entry with required fields and ensuring no undefined values
-        const cleanEntry = { 
+        const cleanEntry: any = { 
           column_id: entry.column_id,
           category_id: categoryId,
           school_id: schoolId,
@@ -182,12 +189,12 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
         
         // Add id if present
         if (entry.id) {
-          cleanEntry['id'] = entry.id;
+          cleanEntry.id = entry.id;
         }
         
         // Add status if present
         if (entry.status) {
-          cleanEntry['status'] = entry.status;
+          cleanEntry.status = entry.status;
         }
         
         return cleanEntry;
@@ -221,7 +228,7 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
       
       setEntriesMap(updatedLookup);
       
-      await fetchDataEntries(); // Refresh data
+      await fetchDataEntriesFunc(); // Refresh data
       toast.success('Data saved successfully');
       return true;
     } catch (err: any) {
@@ -238,9 +245,9 @@ export const useDataEntryState = ({ categoryId, schoolId }: UseDataEntryStatePro
     entriesMap, // Return the state directly (renamed from entriesLookup for clarity)
     entriesLookup: entriesMap, // Maintain backwards compatibility
     isLoading,
-    error,
-    saveDataEntries,
-    fetchDataEntries
+    error: adaptedError,
+    saveDataEntries: saveDataEntriesFunc,
+    fetchDataEntries: fetchDataEntriesFunc
   };
 };
 
