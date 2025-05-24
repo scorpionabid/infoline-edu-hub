@@ -1,17 +1,29 @@
+
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/common/useToast';
 
 export const useApprovalProcess = () => {
   const [loading, setLoading] = useState(false);
+  const { success, error } = useToast();
 
   const approveEntry = async (entryId: string, reason?: string) => {
     setLoading(true);
     try {
-      // Implementation for approval logic
-      toast.success('Məlumat təsdiqləndi');
-    } catch (error) {
-      toast.error('Təsdiqləmə zamanı xəta baş verdi');
-      throw error;
+      const { error: dbError } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'approved',
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', entryId);
+
+      if (dbError) throw dbError;
+      
+      success('Məlumat təsdiqləndi');
+    } catch (err) {
+      error('Təsdiqləmə zamanı xəta baş verdi');
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -20,11 +32,21 @@ export const useApprovalProcess = () => {
   const rejectEntry = async (entryId: string, reason: string) => {
     setLoading(true);
     try {
-      // Implementation for rejection logic
-      toast.success('Məlumat rədd edildi');
-    } catch (error) {
-      toast.error('Rədd etmə zamanı xəta baş verdi');
-      throw error;
+      const { error: dbError } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'rejected',
+          rejection_reason: reason,
+          rejected_at: new Date().toISOString()
+        })
+        .eq('id', entryId);
+
+      if (dbError) throw dbError;
+      
+      success('Məlumat rədd edildi');
+    } catch (err) {
+      error('Rədd etmə zamanı xəta baş verdi');
+      throw err;
     } finally {
       setLoading(false);
     }

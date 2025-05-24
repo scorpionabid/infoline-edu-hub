@@ -2,8 +2,19 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
+export interface EnhancedRegion {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  admin_id?: string;
+  admin_email?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const useRegionsStore = () => {
-  const [regions, setRegions] = useState([]);
+  const [regions, setRegions] = useState<EnhancedRegion[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchRegions = async () => {

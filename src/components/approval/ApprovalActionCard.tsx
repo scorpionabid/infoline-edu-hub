@@ -1,126 +1,95 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, CheckCircle, X } from 'lucide-react';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { useApprovalProcess } from '@/hooks/useApprovalProcess';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useApprovalProcess } from '@/hooks/approval/useApprovalProcess';
 
 interface ApprovalActionCardProps {
-  schoolId: string;
-  schoolName: string;
-  categoryId: string;
-  categoryName: string;
-  onComplete: () => void;
+  entry: any;
+  onApprove?: () => void;
+  onReject?: () => void;
 }
 
-const ApprovalActionCard: React.FC<ApprovalActionCardProps> = ({
-  schoolId,
-  schoolName,
-  categoryId,
-  categoryName,
-  onComplete
+export const ApprovalActionCard: React.FC<ApprovalActionCardProps> = ({
+  entry,
+  onApprove,
+  onReject
 }) => {
-  const { t } = useLanguageSafe();
-  const { approveEntries, rejectEntries, loading } = useApprovalProcess();
-  const [rejectionReason, setRejectionReason] = useState('');
-  const [isRejecting, setIsRejecting] = useState(false);
+  const { approveEntry, rejectEntry, loading } = useApprovalProcess();
 
   const handleApprove = async () => {
-    const result = await approveEntries(schoolId, categoryId, categoryName);
-    if (result.success) {
-      onComplete();
+    try {
+      await approveEntry(entry.id);
+      onApprove?.();
+    } catch (error) {
+      console.error('Error approving entry:', error);
     }
   };
 
   const handleReject = async () => {
-    const result = await rejectEntries(schoolId, categoryId, categoryName, rejectionReason);
-    if (result.success) {
-      setIsRejecting(false);
-      setRejectionReason('');
-      onComplete();
+    try {
+      await rejectEntry(entry.id, 'Rədd edildi');
+      onReject?.();
+    } catch (error) {
+      console.error('Error rejecting entry:', error);
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'rejected':
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return <Clock className="w-4 h-4 text-yellow-500" />;
     }
   };
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">{t('pendingApproval')}</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center justify-between">
+          <span className="text-sm font-medium">{entry.title || 'Məlumat girişi'}</span>
+          <div className="flex items-center gap-2">
+            {getStatusIcon(entry.status)}
+            <Badge variant={entry.status === 'approved' ? 'default' : entry.status === 'rejected' ? 'destructive' : 'secondary'}>
+              {entry.status === 'approved' ? 'Təsdiqlənib' : entry.status === 'rejected' ? 'Rədd edilib' : 'Gözləmədə'}
+            </Badge>
+          </div>
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">{t('school')}</p>
-              <p className="text-base">{schoolName}</p>
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600">{entry.value || 'Məlumat dəyəri'}</p>
+          
+          {entry.status === 'pending' && (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={handleApprove}
+                disabled={loading}
+                className="flex-1"
+              >
+                <CheckCircle className="w-4 h-4 mr-1" />
+                Təsdiqlə
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleReject}
+                disabled={loading}
+                className="flex-1"
+              >
+                <XCircle className="w-4 h-4 mr-1" />
+                Rədd et
+              </Button>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">{t('category')}</p>
-              <p className="text-base">{categoryName}</p>
-            </div>
-          </div>
-
-          {isRejecting ? (
-            <div className="space-y-2">
-              <label htmlFor="rejection-reason" className="text-sm font-medium">
-                {t('rejectionReason')} <span className="text-destructive">*</span>
-              </label>
-              <Textarea
-                id="rejection-reason"
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder={t('enterRejectionReason')}
-                className="min-h-[100px]"
-              />
-            </div>
-          ) : null}
+          )}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-end space-x-2">
-        {isRejecting ? (
-          <>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsRejecting(false)}
-              disabled={loading}
-            >
-              <X className="mr-2 h-4 w-4" />
-              {t('cancel')}
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleReject}
-              disabled={loading || !rejectionReason.trim()}
-            >
-              <AlertCircle className="mr-2 h-4 w-4" />
-              {loading ? t('rejecting') : t('reject')}
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsRejecting(true)}
-              disabled={loading}
-            >
-              <X className="mr-2 h-4 w-4" />
-              {t('reject')}
-            </Button>
-            <Button 
-              variant="default" 
-              onClick={handleApprove}
-              disabled={loading}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <CheckCircle className="mr-2 h-4 w-4" />
-              {loading ? t('approving') : t('approve')}
-            </Button>
-          </>
-        )}
-      </CardFooter>
     </Card>
   );
 };
-
-export default ApprovalActionCard;

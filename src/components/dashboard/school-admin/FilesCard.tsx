@@ -24,7 +24,7 @@ export const FilesCard: React.FC = () => {
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return 'N/A';
-    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   };
@@ -49,9 +49,9 @@ export const FilesCard: React.FC = () => {
             {files.slice(0, 3).map((file) => (
               <div key={file.id} className="flex items-center justify-between">
                 <div className="flex items-center gap-2 flex-1">
-                  <File className="h-3 w-3 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">{file.file_name}</p>
+                  <File className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{file.file_name}</p>
                     <p className="text-xs text-muted-foreground">
                       {formatFileSize(file.file_size)}
                     </p>

@@ -1,150 +1,71 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import DataTable, { Column } from '@/components/common/DataTable';
-import { EnhancedRegion } from '@/hooks/useRegionsStore';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Edit, 
-  Trash2, 
-  FileText, 
-  School, 
-  Mail, 
-  Building,
-  MapPin,
-  UserPlus
-} from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { useRegionsStore, EnhancedRegion } from '@/hooks/useRegionsStore';
 
 interface RegionTableProps {
-  regions: EnhancedRegion[];
-  loading: boolean;
   onEdit: (region: EnhancedRegion) => void;
-  onDelete: (id: string) => void;
+  onDelete: (region: EnhancedRegion) => void;
   onAssignAdmin: (region: EnhancedRegion) => void;
 }
 
-const RegionTable: React.FC<RegionTableProps> = ({
-  regions,
-  loading,
+export const RegionTable: React.FC<RegionTableProps> = ({
   onEdit,
   onDelete,
   onAssignAdmin
 }) => {
-  const { t } = useLanguage();
-  const [itemToDelete, setItemToDelete] = React.useState<string | null>(null);
+  const { regions, loading } = useRegionsStore();
 
-  const getStatusBadge = (status?: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge variant="success">{t('active')}</Badge>;
-      case 'inactive':
-        return <Badge variant="secondary">{t('inactive')}</Badge>;
-      case 'blocked':
-        return <Badge variant="destructive">{t('blocked')}</Badge>;
-      default:
-        return <Badge>{t('unknown')}</Badge>;
-    }
-  };
-
-  const columns: Column[] = [
-    {
-      key: 'name',
-      header: t('regionName'),
-      cell: (region) => <span className="font-medium">{region.name}</span>
-    },
-    {
-      key: 'description',
-      header: t('description'),
-      cell: (region) => <span className="text-muted-foreground">{region.description || '-'}</span>
-    },
-    {
-      key: 'admin',
-      header: t('regionAdmin'),
-      cell: (region) => (
-        <div className="flex items-center">
-          {region.admin_email ? (
-            <>
-              <Mail className="h-4 w-4 mr-2 text-blue-500" />
-              <span>{region.admin_email}</span>
-            </>
-          ) : (
-            <span className="text-muted-foreground">-</span>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'sectorCount',
-      header: t('sectorCount'),
-      cell: (region) => (
-        <div className="flex items-center">
-          <Building className="h-4 w-4 mr-2 text-indigo-500" />
-          <span>{region.sectorCount || 0}</span>
-        </div>
-      )
-    },
-    {
-      key: 'schoolCount',
-      header: t('schoolCount'),
-      cell: (region) => (
-        <div className="flex items-center">
-          <School className="h-4 w-4 mr-2 text-orange-500" />
-          <span>{region.schoolCount || 0}</span>
-        </div>
-      )
-    },
-    {
-      key: 'status',
-      header: t('status'),
-      cell: (region) => getStatusBadge(region.status)
-    }
-  ];
+  if (loading) {
+    return <div className="text-center py-4">Yüklənir...</div>;
+  }
 
   return (
-    <DataTable
-      data={regions}
-      columns={columns}
-      isLoading={loading}
-      isError={false}
-      emptyState={{
-        icon: <FileText className="h-10 w-10 text-muted-foreground" />,
-        title: t('noRegionsFound'),
-        description: t('noRegionsFoundDesc')
-      }}
-      actionColumn={{
-        canManage: true,
-        actions: [
-          {
-            icon: <Edit className="h-4 w-4 mr-2" />,
-            label: t('edit'),
-            onClick: (region) => onEdit(region)
-          },
-          {
-            icon: <UserPlus className="h-4 w-4 mr-2" />,
-            label: t('assignAdmin'),
-            onClick: (region) => onAssignAdmin(region),
-            isHidden: (region) => !!region.admin_email
-          },
-          {
-            icon: <Trash2 className="h-4 w-4 mr-2" />,
-            label: t('delete'),
-            onClick: (region) => setItemToDelete(region.id),
-            variant: "destructive"
-          }
-        ]
-      }}
-      deleteDialog={{
-        title: t('deleteRegion'),
-        description: t('deleteRegionConfirmation'),
-        itemToDelete: itemToDelete,
-        setItemToDelete: setItemToDelete,
-        onDelete: async (id) => {
-          onDelete(id);
-          return true;
-        }
-      }}
-    />
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Ad</TableHead>
+            <TableHead>Təsvir</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Admin</TableHead>
+            <TableHead>Əməliyyatlar</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {regions.map((region) => (
+            <TableRow key={region.id}>
+              <TableCell className="font-medium">{region.name}</TableCell>
+              <TableCell>{region.description}</TableCell>
+              <TableCell>{region.status}</TableCell>
+              <TableCell>{region.admin_email || 'Təyin edilməyib'}</TableCell>
+              <TableCell>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <DotsHorizontalIcon className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => onEdit(region)}>
+                      Redaktə et
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onAssignAdmin(region)}>
+                      Admin təyin et
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDelete(region)}>
+                      Sil
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
-
-export default RegionTable;
