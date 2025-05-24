@@ -4,12 +4,18 @@ import { toast } from 'sonner';
 import { useAuth } from '@/context/auth';
 import { Column, ColumnType } from '@/types/column';
 import { parseJsonSafe } from '@/utils/json-utils';
+import { CategoryAssignment } from '@/types/category';
 
 interface CategoryData {
   id: string;
   name: string;
   columns: Column[];
   description?: string;
+  status?: string;
+  assignment?: CategoryAssignment;
+  priority?: number;
+  deadline?: string;
+  completionRate?: number;
 }
 
 export interface UseCategoryDataProps {

@@ -10,6 +10,7 @@ import { useLanguage } from '@/context/LanguageContext';
  */
 export const useCategoryOperations = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
 
   const addCategory = async (categoryData: AddCategoryFormData): Promise<Category | null> => {
@@ -100,8 +101,57 @@ export const useCategoryOperations = () => {
     }
   };
   
+  /**
+   * Kateqoriyaları gətirən funksiya
+   * @param searchQuery - Axtarış sorgusu
+   * @param filters - Filter parametrləri
+   * @returns Kateqoriyaların siyahısı
+   */
+  const fetchCategories = async (searchQuery: string = '', filters: any = {}) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      let query = supabase
+        .from('categories')
+        .select('*');
+      
+      // Axtarış sorgusu varsa filter tətbiq edirik
+      if (searchQuery) {
+        query = query.ilike('name', `%${searchQuery}%`);
+      }
+      
+      // Status filter
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+      
+      // Assignment filter
+      if (filters.assignment) {
+        query = query.eq('assignment', filters.assignment);
+      }
+      
+      // Sorgu
+      const { data, error: apiError } = await query;
+      
+      if (apiError) {
+        throw apiError;
+      }
+      
+      return data as Category[];
+    } catch (err: any) {
+      console.error('Kateqoriyaları yükləyərkən xəta baş verdi:', err);
+      setError(err.message || t('categoryFetchError'));
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isLoading,
+    error,
+    fetchCategories,
     addCategory,
     updateCategory,
     deleteCategory

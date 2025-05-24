@@ -20,7 +20,7 @@ import ColumnFormDialog from '@/components/columns/ColumnFormDialog';
 import { useColumns } from '@/hooks/columns';
 import ColumnList from '@/components/columns/ColumnList';
 import EmptyState from '@/components/common/EmptyState';
-import { useCategories } from '@/hooks/useCategories';
+import { useCategories } from '@/hooks/categories/useCategories';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useColumnMutations } from '@/hooks/columns/useColumnMutations';
@@ -41,7 +41,7 @@ const Columns: React.FC = () => {
   // Use the correct hook API for categories
   const { 
     categories, 
-    isLoading: categoriesLoading, 
+    loading: categoriesLoading, 
     error: categoriesError,
     refetch: refetchCategories
   } = useCategories();
@@ -260,7 +260,7 @@ const Columns: React.FC = () => {
         <Alert variant="destructive" className="mb-4">
           <AlertTriangle className="h-4 w-4 mr-2" />
           <AlertDescription>
-            {categoriesError || columnsError}
+            {String(categoriesError || columnsError || t('unknownError'))}
           </AlertDescription>
           <Button variant="outline" size="sm" onClick={loadData} className="ml-auto">
             {t('tryAgain')}

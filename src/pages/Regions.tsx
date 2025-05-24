@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { useRegionsStore } from '@/hooks/regions/useRegionsStore';
+import { regionsStore } from '@/hooks/regions/useRegionsStore';
 import { RegionDialog } from '@/components/regions/RegionDialog';
 import { RegionAdminDialog } from '@/components/regions/RegionAdminDialog';
 import { ExistingUserAdminDialog } from '@/components/regions/ExistingUserAdminDialog'; 
@@ -13,22 +13,22 @@ import { Pagination } from '@/components/ui/pagination';
 
 const Regions = () => {
   const { t } = useLanguage();
-  const {
-    regions,
-    loading,
-    searchTerm,
-    selectedStatus,
-    currentPage,
-    totalPages,
-    handleSearch,
-    handleStatusFilter,
-    handlePageChange,
-    resetFilters,
-    handleAddRegion,
-    handleUpdateRegion,
-    handleDeleteRegion,
-    fetchRegions
-  } = useRegionsStore();
+  
+  // Zustand store istifadəsi
+  const regions = regionsStore(state => state.regions);
+  const loading = regionsStore(state => state.loading);
+  const searchTerm = regionsStore(state => state.searchTerm);
+  const selectedStatus = regionsStore(state => state.selectedStatus);
+  const currentPage = regionsStore(state => state.currentPage);
+  const totalPages = regionsStore(state => state.totalPages);
+  const handleSearch = regionsStore(state => state.handleSearch);
+  const handleStatusFilter = regionsStore(state => state.handleStatusFilter);
+  const handlePageChange = regionsStore(state => state.handlePageChange);
+  const resetFilters = regionsStore(state => state.resetFilters);
+  const handleAddRegion = regionsStore(state => state.handleAddRegion);
+  const handleUpdateRegion = regionsStore(state => state.handleUpdateRegion);
+  const handleDeleteRegion = regionsStore(state => state.handleDeleteRegion);
+  const fetchRegions = regionsStore(state => state.fetchRegions);
 
   const [openRegionDialog, setOpenRegionDialog] = useState(false);
   const [openAdminDialog, setOpenAdminDialog] = useState(false);
@@ -43,7 +43,8 @@ const Regions = () => {
     const initFetch = async () => {
       console.log('Initial fetch of regions...');
       try {
-        await fetchRegions();
+        // Zustand store-dan funksiya çağırmaq üçün daha davamlı yanaşma
+        await regionsStore.getState().fetchRegions(t);
       } catch (error) {
         console.error('Error fetching regions:', error);
         toast.error(t('errorFetchingRegions'));
@@ -62,15 +63,16 @@ const Regions = () => {
     return () => {
       document.removeEventListener('refresh-regions', handleRefreshRegions);
     };
-  }, [fetchRegions, t]);
+  }, [t]); // fetchRegions asılılığını silirəm, əvəzinə yalnız t qalır
   
   // Handle refresh trigger
   useEffect(() => {
     if (refreshTrigger > 0) {
       console.log(`Refreshing regions due to trigger change (${refreshTrigger})...`);
-      fetchRegions();
+      // Burada da eyni yanaşma - getState() istifadə edirik
+      regionsStore.getState().fetchRegions(t);
     }
-  }, [refreshTrigger, fetchRegions]);
+  }, [refreshTrigger, t]); // fetchRegions asılılığını silirəm, əvəzinə yalnız t saxlayıram
 
   const handleOpenRegionDialog = useCallback((region: EnhancedRegion | null) => {
     setSelectedRegion(region);
@@ -97,7 +99,7 @@ const Regions = () => {
 
   const handleAdminAssigned = async () => {
     console.log('Admin assigned, refreshing regions...');
-    await fetchRegions();
+    await regionsStore.getState().fetchRegions(t);
     setCreatedRegion(null);
     setRefreshTrigger(prev => prev + 1);
   };

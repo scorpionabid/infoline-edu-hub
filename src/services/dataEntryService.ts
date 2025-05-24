@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { DataEntryForm, EntryValue } from '@/types/dataEntry';
+import { DataEntryForm, EntryValue, DataEntryStatus } from '@/types/dataEntry';
 
 // Data entry formunu yadda saxla
 export const saveDataEntryForm = async (formData: DataEntryForm): Promise<{
@@ -10,8 +10,12 @@ export const saveDataEntryForm = async (formData: DataEntryForm): Promise<{
   try {
     const { entries, ...formInfo } = formData;
 
+    // Form data-dan gələn məlumatları əlavə bir id property ilə genişləndiririk
+    // TypeScript error-dan qaçmaq üçün formInfo obyektini genişləndirilmiş tipə cast edirik
+    const extendedFormInfo = formInfo as typeof formInfo & { id?: string };
+    
     // Əgər artıq bir ID varsa, mövcud yazıları silirik
-    if (formInfo.id) {
+    if (extendedFormInfo.id) {
       await supabase
         .from('data_entries')
         .delete()
@@ -36,7 +40,7 @@ export const saveDataEntryForm = async (formData: DataEntryForm): Promise<{
 
     return {
       success: true,
-      id: formInfo.id || `form-${Date.now()}`
+      id: extendedFormInfo.id || `form-${Date.now()}`
     };
   } catch (error: any) {
     console.error('Form yadda saxlanarkən xəta baş verdi:', error);
@@ -69,7 +73,7 @@ export const getDataEntries = async (
       id: entry.id,
       columnId: entry.column_id,
       value: entry.value,
-      status: entry.status
+      status: entry.status as DataEntryStatus // Status dəyərini DataEntryStatus tipinə cast edirik
     }));
 
     return {

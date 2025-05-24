@@ -17,6 +17,10 @@ export interface EnhancedRegion extends Region {
   // Required fields
   id: string; 
   
+  // Localized name fields
+  name_az?: string;
+  name_en?: string;
+  
   // Count fields (with various naming conventions for compatibility)
   school_count?: number;
   sector_count?: number;
