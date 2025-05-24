@@ -50,17 +50,43 @@ export function ensureJson<T>(value: T): T {
 }
 
 /**
- * Safely parse a JSON string with fallback to default value
- * @param value The JSON string to parse
+ * Safely parse a JSON string or object with fallback to default value
+ * @param input The JSON string or object to parse
  * @param defaultValue Default value to return if parsing fails
  * @returns Parsed object or default value
  */
-export function parseJsonSafe<T>(value: string | null | undefined, defaultValue: T): T {
-  if (!value) return defaultValue;
+export function parseJsonSafe<T>(input: any, defaultValue: T): T {
+  // If input is null/undefined, return default value
+  if (input === null || input === undefined) {
+    return defaultValue;
+  }
+  
   try {
-    return JSON.parse(value) as T;
-  } catch (error) {
-    console.error('Error parsing JSON:', error);
+    // If input is already an object or array, return it directly
+    if (typeof input !== 'string') {
+      return input as T;
+    }
+    
+    // Check for empty string
+    if (input.trim() === '') {
+      return defaultValue;
+    }
+    
+    // Special cleaning for JSON strings from Supabase
+    // Sometimes data comes from the database in this format: '[{\"key\":\"value\"}]'
+    let cleanedString = input;
+    
+    // Fix escaped slashes
+    if (input.includes('\\"')) {
+      cleanedString = input.replace(/\\\"([^\\\"]*)\\\"/g, '"$1"');
+      console.log('Fixed escaped quotes:', cleanedString);
+    }
+    
+    // Parse JSON
+    return JSON.parse(cleanedString) as T;
+  } catch (e) {
+    console.error('JSON parse error for input:', input);
+    console.error('Error details:', e);
     return defaultValue;
   }
 }

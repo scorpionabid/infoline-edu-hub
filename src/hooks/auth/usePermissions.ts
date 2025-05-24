@@ -28,6 +28,10 @@ export interface UsePermissionsResult {
   schoolId: string | undefined;
   canManageCategories: boolean;
   canApproveData: boolean;
+  // Məlumatları redaktə etmək üçün icazə
+  canEditData: boolean;
+  // Məlumatları təqdim etmək üçün icazə
+  hasSubmitPermission: boolean;
 }
 
 export const usePermissions = (): UsePermissionsResult => {
@@ -98,6 +102,12 @@ export const usePermissions = (): UsePermissionsResult => {
   const canManageCategories = isSuperAdmin || isRegionAdmin;
   const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   
+  // Məlumatları redaktə etmək üçün icazə - superadmin, regionadmin, sectoradmin və schooladmin
+  const canEditData = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
+  
+  // Məlumatları təqdim etmək üçün icazə - bütün rol növləri üçün
+  const hasSubmitPermission = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin || isTeacher || isUser;
+  
   // Entity ID based on user role
   const userEntityId = getUserEntityId();
   
@@ -117,7 +127,9 @@ export const usePermissions = (): UsePermissionsResult => {
     sectorId: userSectorId,
     schoolId: userSchoolId,
     canManageCategories,
-    canApproveData
+    canApproveData,
+    canEditData,
+    hasSubmitPermission
   };
 };
 

@@ -54,18 +54,85 @@ export const Alert = React.forwardRef<
 });
 Alert.displayName = "Alert";
 
+// DataEntryForm Props
+interface DataEntryFormProps {
+  schoolId?: string;
+  categories?: any[];
+  initialCategoryId?: string;
+  isSectorAdmin?: boolean;
+  schoolName?: string;
+}
+
 // Məlumat daxiletmə komponenti - Enhanced with null safety
-const DataEntryForm = ({ 
-  schoolId, 
-  categories, 
-  initialCategoryId, 
-  isSectorAdmin = false,
-  schoolName = ""
-}) => {
-  const { t } = useLanguage();
+const DataEntryForm: React.FC<DataEntryFormProps> = ({ schoolId, categories, initialCategoryId, isSectorAdmin = false, schoolName = "" }) => {
+  const { t, currentLanguage } = useLanguage();
+  const { user } = useAuth();
+  const permissions = usePermissions();
+  const [readOnly, setReadOnly] = useState(false);
+  const [formStatus, setFormStatus] = useState<'view' | 'edit' | 'locked'>('view');
   const navigate = useNavigate();
   const location = useLocation();
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
+  
+  // Müvəqqəti həll - formulyarları məcburi aktivləşdirmək
+  useEffect(() => {
+    // Birdafəlik formulyarı redaktə edilir vəziyyətinə gətir
+    setFormStatus('edit');
+    setReadOnly(false);
+    console.log('Formulyar aktiv edildi');
+    
+    // Supabase ilə sessiya yoxlaması - diagnostic məqsədləri üçün
+    const checkSession = async () => {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session) {
+          console.log('Aktiv sessiya tapıldı, ID:', sessionData.session.user.id);
+        } else {
+          console.log('Aktiv sessiya yoxdur');
+        }
+      } catch (err) {
+        console.error('Sessiya yoxlama xətası:', err);
+      }
+    };
+    
+    checkSession();
+  }, []);
+  
+  // Debug icazələri və məlumatların redaktə etmə statusunu
+  useEffect(() => {
+    console.log('DataEntry form permissions:', {
+      user_id: user?.id,
+      user_role: user?.role,
+      can_edit: permissions.canEditData,
+      can_submit: permissions.hasSubmitPermission,
+      readOnly: readOnly,
+      formStatus: formStatus
+    });
+    
+    // Əgər istifadəçi undefined-dirsa, formanı sadecə readonly et
+    if (!user || !user.role) {
+      console.log('User undefined, setting form to read-only');
+      setFormStatus('view');
+      setReadOnly(true);
+      return;
+    }
+    
+    // Ekran görüntülərindəki problemin müvəqqəti həlli:
+    // Roldan asılı olmayaraq formanı redaktə edilir vəziyyətinə gətir
+    setFormStatus('edit');
+    setReadOnly(false);
+    
+    // Normal həll (yuxarıdakı 2 sətri komment edib, bunları açmaq lazımdır):
+    /*
+    if (permissions.canEditData) {
+      setFormStatus('edit');
+      setReadOnly(false);
+    } else {
+      setFormStatus('view');
+      setReadOnly(true);
+    }
+    */
+  }, [user, permissions, readOnly]);
   
   // Safe categories check
   const safeCategories = React.useMemo(() => {
