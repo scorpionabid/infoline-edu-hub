@@ -59,6 +59,7 @@ export interface PendingApproval {
   submittedBy?: string;
   submittedAt: string;
   priority?: string;
+  sectorName?: string;
 }
 
 export interface SchoolStat {

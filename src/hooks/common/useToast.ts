@@ -2,12 +2,8 @@
 import { toast } from 'sonner';
 
 export const useToast = () => {
-  const toastFn = (message: string, options?: { description?: string }) => {
-    if (options?.description) {
-      toast(message, { description: options.description });
-    } else {
-      toast(message);
-    }
+  const showToast = (message: string) => {
+    toast(message);
   };
 
   const success = (message: string) => toast.success(message);
@@ -15,13 +11,9 @@ export const useToast = () => {
   const warning = (message: string) => toast.warning(message);
   const info = (message: string) => toast.info(message);
 
-  toastFn.success = success;
-  toastFn.error = error;
-  toastFn.warning = warning;
-  toastFn.info = info;
-
+  // Return both individual methods and the main toast function
   return {
-    toast: toastFn,
+    toast: showToast,
     success,
     error,
     warning,

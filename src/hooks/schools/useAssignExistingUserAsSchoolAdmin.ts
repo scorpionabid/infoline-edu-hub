@@ -17,6 +17,16 @@ export const useAssignExistingUserAsSchoolAdmin = () => {
 
       if (dbError) throw dbError;
 
+      // Check if the response indicates success
+      if (data && typeof data === 'object' && 'success' in data) {
+        if (data.success) {
+          success('Məktəb admini uğurla təyin edildi');
+          return data;
+        } else {
+          throw new Error(data.error || 'Təyin edilərkən xəta baş verdi');
+        }
+      }
+
       success('Məktəb admini uğurla təyin edildi');
       return data;
     } catch (err: any) {

@@ -40,7 +40,7 @@ export const useCreateColumn = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (categoryId: string, columnData: ColumnFormData): Promise<Column> => {
+    mutationFn: async ({ categoryId, columnData }: { categoryId: string; columnData: ColumnFormData }): Promise<Column> => {
       const { data, error } = await supabase
         .from('columns')
         .insert({
@@ -53,7 +53,7 @@ export const useCreateColumn = () => {
       if (error) throw error;
       return convertDbColumnToColumn(data);
     },
-    onSuccess: (_, categoryId) => {
+    onSuccess: (_, { categoryId }) => {
       queryClient.invalidateQueries({ queryKey: ['columns', categoryId] });
     }
   });
@@ -63,7 +63,7 @@ export const useUpdateColumn = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (columnId: string, columnData: Partial<ColumnFormData>): Promise<Column> => {
+    mutationFn: async ({ columnId, columnData }: { columnId: string; columnData: Partial<ColumnFormData> }): Promise<Column> => {
       const { data, error } = await supabase
         .from('columns')
         .update(columnData)
