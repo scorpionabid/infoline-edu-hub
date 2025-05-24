@@ -2,33 +2,34 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
-export const useAvailableUsers = () => {
-  const [users, setUsers] = useState([]);
+export const useRegionsStore = () => {
+  const [regions, setRegions] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchUsers = async () => {
+  const fetchRegions = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*');
+        .from('regions')
+        .select('*')
+        .order('name');
       
       if (error) throw error;
-      setUsers(data || []);
+      setRegions(data || []);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching regions:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchRegions();
   }, []);
 
   return {
-    users,
+    regions,
     loading,
-    refetch: fetchUsers
+    refetch: fetchRegions
   };
 };

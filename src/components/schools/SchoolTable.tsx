@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { DotsHorizontalIcon, PencilIcon, TrashIcon, UserPlusIcon } from '@radix-ui/react-icons'
+import { DotsHorizontalIcon, Pencil1Icon, TrashIcon, PersonIcon } from '@radix-ui/react-icons'
 import { Search } from 'lucide-react';
 import { Link2, FolderOpen } from 'lucide-react';
 import { SchoolLinksDialog } from './SchoolLinksDialog';
@@ -173,11 +173,11 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
                           <DropdownMenuItem onClick={() => onEdit(school)}>
-                            <PencilIcon className="mr-2 h-4 w-4" />
+                            <Pencil1Icon className="mr-2 h-4 w-4" />
                             Redaktə et
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => onAssignAdmin(school)}>
-                            <UserPlusIcon className="mr-2 h-4 w-4" />
+                            <PersonIcon className="mr-2 h-4 w-4" />
                             Admin təyin et
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
@@ -232,7 +232,6 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
                   <path fillRule="evenodd" d="M12.79 5.21a.75.75 0 01-.02 1.06L8.832 10l3.938 3.73a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
                 </svg>
               </Button>
-              {/* Məsələn səhifələr */}
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                 <Button
                   key={page}

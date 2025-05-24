@@ -2,6 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
+import { supabase } from '@/lib/supabase';
 import SchoolsContainer from '@/components/schools/SchoolsContainer';
 import { Loader2 } from 'lucide-react';
 import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
