@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { regionsStore } from '@/hooks/regions/useRegionsStore';
@@ -5,7 +6,7 @@ import { RegionDialog } from '@/components/regions/RegionDialog';
 import { RegionAdminDialog } from '@/components/regions/RegionAdminDialog';
 import { ExistingUserAdminDialog } from '@/components/regions/ExistingUserAdminDialog'; 
 import RegionHeader from '@/components/regions/RegionHeader';
-import RegionTable from '@/components/regions/RegionTable';
+import { RegionTable } from '@/components/regions/RegionTable';
 import { EnhancedRegion } from '@/types/region';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet';
