@@ -448,4 +448,10 @@ Bütün interfeys elementləri mobil cihazlara adaptasiya olunub:
    - Kiçik ekranlara uyğunlaşdırılmış bildirişlər
    
 
+## 11. Link və Fayl İdarəetməsi Axınları
+### 11.1. Admin tərəfindən Link Göndərmə
+### 11.2. Admin tərəfindən Fayl Paylaşımı
+### 11.3. SchoolAdmin tərəfindən Link və Fayl İstifadəsi
+
+
 Bu sənəd İnfoLine proyektinin əsas istifadəçi axınlarını və əməliyyatlarını ətraflı təsvir edir. Tətbiqin funksionallığı, istifadəçi təcrübəsi və işləmə prinsipi barədə hərtərəfli məlumat təqdim edir.

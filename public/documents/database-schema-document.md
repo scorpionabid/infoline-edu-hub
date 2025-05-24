@@ -443,6 +443,37 @@ categories (1) ───► columns (1) ───► data_entries (n)
 | regionadmin_manage_region | public | ALL | İstifadəçinin regionadmin olması VƏ rolun region daxilində olması |
 | view_own_role | public | SELECT | Rolun user_id-si auth.uid() ilə eyni olması |
 
+### 5.9. school_links cədvəli üçün RLS
+
+| Siyasət Adı | Rol | Əmr | Şərt |
+|-------------|-----|-----|------|
+| superadmin_manage_all | public | ALL | İstifadəçinin superadmin olması |
+| regionadmin_manage_region | public | ALL | İstifadəçinin regionadmin olması VƏ rolun region daxilində olması |
+| view_own_role | public | SELECT | Rolun user_id-si auth.uid() ilə eyni olması |
+
+### 5.10. school_files cədvəli üçün RLS
+
+| Siyasət Adı | Rol | Əmr | Şərt |
+|-------------|-----|-----|------|
+| superadmin_manage_all | public | ALL | İstifadəçinin superadmin olması |
+| regionadmin_manage_region | public | ALL | İstifadəçinin regionadmin olması VƏ rolun region daxilində olması |
+| view_own_role | public | SELECT | Rolun user_id-si auth.uid() ilə eyni olması |
+
+### 5.11. file_categories cədvəli üçün RLS
+
+| Siyasət Adı | Rol | Əmr | Şərt |
+|-------------|-----|-----|------|
+| superadmin_manage_all | public | ALL | İstifadəçinin superadmin olması |
+| regionadmin_manage_region | public | ALL | İstifadəçinin regionadmin olması VƏ rolun region daxilində olması |
+| view_own_role | public | SELECT | Rolun user_id-si auth.uid() ilə eyni olması |
+
+
+-- school_links cədvəli
+-- school_files cədvəli  
+-- file_categories cədvəli
+
+
+
 ## 6. İndekslər və Optimallaşdırma
 
 ## 6. İndekslər və Optimallaşdırma (davamı)

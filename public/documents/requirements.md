@@ -91,6 +91,11 @@ Məktəb Admini məlumatların ilkin daxil edilməsini həyata keçirir:
 - Silinmiş elementlərin arxivləşdirilməsi
 - 30 günlük saxlama müddəti
 - Versiya bərpası funksiyası
+### 3.8. Link İdarəetməsi və Fayl İdarəetməsi
+- RegionAdmin və SectorAdmin-lər məktəblərə linklər və fayllar göndərə bilər
+- Məktəblər üçün strukturlaşdırılmış fayl qovluq sistemi (Sənədlər, Hesabatlar, Şəkillər, Digər)
+- SchoolAdmin-lər göndərilmiş linklər və fayllardan istifadə edə bilər
+- Fayl yükləmə, endirmə və izləmə imkanları
 
 ## 4. İNTERFEYS TƏLƏBLƏRİ
 
