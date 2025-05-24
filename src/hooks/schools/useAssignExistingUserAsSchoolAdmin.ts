@@ -27,8 +27,12 @@ export const useAssignExistingUserAsSchoolAdmin = () => {
     }
   };
 
+  // Add the missing method for backward compatibility
+  const assignUserAsSchoolAdmin = assignSchoolAdmin;
+
   return {
     assignSchoolAdmin,
+    assignUserAsSchoolAdmin,
     loading
   };
 };

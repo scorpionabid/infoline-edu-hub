@@ -61,6 +61,40 @@ export const useNotifications = () => {
     }
   };
 
+  const markAllAsRead = async () => {
+    try {
+      const { error: dbError } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('is_read', false);
+
+      if (dbError) throw dbError;
+      
+      setNotifications(prev => 
+        prev.map(notif => ({ ...notif, is_read: true }))
+      );
+    } catch (err) {
+      console.error('Error marking all notifications as read:', err);
+    }
+  };
+
+  const clearAll = async () => {
+    try {
+      const { error: dbError } = await supabase
+        .from('notifications')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (dbError) throw dbError;
+      
+      setNotifications([]);
+    } catch (err) {
+      console.error('Error clearing all notifications:', err);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
   useEffect(() => {
     fetchNotifications();
   }, []);
@@ -68,7 +102,10 @@ export const useNotifications = () => {
   return {
     notifications,
     loading,
+    unreadCount,
     markAsRead,
+    markAllAsRead,
+    clearAll,
     refetch: fetchNotifications
   };
 };

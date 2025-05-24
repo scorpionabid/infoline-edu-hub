@@ -1,131 +1,111 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Column } from '@/types/column';
+import { supabase } from '@/lib/supabase';
+import { Column, ColumnFormData, ColumnType } from '@/types/column';
 
-export interface ColumnFormData {
-  name: string;
-  description?: string;
-  type: string;
-  is_required?: boolean;
-  default_value?: string;
-  options?: any;
-  validation?: any;
-  placeholder?: string;
-  help_text?: string;
-  order_index?: number;
-}
+// Helper function to convert database column to typed Column
+const convertDbColumnToColumn = (dbColumn: any): Column => {
+  return {
+    ...dbColumn,
+    type: dbColumn.type as ColumnType,
+    description: dbColumn.help_text || '',
+    section: '',
+    color: ''
+  };
+};
 
-export interface UseColumnsQueryResult {
-  createColumn: (categoryId: string, columnData: ColumnFormData) => Promise<Column>;
-  updateColumn: (columnId: string, columnData: Partial<ColumnFormData>) => Promise<Column>;
-  deleteColumn: (columnId: string) => Promise<void>;
-  fetchColumnsByCategory: (categoryId: string) => Promise<Column[]>;
-  // Deprecated compatibility functions
-  add: (data: any) => Promise<any>;
-  update: (id: string, data: any) => Promise<any>;
-  remove: (id: string) => Promise<any>;
-  columns: Column[];
-}
-
-export const useColumnsQuery = (): UseColumnsQueryResult => {
-  const queryClient = useQueryClient();
-
-  const { data: columns = [] } = useQuery({
-    queryKey: ['columns'],
+export const useColumnsQuery = ({ categoryId, enabled = true }: { categoryId?: string; enabled?: boolean }) => {
+  return useQuery({
+    queryKey: ['columns', categoryId],
     queryFn: async () => {
+      if (!categoryId) return [];
+      
       const { data, error } = await supabase
         .from('columns')
         .select('*')
+        .eq('category_id', categoryId)
+        .eq('status', 'active')
         .order('order_index');
-      
-      if (error) throw error;
-      return data || [];
-    }
-  });
 
-  const createMutation = useMutation({
-    mutationFn: async ({ categoryId, columnData }: { categoryId: string; columnData: ColumnFormData }) => {
+      if (error) throw error;
+      
+      // Convert database columns to typed Columns
+      return (data || []).map(convertDbColumnToColumn);
+    },
+    enabled: enabled && !!categoryId
+  });
+};
+
+export const useCreateColumn = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (categoryId: string, columnData: ColumnFormData): Promise<Column> => {
       const { data, error } = await supabase
         .from('columns')
-        .insert([{ ...columnData, category_id: categoryId }])
+        .insert({
+          category_id: categoryId,
+          ...columnData
+        })
         .select()
         .single();
-      
+
       if (error) throw error;
-      return data;
+      return convertDbColumnToColumn(data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['columns'] });
-      toast.success('Column created successfully');
-    },
-    onError: (error: any) => {
-      toast.error(`Failed to create column: ${error.message}`);
+    onSuccess: (_, categoryId) => {
+      queryClient.invalidateQueries({ queryKey: ['columns', categoryId] });
     }
   });
+};
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ columnId, columnData }: { columnId: string; columnData: Partial<ColumnFormData> }) => {
+export const useUpdateColumn = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (columnId: string, columnData: Partial<ColumnFormData>): Promise<Column> => {
       const { data, error } = await supabase
         .from('columns')
         .update(columnData)
         .eq('id', columnId)
         .select()
         .single();
-      
+
       if (error) throw error;
-      return data;
+      return convertDbColumnToColumn(data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['columns'] });
-      toast.success('Column updated successfully');
-    },
-    onError: (error: any) => {
-      toast.error(`Failed to update column: ${error.message}`);
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['columns', data.category_id] });
     }
   });
+};
 
-  const deleteMutation = useMutation({
+export const useDeleteColumn = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
     mutationFn: async (columnId: string) => {
       const { error } = await supabase
         .from('columns')
-        .delete()
+        .update({ status: 'deleted' })
         .eq('id', columnId);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
-      toast.success('Column deleted successfully');
-    },
-    onError: (error: any) => {
-      toast.error(`Failed to delete column: ${error.message}`);
     }
   });
+};
 
-  const fetchColumnsByCategory = async (categoryId: string): Promise<Column[]> => {
-    const { data, error } = await supabase
-      .from('columns')
-      .select('*')
-      .eq('category_id', categoryId)
-      .order('order_index');
-    
-    if (error) throw error;
-    return data || [];
-  };
+export const fetchColumnsByCategory = async (categoryId: string): Promise<Column[]> => {
+  const { data, error } = await supabase
+    .from('columns')
+    .select('*')
+    .eq('category_id', categoryId)
+    .eq('status', 'active')
+    .order('order_index');
 
-  return {
-    createColumn: (categoryId: string, columnData: ColumnFormData) => 
-      createMutation.mutateAsync({ categoryId, columnData }),
-    updateColumn: (columnId: string, columnData: Partial<ColumnFormData>) => 
-      updateMutation.mutateAsync({ columnId, columnData }),
-    deleteColumn: deleteMutation.mutateAsync,
-    fetchColumnsByCategory,
-    // Deprecated compatibility functions
-    add: (data: any) => createMutation.mutateAsync({ categoryId: data.category_id, columnData: data }),
-    update: (id: string, data: any) => updateMutation.mutateAsync({ columnId: id, columnData: data }),
-    remove: (id: string) => deleteMutation.mutateAsync(id),
-    columns
-  };
+  if (error) throw error;
+  return (data || []).map(convertDbColumnToColumn);
 };

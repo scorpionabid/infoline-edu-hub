@@ -10,17 +10,22 @@ export const useToast = () => {
     }
   };
 
-  toastFn.success = (message: string) => toast.success(message);
-  toastFn.error = (message: string) => toast.error(message);
-  toastFn.warning = (message: string) => toast.warning(message);
-  toastFn.info = (message: string) => toast.info(message);
+  const success = (message: string) => toast.success(message);
+  const error = (message: string) => toast.error(message);
+  const warning = (message: string) => toast.warning(message);
+  const info = (message: string) => toast.info(message);
+
+  toastFn.success = success;
+  toastFn.error = error;
+  toastFn.warning = warning;
+  toastFn.info = info;
 
   return {
     toast: toastFn,
-    success: (message: string) => toast.success(message),
-    error: (message: string) => toast.error(message),
-    warning: (message: string) => toast.warning(message),
-    info: (message: string) => toast.info(message)
+    success,
+    error,
+    warning,
+    info
   };
 };
 
