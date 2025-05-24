@@ -15,7 +15,7 @@ const convertDbColumnToColumn = (dbColumn: any): Column => {
 };
 
 export const useColumnsQuery = ({ categoryId, enabled = true }: { categoryId?: string; enabled?: boolean }) => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['columns', categoryId],
     queryFn: async () => {
       if (!categoryId) return [];
@@ -34,6 +34,20 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: { categoryId?: s
     },
     enabled: enabled && !!categoryId
   });
+
+  // Add missing methods for backward compatibility
+  return {
+    ...query,
+    createColumn: async (data: { categoryId: string; columnData: ColumnFormData }) => {
+      const mutation = useCreateColumn();
+      return mutation.mutateAsync(data);
+    },
+    updateColumn: async (data: { columnId: string; columnData: Partial<ColumnFormData> }) => {
+      const mutation = useUpdateColumn();
+      return mutation.mutateAsync(data);
+    },
+    columns: query.data || []
+  };
 };
 
 export const useCreateColumn = () => {
