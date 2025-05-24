@@ -2,7 +2,7 @@
 import { toast } from 'sonner';
 
 export const useToast = () => {
-  const toastFn = (message: string, options?: any) => {
+  const toastFn = (message: string, options?: { description?: string }) => {
     if (options?.description) {
       toast(message, { description: options.description });
     } else {
