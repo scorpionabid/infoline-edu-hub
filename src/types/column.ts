@@ -94,9 +94,36 @@ export const columnTypes: ColumnType[] = [
   'range'
 ];
 
+// Column type definitions for UI display
+export const columnTypeDefinitions = [
+  { value: 'text', label: 'Mətn', description: 'Qısa mətn sahəsi', icon: '📝' },
+  { value: 'textarea', label: 'Uzun mətn', description: 'Çox sətirli mətn sahəsi', icon: '📄' },
+  { value: 'number', label: 'Rəqəm', description: 'Rəqəmsal dəyər', icon: '🔢' },
+  { value: 'email', label: 'E-poçt', description: 'E-poçt ünvanı', icon: '📧' },
+  { value: 'phone', label: 'Telefon', description: 'Telefon nömrəsi', icon: '📞' },
+  { value: 'url', label: 'URL', description: 'İnternet ünvanı', icon: '🔗' },
+  { value: 'password', label: 'Şifrə', description: 'Şifrə sahəsi', icon: '🔒' },
+  { value: 'select', label: 'Seçim', description: 'Açılan siyahı', icon: '📋' },
+  { value: 'checkbox', label: 'Çek-boks', description: 'Bəli/Xeyr seçimi', icon: '☑️' },
+  { value: 'radio', label: 'Radio düymə', description: 'Tək seçim', icon: '🔘' },
+  { value: 'date', label: 'Tarix', description: 'Tarix seçimi', icon: '📅' },
+  { value: 'file', label: 'Fayl', description: 'Fayl yükləmə', icon: '📎' },
+  { value: 'time', label: 'Vaxt', description: 'Vaxt seçimi', icon: '⏰' },
+  { value: 'datetime', label: 'Tarix və Vaxt', description: 'Tarix və vaxt seçimi', icon: '📆' },
+  { value: 'richtext', label: 'Formatlı mətn', description: 'Rich text editor', icon: '📝' },
+  { value: 'range', label: 'Aralıq', description: 'Aralıq seçimi', icon: '📏' }
+];
+
 // Props interface for BasicColumnFields
 export interface BasicColumnFieldsProps {
   control: any;
   errors: any;
   watch: any;
+  categories?: any[];
+  form?: any;
+  columns?: Column[];
+  editColumn?: Column | null;
+  selectedType?: ColumnType;
+  onTypeChange?: (type: ColumnType) => void;
+  isEditMode?: boolean;
 }

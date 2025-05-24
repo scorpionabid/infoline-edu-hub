@@ -3,11 +3,10 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Trash2, Plus, ExternalLink, Edit } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Trash2, ExternalLink, Plus } from 'lucide-react';
 import { useSchoolLinks } from '@/hooks/schools/useSchoolLinks';
-import { CreateSchoolLinkData } from '@/types/link';
 
 interface SchoolLinksDialogProps {
   open: boolean;
@@ -22,168 +21,143 @@ export const SchoolLinksDialog: React.FC<SchoolLinksDialogProps> = ({
   schoolId,
   schoolName
 }) => {
-  const { links, loading, createLink, updateLink, deleteLink } = useSchoolLinks(schoolId);
-  const [showForm, setShowForm] = useState(false);
-  const [editingLink, setEditingLink] = useState<any>(null);
-  const [formData, setFormData] = useState({
+  const { links, loading, createLink, deleteLink } = useSchoolLinks(schoolId);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newLink, setNewLink] = useState({
     title: '',
     url: '',
     description: '',
     category: 'general'
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddLink = async () => {
+    if (!newLink.title || !newLink.url) return;
     
     try {
-      if (editingLink) {
-        await updateLink(editingLink.id, formData);
-        setEditingLink(null);
-      } else {
-        const linkData: CreateSchoolLinkData = {
-          school_id: schoolId,
-          ...formData
-        };
-        await createLink(linkData);
-      }
+      await createLink({
+        school_id: schoolId,
+        title: newLink.title,
+        url: newLink.url,
+        description: newLink.description,
+        category: newLink.category
+      });
       
-      setFormData({ title: '', url: '', description: '', category: 'general' });
-      setShowForm(false);
+      setNewLink({ title: '', url: '', description: '', category: 'general' });
+      setShowAddForm(false);
     } catch (error) {
-      console.error('Error saving link:', error);
+      console.error('Error adding link:', error);
     }
   };
 
-  const handleEdit = (link: any) => {
-    setEditingLink(link);
-    setFormData({
-      title: link.title,
-      url: link.url,
-      description: link.description || '',
-      category: link.category
-    });
-    setShowForm(true);
+  const handleDeleteLink = async (linkId: string) => {
+    try {
+      await deleteLink(linkId);
+    } catch (error) {
+      console.error('Error deleting link:', error);
+    }
   };
 
-  const handleCancel = () => {
-    setShowForm(false);
-    setEditingLink(null);
-    setFormData({ title: '', url: '', description: '', category: 'general' });
+  const handleLinkClick = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>
-            {schoolName} - Link İdarəetməsi
-          </DialogTitle>
+          <DialogTitle>{schoolName} - Linklər İdarəetməsi</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {!showForm ? (
-            <>
-              <Button 
-                onClick={() => setShowForm(true)}
-                className="w-full"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Yeni Link Əlavə Et
-              </Button>
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium">Mövcud Linklər</h3>
+            <Button onClick={() => setShowAddForm(true)} size="sm">
+              <Plus className="w-4 h-4 mr-1" />
+              Yeni Link
+            </Button>
+          </div>
 
-              {loading ? (
-                <div className="text-center py-4">Yüklənir...</div>
-              ) : (
-                <div className="space-y-3">
-                  {links.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      Hələ ki heç bir link əlavə edilməyib
-                    </div>
-                  ) : (
-                    links.map((link) => (
-                      <div key={link.id} className="border rounded-lg p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium">{link.title}</h4>
-                            <a 
-                              href={link.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline text-sm flex items-center gap-1"
-                            >
-                              {link.url}
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                            {link.description && (
-                              <p className="text-sm text-gray-600 mt-1">
-                                {link.description}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(link)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => deleteLink(link.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </>
+          {loading ? (
+            <div className="text-center py-4">Yüklənir...</div>
+          ) : links.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              Hələ ki heç bir link əlavə edilməyib
+            </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
+            <div className="space-y-2">
+              {links.map((link) => (
+                <div key={link.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <h4 className="font-medium">{link.title}</h4>
+                    <p className="text-sm text-gray-600">{link.url}</p>
+                    {link.description && (
+                      <p className="text-sm text-gray-500 mt-1">{link.description}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleLinkClick(link.url)}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteLink(link.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {showAddForm && (
+            <div className="border rounded-lg p-4 space-y-4">
+              <h3 className="font-medium">Yeni Link Əlavə Et</h3>
+              
+              <div className="space-y-2">
                 <Label htmlFor="title">Başlıq</Label>
                 <Input
                   id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="url">URL</Label>
-                <Input
-                  id="url"
-                  type="url"
-                  value={formData.url}
-                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Təsvir (ixtiyari)</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  value={newLink.title}
+                  onChange={(e) => setNewLink({...newLink, title: e.target.value})}
+                  placeholder="Link başlığı"
                 />
               </div>
 
-              <div className="flex gap-2">
-                <Button type="submit">
-                  {editingLink ? 'Yenilə' : 'Əlavə Et'}
+              <div className="space-y-2">
+                <Label htmlFor="url">URL</Label>
+                <Input
+                  id="url"
+                  value={newLink.url}
+                  onChange={(e) => setNewLink({...newLink, url: e.target.value})}
+                  placeholder="https://example.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Açıqlama (İxtiyari)</Label>
+                <Textarea
+                  id="description"
+                  value={newLink.description}
+                  onChange={(e) => setNewLink({...newLink, description: e.target.value})}
+                  placeholder="Link haqqında qısa açıqlama"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowAddForm(false)}>
+                  Ləğv et
                 </Button>
-                <Button type="button" variant="outline" onClick={handleCancel}>
-                  Ləğv Et
+                <Button onClick={handleAddLink}>
+                  Link Əlavə Et
                 </Button>
               </div>
-            </form>
+            </div>
           )}
         </div>
       </DialogContent>

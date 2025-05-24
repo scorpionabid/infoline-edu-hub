@@ -1,13 +1,13 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Upload, Download, FolderOpen, File } from 'lucide-react';
+import { Trash2, Download, Upload, File } from 'lucide-react';
 import { useSchoolFiles } from '@/hooks/schools/useSchoolFiles';
-import { UploadFileData } from '@/types/file';
 
 interface SchoolFilesDialogProps {
   open: boolean;
@@ -23,30 +23,33 @@ export const SchoolFilesDialog: React.FC<SchoolFilesDialogProps> = ({
   schoolName
 }) => {
   const { files, categories, loading, uploading, uploadFile, deleteFile, getFileUrl } = useSchoolFiles(schoolId);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [description, setDescription] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [uploadData, setUploadData] = useState({
+    file: null as File | null,
+    description: '',
+    category_id: ''
+  });
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadData({...uploadData, file});
+    }
+  };
 
+  const handleUpload = async () => {
+    if (!uploadData.file) return;
+    
     try {
-      const uploadData: UploadFileData = {
+      await uploadFile({
         school_id: schoolId,
-        category_id: selectedCategory || undefined,
-        file,
-        description: description || undefined
-      };
+        file: uploadData.file,
+        description: uploadData.description,
+        category_id: uploadData.category_id || undefined
+      });
       
-      await uploadFile(uploadData);
-      setDescription('');
-      setSelectedCategory('');
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      setUploadData({ file: null, description: '', category_id: '' });
+      setShowUploadForm(false);
     } catch (error) {
       console.error('Error uploading file:', error);
     }
@@ -63,6 +66,14 @@ export const SchoolFilesDialog: React.FC<SchoolFilesDialogProps> = ({
     }
   };
 
+  const handleDeleteFile = async (file: any) => {
+    try {
+      await deleteFile(file.id, file.file_path);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+    }
+  };
+
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return 'N/A';
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -70,135 +81,114 @@ export const SchoolFilesDialog: React.FC<SchoolFilesDialogProps> = ({
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const groupedFiles = files.reduce((acc, file) => {
-    const categoryName = file.category?.name || 'other';
-    if (!acc[categoryName]) {
-      acc[categoryName] = [];
-    }
-    acc[categoryName].push(file);
-    return acc;
-  }, {} as Record<string, typeof files>);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>
-            {schoolName} - Fayl İdarəetməsi
-          </DialogTitle>
+          <DialogTitle>{schoolName} - Fayllar İdarəetməsi</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Upload Section */}
-          <div className="border rounded-lg p-4">
-            <h3 className="font-medium mb-4">Yeni Fayl Yüklə</h3>
-            <div className="space-y-4">
-              <div>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium">Mövcud Fayllar</h3>
+            <Button onClick={() => setShowUploadForm(true)} size="sm">
+              <Upload className="w-4 h-4 mr-1" />
+              Fayl Yüklə
+            </Button>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-4">Yüklənir...</div>
+          ) : files.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              Hələ ki heç bir fayl yüklənməyib
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {files.map((file) => (
+                <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <File className="w-8 h-8 text-gray-400" />
+                    <div>
+                      <h4 className="font-medium">{file.file_name}</h4>
+                      <p className="text-sm text-gray-600">
+                        {formatFileSize(file.file_size)} • {file.category?.name || 'Kateqoriyasız'}
+                      </p>
+                      {file.description && (
+                        <p className="text-sm text-gray-500 mt-1">{file.description}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(file)}
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteFile(file)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {showUploadForm && (
+            <div className="border rounded-lg p-4 space-y-4">
+              <h3 className="font-medium">Yeni Fayl Yüklə</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="file">Fayl</Label>
+                <Input
+                  id="file"
+                  type="file"
+                  onChange={handleFileSelect}
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="category">Kateqoriya</Label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <Select value={uploadData.category_id} onValueChange={(value) => setUploadData({...uploadData, category_id: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Kateqoriya seçin" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
-                        {category.description || category.name}
+                        {category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div>
-                <Label htmlFor="description">Təsvir (ixtiyari)</Label>
-                <Input
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Açıqlama (İxtiyari)</Label>
+                <Textarea
                   id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Fayl haqqında qısa məlumat"
+                  value={uploadData.description}
+                  onChange={(e) => setUploadData({...uploadData, description: e.target.value})}
+                  placeholder="Fayl haqqında qısa açıqlama"
                 />
               </div>
 
-              <div>
-                <Label htmlFor="file">Fayl seçin</Label>
-                <Input
-                  ref={fileInputRef}
-                  id="file"
-                  type="file"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
-                />
-                {uploading && (
-                  <p className="text-sm text-gray-500 mt-1">Yüklənir...</p>
-                )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowUploadForm(false)}>
+                  Ləğv et
+                </Button>
+                <Button onClick={handleUpload} disabled={!uploadData.file || uploading}>
+                  {uploading ? 'Yüklənir...' : 'Fayl Yüklə'}
+                </Button>
               </div>
             </div>
-          </div>
-
-          {/* Files List */}
-          <div className="space-y-4">
-            {loading ? (
-              <div className="text-center py-4">Yüklənir...</div>
-            ) : (
-              <>
-                {Object.keys(groupedFiles).length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    Hələ ki heç bir fayl yüklənməyib
-                  </div>
-                ) : (
-                  Object.entries(groupedFiles).map(([categoryName, categoryFiles]) => {
-                    const category = categories.find(c => c.name === categoryName);
-                    return (
-                      <div key={categoryName} className="border rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <FolderOpen className="w-5 h-5" />
-                          <h4 className="font-medium">
-                            {category?.description || categoryName} ({categoryFiles.length})
-                          </h4>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          {categoryFiles.map((file) => (
-                            <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                              <div className="flex items-center gap-2 flex-1">
-                                <File className="w-4 h-4" />
-                                <div>
-                                  <p className="font-medium text-sm">{file.file_name}</p>
-                                  <p className="text-xs text-gray-500">
-                                    {formatFileSize(file.file_size)} • {new Date(file.created_at).toLocaleDateString()}
-                                  </p>
-                                  {file.description && (
-                                    <p className="text-xs text-gray-600">{file.description}</p>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDownload(file)}
-                                >
-                                  <Download className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => deleteFile(file.id, file.file_path)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </>
-            )}
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
