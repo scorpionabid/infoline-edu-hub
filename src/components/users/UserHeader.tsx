@@ -25,13 +25,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { UserFilter } from '@/hooks/useUserList';
-import { useUserList } from '@/hooks/useUserList';
+import { UserFilter } from '@/hooks/user/useUserList';
+import { useUserList } from '@/hooks/user/useUserList';
 
 interface UserHeaderProps {
-  title: string;
-  filterProps: any;
+  title?: string;
+  filterProps?: any;
   onRefresh?: () => void;
+  // Users səhifəsindən ötürülən əlavə proplar
+  entityTypes?: Array<'region' | 'sector' | 'school'>;
+  onUserAddedOrEdited?: () => void;
 }
 
 const UserHeader: React.FC<UserHeaderProps> = ({ 

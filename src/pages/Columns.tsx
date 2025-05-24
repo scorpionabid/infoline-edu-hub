@@ -26,6 +26,7 @@ import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useColumnMutations } from '@/hooks/columns/useColumnMutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { Column } from '@/types/column';
+import { supabase } from '@/lib/supabase';
 
 const Columns: React.FC = () => {
   const { t } = useLanguage();
@@ -65,33 +66,67 @@ const Columns: React.FC = () => {
     categoryId: ''
   });
 
-  // Load categories and columns with retry logic
-  const loadData = useCallback(() => {
-    console.log('Loading categories and columns data');
-    refetchCategories();
-    refetchColumns();
-  }, [refetchCategories, refetchColumns]);
+  // Load categories and columns independently
+  const loadCategories = useCallback(() => {
+    console.log('Loading categories data');
+    try {
+      // useCategories hook-unun refetch funksiyasını çağırmaq əvəzinə
+      // birbaşa hook-u çağırmaq yerinə əl ilə fetch edə bilərik
+      const fetchCategoriesDirectly = async () => {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching categories:', error);
+          return [];
+        }
+        
+        return data || [];
+      };
+      
+      fetchCategoriesDirectly();
+    } catch (error) {
+      console.error('Error in loadCategories:', error);
+    }
+  }, []);
+  
+  const loadColumns = useCallback(() => {
+    console.log('Loading columns data');
+    try {
+      // useColumns hook-unun refetch funksiyasını çağırmaq əvəzinə
+      // birbaşa hook-u çağırmaq yerinə React Query keşini təmizləyirik
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+    } catch (error) {
+      console.error('Error in loadColumns:', error);
+    }
+  }, [queryClient]);
 
-  // Retry if data loading fails
+  // Retry if data loading fails - dairəvi asılılıqları azaltdıq
   useEffect(() => {
     if ((categoriesError || columnsError) && loadingRetries < 3) {
       const timer = setTimeout(() => {
         console.log(`Retrying data fetch (attempt ${loadingRetries + 1})`);
         setLoadingRetries(prev => prev + 1);
-        loadData();
+        // loadData əvəzinə birbaşa ayrı-ayrı funksiyaları çağırırıq
+        loadCategories();
+        loadColumns();
       }, Math.pow(2, loadingRetries) * 1000); // Exponential backoff
       return () => clearTimeout(timer);
     }
-  }, [categoriesError, columnsError, loadingRetries, loadData]);
+  }, [categoriesError, columnsError, loadingRetries, loadCategories, loadColumns]);
 
-  // Initial data load
+  // Initial data load - sadəcə bir dəfə çağırılacaq
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadCategories();
+    loadColumns();
+  }, []); // Boş asılılıq massivi - yalnız bir dəfə çalışsın
 
   // Filter columns
   const filteredColumns = React.useMemo(() => {
-    if (!columns) return [];
+    // Əmin olaq ki, columns bir massivdir
+    if (!columns || !Array.isArray(columns)) return [];
     
     return columns.filter(column => {
       // Filter by search query
@@ -262,7 +297,10 @@ const Columns: React.FC = () => {
           <AlertDescription>
             {String(categoriesError || columnsError || t('unknownError'))}
           </AlertDescription>
-          <Button variant="outline" size="sm" onClick={loadData} className="ml-auto">
+          <Button variant="outline" size="sm" onClick={() => {
+            loadCategories();
+            loadColumns();
+          }} className="ml-auto">
             {t('tryAgain')}
           </Button>
         </Alert>
@@ -391,7 +429,10 @@ const Columns: React.FC = () => {
           onDeleteColumn={(id, name) => handleOpenDeleteDialog(
             id, 
             name, 
-            columns?.find(c => c.id === id)?.category_id || ''
+            // TypeScript xətasını aradan qaldırmaq üçün massiv yoxlaması əlavə edirik
+            Array.isArray(columns) 
+              ? columns.find(c => c.id === id)?.category_id || ''
+              : ''
           )}
           onUpdateStatus={(id, status) => console.log('Update status:', id, status)}
           canManageColumns={canManageColumns}

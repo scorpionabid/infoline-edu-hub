@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 import { Helmet } from 'react-helmet';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { UserFilter } from '@/hooks/useUserList';
+import { UserFilter } from '@/hooks/user/useUserList';
 
 const Users = () => {
   const { t } = useLanguage();

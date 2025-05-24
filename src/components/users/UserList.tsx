@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useUserList, UserFilter } from '@/hooks/useUserList';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+// Düzgün import yolları
+import { useUserList, UserFilter } from '@/hooks/user/useUserList';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +14,20 @@ import UserActions from './UserActions';
 import { useLanguage } from '@/context/LanguageContext';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { useDebounceCallback } from '@/hooks/useDebounceCallback';
+// Bu hook-u bəlkə ayrıca yaratmalı olacaq, hələlik sadə debounce istifadə edək
+const useDebounceCallback = (callback: any, delay: number) => {
+  const timeoutRef = React.useRef<NodeJS.Timeout>();
+  
+  return useCallback((...args: any[]) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    timeoutRef.current = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  }, [callback, delay]);
+};
 
 interface UserListProps {
   refreshTrigger?: number;
@@ -23,6 +37,9 @@ interface UserListProps {
 const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = {} }) => {
   const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // İstifadəçi sorğularının təkrarlanmasının qarşısını almaq üçün bir bayraq dəyişəni
+  const initialFetchDone = useRef(false);
   
   // Initialize filter with provided params
   const defaultFilter = {
@@ -75,19 +92,56 @@ const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = 
   // Handle refresh trigger from parent
   useEffect(() => {
     if (refreshTrigger > 0) {
-      refetch();
+      refetch(true); // Force refresh
     }
   }, [refreshTrigger, refetch]);
+  
+  // İlk yüklənmə zamanı istifadəçiləri avtomatik çək - yalnız bir dəfə icra olunur
+  const mountedRef = useRef(false);
+  
+  useEffect(() => {
+    // Yalnız bir dəfə icra et - ilk render
+    if (mountedRef.current) {
+      return;
+    }
+    
+    console.log('UserList mounted for the first time');
+    mountedRef.current = true;
+    initialFetchDone.current = true;
+    
+    // Component ilk dəfə yüklənəndə istifadəçiləri çək
+    // Qeyd: boş asılılıq massivi - yalnız bir dəfə çağırılır
+    refetch(true);
+  }, []);
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     updateFilter({ ...filter, search: searchTerm });
   };
   
-  // Handle page change - now works directly with the pagination component
+  // Səhifələmə və render kontrolu üçün bayraqlar
+  const lastPageRef = useRef<number>(1); // Son səhifəni yadda saxlamaq üçün
+  const pageChangeInProgressRef = useRef<boolean>(false); // Səhifə dəyişikliyi prosesini izləmək üçün
+  
+  // Səhifə dəyişikliyi zamanı təkrar soruların qarşısını alırıq
   const handlePageChange = useCallback((page: number) => {
-    console.log('Changing to page:', page);
-    setCurrentPage(page);
+    // Səhifə dəyişikliyi davam edirsə və ya eyni səhifədirsə, geri qayıt
+    if (pageChangeInProgressRef.current || page === lastPageRef.current) {
+      console.log('Page change in progress or already on page:', page, '- skipping');
+      return;
+    }
+    
+    // Səhifə dəyişikliyi başladı
+    pageChangeInProgressRef.current = true;
+    
+    console.log('Changing to page:', page, 'from', lastPageRef.current);
+    lastPageRef.current = page;
+    
+    // Səhifəni dəyişdikdən sonra, bayraqı sıfırla
+    setTimeout(() => {
+      setCurrentPage(page);
+      pageChangeInProgressRef.current = false;
+    }, 50);
   }, [setCurrentPage]);
   
   const handleReset = useCallback(() => {
@@ -98,7 +152,7 @@ const UserList: React.FC<UserListProps> = ({ refreshTrigger = 0, filterParams = 
   if (error) {
     console.error("Error loading users:", error);
     toast.error(t('errorLoadingUsers'), {
-      description: error.message || t('tryAgainLater')
+      description: typeof error === 'string' ? error : (error as any)?.message || t('tryAgainLater')
     });
   }
   
