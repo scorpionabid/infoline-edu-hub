@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from '../common/StatsCard';
@@ -9,6 +8,8 @@ import { AppNotification, adaptDashboardNotificationToApp } from '@/types/notifi
 import { ClockIcon, CheckCircleIcon, AlertTriangleIcon, FileText } from 'lucide-react';
 import FormTabs from './FormTabs';
 import { Button } from '@/components/ui/button';
+import { LinksCard } from './LinksCard';
+import { FilesCard } from './FilesCard';
 
 interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
@@ -154,6 +155,12 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         />
       </Grid>
       
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <LinksCard />
+        <FilesCard />
+      </div>
+
       {categories.length > 0 && upcoming.length > 0 && pendingForms.length > 0 && (
         <FormTabs 
           categories={categories}
