@@ -130,6 +130,7 @@ export const useAvailableUsers = () => {
     currentPage,
     totalRecords,
     handlePageChange,
-    refetch
+    refetch,
+    fetchUsers
   };
 };

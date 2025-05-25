@@ -28,6 +28,7 @@ export interface ColumnOption {
   label: string;
   value: string;
   description?: string;
+  disabled?: boolean;
 }
 
 export interface ColumnValidation {
@@ -38,7 +39,10 @@ export interface ColumnValidation {
   maxLength?: number;
   minValue?: number;
   maxValue?: number;
+  min?: number;
+  max?: number;
   pattern?: string;
+  patternMessage?: string;
 }
 
 export interface BaseColumn {
@@ -64,6 +68,7 @@ export interface Column extends BaseColumn {
   color?: string;
   parent_column_id?: string;
   version?: number;
+  key?: string;
 }
 
 export interface ColumnFormValues {
@@ -92,6 +97,19 @@ export interface ColumnFormData {
   validation?: Json;
   options?: Json;
   order_index?: number;
+}
+
+export interface BasicColumnFieldsProps {
+  form: any;
+  control: any;
+  errors: any;
+  watch: any;
+  categories: { id: string; name: string }[];
+  columns: Column[];
+  editColumn?: Column | null;
+  selectedType: ColumnType;
+  onTypeChange: (type: ColumnType) => void;
+  isEditMode: boolean;
 }
 
 export const columnTypeDefinitions = [

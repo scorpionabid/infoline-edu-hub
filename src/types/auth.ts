@@ -50,6 +50,7 @@ export interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   logOut: () => Promise<void>;
+  logout: () => Promise<void>;
   updatePassword: (newPassword: string) => Promise<{ error?: string }>;
   updateProfile: (data: Partial<User>) => Promise<{ error?: string }>;
   isAuthenticated: boolean;
@@ -64,4 +65,21 @@ export interface UseAuthResult {
   updatePassword: (newPassword: string) => Promise<{ error?: string }>;
   updateProfile: (data: Partial<User>) => Promise<{ error?: string }>;
   isAuthenticated: boolean;
+}
+
+// Auth store interface
+export interface AuthState {
+  user: FullUserData | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  error: string | null;
+  session: any;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  logout: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  fetchUser: () => Promise<void>;
+  updateUser: (userData: Partial<FullUserData>) => void;
+  clearError: () => void;
+  initializeAuth: () => Promise<void>;
 }

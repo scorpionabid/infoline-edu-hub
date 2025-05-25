@@ -1,33 +1,40 @@
 
 import React, { useEffect } from 'react';
-import { Toaster } from 'sonner';
-import { AppRoutes } from '@/routes/AppRoutes';
+import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/context/auth/AuthProvider';
+import { LanguageProvider } from '@/context/LanguageContext';
+import AppRoutes from '@/routes/AppRoutes';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000,
+    },
+  },
+});
+
 function App() {
-  // Prevent double initialization by using a flag
-  const authInitialized = React.useRef(false);
-  const initializeAuth = useAuthStore(state => state.initializeAuth);
-  
-  // Run once on app startup, but use a ref to prevent repeated calls
+  const initializeAuth = useAuthStore((state) => state.initializeAuth);
+
   useEffect(() => {
-    if (authInitialized.current) return;
-    
-    console.info('Initializing application', { context: 'App' });
-    authInitialized.current = true;
-    
-    // Initialize auth immediately to avoid any timing issues
-    console.info('Initializing authentication', { context: 'App' });
-    initializeAuth().catch(error => {
-      console.error('Failed to initialize authentication', error, { context: 'App' });
-    });
+    initializeAuth();
   }, [initializeAuth]);
 
   return (
-    <>
-      <Toaster position="top-right" />
-      <AppRoutes />
-    </>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <LanguageProvider>
+          <AuthProvider>
+            <AppRoutes />
+            <Toaster />
+          </AuthProvider>
+        </LanguageProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

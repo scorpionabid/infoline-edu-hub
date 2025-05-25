@@ -6,6 +6,14 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import { Loader2 } from 'lucide-react';
 
+interface SidebarProps {
+  onClose: () => void;
+}
+
+interface HeaderProps {
+  onMenuClick: () => void;
+}
+
 const SidebarLayout: React.FC = () => {
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);

@@ -1,15 +1,9 @@
 
-// Export all auth context components and hooks
-export { AuthProvider } from './AuthProvider';
-export { useAuth } from './useAuth';
-export { useRole } from './useRole';
+export * from './AuthProvider';
+export * from './context';
 
-// Re-export types
-export type { AuthContextType, AuthErrorType } from './types';
-
-// Re-export from the Zustand store
-export { 
-  useAuthStore,
+// Re-export selector functions from useAuthStore
+export {
   selectUser,
   selectIsAuthenticated,
   selectIsLoading,
@@ -23,6 +17,3 @@ export {
   isProtectedRoute,
   getRedirectPath
 } from '@/hooks/auth/useAuthStore';
-
-// Re-export from hooks
-export { usePermissions } from '@/hooks/auth/usePermissions';
