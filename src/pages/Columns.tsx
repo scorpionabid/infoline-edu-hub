@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -26,7 +25,6 @@ import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useColumnMutations } from '@/hooks/columns/useColumnMutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { Column } from '@/types/column';
-import { supabase } from '@/lib/supabase';
 
 const Columns: React.FC = () => {
   const { t } = useLanguage();
@@ -34,11 +32,11 @@ const Columns: React.FC = () => {
   const queryClient = useQueryClient();
   const [columnFormDialogOpen, setColumnFormDialogOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState<Column | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { columns, isLoading: columnsLoading, isError, error: columnsError, refetch: refetchColumns } = useColumns();
   
-  // Use the correct hook API for categories
   const { 
     categories, 
     loading: categoriesLoading, 
@@ -69,23 +67,18 @@ const Columns: React.FC = () => {
 
   // Filter columns
   const filteredColumns = React.useMemo(() => {
-    // Əmin olaq ki, columns bir massivdir
     if (!columns || !Array.isArray(columns)) return [];
     
     return columns.filter(column => {
-      // Filter by search query
       const matchesSearch = searchQuery === '' || 
         column.name.toLowerCase().includes(searchQuery.toLowerCase());
       
-      // Filter by category
       const matchesCategory = categoryFilter === 'all' || 
         column.category_id === categoryFilter;
       
-      // Filter by type
       const matchesType = typeFilter === 'all' || 
         column.type === typeFilter;
       
-      // Filter by status
       const matchesStatus = statusFilter === 'all' || 
         column.status === statusFilter;
       
@@ -93,9 +86,17 @@ const Columns: React.FC = () => {
     }) || [];
   }, [columns, searchQuery, categoryFilter, typeFilter, statusFilter]);
 
-  // Sütun əlavə etmə düyməsinin hadisə işləyicisi
+  // Get the first available category for new columns
+  useEffect(() => {
+    if (categories && categories.length > 0 && !selectedCategoryId) {
+      setSelectedCategoryId(categories[0].id);
+      console.log('Setting default category:', categories[0].id);
+    }
+  }, [categories, selectedCategoryId]);
+
   const handleOpenAddColumnDialog = () => {
     console.log('Add column button clicked, canManageColumns:', canManageColumns);
+    console.log('Selected category ID:', selectedCategoryId);
     
     if (!canManageColumns) {
       toast.error(t('noPermission'), {
@@ -103,55 +104,53 @@ const Columns: React.FC = () => {
       });
       return;
     }
+
+    if (!selectedCategoryId && categories && categories.length > 0) {
+      setSelectedCategoryId(categories[0].id);
+    }
     
-    // Əvvəlcə seçilmiş sütunu təmizləyirik
     setSelectedColumn(null);
-    
-    // Dialoqu açırıq
     console.log('Opening add column dialog...');
     setColumnFormDialogOpen(true);
   };
 
-  // Sütun əlavə etmə
   const handleAddColumn = async (newColumn: Omit<Column, "id"> & { id?: string }): Promise<boolean> => {
     try {
       setIsSubmitting(true);
       console.log('Creating new column:', newColumn);
       
+      // Ensure category_id is set
+      if (!newColumn.category_id && selectedCategoryId) {
+        newColumn.category_id = selectedCategoryId;
+      }
+      
       const result = await createColumn(newColumn);
       
       if (result.success) {
-        toast.success(t('columnAdded'), {
-          description: t('columnAddedDescription')
-        });
+        toast.success(t('columnAdded') || 'Column added successfully');
         setColumnFormDialogOpen(false);
         refetchColumns();
         return true;
       } else {
-        toast.error(t('columnAddFailed'), {
-          description: result.error || t('unknownError')
-        });
+        toast.error(t('columnAddFailed') || 'Failed to add column');
         return false;
       }
     } catch (error) {
       console.error('Error creating column:', error);
-      toast.error(t('columnAddFailed'), {
-        description: t('unknownError')
-      });
+      toast.error(t('columnAddFailed') || 'Failed to add column');
       return false;
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Sütun redaktə etmə
   const handleEditColumn = (column: Column) => {
     console.log('Editing column:', column);
     setSelectedColumn(column);
+    setSelectedCategoryId(column.category_id);
     setColumnFormDialogOpen(true);
   };
 
-  // Sütun yeniləmə
   const handleUpdateColumn = async (updatedColumn: Omit<Column, "id"> & { id?: string }): Promise<boolean> => {
     try {
       setIsSubmitting(true);
@@ -160,30 +159,23 @@ const Columns: React.FC = () => {
       const result = await updateColumn(updatedColumn as Column);
       
       if (result.success) {
-        toast.success(t('columnUpdated'), {
-          description: t('columnUpdatedDescription')
-        });
+        toast.success(t('columnUpdated') || 'Column updated successfully');
         setColumnFormDialogOpen(false);
         refetchColumns();
         return true;
       } else {
-        toast.error(t('columnUpdateFailed'), {
-          description: result.error || t('unknownError')
-        });
+        toast.error(t('columnUpdateFailed') || 'Failed to update column');
         return false;
       }
     } catch (error) {
       console.error('Error updating column:', error);
-      toast.error(t('columnUpdateFailed'), {
-        description: t('unknownError')
-      });
+      toast.error(t('columnUpdateFailed') || 'Failed to update column');
       return false;
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Sütun silmə dialoqu
   const handleOpenDeleteDialog = (columnId: string, columnName: string, categoryId: string) => {
     if (!canManageColumns) {
       toast.error(t('noPermission'), {
@@ -200,7 +192,6 @@ const Columns: React.FC = () => {
     });
   };
 
-  // Sütun silmə
   const handleDeleteColumn = async () => {
     try {
       setIsSubmitting(true);
@@ -209,21 +200,15 @@ const Columns: React.FC = () => {
       const result = await deleteColumn(deleteDialog.column);
       
       if (result.success) {
-        toast.success(t('columnDeleted'), {
-          description: t('columnDeletedDescription')
-        });
+        toast.success(t('columnDeleted') || 'Column deleted successfully');
         setDeleteDialog({ ...deleteDialog, isOpen: false });
         refetchColumns();
       } else {
-        toast.error(t('columnDeleteFailed'), {
-          description: result.error || t('unknownError')
-        });
+        toast.error(t('columnDeleteFailed') || 'Failed to delete column');
       }
     } catch (error) {
       console.error('Error deleting column:', error);
-      toast.error(t('columnDeleteFailed'), {
-        description: t('unknownError')
-      });
+      toast.error(t('columnDeleteFailed') || 'Failed to delete column');
     } finally {
       setIsSubmitting(false);
     }
@@ -234,8 +219,8 @@ const Columns: React.FC = () => {
     return (
       <div className="container mx-auto py-6 space-y-6">
         <PageHeader
-          title={t('columnsPageTitle')}
-          description={t('columnsPageDescription')}
+          title={t('columnsPageTitle') || 'Columns'}
+          description={t('columnsPageDescription') || 'Manage columns'}
           backButtonUrl="/categories"
         />
         <Alert variant="destructive" className="mb-4">
@@ -247,7 +232,7 @@ const Columns: React.FC = () => {
             refetchCategories();
             refetchColumns();
           }} className="ml-auto">
-            {t('tryAgain')}
+            {t('tryAgain') || 'Try Again'}
           </Button>
         </Alert>
       </div>
@@ -259,13 +244,13 @@ const Columns: React.FC = () => {
     return (
       <div className="container mx-auto py-6 space-y-6">
         <PageHeader
-          title={t('columnsPageTitle')}
-          description={t('columnsPageDescription')}
+          title={t('columnsPageTitle') || 'Columns'}
+          description={t('columnsPageDescription') || 'Manage columns'}
           backButtonUrl="/categories"
         />
         <div className="flex flex-col items-center justify-center h-64">
           <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-          <p>{t('loadingColumns')}</p>
+          <p>{t('loadingColumns') || 'Loading columns...'}</p>
         </div>
       </div>
     );
@@ -274,15 +259,29 @@ const Columns: React.FC = () => {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <PageHeader
-        title={t('columnsPageTitle')}
-        description={t('columnsPageDescription')}
+        title={t('columnsPageTitle') || 'Columns'}
+        description={t('columnsPageDescription') || 'Manage columns'}
         backButtonUrl="/categories"
       >
         {canManageColumns && (
-          <Button onClick={handleOpenAddColumnDialog}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('addColumn')}
-          </Button>
+          <div className="flex gap-2">
+            <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories?.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleOpenAddColumnDialog} disabled={!selectedCategoryId}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('addColumn') || 'Add Column'}
+            </Button>
+          </div>
         )}
       </PageHeader>
 
@@ -293,7 +292,7 @@ const Columns: React.FC = () => {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder={t("searchColumns")}
+              placeholder={t("searchColumns") || "Search columns..."}
               className="pl-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -306,10 +305,10 @@ const Columns: React.FC = () => {
               onValueChange={setCategoryFilter}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t("categoryFilter")} />
+                <SelectValue placeholder={t("categoryFilter") || "Category filter"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t("allCategories")}</SelectItem>
+                <SelectItem value="all">{t("allCategories") || "All categories"}</SelectItem>
                 {categories?.map((category) => (
                   <SelectItem key={category.id} value={category.id || `category-${Math.random()}`}>
                     {category.name}
@@ -323,32 +322,17 @@ const Columns: React.FC = () => {
               onValueChange={setTypeFilter}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t("typeFilter")} />
+                <SelectValue placeholder={t("typeFilter") || "Type filter"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t("allTypes")}</SelectItem>
-                <SelectItem value="text">{t("text")}</SelectItem>
-                <SelectItem value="number">{t("number")}</SelectItem>
-                <SelectItem value="date">{t("date")}</SelectItem>
-                <SelectItem value="select">{t("select")}</SelectItem>
-                <SelectItem value="checkbox">{t("checkbox")}</SelectItem>
-                <SelectItem value="radio">{t("radio")}</SelectItem>
-                <SelectItem value="file">{t("file")}</SelectItem>
-                <SelectItem value="image">{t("image")}</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select 
-              value={statusFilter || 'all'} 
-              onValueChange={setStatusFilter}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t("statusFilter")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("allStatuses")}</SelectItem>
-                <SelectItem value="active">{t("activeOnly")}</SelectItem>
-                <SelectItem value="inactive">{t("inactiveOnly")}</SelectItem>
+                <SelectItem value="all">{t("allTypes") || "All types"}</SelectItem>
+                <SelectItem value="text">{t("text") || "Text"}</SelectItem>
+                <SelectItem value="number">{t("number") || "Number"}</SelectItem>
+                <SelectItem value="date">{t("date") || "Date"}</SelectItem>
+                <SelectItem value="select">{t("select") || "Select"}</SelectItem>
+                <SelectItem value="checkbox">{t("checkbox") || "Checkbox"}</SelectItem>
+                <SelectItem value="radio">{t("radio") || "Radio"}</SelectItem>
+                <SelectItem value="file">{t("file") || "File"}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -358,10 +342,10 @@ const Columns: React.FC = () => {
       {filteredColumns.length === 0 && !columnsLoading ? (
         <EmptyState
           icon={<Database className="h-12 w-12" />}
-          title={t('noColumnsFound')}
-          description={t('noColumnsFoundDescription')}
-          action={canManageColumns ? {
-            label: t('addColumn'),
+          title={t('noColumnsFound') || 'No columns found'}
+          description={t('noColumnsFoundDescription') || 'No columns found for the selected filters'}
+          action={canManageColumns && selectedCategoryId ? {
+            label: t('addColumn') || 'Add Column',
             onClick: handleOpenAddColumnDialog
           } : undefined}
         />
@@ -375,7 +359,6 @@ const Columns: React.FC = () => {
           onDeleteColumn={(id, name) => handleOpenDeleteDialog(
             id, 
             name, 
-            // TypeScript xətasını aradan qaldırmaq üçün massiv yoxlaması əlavə edirik
             Array.isArray(columns) 
               ? columns.find(c => c.id === id)?.category_id || ''
               : ''
@@ -385,7 +368,6 @@ const Columns: React.FC = () => {
         />
       )}
 
-      {/* Sütun əlavə etmə və redaktə dialoqu */}
       <ColumnFormDialog
         isOpen={columnFormDialogOpen}
         onClose={() => {

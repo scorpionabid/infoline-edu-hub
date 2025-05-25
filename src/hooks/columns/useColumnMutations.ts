@@ -1,196 +1,141 @@
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Column } from '@/types/column';
-import { useQueryClient } from '@tanstack/react-query';
+import { Column, ColumnFormData } from '@/types/column';
+import { toast } from 'sonner';
 
 export const useColumnMutations = () => {
-  const { t } = useLanguage();
-  const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
 
-  /**
-   * JSON məlumatları düzgün formatda hazırlamaq üçün utiliti funksiya
-   */
-  const formatJsonField = (data: any): string | null => {
-    if (!data) return null;
-    
-    if (typeof data === 'string') {
-      // Əgər artıq string formatındadırsa, JSON formatında olduğunu yoxlayaq
-      try {
-        // Yoxlayaq ki, düzgün JSON formatındadır
-        JSON.parse(data);
-        return data; // Əgər parse olunursa, deməli düzgün formatdadır
-      } catch (e) {
-        // Əgər parse olunmursa, JSON formatına çeviririk
-        return JSON.stringify(data);
-      }
-    }
-    
-    // Əgər array və ya obyektdirsə, JSON string-ə çeviririk
-    return JSON.stringify(data);
-  };
-
-  /**
-   * Sütun məlumatlarını Supabase üçün hazırlayan funksiya
-   */
-  const prepareColumnData = (columnData: any): any => {
-    const formattedData = { ...columnData };
-    
-    // options və validation sahələrini JSON formatında hazırlayaq
-    if (columnData.options !== undefined) {
-      formattedData.options = formatJsonField(columnData.options);
-    }
-    
-    if (columnData.validation !== undefined) {
-      formattedData.validation = formatJsonField(columnData.validation);
-    }
-    
-    return formattedData;
-  };
-
-  /**
-   * Supabase-dən gələn sütun məlumatlarını işləyən funksiya
-   */
-  const processColumnData = (columnData: any): Column => {
-    const processedData = { ...columnData };
-    
-    // options sahəsini işləyək
-    if (processedData.options) {
-      try {
-        if (typeof processedData.options === 'string') {
-          processedData.options = JSON.parse(processedData.options);
-        }
-      } catch (e) {
-        console.warn('Failed to parse column options:', e);
-        // Xəta halında orijinal məlumatı saxlayırıq
-      }
-    }
-    
-    // validation sahəsini işləyək
-    if (processedData.validation) {
-      try {
-        if (typeof processedData.validation === 'string') {
-          processedData.validation = JSON.parse(processedData.validation);
-        }
-      } catch (e) {
-        console.warn('Failed to parse column validation:', e);
-        // Xəta halında orijinal məlumatı saxlayırıq
-      }
-    }
-    
-    return processedData as Column;
-  };
-
-  const createColumn = async (columnData: Omit<Column, 'id'>): Promise<{ success: boolean; data?: Column; error?: string }> => {
-    try {
-      setIsLoading(true);
-      console.log('Creating column with raw data:', columnData);
-
-      // Məlumatları Supabase üçün hazırlayaq
-      const formattedData = prepareColumnData(columnData);
-      console.log('Formatted data for Supabase:', formattedData);
+  const createColumn = useMutation({
+    mutationFn: async (columnData: Omit<Column, 'id'> & { id?: string }) => {
+      console.log('Creating column with data:', columnData);
+      
+      // Prepare data for database insertion
+      const dbData = {
+        category_id: columnData.category_id,
+        name: columnData.name,
+        type: columnData.type,
+        is_required: columnData.is_required || false,
+        placeholder: columnData.placeholder || '',
+        help_text: columnData.help_text || '',
+        default_value: columnData.default_value || '',
+        order_index: columnData.order_index || 0,
+        validation: columnData.validation ? JSON.stringify(columnData.validation) : null,
+        options: columnData.options ? JSON.stringify(columnData.options) : null,
+        status: 'active'
+      };
 
       const { data, error } = await supabase
         .from('columns')
-        .insert(formattedData)
+        .insert([dbData])
         .select()
         .single();
 
       if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+        console.error('Database error creating column:', error);
+        throw new Error(error.message);
       }
 
-      // Əldə edilmiş məlumatları işləyək
-      const processedData = processColumnData(data);
-      console.log('Column created successfully:', processedData);
-
-      await queryClient.invalidateQueries({ queryKey: ['columns'] });
-      toast.success(t('columnCreated'));
-
-      return { success: true, data: processedData };
-    } catch (error: any) {
+      console.log('Column created successfully:', data);
+      return { success: true, data };
+    },
+    onSuccess: (result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      queryClient.invalidateQueries({ queryKey: ['columns', variables.category_id] });
+      toast.success('Sütun uğurla yaradıldı');
+    },
+    onError: (error: Error) => {
       console.error('Error creating column:', error);
-      toast.error(t('errorCreatingColumn'));
-      return { success: false, error: error.message };
-    } finally {
-      setIsLoading(false);
+      toast.error('Sütun yaradılarkən xəta baş verdi: ' + error.message);
     }
-  };
+  });
 
-  const updateColumn = async (columnData: Partial<Column>): Promise<{ success: boolean; data?: Column; error?: string }> => {
-    try {
-      setIsLoading(true);
-      console.log('Updating column with raw data:', columnData);
-
-      // Məlumatları Supabase üçün hazırlayaq
-      const formattedData = prepareColumnData(columnData);
-      console.log('Formatted data for Supabase:', formattedData);
+  const updateColumn = useMutation({
+    mutationFn: async (columnData: Column) => {
+      console.log('Updating column with data:', columnData);
+      
+      // Prepare data for database update
+      const dbData = {
+        name: columnData.name,
+        type: columnData.type,
+        is_required: columnData.is_required || false,
+        placeholder: columnData.placeholder || '',
+        help_text: columnData.help_text || '',
+        default_value: columnData.default_value || '',
+        order_index: columnData.order_index || 0,
+        validation: columnData.validation ? JSON.stringify(columnData.validation) : null,
+        options: columnData.options ? JSON.stringify(columnData.options) : null
+      };
 
       const { data, error } = await supabase
         .from('columns')
-        .update(formattedData)
+        .update(dbData)
         .eq('id', columnData.id)
         .select()
         .single();
 
       if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+        console.error('Database error updating column:', error);
+        throw new Error(error.message);
       }
 
-      // Əldə edilmiş məlumatları işləyək
-      const processedData = processColumnData(data);
-      console.log('Column updated successfully:', processedData);
-
-      await queryClient.invalidateQueries({ queryKey: ['columns'] });
-      toast.success(t('columnUpdated'));
-
-      return { success: true, data: processedData };
-    } catch (error: any) {
+      console.log('Column updated successfully:', data);
+      return { success: true, data };
+    },
+    onSuccess: (result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      queryClient.invalidateQueries({ queryKey: ['columns', variables.category_id] });
+      toast.success('Sütun uğurla yeniləndi');
+    },
+    onError: (error: Error) => {
       console.error('Error updating column:', error);
-      toast.error(t('errorUpdatingColumn'));
-      return { success: false, error: error.message };
-    } finally {
-      setIsLoading(false);
+      toast.error('Sütun yenilənərkən xəta baş verdi: ' + error.message);
     }
-  };
+  });
 
-  const deleteColumn = async (columnId: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      setIsLoading(true);
-      console.log('Deleting column:', columnId);
-
+  const deleteColumn = useMutation({
+    mutationFn: async (columnId: string) => {
+      console.log('Deleting column with ID:', columnId);
+      
       const { error } = await supabase
         .from('columns')
-        .delete()
+        .update({ status: 'deleted' })
         .eq('id', columnId);
 
       if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+        console.error('Database error deleting column:', error);
+        throw new Error(error.message);
       }
 
       console.log('Column deleted successfully');
-      await queryClient.invalidateQueries({ queryKey: ['columns'] });
-      toast.success(t('columnDeleted'));
-
       return { success: true };
-    } catch (error: any) {
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success('Sütun uğurla silindi');
+    },
+    onError: (error: Error) => {
       console.error('Error deleting column:', error);
-      toast.error(t('errorDeletingColumn'));
-      return { success: false, error: error.message };
-    } finally {
-      setIsLoading(false);
+      toast.error('Sütun silinərkən xəta baş verdi: ' + error.message);
     }
-  };
+  });
 
   return {
-    createColumn,
-    updateColumn,
-    deleteColumn,
-    isLoading
+    createColumn: (data: Omit<Column, 'id'> & { id?: string }) => {
+      console.log('CreateColumn function called with:', data);
+      return createColumn.mutateAsync(data);
+    },
+    updateColumn: (data: Column) => {
+      console.log('UpdateColumn function called with:', data);
+      return updateColumn.mutateAsync(data);
+    },
+    deleteColumn: (id: string) => {
+      console.log('DeleteColumn function called with ID:', id);
+      return deleteColumn.mutateAsync(id);
+    },
+    isCreating: createColumn.isPending,
+    isUpdating: updateColumn.isPending,
+    isDeleting: deleteColumn.isPending
   };
 };
