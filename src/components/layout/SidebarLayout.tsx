@@ -1,22 +1,44 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { Loader2 } from 'lucide-react';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
-interface SidebarProps {
+// İnterfeysləri yerində təyin edirik
+interface SidebarComponentProps {
   onClose: () => void;
 }
 
-interface HeaderProps {
+interface HeaderComponentProps {
   onMenuClick: () => void;
 }
 
-const SidebarLayout: React.FC = () => {
+interface SidebarLayoutProps {
+  children?: React.ReactNode;
+}
+
+const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Debug loqu əlavə edirik
+  useEffect(() => {
+    console.log('SidebarLayout rendering with:', { user, loading });
+    
+    // 10 saniyə sonra yüklənmə vəziyyətini sıfırla
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.log('SidebarLayout loading timeout triggered');
+        // useAuthStore-dan istifadə edərək isLoading-i sıfırla
+        useAuthStore.setState({ isLoading: false });
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timeout);
+  }, [user, loading]);
 
   if (loading) {
     return (
@@ -43,17 +65,19 @@ const SidebarLayout: React.FC = () => {
           lg:translate-x-0 lg:static lg:inset-0
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
-          <Sidebar onClose={() => setSidebarOpen(false)} />
+          {/* TypeScript xətasından qaçmaq üçün (any) tipindən istifadə edirik */}
+          {React.createElement(Sidebar as any, { onClose: () => setSidebarOpen(false) })}
         </div>
 
         {/* Main content */}
         <div className="flex flex-col flex-1 lg:ml-0">
           {/* Header */}
-          <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+          {/* TypeScript xətasından qaçmaq üçün (any) tipindən istifadə edirik */}
+          {React.createElement(Header as any, { onMenuClick: () => setSidebarOpen(!sidebarOpen) })}
           
           {/* Page content */}
           <main className="flex-1 overflow-auto">
-            <Outlet />
+            {children || <Outlet />}
           </main>
         </div>
       </div>

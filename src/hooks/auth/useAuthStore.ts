@@ -9,13 +9,40 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   error: null,
   session: null,
+  initialized: false,
+  initializationAttempted: false,
 
-  initializeAuth: async () => {
-    set({ isLoading: true });
+  // Yeni: loginOnly parametri əlavə edildi
+  initializeAuth: async (loginOnly: boolean = false) => {
+    // Əgər artıq bir cəhd olubsa və xüsusi hallar deyilsə, artıq bir cəhd etmə
+    const state = get();
+    
+    if (state.initializationAttempted && !loginOnly) {
+      console.log('Auth already attempted, skipping initialization');
+      return;
+    }
+    
+    // İnasializasiya bayraqlarını tənzimlə
+    set({ 
+      isLoading: true, 
+      initializationAttempted: true,
+      // Xətanı sıfırlayırıq ki, əvvəlki timeout xətası yeni login cəhdinə mane olmasın
+      error: null 
+    });
+    
     try {
+      console.log('Fetching user in initializeAuth...');
       await get().fetchUser();
+      // Uğurla başa çatsa, initialized = true
+      set({ initialized: true });
     } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+      console.error('Error in initializeAuth:', error);
+      set({ 
+        error: error.message, 
+        isLoading: false,
+        // Xəta olsa da, inisializasiya cəhdi baş tutub
+        initialized: true 
+      });
     }
   },
 

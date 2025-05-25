@@ -41,11 +41,19 @@ const Login = () => {
     }
   }, [isAuthenticated, isLoading, user, from, navigate, redirectInProgress]);
 
-  // Initialize auth if not already done
+  // Initialize auth if not already done - dövrə düşmə problemi
   useEffect(() => {
-    if (!useAuthStore.getState().initialized) {
-      console.log('[Login.tsx] Initializing auth');
-      useAuthStore.getState().initializeAuth();
+    // Əvəzi loginOnly parametri əlavə edirik ki, App.tsx-dəki çağırışdan fərqlənsin
+    // Bu flag-i useAuthStore-da işlədəcəyik
+    const authState = useAuthStore.getState();
+    
+    // Rekursiv çağırışları qabaqlamaq üçün: əgər error varsa, auth yenidən inisializasiya edilməsin
+    if (!authState.initialized && !authState.initializationAttempted) {
+      console.log('[Login.tsx] Initializing auth for login');
+      // İnisializasiya cəhdini qeyd edirik
+      useAuthStore.setState({ initializationAttempted: true });
+      // Login səhifəsindən inisializasiya bayrağı
+      authState.initializeAuth(true);
     }
   }, []);
 

@@ -74,6 +74,9 @@ export interface AuthState {
   isAuthenticated: boolean;
   error: string | null;
   session: any;
+  // Yeni əlavə olunan rekursiya-əleyhinə bayrağı
+  initialized: boolean;
+  initializationAttempted: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   logout: () => Promise<void>;
@@ -81,5 +84,6 @@ export interface AuthState {
   fetchUser: () => Promise<void>;
   updateUser: (userData: Partial<FullUserData>) => void;
   clearError: () => void;
-  initializeAuth: () => Promise<void>;
+  // loginOnly parametri əlavə edildi
+  initializeAuth: (loginOnly?: boolean) => Promise<void>;
 }

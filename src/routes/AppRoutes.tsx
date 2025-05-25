@@ -135,9 +135,8 @@ const AppRoutes = () => (
     {/* Protected Routes with SidebarLayout */}
     <Route element={
       <ProtectedRoute>
-        <SidebarLayout>
-          <Outlet />
-        </SidebarLayout>
+        {/* TypeScript xətasını aradan qaldırmaq üçün Outlet-i birbaşa ProtectedRoute-a ötürürük */}
+        <SidebarLayout />
       </ProtectedRoute>
     }>
       {/* Dashboard və digər səhifələr */}
