@@ -60,22 +60,26 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
     onSave: onSaveColumn
   });
 
-  // Log when dialog is opened or closed
+  // Log when dialog is opened or closed for debugging
   useEffect(() => {
-    console.log(`Dialog ${isOpen ? 'opened' : 'closed'}`, { editColumn });
-  }, [isOpen, editColumn]);
+    console.log(`ColumnFormDialog ${isOpen ? 'opened' : 'closed'}`, { editColumn, isEditMode });
+  }, [isOpen, editColumn, isEditMode]);
 
-  // Form submission handler
+  // Form submission handler with detailed logging
   const handleSubmit = async (values: any) => {
-    console.log("Form submitted:", values);
+    console.log("Form submit started:", values);
+    console.log("Form state:", { isEditMode, isLoading, isSubmitting });
     
     try {
       const result = await onSubmit(values);
+      console.log("Form submit result:", result);
       
       if (result) {
         toast.success(isEditMode ? t("columnUpdated") : t("columnAdded"));
+        console.log("Success! Closing dialog...");
         onClose();
       } else {
+        console.error("Form submit failed");
         toast.error(t("errorOccurred"));
       }
     } catch (error) {
@@ -84,10 +88,31 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
     }
   };
 
+  // Handle add button click
+  const handleAddButtonClick = () => {
+    console.log("Add button clicked! Triggering form submit...");
+    console.log("Form validation state:", form.formState);
+    
+    // Validate form before submitting
+    form.handleSubmit(
+      (data) => {
+        console.log("Form validation passed, submitting:", data);
+        handleSubmit(data);
+      },
+      (errors) => {
+        console.error("Form validation failed:", errors);
+        toast.error("Form validation failed. Please check all fields.");
+      }
+    )();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       console.log("Dialog onOpenChange:", open);
-      if (!open) onClose();
+      if (!open) {
+        console.log("Closing dialog via onOpenChange");
+        onClose();
+      }
     }}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
         <DialogHeader>
@@ -103,7 +128,11 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
         
         <Form {...form}>
           <ScrollArea className="h-[60vh] pr-4">
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <form className="space-y-4" onSubmit={(e) => {
+              e.preventDefault();
+              console.log("Form onSubmit triggered");
+              handleAddButtonClick();
+            }}>
               <Tabs defaultValue="basic" className="w-full">
                 <TabsList className="grid grid-cols-3 mb-4">
                   <TabsTrigger value="basic">{t("basicInfo")}</TabsTrigger>
@@ -182,14 +211,20 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
             <Button 
               type="button" 
               variant="outline" 
-              onClick={onClose}
+              onClick={() => {
+                console.log("Cancel button clicked");
+                onClose();
+              }}
               disabled={isSubmitting || isLoading}
             >
               {t("cancel")}
             </Button>
             <Button 
-              type="submit"
-              onClick={form.handleSubmit(handleSubmit)}
+              type="button"
+              onClick={() => {
+                console.log("Add/Save button clicked directly");
+                handleAddButtonClick();
+              }}
               disabled={form.formState.isSubmitting || isSubmitting || isLoading}
             >
               {form.formState.isSubmitting || isSubmitting || isLoading ? (

@@ -42,6 +42,8 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
   const [options, setOptions] = useState<ColumnOption[]>(column?.options || []);
   const [newOption, setNewOption] = useState<Partial<ColumnOption>>({ label: '', value: '' });
   
+  console.log('useColumnForm initialized:', { column, categoryId, isEditMode });
+  
   // Form setup
   const form = useForm<ColumnFormValues>({
     resolver: zodResolver(formSchema),
@@ -61,8 +63,53 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
     },
   });
 
+  // Update form when column changes
+  useEffect(() => {
+    console.log('useColumnForm useEffect - column changed:', column);
+    setIsEditMode(!!column);
+    
+    if (column) {
+      console.log('Resetting form with column data:', column);
+      form.reset({
+        name: column.name,
+        type: column.type,
+        category_id: column.category_id,
+        is_required: column.is_required !== undefined ? column.is_required : true,
+        placeholder: column.placeholder || '',
+        help_text: column.help_text || '',
+        default_value: column.default_value || '',
+        description: column.description || '',
+        section: column.section || '',
+        validation: column.validation || {},
+        options: column.options || [],
+        order_index: column.order_index || 0,
+      });
+      setSelectedType(column.type);
+      setOptions(column.options || []);
+    } else {
+      console.log('Resetting form for new column with categoryId:', categoryId);
+      form.reset({
+        name: '',
+        type: 'text',
+        category_id: categoryId || '',
+        is_required: true,
+        placeholder: '',
+        help_text: '',
+        default_value: '',
+        description: '',
+        section: '',
+        validation: {},
+        options: [],
+        order_index: 0,
+      });
+      setSelectedType('text');
+      setOptions([]);
+    }
+  }, [column, categoryId, form]);
+
   // Update form when column type changes
   useEffect(() => {
+    console.log('Type changed to:', selectedType);
     form.setValue('type', selectedType);
     
     // Clear options when switching to a non-option type
@@ -74,11 +121,13 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
 
   // Handle type change
   const onTypeChange = (type: ColumnType) => {
+    console.log('onTypeChange called with:', type);
     setSelectedType(type);
   };
 
   // Add a new option
   const addOption = () => {
+    console.log('addOption called with:', newOption);
     if (!newOption.label || !newOption.value) return;
     
     const newOptionWithId: ColumnOption = {
@@ -88,6 +137,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
     };
     
     const updatedOptions = [...options, newOptionWithId];
+    console.log('Adding option, updated options:', updatedOptions);
     setOptions(updatedOptions);
     form.setValue('options', updatedOptions);
     setNewOption({ label: '', value: '' });
@@ -95,6 +145,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
 
   // Remove an option
   const removeOption = (optionId: string) => {
+    console.log('removeOption called with:', optionId);
     const updatedOptions = options.filter(opt => opt.id !== optionId);
     setOptions(updatedOptions);
     form.setValue('options', updatedOptions);
@@ -102,22 +153,36 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
 
   // Form submission handler
   const onSubmit = async (data: ColumnFormValues): Promise<boolean> => {
+    console.log('onSubmit called with data:', data);
     setIsLoading(true);
+    
     try {
       // Ensure options are set for types that need them
       if (['select', 'radio', 'checkbox', 'multiselect'].includes(data.type) && (!data.options || data.options.length === 0)) {
+        console.error('Options required for type:', data.type);
         toast.error('This field type requires at least one option');
         setIsLoading(false);
         return false;
       }
 
+      // Ensure category_id is set
+      if (!data.category_id) {
+        console.error('Category ID is required');
+        toast.error('Category is required');
+        setIsLoading(false);
+        return false;
+      }
+
+      console.log('Calling onSave function...');
       if (onSave) {
         // Use the provided save function
         const result = await onSave(data);
+        console.log('onSave result:', result);
         setIsLoading(false);
         return result;
       }
       
+      console.log('No onSave function provided, using default database logic');
       // Default database logic
       const dbData = {
         name: data.name,
@@ -132,7 +197,10 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
         order_index: data.order_index || 0,
       };
 
+      console.log('Prepared database data:', dbData);
+
       if (column?.id) {
+        console.log('Updating existing column:', column.id);
         // Update existing column
         const { error } = await supabase
           .from('columns')
@@ -146,6 +214,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
         toast.success('Column updated successfully');
         return true;
       } else {
+        console.log('Creating new column');
         // Create new column
         const { error } = await supabase
           .from('columns')
