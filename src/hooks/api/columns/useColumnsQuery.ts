@@ -55,12 +55,23 @@ export const useCreateColumn = () => {
   
   return useMutation({
     mutationFn: async ({ categoryId, columnData }: { categoryId: string; columnData: ColumnFormData }): Promise<Column> => {
+      // Convert arrays to JSON strings for database storage
+      const dbData = {
+        category_id: categoryId,
+        name: columnData.name,
+        type: columnData.type,
+        is_required: columnData.is_required,
+        placeholder: columnData.placeholder,
+        help_text: columnData.help_text,
+        default_value: columnData.default_value,
+        order_index: columnData.order_index,
+        validation: columnData.validation ? JSON.stringify(columnData.validation) : null,
+        options: columnData.options ? JSON.stringify(columnData.options) : null
+      };
+
       const { data, error } = await supabase
         .from('columns')
-        .insert({
-          category_id: categoryId,
-          ...columnData
-        })
+        .insert(dbData)
         .select()
         .single();
 
@@ -78,9 +89,20 @@ export const useUpdateColumn = () => {
   
   return useMutation({
     mutationFn: async ({ columnId, columnData }: { columnId: string; columnData: Partial<ColumnFormData> }): Promise<Column> => {
+      // Convert arrays to JSON strings for database storage
+      const dbData: any = {};
+      
+      Object.entries(columnData).forEach(([key, value]) => {
+        if (key === 'validation' || key === 'options') {
+          dbData[key] = value ? JSON.stringify(value) : null;
+        } else {
+          dbData[key] = value;
+        }
+      });
+
       const { data, error } = await supabase
         .from('columns')
-        .update(columnData)
+        .update(dbData)
         .eq('id', columnId)
         .select()
         .single();

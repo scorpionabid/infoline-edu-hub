@@ -25,9 +25,8 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Column, ColumnType, columnTypes } from '@/types/column';
+import { Column, columnTypeDefinitions } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
-import { Icons } from '@/components/ui/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import EmptyState from '@/components/ui/empty-state';
 
@@ -107,29 +106,21 @@ const ColumnList: React.FC<ColumnListProps> = ({
     }
   };
 
-  // Get icon component
-  const getIconComponent = (iconName: string | undefined) => {
-    if (!iconName) return Edit;
-    return iconComponents[iconName] || Edit;
-  };
-
   // Get column type info
   const getColumnTypeInfo = (type: string) => {
-    if (!type) {
-      return {
-        label: 'Unknown',
-        description: 'Unknown column type'
-      };
-    }
-    
-    const typeInfo = columnTypes.find(type);
+    const typeInfo = columnTypeDefinitions.find(def => def.value === type);
     if (typeInfo) {
-      return typeInfo;
+      return {
+        label: typeInfo.label,
+        description: typeInfo.description,
+        icon: typeInfo.icon
+      };
     }
     
     return {
       label: type,
-      description: 'Custom column type'
+      description: 'Custom column type',
+      icon: '📝'
     };
   };
 
@@ -213,7 +204,6 @@ const ColumnList: React.FC<ColumnListProps> = ({
             <TableBody>
               {columns.map((column) => {
                 const typeInfo = getColumnTypeInfo(column.type);
-                const IconComponent = getIconComponent(typeInfo.icon);
                 
                 return (
                   <TableRow key={column.id}>
@@ -224,7 +214,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
                           <TooltipTrigger asChild>
                             <div className="flex items-center space-x-2">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeBadgeColor(column.type)}`}>
-                                {IconComponent && typeof IconComponent === 'function' && <IconComponent className="w-3 h-3 mr-1" />}
+                                <span className="mr-1">{typeInfo.icon}</span>
                                 {typeInfo.label}
                               </span>
                             </div>
@@ -287,29 +277,6 @@ const ColumnList: React.FC<ColumnListProps> = ({
       </CardContent>
     </Card>
   );
-};
-
-// Define icon components mapping
-const iconComponents: Record<string, React.FC<any>> = {
-  text: Icons.text,
-  textAlignLeft: Icons.alignLeft,
-  hash: Icons.hash,
-  calendar: Icons.calendar,
-  listBox: Icons.listChoice,
-  check: Icons.check,
-  circle: Icons.circle,
-  file: Icons.fileUp,
-  image: Icons.image,
-  mail: Icons.mail,
-  link: Icons.link,
-  phone: Icons.phone,
-  sliders: Icons.sliders,
-  palette: Icons.palette,
-  lock: Icons.lock,
-  clock: Icons.clock,
-  calendarClock: Icons.calendarClock,
-  formattingTwo: Icons.fileEdit,
-  edit: Edit
 };
 
 export default ColumnList;

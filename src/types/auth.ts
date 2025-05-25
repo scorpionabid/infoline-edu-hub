@@ -1,4 +1,3 @@
-
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
 export interface FullUserData {
@@ -23,4 +22,13 @@ export interface FullUserData {
   updatedAt?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signOut: () => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<{ error?: string }>;
+  updateProfile: (data: Partial<User>) => Promise<{ error?: string }>;
 }

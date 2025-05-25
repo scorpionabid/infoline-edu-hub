@@ -114,7 +114,9 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
                 <TabsContent value="basic" className="space-y-4">
                   <BasicColumnFields 
                     form={form}
-                    control={form.control} 
+                    control={form.control}
+                    errors={form.formState.errors}
+                    watch={form.watch}
                     categories={categories}
                     columns={columns}
                     editColumn={editColumn}
