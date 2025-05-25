@@ -20,8 +20,9 @@ import {
 import { DotsHorizontalIcon, Pencil1Icon, TrashIcon, PersonIcon } from '@radix-ui/react-icons'
 import { Search } from 'lucide-react';
 import { Link2, FolderOpen } from 'lucide-react';
-import { SchoolLinksDialog } from './SchoolLinksDialog';
-import { SchoolFilesDialog } from './SchoolFilesDialog';
+import { SchoolLinksDialog } from './school-links/SchoolLinksDialog';
+import { SchoolFilesDialog } from './school-files/SchoolFilesDialog';
+import { useAuth } from '@/hooks/auth/useAuth';
 
 interface School {
   id: string;
@@ -262,20 +263,20 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
       {/* Link Management Dialog */}
       {selectedSchool && (
         <SchoolLinksDialog
-          open={linkDialogOpen}
-          onOpenChange={setLinkDialogOpen}
-          schoolId={selectedSchool.id}
-          schoolName={selectedSchool.name}
+          isOpen={linkDialogOpen}
+          onClose={() => setLinkDialogOpen(false)}
+          school={selectedSchool}
+          userRole={useAuth().user?.role || 'viewer'}
         />
       )}
 
       {/* File Management Dialog */}
       {selectedSchool && (
         <SchoolFilesDialog
-          open={fileDialogOpen}
-          onOpenChange={setFileDialogOpen}
-          schoolId={selectedSchool.id}
-          schoolName={selectedSchool.name}
+          isOpen={fileDialogOpen}
+          onClose={() => setFileDialogOpen(false)}
+          school={selectedSchool}
+          userRole={useAuth().user?.role || 'viewer'}
         />
       )}
     </div>

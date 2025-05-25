@@ -6,6 +6,75 @@ Bu sənəd, İnfoLine sistemində istifadə olunan verilənlər bazası sxemini,
 
 ## 2. Cədvəl Strukturları
 
+### 2.1. `school_links` - Məktəb Linkləri
+
+Məktəblərə aid linklər haqqında məlumatları saxlayır.
+
+| Sütun Adı | Tip | Məcburi | Təsvir |
+|-----------|-----|---------|--------|
+| id | uuid | YES | Unikal identifikator (primary key) |
+| school_id | uuid | YES | Məktəb ID-si (schools cədvəlinə foreign key) |
+| title | text | YES | Link başlığı |
+| url | text | YES | Link URL-i |
+| description | text | NO | Link təsviri |
+| category | text | NO | Link kateqoriyası (default: 'general') |
+| is_active | boolean | NO | Aktiv/deaktiv statusu (default: true) |
+| created_by | uuid | NO | Yaradılmış istifadəçi ID-si |
+| created_at | timestamp with time zone | NO | Yaradılma tarixi (default: now()) |
+| updated_at | timestamp with time zone | NO | Yenilənmə tarixi (default: now()) |
+
+**Indekslər:**
+- `school_links_pkey`: Primary key indeksi `id` sütunu üzərində
+
+**Foreign Keys:**
+- `school_links_school_id_fkey`: `school_id` sütunu `schools` cədvəlinin `id` sütununa bağlıdır (CASCADE silmə)
+- `school_links_created_by_fkey`: `created_by` sütunu `auth.users` cədvəlinin `id` sütununa bağlıdır
+
+### 2.2. `file_categories` - Fayl Kateqoriyaları
+
+Fayl kateqoriyaları haqqında məlumatları saxlayır.
+
+| Sütun Adı | Tip | Məcburi | Təsvir |
+|-----------|-----|---------|--------|
+| id | uuid | YES | Unikal identifikator (primary key) |
+| name | text | YES | Kateqoriya adı |
+| description | text | NO | Kateqoriya təsviri |
+| icon | text | NO | Kateqoriya ikonu (default: 'folder') |
+| sort_order | integer | NO | Sıralama indeksi (default: 0) |
+| created_at | timestamp with time zone | NO | Yaradılma tarixi (default: now()) |
+
+**Indekslər:**
+- `file_categories_pkey`: Primary key indeksi `id` sütunu üzərində
+
+### 2.3. `school_files` - Məktəb Faylları
+
+Məktəblərə aid fayllar haqqında məlumatları saxlayır.
+
+| Sütun Adı | Tip | Məcburi | Təsvir |
+|-----------|-----|---------|--------|
+| id | uuid | YES | Unikal identifikator (primary key) |
+| school_id | uuid | YES | Məktəb ID-si (schools cədvəlinə foreign key) |
+| category_id | uuid | NO | Kateqoriya ID-si (file_categories cədvəlinə foreign key) |
+| file_name | text | YES | Fayl adı |
+| file_path | text | YES | Fayl yolu |
+| file_size | bigint | NO | Fayl ölçüsü (baytlarla) |
+| file_type | text | NO | Fayl növü/MIME tipi |
+| description | text | NO | Fayl təsviri |
+| is_active | boolean | NO | Aktiv/deaktiv statusu (default: true) |
+| uploaded_by | uuid | NO | Yükləyən istifadəçi ID-si |
+| created_at | timestamp with time zone | NO | Yaradılma tarixi (default: now()) |
+| updated_at | timestamp with time zone | NO | Yenilənmə tarixi (default: now()) |
+
+**Indekslər:**
+- `school_files_pkey`: Primary key indeksi `id` sütunu üzərində
+
+**Foreign Keys:**
+- `school_files_school_id_fkey`: `school_id` sütunu `schools` cədvəlinin `id` sütununa bağlıdır (CASCADE silmə)
+- `school_files_category_id_fkey`: `category_id` sütunu `file_categories` cədvəlinin `id` sütununa bağlıdır
+- `school_files_uploaded_by_fkey`: `uploaded_by` sütunu `auth.users` cədvəlinin `id` sütununa bağlıdır
+
+### 2.4. `regions` - Regionlar
+
 ### 2.1. `regions` - Regionlar
 
 Regionlar haqqında məlumatları saxlayır.
@@ -443,34 +512,38 @@ categories (1) ───► columns (1) ───► data_entries (n)
 | regionadmin_manage_region | public | ALL | İstifadəçinin regionadmin olması VƏ rolun region daxilində olması |
 | view_own_role | public | SELECT | Rolun user_id-si auth.uid() ilə eyni olması |
 
-### 5.9. school_links cədvəli üçün RLS
+### 5.9. `school_links` Cədvəli üçün RLS
 
 | Siyasət Adı | Rol | Əmr | Şərt |
 |-------------|-----|-----|------|
-| superadmin_manage_all | public | ALL | İstifadəçinin superadmin olması |
-| regionadmin_manage_region | public | ALL | İstifadəçinin regionadmin olması VƏ rolun region daxilində olması |
-| view_own_role | public | SELECT | Rolun user_id-si auth.uid() ilə eyni olması |
+| SuperAdmins can manage all school links | authenticated | ALL | İstifadəçinin superadmin olması |
+| RegionAdmins can manage links in their region | authenticated | ALL | İstifadəçinin regionadmin olması VƏ məktəbin onun regionunda olması |
+| SectorAdmins can manage links in their sector | authenticated | ALL | İstifadəçinin sectoradmin olması VƏ məktəbin onun sektorunda olması |
+| SchoolAdmins can view their school links | authenticated | SELECT | İstifadəçinin schooladmin olması VƏ məktəbin onun məktəbi olması |
 
-### 5.10. school_files cədvəli üçün RLS
-
-| Siyasət Adı | Rol | Əmr | Şərt |
-|-------------|-----|-----|------|
-| superadmin_manage_all | public | ALL | İstifadəçinin superadmin olması |
-| regionadmin_manage_region | public | ALL | İstifadəçinin regionadmin olması VƏ rolun region daxilində olması |
-| view_own_role | public | SELECT | Rolun user_id-si auth.uid() ilə eyni olması |
-
-### 5.11. file_categories cədvəli üçün RLS
+### 5.10. `school_files` Cədvəli üçün RLS
 
 | Siyasət Adı | Rol | Əmr | Şərt |
 |-------------|-----|-----|------|
-| superadmin_manage_all | public | ALL | İstifadəçinin superadmin olması |
-| regionadmin_manage_region | public | ALL | İstifadəçinin regionadmin olması VƏ rolun region daxilində olması |
-| view_own_role | public | SELECT | Rolun user_id-si auth.uid() ilə eyni olması |
+| SuperAdmins can manage all school files | authenticated | ALL | İstifadəçinin superadmin olması |
+| RegionAdmins can manage files in their region | authenticated | ALL | İstifadəçinin regionadmin olması VƏ məktəbin onun regionunda olması |
+| SectorAdmins can manage files in their sector | authenticated | ALL | İstifadəçinin sectoradmin olması VƏ məktəbin onun sektorunda olması |
+| SchoolAdmins can manage their school files | authenticated | ALL | İstifadəçinin schooladmin olması VƏ məktəbin onun məktəbi olması |
 
+### 5.11. `file_categories` Cədvəli üçün RLS
 
--- school_links cədvəli
--- school_files cədvəli  
--- file_categories cədvəli
+| Siyasət Adı | Rol | Əmr | Şərt |
+|-------------|-----|-----|------|
+| Everyone can view file categories | authenticated | SELECT | Həmişə (true) |
+
+### 5.12. `storage.objects` (Fayl Saxlama) üçün RLS
+
+| Siyasət Adı | Rol | Əmr | Şərt |
+|-------------|-----|-----|------|
+| Authenticated users can upload files | authenticated | INSERT | Bucket ID-nin 'school-files' olması və istifadəçinin authenticated olması |
+| Users can view files they have access to | authenticated | SELECT | Bucket ID-nin 'school-files' olması və istifadəçinin authenticated olması |
+| Users can update files they have access to | authenticated | UPDATE | Bucket ID-nin 'school-files' olması və istifadəçinin authenticated olması |
+| Users can delete files they have access to | authenticated | DELETE | Bucket ID-nin 'school-files' olması və istifadəçinin authenticated olması |
 
 
 

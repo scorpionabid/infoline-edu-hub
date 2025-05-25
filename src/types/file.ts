@@ -8,6 +8,13 @@ export interface FileCategory {
   created_at: string;
 }
 
+export interface School {
+  id: string;
+  name: string;
+  region_id?: string;
+  sector_id?: string;
+}
+
 export interface SchoolFile {
   id: string;
   school_id: string;
@@ -22,11 +29,12 @@ export interface SchoolFile {
   created_at: string;
   updated_at: string;
   category?: FileCategory;
+  schools?: School; // Region və sektor adminləri üçün sorğularda birləşdirilir
 }
 
 export interface UploadFileData {
   school_id: string;
   category_id?: string;
-  file: File;
+  file_name?: string; // Əlavə edildi: useEntityFiles hook-unda istifadə edilir
   description?: string;
 }

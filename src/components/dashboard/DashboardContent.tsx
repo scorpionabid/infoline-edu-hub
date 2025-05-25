@@ -3,6 +3,12 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
+import { LinksCard } from './school-admin/LinksCard';
+import { FilesCard } from './school-admin/FilesCard';
+import { RegionLinksCard } from './region-admin/RegionLinksCard';
+import { RegionFilesCard } from './region-admin/RegionFilesCard';
+import { SectorLinksCard } from './sector-admin/SectorLinksCard';
+import { SectorFilesCard } from './sector-admin/SectorFilesCard';
 
 /**
  * Dashboard əsas məzmunu komponenti
@@ -44,6 +50,11 @@ const DashboardContent: React.FC = () => {
                 <p>{t('regionadminDashboardDescription')}</p>
               </CardContent>
             </Card>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <RegionLinksCard />
+              <RegionFilesCard />
+            </div>
           </div>
         );
 
@@ -58,6 +69,11 @@ const DashboardContent: React.FC = () => {
                 <p>{t('sectoradminDashboardDescription')}</p>
               </CardContent>
             </Card>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SectorLinksCard />
+              <SectorFilesCard />
+            </div>
           </div>
         );
 
@@ -72,6 +88,11 @@ const DashboardContent: React.FC = () => {
                 <p>{t('schooladminDashboardDescription')}</p>
               </CardContent>
             </Card>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <LinksCard />
+              <FilesCard />
+            </div>
           </div>
         );
 

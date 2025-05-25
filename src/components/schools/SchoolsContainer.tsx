@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Download, RefreshCw, UserPlus } from 'lucide-react';
+import { Plus, Edit, Trash2, Download, RefreshCw, UserPlus, Link, FolderOpen } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from 'sonner';
 import {
@@ -39,6 +39,8 @@ import AddSchoolDialog from './AddSchoolDialog';
 import EditSchoolDialog from './EditSchoolDialog';
 import DeleteSchoolDialog from './DeleteSchoolDialog';
 import SchoolAdminDialog from './SchoolAdminDialog';
+import { SchoolLinksDialog } from './school-links/SchoolLinksDialog';
+import { SchoolFilesDialog } from './school-files/SchoolFilesDialog';
 import exportSchoolsToExcel from '@/utils/exportSchoolsToExcel';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -78,6 +80,8 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [isAdminDialogOpen, setIsAdminDialogOpen] = React.useState(false);
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = React.useState(false);
+  const [isFileDialogOpen, setIsFileDialogOpen] = React.useState(false);
   const [selectedSchool, setSelectedSchool] = React.useState<School | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -324,41 +328,62 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
               <TableHead>{t('schoolName')}</TableHead>
               <TableHead>{t('region')}</TableHead>
               <TableHead>{t('sector')}</TableHead>
-              <TableHead>{t('principal')}</TableHead>
               <TableHead>{t('status')}</TableHead>
-              <TableHead className="text-right">{t('actions')}</TableHead>
+              <TableHead>{t('actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredSchools.map(school => (
-              <TableRow key={school.id}>
+              <TableRow key={school.id} className={school.status === 'active' ? '' : 'opacity-60'}>
                 <TableCell>{school.name}</TableCell>
-                <TableCell>{regionNames[school.region_id] || ''}</TableCell>
-                <TableCell>{sectorNames[school.sector_id] || ''}</TableCell>
-                <TableCell>{school.principal_name || '-'}</TableCell>
-                <TableCell>{school.status}</TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        ...
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handleEditDialogOpen(school)} disabled={!canEditSchool(school)}>
-                        <Edit className="mr-2 h-4 w-4" /> {t('edit')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleAdminDialogOpen(school)} disabled={!canAssignAdmin(school)}>
-                        <UserPlus className="mr-2 h-4 w-4" /> {t('assignAdmin')}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleDeleteDialogOpen(school)} disabled={!canDeleteSchool(school)}>
-                        <Trash2 className="mr-2 h-4 w-4" /> {t('delete')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <TableCell>{regionNames[school.region_id] || '-'}</TableCell>
+                <TableCell>{sectorNames[school.sector_id] || '-'}</TableCell>
+                <TableCell>{
+                  school.status === 'active' 
+                    ? <span className="px-2 py-1 rounded-full bg-green-100 text-green-800">Aktiv</span>
+                    : <span className="px-2 py-1 rounded-full bg-red-100 text-red-800">Deaktiv</span>
+                }</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">{t('openMenu')}</span>
+                          <span>···</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            setSelectedSchool(school);
+                            setIsLinkDialogOpen(true);
+                          }}
+                        >
+                          <Link className="mr-2 h-4 w-4" /> Linklər
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            setSelectedSchool(school);
+                            setIsFileDialogOpen(true);
+                          }}
+                        >
+                          <FolderOpen className="mr-2 h-4 w-4" /> Fayllar
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleEditDialogOpen(school)} disabled={!canEditSchool(school)}>
+                          <Edit className="mr-2 h-4 w-4" /> {t('edit')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleAdminDialogOpen(school)} disabled={!canAssignAdmin(school)}>
+                          <UserPlus className="mr-2 h-4 w-4" /> {t('assignAdmin')}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleDeleteDialogOpen(school)} disabled={!canDeleteSchool(school)}>
+                          <Trash2 className="mr-2 h-4 w-4" /> {t('delete')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -411,6 +436,26 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
           school={selectedSchool}
           onSubmit={handleAssignAdmin}
           isSubmitting={isSubmitting}
+        />
+      )}
+      
+      {/* Link Management Dialog */}
+      {isLinkDialogOpen && selectedSchool && (
+        <SchoolLinksDialog
+          isOpen={isLinkDialogOpen}
+          onClose={() => setIsLinkDialogOpen(false)}
+          school={selectedSchool}
+          userRole={user?.role || 'viewer'}
+        />
+      )}
+      
+      {/* File Management Dialog */}
+      {isFileDialogOpen && selectedSchool && (
+        <SchoolFilesDialog
+          isOpen={isFileDialogOpen}
+          onClose={() => setIsFileDialogOpen(false)}
+          school={selectedSchool}
+          userRole={user?.role || 'viewer'}
         />
       )}
     </div>

@@ -341,9 +341,97 @@ SchoolAdmin Dashboard ──┬─► Məlumat Daxil Etmə ──► Forms üslu
 4. "Göndər" düyməsinə basır
 5. Sistem bildirişləri müəyyən edilmiş alıcılara göndərir
 
-## 7. Profil və Tənzimləmələr Axını
+## 7. Link və Fayl İdarəetməsi Axını
 
-### 7.1. Profil Redaktəsi
+### 7.1. Link İdarəetmə Axını
+
+#### 7.1.1. Link Əlavə Etmə (RegionAdmin, SectorAdmin, SchoolAdmin)
+
+1. Admin müvafiq dashboard-dan "Linklər" bölməsinə daxil olur
+2. "Yeni Link Əlavə Et" düyməsinə basır
+3. Link məlumatlarını daxil edir:
+   - Başlıq
+   - URL
+   - Təsvir (isteȷə bağlı)
+   - Kateqoriya (default: "general")
+4. "Yadda saxla" düyməsinə basır
+5. Sistem linki yadda saxlayır və təsdiq bildirişi göstərir
+6. Yeni link siyahıda görünür
+
+#### 7.1.2. Link Redaktəsi (RegionAdmin, SectorAdmin, SchoolAdmin)
+
+1. Admin "Linklər" bölməsində redaktə etmək istədiyi linki tapır
+2. "Redaktə" düyməsinə basır
+3. Link məlumatlarını redaktə edir
+4. "Yadda saxla" düyməsinə basır
+5. Sistem dəyişiklikləri yadda saxlayır və təsdiq bildirişi göstərir
+
+#### 7.1.3. Link Silmə (RegionAdmin, SectorAdmin, SchoolAdmin)
+
+1. Admin "Linklər" bölməsində silmək istədiyi linki tapır
+2. "Sil" düyməsinə basır
+3. Təsdiq dialoqu görünür
+4. Admin silməni təsdiqləyir
+5. Sistem linki silir (ya soft delete, ya da hard delete)
+6. Təsdiq bildirişi göstərilir
+
+#### 7.1.4. Rol-əsaslı Link Görüntüləmə
+
+1. **RegionAdmin** - regionuna aid olan bütün məktəblərin linklərini görə və idarə edə bilir
+2. **SectorAdmin** - sektoruna aid olan bütün məktəblərin linklərini görə və idarə edə bilir
+3. **SchoolAdmin** - yalnız öz məktəbinin linklərini görə və idarə edə bilir
+
+### 7.2. Fayl İdarəetmə Axını
+
+#### 7.2.1. Fayl Yükləmə (RegionAdmin, SectorAdmin, SchoolAdmin)
+
+1. Admin müvafiq dashboard-dan "Fayllar" bölməsinə daxil olur
+2. "Yeni Fayl Yüklə" düyməsinə basır
+3. Fayl yükləmə formu görünür:
+   - Fayl seçimi
+   - Fayl adı (avtomatik doldurulur, dəyişdirilə bilər)
+   - Kateqoriya seçimi
+   - Təsvir (isteȷə bağlı)
+4. "Yüklə" düyməsinə basır
+5. Sistem faylı Supabase Storage bucket-a yükləyir
+6. Yükləmə tamamlandıqda təsdiq bildirişi göstərilir
+7. Fayl siyahıda görünür
+
+#### 7.2.2. Fayl Endirmə (RegionAdmin, SectorAdmin, SchoolAdmin)
+
+1. Admin "Fayllar" bölməsində endirmək istədiyi faylı tapır
+2. "Endir" düyməsinə basır
+3. Sistem Supabase Storage-dan faylın URL-ini əldə edir
+4. Fayl avtomatik olaraq endirməyə başlayır
+
+#### 7.2.3. Fayl Silmə (RegionAdmin, SectorAdmin, SchoolAdmin)
+
+1. Admin "Fayllar" bölməsində silmək istədiyi faylı tapır
+2. "Sil" düyməsinə basır
+3. Təsdiq dialoqu görünür
+4. Admin silməni təsdiqləyir
+5. Sistem faylı həm verilənlər bazasından, həm də storage-dan silir
+6. Təsdiq bildirişi göstərilir
+
+#### 7.2.4. Rol-əsaslı Fayl Görüntüləmə
+
+1. **RegionAdmin** - regionuna aid olan bütün məktəblərin fayllarını görə və idarə edə bilir
+2. **SectorAdmin** - sektoruna aid olan bütün məktəblərin fayllarını görə və idarə edə bilir
+3. **SchoolAdmin** - yalnız öz məktəbinin fayllarını görə və idarə edə bilir
+
+#### 7.2.5. Fayl Kateqoriyaları
+
+1. Sistem öncədən müəyyən edilmiş kateqoriyalar təmin edir:
+   - Sənədlər
+   - Hesabatlar
+   - Şəkillər
+   - Digər
+2. Admin faylları kateqoriyasına görə filtrləyə bilir
+3. Fayllar kateqoriyasına görə qruplaşdırılır
+
+## 8. Profil və Tənzimləmələr Axını
+
+### 8.1. Profil Redaktəsi
 
 1. İstifadəçi yuxarı sağ küncdəki profil ikonasına basır
 2. Dropdown menyudan "Profil" seçir
@@ -355,7 +443,7 @@ SchoolAdmin Dashboard ──┬─► Məlumat Daxil Etmə ──► Forms üslu
 4. "Yadda saxla" düyməsinə basır
 5. Sistem məlumatları yeniləyir və təsdiq bildirişi göstərir
 
-### 7.2. Şifrə Dəyişmə
+### 8.2. Şifrə Dəyişmə
 
 1. İstifadəçi profil səhifəsində "Şifrəni dəyiş" tabına keçir
 2. Cari şifrəni daxil edir
@@ -364,7 +452,7 @@ SchoolAdmin Dashboard ──┬─► Məlumat Daxil Etmə ──► Forms üslu
 5. "Yadda saxla" düyməsinə basır
 6. Sistem şifrəni yeniləyir və təsdiq bildirişi göstərir
 
-### 7.3. Dil Tənzimləmələri
+### 8.3. Dil Tənzimləmələri
 
 1. İstifadəçi profil səhifəsində "Tənzimləmələr" tabına keçir
 2. Dil seçimləri bölməsində istədiyi dili seçir:
@@ -375,7 +463,7 @@ SchoolAdmin Dashboard ──┬─► Məlumat Daxil Etmə ──► Forms üslu
 3. "Yadda saxla" düyməsinə basır
 4. Sistem dil parametrini yeniləyir və interfeys seçilmiş dilə keçir
 
-### 7.4. Bildiriş Tənzimləmələri
+### 8.4. Bildiriş Tənzimləmələri
 
 1. İstifadəçi profil səhifəsində "Tənzimləmələr" tabına keçir
 2. Bildiriş parametrləri bölməsində bildiriş növlərini aktivləşdirir/deaktivləşdirir:
@@ -386,7 +474,7 @@ SchoolAdmin Dashboard ──┬─► Məlumat Daxil Etmə ──► Forms üslu
 3. "Yadda saxla" düyməsinə basır
 4. Sistem bildiriş parametrlərini yeniləyir
 
-## 8. Çıxış Axını
+## 9. Çıxış Axını
 
 1. İstifadəçi yuxarı sağ küncdəki profil ikonasına basır
 2. Dropdown menyudan "Çıxış" seçir
@@ -394,9 +482,9 @@ SchoolAdmin Dashboard ──┬─► Məlumat Daxil Etmə ──► Forms üslu
 4. JWT token və local storage-dakı session məlumatları silinir
 5. İstifadəçi login səhifəsinə yönləndirilir
 
-## 9. Xəta və İstisna Axınları
+## 10. Xəta və İstisna Axınları
 
-### 9.1. Giriş Xətaları
+### 10.1. Giriş Xətaları
 
 1. İstifadəçi yanlış e-poçt/şifrə daxil etdikdə:
    - "Yanlış e-poçt və ya şifrə" xəta mesajı göstərilir

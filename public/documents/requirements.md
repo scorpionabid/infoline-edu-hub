@@ -46,7 +46,7 @@ Məktəb Admini məlumatların ilkin daxil edilməsini həyata keçirir:
 
 ## 3. SİSTEM FUNKSİONALLIĞI
 
-### 3.1. Authentication və Authorization
+### 3.1. İstifadəçi Autentifikasiyasıon və Authorization
 - Çoxsəviyyəli, rol-əsaslı giriş sistemi
 - Şifrə bərpa mexanizmi
 - Aktivlik tarixçəsinin izlənməsi
