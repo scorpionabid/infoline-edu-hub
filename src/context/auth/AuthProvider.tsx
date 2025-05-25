@@ -1,160 +1,122 @@
-import React, { createContext, useEffect, useState } from 'react';
-import { Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
-import { AuthContextType, FullUserData as AuthFullUserData } from '@/types/auth';
-import { useAuth } from '@/hooks/auth/useAuth';
-import { AuthService } from '@/services/auth/AuthService';
-import { FullUserData as UserFullUserData } from '@/types/user';
 
-// Use the existing AuthContext from context.ts instead of creating a new one
-import { AuthContext } from './context';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { AuthContextType, FullUserData } from '@/types/auth';
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const auth = useAuth();
-  const [error, setError] = useState<string>('');
+  const [user, setUser] = useState<FullUserData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<any>(null);
 
-  // Map our new auth hook to maintain backward compatibility
-  // Type uyğunsuzluğunu həll etmək üçün user obyektini AuthFullUserData tipinə çeviririk
-  const value: AuthContextType = {
-    user: auth.user as unknown as AuthFullUserData,
-    session: auth.session,
-    isAuthenticated: auth.isAuthenticated,
-    authenticated: auth.isAuthenticated, // For backwards compatibility
-    loading: auth.isLoading,
-    error: error || (auth.error ? auth.error.message : null),
-    
-    logIn: async (email, password) => {
-      const success = await auth.login(email, password);
-      return success ? { data: auth.session, error: null } : { data: null, error: new Error('Login failed') };
-    },
-    
-    login: auth.login,
-    
-    register: async (userData) => {
-      // This is just a compatibility layer, use proper register in real code
-      console.warn('Register functionality should be implemented in AuthService');
-      return { data: null, error: null };
-    },
-    
-    logOut: auth.logout,
-    logout: auth.logout,
-    signOut: auth.logout,
-    
-    resetPassword: async (email) => {
-      try {
-        const { data, error } = await supabase.auth.resetPasswordForEmail(email);
-        return { data, error };
-      } catch (err: any) {
-        return { data: null, error: err };
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setLoading(false);
       }
-    },
-    
-    updatePassword: async (password) => {
-      try {
-        const { data, error } = await supabase.auth.updateUser({ password });
-        return { data, error };
-      } catch (err: any) {
-        return { data: null, error: err };
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSession(session);
+      if (session?.user) {
+        await fetchUserProfile(session.user.id);
+      } else {
+        setUser(null);
+        setLoading(false);
       }
-    },
-    
-    sendPasswordResetEmail: async (email) => {
-      try {
-        const { data, error } = await supabase.auth.resetPasswordForEmail(email);
-        return { data, error };
-      } catch (err: any) {
-        return { data: null, error: err };
-      }
-    },
-    
-    refreshSession: auth.refreshSession,
-    
-    getSession: async () => {
-      const { session } = await AuthService.getSession();
-      return session;
-    },
-    
-    setSession: (session) => {
-      // Can't directly set session in new system, this is a no-op
-      console.warn('setSession is deprecated, use refreshSession instead');
-    },
-    
-    updateProfile: async (profileData) => {
-      try {
-        // This needs to be replaced with a real implementation
-        console.warn('updateProfile needs proper implementation');
-        return { data: null, error: null };
-      } catch (err: any) {
-        return { data: null, error: err };
-      }
-    },
-    
-    fetchUserData: async () => {
-      await auth.refreshUserData();
-      return auth.user as unknown as AuthFullUserData;
-    },
-    clearError: auth.clearError,
-    clearErrors: auth.clearError,
-    
-    setUser: (userData) => {
-      console.warn('setUser is deprecated, use proper state management');
-    },
-    
-    setLoading: (loading) => {
-      console.warn('setLoading is deprecated, use proper state management');
-    },
-    
-    setError: (errorMsg) => setError(errorMsg),
-    
-    updateUserData: async (userData) => {
-      try {
-        // This needs to be replaced with a real implementation
-        console.warn('updateUserData needs proper implementation');
-        return { data: null, error: null };
-      } catch (err: any) {
-        return { data: null, error: err };
-      }
-    },
-    
-    updateUser: (userData) => {
-      // In a real implementation, this would update the user data
-      console.warn('updateUser needs proper implementation');
-    },
-    
-    updateUserProfile: async (userData) => {
-      try {
-        // This needs to be replaced with a real implementation
-        console.warn('updateUserProfile needs proper implementation');
-        return { data: null, error: null };
-      } catch (err: any) {
-        return { data: null, error: err };
-      }
-    },
-    
-    createUser: async (userData) => {
-      try {
-        // This needs to be replaced with a real implementation
-        console.warn('createUser needs proper implementation');
-        return { data: null, error: null };
-      } catch (err: any) {
-        return { data: null, error: err };
-      }
-    },
-    
-    signup: async (email, password, options) => {
-      try {
-        // This needs to be replaced with a real implementation
-        console.warn('signup needs proper implementation');
-        return { user: null, error: null };
-      } catch (err: any) {
-        return { user: null, error: err };
-      }
-    },
-    
-    refreshProfile: async () => {
-      await auth.refreshUserData();
-      return auth.user as unknown as AuthFullUserData;
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase.rpc('get_full_user_data', {
+        user_id_param: userId
+      });
+
+      if (error) throw error;
+      
+      setUser(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) return { error: error.message };
+      return {};
+    } catch (error) {
+      return { error: 'An unexpected error occurred' };
+    }
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
+  const logOut = async () => {
+    await signOut();
+  };
+
+  const updatePassword = async (newPassword: string): Promise<{ error?: string }> => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) return { error: error.message };
+      return {};
+    } catch (error) {
+      return { error: 'Failed to update password' };
+    }
+  };
+
+  const updateProfile = async (data: Partial<FullUserData>): Promise<{ error?: string }> => {
+    try {
+      if (!user) return { error: 'No user logged in' };
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update(data)
+        .eq('id', user.id);
+
+      if (error) return { error: error.message };
+      
+      // Refresh user data
+      await fetchUserProfile(user.id);
+      return {};
+    } catch (error) {
+      return { error: 'Failed to update profile' };
+    }
+  };
+
+  const value: AuthContextType = {
+    user,
+    loading,
+    signIn,
+    signOut,
+    logOut,
+    updatePassword,
+    updateProfile,
+    isAuthenticated: !!user,
+    session
   };
 
   return (
@@ -162,4 +124,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

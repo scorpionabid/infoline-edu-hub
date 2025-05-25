@@ -1,5 +1,6 @@
 
-// Core column types
+import { Json } from '@/types/json';
+
 export type ColumnType = 
   | 'text' 
   | 'textarea' 
@@ -13,23 +14,31 @@ export type ColumnType =
   | 'radio' 
   | 'date' 
   | 'file'
+  | 'image'
   | 'time'
   | 'datetime'
+  | 'multiselect'
+  | 'range'
+  | 'color'
   | 'richtext'
-  | 'range';
+  | 'tel';
 
 export interface ColumnOption {
   id?: string;
   label: string;
   value: string;
   description?: string;
-  disabled?: boolean;
 }
 
 export interface ColumnValidation {
-  type: 'required' | 'min' | 'max' | 'pattern' | 'email' | 'url' | 'minLength' | 'maxLength' | 'minValue' | 'maxValue';
+  type?: 'required' | 'min' | 'max' | 'pattern' | 'email' | 'url';
   value?: string | number;
   message?: string;
+  minLength?: number;
+  maxLength?: number;
+  minValue?: number;
+  maxValue?: number;
+  pattern?: string;
 }
 
 export interface BaseColumn {
@@ -48,82 +57,54 @@ export interface BaseColumn {
 }
 
 export interface Column extends BaseColumn {
-  options?: ColumnOption[] | any;
-  validation?: ColumnValidation[] | any;
+  options?: ColumnOption[];
+  validation?: ColumnValidation;
   description?: string;
   section?: string;
   color?: string;
-  key?: string;
+  parent_column_id?: string;
+  version?: number;
 }
 
 export interface ColumnFormValues {
   name: string;
   type: ColumnType;
+  category_id: string;
   is_required: boolean;
   placeholder?: string;
   help_text?: string;
   default_value?: string;
-  options?: ColumnOption[];
-  validation?: ColumnValidation[];
-  order_index?: number;
-  category_id?: string;
   description?: string;
   section?: string;
+  validation?: ColumnValidation;
+  options?: ColumnOption[];
+  order_index?: number;
 }
 
-// Add ColumnFormData alias for backward compatibility
-export type ColumnFormData = ColumnFormValues;
+export interface ColumnFormData {
+  name: string;
+  type: ColumnType;
+  category_id: string;
+  is_required: boolean;
+  placeholder?: string;
+  help_text?: string;
+  default_value?: string;
+  validation?: Json;
+  options?: Json;
+  order_index?: number;
+}
 
-// Export column types array
-export const columnTypes: ColumnType[] = [
-  'text',
-  'textarea', 
-  'number',
-  'email',
-  'phone',
-  'url',
-  'password',
-  'select',
-  'checkbox',
-  'radio',
-  'date',
-  'file',
-  'time',
-  'datetime',
-  'richtext',
-  'range'
-];
-
-// Column type definitions for UI display
 export const columnTypeDefinitions = [
-  { value: 'text', label: 'Mətn', description: 'Qısa mətn sahəsi', icon: '📝' },
-  { value: 'textarea', label: 'Uzun mətn', description: 'Çox sətirli mətn sahəsi', icon: '📄' },
-  { value: 'number', label: 'Rəqəm', description: 'Rəqəmsal dəyər', icon: '🔢' },
-  { value: 'email', label: 'E-poçt', description: 'E-poçt ünvanı', icon: '📧' },
-  { value: 'phone', label: 'Telefon', description: 'Telefon nömrəsi', icon: '📞' },
-  { value: 'url', label: 'URL', description: 'İnternet ünvanı', icon: '🔗' },
-  { value: 'password', label: 'Şifrə', description: 'Şifrə sahəsi', icon: '🔒' },
-  { value: 'select', label: 'Seçim', description: 'Açılan siyahı', icon: '📋' },
-  { value: 'checkbox', label: 'Çek-boks', description: 'Bəli/Xeyr seçimi', icon: '☑️' },
-  { value: 'radio', label: 'Radio düymə', description: 'Tək seçim', icon: '🔘' },
-  { value: 'date', label: 'Tarix', description: 'Tarix seçimi', icon: '📅' },
-  { value: 'file', label: 'Fayl', description: 'Fayl yükləmə', icon: '📎' },
-  { value: 'time', label: 'Vaxt', description: 'Vaxt seçimi', icon: '⏰' },
-  { value: 'datetime', label: 'Tarix və Vaxt', description: 'Tarix və vaxt seçimi', icon: '📆' },
-  { value: 'richtext', label: 'Formatlı mətn', description: 'Rich text editor', icon: '📝' },
-  { value: 'range', label: 'Aralıq', description: 'Aralıq seçimi', icon: '📏' }
+  { value: 'text', label: 'Text', description: 'Single line text input', icon: '📝' },
+  { value: 'textarea', label: 'Textarea', description: 'Multi-line text input', icon: '📄' },
+  { value: 'number', label: 'Number', description: 'Numeric input', icon: '🔢' },
+  { value: 'email', label: 'Email', description: 'Email address input', icon: '📧' },
+  { value: 'phone', label: 'Phone', description: 'Phone number input', icon: '📞' },
+  { value: 'url', label: 'URL', description: 'Website URL input', icon: '🔗' },
+  { value: 'select', label: 'Select', description: 'Dropdown selection', icon: '📋' },
+  { value: 'radio', label: 'Radio', description: 'Single choice selection', icon: '🔘' },
+  { value: 'checkbox', label: 'Checkbox', description: 'Multiple choice selection', icon: '☑️' },
+  { value: 'date', label: 'Date', description: 'Date picker input', icon: '📅' },
+  { value: 'file', label: 'File', description: 'File upload input', icon: '📎' },
+  { value: 'image', label: 'Image', description: 'Image upload input', icon: '🖼️' }
 ];
-
-// Props interface for BasicColumnFields
-export interface BasicColumnFieldsProps {
-  control: any;
-  errors: any;
-  watch: any;
-  categories?: any[];
-  form?: any;
-  columns?: Column[];
-  editColumn?: Column | null;
-  selectedType?: ColumnType;
-  onTypeChange?: (type: ColumnType) => void;
-  isEditMode?: boolean;
-}

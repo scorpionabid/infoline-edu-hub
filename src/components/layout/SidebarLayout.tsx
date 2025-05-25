@@ -1,93 +1,60 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Navbar from '../navigation/Navbar';
+import React, { useState } from 'react';
+import { Outlet } from 'react-router-dom';
+import { useAuth } from '@/context/auth';
 import Sidebar from './Sidebar';
-import UserProfile from '../auth/UserProfile';
-import { useAuth } from '@/context/auth/useAuth';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { cn } from '@/lib/utils';
+import Header from './Header';
+import { Loader2 } from 'lucide-react';
 
-interface SidebarLayoutProps {
-  children: React.ReactNode;
-  showHeader?: boolean;
-}
+const SidebarLayout: React.FC = () => {
+  const { user, loading } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, showHeader = true }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-  const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
-  
-  // Check window size on mount and resize
-  useEffect(() => {
-    const checkSize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      // Auto collapse sidebar on mobile
-      if (mobile) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
-    };
-    
-    // Initial check
-    checkSize();
-    
-    // Add event listener
-    window.addEventListener('resize', checkSize);
-    
-    // Clean up
-    return () => window.removeEventListener('resize', checkSize);
-  }, []);
-  
-  // Make sure the user is logged in
-  if (!isAuthenticated || !user) {
-    // Redirect will be handled by the routes
-    return null;
-  }
-  
-  const toggleSidebar = () => {
-    console.log("Toggling sidebar. Current state:", sidebarOpen, "New state:", !sidebarOpen);
-    setSidebarOpen(!sidebarOpen);
-  };
-  
-  return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Unified Sidebar component */}
-      <Sidebar 
-        isOpen={sidebarOpen}
-        onToggle={toggleSidebar}
-        onMenuClick={() => isMobile && setSidebarOpen(false)}
-      />
-      
-      {/* Main content - with proper margin to avoid overlap */}
-      <div className={cn(
-        "flex flex-col flex-1 w-full transition-all duration-300 ease-in-out",
-        sidebarOpen ? "md:ml-64" : "ml-0"
-      )}>
-        {/* Navbar */}
-        {showHeader && (
-          <Navbar 
-            sidebarOpen={sidebarOpen} 
-            setSidebarOpen={setSidebarOpen}
-          >
-            <UserProfile />
-          </Navbar>
-        )}
-        
-        {/* Main content with padding and scrollable area */}
-        <main className="flex-1 overflow-auto p-6">
-          {children}
-        </main>
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
-      
-      {/* Mobile sidebar backdrop with proper z-index */}
-      {sidebarOpen && isMobile && (
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>İstifadəçi məlumatları yüklənir...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="flex h-screen">
+        {/* Sidebar */}
+        <div className={`
+          fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transition-transform duration-300 ease-in-out
+          lg:translate-x-0 lg:static lg:inset-0
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
+          <Sidebar onClose={() => setSidebarOpen(false)} />
+        </div>
+
+        {/* Main content */}
+        <div className="flex flex-col flex-1 lg:ml-0">
+          {/* Header */}
+          <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+          
+          {/* Page content */}
+          <main className="flex-1 overflow-auto">
+            <Outlet />
+          </main>
+        </div>
+      </div>
+
+      {/* Sidebar overlay for mobile */}
+      {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 transition-opacity"
-          onClick={toggleSidebar}
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
         />
       )}
     </div>

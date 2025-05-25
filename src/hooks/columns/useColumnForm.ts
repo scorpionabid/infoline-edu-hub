@@ -6,7 +6,6 @@ import * as z from 'zod';
 import { ColumnFormValues, ColumnOption, Column, ColumnType } from '@/types/column';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ensureJson } from '@/types/json';
 
 interface UseColumnFormProps {
   column?: Column | null;
@@ -25,7 +24,6 @@ const formSchema = z.object({
   default_value: z.string().optional(),
   description: z.string().optional(),
   section: z.string().optional(),
-  color: z.string().optional(),
   validation: z.any().optional(),
   options: z.array(
     z.object({
@@ -57,7 +55,6 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
       default_value: column?.default_value || '',
       description: column?.description || '',
       section: column?.section || '',
-      color: column?.color || '',
       validation: column?.validation || {},
       options: column?.options || [],
       order_index: column?.order_index || 0,
@@ -122,23 +119,25 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
       }
       
       // Default database logic
+      const dbData = {
+        name: data.name,
+        type: data.type,
+        category_id: data.category_id,
+        is_required: data.is_required,
+        placeholder: data.placeholder,
+        help_text: data.help_text,
+        default_value: data.default_value,
+        validation: data.validation ? JSON.stringify(data.validation) : null,
+        options: data.options ? JSON.stringify(data.options) : null,
+        order_index: data.order_index || 0,
+      };
+
       if (column?.id) {
         // Update existing column
         const { error } = await supabase
           .from('columns')
           .update({
-            name: data.name,
-            type: data.type,
-            is_required: data.is_required,
-            placeholder: data.placeholder,
-            help_text: data.help_text,
-            default_value: data.default_value,
-            description: data.description,
-            section: data.section,
-            color: data.color,
-            validation: ensureJson(data.validation || {}),
-            options: ensureJson(data.options || []),
-            order_index: data.order_index || 0,
+            ...dbData,
             updated_at: new Date().toISOString(),
           })
           .eq('id', column.id);
@@ -150,21 +149,7 @@ export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps
         // Create new column
         const { error } = await supabase
           .from('columns')
-          .insert({
-            name: data.name,
-            type: data.type,
-            category_id: data.category_id,
-            is_required: data.is_required,
-            placeholder: data.placeholder,
-            help_text: data.help_text,
-            default_value: data.default_value,
-            description: data.description,
-            section: data.section,
-            color: data.color,
-            validation: ensureJson(data.validation || {}),
-            options: ensureJson(data.options || []),
-            order_index: data.order_index || 0,
-          });
+          .insert(dbData);
 
         if (error) throw error;
         toast.success('Column created successfully');

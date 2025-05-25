@@ -1,148 +1,111 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/useToast";
-import { useLanguage } from "@/context/LanguageContext";
-import { useAuth } from "@/context/auth";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/context/auth';
+import { toast } from 'sonner';
 
-export function ProfileSettings() {
-  const { t } = useLanguage();
-  const { toast } = useToast();
-  const { user, loading } = useAuth();
-  
-  const [fullName, setFullName] = useState(user?.full_name || '');
-  const [phone, setPhone] = useState(user?.phone || '');
-  const [position, setPosition] = useState(user?.position || '');
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
-  const [isSaving, setIsSaving] = useState(false);
+const ProfileSettings: React.FC = () => {
+  const { user, updateProfile } = useAuth();
+  const [formData, setFormData] = useState({
+    full_name: user?.full_name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    position: user?.position || '',
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSave = async () => {
-    if (!user) return;
-    
-    setIsSaving(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
     try {
-      const { data, error } = await supabase.auth.updateUser({
-        data: { 
-          full_name: fullName,
-          phone,
-          position
-        }
-      });
+      const result = await updateProfile(formData);
       
-      if (error) throw error;
-      
-      toast.success(t('profileUpdated'), {
-        description: t('profileUpdatedDescription')
-      });
-    } catch (error: any) {
-      console.error('Error updating profile:', error);
-      toast.error(t('error'), {
-        description: error.message || t('errorUpdatingProfile')
+      if (result.error) {
+        toast.error('Profil yenilənə bilmədi', {
+          description: result.error
+        });
+      } else {
+        toast.success('Profil uğurla yeniləndi');
+      }
+    } catch (error) {
+      toast.error('Xəta baş verdi', {
+        description: 'Profil yenilənərkən xəta baş verdi'
       });
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
-  const getInitials = (name: string) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
   };
-
-  if (!user) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('profile')}</CardTitle>
-          <CardDescription>{t('loading')}</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('profileSettings')}</CardTitle>
-        <CardDescription>{t('updateYourProfileInformation')}</CardDescription>
+        <CardTitle>Profil Məlumatları</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Avatar className="w-20 h-20">
-            <AvatarImage src={user.avatar || ''} alt={user.full_name} />
-            <AvatarFallback className="text-lg">
-              {getInitials(user.full_name || user.email)}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className="font-medium">{user.full_name || user.email}</h3>
-            <p className="text-sm text-muted-foreground">{user.email}</p>
-            <p className="text-sm text-muted-foreground">{user.role}</p>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="full_name">Ad Soyad</Label>
+            <Input
+              id="full_name"
+              name="full_name"
+              value={formData.full_name}
+              onChange={handleChange}
+              placeholder="Ad və soyadınızı daxil edin"
+            />
           </div>
-        </div>
 
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">{t('fullName')}</Label>
-            <Input 
-              id="name" 
-              value={fullName} 
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder={t('enterYourName')} 
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Email ünvanınızı daxil edin"
             />
           </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="email">{t('email')}</Label>
-            <Input 
-              id="email" 
-              value={user.email} 
-              disabled 
-              readOnly
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Telefon</Label>
+            <Input
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="Telefon nömrənizi daxil edin"
             />
           </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="phone">{t('phone')}</Label>
-            <Input 
-              id="phone" 
-              value={phone} 
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder={t('enterYourPhone')} 
+
+          <div className="space-y-2">
+            <Label htmlFor="position">Vəzifə</Label>
+            <Input
+              id="position"
+              name="position"
+              value={formData.position}
+              onChange={handleChange}
+              placeholder="Vəzifənizi daxil edin"
             />
           </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="position">{t('position')}</Label>
-            <Input 
-              id="position" 
-              value={position} 
-              onChange={(e) => setPosition(e.target.value)}
-              placeholder={t('enterYourPosition')} 
-            />
-          </div>
-        </div>
+
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Yenilənir...' : 'Yadda saxla'}
+          </Button>
+        </form>
       </CardContent>
-      <CardFooter className="flex justify-end">
-        <Button 
-          onClick={handleSave} 
-          disabled={isSaving || loading}
-        >
-          {isSaving ? t('saving') : t('saveChanges')}
-        </Button>
-      </CardFooter>
     </Card>
   );
-}
+};
 
 export default ProfileSettings;

@@ -2,16 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
-
-export interface User {
-  id: string;
-  email: string;
-  full_name: string;
-  role: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-}
+import { User } from '@/types/auth';
 
 export interface UserFilter {
   role?: string;
@@ -38,25 +29,33 @@ export const useAvailableUsers = () => {
 
     try {
       let query = supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact' });
+        .from('profiles')
+        .select(`
+          *,
+          user_roles (
+            role,
+            region_id,
+            sector_id,
+            school_id
+          )
+        `, { count: 'exact' });
 
       // Apply filters based on current user's role
       if (user?.role === 'regionadmin' && user.region_id) {
-        query = query.eq('region_id', user.region_id);
+        query = query.eq('user_roles.region_id', user.region_id);
       } else if (user?.role === 'sectoradmin' && user.sector_id) {
-        query = query.eq('sector_id', user.sector_id);
+        query = query.eq('user_roles.sector_id', user.sector_id);
       }
 
       // Apply additional filters
       if (currentFilter.role) {
-        query = query.eq('role', currentFilter.role);
+        query = query.eq('user_roles.role', currentFilter.role);
       }
       if (currentFilter.region_id) {
-        query = query.eq('region_id', currentFilter.region_id);
+        query = query.eq('user_roles.region_id', currentFilter.region_id);
       }
       if (currentFilter.sector_id) {
-        query = query.eq('sector_id', currentFilter.sector_id);
+        query = query.eq('user_roles.sector_id', currentFilter.sector_id);
       }
       if (currentFilter.search) {
         query = query.or(`full_name.ilike.%${currentFilter.search}%,email.ilike.%${currentFilter.search}%`);
@@ -71,7 +70,25 @@ export const useAvailableUsers = () => {
 
       if (queryError) throw queryError;
 
-      setUsers(data || []);
+      // Transform data to User format
+      const transformedUsers: User[] = (data || []).map(profile => ({
+        id: profile.id,
+        email: profile.email || '',
+        full_name: profile.full_name || '',
+        role: profile.user_roles?.[0]?.role || 'schooladmin',
+        region_id: profile.user_roles?.[0]?.region_id,
+        sector_id: profile.user_roles?.[0]?.sector_id,
+        school_id: profile.user_roles?.[0]?.school_id,
+        phone: profile.phone,
+        position: profile.position,
+        language: profile.language,
+        avatar: profile.avatar,
+        status: profile.status,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at
+      }));
+
+      setUsers(transformedUsers);
       setTotalRecords(count || 0);
       setTotalPages(Math.ceil((count || 0) / pageSize));
       setCurrentPage(page);

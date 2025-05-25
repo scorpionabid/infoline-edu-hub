@@ -1,85 +1,43 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { User, Settings, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
-import { useLanguage } from '@/context/LanguageContext';
+import { LogOut, User, Settings } from 'lucide-react';
 
-const UserProfile = () => {
-  const { user, logOut } = useAuth();
-  const navigate = useNavigate();
-  const { t } = useLanguage();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+const UserProfile: React.FC = () => {
+  const { user, signOut } = useAuth();
 
-  const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-      await logOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
+  if (!user) return null;
 
-  const handleSettings = () => {
-    navigate('/settings');
-  };
-
-  const handleProfile = () => {
-    navigate('/profile');
-  };
-
-  const getInitials = (name?: string) => {
-    if (!name) return '?';
-    return name.split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.avatar || ''} alt={user?.full_name || 'User'} />
-            <AvatarFallback>{getInitials(user?.full_name)}</AvatarFallback>
-          </Avatar>
+    <div className="flex items-center space-x-4 p-4 border rounded-lg">
+      <Avatar className="h-10 w-10">
+        <AvatarImage src={user.avatar} alt={user.full_name} />
+        <AvatarFallback>
+          <User className="h-6 w-6" />
+        </AvatarFallback>
+      </Avatar>
+      
+      <div className="flex-1">
+        <p className="text-sm font-medium">{user.full_name}</p>
+        <p className="text-xs text-muted-foreground">{user.email}</p>
+        <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+      </div>
+      
+      <div className="flex space-x-2">
+        <Button variant="ghost" size="icon">
+          <Settings className="h-4 w-4" />
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>
-          <div className="flex flex-col">
-            <span>{user?.full_name || 'İstifadəçi'}</span>
-            <span className="text-xs text-muted-foreground">{user?.email}</span>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleProfile}>
-          <User className="mr-2 h-4 w-4" />
-          <span>{t('profile') || 'Profil'}</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleSettings}>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>{t('settings') || 'Parametrlər'}</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={handleLogout} 
-          disabled={isLoggingOut} 
-          className="text-red-600 focus:text-red-600"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>{isLoggingOut ? (t('loggingOut') || 'Çıxış...') : (t('logout') || 'Çıxış')}</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        <Button variant="ghost" size="icon" onClick={handleSignOut}>
+          <LogOut className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 };
 

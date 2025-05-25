@@ -35,7 +35,6 @@ const Columns: React.FC = () => {
   const [columnFormDialogOpen, setColumnFormDialogOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState<Column | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loadingRetries, setLoadingRetries] = useState(0);
   
   const { columns, isLoading: columnsLoading, isError, error: columnsError, refetch: refetchColumns } = useColumns();
   
@@ -66,62 +65,7 @@ const Columns: React.FC = () => {
     categoryId: ''
   });
 
-  // Load categories and columns independently
-  const loadCategories = useCallback(() => {
-    console.log('Loading categories data');
-    try {
-      // useCategories hook-unun refetch funksiyasını çağırmaq əvəzinə
-      // birbaşa hook-u çağırmaq yerinə əl ilə fetch edə bilərik
-      const fetchCategoriesDirectly = async () => {
-        const { data, error } = await supabase
-          .from('categories')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error('Error fetching categories:', error);
-          return [];
-        }
-        
-        return data || [];
-      };
-      
-      fetchCategoriesDirectly();
-    } catch (error) {
-      console.error('Error in loadCategories:', error);
-    }
-  }, []);
-  
-  const loadColumns = useCallback(() => {
-    console.log('Loading columns data');
-    try {
-      // useColumns hook-unun refetch funksiyasını çağırmaq əvəzinə
-      // birbaşa hook-u çağırmaq yerinə React Query keşini təmizləyirik
-      queryClient.invalidateQueries({ queryKey: ['columns'] });
-    } catch (error) {
-      console.error('Error in loadColumns:', error);
-    }
-  }, [queryClient]);
-
-  // Retry if data loading fails - dairəvi asılılıqları azaltdıq
-  useEffect(() => {
-    if ((categoriesError || columnsError) && loadingRetries < 3) {
-      const timer = setTimeout(() => {
-        console.log(`Retrying data fetch (attempt ${loadingRetries + 1})`);
-        setLoadingRetries(prev => prev + 1);
-        // loadData əvəzinə birbaşa ayrı-ayrı funksiyaları çağırırıq
-        loadCategories();
-        loadColumns();
-      }, Math.pow(2, loadingRetries) * 1000); // Exponential backoff
-      return () => clearTimeout(timer);
-    }
-  }, [categoriesError, columnsError, loadingRetries, loadCategories, loadColumns]);
-
-  // Initial data load - sadəcə bir dəfə çağırılacaq
-  useEffect(() => {
-    loadCategories();
-    loadColumns();
-  }, []); // Boş asılılıq massivi - yalnız bir dəfə çalışsın
+  console.log('Columns page rendered, canManageColumns:', canManageColumns);
 
   // Filter columns
   const filteredColumns = React.useMemo(() => {
@@ -151,6 +95,8 @@ const Columns: React.FC = () => {
 
   // Sütun əlavə etmə düyməsinin hadisə işləyicisi
   const handleOpenAddColumnDialog = () => {
+    console.log('Add column button clicked, canManageColumns:', canManageColumns);
+    
     if (!canManageColumns) {
       toast.error(t('noPermission'), {
         description: t('adminPermissionRequired')
@@ -162,7 +108,7 @@ const Columns: React.FC = () => {
     setSelectedColumn(null);
     
     // Dialoqu açırıq
-    console.log('Sütun əlavə et dialoqu açılır...');
+    console.log('Opening add column dialog...');
     setColumnFormDialogOpen(true);
   };
 
@@ -170,7 +116,7 @@ const Columns: React.FC = () => {
   const handleAddColumn = async (newColumn: Omit<Column, "id"> & { id?: string }): Promise<boolean> => {
     try {
       setIsSubmitting(true);
-      console.log('Yeni sütun əlavə edilir:', newColumn);
+      console.log('Creating new column:', newColumn);
       
       const result = await createColumn(newColumn);
       
@@ -188,7 +134,7 @@ const Columns: React.FC = () => {
         return false;
       }
     } catch (error) {
-      console.error('Sütun əlavə etmə xətası:', error);
+      console.error('Error creating column:', error);
       toast.error(t('columnAddFailed'), {
         description: t('unknownError')
       });
@@ -200,7 +146,7 @@ const Columns: React.FC = () => {
 
   // Sütun redaktə etmə
   const handleEditColumn = (column: Column) => {
-    console.log('Redaktə ediləcək sütun:', column);
+    console.log('Editing column:', column);
     setSelectedColumn(column);
     setColumnFormDialogOpen(true);
   };
@@ -209,7 +155,7 @@ const Columns: React.FC = () => {
   const handleUpdateColumn = async (updatedColumn: Omit<Column, "id"> & { id?: string }): Promise<boolean> => {
     try {
       setIsSubmitting(true);
-      console.log('Sütun yenilənir:', updatedColumn);
+      console.log('Updating column:', updatedColumn);
       
       const result = await updateColumn(updatedColumn as Column);
       
@@ -227,7 +173,7 @@ const Columns: React.FC = () => {
         return false;
       }
     } catch (error) {
-      console.error('Sütun yeniləmə xətası:', error);
+      console.error('Error updating column:', error);
       toast.error(t('columnUpdateFailed'), {
         description: t('unknownError')
       });
@@ -258,7 +204,7 @@ const Columns: React.FC = () => {
   const handleDeleteColumn = async () => {
     try {
       setIsSubmitting(true);
-      console.log('Sütun silinir:', deleteDialog.column);
+      console.log('Deleting column:', deleteDialog.column);
       
       const result = await deleteColumn(deleteDialog.column);
       
@@ -274,7 +220,7 @@ const Columns: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Sütun silmə xətası:', error);
+      console.error('Error deleting column:', error);
       toast.error(t('columnDeleteFailed'), {
         description: t('unknownError')
       });
@@ -283,8 +229,8 @@ const Columns: React.FC = () => {
     }
   };
 
-  // Show error message if all retries failed
-  if ((categoriesError || columnsError) && loadingRetries >= 3) {
+  // Show error message if retries failed
+  if (categoriesError || columnsError) {
     return (
       <div className="container mx-auto py-6 space-y-6">
         <PageHeader
@@ -298,8 +244,8 @@ const Columns: React.FC = () => {
             {String(categoriesError || columnsError || t('unknownError'))}
           </AlertDescription>
           <Button variant="outline" size="sm" onClick={() => {
-            loadCategories();
-            loadColumns();
+            refetchCategories();
+            refetchColumns();
           }} className="ml-auto">
             {t('tryAgain')}
           </Button>
@@ -442,7 +388,11 @@ const Columns: React.FC = () => {
       {/* Sütun əlavə etmə və redaktə dialoqu */}
       <ColumnFormDialog
         isOpen={columnFormDialogOpen}
-        onClose={() => setColumnFormDialogOpen(false)}
+        onClose={() => {
+          console.log('Closing column dialog');
+          setColumnFormDialogOpen(false);
+          setSelectedColumn(null);
+        }}
         onSaveColumn={selectedColumn ? handleUpdateColumn : handleAddColumn}
         categories={categories || []}
         editColumn={selectedColumn}
