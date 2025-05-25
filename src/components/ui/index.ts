@@ -43,15 +43,15 @@ export * from './toggle-group';
 // Icon component for backward compatibility
 import React from 'react';
 
-export const Icon: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export const Icon = ({ children }: { children: React.ReactNode }) => (
   <span>{children}</span>
 );
 
 // Typography component for backward compatibility
-export const Typography: React.FC<{ 
+export const Typography = ({ children, variant = 'body' }: { 
   children: React.ReactNode; 
   variant?: string 
-}> = ({ children, variant = 'body' }) => {
+}) => {
   const className = variant === 'h3' ? 'text-lg font-semibold' : 'text-sm';
   return <div className={className}>{children}</div>;
 };
