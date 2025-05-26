@@ -206,6 +206,7 @@ export const mockAuthStore = () => {
     initializeAuth: vi.fn(),
     login: vi.fn().mockResolvedValue(true),
     logout: vi.fn().mockResolvedValue(true),
+    signIn: vi.fn().mockResolvedValue(true),
     initialized: true
   });
   

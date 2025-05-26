@@ -61,6 +61,10 @@ vi.mock('@/hooks/auth/useAuthStore', () => {
   
   // Starik olaraq getState funksiyasını əlavə edirik
   useAuthStoreWithGetState.getState = () => mockStore;
+  useAuthStoreWithGetState.setState = (newState: any) => {
+    Object.assign(mockStore, newState);
+    return mockStore;
+  };
   
   return {
     useAuthStore: useAuthStoreWithGetState,

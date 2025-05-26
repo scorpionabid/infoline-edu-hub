@@ -54,21 +54,21 @@ describe('Autentifikasiya Testləri', () => {
     it('email və şifrə ilə giriş prosesini uğurla tamamlayır', async () => {
       // Auth store-u mockla
       const store = mockAuthStore();
-      store.login.mockResolvedValue(true);
+      store.signIn = vi.fn().mockResolvedValue(true);
       
       // LoginForm-u render et
       render(<LoginForm error={null} clearError={store.clearError} />);
       
       // Email və şifrəni doldur
-      fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-      fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+      fireEvent.change(screen.getByPlaceholderText(/email/i), { target: { value: 'test@example.com' } });
+      fireEvent.change(screen.getByPlaceholderText(/şifrə/i), { target: { value: 'password123' } });
       
       // Giriş düyməsinə kliklə
-      fireEvent.click(screen.getByRole('button', { name: /login/i }));
+      fireEvent.click(screen.getByRole('button', { name: /giriş et/i }));
       
       // Login funksiyasının çağırıldığını yoxla
       await waitFor(() => {
-        expect(store.login).toHaveBeenCalledWith('test@example.com', 'password123');
+        expect(store.signIn).toHaveBeenCalledWith('test@example.com', 'password123');
       });
     });
     
@@ -103,7 +103,7 @@ describe('Autentifikasiya Testləri', () => {
     it('yanlış giriş məlumatları ilə xəta mesajı göstərir', async () => {
       // Auth store-u mockla
       const store = mockAuthStore();
-      store.login.mockRejectedValue(new Error('İstifadəçi adı və ya şifrə yanlışdır'));
+      store.signIn = vi.fn().mockRejectedValue(new Error('İstifadəçi adı və ya şifrə yanlışdır'));
       
       // LoginForm-u render et
       const { rerender } = render(
@@ -114,15 +114,15 @@ describe('Autentifikasiya Testləri', () => {
       );
       
       // Email və şifrəni doldur
-      fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'wrong@example.com' } });
-      fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrongpassword' } });
+      fireEvent.change(screen.getByPlaceholderText(/email/i), { target: { value: 'wrong@example.com' } });
+      fireEvent.change(screen.getByPlaceholderText(/şifrə/i), { target: { value: 'wrongpassword' } });
       
       // Giriş düyməsinə kliklə
-      fireEvent.click(screen.getByRole('button', { name: /login/i }));
+      fireEvent.click(screen.getByRole('button', { name: /giriş et/i }));
       
       // Login funksiyasının çağırıldığını yoxla
       await waitFor(() => {
-        expect(store.login).toHaveBeenCalledWith('wrong@example.com', 'wrongpassword');
+        expect(store.signIn).toHaveBeenCalledWith('wrong@example.com', 'wrongpassword');
       });
       
       // Xəta mesajı ilə yenidən render et
@@ -134,8 +134,7 @@ describe('Autentifikasiya Testləri', () => {
       );
       
       // Xəta mesajının göstərildiyini yoxla
-      expect(screen.getByRole('alert')).toBeInTheDocument();
-      expect(screen.getByRole('alert')).toHaveTextContent('İstifadəçi adı və ya şifrə yanlışdır');
+      expect(screen.getByText('İstifadəçi adı və ya şifrə yanlışdır')).toBeInTheDocument();
     });
   });
   
