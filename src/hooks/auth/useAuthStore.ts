@@ -27,7 +27,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       console.log('[useAuthStore] Initializing auth...');
       
-      // İlk olaraq mövcud sessiyanı yoxla
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -49,7 +48,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
       }
       
-      // Auth state listener quraşdır (yalnız bir dəfə)
       if (!state.initializationAttempted) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
           console.log('[useAuthStore] Auth state change:', event);
@@ -66,12 +64,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               error: null
             });
           } else if (event === 'TOKEN_REFRESHED' && currentSession) {
-            // Token yenilənəndə user məlumatını da yenilə
             await get().fetchUser();
           }
         });
         
-        // Cleanup funksiyasını saxla
         window.addEventListener('beforeunload', () => {
           subscription.unsubscribe();
         });
@@ -110,7 +106,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       console.log('[useAuthStore] SignIn successful');
-      // fetchUser auth state change listener tərəfindən çağırılacaq
       
     } catch (error: any) {
       console.error('[useAuthStore] SignIn failed:', error);
@@ -131,7 +126,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       if (error) throw error;
       
-      // State auth listener tərəfindən təmizlənəcək
       console.log('[useAuthStore] Sign out successful');
       
     } catch (error: any) {
@@ -214,7 +208,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           error: null
         });
       } else {
-        // Profil yoxdursa, basic user məlumatları ilə davam et
         const basicUserData: FullUserData = {
           id: session.user.id,
           email: session.user.email || '',

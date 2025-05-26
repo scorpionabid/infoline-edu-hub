@@ -8,6 +8,7 @@ export const AuthContext = createContext<AuthContextType>({
   signIn: async () => ({ error: 'Not implemented' }),
   signOut: async () => {},
   logOut: async () => {},
+  logout: async () => {}, // logout funksiyasını əlavə etdik
   updatePassword: async () => ({ error: 'Not implemented' }),
   updateProfile: async () => ({ error: 'Not implemented' }),
   isAuthenticated: false,

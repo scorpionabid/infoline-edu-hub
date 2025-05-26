@@ -1,3 +1,4 @@
+
 /**
  * Test Vasitələri
  * 
@@ -88,13 +89,9 @@ export const mockUserRole = (role: UserRole = 'superadmin') => {
 
 /**
  * Edge Functions sorğularını mocklamaq üçün funksiya
- * 
- * Bu funksiya, InfoLine tətbiqində istifadə edilən Edge Functions sorğularını
- * test mühitində simulyasiya edir.
  */
 export const mockEdgeFunctions = () => {
   global.fetch = vi.fn().mockImplementation((url: string, options) => {
-    // URL-ə əsasən müxtəlif cavablar
     if (url.includes('create-user')) {
       return Promise.resolve({
         ok: true,
@@ -116,7 +113,6 @@ export const mockEdgeFunctions = () => {
       });
     }
     
-    // JWT token xətaları simulyasiyası
     if (options && (!options.headers || !options.headers['Authorization'])) {
       return Promise.resolve({
         ok: false,
@@ -124,7 +120,6 @@ export const mockEdgeFunctions = () => {
       });
     }
     
-    // Default cavab
     return Promise.resolve({
       ok: false,
       json: () => Promise.resolve({ error: 'Unknown endpoint' })
@@ -142,6 +137,8 @@ export const globalMockStore = {
   initializeAuth: vi.fn(),
   login: vi.fn().mockResolvedValue(true),
   logout: vi.fn().mockResolvedValue(true),
+  signIn: vi.fn().mockResolvedValue(true), // signIn funksiyasını əlavə etdik
+  signOut: vi.fn().mockResolvedValue(true),
   initialized: true
 };
 
@@ -151,7 +148,7 @@ vi.mock('@/context/LanguageContext', () => {
     language: 'az',
     currentLanguage: 'az',
     setLanguage: vi.fn(),
-    t: (key: string) => key, // basit tərcümə funk. qaytaraq
+    t: (key: string) => key,
   };
   
   return {
@@ -169,7 +166,6 @@ const useAuthStoreMock = ((selector: any) => {
   return globalMockStore;
 }) as any;
 
-// getState funksiyasını əlavə edirik
 useAuthStoreMock.getState = () => globalMockStore;
 
 vi.mock('@/hooks/auth/useAuthStore', () => {
@@ -179,7 +175,6 @@ vi.mock('@/hooks/auth/useAuthStore', () => {
     selectIsLoading: (state: any) => state.isLoading,
     selectUser: (state: any) => state.user,
     selectError: (state: any) => state.error,
-    // daha sonra istifadə üçün default object əlavə edirik
     default: {
       useAuthStore: useAuthStoreMock,
       selectIsAuthenticated: (state: any) => state.isAuthenticated,
@@ -192,11 +187,8 @@ vi.mock('@/hooks/auth/useAuthStore', () => {
 
 /**
  * Auth store mocklamaq üçün funksiya
- * Bu funksiya, ümumi mock store-u istifadə edir və
- * test zamanı təzədən konfiqurasiya etməyə imkan verir
  */
 export const mockAuthStore = () => {
-  // Öncəki dəyərləri sıfırla
   Object.assign(globalMockStore, {
     isAuthenticated: false,
     isLoading: false,
@@ -207,6 +199,7 @@ export const mockAuthStore = () => {
     login: vi.fn().mockResolvedValue(true),
     logout: vi.fn().mockResolvedValue(true),
     signIn: vi.fn().mockResolvedValue(true),
+    signOut: vi.fn().mockResolvedValue(true),
     initialized: true
   });
   

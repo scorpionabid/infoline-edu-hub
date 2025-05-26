@@ -17,24 +17,31 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     storage: {
       getItem: (key: string) => {
-        try {
-          return localStorage.getItem(key);
-        } catch {
-          return null;
+        if (typeof window !== 'undefined') {
+          try {
+            return localStorage.getItem(key);
+          } catch {
+            return null;
+          }
         }
+        return null;
       },
       setItem: (key: string, value: string) => {
-        try {
-          localStorage.setItem(key, value);
-        } catch {
-          // Ignore storage errors
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(key, value);
+          } catch {
+            // Ignore storage errors
+          }
         }
       },
       removeItem: (key: string) => {
-        try {
-          localStorage.removeItem(key);
-        } catch {
-          // Ignore storage errors
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem(key);
+          } catch {
+            // Ignore storage errors
+          }
         }
       },
     },
