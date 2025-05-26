@@ -12,9 +12,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initialized: false,
   initializationAttempted: false,
 
-  // Yeni: loginOnly parametri əlavə edildi
   initializeAuth: async (loginOnly: boolean = false) => {
-    // Əgər artıq bir cəhd olubsa və xüsusi hallar deyilsə, artıq bir cəhd etmə
     const state = get();
     
     if (state.initializationAttempted && !loginOnly) {
@@ -22,25 +20,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
     
-    // İnasializasiya bayraqlarını tənzimlə
     set({ 
       isLoading: true, 
       initializationAttempted: true,
-      // Xətanı sıfırlayırıq ki, əvvəlki timeout xətası yeni login cəhdinə mane olmasın
       error: null 
     });
     
     try {
       console.log('Fetching user in initializeAuth...');
       await get().fetchUser();
-      // Uğurla başa çatsa, initialized = true
       set({ initialized: true });
     } catch (error: any) {
       console.error('Error in initializeAuth:', error);
       set({ 
         error: error.message, 
         isLoading: false,
-        // Xəta olsa da, inisializasiya cəhdi baş tutub
         initialized: true 
       });
     }
@@ -49,17 +43,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signIn: async (email: string, password: string) => {
     set({ isLoading: true, error: null });
     try {
+      console.log('[useAuthStore] Starting signIn process...');
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useAuthStore] SignIn error:', error);
+        throw error;
+      }
+
+      console.log('[useAuthStore] SignIn successful, fetching user...');
 
       if (data.user) {
         await get().fetchUser();
       }
+      
+      console.log('[useAuthStore] User fetched successfully');
     } catch (error: any) {
+      console.error('[useAuthStore] SignIn failed:', error);
       set({ error: error.message, isLoading: false });
       throw error;
     }
@@ -73,7 +77,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       await supabase.auth.signOut();
-      set({ user: null, isAuthenticated: false, isLoading: false, session: null });
+      set({ 
+        user: null, 
+        isAuthenticated: false, 
+        isLoading: false, 
+        session: null,
+        error: null,
+        initialized: false,
+        initializationAttempted: false
+      });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
@@ -86,13 +98,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   fetchUser: async () => {
     set({ isLoading: true });
     try {
+      console.log('[useAuthStore] Starting fetchUser...');
+      
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.user) {
+        console.log('[useAuthStore] No session found');
         set({ user: null, isAuthenticated: false, isLoading: false, session: null });
         return;
       }
 
+      console.log('[useAuthStore] Session found, setting session...');
       set({ session });
 
       // Fetch user profile with role information
@@ -110,9 +126,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .eq('id', session.user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useAuthStore] Profile fetch error:', error);
+        throw error;
+      }
 
       if (userProfile) {
+        console.log('[useAuthStore] Profile found, building user data...');
+        
         const role = userProfile.user_roles?.[0]?.role as UserRole || 'schooladmin' as UserRole;
         
         const fullUserData: FullUserData = {
@@ -138,10 +159,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           updatedAt: userProfile.updated_at
         };
 
+        console.log('[useAuthStore] User data built successfully:', fullUserData);
+
         set({ 
           user: fullUserData, 
           isAuthenticated: true, 
-          isLoading: false 
+          isLoading: false,
+          error: null
         });
       }
     } catch (error: any) {

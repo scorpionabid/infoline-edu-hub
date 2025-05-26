@@ -45,25 +45,25 @@ export interface User {
 }
 
 export interface AuthContextType {
-  user: User | null;
+  user: FullUserData | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   logOut: () => Promise<void>;
   logout: () => Promise<void>;
   updatePassword: (newPassword: string) => Promise<{ error?: string }>;
-  updateProfile: (data: Partial<User>) => Promise<{ error?: string }>;
+  updateProfile: (data: Partial<FullUserData>) => Promise<{ error?: string }>;
   isAuthenticated: boolean;
   session: any;
 }
 
 export interface UseAuthResult {
-  user: User | null;
+  user: FullUserData | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   updatePassword: (newPassword: string) => Promise<{ error?: string }>;
-  updateProfile: (data: Partial<User>) => Promise<{ error?: string }>;
+  updateProfile: (data: Partial<FullUserData>) => Promise<{ error?: string }>;
   isAuthenticated: boolean;
 }
 
@@ -74,7 +74,6 @@ export interface AuthState {
   isAuthenticated: boolean;
   error: string | null;
   session: any;
-  // Yeni əlavə olunan rekursiya-əleyhinə bayrağı
   initialized: boolean;
   initializationAttempted: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -84,6 +83,5 @@ export interface AuthState {
   fetchUser: () => Promise<void>;
   updateUser: (userData: Partial<FullUserData>) => void;
   clearError: () => void;
-  // loginOnly parametri əlavə edildi
   initializeAuth: (loginOnly?: boolean) => Promise<void>;
 }

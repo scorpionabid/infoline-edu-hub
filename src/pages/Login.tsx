@@ -43,27 +43,38 @@ const Login = () => {
 
   // Initialize auth if not already done - dövrə düşmə problemi
   useEffect(() => {
-    // Əvəzi loginOnly parametri əlavə edirik ki, App.tsx-dəki çağırışdan fərqlənsin
-    // Bu flag-i useAuthStore-da işlədəcəyik
     const authState = useAuthStore.getState();
     
-    // Rekursiv çağırışları qabaqlamaq üçün: əgər error varsa, auth yenidən inisializasiya edilməsin
+    // Rekursiv çağırışları qabaqlamaq üçün
     if (!authState.initialized && !authState.initializationAttempted) {
       console.log('[Login.tsx] Initializing auth for login');
-      // İnisializasiya cəhdini qeyd edirik
       useAuthStore.setState({ initializationAttempted: true });
-      // Login səhifəsindən inisializasiya bayrağı
       authState.initializeAuth(true);
     }
   }, []);
 
+  // Loading timeout - əgər 3 saniyədən çox yüklənərsə dayandır
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.log('[Login.tsx] Loading timeout - stopping loading state');
+        useAuthStore.setState({ 
+          isLoading: false,
+          error: null
+        });
+      }
+    }, 3000);
+
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
+
   // Show loading state when auth is being checked
-  if (isLoading) {
-    return <LoadingScreen message="Yüklənir, zəhmət olmasa gözləyin..." />;
+  if (isLoading && !redirectInProgress) {
+    return <LoadingScreen message="Giriş yoxlanılır..." />;
   }
 
   // Əgər istifadəçi artıq daxil olubsa, login səhifəsindən çıxarırıq
-  if (isAuthenticated && user) {
+  if (isAuthenticated && user && !redirectInProgress) {
     return <LoadingScreen message="Yönləndiriliyor..." />;
   }
 

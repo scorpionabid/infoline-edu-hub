@@ -1,6 +1,5 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContextType, FullUserData } from '@/types/auth';
 
@@ -75,6 +74,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await signOut();
   };
 
+  const logout = async () => {
+    await signOut();
+  };
+
   const updatePassword = async (newPassword: string): Promise<{ error?: string }> => {
     try {
       const { error } = await supabase.auth.updateUser({
@@ -113,6 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signOut,
     logOut,
+    logout,
     updatePassword,
     updateProfile,
     isAuthenticated: !!user,

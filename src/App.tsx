@@ -23,17 +23,17 @@ function App() {
     initializeAuth();
   }, [initializeAuth]);
 
-  // 10 saniyə sonra yüklənmə vəziyyətini dayandır ki, istifadəçi sonsuz yüklənmədə qalmasın
+  // 5 saniyə sonra yüklənmə vəziyyətini dayandır ki, istifadəçi sonsuz yüklənmədə qalmasın
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (useAuthStore.getState().isLoading) {
         console.log('Auth loading timeout triggered');
         useAuthStore.setState({ 
           isLoading: false,
-          error: 'Authentication timed out. Please refresh and try again.'
+          error: null // Error-u sıfırla
         });
       }
-    }, 10000);
+    }, 5000); // 10 saniyədən 5 saniyəyə düşürdük
 
     return () => clearTimeout(timeout);
   }, []);
