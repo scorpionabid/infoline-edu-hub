@@ -1,19 +1,10 @@
 
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { useAuth } from '@/context/auth';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { Loader2 } from 'lucide-react';
 import { useAuthStore, selectIsLoading, selectUser } from '@/hooks/auth/useAuthStore';
-
-interface SidebarComponentProps {
-  onClose: () => void;
-}
-
-interface HeaderComponentProps {
-  onMenuClick: () => void;
-}
 
 interface SidebarLayoutProps {
   children?: React.ReactNode;
@@ -43,33 +34,41 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex h-screen">
-        {/* Sidebar */}
+    <div className="min-h-screen bg-background w-full">
+      <div className="flex h-screen w-full">
+        {/* Sidebar - Mobile overlay */}
         <div className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transition-transform duration-300 ease-in-out
-          lg:translate-x-0 lg:static lg:inset-0
+          fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transition-transform duration-300 ease-in-out
+          md:translate-x-0 md:static md:inset-0 md:z-auto
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
-          {React.createElement(Sidebar as any, { onClose: () => setSidebarOpen(false) })}
+          <Sidebar 
+            isOpen={sidebarOpen}
+            onToggle={() => setSidebarOpen(false)}
+          />
         </div>
 
-        {/* Main content */}
-        <div className="flex flex-col flex-1 lg:pl-64">
+        {/* Main content area */}
+        <div className="flex flex-col flex-1 w-full min-w-0 md:ml-0">
           {/* Header */}
-          {React.createElement(Header as any, { onMenuClick: () => setSidebarOpen(!sidebarOpen) })}
+          <Header 
+            onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+            isSidebarOpen={sidebarOpen}
+          />
           
           {/* Page content */}
-          <main className="flex-1 overflow-auto p-4">
-            {children || <Outlet />}
+          <main className="flex-1 overflow-auto p-3 md:p-4 w-full">
+            <div className="w-full max-w-full">
+              {children || <Outlet />}
+            </div>
           </main>
         </div>
       </div>
 
-      {/* Sidebar overlay for mobile */}
+      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

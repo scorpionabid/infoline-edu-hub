@@ -14,22 +14,26 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-      <div className="flex h-16 items-center justify-between px-4">
-        <div className="flex items-center">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur w-full">
+      <div className="flex h-16 items-center justify-between px-3 md:px-4 w-full">
+        <div className="flex items-center min-w-0 flex-1">
           <Button
             variant="ghost"
             size="icon"
-            className="mr-2 md:hidden"
+            className="mr-2 md:hidden flex-shrink-0"
             onClick={onSidebarToggle}
           >
             <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
+            <span className="sr-only">Menyunu aç</span>
           </Button>
-          <NavigationMenu isSidebarOpen={isSidebarOpen} onMenuClick={onSidebarToggle} />
+          
+          {/* Hide navigation menu on mobile to avoid duplication */}
+          <div className="hidden md:block min-w-0 flex-1">
+            <NavigationMenu isSidebarOpen={isSidebarOpen} onMenuClick={onSidebarToggle} />
+          </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <LanguageSwitcher />
           <ThemeToggle />
           <UserProfile />

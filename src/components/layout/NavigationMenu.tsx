@@ -21,46 +21,55 @@ const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarO
 
   const activeItem = location.pathname.split('/')[1] || 'dashboard';
 
-  // Define navigation items with proper visibility checks
+  // Define navigation items with proper visibility checks and unique keys
   const navigationItems = [
-    { id: 'dashboard', label: t('dashboard'), path: '/dashboard', visible: true },
-    { id: 'regions', label: t('regions'), path: '/regions', visible: userRole === 'superadmin' },
-    { id: 'sectors', label: t('sectors'), path: '/sectors', visible: userRole === 'superadmin' || userRole === 'regionadmin' },
-    { id: 'schools', label: t('schools'), path: '/schools', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
-    { id: 'categories', label: t('categories'), path: '/categories', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
-    { id: 'columns', label: t('columns'), path: '/columns', visible: ['superadmin', 'regionadmin'].includes(userRole as string) },
-    { id: 'users', label: t('users'), path: '/users', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
-    { id: 'data-entry', label: t('dataEntry'), path: '/data-entry', visible: ['superadmin', 'sectoradmin', 'schooladmin'].includes(userRole as string) },
-    { id: 'approvals', label: t('approvals'), path: '/approvals', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
-    { id: 'settings', label: t('settings'), path: '/settings', visible: true },
+    { id: 'dashboard', label: t('dashboard') || 'İdarəetmə paneli', path: '/dashboard', visible: true },
+    { id: 'regions', label: t('regions') || 'Regionlar', path: '/regions', visible: userRole === 'superadmin' },
+    { id: 'sectors', label: t('sectors') || 'Sektorlar', path: '/sectors', visible: userRole === 'superadmin' || userRole === 'regionadmin' },
+    { id: 'schools', label: t('schools') || 'Məktəblər', path: '/schools', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
+    { id: 'categories', label: t('categories') || 'Kateqoriyalar', path: '/categories', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
+    { id: 'columns', label: t('columns') || 'Sütunlar', path: '/columns', visible: ['superadmin', 'regionadmin'].includes(userRole as string) },
+    { id: 'users', label: t('users') || 'İstifadəçilər', path: '/users', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
+    { id: 'data-entry', label: t('dataEntry') || 'Məlumat daxiletmə', path: '/data-entry', visible: ['superadmin', 'sectoradmin', 'schooladmin'].includes(userRole as string) },
+    { id: 'approvals', label: t('approvals') || 'Təsdiqlər', path: '/approvals', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
+    { id: 'settings', label: t('settings') || 'Parametrlər', path: '/settings', visible: true },
   ];
 
-  return (
-    <nav className="flex flex-col md:flex-row md:items-center gap-6 overflow-x-auto whitespace-nowrap w-full">
-      {navigationItems
-        .filter(item => item.visible)
-        .map(item => (
-          <Link 
-            key={item.id}
-            to={item.path}
-            className={cn(
-              "transition-colors text-muted-foreground hover:text-primary focus:text-primary",
-              activeItem === item.id && "text-primary font-medium"
-            )}
-            onClick={() => onMenuClick && onMenuClick()}
-          >
-            {item.label}
-          </Link>
-        ))}
+  // Remove duplicate items by unique id
+  const uniqueItems = navigationItems.filter((item, index, self) => 
+    index === self.findIndex(i => i.id === item.id)
+  );
 
-      <div className="md:hidden mt-4">
+  return (
+    <nav className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 overflow-x-auto whitespace-nowrap w-full">
+      <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+        {uniqueItems
+          .filter(item => item.visible)
+          .map(item => (
+            <Link 
+              key={item.id}
+              to={item.path}
+              className={cn(
+                "transition-colors text-sm md:text-base px-2 py-1 rounded-md",
+                "text-muted-foreground hover:text-primary focus:text-primary",
+                "hover:bg-muted/50 focus:bg-muted/50",
+                activeItem === item.id && "text-primary font-medium bg-primary/10"
+              )}
+              onClick={() => onMenuClick && onMenuClick()}
+            >
+              {item.label}
+            </Link>
+          ))}
+      </div>
+
+      <div className="md:hidden mt-2 pt-2 border-t border-border">
         <Button 
           variant="outline" 
           size="sm" 
           onClick={() => onMenuClick && onMenuClick()}
-          className="w-full"
+          className="w-full text-sm"
         >
-          {isSidebarOpen ? t('closeSidebar') : t('openSidebar')}
+          {isSidebarOpen ? (t('closeSidebar') || 'Menyunu bağla') : (t('openSidebar') || 'Menyunu aç')}
         </Button>
       </div>
     </nav>
