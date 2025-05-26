@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuthStore, selectIsAuthenticated, selectIsLoading } from "@/hooks/auth/useAuthStore";
 import { usePermissions } from "@/hooks/auth/usePermissions";
 import AccessDenied from "@/components/AccessDenied";
@@ -38,33 +38,30 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
   redirectUrl = "/login" 
 }) => {
-  // Use selectors for more efficient state access
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const isLoading = useAuthStore(selectIsLoading);
   const { hasRole } = usePermissions();
   const location = useLocation();
   
-  // Scroll to top on route change
+  console.log('[ProtectedRoute] State:', { isAuthenticated, isLoading, pathname: location.pathname });
+  
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
   
-  // Show loading screen while auth state is being determined
   if (isLoading) {
     return <LoadingScreen message="Zəhmət olmasa gözləyin..." />;
   }
   
-  // Not authenticated - redirect to login
   if (!isAuthenticated) {
+    console.log('[ProtectedRoute] Not authenticated, redirecting to login');
     return <Navigate to={redirectUrl} state={{ from: location }} replace />;
   }
   
-  // Check role-based access
   if (allowedRoles && !hasRole(allowedRoles)) {
     return <AccessDenied />;
   }
   
-  // Authenticated and authorized
   return <>{children}</>;
 };
 
@@ -74,28 +71,26 @@ interface PublicRouteProps {
 }
 
 const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
-  // Use selectors for more efficient state access
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const isLoading = useAuthStore(selectIsLoading);
   const location = useLocation();
   
-  // Scroll to top on route change
+  console.log('[PublicRoute] State:', { isAuthenticated, isLoading, restricted, pathname: location.pathname });
+  
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
   
-  // Show loading screen while auth state is being determined
   if (isLoading) {
     return <LoadingScreen message="Zəhmət olmasa gözləyin..." />;
   }
   
-  // If authenticated and trying to access a restricted route (like login), redirect to dashboard
   if (isAuthenticated && restricted) {
     const from = location.state?.from?.pathname || "/dashboard";
+    console.log('[PublicRoute] Authenticated user on restricted route, redirecting to:', from);
     return <Navigate to={from} replace />;
   }
   
-  // Not restricted or not authenticated
   return <>{children}</>;
 };
 
@@ -135,7 +130,6 @@ const AppRoutes = () => (
     {/* Protected Routes with SidebarLayout */}
     <Route element={
       <ProtectedRoute>
-        {/* TypeScript xətasını aradan qaldırmaq üçün Outlet-i birbaşa ProtectedRoute-a ötürürük */}
         <SidebarLayout />
       </ProtectedRoute>
     }>

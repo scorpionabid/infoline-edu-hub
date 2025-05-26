@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole, UserStatus, FullUserData, AuthState } from '@/types/auth';
@@ -15,27 +14,82 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initializeAuth: async (loginOnly: boolean = false) => {
     const state = get();
     
-    if (state.initializationAttempted && !loginOnly) {
-      console.log('Auth already attempted, skipping initialization');
+    if (state.initialized && !loginOnly) {
+      console.log('[useAuthStore] Auth already initialized');
       return;
     }
     
     set({ 
       isLoading: true, 
-      initializationAttempted: true,
       error: null 
     });
     
     try {
-      console.log('Fetching user in initializeAuth...');
-      await get().fetchUser();
-      set({ initialized: true });
+      console.log('[useAuthStore] Initializing auth...');
+      
+      // İlk olaraq mövcud sessiyanı yoxla
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('[useAuthStore] Session error:', sessionError);
+        throw sessionError;
+      }
+
+      if (session?.user) {
+        console.log('[useAuthStore] Session found, fetching user data...');
+        set({ session });
+        await get().fetchUser();
+      } else {
+        console.log('[useAuthStore] No session found');
+        set({ 
+          user: null, 
+          isAuthenticated: false, 
+          isLoading: false,
+          session: null
+        });
+      }
+      
+      // Auth state listener quraşdır (yalnız bir dəfə)
+      if (!state.initializationAttempted) {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+          console.log('[useAuthStore] Auth state change:', event);
+          
+          set({ session: currentSession });
+          
+          if (event === 'SIGNED_IN' && currentSession) {
+            await get().fetchUser();
+          } else if (event === 'SIGNED_OUT') {
+            set({ 
+              user: null, 
+              isAuthenticated: false, 
+              session: null,
+              error: null
+            });
+          } else if (event === 'TOKEN_REFRESHED' && currentSession) {
+            // Token yenilənəndə user məlumatını da yenilə
+            await get().fetchUser();
+          }
+        });
+        
+        // Cleanup funksiyasını saxla
+        window.addEventListener('beforeunload', () => {
+          subscription.unsubscribe();
+        });
+      }
+      
+      set({ 
+        initialized: true,
+        initializationAttempted: true,
+        isLoading: false
+      });
+      
     } catch (error: any) {
-      console.error('Error in initializeAuth:', error);
+      console.error('[useAuthStore] Initialize auth error:', error);
       set({ 
         error: error.message, 
         isLoading: false,
-        initialized: true 
+        initialized: true,
+        initializationAttempted: true
       });
     }
   },
@@ -43,7 +97,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signIn: async (email: string, password: string) => {
     set({ isLoading: true, error: null });
     try {
-      console.log('[useAuthStore] Starting signIn process...');
+      console.log('[useAuthStore] Starting signIn...');
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -55,13 +109,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw error;
       }
 
-      console.log('[useAuthStore] SignIn successful, fetching user...');
-
-      if (data.user) {
-        await get().fetchUser();
-      }
+      console.log('[useAuthStore] SignIn successful');
+      // fetchUser auth state change listener tərəfindən çağırılacaq
       
-      console.log('[useAuthStore] User fetched successfully');
     } catch (error: any) {
       console.error('[useAuthStore] SignIn failed:', error);
       set({ error: error.message, isLoading: false });
@@ -76,17 +126,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOut: async () => {
     set({ isLoading: true });
     try {
-      await supabase.auth.signOut();
-      set({ 
-        user: null, 
-        isAuthenticated: false, 
-        isLoading: false, 
-        session: null,
-        error: null,
-        initialized: false,
-        initializationAttempted: false
-      });
+      console.log('[useAuthStore] Signing out...');
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) throw error;
+      
+      // State auth listener tərəfindən təmizlənəcək
+      console.log('[useAuthStore] Sign out successful');
+      
     } catch (error: any) {
+      console.error('[useAuthStore] Sign out error:', error);
       set({ error: error.message, isLoading: false });
     }
   },
@@ -96,22 +145,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchUser: async () => {
-    set({ isLoading: true });
     try {
-      console.log('[useAuthStore] Starting fetchUser...');
+      console.log('[useAuthStore] Fetching user...');
       
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.user) {
-        console.log('[useAuthStore] No session found');
-        set({ user: null, isAuthenticated: false, isLoading: false, session: null });
+        console.log('[useAuthStore] No session in fetchUser');
+        set({ 
+          user: null, 
+          isAuthenticated: false, 
+          isLoading: false,
+          session: null
+        });
         return;
       }
 
-      console.log('[useAuthStore] Session found, setting session...');
-      set({ session });
-
-      // Fetch user profile with role information
       const { data: userProfile, error } = await supabase
         .from('profiles')
         .select(`
@@ -126,14 +175,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .eq('id', session.user.id)
         .single();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('[useAuthStore] Profile fetch error:', error);
         throw error;
       }
 
       if (userProfile) {
-        console.log('[useAuthStore] Profile found, building user data...');
-        
         const role = userProfile.user_roles?.[0]?.role as UserRole || 'schooladmin' as UserRole;
         
         const fullUserData: FullUserData = {
@@ -159,23 +206,42 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           updatedAt: userProfile.updated_at
         };
 
-        console.log('[useAuthStore] User data built successfully:', fullUserData);
-
+        console.log('[useAuthStore] User data fetched successfully');
         set({ 
           user: fullUserData, 
           isAuthenticated: true, 
           isLoading: false,
           error: null
         });
+      } else {
+        // Profil yoxdursa, basic user məlumatları ilə davam et
+        const basicUserData: FullUserData = {
+          id: session.user.id,
+          email: session.user.email || '',
+          full_name: session.user.email?.split('@')[0] || '',
+          name: session.user.email?.split('@')[0] || '',
+          role: 'schooladmin' as UserRole,
+          status: 'active' as UserStatus,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        set({ 
+          user: basicUserData, 
+          isAuthenticated: true, 
+          isLoading: false,
+          error: null
+        });
       }
     } catch (error: any) {
-      console.error('Error fetching user:', error);
+      console.error('[useAuthStore] Fetch user error:', error);
       set({ 
         error: error.message, 
         user: null, 
         isAuthenticated: false, 
-        isLoading: false,
-        session: null
+        isLoading: false
       });
     }
   },
