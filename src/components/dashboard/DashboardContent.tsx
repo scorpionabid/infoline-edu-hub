@@ -114,10 +114,6 @@ const DashboardContent: React.FC = () => {
 
   return (
     <div className="p-4 space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">{t('dashboard')}</h2>
-      </div>
-
       <div className="grid grid-cols-1 gap-6">
         {renderRoleSpecificContent()}
       </div>

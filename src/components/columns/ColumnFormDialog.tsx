@@ -71,6 +71,18 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
     console.log("Form state:", { isEditMode, isLoading, isSubmitting });
     
     try {
+      // Log more details for debugging
+      console.log("Category ID:", values.category_id);
+      console.log("Form type:", values.type);
+      console.log("Selected type:", selectedType);
+      
+      // Make sure category_id is set
+      if (!values.category_id && categories.length > 0) {
+        values.category_id = categories[0].id;
+        form.setValue('category_id', values.category_id);
+        console.log("Auto-set category_id to:", values.category_id);
+      }
+      
       const result = await onSubmit(values);
       console.log("Form submit result:", result);
       
@@ -84,7 +96,7 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
       }
     } catch (error) {
       console.error("Form submission error:", error);
-      toast.error(t("errorOccurred"));
+      toast.error(t("errorOccurred") + (error instanceof Error ? `: ${error.message}` : ''));
     }
   };
 
@@ -92,6 +104,21 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
   const handleAddButtonClick = () => {
     console.log("Add button clicked! Triggering form submit...");
     console.log("Form validation state:", form.formState);
+    
+    // Check if category exists in form and set it if available
+    const currentCategory = form.getValues('category_id');
+    console.log("Current category_id:", currentCategory);
+    if (!currentCategory && categories.length > 0) {
+      form.setValue('category_id', categories[0].id);
+      console.log("Auto-set category_id to:", categories[0].id);
+    }
+    
+    // Check if selectedType is set correctly
+    const currentType = form.getValues('type');
+    if (currentType !== selectedType) {
+      console.log(`Type mismatch: form has ${currentType} but selectedType is ${selectedType}`);
+      form.setValue('type', selectedType);
+    }
     
     // Validate form before submitting
     form.handleSubmit(
@@ -101,7 +128,16 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
       },
       (errors) => {
         console.error("Form validation failed:", errors);
-        toast.error("Form validation failed. Please check all fields.");
+        // Show more specific error messages
+        if (errors.category_id) {
+          toast.error(`Category field error: ${errors.category_id.message}`);
+        } else if (errors.name) {
+          toast.error(`Name field error: ${errors.name.message}`);
+        } else if (errors.type) {
+          toast.error(`Type field error: ${errors.type.message}`);
+        } else {
+          toast.error("Form validation failed. Please check all fields.");
+        }
       }
     )();
   };
@@ -223,6 +259,15 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
               type="button"
               onClick={() => {
                 console.log("Add/Save button clicked directly");
+                // Log form state for debugging
+                console.log("Form values before submit:", form.getValues());
+                console.log("Form errors:", form.formState.errors);
+                
+                // Try to handle validation issues
+                if (!form.getValues('category_id') && categories.length > 0) {
+                  form.setValue('category_id', categories[0].id);
+                }
+                
                 handleAddButtonClick();
               }}
               disabled={form.formState.isSubmitting || isSubmitting || isLoading}
