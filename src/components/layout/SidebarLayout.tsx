@@ -55,12 +55,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         </div>
 
         {/* Main content */}
-        <div className="flex flex-col flex-1 lg:ml-0">
+        <div className="flex flex-col flex-1 lg:pl-64">
           {/* Header */}
           {React.createElement(Header as any, { onMenuClick: () => setSidebarOpen(!sidebarOpen) })}
           
           {/* Page content */}
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto p-4">
             {children || <Outlet />}
           </main>
         </div>

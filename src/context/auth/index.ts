@@ -1,6 +1,7 @@
 
-export * from './AuthProvider';
+export * from './AuthContext';
 export * from './context';
+export { default as useAuth } from './useAuth';
 
 // Re-export selector functions from useAuthStore
 export {
