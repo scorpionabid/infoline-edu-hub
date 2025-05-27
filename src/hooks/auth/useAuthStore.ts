@@ -126,12 +126,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       if (error) throw error;
       
+      // Explicitly set isLoading to false after successful signOut
+      set({ 
+        user: null, 
+        isAuthenticated: false, 
+        isLoading: false,
+        session: null,
+        error: null 
+      });
+      
       console.log('[useAuthStore] Sign out successful');
+      
+      // Redirect to login page immediately
+      window.location.href = '/login';
       
     } catch (error: any) {
       console.error('[useAuthStore] Sign out error:', error);
       set({ error: error.message, isLoading: false });
     }
+    
+    // Safety timeout to ensure isLoading is set to false
+    setTimeout(() => {
+      const state = get();
+      if (state.isLoading) {
+        console.warn('[useAuthStore] Force resetting loading state after timeout');
+        set({ isLoading: false });
+        
+        // Force redirect if still on protected page
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+    }, 5000);
   },
 
   logout: async () => {
