@@ -24,15 +24,15 @@ const DashboardChart: React.FC<DashboardChartProps> = ({ completion, stats }) =>
         <div className="grid grid-cols-3 gap-2 pt-4">
           <div className="flex flex-col">
             <span className="text-xs text-muted-foreground">Təsdiqlənən</span>
-            <span className="text-lg font-medium">{stats.approved}</span>
+            <span className="text-lg font-medium">{stats.approvedForms || stats.approved || 0}</span>
           </div>
           <div className="flex flex-col">
             <span className="text-xs text-muted-foreground">Gözləyən</span>
-            <span className="text-lg font-medium">{stats.pending}</span>
+            <span className="text-lg font-medium">{stats.pendingForms || stats.pending || 0}</span>
           </div>
           <div className="flex flex-col">
             <span className="text-xs text-muted-foreground">İmtina</span>
-            <span className="text-lg font-medium">{stats.rejected}</span>
+            <span className="text-lg font-medium">{stats.rejectedForms || stats.rejected || 0}</span>
           </div>
         </div>
       )}

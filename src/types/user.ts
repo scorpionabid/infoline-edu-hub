@@ -1,3 +1,4 @@
+
 import { UserRole } from './role';
 
 // UserStatus enum təyini
@@ -16,6 +17,7 @@ export interface User {
   position?: string;
   language?: string;
   avatar?: string;
+  avatar_url?: string;
   status: UserStatus;
   last_login?: string;
   created_at: string;
@@ -45,6 +47,7 @@ export interface FullUserData extends User {
   notification_settings?: NotificationSettings;
   lastSignIn?: string;
   last_sign_in_at?: string;
+  avatar_url?: string;
 }
 
 export interface NotificationSettings {

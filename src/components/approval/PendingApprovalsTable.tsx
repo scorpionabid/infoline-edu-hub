@@ -1,101 +1,67 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { PendingApproval } from '@/types/dashboard';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Button } from '@/components/ui/button';
-import { Eye, Clock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { format, parseISO } from 'date-fns';
+import { Eye, Check, XCircle } from 'lucide-react';
 
 interface PendingApprovalsTableProps {
-  pendingApprovals: PendingApproval[];
-  onReview?: (approvalId: string) => void;
-  onRefresh?: () => void;
+  approvals: PendingApproval[];
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onView: (id: string) => void;
 }
 
-const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({ 
-  pendingApprovals,
-  onReview,
-  onRefresh
+const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
+  approvals,
+  onApprove,
+  onReject,
+  onView
 }) => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  
-  const handleReview = (id: string) => {
-    if (onReview) {
-      onReview(id);
-    } else {
-      navigate(`/approvals/${id}`);
-    }
-  };
-  
-  // Tarixi formatla
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    
-    try {
-      return format(parseISO(dateString), 'dd.MM.yyyy HH:mm');
-    } catch (e) {
-      return dateString;
-    }
-  };
-  
-  // Əgər təsdiq gözləyən maddələr yoxdursa
-  if (!pendingApprovals || pendingApprovals.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        <p>{t('noPendingApprovals')}</p>
-      </div>
-    );
-  }
-  
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t('school')}</TableHead>
-            <TableHead>{t('category')}</TableHead>
-            <TableHead>{t('submittedAt')}</TableHead>
-            <TableHead>{t('status')}</TableHead>
-            <TableHead className="text-right">{t('actions')}</TableHead>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{t('schoolName')}</TableHead>
+          <TableHead>{t('categoryName')}</TableHead>
+          <TableHead>{t('submittedAt')}</TableHead>
+          <TableHead className="text-right">{t('actions')}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {approvals.map((approval) => (
+          <TableRow key={approval.id}>
+            <TableCell>{approval.schoolName}</TableCell>
+            <TableCell>{approval.categoryName}</TableCell>
+            <TableCell>{approval.submittedAt || approval.date}</TableCell>
+            <TableCell className="text-right">
+              <Button variant="ghost" size="sm" onClick={() => onView(approval.id)}>
+                <Eye className="h-4 w-4 mr-2" />
+                {t('view')}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => onApprove(approval.id)}>
+                <Check className="h-4 w-4 mr-2" />
+                {t('approve')}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => onReject(approval.id)}>
+                <XCircle className="h-4 w-4 mr-2" />
+                {t('reject')}
+              </Button>
+            </TableCell>
           </TableRow>
-        </TableHeader>
-        <TableBody>
-          {pendingApprovals.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.schoolName}</TableCell>
-              <TableCell>{item.categoryName}</TableCell>
-              <TableCell>{formatDate(item.submittedAt)}</TableCell>
-              <TableCell>
-                <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-100">
-                  {t('pending')}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => handleReview(item.id)}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  {t('review')}
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+        ))}
+      </TableBody>
+    </Table>
   );
 };
 

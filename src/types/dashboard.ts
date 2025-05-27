@@ -1,3 +1,4 @@
+
 export interface DashboardStatus {
   total: number;
   active: number;
@@ -9,6 +10,9 @@ export interface DashboardFormStats {
   pendingForms: number;
   approvedForms: number;
   rejectedForms: number;
+  approved: number;
+  pending: number;
+  rejected: number;
 }
 
 export interface CategoryItem {
@@ -16,12 +20,17 @@ export interface CategoryItem {
   name: string;
   status: 'active' | 'inactive' | 'approved' | 'pending' | 'rejected';
   completion?: number;
+  completionRate?: number;
+  description?: string;
+  deadline?: string;
 }
 
 export interface FormItem {
   id: string;
   name: string;
   status: string;
+  title?: string;
+  category?: string;
 }
 
 export interface DeadlineItem {
@@ -39,6 +48,9 @@ export interface PendingApproval {
   regionName?: string;
   categoryName: string;
   date: string;
+  submittedAt?: string;
+  createdAt?: string;
+  status?: 'pending' | 'approved' | 'rejected';
 }
 
 export interface SchoolStat {

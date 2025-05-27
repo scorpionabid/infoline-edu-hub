@@ -42,7 +42,7 @@ const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({
                 <div>
                   <h4 className="font-medium">{item.schoolName}</h4>
                   <p className="text-sm text-muted-foreground">{item.categoryName}</p>
-                  <p className="text-xs text-muted-foreground">{t('submittedAt')}: {item.submittedAt}</p>
+                  <p className="text-xs text-muted-foreground">{t('submittedAt')}: {item.submittedAt || item.date}</p>
                 </div>
                 <Button
                   variant="ghost"
