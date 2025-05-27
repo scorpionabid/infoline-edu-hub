@@ -1,31 +1,25 @@
-
 import { UserRole } from './role';
 
-export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | string;
+// UserStatus enum təyini
+export type UserStatus = 'active' | 'inactive' | 'pending' | 'suspended';
 
 export interface User {
   id: string;
-  full_name?: string;
-  email?: string;
-  avatar?: string;
-  avatar_url?: string;
-  role?: UserRole;
+  email: string;
+  full_name: string;
+  name?: string;
+  role: 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  status?: UserStatus;
-  created_at?: string;
-  updated_at?: string;
-  last_login?: string;
-  position?: string;
   phone?: string;
+  position?: string;
   language?: string;
-  region_name?: string;
-  sector_name?: string;
-  school_name?: string;
-  name?: string;
-  notification_settings?: NotificationSettings;
-  notificationSettings?: NotificationSettings;
+  avatar?: string;
+  status: UserStatus;
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface FullUserData extends User {

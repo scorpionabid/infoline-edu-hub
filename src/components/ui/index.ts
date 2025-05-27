@@ -1,4 +1,3 @@
-
 export * from './button';
 export * from './input';
 export * from './label';
@@ -39,3 +38,5 @@ export * from './navigation-menu';
 export * from './resizable';
 export * from './toggle';
 export * from './toggle-group';
+export { Icon } from './icon';
+export { Typography } from './typography';
