@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { School, adaptSchoolFromSupabase } from '@/types/school'; 
 import { Region } from '@/types/supabase'; // Import from supabase types
@@ -90,27 +89,27 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
   const [sectorFilter, setSectorFilter] = React.useState('all');
   const [statusFilter, setStatusFilter] = React.useState('all');
 
-  const canManageSchools = () => {
+  function canManageSchools() {
     return userRole === 'superadmin' || userRole === 'regionadmin' || userRole === 'sectoradmin';
-  };
+  }
 
-  const canEditSchool = (school: School) => {
+  function canEditSchool(school: School) {
     if (userRole === 'superadmin') return true;
     if (userRole === 'regionadmin' && school.region_id === regionId) return true;
     return false;
-  };
+  }
 
-  const canDeleteSchool = (school: School) => {
+  function canDeleteSchool(school: School) {
     if (userRole === 'superadmin') return true;
     if (userRole === 'regionadmin' && school.region_id === regionId) return true;
     return false;
-  };
+  }
 
-  const canAssignAdmin = (school: School) => {
+  function canAssignAdmin(school: School) {
     if (userRole === 'superadmin') return true;
     if (userRole === 'regionadmin' && school.region_id === regionId) return true;
     return false;
-  };
+  }
 
   const handleCreateSchool = async (schoolData: Omit<School, 'id'>) => {
     try {
@@ -243,45 +242,54 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
   const filteredSchools = filterSchools(schoolsArray, searchTerm, regionFilter, sectorFilter, statusFilter);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header controls - responsive layout */}
+      <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 gap-4">
         <div className="flex flex-wrap gap-2">
           <Button 
             onClick={() => setIsAddDialogOpen(true)}
             disabled={isLoading || !canManageSchools()}
+            className="text-xs sm:text-sm"
           >
-            <Plus className="mr-2 h-4 w-4" />
-            {t('addSchool')}
+            <Plus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{t('addSchool')}</span>
+            <span className="sm:hidden">{t('add')}</span>
           </Button>
           
           <Button 
             variant="outline" 
             onClick={handleExportToExcel}
             disabled={isLoading || schoolsArray.length === 0}
+            className="text-xs sm:text-sm"
           >
-            <Download className="mr-2 h-4 w-4" />
-            {t('export')}
+            <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{t('export')}</span>
+            <span className="sm:hidden">{t('export')}</span>
           </Button>
           
           <Button 
             variant="outline" 
             onClick={onRefresh}
             disabled={isLoading}
+            className="text-xs sm:text-sm"
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            {t('refresh')}
+            <RefreshCw className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{t('refresh')}</span>
+            <span className="sm:hidden">{t('refresh')}</span>
           </Button>
         </div>
         
-        <div className="flex flex-wrap gap-2">
+        {/* Filters - responsive grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:flex sm:flex-wrap lg:gap-2">
           <Input
             type="text"
             placeholder={t('searchSchools')}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
+            className="text-sm"
           />
           <Select value={regionFilter || 'all'} onValueChange={setRegionFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[140px] lg:w-[180px]">
               <SelectValue placeholder={t('filterByRegion')} />
             </SelectTrigger>
             <SelectContent>
@@ -294,7 +302,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
             </SelectContent>
           </Select>
           <Select value={sectorFilter || 'all'} onValueChange={setSectorFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[140px] lg:w-[180px]">
               <SelectValue placeholder={t('filterBySector')} />
             </SelectTrigger>
             <SelectContent>
@@ -307,7 +315,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
             </SelectContent>
           </Select>
           <Select value={statusFilter || 'all'} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-full sm:w-[120px] lg:w-[150px]">
               <SelectValue placeholder={t('filterByStatus')} />
             </SelectTrigger>
             <SelectContent>
@@ -320,76 +328,100 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
         </div>
       </div>
       
-      <ScrollArea>
-        <Table>
-          <TableCaption>{t('schoolsList')}</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t('schoolName')}</TableHead>
-              <TableHead>{t('region')}</TableHead>
-              <TableHead>{t('sector')}</TableHead>
-              <TableHead>{t('status')}</TableHead>
-              <TableHead>{t('actions')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredSchools.map(school => (
-              <TableRow key={school.id} className={school.status === 'active' ? '' : 'opacity-60'}>
-                <TableCell>{school.name}</TableCell>
-                <TableCell>{regionNames[school.region_id] || '-'}</TableCell>
-                <TableCell>{sectorNames[school.sector_id] || '-'}</TableCell>
-                <TableCell>{
-                  school.status === 'active' 
-                    ? <span className="px-2 py-1 rounded-full bg-green-100 text-green-800">Aktiv</span>
-                    : <span className="px-2 py-1 rounded-full bg-red-100 text-red-800">Deaktiv</span>
-                }</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
+      {/* Table - with horizontal scroll on mobile */}
+      <div className="rounded-md border">
+        <ScrollArea className="w-full">
+          <Table>
+            <TableCaption className="text-xs sm:text-sm">{t('schoolsList')}</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs sm:text-sm">{t('schoolName')}</TableHead>
+                <TableHead className="text-xs sm:text-sm hidden sm:table-cell">{t('region')}</TableHead>
+                <TableHead className="text-xs sm:text-sm hidden sm:table-cell">{t('sector')}</TableHead>
+                <TableHead className="text-xs sm:text-sm">{t('status')}</TableHead>
+                <TableHead className="text-xs sm:text-sm text-right">{t('actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredSchools.map(school => (
+                <TableRow key={school.id} className={school.status === 'active' ? '' : 'opacity-60'}>
+                  <TableCell className="text-xs sm:text-sm font-medium">
+                    <div>
+                      <div>{school.name}</div>
+                      {/* Show region/sector on mobile under school name */}
+                      <div className="text-xs text-muted-foreground sm:hidden">
+                        {regionNames[school.region_id]} • {sectorNames[school.sector_id]}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{regionNames[school.region_id] || '-'}</TableCell>
+                  <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{sectorNames[school.sector_id] || '-'}</TableCell>
+                  <TableCell className="text-xs sm:text-sm">
+                    {school.status === 'active' 
+                      ? <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-green-100 text-green-800 text-xs">Aktiv</span>
+                      : <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-red-100 text-red-800 text-xs">Deaktiv</span>
+                    }
+                  </TableCell>
+                  <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <Button variant="ghost" className="h-6 w-6 sm:h-8 sm:w-8 p-0">
                           <span className="sr-only">{t('openMenu')}</span>
-                          <span>···</span>
+                          <span className="text-sm">···</span>
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuLabel className="text-xs">{t('actions')}</DropdownMenuLabel>
                         <DropdownMenuItem 
                           onClick={() => {
                             setSelectedSchool(school);
                             setIsLinkDialogOpen(true);
                           }}
+                          className="text-xs"
                         >
-                          <Link className="mr-2 h-4 w-4" /> Linklər
+                          <Link className="mr-2 h-3 w-3" /> Linklər
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => {
                             setSelectedSchool(school);
                             setIsFileDialogOpen(true);
                           }}
+                          className="text-xs"
                         >
-                          <FolderOpen className="mr-2 h-4 w-4" /> Fayllar
+                          <FolderOpen className="mr-2 h-3 w-3" /> Fayllar
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleEditDialogOpen(school)} disabled={!canEditSchool(school)}>
-                          <Edit className="mr-2 h-4 w-4" /> {t('edit')}
+                        <DropdownMenuItem 
+                          onClick={() => handleEditDialogOpen(school)} 
+                          disabled={!canEditSchool(school)}
+                          className="text-xs"
+                        >
+                          <Edit className="mr-2 h-3 w-3" /> {t('edit')}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleAdminDialogOpen(school)} disabled={!canAssignAdmin(school)}>
-                          <UserPlus className="mr-2 h-4 w-4" /> {t('assignAdmin')}
+                        <DropdownMenuItem 
+                          onClick={() => handleAdminDialogOpen(school)} 
+                          disabled={!canAssignAdmin(school)}
+                          className="text-xs"
+                        >
+                          <UserPlus className="mr-2 h-3 w-3" /> {t('assignAdmin')}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleDeleteDialogOpen(school)} disabled={!canDeleteSchool(school)}>
-                          <Trash2 className="mr-2 h-4 w-4" /> {t('delete')}
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteDialogOpen(school)} 
+                          disabled={!canDeleteSchool(school)}
+                          className="text-xs text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-3 w-3" /> {t('delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </ScrollArea>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      </div>
       
       {/* Dialogs */}
       {isAddDialogOpen && (

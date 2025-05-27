@@ -36,10 +36,10 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-background w-full">
       <div className="flex h-screen w-full">
-        {/* Sidebar - Mobile overlay */}
+        {/* Sidebar - Desktop: Always visible, Mobile: Overlay */}
         <div className={`
           fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transition-transform duration-300 ease-in-out
-          md:translate-x-0 md:static md:inset-0 md:z-auto
+          lg:translate-x-0 lg:static lg:inset-0 lg:z-auto
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
           <Sidebar 
@@ -49,26 +49,26 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         </div>
 
         {/* Main content area */}
-        <div className="flex flex-col flex-1 w-full min-w-0 md:ml-0">
+        <div className="flex flex-col flex-1 w-full min-w-0">
           {/* Header */}
           <Header 
             onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
             isSidebarOpen={sidebarOpen}
           />
           
-          {/* Page content */}
-          <main className="flex-1 overflow-auto p-3 md:p-4 w-full">
-            <div className="w-full max-w-full">
+          {/* Page content with responsive padding */}
+          <main className="flex-1 overflow-auto p-2 sm:p-4 lg:p-6 w-full">
+            <div className="w-full max-w-full mx-auto">
               {children || <Outlet />}
             </div>
           </main>
         </div>
       </div>
 
-      {/* Mobile sidebar overlay */}
+      {/* Mobile sidebar overlay - only show on smaller screens */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

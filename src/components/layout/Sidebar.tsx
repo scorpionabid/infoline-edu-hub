@@ -25,32 +25,32 @@ const Sidebar: React.FC<SidebarProps> = ({
   console.log("[Layout Sidebar] isOpen state:", isOpen);
 
   return (
-    <div
-      className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-[250px] flex-col bg-background border-r border-border transition-transform duration-300 ease-in-out",
-        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 md:w-[250px]"
-      )}
-    >
-      <div className="flex h-16 items-center justify-between px-4 py-4">
+    <div className="flex flex-col h-full bg-background border-r border-border">
+      {/* Header with logo and close button */}
+      <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4 py-2 border-b border-border">
         <Logo />
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden"
+          className="lg:hidden h-8 w-8 sm:h-10 sm:w-10"
           onClick={onToggle}
         >
-          <ChevronLeft className="h-5 w-5" />
-          <span className="sr-only">Close sidebar</span>
+          <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="sr-only">Sidebar-ı bağla</span>
         </Button>
       </div>
       
-      <NavigationSidebar 
-        userRole={userRole} 
-        isOpen={isOpen} 
-        onToggle={onMenuClick} 
-      />
+      {/* Navigation content with scroll */}
+      <ScrollArea className="flex-1">
+        <NavigationSidebar 
+          userRole={userRole} 
+          isOpen={isOpen} 
+          onToggle={onMenuClick} 
+        />
+      </ScrollArea>
       
-      <div className="mt-auto p-4 border-t border-border">
+      {/* Footer */}
+      <div className="mt-auto p-3 sm:p-4 border-t border-border">
         <p className="text-xs text-muted-foreground text-center">
           InfoLine v1.0.0
         </p>

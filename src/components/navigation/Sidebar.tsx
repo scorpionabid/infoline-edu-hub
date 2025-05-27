@@ -148,8 +148,8 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole: rawUserRole, isOpen, onTogg
   );
 
   return (
-    <ScrollArea className="h-full py-4">
-      <nav className="flex flex-col gap-1 px-2">
+    <div className="h-full py-2 sm:py-4">
+      <nav className="flex flex-col gap-1 px-2 sm:px-3">
         {visibleItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -159,21 +159,22 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole: rawUserRole, isOpen, onTogg
               onClick={onToggle}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                  "flex items-center gap-2 sm:gap-3 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-sm transition-colors",
                   "hover:bg-accent/30 hover:text-accent-foreground",
+                  "min-h-[44px] touch-manipulation", // Ensure minimum touch target size
                   isActive
                     ? "bg-accent/50 text-accent-foreground font-medium"
                     : "text-muted-foreground"
                 )
               }
             >
-              <Icon className="h-4 w-4 flex-shrink-0" />
-              <span className="truncate">{item.label}</span>
+              <Icon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="truncate text-xs sm:text-sm">{item.label}</span>
             </NavLink>
           );
         })}
       </nav>
-    </ScrollArea>
+    </div>
   );
 };
 

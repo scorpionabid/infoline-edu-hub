@@ -41,8 +41,8 @@ const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarO
   );
 
   return (
-    <nav className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 overflow-x-auto whitespace-nowrap w-full">
-      <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+    <nav className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4 xl:gap-6 overflow-x-auto whitespace-nowrap w-full">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-3 xl:gap-4">
         {uniqueItems
           .filter(item => item.visible)
           .map(item => (
@@ -50,9 +50,10 @@ const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarO
               key={item.id}
               to={item.path}
               className={cn(
-                "transition-colors text-sm md:text-base px-2 py-1 rounded-md",
+                "transition-colors text-sm lg:text-base px-2 py-1.5 lg:py-1 rounded-md",
                 "text-muted-foreground hover:text-primary focus:text-primary",
                 "hover:bg-muted/50 focus:bg-muted/50",
+                "min-h-[44px] lg:min-h-auto flex items-center touch-manipulation", // Mobile touch target
                 activeItem === item.id && "text-primary font-medium bg-primary/10"
               )}
               onClick={() => onMenuClick && onMenuClick()}
@@ -62,12 +63,13 @@ const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarO
           ))}
       </div>
 
-      <div className="md:hidden mt-2 pt-2 border-t border-border">
+      {/* Mobile sidebar toggle info */}
+      <div className="lg:hidden mt-2 pt-2 border-t border-border">
         <Button 
           variant="outline" 
           size="sm" 
           onClick={() => onMenuClick && onMenuClick()}
-          className="w-full text-sm"
+          className="w-full text-sm min-h-[44px] touch-manipulation"
         >
           {isSidebarOpen ? (t('closeSidebar') || 'Menyunu bağla') : (t('openSidebar') || 'Menyunu aç')}
         </Button>

@@ -1,139 +1,124 @@
 
 import React from 'react';
+import { UseFormReturn, Control } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
-import { BasicColumnFieldsProps, columnTypeDefinitions } from '@/types/column';
+import { Category } from '@/types/category';
+import { ColumnType } from '@/types/column';
+
+interface BasicColumnFieldsProps {
+  form: UseFormReturn<any>;
+  control: Control<any>;
+  errors: any;
+  watch: any;
+  categories: Category[];
+  selectedType: ColumnType;
+  onTypeChange: (type: ColumnType) => void;
+  isEditMode: boolean;
+}
+
+const columnTypes = [
+  { value: 'text', label: 'Text', icon: '📝' },
+  { value: 'number', label: 'Number', icon: '🔢' },
+  { value: 'date', label: 'Date', icon: '📅' },
+  { value: 'select', label: 'Select', icon: '📋' },
+  { value: 'checkbox', label: 'Checkbox', icon: '☑️' },
+  { value: 'radio', label: 'Radio', icon: '🔘' },
+  { value: 'textarea', label: 'Textarea', icon: '📄' }
+];
 
 const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
+  form,
   control,
   errors,
   watch,
-  categories = [],
+  categories,
   selectedType,
   onTypeChange,
-  isEditMode = false
+  isEditMode
 }) => {
   return (
-    <div className="space-y-6">
-      {/* Column name */}
+    <div className="space-y-4">
       <FormField
         control={control}
         name="name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Sütun adı *</FormLabel>
+            <FormLabel>Sütun Adı *</FormLabel>
             <FormControl>
-              <Input placeholder="Sütun adını daxil edin" {...field} />
+              <Input {...field} placeholder="Sütun adını daxil edin" />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
 
-      {/* Column type */}
+      <FormField
+        control={control}
+        name="category_id"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Kateqoriya *</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Kateqoriya seçin" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
       <FormField
         control={control}
         name="type"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Sütun tipi *</FormLabel>
-            <FormControl>
-              <Select
-                value={field.value}
-                onValueChange={(value) => {
-                  field.onChange(value);
-                  onTypeChange?.(value as any);
-                }}
-                disabled={isEditMode}
-              >
+            <FormLabel>Tip *</FormLabel>
+            <Select onValueChange={(value) => {
+              field.onChange(value);
+              onTypeChange(value as ColumnType);
+            }} value={field.value}>
+              <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Sütun tipini seçin" />
                 </SelectTrigger>
-                <SelectContent>
-                  {columnTypeDefinitions.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      <div className="flex items-center gap-2">
-                        <span>{type.icon}</span>
-                        <div>
-                          <div>{type.label}</div>
-                          <div className="text-xs text-muted-foreground">{type.description}</div>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormControl>
+              </FormControl>
+              <SelectContent>
+                {columnTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    <div className="flex items-center space-x-2">
+                      <span>{type.icon}</span>
+                      <span>{type.label}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FormMessage />
           </FormItem>
         )}
       />
 
-      {/* Required field */}
       <FormField
         control={control}
-        name="is_required"
-        render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-            <div className="space-y-0.5">
-              <FormLabel>Məcburi sahə</FormLabel>
-              <p className="text-sm text-muted-foreground">
-                Bu sahə doldurulması məcburi olsun
-              </p>
-            </div>
-            <FormControl>
-              <Switch
-                checked={field.value}
-                onCheckedChange={field.onChange}
-              />
-            </FormControl>
-          </FormItem>
-        )}
-      />
-
-      {/* Placeholder */}
-      <FormField
-        control={control}
-        name="placeholder"
+        name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Placeholder</FormLabel>
+            <FormLabel>Açıqlama</FormLabel>
             <FormControl>
-              <Input placeholder="Sahə üçün placeholder mətni" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* Help text */}
-      <FormField
-        control={control}
-        name="help_text"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Kömək mətni</FormLabel>
-            <FormControl>
-              <Textarea placeholder="Sahə haqqında açıqlama" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* Default value */}
-      <FormField
-        control={control}
-        name="default_value"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Varsayılan dəyər</FormLabel>
-            <FormControl>
-              <Input placeholder="Varsayılan dəyər" {...field} />
+              <Textarea {...field} placeholder="Sütun açıqlaması" />
             </FormControl>
             <FormMessage />
           </FormItem>

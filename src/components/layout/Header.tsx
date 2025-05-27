@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import UserProfile from './UserProfile';
 import LanguageSwitcher from './LanguageSwitcher';
 import NavigationMenu from './NavigationMenu';
@@ -15,26 +15,43 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur w-full">
-      <div className="flex h-16 items-center justify-between px-3 md:px-4 w-full">
+      <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4 lg:px-6 w-full">
         <div className="flex items-center min-w-0 flex-1">
+          {/* Mobile sidebar toggle */}
           <Button
             variant="ghost"
             size="icon"
-            className="mr-2 md:hidden flex-shrink-0"
+            className="mr-2 lg:hidden flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10"
             onClick={onSidebarToggle}
           >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Menyunu aç</span>
+            {isSidebarOpen ? (
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
+            ) : (
+              <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+            )}
+            <span className="sr-only">
+              {isSidebarOpen ? 'Menyunu bağla' : 'Menyunu aç'}
+            </span>
           </Button>
           
-          {/* Hide navigation menu on mobile to avoid duplication */}
-          <div className="hidden md:block min-w-0 flex-1">
+          {/* Desktop navigation - hide on mobile to avoid duplication */}
+          <div className="hidden lg:block min-w-0 flex-1">
             <NavigationMenu isSidebarOpen={isSidebarOpen} onMenuClick={onSidebarToggle} />
+          </div>
+
+          {/* Mobile: Show logo/title when sidebar is closed */}
+          <div className="flex lg:hidden items-center">
+            <span className="font-semibold text-sm sm:text-base text-primary">
+              InfoLine
+            </span>
           </div>
         </div>
         
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <LanguageSwitcher />
+        {/* Right side controls - responsive sizing */}
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div className="hidden sm:block">
+            <LanguageSwitcher />
+          </div>
           <ThemeToggle />
           <UserProfile />
         </div>
