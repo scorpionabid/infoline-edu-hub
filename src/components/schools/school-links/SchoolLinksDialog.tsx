@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table"
 import { Edit, Trash2 } from 'lucide-react';
 import { LinkFormProps, SchoolLink } from '@/types/link';
-import LinkForm from './LinkForm';
+import { LinkForm } from './LinkForm';
 
 interface SchoolLinksDialogProps {
   isOpen: boolean;
@@ -141,7 +141,7 @@ const SchoolLinksDialog: React.FC<SchoolLinksDialogProps> = ({
         
         {showLinkForm && (
           <LinkForm
-            editData={editingLink}
+            link={editingLink}
             onSubmit={handleLinkSubmit}
             onCancel={() => {
               setShowLinkForm(false);

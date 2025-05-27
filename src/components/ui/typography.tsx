@@ -32,3 +32,36 @@ export const Typography: React.FC<TypographyProps> = ({
     </Component>
   );
 };
+
+// Helper komponentlər
+export const H1: React.FC<Omit<TypographyProps, 'variant'>> = (props) => (
+  <Typography variant="h1" {...props} />
+);
+
+export const H2: React.FC<Omit<TypographyProps, 'variant'>> = (props) => (
+  <Typography variant="h2" {...props} />
+);
+
+export const H3: React.FC<Omit<TypographyProps, 'variant'>> = (props) => (
+  <Typography variant="h3" {...props} />
+);
+
+export const H4: React.FC<Omit<TypographyProps, 'variant'>> = (props) => (
+  <Typography variant="h4" {...props} />
+);
+
+export const H5: React.FC<Omit<TypographyProps, 'variant'>> = (props) => (
+  <Typography variant="h5" {...props} />
+);
+
+export const H6: React.FC<Omit<TypographyProps, 'variant'>> = (props) => (
+  <Typography variant="h6" {...props} />
+);
+
+export const P: React.FC<Omit<TypographyProps, 'variant'>> = (props) => (
+  <Typography variant="p" {...props} />
+);
+
+export const Span: React.FC<Omit<TypographyProps, 'variant'>> = (props) => (
+  <Typography variant="span" {...props} />
+);

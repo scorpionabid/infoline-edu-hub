@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/user';
-import { useAuthStore } from './useAuthStore';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { UserStatus } from '@/types/user';
 
 interface AuthFetchResult {

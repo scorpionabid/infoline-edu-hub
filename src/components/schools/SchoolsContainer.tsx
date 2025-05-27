@@ -39,7 +39,7 @@ import AddSchoolDialog from './AddSchoolDialog';
 import EditSchoolDialog from './EditSchoolDialog';
 import DeleteSchoolDialog from './DeleteSchoolDialog';
 import SchoolAdminDialog from './SchoolAdminDialog';
-import { SchoolLinksDialog } from './school-links/SchoolLinksDialog';
+import SchoolLinksDialog from './school-links/SchoolLinksDialog';
 import { SchoolFilesDialog } from './school-files/SchoolFilesDialog';
 import exportSchoolsToExcel from '@/utils/exportSchoolsToExcel';
 import { supabase } from '@/integrations/supabase/client';
@@ -445,7 +445,11 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
           isOpen={isLinkDialogOpen}
           onClose={() => setIsLinkDialogOpen(false)}
           school={selectedSchool}
-          userRole={user?.role || 'viewer'}
+          links={[]}
+          onDelete={async (linkId) => { console.log('Deleting link', linkId); }}
+          onCreate={async (linkData) => { console.log('Creating link', linkData); }}
+          onUpdate={async (linkData) => { console.log('Updating link', linkData); }}
+          fetchLinks={async () => { console.log('Fetching links'); }}
         />
       )}
       
