@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Edit, Trash2, RefreshCw, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, Download, UserPlus, MoreHorizontal } from 'lucide-react';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import {
   DropdownMenu,
@@ -26,6 +26,7 @@ import { Sector, EnhancedSector } from '@/types/supabase'; // Import from supaba
 import { Region } from '@/types/supabase'; // Import from supabase types directly
 import { useRegions } from '@/hooks/regions/useRegions';
 import { useSectors } from '@/hooks/sectors/useSectors';
+import { useSectorAdmins } from '@/hooks/sectors/useSectorAdmins';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -157,6 +158,15 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: external
     }
   };
 
+  // Məktəb ID-lərini əldə edirik
+  const sectorIds = useMemo(() => 
+    Array.isArray(sectors) ? sectors.map(sector => sector.id) : [], 
+    [sectors]
+  );
+  
+  // Sektor adminlərini əldə edirik
+  const { adminMap, isLoading: isAdminsLoading } = useSectorAdmins(sectorIds);
+
   const filterSectors = (
     sectors: Sector[],
     searchTerm: string,
@@ -167,12 +177,14 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: external
       const numberOfSchools = 5;
       const completionRate = 75;
       const regionName = regions?.find(r => r.id === sector.region_id)?.name || 'Unknown';
+      const adminEmail = adminMap[sector.id] || 'Təyin edilməyib';
       
       const enhancedSector: EnhancedSector = {
         ...sector,
         school_count: numberOfSchools,
         completion_rate: completionRate,
-        region_name: regionName
+        region_name: regionName,
+        admin_email: adminEmail
       };
       return enhancedSector;
     }).filter(sector => {
@@ -335,39 +347,78 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: external
           <TableCaption>{t('sectorsList')}</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('sectorName')}</TableHead>
-              <TableHead>{t('region')}</TableHead>
-              <TableHead>{t('description')}</TableHead>
-              <TableHead>{t('status')}</TableHead>
-              <TableHead className="text-right">{t('actions')}</TableHead>
+              <TableHead className="w-[25%]">{t('sectorName')}</TableHead>
+              <TableHead className="w-[25%]">{t('admin')}</TableHead>
+              <TableHead className="w-[25%]">{t('description')}</TableHead>
+              <TableHead className="w-[10%]">{t('status')}</TableHead>
+              <TableHead className="text-right w-[15%]">{t('actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredSectors.map(sector => (
               <TableRow key={sector.id}>
-                <TableCell>{sector.name}</TableCell>
-                <TableCell>{sector.region_name || 'Unknown'}</TableCell>
+                <TableCell className="font-medium">{sector.name}</TableCell>
+                <TableCell>
+                  {isAdminsLoading ? (
+                    <span className="flex items-center">
+                      <span className="h-3 w-3 mr-2 animate-spin rounded-full border-b-2 border-gray-500"></span>
+                      {t('loading')}
+                    </span>
+                  ) : (
+                    sector.admin_email || '-'
+                  )}
+                </TableCell>
                 <TableCell>{sector.description}</TableCell>
-                <TableCell>{sector.status}</TableCell>
+                <TableCell>
+                  {sector.status === 'active' 
+                    ? <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">{t('active')}</span>
+                    : <span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">{t('inactive')}</span>
+                  }
+                </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        ...
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handleEditDialogOpen(sector)} disabled={!canEditSector(sector)}>
-                        <Edit className="mr-2 h-4 w-4" /> {t('edit')}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleDeleteDialogOpen(sector)} disabled={!canDeleteSector(sector)}>
-                        <Trash2 className="mr-2 h-4 w-4" /> {t('delete')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex justify-end items-center space-x-1">
+                    {/* Əsas əməliyyat düymələri birbaşa göstərilir */}
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-7 w-7" 
+                      onClick={() => handleEditDialogOpen(sector)}
+                      disabled={!canEditSector(sector)}
+                      title={t('edit')}
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
+                    
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-7 w-7" 
+                      title={t('assignAdmin')}
+                    >
+                      <UserPlus className="h-3.5 w-3.5" />
+                    </Button>
+                    
+                    {/* Əlavə əməliyyatlar üçün dropdown */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <span className="sr-only">{t('openMenu')}</span>
+                          <MoreHorizontal className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuLabel className="text-xs">{t('moreActions')}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteDialogOpen(sector)} 
+                          disabled={!canDeleteSector(sector)}
+                          className="text-xs text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-3 w-3" /> {t('delete')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
