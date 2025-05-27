@@ -1,112 +1,165 @@
-
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { useAssignExistingUserAsSchoolAdmin } from '@/hooks/useAssignExistingUserAsSchoolAdmin';
-import { AdminDialogHeader } from './admin-dialog/AdminDialogHeader';
-import { AdminDialogForm } from './admin-dialog/AdminDialogForm';
-import { AdminDialogFooter } from './admin-dialog/AdminDialogFooter';
-import { AdminDialogSuccess } from './admin-dialog/AdminDialogSuccess';
-import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useLanguage } from '@/context/LanguageContext';
+import { useToast } from "@/components/ui/use-toast";
+import { useAvailableUsers } from '@/hooks/useAvailableUsers';
+import { User } from '@/types/user';
+import { School } from '@/types/school';
+import { Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface ExistingUserSchoolAdminDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  schoolId: string;
-  schoolName: string;
-  onSuccess: () => void;
+  onAssign: (user: User) => Promise<void>;
+  school: School | null;
 }
 
-export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDialogProps> = ({
+const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDialogProps> = ({
   isOpen,
   onClose,
-  schoolId,
-  schoolName,
-  onSuccess
+  onAssign,
+  school,
 }) => {
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { assignUserAsSchoolAdmin, loading } = useAssignExistingUserAsSchoolAdmin();
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { users, loading: usersLoading, fetchUsers } = useAvailableUsers();
 
-  // Dialoq bağlandıqda vəziyyətləri sıfırla
   useEffect(() => {
-    if (!isOpen) {
-      setSelectedUserId('');
-      setIsSuccess(false);
-      setError(null);
+    if (isOpen) {
+      fetchUsers({ role: 'schooladmin' });
     }
-  }, [isOpen]);
+  }, [isOpen, fetchUsers]);
 
-  // İstifadəçi seçimi dəyişdikdə
-  const onUserSelect = (userId: string) => {
-    console.log('İstifadəçi seçimi dəyişdi:', userId);
-    if (userId !== selectedUserId) {
-      setSelectedUserId(userId);
-      setError(null); // İstifadəçi dəyişdirildikdə xətanı sıfırla
-    }
+  const filteredUsers = React.useMemo(() => {
+    if (!users) return [];
+    return users.filter(user =>
+      user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
+
+  const handleUserSelect = (user: User) => {
+    setSelectedUser(user);
   };
 
-  // Form təqdimatı
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    
-    // Form validasiyası - boş istifadəçi seçimi üçün
-    if (!selectedUserId) {
-      const errorMessage = 'Zəhmət olmasa istifadəçi seçin';
-      setError(errorMessage);
-      return;
-    }
-    
-    console.log(`Məktəb admini təyin etmə başlayır: Məktəb=${schoolId}, İstifadəçi=${selectedUserId}`);
-    
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleAssign = async () => {
+    if (!selectedUser || !school) return;
+
     try {
-      const result = await assignUserAsSchoolAdmin(schoolId, selectedUserId);
+      setIsLoading(true);
       
-      if (result.success) {
-        setIsSuccess(true);
-        
-        // 1.5 saniyə sonra dialoqu bağla və uğurlu callback-i işlət
-        setTimeout(() => {
+      const { data, error } = await supabase.rpc('assign_school_admin', {
+        user_id_param: selectedUser.id,
+        school_id_param: school.id,
+        region_id_param: school.region_id,
+        sector_id_param: school.sector_id
+      });
+
+      if (error) throw error;
+
+      // Type assertion for the response
+      const result = data as { success: boolean; error?: string };
+      
+      if (result && typeof result === 'object' && 'success' in result) {
+        if (result.success) {
+          toast.success(t('schoolAdminAssigned'));
+          await onAssign(selectedUser);
           onClose();
-          onSuccess();
-        }, 1500);
+        } else {
+          const errorMessage = 'error' in result ? result.error : 'Unknown error';
+          throw new Error(errorMessage || 'Assignment failed');
+        }
       } else {
-        setError(result.error || 'Bilinməyən xəta');
+        // If data is successful but not in expected format
+        toast.success(t('schoolAdminAssigned'));
+        await onAssign(selectedUser);
+        onClose();
       }
     } catch (error: any) {
-      console.error('Admin təyin etmə xətası:', error);
-      setError(error instanceof Error ? error.message : 'Bilinməyən xəta');
+      console.error('Error assigning school admin:', error);
+      toast.error(error.message || t('errorAssigningAdmin'));
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
-        <AdminDialogHeader schoolName={schoolName} />
-        
-        {isSuccess ? (
-          <AdminDialogSuccess />
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <AdminDialogForm
-              selectedUserId={selectedUserId}
-              onUserSelect={onUserSelect}
-              error={error}
-              schoolId={schoolId}
-              schoolName={schoolName}
-              loading={loading}
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{t('assignExistingAdmin')}</DialogTitle>
+          <DialogDescription>
+            {t('searchAndAssignAdmin')}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="search">{t('searchUser')}</Label>
+            <Input
+              id="search"
+              value={searchTerm}
+              onChange={handleSearch}
+              className="col-span-3"
             />
-            
-            <AdminDialogFooter
-              onClose={onClose}
-              onSubmit={handleSubmit}
-              loading={loading}
-              selectedUserId={selectedUserId}
-            />
-          </form>
-        )}
+          </div>
+          <div className="max-h-40 overflow-y-auto">
+            {usersLoading ? (
+              <div className="flex items-center justify-center">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('noUsersFound')}</p>
+            ) : (
+              <ul className="space-y-2">
+                {filteredUsers.map(user => (
+                  <li
+                    key={user.id}
+                    className={`p-2 rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground ${selectedUser?.id === user.id ? 'bg-accent text-accent-foreground' : ''}`}
+                    onClick={() => handleUserSelect(user)}
+                  >
+                    {user.full_name} ({user.email})
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            {t('cancel')}
+          </Button>
+          <Button type="button" onClick={handleAssign} disabled={!selectedUser || isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('assigning')}
+              </>
+            ) : (
+              t('assignAdmin')
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
+
+export default ExistingUserSchoolAdminDialog;

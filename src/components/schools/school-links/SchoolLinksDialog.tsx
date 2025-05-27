@@ -1,152 +1,157 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, ExternalLink } from 'lucide-react';
-import { useToast } from '@/hooks/common/useToast';
-import { SchoolLink } from '@/types/link';
-import { useEntityLinks } from '@/hooks/common/useEntityLinks';
-import { LinkForm } from './LinkForm';
-import { LinkList } from './LinkList';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableRow,
+} from "@/components/ui/table"
+import { Edit, Trash2 } from 'lucide-react';
+import { LinkFormProps, SchoolLink } from '@/types/link';
+import LinkForm from './LinkForm';
 
 interface SchoolLinksDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  school: {
-    id: string;
-    name: string;
-    region_id?: string;
-    sector_id?: string;
-  } | null;
-  userRole: string;
+  school: { id: string };
+  links: SchoolLink[];
+  onDelete: (linkId: string) => Promise<void>;
+  onCreate: (linkData: Omit<SchoolLink, 'id'>) => Promise<void>;
+  onUpdate: (linkData: SchoolLink) => Promise<void>;
+  fetchLinks: () => Promise<void>;
 }
 
-export const SchoolLinksDialog: React.FC<SchoolLinksDialogProps> = ({
+const SchoolLinksDialog: React.FC<SchoolLinksDialogProps> = ({
   isOpen,
   onClose,
   school,
-  userRole
+  links,
+  onDelete,
+  onCreate,
+  onUpdate,
+  fetchLinks,
 }) => {
-  const [isAddingLink, setIsAddingLink] = useState(false);
+  const { t } = useLanguage();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showLinkForm, setShowLinkForm] = useState(false);
   const [editingLink, setEditingLink] = useState<SchoolLink | null>(null);
-  
-  // Determine entity type based on user role
-  const entityType = userRole === 'schooladmin' ? 'school' : 
-                    userRole === 'sectoradmin' ? 'sector' : 
-                    userRole === 'regionadmin' ? 'region' : 'school';
-  
-  // Get entity ID based on role
-  const entityId = userRole === 'schooladmin' ? school?.id :
-                  userRole === 'sectoradmin' ? school?.sector_id :
-                  userRole === 'regionadmin' ? school?.region_id : school?.id;
-  
-  const { links, loading, createLink, updateLink, deleteLink, refetch } = useEntityLinks(
-    entityType, 
-    userRole === 'schooladmin' ? school?.id : entityId
-  );
-  
-  const { success } = useToast();
-  
-  useEffect(() => {
-    if (isOpen && school) {
-      refetch();
-    }
-  }, [isOpen, school, refetch]);
-  
-  const handleAddLink = async (linkData: any) => {
+
+  const handleLinkSubmit = async (linkData: any) => {
     try {
-      if (school) {
-        await createLink({
-          ...linkData,
-          school_id: school.id
-        });
-        setIsAddingLink(false);
-        success('Link uğurla əlavə edildi');
-      }
-    } catch (error) {
-      console.error('Error adding link:', error);
-    }
-  };
-  
-  const handleUpdateLink = async (linkData: any) => {
-    try {
+      setIsLoading(true);
       if (editingLink) {
-        await updateLink(editingLink.id, linkData);
-        setEditingLink(null);
-        success('Link uğurla yeniləndi');
+        await onUpdate({ ...editingLink, ...linkData });
+        toast.success(t('linkUpdated'));
+      } else {
+        await onCreate({ ...linkData, school_id: school.id });
+        toast.success(t('linkAdded'));
       }
-    } catch (error) {
-      console.error('Error updating link:', error);
+      setShowLinkForm(false);
+      setEditingLink(null);
+      await fetchLinks();
+    } catch (error: any) {
+      console.error('Error submitting link:', error);
+      toast.error(t('errorSubmittingLink'));
+    } finally {
+      setIsLoading(false);
     }
-  };
-  
-  const handleDeleteLink = async (linkId: string) => {
-    try {
-      await deleteLink(linkId);
-      success('Link uğurla silindi');
-    } catch (error) {
-      console.error('Error deleting link:', error);
-    }
-  };
-  
-  const handleOpenLink = (url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
-  
-  const handleCloseDialog = () => {
-    setIsAddingLink(false);
-    setEditingLink(null);
-    onClose();
   };
 
+  const handleEdit = (link: SchoolLink) => {
+    setEditingLink(link);
+    setShowLinkForm(true);
+  };
+
+  const handleDelete = async (link: SchoolLink) => {
+    try {
+      setIsLoading(true);
+      await onDelete(link.id);
+      toast.success(t('linkDeleted'));
+      fetchLinks();
+    } catch (error: any) {
+      console.error('Error deleting link:', error);
+      toast.error(t('errorDeletingLink'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   return (
-    <Dialog open={isOpen} onOpenChange={handleCloseDialog}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
-          <DialogTitle>
-            {school?.name} - Linklər
-          </DialogTitle>
+          <DialogTitle>{t('schoolLinks')}</DialogTitle>
           <DialogDescription>
-            Məktəb üçün linklər və faydalı resurslar
+            {t('manageSchoolLinks')}
           </DialogDescription>
         </DialogHeader>
+
+        <div className="grid gap-4 py-4">
+          <Button onClick={() => setShowLinkForm(true)}>{t('addLink')}</Button>
+
+          <Table>
+            <TableCaption>{t('schoolLinksList')}</TableCaption>
+            <TableHead>
+              <TableRow>
+                <TableHead>{t('title')}</TableHead>
+                <TableHead>{t('url')}</TableHead>
+                <TableHead>{t('category')}</TableHead>
+                <TableHead className="text-right">{t('actions')}</TableHead>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {links.map((link) => (
+                <TableRow key={link.id}>
+                  <TableCell>{link.title}</TableCell>
+                  <TableCell><a href={link.url} target="_blank" rel="noopener noreferrer">{link.url}</a></TableCell>
+                  <TableCell>{link.category}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(link)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      {t('edit')}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(link)}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {t('delete')}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
+            {t('close')}
+          </Button>
+        </DialogFooter>
         
-        {isAddingLink || editingLink ? (
-          <LinkForm 
-            initialData={editingLink || undefined} 
-            onSubmit={editingLink ? handleUpdateLink : handleAddLink}
+        {showLinkForm && (
+          <LinkForm
+            editData={editingLink}
+            onSubmit={handleLinkSubmit}
             onCancel={() => {
-              setIsAddingLink(false);
+              setShowLinkForm(false);
               setEditingLink(null);
             }}
           />
-        ) : (
-          <>
-            <div className="flex justify-end mb-4">
-              <Button 
-                onClick={() => setIsAddingLink(true)} 
-                size="sm"
-              >
-                <Plus className="mr-2 h-4 w-4" /> Yeni Link Əlavə Et
-              </Button>
-            </div>
-            
-            {loading ? (
-              <div className="text-center py-4">Yüklənir...</div>
-            ) : links.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Bu məktəb üçün heç bir link əlavə edilməyib
-              </div>
-            ) : (
-              <LinkList 
-                links={links} 
-                onEdit={setEditingLink}
-                onDelete={handleDeleteLink}
-                onOpen={handleOpenLink}
-              />
-            )}
-          </>
         )}
       </DialogContent>
     </Dialog>
   );
 };
+
+export default SchoolLinksDialog;

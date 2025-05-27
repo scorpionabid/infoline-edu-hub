@@ -67,7 +67,7 @@ vi.mock('@/hooks/api/categories/useCategoriesQuery', () => ({
     createCategory: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-category-id', ...data })),
     updateCategory: vi.fn().mockResolvedValue(true),
     deleteCategory: vi.fn().mockResolvedValue(true),
-    refetch: vi.fn().mockResolvedValue(true),
+    refetch: vi.fn().mockResolvedValue({}),
     // Deprecated compatibility functions
     add: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-category-id', ...data })),
     update: vi.fn().mockResolvedValue(true),

@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Column, ColumnOption, ColumnType } from '@/types/column';
@@ -45,10 +44,10 @@ export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptio
           }))
         : undefined;
 
-      // Extract additional column field data (with fallbacks)
-      const description = data.description || '';
-      const section = data.section || '';
-      const color = data.color || '';
+      // Extract additional column field data (with fallbacks for missing DB fields)
+      const description = '';  // Database-də description field yoxdur
+      const section = '';      // Database-də section field yoxdur  
+      const color = '';        // Database-də color field yoxdur
       
       // Convert database column to our Column type
       return {

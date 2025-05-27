@@ -1,9 +1,7 @@
+import { supabase } from '@/lib/supabase';
+import { FullUserData, UserFormData } from '@/types/user';
 
-import { supabase } from '@/integrations/supabase/client';
-import { UserRole, normalizeRole } from '@/types/role';
-import { FullUserData, UserStatus } from '@/types/user';
-
-export async function fetchUserProfile(userId: string): Promise<FullUserData | null> {
+export const fetchUserDetails = async (userId: string): Promise<FullUserData | null> => {
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -12,66 +10,88 @@ export async function fetchUserProfile(userId: string): Promise<FullUserData | n
       .single();
 
     if (error) throw error;
-    
-    // Also get the user role
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    
-    if (roleError && roleError.code !== 'PGRST116') {
-      console.error('Error fetching user role:', roleError);
-    }
-    
-    // Create the full user data
+    if (!data) return null;
+
     return {
       ...data,
-      role: normalizeRole(roleData?.role) || 'user',
-      status: (data.status as UserStatus) || 'active',
+      role: data.role as 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin',
+      email: data.email,
+      full_name: data.full_name,
+      avatar_url: data.avatar_url,
+      region_id: data.region_id,
+      sector_id: data.sector_id,
+      school_id: data.school_id,
+      status: data.status,
+      language: data.language,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      last_sign_in_at: data.last_sign_in_at,
+      last_login: data.last_login,
+      name: data.name,
+      entityName: data.entityName,
+      notification_settings: data.notification_settings,
+      preferences: data.preferences,
+      avatar: data.avatar,
+      phone: data.phone,
+      position: data.position,
+      id: data.id
     };
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    console.error('Error fetching user details:', error);
     return null;
   }
-}
+};
 
-export async function updateUserProfile(userId: string, data: Partial<FullUserData>) {
+export const updateUserProfile = async (userId: string, updates: Partial<FullUserData>) => {
   try {
-    // First, update the profile
-    const { error: profileError } = await supabase
+    const { avatar_url, avatar, ...updateData } = updates;
+    const profileUpdates = {
+      ...updateData,
+      avatar: avatar_url || avatar
+    };
+
+    const { data, error } = await supabase
       .from('profiles')
-      .update({
-        full_name: data.full_name,
-        phone: data.phone,
-        position: data.position,
-        language: data.language,
-        avatar_url: data.avatar_url || data.avatar, // Use either avatar_url or avatar
-        status: data.status,
-      })
-      .eq('id', userId);
-    
-    if (profileError) throw profileError;
-    
-    // Then, if role is provided, update the user role
-    if (data.role) {
-      // Normalize the role to ensure it's a valid role
-      const normalizedRole = normalizeRole(data.role);
-      
-      // Upsert to user_roles table with user_id field
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .upsert({
-          user_id: userId,
-          role: normalizedRole as "superadmin" | "regionadmin" | "sectoradmin" | "schooladmin", // Type cast to match the expected enum
-        });
-      
-      if (roleError) throw roleError;
+      .update(profileUpdates)
+      .eq('id', userId)
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error updating profile:', error);
+      throw error;
     }
-    
-    return { data: true, error: null };
+
+    return data;
   } catch (error) {
     console.error('Error updating user profile:', error);
-    return { data: null, error };
+    throw error;
   }
-}
+};
+
+export const createUserProfile = async (userData: UserFormData) => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .insert([
+        {
+          email: userData.email,
+          full_name: userData.full_name,
+          role: userData.role,
+          region_id: userData.region_id,
+          sector_id: userData.sector_id,
+          school_id: userData.school_id,
+          status: userData.status,
+          language: userData.language,
+        },
+      ]);
+
+    if (error) {
+      console.error("Error creating user profile:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error("Error creating user profile:", error);
+    throw error;
+  }
+};

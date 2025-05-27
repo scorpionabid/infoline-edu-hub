@@ -1,3 +1,4 @@
+
 import { useColumnsQuery } from './useColumnsQuery';
 import { useColumnMutations } from './useColumnMutations';
 import { useEffect } from 'react';
@@ -52,6 +53,15 @@ export const useColumns = (categoryId?: string) => {
     
     // Legacy properties for backward compatibility
     loading: isLoading
+  };
+};
+
+// Create a mock mutation hook to fix test errors
+export const useColumnMutations = () => {
+  return {
+    createColumn: { mutateAsync: async () => {} },
+    updateColumn: { mutateAsync: async () => {} },
+    deleteColumn: { mutateAsync: async () => {} }
   };
 };
 

@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { CategoryItem } from '@/types/dashboard';
-import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Clock } from 'lucide-react';
 
 interface CategoryProgressListProps {
   categories: CategoryItem[];
@@ -12,80 +10,46 @@ interface CategoryProgressListProps {
 
 const CategoryProgressList: React.FC<CategoryProgressListProps> = ({ categories }) => {
   const { t } = useLanguage();
-  
-  const getBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-50 text-green-700 hover:bg-green-100';
-      case 'in-progress':
-        return 'bg-blue-50 text-blue-700 hover:bg-blue-100';
-      case 'not-started':
-        return 'bg-gray-50 text-gray-700 hover:bg-gray-100';
-      default:
-        return 'bg-gray-50 text-gray-700 hover:bg-gray-100';
-    }
-  };
-  
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return t('completed');
-      case 'in-progress':
-        return t('inProgress');
-      case 'not-started':
-        return t('notStarted');
-      default:
-        return status;
-    }
-  };
-  
+
   if (!categories || categories.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('categories')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-4 text-muted-foreground">
-            <p>{t('noCategories')}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="text-center py-8 text-muted-foreground">
+        <p>{t('noCategoriesFound')}</p>
+      </div>
     );
   }
-  
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('categories')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {categories.map((category) => (
-            <div key={category.id} className="space-y-2">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <h3 className="font-medium">{category.name}</h3>
-                  <Badge className={`ml-2 ${getBadgeVariant(category.status)}`} variant="outline">
-                    {getStatusText(category.status)}
-                  </Badge>
-                </div>
-                <span>{category.completionRate}%</span>
-              </div>
-              <Progress value={category.completionRate} className="h-2" />
+    <div className="space-y-4">
+      {categories.map((category) => {
+        const completionRate = category.completionRate || category.completion || 0;
+        
+        return (
+          <div key={category.id} className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex-1">
+              <h3 className="font-medium">{category.name}</h3>
               {category.description && (
-                <p className="text-sm text-muted-foreground">{category.description}</p>
-              )}
-              {category.deadline && (
-                <p className="text-xs text-muted-foreground">
-                  {t('deadline')}: {category.deadline}
+                <p className="text-sm text-muted-foreground mt-1">
+                  {category.description}
                 </p>
               )}
+              {category.deadline && (
+                <div className="flex items-center text-xs mt-2 text-amber-600">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {t('deadline')}: {category.deadline}
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            <div className="w-24">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{Math.round(completionRate)}%</span>
+              </div>
+              <Progress value={completionRate} className="h-2" />
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 };
 

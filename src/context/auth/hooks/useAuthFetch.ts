@@ -1,62 +1,55 @@
-
+import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { FullUserData, UserRole } from '@/types/auth';
+import { User } from '@/types/user';
+import { useAuthStore } from './useAuthStore';
+import { UserStatus } from '@/types/user';
 
-export const useAuthFetch = () => {
-  const fetchUserData = async (userId: string): Promise<FullUserData> => {
-    try {
-      // Get user data from profiles table with role information
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          user_roles!inner(
-            role,
-            region_id,
-            sector_id,
-            school_id
-          )
-        `)
-        .eq('id', userId)
-        .single();
+interface AuthFetchResult {
+  loading: boolean;
+  error: Error | null;
+  fetchData: <T>(
+    fn: (supabase: any) => Promise<T>,
+    setData: (data: T) => void
+  ) => Promise<void>;
+}
 
-      if (error) throw error;
+export const useAuthFetch = (): AuthFetchResult => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const updateUser = useAuthStore((state) => state.updateUser);
 
-      // Get auth user email
-      const { data: authUser } = await supabase.auth.getUser();
-      
-      const userRole = Array.isArray(data.user_roles) ? data.user_roles[0] : data.user_roles;
-      
-      const userData: FullUserData = {
-        id: data.id,
-        email: authUser.user?.email || data.email || '',
-        full_name: data.full_name,
-        name: data.full_name,
-        role: userRole.role as UserRole,
-        region_id: userRole.region_id,
-        regionId: userRole.region_id,
-        sector_id: userRole.sector_id,
-        sectorId: userRole.sector_id,
-        school_id: userRole.school_id,
-        schoolId: userRole.school_id,
-        phone: data.phone,
-        position: data.position,
-        language: data.language || 'az',
-        avatar: data.avatar,
-        status: data.status || 'active',
-        lastLogin: data.last_login,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        created_at: data.created_at,
-        updated_at: data.updated_at
-      };
+  const fetchData = useCallback(
+    async <T>(
+      fn: (supabase: any) => Promise<T>,
+      setData: (data: T) => void
+    ): Promise<void> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await fn(supabase);
+        setData(result);
+      } catch (err: any) {
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
-      return userData;
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      throw error;
-    }
+  const processUserData = (userData: any) => {
+    return {
+      ...userData,
+      status: (userData.status as UserStatus) || 'active',
+      full_name: userData.full_name || `${userData.name || ''} ${userData.surname || ''}`.trim(),
+      role: userData.role || 'user',
+      language: userData.language || 'az',
+    };
   };
 
-  return { fetchUserData };
+  return {
+    loading,
+    error,
+    fetchData,
+  };
 };

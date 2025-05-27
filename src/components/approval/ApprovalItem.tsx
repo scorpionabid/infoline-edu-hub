@@ -1,129 +1,62 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PendingApproval } from '@/types/dashboard';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/context/LanguageContext';
-import { format } from 'date-fns';
-import { CheckIcon, XIcon, EyeIcon } from 'lucide-react';
 
 interface ApprovalItemProps {
-  item: PendingApproval;
-  onApprove?: (id: string) => void;
-  onReject?: (id: string, reason: string) => void;
-  viewOnly?: boolean;
+  approval: {
+    id: string;
+    schoolName: string;
+    categoryName: string;
+    submittedAt?: string;
+    date: string;
+  };
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onView: (id: string) => void;
 }
 
-const ApprovalItem: React.FC<ApprovalItemProps> = ({
-  item,
-  onApprove,
-  onReject,
-  viewOnly = false
+const ApprovalItem: React.FC<ApprovalItemProps> = ({ 
+  approval, 
+  onApprove, 
+  onReject, 
+  onView 
 }) => {
   const { t } = useLanguage();
-  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
-
-  const handleReject = () => {
-    if (onReject && rejectReason.trim()) {
-      onReject(item.id, rejectReason);
-      setIsRejectDialogOpen(false);
-      setRejectReason('');
-    }
-  };
-
-  const formattedDate = (dateStr?: string) => {
-    if (!dateStr) return '';
-    
-    try {
-      return format(new Date(dateStr), 'PPp');
-    } catch (e) {
-      return dateStr;
-    }
-  };
 
   return (
-    <>
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h3 className="font-medium">{item.schoolName}</h3>
-              <p className="text-sm text-muted-foreground">{item.categoryName}</p>
-              <p className="text-xs text-muted-foreground">
-                {t('submittedAt')}: {formattedDate(item.submittedAt || item.createdAt)}
-              </p>
-            </div>
-            
-            <div className="flex space-x-2">
-              <Button size="sm" variant="outline">
-                <EyeIcon className="h-4 w-4 mr-1" />
-                {t('view')}
-              </Button>
-              
-              {!viewOnly && (
-                <>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => onApprove && onApprove(item.id)}
-                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                  >
-                    <CheckIcon className="h-4 w-4 mr-1" />
-                    {t('approve')}
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => setIsRejectDialogOpen(true)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <XIcon className="h-4 w-4 mr-1" />
-                    {t('reject')}
-                  </Button>
-                </>
-              )}
-            </div>
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <h3 className="font-semibold text-lg">{approval.schoolName}</h3>
+            <p className="text-sm text-muted-foreground">{approval.categoryName}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('submittedAt')}: {approval.submittedAt || approval.date}
+            </p>
           </div>
-        </CardContent>
-      </Card>
-
-      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('rejectSubmission')}</DialogTitle>
-            <DialogDescription>
-              {t('rejectSubmissionDescription')}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Textarea
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            placeholder={t('rejectReasonPlaceholder')}
-            className="min-h-[100px]"
-          />
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsRejectDialogOpen(false)}
+          <div>
+            <button 
+              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-700 mr-2"
+              onClick={() => onApprove(approval.id)}
             >
-              {t('cancel')}
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleReject}
-              disabled={!rejectReason.trim()}
+              {t('approve')}
+            </button>
+            <button 
+              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-700 mr-2"
+              onClick={() => onReject(approval.id)}
             >
               {t('reject')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+            </button>
+            <button 
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-700"
+              onClick={() => onView(approval.id)}
+            >
+              {t('view')}
+            </button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
