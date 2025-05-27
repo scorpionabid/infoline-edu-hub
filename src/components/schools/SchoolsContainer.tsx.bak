@@ -1,0 +1,512 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Input,
+  ScrollArea,
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui';
+import {
+  Plus,
+  Download,
+  RefreshCw,
+  FolderOpen,
+  Edit,
+  UserPlus,
+  Trash2,
+  Link as LinkIcon
+} from 'lucide-react';
+import SchoolPagination from './SchoolPagination';
+import AddSchoolDialog from './AddSchoolDialog';
+import EditSchoolDialog from './EditSchoolDialog';
+import DeleteSchoolDialog from './DeleteSchoolDialog';
+import SchoolAdminDialog from './SchoolAdminDialog';
+import SchoolLinksDialog from './school-links/SchoolLinksDialog';
+import { SchoolFilesDialog } from './school-files/SchoolFilesDialog';
+import { School, Region, Sector } from '@/types/supabase';
+import { useSchoolDialogs } from '@/hooks/schools/useSchoolDialogs';
+import { useSchoolFilters } from '@/hooks/schools/useSchoolFilters';
+import { useSchoolPagination } from '@/hooks/schools/useSchoolPagination';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { usePermissions } from '@/hooks/auth/usePermissions';
+import { useAuth } from '@/context/auth';
+import { toast } from 'sonner';
+
+// Alt komponentlər
+import SchoolHeaderContainer from './SchoolHeaderContainer';
+import SchoolFiltersContainer from './SchoolFiltersContainer';
+import SchoolTableContainer from './SchoolTableContainer';
+import SchoolDialogsContainer from './SchoolDialogsContainer';
+
+// Yardımçı funksiyalar
+import exportSchoolsToExcel from '@/utils/exportSchoolsToExcel';
+
+interface SchoolsContainerProps {
+  schools: School[];
+  regions: Region[];
+  sectors: Sector[];
+  isLoading: boolean;
+  onRefresh: () => void;
+  onCreate: (school: Omit<School, 'id'>) => Promise<void>;
+  onEdit: (school: School) => Promise<void>;
+  onDelete: (school: School) => Promise<void>;
+  onAssignAdmin: (schoolId: string, userId: string) => Promise<void>;
+  regionNames: { [key: string]: string };
+  sectorNames: { [key: string]: string };
+}
+
+// SchoolsContainer komponenti
+const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
+  schools,
+  regions,
+  sectors,
+  isLoading,
+  onRefresh,
+  onCreate,
+  onEdit,
+  onDelete,
+  onAssignAdmin,
+  regionNames,
+  sectorNames
+}) => {
+  const { t } = useLanguageSafe();
+  const { userRole, regionId } = usePermissions();
+  const { user } = useAuth();
+  
+  // useSchoolDialogs hook-unu istifadə etmək
+  const {
+    isAddDialogOpen,
+    isEditDialogOpen,
+    isDeleteDialogOpen,
+    isAdminDialogOpen,
+    isLinkDialogOpen,
+    isFileDialogOpen,
+    selectedSchool,
+    openAddDialog,
+    closeAddDialog,
+    closeEditDialog,
+    closeDeleteDialog,
+    closeAdminDialog,
+    closeLinkDialog,
+    closeFilesDialog,
+    handleEditDialogOpen,
+    handleDeleteDialogOpen,
+    handleAdminDialogOpen,
+    handleLinkDialogOpen,
+    handleFilesDialogOpen
+  } = useSchoolDialogs();
+  
+  // Əlavə state-lər
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  
+  // Filter hook-unu istifadə et
+  const {
+    searchTerm,
+    regionFilter,
+    sectorFilter,
+    statusFilter,
+    setSearchTerm,
+    setRegionFilter,
+    setSectorFilter,
+    setStatusFilter,
+    filteredSchools,
+    resetFilters
+  } = useSchoolFilters(Array.isArray(schools) ? schools : []);
+  
+  // Pagination hook-unu istifadə et
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    paginatedSchools,
+    goToPage
+  } = useSchoolPagination(filteredSchools);
+
+  function canManageSchools() {
+    return userRole === 'superadmin' || userRole === 'regionadmin' || userRole === 'sectoradmin';
+  }
+
+  function canEditSchool(school: School) {
+    if (userRole === 'superadmin') return true;
+    if (userRole === 'regionadmin' && school.region_id === regionId) return true;
+    return false;
+  }
+
+  function canDeleteSchool(school: School) {
+    if (userRole === 'superadmin') return true;
+    if (userRole === 'regionadmin' && school.region_id === regionId) return true;
+    return false;
+  }
+
+  function canAssignAdmin(school: School) {
+    if (userRole === 'superadmin') return true;
+    if (userRole === 'regionadmin' && school.region_id === regionId) return true;
+    return false;
+  }
+
+  const handleCreateSchool = async (schoolData: Omit<School, 'id'>) => {
+    try {
+      setIsSubmitting(true);
+      await onCreate(schoolData);
+      closeAddDialog(); // hook-dan gələn funksiyanı istifadə edirik
+      toast.success(t('schoolCreated'));
+    } catch (error) {
+      console.error("Məktəb yaratma xətası:", error);
+      toast.error(t('schoolCreationFailed'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditSchool = async (schoolData: School) => {
+    try {
+      setIsSubmitting(true);
+      await onEdit(schoolData);
+      closeEditDialog(); // hook-dan gələn funksiyanı istifadə edirik
+      toast.success(t('schoolUpdated'));
+    } catch (error) {
+      console.error("Məktəb redaktə xətası:", error);
+      toast.error(t('schoolUpdateFailed'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSchool = async (school: School) => {
+    try {
+      setIsSubmitting(true);
+      if (school) {
+        await onDelete(school);
+        closeDeleteDialog(); // hook-dan gələn funksiyanı istifadə edirik
+        toast.success(t('schoolDeleted'));
+      } else {
+        toast.error(t('schoolNotFound'));
+      }
+    } catch (error) {
+      console.error("Məktəb silmə xətası:", error);
+      toast.error(t('schoolDeletionFailed'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAssignAdmin = async (schoolId: string, userId: string) => {
+    try {
+      setIsSubmitting(true);
+      await onAssignAdmin(schoolId, userId);
+      closeAdminDialog(); // hook-dan gələn funksiyanı istifadə edirik
+      toast.success(t('adminAssigned'));
+    } catch (error) {
+      console.error("Admin təyin etmə xətası:", error);
+      toast.error(t('adminAssignmentFailed'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // filterSchools funksionalı artıq useSchoolFilters hook-undan gəlir
+
+  // Link və File dialog funksiyaları artıq useSchoolDialogs hook-undan gəlir
+  
+  // Export to Excel
+  const handleExportToExcel = () => {
+    if (!schools || schools.length === 0) {
+      toast.warning(t('noSchoolsToExport') || 'İxrac etmək üçün məktəb tapılmadı');
+      return;
+    }
+
+    try {
+      // Bu artıq useSchoolFilters hook-undan avtomatik olaraq filteredSchools kimi alınır
+      exportSchoolsToExcel(filteredSchools, {
+        fileName: 'infoLine_məktəblər.xlsx',
+        sheetName: t('schools') || 'Məktəblər'
+      });
+      
+      toast.success(t('exportSuccess') || 'Məktəblər uğurla ixrac edildi');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(t('exportError') || 'İxrac zamanı xəta baş verdi');
+    }
+  };
+  
+  // Ensure regions and sectors are arrays to prevent length issues
+  const regionsArray = Array.isArray(regions) ? regions : [];
+  const sectorsArray = Array.isArray(sectors) ? sectors : [];
+  // filteredSchools artıq useSchoolFilters hook-undan gəlir
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header controls - responsive layout */}
+      <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 gap-4">
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            onClick={openAddDialog} 
+            disabled={isLoading || !canManageSchools()}
+            className="text-xs sm:text-sm"
+          >
+            <Plus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{t('addSchool')}</span>
+            <span className="sm:hidden">{t('add')}</span>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            onClick={handleExportToExcel}
+            disabled={isLoading || filteredSchools.length === 0}
+            className="text-xs sm:text-sm"
+          >
+            <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{t('export')}</span>
+            <span className="sm:hidden">{t('export')}</span>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            onClick={onRefresh}
+            disabled={isLoading}
+            className="text-xs sm:text-sm"
+          >
+            <RefreshCw className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{t('refresh')}</span>
+            <span className="sm:hidden">{t('refresh')}</span>
+          </Button>
+        </div>
+        
+        {/* Filters - responsive grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:flex sm:flex-wrap lg:gap-2">
+          <Input
+            type="text"
+            placeholder={t('searchSchools')}
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="text-sm"
+          />
+          <Select value={regionFilter || 'all'} onValueChange={setRegionFilter}>
+            <SelectTrigger className="w-full sm:w-[140px] lg:w-[180px]">
+              <SelectValue placeholder={t('filterByRegion')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('allRegions')}</SelectItem>
+              {regionsArray.map(region => (
+                <SelectItem key={region.id} value={region.id || `region-${Math.random().toString(36).substr(2, 9)}`}>
+                  {regionNames[region.id] || region.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={sectorFilter || 'all'} onValueChange={setSectorFilter}>
+            <SelectTrigger className="w-full sm:w-[140px] lg:w-[180px]">
+              <SelectValue placeholder={t('filterBySector')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('allSectors')}</SelectItem>
+              {sectorsArray.map(sector => (
+                <SelectItem key={sector.id} value={sector.id || `sector-${Math.random().toString(36).substr(2, 9)}`}>
+                  {sectorNames[sector.id] || sector.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter || 'all'} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[120px] lg:w-[150px]">
+              <SelectValue placeholder={t('filterByStatus')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('allStatuses')}</SelectItem>
+              <SelectItem value="active">{t('active')}</SelectItem>
+              <SelectItem value="inactive">{t('inactive')}</SelectItem>
+              <SelectItem value="blocked">{t('blocked')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      {/* Table - with horizontal scroll on mobile */}
+      <div className="rounded-md border">
+        <ScrollArea className="w-full">
+          <Table>
+            <TableCaption className="text-xs sm:text-sm">{t('schoolsList')}</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs sm:text-sm">{t('schoolName')}</TableHead>
+                <TableHead className="text-xs sm:text-sm hidden sm:table-cell">{t('region')}</TableHead>
+                <TableHead className="text-xs sm:text-sm hidden sm:table-cell">{t('sector')}</TableHead>
+                <TableHead className="text-xs sm:text-sm">{t('status')}</TableHead>
+                <TableHead className="text-xs sm:text-sm text-right">{t('actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedSchools.map(school => (
+                <TableRow key={school.id} className={school.status === 'active' ? '' : 'opacity-60'}>
+                  <TableCell className="text-xs sm:text-sm font-medium">
+                    <div>
+                      <div>{school.name}</div>
+                      {/* Show region/sector on mobile under school name */}
+                      <div className="text-xs text-muted-foreground sm:hidden">
+                        {regionNames[school.region_id]} • {sectorNames[school.sector_id]}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{regionNames[school.region_id] || '-'}</TableCell>
+                  <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{sectorNames[school.sector_id] || '-'}</TableCell>
+                  <TableCell className="text-xs sm:text-sm">
+                    {school.status === 'active' 
+                      ? <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-green-100 text-green-800 text-xs">Aktiv</span>
+                      : <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-red-100 text-red-800 text-xs">Deaktiv</span>
+                    }
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-6 w-6 sm:h-8 sm:w-8 p-0">
+                          <span className="sr-only">{t('openMenu')}</span>
+                          <span className="text-sm">···</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuLabel className="text-xs">{t('actions')}</DropdownMenuLabel>
+                        <DropdownMenuItem 
+                          onClick={() => handleLinkDialogOpen(school)}
+                          className="text-xs"
+                        >
+                          <LinkIcon className="mr-2 h-3 w-3" /> Linklər
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleFilesDialogOpen(school)}
+                          className="text-xs"
+                        >
+                          <FolderOpen className="mr-2 h-3 w-3" /> Fayllar
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => handleEditDialogOpen(school)} 
+                          disabled={!canEditSchool(school)}
+                          className="text-xs"
+                        >
+                          <Edit className="mr-2 h-3 w-3" /> {t('edit')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleAdminDialogOpen(school)} 
+                          disabled={!canAssignAdmin(school)}
+                          className="text-xs"
+                        >
+                          <UserPlus className="mr-2 h-3 w-3" /> {t('assignAdmin')}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteDialogOpen(school)} 
+                          disabled={!canDeleteSchool(school)}
+                          className="text-xs text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-3 w-3" /> {t('delete')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {filteredSchools.length > 0 && (
+            <SchoolPagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={goToPage}
+            />
+          )}
+        </ScrollArea>
+      </div>
+      
+      {/* Dialogs */}
+      {isAddDialogOpen && (
+        <AddSchoolDialog
+          isOpen={isAddDialogOpen}
+          onClose={closeAddDialog}
+          regions={regionsArray}
+          sectors={sectorsArray}
+          onSubmit={handleCreateSchool}
+          regionNames={regionNames}
+          sectorNames={sectorNames}
+          isSubmitting={isSubmitting}
+        />
+      )}
+      
+      {isEditDialogOpen && selectedSchool && (
+        <EditSchoolDialog
+          isOpen={isEditDialogOpen}
+          onClose={closeEditDialog}
+          school={selectedSchool}
+          regions={regionsArray}
+          sectors={sectorsArray}
+          onSubmit={handleEditSchool}
+          regionNames={regionNames}
+          sectorNames={sectorNames}
+          isSubmitting={isSubmitting}
+        />
+      )}
+      
+      {isDeleteDialogOpen && selectedSchool && (
+        <DeleteSchoolDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={closeDeleteDialog}
+          school={selectedSchool}
+          onConfirm={() => handleDeleteSchool(selectedSchool)}
+          isSubmitting={isSubmitting}
+        />
+      )}
+      
+      {isAdminDialogOpen && selectedSchool && (
+        <SchoolAdminDialog
+          isOpen={isAdminDialogOpen}
+          onClose={closeAdminDialog}
+          school={selectedSchool}
+          onSubmit={handleAssignAdmin}
+          isSubmitting={isSubmitting}
+        />
+      )}
+      
+      {/* Link Management Dialog */}
+      {isLinkDialogOpen && selectedSchool && (
+        <SchoolLinksDialog
+          isOpen={isLinkDialogOpen}
+          onClose={closeLinkDialog}
+          school={selectedSchool}
+          links={[]}
+          onDelete={async (linkId) => { console.log('Deleting link', linkId); }}
+          onCreate={async (linkData) => { console.log('Creating link', linkData); }}
+          onUpdate={async (linkData) => { console.log('Updating link', linkData); }}
+          fetchLinks={async () => { console.log('Fetching links'); }}
+        />
+      )}
+      
+      {/* File Management Dialog */}
+      {isFileDialogOpen && selectedSchool && (
+        <SchoolFilesDialog
+          isOpen={isFileDialogOpen}
+          onClose={closeFilesDialog}
+          school={selectedSchool}
+          userRole={user?.role || 'viewer'}
+        />
+      )}
+    </div>
+  );
+};
+
+export default SchoolsContainer;

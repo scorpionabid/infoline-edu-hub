@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { School, Region, Sector } from '@/types/supabase';
 import { useSchoolDialogs } from '@/hooks/schools/useSchoolDialogs';
 import { useSchoolFilters } from '@/hooks/schools/useSchoolFilters';
@@ -83,7 +83,7 @@ const SchoolsContainerRefactored: React.FC<SchoolsContainerProps> = ({
   // Filter hook-u
   const filters = useSchoolFilters(Array.isArray(schools) ? schools : []);
   
-  // Pagination məntiqini işlədək
+  // Pagination hook-u
   const pagination = useSchoolPagination(filters.filteredSchools);
   
   // Məktəb ID-lərini əldə edirik

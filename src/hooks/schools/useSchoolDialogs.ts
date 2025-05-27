@@ -1,13 +1,14 @@
 
 import { useState, useCallback } from 'react';
-import { School } from '@/types/school';
-import { School as SupabaseSchool } from '@/types/supabase';
+import { School } from '@/types/supabase';
 
 interface UseSchoolDialogsReturn {
   isDeleteDialogOpen: boolean;
   isEditDialogOpen: boolean;
   isAddDialogOpen: boolean;
   isAdminDialogOpen: boolean;
+  isLinkDialogOpen: boolean;
+  isFileDialogOpen: boolean;
   selectedSchool: School | null;
   selectedAdmin: School | null;
   openDeleteDialog: (school: School) => void;
@@ -18,9 +19,15 @@ interface UseSchoolDialogsReturn {
   closeAddDialog: () => void;
   openAdminDialog: (school: School) => void;
   closeAdminDialog: () => void;
-  handleEditDialogOpen: (school: SupabaseSchool) => void;
-  handleAdminDialogOpen: (school: SupabaseSchool) => void;
-  handleDeleteDialogOpen: (school: SupabaseSchool) => void;
+  openLinkDialog: (school: School) => void;
+  closeLinkDialog: () => void;
+  openFilesDialog: (school: School) => void;
+  closeFilesDialog: () => void;
+  handleEditDialogOpen: (school: School) => void;
+  handleAdminDialogOpen: (school: School) => void;
+  handleDeleteDialogOpen: (school: School) => void;
+  handleLinkDialogOpen: (school: School) => void;
+  handleFilesDialogOpen: (school: School) => void;
 }
 
 export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
@@ -28,6 +35,8 @@ export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
   const [selectedAdmin, setSelectedAdmin] = useState<School | null>(null);
 
@@ -75,23 +84,57 @@ export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
     }, 300);
   }, []);
 
-  const handleEditDialogOpen = useCallback((school: SupabaseSchool) => {
-    openEditDialog(school as School);
+  const handleEditDialogOpen = useCallback((school: School) => {
+    openEditDialog(school);
   }, [openEditDialog]);
 
-  const handleAdminDialogOpen = useCallback((school: SupabaseSchool) => {
-    openAdminDialog(school as School);
+  const handleAdminDialogOpen = useCallback((school: School) => {
+    openAdminDialog(school);
   }, [openAdminDialog]);
 
-  const handleDeleteDialogOpen = useCallback((school: SupabaseSchool) => {
-    openDeleteDialog(school as School);
+  const handleDeleteDialogOpen = useCallback((school: School) => {
+    openDeleteDialog(school);
   }, [openDeleteDialog]);
+
+  const openLinkDialog = useCallback((school: School) => {
+    setSelectedSchool(school);
+    setIsLinkDialogOpen(true);
+  }, []);
+
+  const closeLinkDialog = useCallback(() => {
+    setIsLinkDialogOpen(false);
+    setTimeout(() => {
+      setSelectedSchool(null);
+    }, 300);
+  }, []);
+
+  const openFilesDialog = useCallback((school: School) => {
+    setSelectedSchool(school);
+    setIsFileDialogOpen(true);
+  }, []);
+
+  const closeFilesDialog = useCallback(() => {
+    setIsFileDialogOpen(false);
+    setTimeout(() => {
+      setSelectedSchool(null);
+    }, 300);
+  }, []);
+
+  const handleLinkDialogOpen = useCallback((school: School) => {
+    openLinkDialog(school);
+  }, [openLinkDialog]);
+
+  const handleFilesDialogOpen = useCallback((school: School) => {
+    openFilesDialog(school);
+  }, [openFilesDialog]);
 
   return {
     isDeleteDialogOpen,
     isEditDialogOpen,
     isAddDialogOpen,
     isAdminDialogOpen,
+    isLinkDialogOpen,
+    isFileDialogOpen,
     selectedSchool,
     selectedAdmin,
     openDeleteDialog,
@@ -102,8 +145,14 @@ export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
     closeAddDialog,
     openAdminDialog,
     closeAdminDialog,
+    openLinkDialog,
+    closeLinkDialog,
+    openFilesDialog,
+    closeFilesDialog,
     handleEditDialogOpen,
     handleAdminDialogOpen,
-    handleDeleteDialogOpen
+    handleDeleteDialogOpen,
+    handleLinkDialogOpen,
+    handleFilesDialogOpen
   };
 };
