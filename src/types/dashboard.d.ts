@@ -124,6 +124,13 @@ export interface SuperAdminDashboardData {
   sectorStats: SectorStat[];
   schoolStats: SchoolStat[];
   notifications?: any[];
+  completion?: {
+    percentage: number;
+    total: number;
+    completed: number;
+  } | number | null;
+  completionRate?: number;
+  categoryData?: CategoryItem[];
 }
 
 export interface RegionAdminDashboardData {

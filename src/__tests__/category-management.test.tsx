@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -5,7 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import Categories from '@/pages/Categories';
 import { mockUseCategoriesQuery, mockAuthStore, mockStorage } from './test-utils';
-import { useCategoriesQuery } from '@/hooks/categories/useCategoriesQuery';
+import useCategoriesQuery from '@/hooks/categories/useCategoriesQuery';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
 vi.mock('@/hooks/categories/useCategoriesQuery');
@@ -45,7 +46,6 @@ describe('Category Management', () => {
   it('should call createCategory with form data', async () => {
     const createCategoryMock = vi.fn().mockResolvedValue({ id: 'new-category-id', name: 'Test Category' });
     
-    // Mock the hook with proper return value
     const mockHook = {
       ...mockUseCategoriesQuery(),
       createCategory: createCategoryMock
@@ -93,9 +93,12 @@ describe('Category Management', () => {
     
     await userEvent.click(submitButton);
     
-    expect(updateCategoryMock).toHaveBeenCalledWith('category-1', {
-      name: 'Updated Category',
-      description: 'Updated Description'
+    expect(updateCategoryMock).toHaveBeenCalledWith({
+      id: 'category-1',
+      data: {
+        name: 'Updated Category',
+        description: 'Updated Description'
+      }
     });
   });
 

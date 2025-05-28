@@ -1,40 +1,100 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import { Category, CategoryFilter } from "@/types/category";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-/**
- * Hook to fetch categories with optional filtering
- */
-const useCategoriesQuery = (filters?: Partial<CategoryFilter>) => {
-  const query = useQuery({
-    queryKey: ['categories', filters],
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CreateCategoryData {
+  name: string;
+  description?: string;
+}
+
+interface UpdateCategoryData {
+  name: string;
+  description?: string;
+}
+
+const useCategoriesQuery = () => {
+  const queryClient = useQueryClient();
+
+  const { data: categories, isLoading, error } = useQuery({
+    queryKey: ['categories'],
     queryFn: async () => {
-      let query = supabase.from('categories').select('*');
-      
-      // Apply filters if provided
-      if (filters) {
-        if (filters.search && filters.search.trim()) {
-          query = query.ilike('name', `%${filters.search.trim()}%`);
-        }
-        
-        if (filters.status && filters.status !== '') {
-          query = query.eq('status', filters.status);
-        }
-        
-        if (filters.assignment && filters.assignment !== '') {
-          query = query.eq('assignment', filters.assignment);
-        }
-      }
-      
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data as Category[];
     }
   });
-  
-  return query;
+
+  const createCategory = useMutation({
+    mutationFn: async (categoryData: CreateCategoryData) => {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert(categoryData)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    }
+  });
+
+  const updateCategory = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateCategoryData }) => {
+      const { data: updatedData, error } = await supabase
+        .from('categories')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return updatedData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    }
+  });
+
+  const deleteCategory = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    }
+  });
+
+  return {
+    categories: categories || [],
+    isLoading,
+    error,
+    createCategory: createCategory.mutateAsync,
+    updateCategory: ({ id, data }: { id: string; data: UpdateCategoryData }) => 
+      updateCategory.mutateAsync({ id, data }),
+    deleteCategory: deleteCategory.mutateAsync,
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['categories'] })
+  };
 };
 
 export default useCategoriesQuery;
