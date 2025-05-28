@@ -1,9 +1,16 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { StatusCardsProps } from '@/types/dashboard';
 import { useLanguage } from '@/context/LanguageContext';
 import { CheckCircle, Clock, XCircle, BarChart3 } from 'lucide-react';
+
+interface StatusCardsProps {
+  completedCount: number;
+  pendingCount: number;
+  rejectedCount: number;
+  totalCount: number;
+  isLoading?: boolean;
+}
 
 const StatusCards: React.FC<StatusCardsProps> = ({
   completedCount,

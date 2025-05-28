@@ -32,15 +32,15 @@ const SuperAdminDashboard = ({ data }) => {
   ];
 
   const dashboardStats: DashboardFormStats = {
-    total: data.approvedEntries + data.pendingEntries + data.rejectedEntries || 0,
+    completed: data.approvedEntries || 0,
     approved: data.approvedEntries || 0,
     pending: data.pendingEntries || 0,
     rejected: data.rejectedEntries || 0,
     dueSoon: data.dueSoonEntries || 0,
     overdue: data.overdueEntries || 0,
     draft: data.draftEntries || 0,
-    completed: data.approvedEntries || 0,
-    percentage: data.completionRate || 0
+    percentage: data.completionRate || 0,
+    completion_rate: data.completionRate || 0
   };
 
   return (

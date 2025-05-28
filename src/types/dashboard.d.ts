@@ -40,6 +40,7 @@ export interface CategoryItem {
   completionRate?: number;
   deadline?: string;
   priority?: number;
+  columnCount?: number;
 }
 
 export interface FormItem {
