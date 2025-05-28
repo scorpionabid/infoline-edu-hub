@@ -67,7 +67,7 @@ const Dashboard: React.FC = () => {
       } else if (isAuthenticated && user && !user.role) {
         console.error("[Dashboard.tsx] useEffect: User exists but role is missing. Trying to refresh session.");
         // Try to refresh the session to get the role
-        useAuthStore.getState().refreshSession();
+        useAuthStore.getState().initializeAuth(true);
       }
     }
   }, [isAuthenticated, isLoading, user, navigate, location]);

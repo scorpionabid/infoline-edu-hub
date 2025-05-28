@@ -28,7 +28,10 @@ const Regions = () => {
   const resetFilters = regionsStore(state => state.resetFilters);
   const handleAddRegion = regionsStore(state => state.handleAddRegion);
   const handleUpdateRegion = regionsStore(state => state.handleUpdateRegion);
-  const handleDeleteRegion = regionsStore(state => state.handleDeleteRegion);
+  const handleDeleteRegion = useCallback(async (region: EnhancedRegion) => {
+    const { t } = useLanguage();
+    return await regionsStore.getState().handleDeleteRegion(region.id, t);
+  }, []);
   const fetchRegions = regionsStore(state => state.fetchRegions);
 
   const [openRegionDialog, setOpenRegionDialog] = useState(false);
@@ -159,9 +162,7 @@ const Regions = () => {
         onResetFilters={resetFilters}
       />
       
-      <RegionTable
-        regions={regions}
-        loading={loading}
+      <RegionTable 
         onEdit={handleOpenRegionDialog}
         onDelete={handleDeleteRegion}
         onAssignAdmin={(region) => handleOpenAdminDialog(region, 'existing')}
