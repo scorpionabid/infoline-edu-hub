@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
-import { SchoolStat, adaptToSchoolStat } from '@/types/school';
+import { SchoolStat } from '@/types/dashboard';
 
 export interface SchoolStatsCardProps {
   stats: SchoolStat[];
@@ -11,18 +11,15 @@ export interface SchoolStatsCardProps {
 const SchoolStatsCard: React.FC<SchoolStatsCardProps> = ({ stats }) => {
   const { t } = useLanguage();
   
-  // Ensure proper typing for stats
-  const normalizedStats = stats.map(stat => adaptToSchoolStat(stat));
-  
   // Məktəb statistikalarını hesabla
-  const activeSchools = normalizedStats.filter(s => s.status === 'active').length;
-  const totalCompletionRate = normalizedStats.length > 0 
-    ? normalizedStats.reduce((sum, s) => sum + (s.completionRate || 0), 0) / normalizedStats.length 
+  const activeSchools = stats.filter(s => s.status === 'active').length;
+  const totalCompletionRate = stats.length > 0 
+    ? stats.reduce((sum, s) => sum + (s.completionRate || s.completion_rate || 0), 0) / stats.length 
     : 0;
     
-  const pendingForms = normalizedStats.reduce((sum, s) => sum + (s.pendingForms || 0), 0);
-  const completedForms = normalizedStats.reduce((sum, s) => sum + (s.formsCompleted || 0), 0);
-  const totalForms = normalizedStats.reduce((sum, s) => sum + (s.totalForms || 0), 0);
+  const pendingForms = stats.reduce((sum, s) => sum + (s.pendingForms || s.pendingCount || 0), 0);
+  const completedForms = stats.reduce((sum, s) => sum + (s.formsCompleted || 0), 0);
+  const totalForms = stats.reduce((sum, s) => sum + (s.totalForms || 0), 0);
 
   return (
     <Card>
@@ -36,7 +33,7 @@ const SchoolStatsCard: React.FC<SchoolStatsCardProps> = ({ stats }) => {
               <p className="text-sm font-medium text-muted-foreground">
                 {t('totalSchools')}
               </p>
-              <p className="text-2xl font-bold">{normalizedStats.length}</p>
+              <p className="text-2xl font-bold">{stats.length}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">

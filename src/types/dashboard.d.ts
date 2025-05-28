@@ -37,6 +37,7 @@ export interface CategoryItem {
   status: string;
   completion_rate?: number;
   completion?: number;
+  completionRate?: number;
   deadline?: string;
   priority?: number;
 }
@@ -131,6 +132,22 @@ export interface SuperAdminDashboardData {
   } | number | null;
   completionRate?: number;
   categoryData?: CategoryItem[];
+  users: {
+    active: number;
+    total: number;
+  };
+  regionCount: number;
+  sectorCount: number;
+  schoolCount: number;
+  entryCount?: {
+    total: number;
+    approved: number;
+    pending: number;
+    rejected: number;
+    dueSoon: number;
+    overdue: number;
+    draft: number;
+  };
 }
 
 export interface RegionAdminDashboardData {

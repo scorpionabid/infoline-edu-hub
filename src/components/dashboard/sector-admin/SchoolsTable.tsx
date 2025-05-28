@@ -50,7 +50,7 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools }) => {
                   {Math.round(school.completionRate)}%
                 </TableCell>
                 <TableCell className="text-right">
-                  {school.pendingForms}
+                  {school.pendingForms || school.pendingCount || 0}
                 </TableCell>
                 <TableCell className="text-right">
                   {school.lastUpdate ? format(new Date(school.lastUpdate), 'dd.MM.yyyy') : '-'}

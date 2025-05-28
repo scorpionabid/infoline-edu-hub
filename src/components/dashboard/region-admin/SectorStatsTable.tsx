@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Table, 
@@ -12,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, BarChart } from 'lucide-react';
 import { SectorStat } from '@/types/dashboard';
 import { useLanguage } from '@/context/LanguageContext';
-import { useNavigate } from 'react-router-dom';  // Fixed import
+import { useNavigate } from 'react-router-dom';
 
 interface SectorStatsTableProps {
   sectors: SectorStat[];
@@ -25,8 +26,8 @@ const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors, showAction
 
   // Sort sectors by completion rate in descending order
   const sortedSectors = [...sectors].sort((a, b) => {
-    const completionA = a.completionRate ?? a.completion ?? 0;
-    const completionB = b.completionRate ?? b.completion ?? 0;
+    const completionA = a.completionRate ?? a.completion_rate ?? a.completion ?? 0;
+    const completionB = b.completionRate ?? b.completion_rate ?? b.completion ?? 0;
     return completionB - completionA;
   });
 
@@ -55,7 +56,7 @@ const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors, showAction
         </TableHeader>
         <TableBody>
           {sortedSectors.map((sector) => {
-            const completionRate = sector.completionRate ?? sector.completion ?? 0;
+            const completionRate = sector.completionRate ?? sector.completion_rate ?? sector.completion ?? 0;
             
             return (
               <TableRow key={sector.id}>
@@ -78,7 +79,7 @@ const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors, showAction
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="text-center">{sector.schoolCount}</TableCell>
+                <TableCell className="text-center">{sector.schoolCount || sector.total_schools}</TableCell>
                 {showActions && (
                   <TableCell className="text-right">
                     <Button

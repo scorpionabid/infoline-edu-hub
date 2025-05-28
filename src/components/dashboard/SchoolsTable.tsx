@@ -40,7 +40,7 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools, onViewSchool }) =>
       case 'inactive':
         return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Inactive</Badge>;
       default:
-        return null;
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Unknown</Badge>;
     }
   };
   

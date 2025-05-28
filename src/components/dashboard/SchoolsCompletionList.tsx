@@ -34,8 +34,8 @@ const SchoolsCompletionList: React.FC<SchoolsCompletionListProps> = ({ schools, 
             </div>
             <Progress value={school.completionRate} className="h-1.5" />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{t('totalEntries')}: {school.totalEntries || 0}</span>
-              <span>{t('pending')}: {school.pendingEntries || school.pendingCount || 0}</span>
+              <span>{t('totalEntries')}: {school.totalEntries || school.total_entries || 0}</span>
+              <span>{t('pending')}: {school.pendingEntries || school.pending_entries || school.pendingCount || 0}</span>
             </div>
           </div>
         ))
