@@ -22,6 +22,7 @@ export type ColumnType =
   | 'richtext';
 
 export interface ColumnOption {
+  id?: string;
   value: string;
   label: string;
 }
@@ -54,6 +55,22 @@ export interface Column {
   order_index?: number;
   created_at?: string;
   updated_at?: string;
+  section?: string;
+}
+
+export interface ColumnFormValues {
+  name: string;
+  type: ColumnType;
+  category_id: string;
+  is_required: boolean;
+  placeholder?: string;
+  help_text?: string;
+  default_value?: string;
+  description?: string;
+  section?: string;
+  validation?: ColumnValidation;
+  options?: ColumnOption[];
+  order_index?: number;
 }
 
 export interface ColumnTypeDefinition {

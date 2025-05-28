@@ -9,11 +9,13 @@ import { useLanguage } from '@/context/LanguageContext';
 
 export interface ColumnTypeSelectorProps {
   control: Control<any>;
+  selectedType?: ColumnType;
   onTypeChange: (type: ColumnType) => void;
 }
 
 const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({
   control,
+  selectedType,
   onTypeChange
 }) => {
   const { t } = useLanguage();
@@ -31,6 +33,7 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({
               onTypeChange(value as ColumnType);
             }} 
             defaultValue={field.value}
+            value={selectedType || field.value}
           >
             <FormControl>
               <SelectTrigger>

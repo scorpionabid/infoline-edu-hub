@@ -1,143 +1,160 @@
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
-import { useLanguage } from '@/context/LanguageContext';
-import { Category } from '@/types/category';
-import { Column, ColumnType } from '@/types/column';
-import BasicColumnFields from './columnDialog/BasicColumnFields';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Column } from '@/types/column';
+import { useColumnForm } from '@/hooks/columns/useColumnForm';
 import ColumnTypeSelector from './columnDialog/ColumnTypeSelector';
 import OptionsField from './columnDialog/OptionsField';
-import ValidationFields from './columnDialog/ValidationFields';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ColumnFormDialogProps {
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => Promise<void>;
-  column?: Column;
-  categories: Category[];
+  column?: Column | null;
+  categoryId?: string;
+  onSave: (columnData: any) => Promise<boolean>;
 }
 
-const columnSchema = z.object({
-  name: z.string().min(1, 'Sütun adı tələb olunur'),
-  type: z.string().min(1, 'Tip tələb olunur'),
-  category_id: z.string().min(1, 'Kateqoriya tələb olunur'),
-  description: z.string().optional(),
-  required: z.boolean().default(false),
-  options: z.array(z.string()).optional(),
-  validation: z.object({
-    min: z.number().optional(),
-    max: z.number().optional(),
-    pattern: z.string().optional()
-  }).optional()
-});
-
-type ColumnFormValues = z.infer<typeof columnSchema>;
-
 const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
-  isOpen,
+  open,
   onClose,
-  onSubmit,
   column,
-  categories
+  categoryId,
+  onSave
 }) => {
   const { t } = useLanguage();
-  const [selectedType, setSelectedType] = React.useState<ColumnType>('text');
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const {
+    form,
+    isLoading,
+    selectedType,
+    onTypeChange,
+    options,
+    addOption,
+    removeOption,
+    newOption,
+    setNewOption,
+    onSubmit,
+    isEditMode
+  } = useColumnForm({ column, categoryId, onSave });
 
-  const form = useForm<ColumnFormValues>({
-    resolver: zodResolver(columnSchema),
-    defaultValues: {
-      name: column?.name || '',
-      type: column?.type || 'text',
-      category_id: column?.category_id || '',
-      description: column?.description || '',
-      required: column?.required || false,
-      options: column?.options || [],
-      validation: column?.validation || {}
-    }
-  });
-
-  const { control, handleSubmit, watch, formState: { errors }, reset } = form;
-
-  React.useEffect(() => {
-    if (column) {
-      reset({
-        name: column.name,
-        type: column.type,
-        category_id: column.category_id,
-        description: column.description || '',
-        required: column.required || false,
-        options: column.options || [],
-        validation: column.validation || {}
-      });
-      setSelectedType(column.type as ColumnType);
-    }
-  }, [column, reset]);
-
-  const handleFormSubmit = async (data: ColumnFormValues) => {
-    try {
-      setIsSubmitting(true);
-      await onSubmit(data);
+  const handleSubmit = async (data: any) => {
+    const success = await onSubmit(data);
+    if (success) {
       onClose();
-      reset();
-    } catch (error) {
-      console.error('Column form submit error:', error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  const handleTypeChange = (type: ColumnType) => {
-    setSelectedType(type);
-    form.setValue('type', type);
-  };
+  const showOptionsField = ['select', 'radio', 'checkbox', 'multiselect'].includes(selectedType);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
-            {column ? t('editColumn') : t('addColumn')}
+            {isEditMode ? t('editColumn') : t('createColumn')}
           </DialogTitle>
+          <DialogDescription>
+            {isEditMode ? t('editColumnDescription') : t('createColumnDescription')}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-            <BasicColumnFields
-              form={form}
-              control={control}
-              errors={errors}
-              watch={watch}
-              categories={categories}
-              selectedType={selectedType}
-              onTypeChange={handleTypeChange}
-              isEditMode={!!column}
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('columnName')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t('enterColumnName')} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
-            <ColumnTypeSelector
+            <ColumnTypeSelector 
+              control={form.control}
               selectedType={selectedType}
-              onTypeChange={handleTypeChange}
+              onTypeChange={onTypeChange}
             />
 
-            {(selectedType === 'select' || selectedType === 'radio') && (
-              <OptionsField control={control} />
+            {showOptionsField && (
+              <OptionsField
+                control={form.control}
+                options={options}
+                newOption={newOption}
+                setNewOption={setNewOption}
+                addOption={addOption}
+                removeOption={(id: string) => removeOption(id)}
+              />
             )}
 
-            {(selectedType === 'number' || selectedType === 'text') && (
-              <ValidationFields control={control} type={selectedType} />
-            )}
+            <FormField
+              control={form.control}
+              name="placeholder"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('placeholder')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t('enterPlaceholder')} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="help_text"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('helpText')}</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder={t('enterHelpText')} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="is_required"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>{t('required')}</FormLabel>
+                  </div>
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
                 {t('cancel')}
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('saving') : (column ? t('update') : t('create'))}
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? t('saving') : (isEditMode ? t('update') : t('create'))}
               </Button>
             </DialogFooter>
           </form>

@@ -1,506 +1,120 @@
-/**
- * Kateqoriya və Sütun İdarəetməsi Testləri
- * 
- * Bu test faylı, İnfoLine tətbiqinin Kateqoriya və Sütun idarəetməsini yoxlayır:
- * - Kateqoriya yaratma və redaktə
- * - Sütun yaratma və redaktə
- * - Sütun tipləri və formatlama
- * - Kateqoriya və sütun əlaqələrinin idarə edilməsi
- */
-
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { vi, expect, beforeEach, describe, it } from 'vitest';
-import '@testing-library/jest-dom';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { vi } from 'vitest';
+import Categories from '@/pages/Categories';
+import { mockUseCategoriesQuery, mockAuthStore, mockStorage } from './test-utils';
+import { useCategoriesQuery } from '@/hooks/categories/useCategoriesQuery';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
-// Test vasitələri və yardımçı funksiyalar
-import { 
-  renderWithProviders, 
-  mockSupabase, 
-  mockUserRole, 
-  mockAuthStore, 
-  mockStorage,
-  mockUserData,
-  globalMockStore,
-  mockEdgeFunctions
-} from './test-utils';
+vi.mock('@/hooks/categories/useCategoriesQuery');
+vi.mock('@/hooks/auth/useAuthStore');
 
-// İstifadəçi rolu üçün enum
-enum UserRole {
-  SUPERADMIN = 'superadmin',
-  REGIONADMIN = 'regionadmin',
-  SECTORADMIN = 'sectoradmin',
-  SCHOOLADMIN = 'schooladmin'
-}
-
-// React Router
-const mockNavigate = vi.fn();
-
-// React Router mockla
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual as any,
-    useNavigate: () => mockNavigate
-  };
-});
-
-// Mock callEdgeFunction və digər Supabase funksiyaları
-const mockCallEdgeFunction = vi.fn().mockImplementation((funcName, options) => {
-  if (funcName === 'update-category-permissions') {
-    return Promise.resolve({ data: { success: true, message: 'Kateqoriya icazələri yeniləndi' }, error: null });
-  }
-  return Promise.resolve({ data: null, error: { message: 'Unknown function' } });
-});
-
-// Categories və Columns hook-larını düzəlt
-vi.mock('@/hooks/api/categories/useCategoriesQuery', () => ({
-  useCategoriesQuery: () => ({
-    categories: [
-      { id: 'category-1', name: 'Ümumi Məlumatlar', description: 'Məktəbin ümumi məlumatları', status: 'active' },
-      { id: 'category-2', name: 'Şagird Məlumatları', description: 'Şagirdlərlə bağlı məlumatlar', status: 'active' }
-    ],
-    loading: false,
-    error: null,
-    filter: {},
-    updateFilter: vi.fn(),
-    createCategory: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-category-id', ...data })),
-    updateCategory: vi.fn().mockResolvedValue(true),
-    deleteCategory: vi.fn().mockResolvedValue(true),
-    refetch: vi.fn().mockResolvedValue({}),
-    // Deprecated compatibility functions
-    add: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-category-id', ...data })),
-    update: vi.fn().mockResolvedValue(true),
-    remove: vi.fn().mockResolvedValue(true)
-  })
-}));
-
-vi.mock('@/hooks/api/columns/useColumnsQuery', () => ({
-  useColumnsQuery: () => ({
-    columns: [
-      { 
-        id: 'column-1', 
-        name: 'Məktəb adı', 
-        description: 'Məktəbin rəsmi adı', 
-        type: 'text', 
-        category_id: 'category-1', 
-        is_required: true, 
-        status: 'active' 
-      },
-      { 
-        id: 'column-2', 
-        name: 'Şagird sayı', 
-        description: 'Ümumi şagird sayı', 
-        type: 'number', 
-        category_id: 'category-1', 
-        is_required: true, 
-        status: 'active' 
-      },
-      { 
-        id: 'column-3', 
-        name: 'Şagird siyahısı', 
-        description: 'Excel formatında şagird siyahısı', 
-        type: 'file', 
-        category_id: 'category-2', 
-        is_required: false, 
-        status: 'active' 
-      }
-    ],
-    createColumn: vi.fn().mockImplementation((categoryId, data) => Promise.resolve({ id: 'new-column-id', category_id: categoryId, ...data })),
-    updateColumn: vi.fn().mockResolvedValue(true),
-    deleteColumn: vi.fn().mockResolvedValue(true),
-    fetchColumnsByCategory: vi.fn().mockResolvedValue(true),
-    // Deprecated compatibility functions
-    add: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-column-id', ...data })),
-    update: vi.fn().mockResolvedValue(true),
-    remove: vi.fn().mockResolvedValue(true)
-  })
-}));
-
-// Supabase client mockla
-vi.mock('@/integrations/supabase/client', () => ({
-  callEdgeFunction: mockCallEdgeFunction,
-  supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: { user: { id: 'test-id' } } }, error: null }),
-    },
-  }
-}));
-
-// Mock komponentlər
-vi.mock('@/components/categories/CategoryForm', () => {
-  const CategoryForm = ({ onSubmit, initialData }: any) => {
-    return (
-      <div data-testid="category-form">
-        <button 
-          data-testid="category-submit-button"
-          onClick={() => onSubmit(initialData ? 
-            { ...initialData, name: 'Yeni Ad' } : 
-            { name: 'Test Kateqoriya', description: 'Test təsviri' })}
-        >
-          Əlavə et / Yadda saxla
-        </button>
-      </div>
-    );
-  };
-  return { default: CategoryForm };
-});
-
-vi.mock('@/components/columns/ColumnForm', () => {
-  const ColumnForm = ({ onSubmit, initialData, categoryId }: any) => {
-    return (
-      <div data-testid="column-form">
-        <button 
-          data-testid="column-submit-button"
-          onClick={() => onSubmit(initialData ? 
-            { ...initialData, name: 'Yeni Ad' } : 
-            { 
-              name: 'Test Sütun', 
-              description: 'Test təsviri', 
-              data_type: 'text', 
-              category_id: categoryId || 'category-1',
-              required: false,
-              status: 'active'
-            })}
-        >
-          Əlavə et / Yadda saxla
-        </button>
-      </div>
-    );
-  };
-  return { default: ColumnForm };
-});
-
-describe('Kateqoriya və Sütun İdarəetməsi Testləri', () => {
-  // Hər testin əvvəlində mockları sıfırlamaq
+describe('Category Management', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockNavigate.mockReset();
-    mockCallEdgeFunction.mockClear();
+    mockAuthStore();
+    mockStorage();
+
+    (useAuthStore as any).mockReturnValue({
+      user: { role: 'superadmin' },
+      isAuthenticated: true
+    });
+
+    (useCategoriesQuery as any).mockReturnValue(mockUseCategoriesQuery());
+
+    render(
+      <MemoryRouter>
+        <Categories />
+      </MemoryRouter>
+    );
+  });
+
+  it('should render the categories page', () => {
+    expect(screen.getByText('Kateqoriyalar')).toBeInTheDocument();
+    expect(screen.getByText('Kateqoriya əlavə et')).toBeInTheDocument();
+  });
+
+  it('should open the create category dialog', async () => {
+    const addButton = screen.getByText('Kateqoriya əlavə et');
+    await userEvent.click(addButton);
+    expect(screen.getByText('Kateqoriya yarat')).toBeInTheDocument();
+  });
+
+  it('should call createCategory with form data', async () => {
+    const createCategoryMock = vi.fn().mockResolvedValue({ id: 'new-category-id', name: 'Test Category' });
     
-    // Auth store mockla və superadmin istifadəçini təyin et
-    const store = mockAuthStore();
-    Object.assign(store, {
-      isAuthenticated: true,
-      user: { ...mockUserData, role: 'superadmin' as UserRole }
+    // Mock the hook with proper return value
+    const mockHook = {
+      ...mockUseCategoriesQuery(),
+      createCategory: createCategoryMock
+    };
+    
+    (useCategoriesQuery as any).mockReturnValue(mockHook);
+
+    const addButton = screen.getByText('Kateqoriya əlavə et');
+    await userEvent.click(addButton);
+
+    const nameInput = screen.getByLabelText('Ad');
+    const descriptionInput = screen.getByLabelText('Açıqlama');
+    const submitButton = screen.getByText('Yarat');
+
+    await userEvent.type(nameInput, 'Test Category');
+    await userEvent.type(descriptionInput, 'Test Description');
+    
+    await userEvent.click(submitButton);
+    
+    expect(createCategoryMock).toHaveBeenCalledWith({
+      name: 'Test Category',
+      description: 'Test Description'
     });
   });
 
-  describe('CAT-01: Kateqoriya yaratma', () => {
-    it('yeni kateqoriya yaratma prosesi', async () => {
-      // useCategoriesQuery hook-undakı funksiyaları al
-      const { useCategoriesQuery } = await import('@/hooks/api/categories/useCategoriesQuery');
-      const { createCategory } = useCategoriesQuery();
+  it('should call updateCategory with form data', async () => {
+    const updateCategoryMock = vi.fn().mockResolvedValue({ id: 'category-1', name: 'Updated Category' });
+    
+    const mockHook = {
+      ...mockUseCategoriesQuery(),
+      updateCategory: updateCategoryMock
+    };
+    
+    (useCategoriesQuery as any).mockReturnValue(mockHook);
 
-      // CategoryForm komponentini render et
-      const handleSubmit = vi.fn().mockImplementation((data) => {
-        // createCategory funksiyasını çağır
-        return createCategory(data);
-      });
+    const editButton = screen.getAllByTestId('edit-category-button')[0];
+    await userEvent.click(editButton);
 
-      render(
-        <div data-testid="category-create-container">
-          <div data-testid="category-form">
-            <button 
-              data-testid="category-submit-button"
-              onClick={() => handleSubmit({ name: 'Test Kateqoriya', description: 'Test təsviri' })}
-            >
-              Təsdiq
-            </button>
-          </div>
-        </div>
-      );
+    const nameInput = screen.getByLabelText('Ad');
+    const descriptionInput = screen.getByLabelText('Açıqlama');
+    const submitButton = screen.getByText('Yenilə');
 
-      // Submit düyməsinə klik et
-      fireEvent.click(screen.getByTestId('category-submit-button'));
-
-      // Funksiyaların çağırıldığını yoxla
-      await waitFor(() => {
-        expect(handleSubmit).toHaveBeenCalledWith(expect.objectContaining({
-          name: 'Test Kateqoriya',
-          description: 'Test təsviri'
-        }));
-        expect(createCategory).toHaveBeenCalled();
-      });
+    await userEvent.type(nameInput, 'Updated Category');
+    await userEvent.type(descriptionInput, 'Updated Description');
+    
+    await userEvent.click(submitButton);
+    
+    expect(updateCategoryMock).toHaveBeenCalledWith('category-1', {
+      name: 'Updated Category',
+      description: 'Updated Description'
     });
   });
 
-  describe('CAT-02: Kateqoriya redaktə', () => {
-    it('mövcud kateqoriyanı redaktə prosesi', async () => {
-      // useCategoriesQuery hook-undakı funksiyaları al
-      const { useCategoriesQuery } = await import('@/hooks/api/categories/useCategoriesQuery');
-      const { updateCategory } = useCategoriesQuery();
+  it('should call deleteCategory with category id', async () => {
+    const deleteCategoryMock = vi.fn().mockResolvedValue(true);
+    
+    const mockHook = {
+      ...mockUseCategoriesQuery(),
+      deleteCategory: deleteCategoryMock
+    };
+    
+    (useCategoriesQuery as any).mockReturnValue(mockHook);
 
-      // İlkin məlumatları təyin et
-      const initialData = { 
-        id: 'category-1', 
-        name: 'Ümumi Məlumatlar', 
-        description: 'Məktəbin ümumi məlumatları', 
-        status: 'active' 
-      };
+    const deleteButton = screen.getAllByTestId('delete-category-button')[0];
+    await userEvent.click(deleteButton);
 
-      // CategoryForm komponentini render et
-      const handleSubmit = vi.fn().mockImplementation((data) => {
-        // updateCategory funksiyasını çağır
-        return updateCategory(initialData.id, data);
-      });
-
-      render(
-        <div data-testid="category-edit-container">
-          <div data-testid="category-form">
-            <button 
-              data-testid="category-submit-button"
-              onClick={() => handleSubmit({ 
-                ...initialData, 
-                name: 'Yenilənmiş Ad', 
-                description: 'Yenilənmiş təsvir' 
-              })}
-            >
-              Yadda saxla
-            </button>
-          </div>
-        </div>
-      );
-
-      // Submit düyməsinə klik et
-      fireEvent.click(screen.getByTestId('category-submit-button'));
-
-      // Funksiyaların çağırıldığını yoxla
-      await waitFor(() => {
-        expect(handleSubmit).toHaveBeenCalledWith(expect.objectContaining({
-          id: 'category-1',
-          name: 'Yenilənmiş Ad',
-          description: 'Yenilənmiş təsvir'
-        }));
-        expect(updateCategory).toHaveBeenCalled();
-      });
-    });
-  });
-
-  describe('CAT-03: Sütun yaratma', () => {
-    it('yeni sütun yaratma prosesi', async () => {
-      // useColumnsQuery hook-undakı funksiyaları al
-      const { useColumnsQuery } = await import('@/hooks/api/columns/useColumnsQuery');
-      const { createColumn } = useColumnsQuery();
-
-      // ColumnForm komponentini render et
-      const handleSubmit = vi.fn().mockImplementation((data) => {
-        // createColumn funksiyasını çağır
-        return createColumn('category-1', data);
-      });
-
-      render(
-        <div data-testid="column-create-container">
-          <div data-testid="column-form">
-            <button 
-              data-testid="column-submit-button"
-              onClick={() => handleSubmit({ 
-                name: 'Test Sütun', 
-                description: 'Test təsviri', 
-                data_type: 'text', 
-                category_id: 'category-1',
-                required: false,
-                status: 'active'
-              })}
-            >
-              Təsdiq
-            </button>
-          </div>
-        </div>
-      );
-
-      // Submit düyməsinə klik et
-      fireEvent.click(screen.getByTestId('column-submit-button'));
-
-      // Funksiyaların çağırıldığını yoxla
-      await waitFor(() => {
-        expect(handleSubmit).toHaveBeenCalledWith(expect.objectContaining({
-          name: 'Test Sütun',
-          description: 'Test təsviri',
-          data_type: 'text',
-          category_id: 'category-1'
-        }));
-        expect(createColumn).toHaveBeenCalled();
-      });
-    });
-  });
-
-  describe('CAT-04: Sütun redaktə', () => {
-    it('mövcud sütunu redaktə prosesi', async () => {
-      // useColumnsQuery hook-undakı funksiyaları al
-      const { useColumnsQuery } = await import('@/hooks/api/columns/useColumnsQuery');
-      const { updateColumn } = useColumnsQuery();
-
-      // İlkin məlumatları təyin et
-      const initialData = { 
-        id: 'column-1', 
-        name: 'Məktəb adı', 
-        description: 'Məktəbin rəsmi adı', 
-        data_type: 'text', 
-        category_id: 'category-1', 
-        required: true, 
-        status: 'active' 
-      };
-
-      // ColumnForm komponentini render et
-      const handleSubmit = vi.fn().mockImplementation((data) => {
-        // updateColumn funksiyasını çağır
-        return updateColumn(initialData.id, data);
-      });
-
-      render(
-        <div data-testid="column-edit-container">
-          <div data-testid="column-form">
-            <button 
-              data-testid="column-submit-button"
-              onClick={() => handleSubmit({ 
-                ...initialData, 
-                name: 'Yenilənmiş Sütun Adı', 
-                description: 'Yenilənmiş təsvir',
-                required: false
-              })}
-            >
-              Yadda saxla
-            </button>
-          </div>
-        </div>
-      );
-
-      // Submit düyməsinə klik et
-      fireEvent.click(screen.getByTestId('column-submit-button'));
-
-      // Funksiyaların çağırıldığını yoxla
-      await waitFor(() => {
-        expect(handleSubmit).toHaveBeenCalledWith(expect.objectContaining({
-          id: 'column-1',
-          name: 'Yenilənmiş Sütun Adı',
-          description: 'Yenilənmiş təsvir',
-          required: false
-        }));
-        expect(updateColumn).toHaveBeenCalled();
-      });
-    });
-  });
-
-  describe('CAT-05: Sütun tipləri və validasiya', () => {
-    it('müxtəlif tip sütunların düzgün işləməsini yoxlama', async () => {
-      // useColumnsQuery hook-undakı funksiyaları al
-      const { useColumnsQuery } = await import('@/hooks/api/columns/useColumnsQuery');
-      const { columns } = useColumnsQuery();
-
-      // Sütun tiplərini yoxla
-      const textColumn = columns.find(c => c.type === 'text');
-      const numberColumn = columns.find(c => c.type === 'number');
-      const fileColumn = columns.find(c => c.type === 'file');
-
-      expect(textColumn).toBeDefined();
-      expect(numberColumn).toBeDefined();
-      expect(fileColumn).toBeDefined();
-
-      // Text tipli sütunun xüsusiyyətlərini yoxla
-      expect(textColumn?.name).toBe('Məktəb adı');
-      expect(textColumn?.is_required).toBe(true);
-
-      // Number tipli sütunun xüsusiyyətlərini yoxla
-      expect(numberColumn?.name).toBe('Şagird sayı');
-      expect(numberColumn?.is_required).toBe(true);
-
-      // File tipli sütunun xüsusiyyətlərini yoxla
-      expect(fileColumn?.name).toBe('Şagird siyahısı');
-      expect(fileColumn?.is_required).toBe(false);
-    });
-  });
-
-  describe('CAT-06: Kateqoriya-Sütun əlaqələri', () => {
-    it('sütunların kateqoriyalara düzgün bağlanmasının yoxlanması', async () => {
-      // useCategoriesQuery və useColumnsQuery hook-larını al
-      const { useCategoriesQuery } = await import('@/hooks/api/categories/useCategoriesQuery');
-      const { useColumnsQuery } = await import('@/hooks/api/columns/useColumnsQuery');
-      
-      // Verilənləri al
-      const { categories } = useCategoriesQuery();
-      const { columns } = useColumnsQuery();
-      
-      // Əlaqələri yoxla - Kateqoriya 1
-      const category1 = categories.find(c => c.id === 'category-1');
-      const category1Columns = columns.filter(c => c.category_id === 'category-1');
-      
-      expect(category1).toBeDefined();
-      expect(category1Columns.length).toBe(2);
-      expect(category1Columns[0].name).toBe('Məktəb adı');
-      expect(category1Columns[1].name).toBe('Şagird sayı');
-      
-      // Əlaqələri yoxla - Kateqoriya 2
-      const category2 = categories.find(c => c.id === 'category-2');
-      const category2Columns = columns.filter(c => c.category_id === 'category-2');
-      
-      expect(category2).toBeDefined();
-      expect(category2Columns.length).toBe(1);
-      expect(category2Columns[0].name).toBe('Şagird siyahısı');
-    });
-  });
-
-  describe('CAT-07: Kateqoriya icazələrini yeniləmə', () => {
-    it('kateqoriya icazələrini yeniləmə prosesi', async () => {
-      // callEdgeFunction ilə edge function çağırışını simulate et
-      mockCallEdgeFunction.mockImplementation((funcName, options) => {
-        if (funcName === 'update-category-permissions') {
-          return Promise.resolve({ 
-            data: { 
-              success: true, 
-              message: 'Kateqoriya icazələri yeniləndi' 
-            }, 
-            error: null 
-          });
-        }
-        return Promise.resolve({ data: null, error: { message: 'Unknown function' } });
-      });
-
-      // İcazə funksiyasını mockla
-      const updateCategoryPermissions = vi.fn().mockImplementation((categoryId, permissions) => {
-        return mockCallEdgeFunction('update-category-permissions', { 
-          body: { 
-            categoryId, 
-            permissions 
-          } 
-        });
-      });
-
-      // Funksiyadan istifadə edən bir handler yarat
-      const handlePermissionsUpdate = async () => {
-        const permissions = {
-          superadmin: { read: true, write: true },
-          regionadmin: { read: true, write: false },
-          sectoradmin: { read: true, write: false },
-          schooladmin: { read: true, write: true }
-        };
-        
-        const result = await updateCategoryPermissions('category-1', permissions);
-        return result.data;
-      };
-
-      // Funksiyaları çağır və nəticələri yoxla
-      const result = await handlePermissionsUpdate();
-      
-      expect(updateCategoryPermissions).toHaveBeenCalledWith('category-1', expect.objectContaining({
-        superadmin: { read: true, write: true },
-        schooladmin: { read: true, write: true }
-      }));
-      
-      expect(mockCallEdgeFunction).toHaveBeenCalledWith('update-category-permissions', {
-        body: {
-          categoryId: 'category-1',
-          permissions: expect.objectContaining({
-            superadmin: { read: true, write: true },
-            regionadmin: { read: true, write: false }
-          })
-        }
-      });
-      
-      expect(result).toEqual({ 
-        success: true, 
-        message: 'Kateqoriya icazələri yeniləndi' 
-      });
-    });
+    const confirmButton = screen.getByText('Sil');
+    await userEvent.click(confirmButton);
+    
+    expect(deleteCategoryMock).toHaveBeenCalledWith('category-1');
   });
 });
