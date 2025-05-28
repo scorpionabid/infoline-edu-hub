@@ -1,88 +1,85 @@
 
-export type ColumnType =
-  | "text"
-  | "number"
-  | "date"
-  | "email"
-  | "url"
-  | "tel"
-  | "select"
-  | "radio"
-  | "checkbox"
-  | "textarea"
-  | "file"
-  | "location"
-  | "phone"
-  | "richtext"
-  | "range"
-  | "datetime";
+import { LucideIcon } from 'lucide-react';
+
+export type ColumnType = 
+  | 'text' 
+  | 'textarea' 
+  | 'number' 
+  | 'email' 
+  | 'url' 
+  | 'phone'
+  | 'date' 
+  | 'time' 
+  | 'datetime'
+  | 'select' 
+  | 'radio' 
+  | 'checkbox'
+  | 'file' 
+  | 'image'
+  | 'range'
+  | 'color'
+  | 'password'
+  | 'richtext';
 
 export interface ColumnOption {
-  id?: string;
-  label: string;
   value: string;
+  label: string;
 }
 
-export type ValidationType = "required" | "minLength" | "maxLength" | "pattern";
-
-export interface ColumnFormValues {
-  name: string;
-  type: string;
-  category_id: string;
-  is_required: boolean;
-  placeholder?: string;
-  help_text?: string;
-  default_value?: string;
-  description?: string;
-  section?: string;
-  validation?: any;
-  options?: ColumnOption[];
-  order_index?: number;
+export interface ColumnValidation {
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  required?: boolean;
+  minValue?: number;
+  maxValue?: number;
 }
 
 export interface Column {
   id: string;
-  category_id: string;
   name: string;
   type: ColumnType;
-  is_required: boolean;
-  placeholder?: string;
-  help_text?: string;
-  order_index: number;
-  status: string;
-  validation?: any;
-  default_value?: string;
-  options?: ColumnOption[];
-  created_at: string;
-  updated_at: string;
+  category_id: string;
   description?: string;
-  section?: string;
-  color?: string;
+  is_required?: boolean;
+  required?: boolean;
+  options?: ColumnOption[];
+  validation?: ColumnValidation;
+  help_text?: string;
+  placeholder?: string;
+  default_value?: string;
+  status?: string;
+  order_index?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
-// Column type definitions for UI
-export const columnTypeDefinitions = [
-  { value: 'text', label: 'Text', icon: 'Type' },
-  { value: 'number', label: 'Number', icon: 'Hash' },
-  { value: 'email', label: 'Email', icon: 'Mail' },
-  { value: 'tel', label: 'Phone', icon: 'Phone' },
-  { value: 'url', label: 'URL', icon: 'Link' },
-  { value: 'textarea', label: 'Long Text', icon: 'AlignLeft' },
-  { value: 'select', label: 'Dropdown', icon: 'ChevronDown' },
-  { value: 'radio', label: 'Radio', icon: 'Circle' },
-  { value: 'checkbox', label: 'Checkbox', icon: 'Check' },
-  { value: 'date', label: 'Date', icon: 'Calendar' },
-  { value: 'file', label: 'File Upload', icon: 'Upload' },
-  { value: 'location', label: 'Location', icon: 'MapPin' },
-  { value: 'phone', label: 'Phone Number', icon: 'Phone' },
-  { value: 'richtext', label: 'Rich Text', icon: 'FileText' },
-  { value: 'range', label: 'Range', icon: 'Slider' },
-  { value: 'datetime', label: 'Date Time', icon: 'Calendar' }
+export interface ColumnTypeDefinition {
+  value: ColumnType;
+  label: string;
+  description: string;
+  icon: string;
+}
+
+export const columnTypeDefinitions: ColumnTypeDefinition[] = [
+  { value: 'text', label: 'Mətn', description: 'Qısa mətn sahəsi', icon: '📝' },
+  { value: 'textarea', label: 'Uzun mətn', description: 'Çox sətrli mətn sahəsi', icon: '📄' },
+  { value: 'number', label: 'Rəqəm', description: 'Rəqəmsal dəyər', icon: '🔢' },
+  { value: 'email', label: 'E-poçt', description: 'E-poçt ünvanı', icon: '📧' },
+  { value: 'url', label: 'URL', description: 'Veb ünvanı', icon: '🔗' },
+  { value: 'phone', label: 'Telefon', description: 'Telefon nömrəsi', icon: '📞' },
+  { value: 'date', label: 'Tarix', description: 'Tarix seçimi', icon: '📅' },
+  { value: 'time', label: 'Vaxt', description: 'Vaxt seçimi', icon: '⏰' },
+  { value: 'datetime', label: 'Tarix və Vaxt', description: 'Tarix və vaxt seçimi', icon: '📆' },
+  { value: 'select', label: 'Seçim siyahısı', description: 'Açılan seçim siyahısı', icon: '📋' },
+  { value: 'radio', label: 'Radio düymələr', description: 'Tək seçim düymələri', icon: '🔘' },
+  { value: 'checkbox', label: 'Yoxlama qutuları', description: 'Çoxlu seçim qutuları', icon: '☑️' },
+  { value: 'file', label: 'Fayl', description: 'Fayl yükləmə', icon: '📎' },
+  { value: 'image', label: 'Şəkil', description: 'Şəkil yükləmə', icon: '🖼️' },
+  { value: 'range', label: 'Diapazon', description: 'Diapazon seçimi', icon: '📏' },
+  { value: 'color', label: 'Rəng', description: 'Rəng seçimi', icon: '🎨' },
+  { value: 'password', label: 'Şifrə', description: 'Şifrə sahəsi', icon: '🔐' },
+  { value: 'richtext', label: 'Zəngin mətn', description: 'Formatlanmış mətn editoru', icon: '📝' }
 ];
-
-// Props interface for BasicColumnFields
-export interface BasicColumnFieldsProps {
-  form: any;
-  data: any;
-  onFormChange: (field: string, value: any) => void;
-}

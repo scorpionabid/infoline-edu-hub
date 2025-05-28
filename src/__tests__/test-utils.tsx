@@ -1,4 +1,3 @@
-
 /**
  * Test Vasitələri
  * 
@@ -233,3 +232,64 @@ export const mockStorage = () => {
   
   return { localStorageMock, sessionStorageMock };
 };
+
+// Mock useCategoriesQuery hook
+export const mockUseCategoriesQuery = () => ({
+  categories: [
+    { id: 'category-1', name: 'Ümumi Məlumatlar', description: 'Məktəbin ümumi məlumatları', status: 'active' },
+    { id: 'category-2', name: 'Şagird Məlumatları', description: 'Şagirdlərlə bağlı məlumatlar', status: 'active' }
+  ],
+  loading: false,
+  error: null,
+  filter: {},
+  updateFilter: vi.fn(),
+  createCategory: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-category-id', ...data })),
+  updateCategory: vi.fn().mockImplementation((id, data) => Promise.resolve({ id, ...data })),
+  deleteCategory: vi.fn().mockResolvedValue(true),
+  refetch: vi.fn().mockResolvedValue({}),
+  // Compatibility functions
+  add: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-category-id', ...data })),
+  update: vi.fn().mockImplementation((id, data) => Promise.resolve({ id, ...data })),
+  remove: vi.fn().mockResolvedValue(true)
+});
+
+// Mock useColumnsQuery hook
+export const mockUseColumnsQuery = () => ({
+  columns: [
+    { 
+      id: 'column-1', 
+      name: 'Məktəb adı', 
+      description: 'Məktəbin rəsmi adı', 
+      type: 'text', 
+      category_id: 'category-1', 
+      is_required: true, 
+      status: 'active' 
+    },
+    { 
+      id: 'column-2', 
+      name: 'Şagird sayı', 
+      description: 'Ümumi şagird sayı', 
+      type: 'number', 
+      category_id: 'category-1', 
+      is_required: true, 
+      status: 'active' 
+    },
+    { 
+      id: 'column-3', 
+      name: 'Şagird siyahısı', 
+      description: 'Excel formatında şagird siyahısı', 
+      type: 'file', 
+      category_id: 'category-2', 
+      is_required: false, 
+      status: 'active' 
+    }
+  ],
+  createColumn: vi.fn().mockImplementation((categoryId, data) => Promise.resolve({ id: 'new-column-id', category_id: categoryId, ...data })),
+  updateColumn: vi.fn().mockImplementation((id, data) => Promise.resolve({ id, ...data })),
+  deleteColumn: vi.fn().mockResolvedValue(true),
+  fetchColumnsByCategory: vi.fn().mockResolvedValue(true),
+  // Compatibility functions
+  add: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'new-column-id', ...data })),
+  update: vi.fn().mockImplementation((id, data) => Promise.resolve({ id, ...data })),
+  remove: vi.fn().mockResolvedValue(true)
+});
