@@ -1,3 +1,4 @@
+
 export interface BaseLink {
   id: string;
   title: string;
@@ -12,6 +13,7 @@ export interface BaseLink {
 
 export interface SchoolLink extends BaseLink {
   school_id: string;
+  schools?: string; // Add schools property for component compatibility
 }
 
 export interface RegionLink extends BaseLink {
@@ -24,16 +26,3 @@ export interface SectorLink extends BaseLink {
 
 export type Link = SchoolLink | RegionLink | SectorLink;
 
-export interface SchoolLink {
-  id: string;
-  title: string;
-  url: string;
-  description?: string;
-  category?: string;
-  school_id: string;
-  created_by?: string;
-  created_at?: string;
-  updated_at?: string;
-  is_active?: boolean;
-  schools?: string; // Add schools property for component compatibility
-}
