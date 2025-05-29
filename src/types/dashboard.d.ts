@@ -1,4 +1,5 @@
 
+
 export interface StatusCardsProps {
   completedCount: number;
   pendingCount: number;
@@ -221,3 +222,4 @@ export interface FormTabsProps {
   navigateToDataEntry?: () => void;
   handleFormClick?: (id: string) => void;
 }
+
