@@ -2,8 +2,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
-import { FullUserData, NotificationSettings } from '@/types/user';
-import { UserRole } from '@/types/role';
+import { FullUserData, NotificationSettings, UserStatus } from '@/types/user';
+import { UserRole, normalizeRole } from '@/types/role';
 
 /**
  * Hook for Supabase authentication operations
@@ -49,7 +49,8 @@ export const useSupabaseAuth = () => {
         setUser({
           id: data.session.user.id,
           email: data.session.user.email || '',
-          role: (roleData?.role as UserRole) || 'user',
+          role: normalizeRole(roleData?.role) as 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin',
+          status: (profileData?.status as UserStatus) || 'active',
           ...profileData,
         });
       }
@@ -98,7 +99,8 @@ export const useSupabaseAuth = () => {
             setUser({
               id: currentSession.user.id,
               email: currentSession.user.email || '',
-              role: (roleData?.role as UserRole) || 'user',
+              role: normalizeRole(roleData?.role) as 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin',
+              status: (profileData?.status as UserStatus) || 'active',
               ...profileData,
             });
           } catch (e: any) {

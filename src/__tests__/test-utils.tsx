@@ -34,10 +34,16 @@ export const mockUserData = {
 export const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <MemoryRouter>
-      {/* Digər providerləri də buraya əlavə edə bilərsiniz */}
-      {ui}
+      {/* Dil provideri əlavə edildi */}
+      <MockLanguageProvider>
+        {ui}
+      </MockLanguageProvider>
     </MemoryRouter>
   );
+};
+
+export const MockLanguageProvider = ({ children }: { children: React.ReactNode }) => {
+  return React.createElement('div', { 'data-testid': 'mock-language-provider', className: 'mock-language-provider' }, children);
 };
 
 /**
@@ -143,29 +149,81 @@ export const globalMockStore = {
 
 // Language context-i mockla
 vi.mock('@/context/LanguageContext', () => {
-  const mockLanguageContext = {
-    language: 'az',
-    currentLanguage: 'az',
-    setLanguage: vi.fn(),
-    t: (key: string) => key,
+  // Mock dil funksiyaları və provideri
+  const t = (key: string, options?: any) => {
+    return key;
   };
   
+  const mockLanguageContext = {
+    language: 'az',
+    setLanguage: vi.fn(),
+    t,
+    i18n: { t, changeLanguage: vi.fn() },
+    isRtl: false,
+    availableLanguages: ['az', 'en', 'ru'],
+    currentLanguage: 'az',
+    languages: {
+      az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
+      en: { nativeName: 'English', flag: '🇬🇧' },
+      ru: { nativeName: 'Русский', flag: '🇷🇺' }
+    },
+    supportedLanguages: ['az', 'en', 'ru']
+  };
+  
+  const LanguageContext = {
+    Provider: ({ children }: { children: React.ReactNode }) => {
+      return React.createElement('div', { 'data-testid': 'language-provider' }, children);
+    },
+    Consumer: ({ children }: { children: (context: any) => React.ReactNode }) => {
+      return children(mockLanguageContext);
+    }
+  };
+
   return {
+    LanguageContext,
     useLanguage: () => mockLanguageContext,
     useLanguageSafe: () => mockLanguageContext,
-    LanguageProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    LanguageProvider: ({ children }: { children: React.ReactNode }) => {
+      return React.createElement(
+        LanguageContext.Provider,
+        null,
+        children
+      );
+    },
+    default: {
+      LanguageContext,
+      useLanguage: () => mockLanguageContext,
+      useLanguageSafe: () => mockLanguageContext,
+      LanguageProvider: ({ children }: { children: React.ReactNode }) => {
+        return React.createElement(
+          LanguageContext.Provider,
+          null,
+          children
+        );
+      }
+    }
   };
 });
 
 // useAuthStore hook-unu əvvəlcədən mockla
-const useAuthStoreMock = ((selector: any) => {
+const useAuthStoreMock = vi.fn((selector: any) => {
   if (typeof selector === 'function') {
     return selector(globalMockStore);
   }
   return globalMockStore;
 }) as any;
 
-useAuthStoreMock.getState = () => globalMockStore;
+useAuthStoreMock.getState = () => {
+  return globalMockStore;
+};
+
+useAuthStoreMock.mockReturnValue = (value: any) => {
+  globalMockStore.user = value.user || null;
+  globalMockStore.isAuthenticated = value.isAuthenticated || false;
+  globalMockStore.isLoading = value.isLoading || false;
+  globalMockStore.error = value.error || null;
+  return useAuthStoreMock;
+};
 
 vi.mock('@/hooks/auth/useAuthStore', () => {
   return {

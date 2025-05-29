@@ -40,11 +40,7 @@ export const RegionLinksCard: React.FC = () => {
                       {link.description}
                     </p>
                   )}
-                  {link.schools && (
-                    <p className="text-xs text-muted-foreground">
-                      Məktəb: {link.schools.name}
-                    </p>
-                  )}
+                  {/* School information is not available in the SchoolLink type */}
                 </div>
                 <Button
                   variant="ghost"
