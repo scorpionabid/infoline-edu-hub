@@ -28,6 +28,11 @@ export interface DashboardFormStats {
   overdue: number;
   completion_rate: number;
   percentage: number;
+  // Legacy support
+  totalForms?: number;
+  pendingForms?: number;
+  approvedForms?: number;
+  rejectedForms?: number;
 }
 
 export interface CategoryItem {
@@ -149,6 +154,9 @@ export interface SuperAdminDashboardData {
     overdue: number;
     draft: number;
   };
+  // Additional properties for legacy support
+  regionData?: any[];
+  schoolData?: SchoolStat[];
 }
 
 export interface RegionAdminDashboardData {

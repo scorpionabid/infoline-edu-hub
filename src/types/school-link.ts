@@ -22,7 +22,7 @@ export interface RegionLink extends BaseLink {
 
 export interface SectorLink extends BaseLink {
   sector_id: string;
+  schools?: string; // Add schools property for sector link compatibility
 }
 
 export type Link = SchoolLink | RegionLink | SectorLink;
-
