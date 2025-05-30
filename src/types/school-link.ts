@@ -1,5 +1,4 @@
 
-
 export interface BaseLink {
   id: string;
   title: string;
@@ -27,4 +26,3 @@ export interface SectorLink extends BaseLink {
 }
 
 export type Link = SchoolLink | RegionLink | SectorLink;
-
