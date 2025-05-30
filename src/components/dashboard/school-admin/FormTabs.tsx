@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CategoryWithColumns } from '@/types/category';
+import { CategoryItem } from '@/types/dashboard';
 
 interface FormTabsProps {
-  categories: CategoryWithColumns[];
+  categories: CategoryItem[];
   selectedCategory?: string;
   onCategoryChange: (categoryId: string) => void;
 }
@@ -27,7 +27,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
             value={category.id}
             className="text-xs"
           >
-            {typeof category === 'object' && category !== null ? category.name : String(category)}
+            {category.name}
           </TabsTrigger>
         ))}
       </TabsList>
@@ -40,7 +40,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
               <p className="text-muted-foreground mb-4">{category.description}</p>
             )}
             <div className="text-sm text-muted-foreground">
-              {category.columns?.length || 0} fields available
+              Completion: {category.completion_rate || 0}%
             </div>
           </div>
         </TabsContent>

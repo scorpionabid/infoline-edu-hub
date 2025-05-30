@@ -1,6 +1,5 @@
 
-import React, { useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
+import React, { useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload, X } from 'lucide-react';
 
@@ -21,32 +20,42 @@ const FileUpload: React.FC<FileUploadProps> = ({
   maxSize = 10 * 1024 * 1024, // 10MB
   disabled = false
 }) => {
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      onFileSelect(acceptedFiles[0]);
-    }
-  }, [onFileSelect]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { [accept]: [] },
-    maxSize,
-    multiple: false,
-    disabled
-  });
+  const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > maxSize) {
+        alert(`File size must be less than ${maxSize / 1024 / 1024}MB`);
+        return;
+      }
+      onFileSelect(file);
+    }
+  }, [onFileSelect, maxSize]);
+
+  const handleClick = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
     <div className="space-y-4">
       <div
-        {...getRootProps()}
+        onClick={handleClick}
         className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-          isDragActive ? 'border-primary bg-primary/10' : 'border-gray-300 hover:border-gray-400'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled ? 'opacity-50 cursor-not-allowed border-gray-200' : 'border-gray-300 hover:border-gray-400'
+        }`}
       >
-        <input {...getInputProps()} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={accept}
+          onChange={handleFileChange}
+          disabled={disabled}
+          className="hidden"
+        />
         <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
         <p className="text-sm text-gray-600">
-          {isDragActive ? 'Drop the file here' : 'Drag & drop a file here, or click to select'}
+          Click to select a file
         </p>
       </div>
 

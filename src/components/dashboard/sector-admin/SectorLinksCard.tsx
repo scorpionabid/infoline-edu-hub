@@ -3,7 +3,13 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Plus } from 'lucide-react';
-import { SectorLink } from '@/types/school-link';
+
+export interface SectorLink {
+  id: string;
+  title: string;
+  url: string;
+  description?: string;
+}
 
 interface SectorLinksCardProps {
   links: SectorLink[];

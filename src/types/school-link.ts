@@ -1,28 +1,26 @@
 
-export interface BaseLink {
+export interface SchoolLink {
   id: string;
   title: string;
   url: string;
   description?: string;
   category?: string;
-  created_by?: string;
+  school_id: string;
+  is_active?: boolean;
   created_at?: string;
   updated_at?: string;
+  created_by?: string;
+}
+
+export interface SectorLink {
+  id: string;
+  title: string;
+  url: string;
+  description?: string;
+  category?: string;
+  sector_id?: string;
   is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
 }
-
-export interface SchoolLink extends BaseLink {
-  school_id: string;
-  schools?: string;
-}
-
-export interface RegionLink extends BaseLink {
-  region_id: string;
-}
-
-export interface SectorLink extends BaseLink {
-  sector_id: string;
-  schools?: string;
-}
-
-export type Link = SchoolLink | RegionLink | SectorLink;
