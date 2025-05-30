@@ -32,6 +32,7 @@ const SuperAdminDashboard = ({ data }) => {
   ];
 
   const dashboardStats: DashboardFormStats = {
+    total: data.totalEntries || 0,
     completed: data.approvedEntries || 0,
     approved: data.approvedEntries || 0,
     pending: data.pendingEntries || 0,

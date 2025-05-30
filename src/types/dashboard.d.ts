@@ -86,7 +86,7 @@ export interface PendingApproval {
   date?: string;
   submittedAt?: string;
   createdAt?: string;
-  status: 'pending';
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 export interface SchoolStat {
@@ -138,13 +138,6 @@ export interface SuperAdminDashboardData {
   } | number | null;
   completionRate?: number;
   categoryData?: CategoryItem[];
-  users: {
-    active: number;
-    total: number;
-  };
-  regionCount: number;
-  sectorCount: number;
-  schoolCount: number;
   entryCount?: {
     total: number;
     approved: number;
@@ -154,6 +147,13 @@ export interface SuperAdminDashboardData {
     overdue: number;
     draft: number;
   };
+  users: {
+    active: number;
+    total: number;
+  };
+  regionCount: number;
+  sectorCount: number;
+  schoolCount: number;
   // Additional properties for legacy support
   regionData?: any[];
   schoolData?: SchoolStat[];
@@ -187,7 +187,7 @@ export interface SectorAdminDashboardData {
   upcoming?: DeadlineItem[];
   pendingForms?: FormItem[];
   schoolStats?: SchoolStat[];
-  schools?: SchoolStat[] | DashboardStatus;
+  schools?: SchoolStat[];
   notifications?: any[];
   completion?: {
     percentage: number;

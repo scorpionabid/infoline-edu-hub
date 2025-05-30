@@ -49,7 +49,6 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
         completionRate: item.completionRate,
         description: item.description,
         deadline: item.deadline,
-        // Ensure status is always provided
         status: item.status || 'active'
       }))
     : [];
@@ -63,7 +62,8 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
     overdue: data.entryCount?.overdue || 0,
     draft: data.entryCount?.draft || 0,
     completed: data.entryCount?.approved || 0,
-    percentage: completionValue
+    percentage: completionValue,
+    completion_rate: completionValue
   };
 
   return (

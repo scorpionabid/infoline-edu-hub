@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,41 +37,39 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
     );
   }
   
-  // Get statistics data from the correct property with proper type casting
+  // Handle schools data - check if it's an array or status object
+  const schoolsArray = Array.isArray(data.schools) ? data.schools : [];
+  
+  // Get statistics data with proper type casting
   const statsData = [
     { 
       title: t('totalSchools'), 
-      value: (data.status?.total || 
-        (data.schools && 'total' in data.schools ? data.schools.total : 
-         (data.schools ? data.schools.length : 0))) as number,
+      value: (data.status?.total || schoolsArray.length) as number,
       color: 'bg-blue-100' 
     },
     { 
       title: t('activeSchools'), 
-      value: (data.status?.active || 
-        (data.schools && 'active' in data.schools ? data.schools.active : 
-         (data.schools ? data.schools.filter(s => s.status === 'active').length : 0))) as number,
+      value: (data.status?.active || schoolsArray.filter(s => s.status === 'active').length) as number,
       color: 'bg-green-100' 
     },
     { 
       title: t('inactiveSchools'), 
-      value: (data.status?.inactive || 
-        (data.schools && 'inactive' in data.schools ? data.schools.inactive : 
-         (data.schools ? data.schools.filter(s => s.status === 'inactive').length : 0))) as number,
+      value: (data.status?.inactive || schoolsArray.filter(s => s.status === 'inactive').length) as number,
       color: 'bg-gray-100' 
     },
   ];
   
   const formStatsData: DashboardFormStats = {
+    total: data.formStats?.total || data.status?.total || 0,
     pending: data.formStats?.pending || data.status?.pending || 0,
     approved: data.formStats?.approved || data.status?.approved || 0,
     rejected: data.formStats?.rejected || data.status?.rejected || 0,
-    total: data.formStats?.total || data.status?.total || 0,
     dueSoon: data.formStats?.dueSoon || 0,
     overdue: data.formStats?.overdue || 0,
     draft: data.formStats?.draft || data.status?.draft || 0,
     completed: data.formStats?.completed || data.status?.approved || 0,
-    percentage: data.formStats?.percentage || data.completionRate || 0
+    percentage: data.formStats?.percentage || data.completionRate || 0,
+    completion_rate: data.formStats?.completion_rate || data.completionRate || 0
   };
 
   // Handle completion data safely regardless of whether it's an object or number
@@ -79,7 +78,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data, isLoa
     : (typeof data.completion === 'number' ? data.completion : data.completionRate || 0);
 
   // Convert school stats to the correct format and ensure property consistency
-  const schoolStats: SchoolStat[] = (data.schoolStats || []).map(school => adaptToSchoolStat(school));
+  const schoolStats: SchoolStat[] = (data.schoolStats || schoolsArray).map(school => adaptToSchoolStat(school));
 
   return (
     <div className="space-y-4">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import {
@@ -30,25 +31,30 @@ interface ApprovalProps {
   permissions: any;
 }
 
+interface ApprovalRecord extends PendingApproval {
+  status: 'pending' | 'approved' | 'rejected';
+}
+
 const Approval: React.FC<ApprovalProps> = ({ 
   user, 
   userRole, 
   permissions 
 }) => {
   const { t } = useLanguage();
-  const [approvals, setApprovals] = useState<PendingApproval[]>([]);
+  const [approvals, setApprovals] = useState<ApprovalRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const mockApprovals: PendingApproval[] = [
+  const mockApprovals: ApprovalRecord[] = [
     {
       id: '1',
       schoolName: 'ABC İbtidai Məktəbi',
       categoryName: 'Müəllim Məlumatları',
       date: '2024-01-15',
       submittedAt: '2024-01-15',
+      created_at: '2024-01-15T00:00:00Z',
       status: 'pending'
     },
     {
@@ -57,6 +63,7 @@ const Approval: React.FC<ApprovalProps> = ({
       categoryName: 'Şagird Nailiyyətləri',
       date: '2024-01-20',
       submittedAt: '2024-01-20',
+      created_at: '2024-01-20T00:00:00Z',
       status: 'approved'
     },
     {
@@ -65,12 +72,12 @@ const Approval: React.FC<ApprovalProps> = ({
       categoryName: 'Tədbir Planları',
       date: '2024-01-25',
       submittedAt: '2024-01-25',
+      created_at: '2024-01-25T00:00:00Z',
       status: 'rejected'
     },
   ];
 
   useEffect(() => {
-    // Replace mockApprovals with actual data fetching logic
     setApprovals(mockApprovals);
   }, []);
 
@@ -80,18 +87,17 @@ const Approval: React.FC<ApprovalProps> = ({
 
   const handleApprove = (id: string) => {
     setApprovals(approvals.map(item =>
-      item.id === id ? { ...item, status: 'approved' } : item
+      item.id === id ? { ...item, status: 'approved' as const } : item
     ));
   };
 
   const handleReject = (id: string) => {
     setApprovals(approvals.map(item =>
-      item.id === id ? { ...item, status: 'rejected' } : item
+      item.id === id ? { ...item, status: 'rejected' as const } : item
     ));
   };
 
   const handleView = (id: string) => {
-    // Implement view logic here
     console.log(`Viewing approval with id ${id}`);
   };
 
@@ -104,7 +110,7 @@ const Approval: React.FC<ApprovalProps> = ({
   };
 
   const filteredBySearch = approvals.filter(item =>
-    item.schoolName.toLowerCase().includes(searchTerm.toLowerCase())
+    item.schoolName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredByStatus = selectedStatus === 'all' 
