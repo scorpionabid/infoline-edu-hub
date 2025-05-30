@@ -1,4 +1,5 @@
 
+
 import { LucideIcon, Type, Hash, Mail, Phone, Calendar, ChevronDown, CheckSquare, Circle, FileText } from 'lucide-react';
 
 // Core column types
@@ -93,65 +94,6 @@ export interface ColumnTypeDefinition {
   hasOptions?: boolean;
 }
 
-export const columnTypeDefinitions: ColumnTypeDefinition[] = [
-  {
-    value: 'text',
-    label: 'Text',
-    description: 'Single line text input',
-    icon: <Type className="h-4 w-4" />
-  },
-  {
-    value: 'textarea',
-    label: 'Textarea',
-    description: 'Multi-line text input',
-    icon: <FileText className="h-4 w-4" />
-  },
-  {
-    value: 'number',
-    label: 'Number',
-    description: 'Numeric input',
-    icon: <Hash className="h-4 w-4" />
-  },
-  {
-    value: 'email',
-    label: 'Email',
-    description: 'Email address input',
-    icon: <Mail className="h-4 w-4" />
-  },
-  {
-    value: 'phone',
-    label: 'Phone',
-    description: 'Phone number input',
-    icon: <Phone className="h-4 w-4" />
-  },
-  {
-    value: 'date',
-    label: 'Date',
-    description: 'Date picker input',
-    icon: <Calendar className="h-4 w-4" />
-  },
-  {
-    value: 'select',
-    label: 'Select',
-    description: 'Dropdown selection',
-    icon: <ChevronDown className="h-4 w-4" />,
-    hasOptions: true
-  },
-  {
-    value: 'radio',
-    label: 'Radio',
-    description: 'Radio button selection',
-    icon: <Circle className="h-4 w-4" />,
-    hasOptions: true
-  },
-  {
-    value: 'checkbox',
-    label: 'Checkbox',
-    description: 'Checkbox input',
-    icon: <CheckSquare className="h-4 w-4" />
-  }
-];
-
 // Legacy validation interface for backward compatibility
 export interface ValidationRules extends ColumnValidation {}
 
@@ -197,3 +139,4 @@ export interface ColumnHeaderProps {
   columnsCount?: number;
   isLoading?: boolean;
 }
+
