@@ -1,18 +1,26 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CategoryItem } from '@/types/dashboard';
+import { CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
 
 interface FormTabsProps {
   categories: CategoryItem[];
   selectedCategory?: string;
   onCategoryChange: (categoryId: string) => void;
+  upcoming?: DeadlineItem[];
+  pendingForms?: FormItem[];
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (id: string) => void;
 }
 
 const FormTabs: React.FC<FormTabsProps> = ({ 
   categories, 
   selectedCategory, 
-  onCategoryChange 
+  onCategoryChange,
+  upcoming = [],
+  pendingForms = [],
+  navigateToDataEntry,
+  handleFormClick
 }) => {
   return (
     <Tabs 
@@ -40,7 +48,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
               <p className="text-muted-foreground mb-4">{category.description}</p>
             )}
             <div className="text-sm text-muted-foreground">
-              Completion: {category.completion_rate || 0}%
+              Completion: {category.completion_rate || category.completionRate || 0}%
             </div>
           </div>
         </TabsContent>

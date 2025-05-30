@@ -7,7 +7,7 @@ import { LinksCard } from './school-admin/LinksCard';
 import { FilesCard } from './school-admin/FilesCard';
 import { RegionLinksCard } from './region-admin/RegionLinksCard';
 import { RegionFilesCard } from './region-admin/RegionFilesCard';
-import { SectorLinksCard } from './sector-admin/SectorLinksCard';
+import SectorLinksCard from './sector-admin/SectorLinksCard';
 import { SectorFilesCard } from './sector-admin/SectorFilesCard';
 
 /**
@@ -71,7 +71,7 @@ const DashboardContent: React.FC = () => {
             </Card>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SectorLinksCard />
+              <SectorLinksCard links={[]} />
               <SectorFilesCard />
             </div>
           </div>
