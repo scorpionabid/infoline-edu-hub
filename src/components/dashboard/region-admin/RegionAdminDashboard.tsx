@@ -7,9 +7,10 @@ import { DashboardFormStats, RegionAdminDashboardData } from '@/types/dashboard'
 import StatsGrid from '../StatsGrid';
 import DashboardChart from '../DashboardChart';
 import PendingApprovalsCard from '../PendingApprovalsCard';
-import SectorStatsTable from './SectorStatsTable';
-import CategoryProgressList from '../CategoryProgressList';
 import SchoolsCompletionList from '../SchoolsCompletionList';
+import CategoryProgressList from '../CategoryProgressList';
+import UpcomingDeadlinesList from '../UpcomingDeadlinesList';
+import SectorsList from './SectorsList';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 
@@ -38,33 +39,34 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data, isLoa
   const statsData = [
     { 
       title: t('totalSectors'), 
-      value: data.sectorStats?.length || 0, 
+      value: data.status?.total || 0,
       color: 'bg-blue-100' 
     },
     { 
-      title: t('totalSchools'), 
-      value: data.schoolStats?.length || 0, 
+      title: t('activeSectors'), 
+      value: data.status?.active || 0,
       color: 'bg-green-100' 
     },
     { 
-      title: t('pendingApprovals'), 
-      value: data.pendingApprovals?.length || 0, 
-      color: 'bg-amber-100' 
+      title: t('inactiveSectors'), 
+      value: data.status?.inactive || 0,
+      color: 'bg-gray-100' 
     },
   ];
   
-  const formStatsData: DashboardFormStats = data.formStats || {
-    pending: data.status?.pending || 0,
-    approved: data.status?.approved || 0,
-    rejected: data.status?.rejected || 0,
-    draft: data.status?.draft || 0,
-    total: data.status?.total || 0,
-    dueSoon: 0,
-    overdue: 0,
-    completed: data.status?.approved || 0,
-    percentage: data.completionRate || 0
+  const formStatsData: DashboardFormStats = {
+    total: data.formStats?.total || data.status?.total || 0,
+    pending: data.formStats?.pending || data.status?.pending || 0,
+    approved: data.formStats?.approved || data.status?.approved || 0,
+    rejected: data.formStats?.rejected || data.status?.rejected || 0,
+    draft: data.formStats?.draft || data.status?.draft || 0,
+    dueSoon: data.formStats?.dueSoon || 0,
+    overdue: data.formStats?.overdue || 0,
+    completed: data.formStats?.completed || data.status?.approved || 0,
+    percentage: data.formStats?.percentage || data.completionRate || 0,
+    completion_rate: data.formStats?.completion_rate || data.completionRate || 0
   };
-  
+
   // Handle completion data safely regardless of whether it's an object or number
   const completionPercentage = typeof data.completion === 'object' && data.completion
     ? data.completion.percentage
@@ -101,8 +103,8 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data, isLoa
             <CardTitle>{t('sectorsProgress')}</CardTitle>
             <CardDescription>{t('sectorsProgressDescription')}</CardDescription>
           </CardHeader>
-          <CardContent className="px-2">
-            <SectorStatsTable sectors={data.sectorStats || []} />
+          <CardContent>
+            <SectorsList sectors={data.sectorStats || []} />
           </CardContent>
         </Card>
       </div>
@@ -111,6 +113,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data, isLoa
         <TabsList>
           <TabsTrigger value="approvals">{t('pendingApprovals')}</TabsTrigger>
           <TabsTrigger value="categories">{t('categories')}</TabsTrigger>
+          <TabsTrigger value="upcoming">{t('upcomingDeadlines')}</TabsTrigger>
           <TabsTrigger value="schools">{t('schools')}</TabsTrigger>
         </TabsList>
         
@@ -120,6 +123,10 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data, isLoa
         
         <TabsContent value="categories" className="space-y-4">
           <CategoryProgressList categories={data.categories || []} />
+        </TabsContent>
+        
+        <TabsContent value="upcoming" className="space-y-4">
+          <UpcomingDeadlinesList deadlines={data.upcomingDeadlines || []} />
         </TabsContent>
         
         <TabsContent value="schools" className="space-y-4">

@@ -32,7 +32,10 @@ interface ApprovalProps {
 }
 
 interface ApprovalRecord extends PendingApproval {
-  status: 'pending' | 'approved' | 'rejected';
+  schoolName: string;
+  categoryName: string;
+  date: string;
+  submittedAt: string;
 }
 
 const Approval: React.FC<ApprovalProps> = ({ 
