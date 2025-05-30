@@ -1,6 +1,7 @@
 
 
-import { LucideIcon, Type, Hash, Mail, Phone, Calendar, ChevronDown, CheckSquare, Circle, FileText } from 'lucide-react';
+import React from 'react';
+import { LucideIcon, Type, Hash, Mail, Phone, Calendar, ChevronDown, CheckSquare, Circle, FileText, AlignLeft, Link, Clock, CalendarClock } from 'lucide-react';
 
 // Core column types
 export type ColumnType = 
@@ -96,6 +97,97 @@ export interface ColumnTypeDefinition {
 
 // Legacy validation interface for backward compatibility
 export interface ValidationRules extends ColumnValidation {}
+
+// Column type definitions for UI display
+export const columnTypeDefinitions: ColumnTypeDefinition[] = [
+  {
+    value: 'text',
+    label: 'Text',
+    description: 'Short text input',
+    icon: React.createElement(Type, { className: "h-4 w-4" }),
+  },
+  {
+    value: 'textarea',
+    label: 'Textarea',
+    description: 'Multi-line text input',
+    icon: React.createElement(AlignLeft, { className: "h-4 w-4" }),
+  },
+  {
+    value: 'number',
+    label: 'Number',
+    description: 'Numeric input',
+    icon: React.createElement(Hash, { className: "h-4 w-4" }),
+  },
+  {
+    value: 'email',
+    label: 'Email',
+    description: 'Email address input',
+    icon: React.createElement(Mail, { className: "h-4 w-4" }),
+  },
+  {
+    value: 'phone',
+    label: 'Phone',
+    description: 'Phone number input',
+    icon: React.createElement(Phone, { className: "h-4 w-4" }),
+  },
+  {
+    value: 'url',
+    label: 'URL',
+    description: 'Website URL input',
+    icon: React.createElement(Link, { className: "h-4 w-4" }),
+  },
+  {
+    value: 'select',
+    label: 'Select',
+    description: 'Dropdown selection',
+    icon: React.createElement(ChevronDown, { className: "h-4 w-4" }),
+    hasOptions: true,
+  },
+  {
+    value: 'multiselect',
+    label: 'Multi Select',
+    description: 'Multiple selection dropdown',
+    icon: React.createElement(CheckSquare, { className: "h-4 w-4" }),
+    hasOptions: true,
+  },
+  {
+    value: 'checkbox',
+    label: 'Checkbox',
+    description: 'Yes/No checkbox',
+    icon: React.createElement(CheckSquare, { className: "h-4 w-4" }),
+  },
+  {
+    value: 'radio',
+    label: 'Radio',
+    description: 'Single selection radio buttons',
+    icon: React.createElement(Circle, { className: "h-4 w-4" }),
+    hasOptions: true,
+  },
+  {
+    value: 'date',
+    label: 'Date',
+    description: 'Date picker',
+    icon: React.createElement(Calendar, { className: "h-4 w-4" }),
+  },
+  {
+    value: 'time',
+    label: 'Time',
+    description: 'Time picker',
+    icon: React.createElement(Clock, { className: "h-4 w-4" }),
+  },
+  {
+    value: 'datetime',
+    label: 'Date & Time',
+    description: 'Date and time picker',
+    icon: React.createElement(CalendarClock, { className: "h-4 w-4" }),
+  },
+  {
+    value: 'file',
+    label: 'File',
+    description: 'File upload',
+    icon: React.createElement(FileText, { className: "h-4 w-4" }),
+  },
+];
 
 // Column type selector component props
 export interface ColumnTypeSelectorProps {
