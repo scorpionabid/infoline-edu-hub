@@ -1,51 +1,44 @@
-import React from 'react';
-import { FileCategory } from '../../types/file';
-import { Icon, Typography } from '../ui';
 
-interface FolderStructureProps {
-  categories: FileCategory[];
-  activeCategory: string | null;
-  onSelectCategory: (categoryId: string | null) => void;
+import React from 'react';
+import { Folder, File } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+interface FolderItem {
+  id: string;
+  name: string;
+  type: 'folder' | 'file';
+  children?: FolderItem[];
 }
 
-export const FolderStructure: React.FC<FolderStructureProps> = ({ 
-  categories, 
-  activeCategory, 
-  onSelectCategory 
-}) => {
+interface FolderStructureProps {
+  items: FolderItem[];
+  onItemClick?: (item: FolderItem) => void;
+}
+
+const FolderStructure: React.FC<FolderStructureProps> = ({ items, onItemClick }) => {
+  const renderItem = (item: FolderItem, level: number = 0) => (
+    <div key={item.id} style={{ marginLeft: `${level * 20}px` }}>
+      <Button
+        variant="ghost"
+        className="w-full justify-start p-2 h-auto"
+        onClick={() => onItemClick?.(item)}
+      >
+        {item.type === 'folder' ? (
+          <Folder className="h-4 w-4 mr-2" />
+        ) : (
+          <File className="h-4 w-4 mr-2" />
+        )}
+        <span className="text-sm">{item.name}</span>
+      </Button>
+      {item.children && item.children.map(child => renderItem(child, level + 1))}
+    </div>
+  );
+
   return (
-    <div className="bg-gray-50 p-4 rounded-md">
-      <div className="mb-3">
-        <Typography variant="h6">Qovluqlar</Typography>
-      </div>
-      
-      <ul className="space-y-2">
-        <li>
-          <button
-            className={`flex items-center w-full text-left p-2 rounded hover:bg-gray-100 ${
-              activeCategory === null ? 'bg-gray-200' : ''
-            }`}
-            onClick={() => onSelectCategory(null)}
-          >
-            <Icon name="folder" className="mr-2" />
-            <span>Bütün fayllar</span>
-          </button>
-        </li>
-        
-        {categories.map(category => (
-          <li key={category.id}>
-            <button
-              className={`flex items-center w-full text-left p-2 rounded hover:bg-gray-100 ${
-                activeCategory === category.id ? 'bg-gray-200' : ''
-              }`}
-              onClick={() => onSelectCategory(category.id)}
-            >
-              <Icon name={category.icon || 'folder'} className="mr-2" />
-              <span>{category.name}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
+    <div className="space-y-1">
+      {items.map(item => renderItem(item))}
     </div>
   );
 };
+
+export default FolderStructure;

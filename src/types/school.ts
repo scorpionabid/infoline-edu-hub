@@ -65,6 +65,21 @@ export interface SchoolStat {
   lastUpdate?: string;
 }
 
+export interface SchoolFormProps {
+  initialValues?: Partial<School>;
+  onSubmit: (values: School) => void;
+  onCancel: () => void;
+  regions: Region[];
+  sectors: Sector[];
+  isSubmitting?: boolean;
+}
+
+export interface UploadFileData {
+  file: File;
+  category_id?: string;
+  description?: string;
+}
+
 export const adaptToSchoolStat = (school: any): SchoolStat => {
   return {
     id: school.id,
