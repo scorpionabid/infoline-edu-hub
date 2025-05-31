@@ -26,6 +26,7 @@ export interface FullUserData {
   created_at?: string;
   updated_at?: string;
   permissions?: string[];
+  preferences?: any; // İstifadəçi tərcihləri - notification_settings və digər tərcihləri saxlamaq üçün
 }
 
 export interface User {

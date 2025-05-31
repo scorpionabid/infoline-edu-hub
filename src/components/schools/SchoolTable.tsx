@@ -20,9 +20,9 @@ import {
 import { DotsHorizontalIcon, Pencil1Icon, TrashIcon, PersonIcon } from '@radix-ui/react-icons'
 import { Search } from 'lucide-react';
 import { Link2, FolderOpen } from 'lucide-react';
-import { SchoolLinksDialog } from './school-links/SchoolLinksDialog';
+import SchoolLinksDialog from './school-links/SchoolLinksDialog';
 import { SchoolFilesDialog } from './school-files/SchoolFilesDialog';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
 interface School {
   id: string;
@@ -263,20 +263,20 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
       {/* Link Management Dialog */}
       {selectedSchool && (
         <SchoolLinksDialog
-          isOpen={linkDialogOpen}
-          onClose={() => setLinkDialogOpen(false)}
-          school={selectedSchool}
-          userRole={useAuth().user?.role || 'viewer'}
+          open={linkDialogOpen}
+          onOpenChange={(open) => setLinkDialogOpen(open)}
+          schoolId={selectedSchool.id}
+          links={selectedSchool.links || []}
         />
       )}
 
       {/* File Management Dialog */}
       {selectedSchool && (
         <SchoolFilesDialog
-          isOpen={fileDialogOpen}
-          onClose={() => setFileDialogOpen(false)}
-          school={selectedSchool}
-          userRole={useAuth().user?.role || 'viewer'}
+          open={fileDialogOpen}
+          onOpenChange={(open) => setFileDialogOpen(open)}
+          schoolId={selectedSchool.id}
+          files={selectedSchool.files || []}
         />
       )}
     </div>

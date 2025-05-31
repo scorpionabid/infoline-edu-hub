@@ -30,5 +30,5 @@ export { useRouter } from './common/useRouter';
 // Legacy compatibility exports
 export { useCategories } from './categories';
 export { useDataEntry } from './dataEntry';
-export { useAuth } from './auth';
+// Legacy auth hook silindi - indi Zustand istifadə olunur
 export { useValidation } from './form';

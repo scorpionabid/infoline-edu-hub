@@ -9,7 +9,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } fr
 import { Switch } from '@/components/ui/switch';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useAuthStore, selectUser, selectUpdateProfile } from '@/hooks/auth/useAuthStore';
 import { NotificationSettings } from '@/types/user';
 
 const formSchema = z.object({
@@ -26,7 +26,8 @@ const formSchema = z.object({
 
 const PreferencesForm = () => {
   const { t } = useLanguage();
-  const { user, updateUserPreferences } = useAuth();
+  const user = useAuthStore(selectUser);
+  const updateProfile = useAuthStore(selectUpdateProfile);
   
   const defaultValues: NotificationSettings = {
     email: true,
@@ -42,12 +43,13 @@ const PreferencesForm = () => {
   
   const form = useForm<NotificationSettings>({
     resolver: zodResolver(formSchema),
-    defaultValues: user?.notification_settings || defaultValues,
+    // Supabase profiles cədvəlində preferences sahəsində saxlanıla bilər
+    defaultValues: (user?.preferences as NotificationSettings) || defaultValues,
   });
   
   const onSubmit = async (data: NotificationSettings) => {
     try {
-      await updateUserPreferences(data);
+      await updateProfile({ preferences: data });
       toast.success(t('preferencesUpdated'));
     } catch (error) {
       toast.error(t('errorUpdatingPreferences'));

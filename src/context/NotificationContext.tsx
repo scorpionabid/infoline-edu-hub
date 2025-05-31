@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { AppNotification, adaptDashboardNotificationToApp, adaptNotificationForDatabase } from '@/types/notification';
 
 // Context type definition
@@ -37,7 +37,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   
   // Fetch notifications from Supabase
   const fetchNotifications = useCallback(async () => {
