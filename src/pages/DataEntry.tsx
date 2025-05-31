@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDataEntry } from '@/hooks/dataEntry/useDataEntry';
+import { useDataEntryManager } from '@/hooks/dataEntry/useDataEntryManager';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { FormFields } from '@/components/dataEntry/core';
+import DataEntryFormManager from '@/components/dataEntry/core/DataEntryFormManager';
 
 // Alert komponenti
 export const Alert = React.forwardRef<
@@ -63,8 +65,14 @@ interface DataEntryFormProps {
   schoolName?: string;
 }
 
-// Məlumat daxiletmə komponenti - Enhanced with null safety
-const DataEntryForm: React.FC<DataEntryFormProps> = ({ schoolId, categories, initialCategoryId, isSectorAdmin = false, schoolName = "" }) => {
+// Məlumat daxiletmə komponenti - Enhanced with real data manager
+const DataEntryForm: React.FC<DataEntryFormProps> = ({ 
+  schoolId, 
+  categories, 
+  initialCategoryId, 
+  isSectorAdmin = false, 
+  schoolName = "" 
+}) => {
   const { t, currentLanguage } = useLanguage();
   const { user } = useAuth();
   const permissions = usePermissions();
@@ -163,65 +171,44 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ schoolId, categories, ini
     return categories.filter(cat => cat && cat.id);
   }, [categories]);
   
-  const {
-    formData,
-    isAutoSaving,
-    isSubmitting,
-    handleInputChange,
-    handleSubmit,
-    handleSave,
-    handleReset,
-    handleCategoryChange,
-    currentCategory,
-    loadingEntry,
-    entryStatus,
-    entryError,
-    entryId
-  } = useDataEntry({
-    schoolId,
-    categoryId: initialCategoryId
-  });
-
-  // Safe formData access with proper null checks
-  const getFormValue = useCallback((columnId: string): string => {
-    if (!formData || typeof formData !== 'object') {
-      return '';
+  // Selected category with safety check
+  const [selectedCategory, setSelectedCategory] = useState<any>(null);
+  
+  useEffect(() => {
+    if (initialCategoryId && safeCategories.length > 0) {
+      const category = safeCategories.find(cat => cat.id === initialCategoryId);
+      if (category) {
+        setSelectedCategory(category);
+      } else if (safeCategories.length > 0) {
+        setSelectedCategory(safeCategories[0]);
+      }
+    } else if (safeCategories.length > 0) {
+      setSelectedCategory(safeCategories[0]);
     }
-    const value = formData[columnId];
-    return value !== undefined && value !== null ? String(value) : '';
-  }, [formData]);
+  }, [initialCategoryId, safeCategories]);
+
+  // Data entry manager hook
+  const dataManager = useDataEntryManager({
+    categoryId: selectedCategory?.id || '',
+    schoolId: schoolId || '',
+    category: selectedCategory
+  });
   
   // Update URL when category changes
   useEffect(() => {
-    if (currentCategory && currentCategory.id) {
+    if (selectedCategory && selectedCategory.id) {
       const newParams = new URLSearchParams(location.search);
-      newParams.set('categoryId', currentCategory.id);
+      newParams.set('categoryId', selectedCategory.id);
       navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
     }
-  }, [currentCategory, location.pathname, location.search, navigate]);
+  }, [selectedCategory, location.pathname, location.search, navigate]);
   
   // Loading state
-  if (loadingEntry) {
+  if (dataManager.isLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-15rem)]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
         <span className="ml-2 text-lg">{t('loading')}</span>
-      </div>
-    );
-  }
-  
-  // Error state
-  if (entryError) {
-    return (
-      <div className="p-4">
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          <div className="ml-4">
-            <h3 className="font-medium">{t('error')}</h3>
-            <p className="text-sm">{entryError}</p>
-          </div>
-        </Alert>
-        <Button onClick={() => window.location.reload()}>{t('tryAgain')}</Button>
       </div>
     );
   }
@@ -240,9 +227,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ schoolId, categories, ini
       </div>
     );
   }
-  
-  // Selected category with safety check
-  const selectedCategory = currentCategory || (safeCategories.length > 0 ? safeCategories[0] : null);
   
   if (!selectedCategory) {
     return (
@@ -291,19 +275,19 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ schoolId, categories, ini
                     )}
                     onClick={() => {
                       setCurrentCategoryIndex(index);
-                      handleCategoryChange(category);
+                      setSelectedCategory(category);
                     }}
                   >
                     {category.name || `Category ${index + 1}`}
-                    {entryStatus && entryStatus[category.id] && (
+                    {dataManager.entryStatus && (
                       <span className={cn(
                         "ml-auto text-xs px-2 py-0.5 rounded-full",
-                        entryStatus[category.id] === 'draft' && "bg-yellow-100 text-yellow-800",
-                        entryStatus[category.id] === 'pending' && "bg-blue-100 text-blue-800",
-                        entryStatus[category.id] === 'approved' && "bg-green-100 text-green-800",
-                        entryStatus[category.id] === 'rejected' && "bg-red-100 text-red-800"
+                        dataManager.entryStatus === 'draft' && "bg-yellow-100 text-yellow-800",
+                        dataManager.entryStatus === 'pending' && "bg-blue-100 text-blue-800",
+                        dataManager.entryStatus === 'approved' && "bg-green-100 text-green-800",
+                        dataManager.entryStatus === 'rejected' && "bg-red-100 text-red-800"
                       )}>
-                        {t(entryStatus[category.id])}
+                        {t(dataManager.entryStatus)}
                       </span>
                     )}
                   </Button>
@@ -314,73 +298,23 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ schoolId, categories, ini
         </Card>
       </div>
       
-      {/* Data entry form */}
+      {/* Data entry form with manager */}
       <div className="md:col-span-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>{selectedCategory?.name || t('untitledCategory')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[calc(100vh-15rem)]">
-              <form onSubmit={handleSubmit} className="space-y-6 p-2">
-                {selectedCategory?.columns && Array.isArray(selectedCategory.columns) ? (
-                  <FormFields 
-                    columns={selectedCategory.columns}
-                    disabled={isSubmitting || isAutoSaving}
-                    readOnly={readOnly}
-                  />
-                ) : (
-                  <div className="text-center py-6 text-gray-500">
-                    {t('noColumnsForCategory')}
-                  </div>
-                )}
-                
-                <div className="flex justify-between pt-4">
-                  <div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleReset}
-                      disabled={isSubmitting || isAutoSaving}
-                    >
-                      {t('reset')}
-                    </Button>
-                  </div>
-                  <div className="space-x-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleSave}
-                      disabled={isSubmitting || isAutoSaving}
-                    >
-                      {isAutoSaving ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {t('saving')}
-                        </>
-                      ) : (
-                        t('saveDraft')
-                      )}
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting || isAutoSaving}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {t('submitting')}
-                        </>
-                      ) : (
-                        t('submit')
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </form>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+        <DataEntryFormManager
+          category={selectedCategory}
+          schoolId={schoolId || ''}
+          formData={dataManager.formData}
+          onFormDataChange={dataManager.setFormData}
+          onSave={dataManager.handleSave}
+          onSubmit={dataManager.handleSubmit}
+          onExportTemplate={dataManager.handleExportTemplate}
+          onImportData={dataManager.handleImportData}
+          isLoading={dataManager.isLoading}
+          isSaving={dataManager.isSaving}
+          isSubmitting={dataManager.isSubmitting}
+          errors={dataManager.errors}
+          readOnly={readOnly}
+        />
       </div>
     </div>
   );

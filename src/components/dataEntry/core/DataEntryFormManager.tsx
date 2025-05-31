@@ -154,13 +154,6 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
     event.target.value = '';
   }, [onImportData, t, toast]);
 
-  // Status badge color
-  const getStatusColor = () => {
-    if (completionPercentage === 100) return 'bg-green-500';
-    if (completionPercentage >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
   return (
     <div className="space-y-4">
       {/* Header with status and actions */}
@@ -180,7 +173,7 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
                     `${Math.round(completionPercentage)}% ${t('completed')}`
                   )}
                 </Badge>
-              </div>
+              </CardTitle>
             </div>
             <div className="flex items-center gap-2">
               <Button

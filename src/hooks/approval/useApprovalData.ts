@@ -1,176 +1,200 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/auth';
 
-interface ApprovalData {
-  schools: any[];
-  regions: any[];
-  sectors: any[];
-  categories: any[];
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/context/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth';
+
+interface ApprovalItem {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  schoolId: string;
+  schoolName: string;
+  submittedAt: string;
+  submittedBy: string;
+  status: 'pending' | 'approved' | 'rejected' | 'draft';
+  entries: any[];
+  completionRate: number;
 }
 
 export const useApprovalData = () => {
-  const [data, setData] = useState<ApprovalData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const { t } = useLanguage();
+  const { toast } = useToast();
   const { user } = useAuth();
+  
+  const [pendingApprovals, setPendingApprovals] = useState<ApprovalItem[]>([]);
+  const [approvedItems, setApprovedItems] = useState<ApprovalItem[]>([]);
+  const [rejectedItems, setRejectedItems] = useState<ApprovalItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Helper functions to fetch data
-  const fetchSchools = async () => {
-    const { data, error } = await supabase
-      .from('schools')
-      .select('id, name, region_id, sector_id');
-    if (error) {
-      console.error('Error fetching schools:', error);
-      throw error;
-    }
-    return data;
-  };
-
-  const fetchRegions = async () => {
-    const { data, error } = await supabase
-      .from('regions')
-      .select('id, name');
-    if (error) {
-      console.error('Error fetching regions:', error);
-      throw error;
-    }
-    return data;
-  };
-
-  const fetchSectors = async () => {
-    const { data, error } = await supabase
-      .from('sectors')
-      .select('id, name, region_id');
-    if (error) {
-      console.error('Error fetching sectors:', error);
-      throw error;
-    }
-    return data;
-  };
-
-  const fetchCategories = async () => {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('id, name, type');
-    if (error) {
-      console.error('Error fetching categories:', error);
-      throw error;
-    }
-    return data;
-  };
-
-  // Fetch all data
-  const fetchData = async () => {
-    setLoading(true);
+  // Load approval data
+  const loadApprovalData = useCallback(async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
     try {
-      const [schools, regions, sectors, categories] = await Promise.all([
-        fetchSchools(),
-        fetchRegions(),
-        fetchSectors(),
-        fetchCategories(),
-      ]);
+      // Get data entries with related information
+      const { data: entries, error } = await supabase
+        .from('data_entries')
+        .select(`
+          id,
+          status,
+          category_id,
+          school_id,
+          created_at,
+          created_by,
+          value,
+          categories (
+            id,
+            name
+          ),
+          schools (
+            id,
+            name
+          )
+        `)
+        .in('status', ['pending', 'approved', 'rejected']);
 
-      setData({
-        schools,
-        regions,
-        sectors,
-        categories,
+      if (error) throw error;
+
+      // Group entries by category and school
+      const groupedData: Record<string, ApprovalItem> = {};
+      
+      entries?.forEach(entry => {
+        const key = `${entry.category_id}-${entry.school_id}`;
+        
+        if (!groupedData[key]) {
+          groupedData[key] = {
+            id: key,
+            categoryId: entry.category_id,
+            categoryName: entry.categories?.name || 'Unknown Category',
+            schoolId: entry.school_id,
+            schoolName: entry.schools?.name || 'Unknown School',
+            submittedAt: entry.created_at,
+            submittedBy: entry.created_by || 'Unknown User',
+            status: entry.status as any,
+            entries: [],
+            completionRate: 0
+          };
+        }
+        
+        groupedData[key].entries.push(entry);
       });
-    } catch (error: any) {
-      setError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    fetchData();
+      // Calculate completion rates and separate by status
+      const pending: ApprovalItem[] = [];
+      const approved: ApprovalItem[] = [];
+      const rejected: ApprovalItem[] = [];
+
+      Object.values(groupedData).forEach(item => {
+        // Calculate completion rate based on filled fields
+        const filledEntries = item.entries.filter(e => e.value && e.value.trim() !== '');
+        item.completionRate = item.entries.length > 0 ? (filledEntries.length / item.entries.length) * 100 : 0;
+
+        // Group by status
+        switch (item.status) {
+          case 'pending':
+            pending.push(item);
+            break;
+          case 'approved':
+            approved.push(item);
+            break;
+          case 'rejected':
+            rejected.push(item);
+            break;
+        }
+      });
+
+      setPendingApprovals(pending);
+      setApprovedItems(approved);
+      setRejectedItems(rejected);
+
+    } catch (error) {
+      console.error('Error loading approval data:', error);
+      toast({
+        title: t('error'),
+        description: t('errorLoadingApprovalData'),
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, t, toast]);
+
+  // Approve item
+  const approveItem = useCallback(async (itemId: string, comment?: string) => {
+    const [categoryId, schoolId] = itemId.split('-');
+    
+    try {
+      const { error } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: user?.id
+        })
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+      
+      // Reload data
+      await loadApprovalData();
+      
+    } catch (error) {
+      console.error('Error approving item:', error);
+      throw error;
+    }
+  }, [user?.id, loadApprovalData]);
+
+  // Reject item
+  const rejectItem = useCallback(async (itemId: string, reason: string) => {
+    const [categoryId, schoolId] = itemId.split('-');
+    
+    try {
+      const { error } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'rejected',
+          rejection_reason: reason,
+          rejected_by: user?.id
+        })
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+      
+      // Reload data
+      await loadApprovalData();
+      
+    } catch (error) {
+      console.error('Error rejecting item:', error);
+      throw error;
+    }
+  }, [user?.id, loadApprovalData]);
+
+  // View item details
+  const viewItem = useCallback((item: ApprovalItem) => {
+    // This would typically navigate to a detailed view
+    console.log('Viewing item:', item);
   }, []);
 
-  // Fix the functions that work with arrays
-const getItemsById = (items: any[], ids: string[]): any[] => {
-  return items.filter(item => ids.includes(item.id));
-};
-
-const getFilteredSchools = (schools: any[], regionId?: string, sectorId?: string): any[] => {
-  if (!schools || schools.length === 0) return [];
-  
-  let filteredSchools = [...schools];
-  
-  if (regionId) {
-    filteredSchools = filteredSchools.filter(school => school.region_id === regionId);
-  }
-  
-  if (sectorId) {
-    filteredSchools = filteredSchools.filter(school => school.sector_id === sectorId);
-  }
-  
-  return filteredSchools;
-};
-
-  const getFilteredRegions = (regions: any[], schoolId?: string): any[] => {
-    if (!regions || regions.length === 0) return [];
-    if (!schoolId) return regions;
-    
-    return regions.filter(region => region.id === schoolId);
-  };
-
-  const getFilteredSectors = (sectors: any[], regionId?: string): any[] => {
-    if (!sectors || sectors.length === 0) return [];
-    if (!regionId) return sectors;
-    
-    return sectors.filter(sector => sector.region_id === regionId);
-  };
-
-  const getCategoriesByType = (categories: any[], type?: string): any[] => {
-    if (!categories || categories.length === 0) return [];
-    if (!type) return categories;
-    
-    return categories.filter(category => category.type === type);
-  };
-
-  // Fix the mapEntities function
-const mapEntities = (data: any) => {
-  if (!data) return {};
-  
-  const schools = Array.isArray(data.schools) ? data.schools : [];
-  const regions = Array.isArray(data.regions) ? data.regions : [];
-  const sectors = Array.isArray(data.sectors) ? data.sectors : [];
-  
-  const schoolsById = schools.reduce((acc: Record<string, any>, school: any) => {
-    acc[school.id] = school;
-    return acc;
-  }, {});
-  
-  const regionsById = regions.reduce((acc: Record<string, any>, region: any) => {
-    acc[region.id] = region;
-    return acc;
-  }, {});
-  
-  const sectorsById = sectors.reduce((acc: Record<string, any>, sector: any) => {
-    acc[sector.id] = sector;
-    return acc;
-  }, {});
-  
-  return {
-    schoolsById,
-    regionsById,
-    sectorsById,
-    regionId: regions.length > 0 ? regions[0].id : null,
-    sectorId: sectors.length > 0 ? sectors[0].id : null
-  };
-};
+  // Load data on mount
+  useEffect(() => {
+    loadApprovalData();
+  }, [loadApprovalData]);
 
   return {
-    data,
-    loading,
-    error,
-    getItemsById,
-    getFilteredSchools,
-    getFilteredRegions,
-    getFilteredSectors,
-    getCategoriesByType,
-    mapEntities,
+    pendingApprovals,
+    approvedItems,
+    rejectedItems,
+    isLoading,
+    approveItem,
+    rejectItem,
+    viewItem,
+    refreshData: loadApprovalData
   };
 };

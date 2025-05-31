@@ -1,59 +1,85 @@
 
-import React, { useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import PageHeader from '@/components/layout/PageHeader';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLanguage } from '@/context/LanguageContext';
 import { useApprovalData } from '@/hooks/approval/useApprovalData';
-import { DataEntryRecord } from '@/types/dataEntry';
+import { Loader2, CheckCircle, Clock, XCircle } from 'lucide-react';
+import ApprovalManager from '@/components/approval/ApprovalManager';
 
-const Approval: React.FC = () => {
-  const { data, loading, error } = useApprovalData();
-  
-  // Hook özü data-nı load edir, useEffect-ə ehtiyac yoxdur
+const ApprovalPage: React.FC = () => {
+  const { t } = useLanguage();
+  const {
+    pendingApprovals,
+    approvedItems,
+    rejectedItems,
+    isLoading,
+    approveItem,
+    rejectItem,
+    viewItem
+  } = useApprovalData();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2 text-lg">{t('loading')}</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-6">
-      <PageHeader title="Approval Queue" description="Review and approve pending data entries" />
-      
-      <div className="grid grid-cols-1 gap-6 mt-6">
-        {loading ? (
+    <div className="container mx-auto py-4 px-2">
+      <div className="flex flex-col space-y-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">{t('dataApproval')}</h1>
+        </div>
+
+        {/* Stats overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
-            <CardContent className="p-6">Loading approval data...</CardContent>
-          </Card>
-        ) : error ? (
-          <Card>
-            <CardContent className="p-6 text-red-500">
-              Error loading approval data: {error.message}
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t('pendingApprovals')}</CardTitle>
+              <Clock className="h-4 w-4 text-yellow-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">{pendingApprovals.length}</div>
             </CardContent>
           </Card>
-        ) : !data || data.schools.length === 0 ? (
+
           <Card>
-            <CardContent className="p-6">
-              <p className="text-center">No pending approvals found.</p>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t('approvedItems')}</CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{approvedItems.length}</div>
             </CardContent>
           </Card>
-        ) : (
-          <>
-            <Card className="shadow-md">
-              <CardContent className="p-6">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold">Təsdiqləmə məlumatları</h3>
-                  <p className="text-sm text-gray-500">
-                    Məktəblər: {data?.schools.length} | Regionlar: {data?.regions.length} | Sektorlar: {data?.sectors.length}
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 gap-4 mb-4">
-                  <p>Təsdiqləmə məlumatları yükləndi, amma indilik tam funksionallıq tətbiq edilməyib.</p>
-                  <p>Refaktor prosesində bu səhifə yenilənəcək.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t('rejectedItems')}</CardTitle>
+              <XCircle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{rejectedItems.length}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Approval manager */}
+        <ApprovalManager
+          pendingApprovals={pendingApprovals}
+          approvedItems={approvedItems}
+          rejectedItems={rejectedItems}
+          onApprove={approveItem}
+          onReject={rejectItem}
+          onView={viewItem}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );
 };
 
-export default Approval;
+export default ApprovalPage;
