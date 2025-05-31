@@ -58,6 +58,7 @@ type ServiceResponse<T> = {
 
 /**
  * Supabase Edge Functions handler
+ * CORS problemlərini həll etmək üçün Supabase SDK-nın functions.invoke metodunu istifadə edir
  */
 export const callEdgeFunction = async <T = any>(
   functionName: string,
@@ -67,41 +68,56 @@ export const callEdgeFunction = async <T = any>(
   }
 ): Promise<ServiceResponse<T>> => {
   try {
-    // Check if we have a valid session
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    console.log(`Calling edge function: ${functionName}`);
     
-    if (sessionError) {
-      console.error('Session error:', sessionError);
-      return { data: null, error: sessionError };
-    }
+    // Əgər keşlənmə mexanizmi aktiv olarsa keşdən yoxla
+    // const cachedData = sessionStorage.getItem(`edge_${functionName}_${JSON.stringify(options?.body)}`);
+    // if (cachedData) {
+    //   console.log(`Using cached data for edge function: ${functionName}`);
+    //   return { data: JSON.parse(cachedData), error: null };
+    // }
     
-    // Get the JWT token
-    const token = sessionData?.session?.access_token;
-    
-    // Supabase URL - hərə kodlanmış
-    const url = `https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/${functionName}`;
-    
-    // Birbaşa fetch API istifadə edərək CORS xətalarını aradan qaldırırıq
-    const response = await fetch(url, {
+    // Supabase SDK-nın functions.invoke metodundan istifadə et
+    // Bu metod CORS ilə bağlı problemləri həll edir
+    const { data, error } = await supabase.functions.invoke<T>(functionName, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : '',
-        // 'x-application-name' CORS xətasına səbəb olduğu üçün silindi
-        ...options?.headers,
-      },
-      body: options?.body ? JSON.stringify(options.body) : undefined,
+      body: options?.body,
+      headers: options?.headers,
     });
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Edge function error: ${response.status} - ${errorText}`);
+    if (error) {
+      console.error(`Error in edge function ${functionName}:`, error);
+      return { data: null, error: new Error(error.message || 'Unknown error in edge function') };
     }
     
-    const data = await response.json();
+    // Nəticəni keşlə
+    // if (data) {
+    //   sessionStorage.setItem(`edge_${functionName}_${JSON.stringify(options?.body)}`, JSON.stringify(data));
+    // }
+    
     return { data, error: null };
   } catch (error) {
-    console.error(`Error calling edge function ${functionName}:`, error);
+    console.error(`Unexpected error calling edge function ${functionName}:`, error);
+    
+    // Xəta hallarını daha ətraflı emala et
+    if (error instanceof Error) {
+      // CORS xətasını dəqiq aşkarlayıb, daha yığcam xəta mesajı ver
+      if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+        return { 
+          data: null, 
+          error: new Error(`CORS issue with edge function: ${functionName}. Please check your network settings.`) 
+        };
+      }
+      
+      // Authentication xətaları
+      if (error.message.includes('auth') || error.message.includes('JWT') || error.message.includes('token')) {
+        return { 
+          data: null, 
+          error: new Error(`Authentication error with edge function: ${functionName}. Please login again.`) 
+        };
+      }
+    }
+    
     return { data: null, error: error as Error };
   }
 };

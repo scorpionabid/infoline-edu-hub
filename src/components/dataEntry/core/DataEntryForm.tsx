@@ -37,10 +37,13 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const resolvedCategoryId = propCategoryId || params.categoryId || '';
   const resolvedSchoolId = schoolId || params.schoolId || '';
   
-  // Setup form with safety measures
+  // Setup form with safety measures and better configuration
   const methods = useForm({
     defaultValues: {},
-    mode: 'onChange'
+    mode: 'onChange',
+    shouldUnregister: false, // DOM-dan silindikdə field-ləri qeydiyyatdan çıxarmamaq
+    reValidateMode: 'onChange', // Dəyişikliklərdə validasiya etmək
+    criteriaMode: 'all' // Bütün xətaları göstərmək
   });
   
   const { reset, formState, handleSubmit } = methods;
@@ -151,8 +154,9 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     return entry.value !== undefined && entry.value !== null ? String(entry.value) : '';
   };
 
-  // Handle form submission with better error handling
+  // Handle form submission with better error handling and debugging
   const onSubmit = async (data: any) => {
+    console.log('Form submission triggered with data:', data);
     try {
       if (!category || !category.columns) {
         toast.error(t('categoryOrColumnsUndefined'));
@@ -220,33 +224,79 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     }
   }, [resolvedCategoryId, resolvedSchoolId, isLoading, hasError, category, entriesMap]);
 
-  // Safe render function that won't crash on undefined
+  // Form status diaqnostikası
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.group('DataEntryForm State Diagnostic');
+      console.log('Form state:', {
+        isLoading,
+        hasError,
+        hasCategoryData: !!category,
+        readOnly,
+        hasEntriesData: !!entriesMap && Object.keys(entriesMap).length > 0
+      });
+      console.groupEnd();
+    }
+  }, [isLoading, hasError, category, readOnly, entriesMap]);
+
+  // Safe render function that won't crash on undefined - Təkmilləşdirilmiş versiya
   const renderFormContent = () => {
+    // Yüklənmə vəziyyətində form
     if (isLoading) {
-      return <DataEntryFormLoading />;
-    }
-    
-    if (hasError) {
       return (
-        <DataEntryFormError 
-          error={categoryError || entriesError || 'Unknown error'} 
-          onRetry={fetchDataEntries}
-        />
-      );
-    }
-    
-    if (!category) {
-      return (
-        <div className="p-4 text-center text-muted-foreground">
-          {t('categoryNotFound')}
+        <div className="p-4">
+          <DataEntryFormLoading />
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-2 text-xs text-muted-foreground border rounded">
+              Loading state active - fetching {resolvedCategoryId ? `category ${resolvedCategoryId}` : 'categories'}
+            </div>
+          )}
         </div>
       );
     }
     
+    // Xəta vəziyyətində form
+    if (hasError) {
+      return (
+        <div className="p-4">
+          <DataEntryFormError 
+            error={categoryError || entriesError || 'Unknown error'} 
+            onRetry={fetchDataEntries}
+          />
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-2 text-xs text-muted-foreground border rounded">
+              Error state: {categoryError || entriesError || 'Unknown error'}
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    // Kateqoriya tapılmadıqda
+    if (!category) {
+      return (
+        <div className="p-4 flex flex-col items-center justify-center min-h-[200px]">
+          <div className="text-center text-lg text-muted-foreground mb-4">
+            {t('categoryNotFound')}
+          </div>
+          <Button variant="outline" onClick={fetchDataEntries}>
+            {t('refresh')}
+          </Button>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-2 text-xs text-muted-foreground border rounded">
+              Category ID requested: {resolvedCategoryId || 'none'}
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    // Əsas məzmun - bütün şərtlər yerləşdikdə
     return (
       <DataEntryFormContent 
         category={category} 
-        readOnly={readOnly} 
+        readOnly={readOnly}
+        key={`form-content-${category.id}`} // Kateqoriya dəyişdikdə komponenti yenidən render etmək üçün
       />
     );
   };
@@ -262,6 +312,24 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           </CardHeader>
           <CardContent className="p-0">
             {renderFormContent()}
+            {/* Debug information - dev mode only */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="p-4 text-xs border-t border-dashed">
+                <details>
+                  <summary className="cursor-pointer">Debug Info</summary>
+                  <pre className="mt-2 text-xs overflow-auto max-h-40">
+                    {JSON.stringify({
+                      isDirty: formState.isDirty,
+                      isSubmitting: formState.isSubmitting,
+                      isLoading: isLoading,
+                      hasEntries: entriesMap ? Object.keys(entriesMap).length : 0,
+                      formValues: methods.getValues(),
+                      errors: formState.errors
+                    }, null, 2)}
+                  </pre>
+                </details>
+              </div>
+            )}
           </CardContent>
           
           {!readOnly && (

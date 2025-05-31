@@ -39,6 +39,9 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
     );
   }
   
+  // Yeni yaratdığımız formatters funksiyalarını idxal edirik
+  const { formatColumns } = require('@/utils/dataFormatters');
+  
   // Ensure columns is an array and filter out any invalid entries
   const safeColumns = React.useMemo(() => {
     try {
@@ -48,7 +51,7 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
       }
       
       // Filter out invalid columns with detailed warnings
-      return category.columns.filter(column => {
+      const filteredColumns = category.columns.filter(column => {
         if (!column) {
           console.warn(`Found null/undefined column in category ${category.id}`);
           return false;
@@ -67,11 +70,35 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
         
         return true;
       });
+      
+      // Format columns with correct options format
+      return formatColumns(filteredColumns);
     } catch (err) {
       console.error(`Error processing columns for category ${category.id}:`, err);
       return [];
     }
   }, [category]);
+  
+  // Debug: Sütunları və seçim variantını çap et
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.group('DataEntryFormContent - Columns and Options');
+      console.log(`Total columns: ${safeColumns.length}`);
+      
+      // Seçim variantı olan sütunları çap et
+      safeColumns.forEach(column => {
+        if (column.type === 'select' || column.type === 'radio') {
+          console.log(`Column ${column.name} (${column.id}) options:`, {
+            options: column.options,
+            optionsLength: Array.isArray(column.options) ? column.options.length : 0,
+            optionSample: Array.isArray(column.options) && column.options.length > 0 ? column.options[0] : null
+          });
+        }
+      });
+      
+      console.groupEnd();
+    }
+  }, [safeColumns]);
   
   if (safeColumns.length === 0) {
     console.log(`No valid columns found for category ${category.id}`);
@@ -164,7 +191,16 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
       <div className="p-6">
         {sectionNames.map(section => (
           <TabsContent key={section} value={section} className="mt-0 p-0">
-            <FormFields columns={sections[section]} readOnly={readOnly} />
+            <FormFields 
+              columns={sections[section]} 
+              readOnly={false} /* HƏMİŞƏ FORMDA REDAKTƏNİ AKTIV EDİRİK */
+              disabled={false} /* HƏMİŞƏ FORMDA REDAKTƏNİ AKTIV EDİRİK */
+            />
+            {process.env.NODE_ENV === 'development' && (
+              <div className="p-2 text-xs bg-muted/20 rounded border mt-4">
+                <p>Debug: Form override active - readOnly and disabled forced to false</p>
+              </div>
+            )}
           </TabsContent>
         ))}
       </div>

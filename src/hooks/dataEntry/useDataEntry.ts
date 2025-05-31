@@ -43,7 +43,8 @@ export const useDataEntry = ({
   
   const validation = useValidation(categories, entries);
   
-  // Safe form data handling with proper event type checking
+  // Təkmilləşdirilmiş form data işləmə funksiyaları
+  // HTML event-ləri üçün handleInputChange
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     if (!event || !event.target) {
       console.warn('handleInputChange: Invalid event object');
@@ -56,16 +57,63 @@ export const useDataEntry = ({
       return;
     }
     
+    // Əvvəlcə daha ətraflı loq çıxaraq
+    console.group('handleInputChange call');
+    console.log('Input event received:', { 
+      name, 
+      value, 
+      type: event.target.type,
+      currentFormData: formData
+    });
+    
+    // Form data-nı atomik əməliyyatla yeniləyirik
     setFormData(prev => {
       const newData = {
         ...prev,
         [name]: value
       };
-      console.debug('Form data updated:', { name, value, newData });
+      console.log('Form data will be updated to:', newData);
       return newData;
     });
+    
+    // Dəyişikliyi qeyd edirik
     setIsDataModified(true);
-  }, []);
+    console.groupEnd();
+    
+    // Debug modüldə form state-i loq edirik
+    setTimeout(() => {
+      console.log('Updated form state after handleInputChange:', formData);
+    }, 100);
+  }, [formData]);
+  
+  // Dirək dəyər üçün handleChange - FieldRendererSimple komponentindən çağrıla bilər
+  const handleChange = useCallback((name: string, value: any) => {
+    if (!name) {
+      console.warn('handleChange: Missing name parameter');
+      return;
+    }
+    
+    console.group('handleChange call');
+    console.log('Direct change received:', { 
+      name, 
+      value, 
+      currentFormData: formData
+    });
+    
+    // Form data-nı yeniləyirik
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: value
+      };
+      console.log('Form data will be updated to:', newData);
+      return newData;
+    });
+    
+    // Dəyişikliyi qeyd edirik
+    setIsDataModified(true);
+    console.groupEnd();
+  }, [formData]);
 
   // Handle form submission with enhanced error handling
   const handleSubmit = useCallback(async (event: React.FormEvent) => {
@@ -215,24 +263,44 @@ export const useDataEntry = ({
     }
   }, [schoolId]);
 
-  // Load data for specific category with enhanced error handling
-  const loadDataForCategory = useCallback(async (schoolId: string, categoryId: string) => {
+  // Təkmilləşdirilmiş loadDataForCategory - zəmanət altına alınmış yüklənmə, yenidən cəhd və xəta idarəetməsi
+  const loadDataForCategory = useCallback(async (schoolId: string, categoryId: string, retryCount = 0) => {
     if (!schoolId || !categoryId) {
       console.warn('loadDataForCategory: Missing required parameters');
       return;
     }
     
+    const MAX_RETRIES = 2; // Maksimum yenidən cəhd sayı
+    const TIMEOUT_MS = 10000; // Zaman aşımını 10 saniyəyə endirik
+    
+    console.group(`Loading data for category ${categoryId} and school ${schoolId} (attempt ${retryCount + 1})`);
     setLoadingEntry(true);
-    setEntryError(null);
+    if (retryCount === 0) setEntryError(null); // Yalnız ilk cəhddə xəta mesajını təmizlə
+    
+    // Timeout promise
+    const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Data loading timeout after ${TIMEOUT_MS/1000} seconds`));
+      }, TIMEOUT_MS);
+    });
     
     try {
-      const { data, error } = await supabase
+      // Ana sorğu - bütün lazımi sahələri seçirik ki tip uyğunsuzluğu olmasın
+      const dataPromise = supabase
         .from('data_entries')
-        .select('*')
+        .select('id, column_id, value, status, school_id, category_id, created_at, updated_at')
         .eq('school_id', schoolId)
         .eq('category_id', categoryId);
 
+      // Timeout və sorğu yarışı
+      const { data, error } = await Promise.race([
+        dataPromise,
+        timeoutPromise
+      ]);
+
       if (error) throw error;
+
+      console.log(`Received ${data?.length || 0} entries for category ${categoryId}`);
 
       // Convert entries to form data with proper validation
       const newFormData: Record<string, string> = {};
@@ -240,21 +308,67 @@ export const useDataEntry = ({
         data.forEach(entry => {
           if (entry && entry.column_id && entry.value !== null && entry.value !== undefined) {
             newFormData[entry.column_id] = String(entry.value);
+            console.log(`Setting field ${entry.column_id} = ${entry.value}`);
           }
         });
       }
 
-      console.debug('Loaded form data for category:', { categoryId, newFormData });
+      console.log('Setting form data:', newFormData);
       setFormData(newFormData);
-      setEntries(data || []);
+      
+      // Ensure data conforms to DataEntry type by ensuring all required fields are present
+      const typedEntries = data?.map(entry => ({
+        ...entry,
+        // Ensure these fields exist even if the database didn't return them
+        school_id: entry.school_id || schoolId,
+        category_id: entry.category_id || categoryId,
+        created_at: entry.created_at || new Date().toISOString(),
+        updated_at: entry.updated_at || new Date().toISOString()
+      })) || [];
+      
+      setEntries(typedEntries);
       setIsDataModified(false);
+      setEntryError(null); // Uğurlu yükləmədə xəta mesajını təmizlə
+      
+      // Yüklənmə tamamlandıqda 200ms gözləyərək UI-in yenilənməsi üçün vaxt ver
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
     } catch (err: any) {
       console.error('Error loading category data:', err);
-      setEntryError(err.message || 'Failed to load data');
+      
+      // Əgər hələ yenidən cəhd etmək imkanımız varsa
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Retrying data load (${retryCount + 1}/${MAX_RETRIES})...`);
+        
+        // 1 saniyə gözlədikdən sonra yenidən cəhd et
+        await new Promise(resolve => setTimeout(resolve, 1000)); 
+        setLoadingEntry(false);
+        console.groupEnd();
+        
+        // Rekursiv olaraq yenidən cəhd edirik
+        return loadDataForCategory(schoolId, categoryId, retryCount + 1);
+      }
+      
+      // Bütün cəhdlər uğursuz olduqda
+      setEntryError(err.message || 'Məlumatları yükləmək mümkün olmadı. Zəhmət olmasa səhifəni yeniləyin.');
+      toast({
+        variant: "destructive",
+        title: "Xəta",
+        description: "Məlumatları yükləmək mümkün olmadı. Səhifəni yeniləyə bilərsiniz.",
+      });
+      
+      // Boş form data-sı qur
+      setFormData({});
+      setEntries([]);
+      
+      // Error zamanı 500ms gözlə
+      await new Promise(resolve => setTimeout(resolve, 500)); 
     } finally {
       setLoadingEntry(false);
+      console.log('Loading state finished');
+      console.groupEnd();
     }
-  }, []);
+  }, [toast]);
   
   // Load categories with enhanced error handling
   const loadCategories = useCallback(async () => {
@@ -412,6 +526,8 @@ export const useDataEntry = ({
     isAutoSaving,
     isSubmitting,
     handleInputChange,
+    // Yeni əlavə edilmiş handleChange funksiyası
+    handleChange,
     handleSubmit,
     handleSave,
     handleReset,

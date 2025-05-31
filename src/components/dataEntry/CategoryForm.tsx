@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CategoryWithColumns } from '@/types/category';
 import { Column } from '@/types/column';
-import FormFields from './FormFields';
+import { FormFields } from './core';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { TabDefinition } from '@/types/category';

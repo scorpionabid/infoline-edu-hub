@@ -119,33 +119,80 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
+    // Create an AbortController to cancel any pending requests
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 8000); // 8-second timeout
+
     set({ isLoading: true });
     try {
-      console.log('[useAuthStore] Signing out...');
+      console.log('[useAuthStore] Preparing to sign out...');
+      
+      // First clear the local state to prevent UI from using stale data
+      set({ 
+        error: null,
+        isAuthenticated: false
+      });
+
+      // Wait a small amount of time to allow UI state to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('[useAuthStore] Calling Supabase signOut...');
       const { error } = await supabase.auth.signOut();
       
       if (error) throw error;
       
-      // Explicitly set isLoading to false after successful signOut
+      // After successful signOut from Supabase, clear all local state
       set({ 
         user: null, 
         isAuthenticated: false, 
-        isLoading: false,
         session: null,
         error: null 
       });
       
-      console.log('[useAuthStore] Sign out successful');
+      console.log('[useAuthStore] Session cleared successfully');
       
-      // Redirect to login page immediately
-      window.location.href = '/login';
+      // Clear any cached data in localStorage
+      try {
+        // Clear any app-specific cached data
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('app-cache-') || key.startsWith('infoline-')) {
+            localStorage.removeItem(key);
+          }
+        });
+      } catch (e) {
+        console.warn('[useAuthStore] Error clearing localStorage:', e);
+      }
+      
+      // Wait for state updates to propagate before redirecting
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Now that cleanup is complete, set loading to false and redirect
+      set({ isLoading: false });
+      console.log('[useAuthStore] Sign out successful, redirecting...');
+      
+      // Use replace instead of setting href to avoid history issues
+      window.location.replace('/login');
       
     } catch (error: any) {
       console.error('[useAuthStore] Sign out error:', error);
-      set({ error: error.message, isLoading: false });
+      set({ 
+        error: error.message, 
+        isLoading: false 
+      });
+      
+      // If there was an error, still try to redirect to login
+      setTimeout(() => {
+        if (window.location.pathname !== '/login') {
+          window.location.replace('/login');
+        }
+      }, 500);
+    } finally {
+      // Clean up the timeout
+      clearTimeout(timeoutId);
     }
     
-    // Safety timeout to ensure isLoading is set to false
+    // Safety timeout as a fallback to ensure isLoading is set to false
+    // and the user is redirected if the main flow fails
     setTimeout(() => {
       const state = get();
       if (state.isLoading) {
@@ -154,7 +201,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         
         // Force redirect if still on protected page
         if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+          window.location.replace('/login');
         }
       }
     }, 5000);

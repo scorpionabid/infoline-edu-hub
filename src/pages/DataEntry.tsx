@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import FormFields from '@/components/dataEntry/FormFields';
+import { FormFields } from '@/components/dataEntry/core';
 
 // Alert komponenti
 export const Alert = React.forwardRef<
@@ -74,13 +74,8 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ schoolId, categories, ini
   const location = useLocation();
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   
-  // Müvəqqəti həll - formulyarları məcburi aktivləşdirmək
+  // Sessiya yoxlama funksiyası
   useEffect(() => {
-    // Birdafəlik formulyarı redaktə edilir vəziyyətinə gətir
-    setFormStatus('edit');
-    setReadOnly(false);
-    console.log('Formulyar aktiv edildi');
-    
     // Supabase ilə sessiya yoxlaması - diagnostic məqsədləri üçün
     const checkSession = async () => {
       try {
@@ -98,41 +93,66 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ schoolId, categories, ini
     checkSession();
   }, []);
   
-  // Debug icazələri və məlumatların redaktə etmə statusunu
+  // İcazələri və məlumatların redaktə etmə statusunu təyin etmək - Təkmilləşdirilmiş versiya
   useEffect(() => {
-    console.log('DataEntry form permissions:', {
-      user_id: user?.id,
-      user_role: user?.role,
-      can_edit: permissions.canEditData,
-      can_submit: permissions.hasSubmitPermission,
-      readOnly: readOnly,
-      formStatus: formStatus
-    });
-    
-    // Əgər istifadəçi undefined-dirsa, formanı sadecə readonly et
-    if (!user || !user.role) {
-      console.log('User undefined, setting form to read-only');
+    // İstifadəçi və permissions-ın yoxlanması
+    if (!user) {
+      console.warn('DataEntry form: İstifadəçi məlumatları yüklənməyib');
       setFormStatus('view');
       setReadOnly(true);
       return;
     }
     
-    // Ekran görüntülərindəki problemin müvəqqəti həlli:
-    // Roldan asılı olmayaraq formanı redaktə edilir vəziyyətinə gətir
-    setFormStatus('edit');
-    setReadOnly(false);
-    
-    // Normal həll (yuxarıdakı 2 sətri komment edib, bunları açmaq lazımdır):
-    /*
-    if (permissions.canEditData) {
-      setFormStatus('edit');
-      setReadOnly(false);
-    } else {
+    if (!permissions) {
+      console.warn('DataEntry form: Permissions obyekti yüklənməyib');
       setFormStatus('view');
       setReadOnly(true);
+      return;
     }
-    */
-  }, [user, permissions, readOnly]);
+
+    // İcazələrə əsasən form statusunun qəti təyini
+    const hasEditPermission = permissions?.canEditData === true;
+    
+    // Force-read state-i sıfırlamaq və icazələri yenidən tətbiq etmək
+    setFormStatus(hasEditPermission ? 'edit' : 'view');
+    setReadOnly(!hasEditPermission);
+
+    // Ətraflı diaqnostika məlumatı
+    console.group('DataEntry Form Permissions Diagnostic');
+    console.log('User details:', {
+      id: user?.id || 'unknown',
+      role: user?.role || 'unknown',
+      region_id: user?.region_id,
+      sector_id: user?.sector_id,
+      school_id: user?.school_id
+    });
+    
+    console.log('Permission details:', {
+      canEditData: permissions?.canEditData,
+      hasSubmitPermission: permissions?.hasSubmitPermission,
+      isSuperAdmin: permissions?.isSuperAdmin,
+      isRegionAdmin: permissions?.isRegionAdmin,
+      isSectorAdmin: permissions?.isSectorAdmin,
+      isSchoolAdmin: permissions?.isSchoolAdmin
+    });
+    
+    console.log('Form status result:', {
+      formStatus: hasEditPermission ? 'edit' : 'view',
+      readOnly: !hasEditPermission,
+      permissions_loaded: !!permissions
+    });
+    console.groupEnd();
+    
+    // Debug informasiyası - əvvəlki formatı saxlayırıq geriyə uygunluq üçün
+    console.log('DataEntry form permissions:', {
+      user_id: user?.id,
+      user_role: user?.role,
+      can_edit: permissions?.canEditData === true,
+      can_submit: permissions?.hasSubmitPermission === true,
+      readOnly: readOnly,
+      formStatus: formStatus
+    });
+  }, [user, permissions]);
   
   // Safe categories check
   const safeCategories = React.useMemo(() => {
@@ -307,7 +327,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ schoolId, categories, ini
                   <FormFields 
                     columns={selectedCategory.columns}
                     disabled={isSubmitting || isAutoSaving}
-                    readOnly={false}
+                    readOnly={readOnly}
                   />
                 ) : (
                   <div className="text-center py-6 text-gray-500">

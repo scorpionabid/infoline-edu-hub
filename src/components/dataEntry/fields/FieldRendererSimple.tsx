@@ -1,347 +1,438 @@
-
-import React from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ColumnType } from '@/types/column';
 
+// Debug logger function
+const useDebugLogger = (debugMode: boolean) => {
+  return useCallback(
+    (
+      message: string,
+      data?: Record<string, unknown>,
+      groupName?: string,
+      isGroupEnd = false
+    ) => {
+      if (!debugMode) return;
+
+      if (groupName && !isGroupEnd) {
+        console.group(groupName);
+      }
+
+      if (data) {
+        console.log(message, data);
+      } else {
+        console.log(message);
+      }
+
+      if (groupName && isGroupEnd) {
+        console.groupEnd();
+      }
+    },
+    [debugMode]
+  );
+};
+
+// Safe error handling wrapper
+const withErrorHandling = <T extends unknown>(
+  fn: (...args: any[]) => T,
+  errorHandler: (error: Error) => void
+) => {
+  return (...args: Parameters<typeof fn>): ReturnType<typeof fn> | undefined => {
+    try {
+      return fn(...args);
+    } catch (error) {
+      errorHandler(error instanceof Error ? error : new Error(String(error)));
+      return undefined;
+    }
+  };
+};
+
+// Format and validate options
+type Option = { label: string; value: string } | string;
+
+const formatOptions = (options: any[] | undefined): { label: string; value: string }[] => {
+  if (!options || !Array.isArray(options) || options.length === 0) {
+    return [];
+  }
+
+  return options.map((option, index) => {
+    if (typeof option === 'object' && option !== null) {
+      return {
+        value: String(option.value || `option-${index}`),
+        label: String(option.label || option.value || option || `Option ${index + 1}`)
+      };
+    }
+    return {
+      value: String(option || `option-${index}`),
+      label: String(option || `Option ${index + 1}`)
+    };
+  });
+};
+
+// Daha yaxşı tip təhlükəsizliyi ilə interface
 interface FieldRendererSimpleProps {
   type: ColumnType;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   disabled?: boolean;
   required?: boolean;
   readOnly?: boolean;
-  options?: any[];
+  options?: Array<{ label?: string; value?: string } | string>;
   placeholder?: string;
+  name?: string;
+  id?: string;
 }
 
-const FieldRendererSimple: React.FC<FieldRendererSimpleProps> = ({
-  type,
-  value,
-  onChange,
-  disabled = false,
-  required = false,
-  readOnly = false,
-  options = [],
-  placeholder = ''
-}) => {
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    onChange(e.target.value);
+// TypeScript ilə forwardRef tipini düzgün müəyyən edirik
+type FieldRendererRef = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+
+const FieldRendererSimple = React.forwardRef<FieldRendererRef, FieldRendererSimpleProps>((
+  {
+    type,
+    value,
+    onChange,
+    onBlur,
+    disabled = false,
+    required = false,
+    readOnly = false,
+    options = [],
+    placeholder = '',
+    name,
+    id
+  }, 
+  ref
+) => {
+  // Optimallaşdırılmış state idarəsi
+  const [localValue, setLocalValue] = useState(value || '');
+  
+  // Debug loqları üçün çıxarılmış funksiya
+  const debugMode = process.env.NODE_ENV === 'development';
+  const logDebug = useDebugLogger(debugMode);
+
+  // Props dəyişdikdə lokal state-i yenilə
+  useEffect(() => {
+    if (value !== localValue) {
+      setLocalValue(value || '');
+    }
+  }, [value, localValue]);
+  
+  // Effektiv parametrlər
+  const effectiveDisabled = disabled;
+  const effectiveReadOnly = readOnly;
+  
+  // Komponent yükləndikdə debug loqları
+  useEffect(() => {
+    logDebug(
+      'Field properties', 
+      {
+        type,
+        value,
+        disabled,
+        readOnly,
+        name,
+        id,
+        effectiveState: effectiveDisabled ? 'DISABLED' : effectiveReadOnly ? 'READONLY' : 'EDITABLE'
+      }, 
+      `FieldRendererSimple - ${type} field debugging`
+    );
+    
+    return () => {
+      logDebug('', {}, `FieldRendererSimple - ${type} field debugging`, true);
+    };
+  }, [type, value, disabled, readOnly, name, id, effectiveDisabled, effectiveReadOnly, logDebug]);
+
+  // Mərkəzləşdirilmiş hadisə emalı funksiyaları
+  const handleValueChange = useCallback(
+    (newValue: string, source: string) => {
+      // Xəta emalı wrapper-i ilə bütün dəyişiklikləri təhlükəsiz emal edirik
+      withErrorHandling(
+        () => {
+          // Lokal state-i yenilə
+          setLocalValue(newValue);
+          // Parent komponentə dəyişiklik haqqında xəbər veririk
+          onChange(newValue);
+          
+          // Debug loq
+          logDebug(
+            `Value changed from ${source}`, 
+            {
+              newValue,
+              previousValue: localValue,
+              fieldType: type,
+              fieldName: name
+            },
+            'Value Change Event'
+          );
+        },
+        (error) => {
+          logDebug(
+            'Error handling value change', 
+            { error: error.message, source, newValue },
+            'Error Event'
+          );
+        }
+      )();
+    },
+    [localValue, onChange, type, name, logDebug]
+  );
+  
+  // Konkret hadisə idarəediciləri
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      handleValueChange(e.target.value, 'input');
+    },
+    [handleValueChange]
+  );
+
+  const handleTextareaChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      handleValueChange(e.target.value, 'textarea');
+    },
+    [handleValueChange]
+  );
+
+  const handleSelectChange = useCallback(
+    (selectValue: string) => {
+      handleValueChange(selectValue, 'select');
+    },
+    [handleValueChange]
+  );
+
+  const handleCheckboxChange = useCallback(
+    (checked: boolean) => {
+      const newValue = checked ? 'true' : 'false';
+      handleValueChange(newValue, 'checkbox');
+    },
+    [handleValueChange]
+  );
+
+  // Options massivini təhlükəsiz şəkildə işləmək üçün
+  const safeOptions = useMemo(() => {
+    // formatOptions utility funksiyadan istifadə edirik
+    const formattedOptions = formatOptions(options);
+    
+    // Debug loqları
+    if (formattedOptions.length === 0) {
+      logDebug('Options array is empty or invalid', { rawOptions: options });
+    } else {
+      logDebug('Options processed successfully', { 
+        count: formattedOptions.length,
+        sample: formattedOptions.slice(0, 2)
+      });
+    }
+    
+    return formattedOptions;
+  }, [options, logDebug]);
+  
+  // Basic input props for all field types
+  const baseFieldProps = {
+    value: localValue,
+    onBlur,
+    disabled: effectiveDisabled,
+    readOnly: effectiveReadOnly,
+    required,
+    placeholder,
+    name,
+    id,
+    'data-testid': `field-${id || name}`
   };
 
-  const handleSelectChange = (newValue: string) => {
-    onChange(newValue);
+  // Text input renderers
+  const renderTextInput = (inputType: string = 'text') => {
+    return (
+      <Input
+        ref={ref as React.Ref<HTMLInputElement>}
+        type={inputType}
+        onChange={handleInputChange}
+        {...baseFieldProps}
+      />
+    );
   };
-
-  const handleCheckboxChange = (checked: boolean) => {
-    onChange(checked ? 'true' : 'false');
+  
+  const renderTextarea = () => {
+    return (
+      <Textarea
+        ref={ref as React.Ref<HTMLTextAreaElement>}
+        onChange={handleTextareaChange}
+        {...baseFieldProps}
+      />
+    );
   };
-
-  switch (type) {
-    case 'text':
-      return (
-        <Input
-          type="text"
-          value={value}
-          onChange={handleInputChange}
-          disabled={false} 
-          readOnly={false} 
-          required={required}
-          placeholder={placeholder}
-        />
-      );
-
-    case 'textarea':
-      return (
-        <Textarea
-          value={value}
-          onChange={handleInputChange}
-          disabled={false} 
-          readOnly={false} 
-          required={required}
-          placeholder={placeholder}
-          rows={4}
-        />
-      );
-
-    case 'number':
-      return (
-        <Input
-          type="number"
-          value={value}
-          onChange={handleInputChange}
-          disabled={false} 
-          readOnly={false} 
-          required={required}
-          placeholder={placeholder}
-        />
-      );
-
-    case 'email':
-      return (
-        <Input
-          type="email"
-          value={value}
-          onChange={handleInputChange}
-          disabled={false} 
-          readOnly={false} 
-          required={required}
-          placeholder={placeholder}
-        />
-      );
-
-    case 'date':
-      return (
-        <Input
-          type="date"
-          value={value}
-          onChange={handleInputChange}
-          disabled={false} 
-          readOnly={false} 
-          required={required}
-        />
-      );
-
-    case 'select':
-      // Variantları işləmək üçün Xüsusi Funksiya
-      // Supabase-dən gələn məlumatları düzgün formatına gətirən köməkçi funksiya
-      const fixDbOptionsFormat = (rawOptions: any): any[] => {
-        console.log('Fixing DB options format for:', rawOptions);
-        
-        // 1. Null və ya undefined yoxlaması
-        if (rawOptions === null || rawOptions === undefined) {
-          console.log('Raw options is null or undefined');
-          return [];
-        }
-        
-        // 2. Əgər artıq massivdirsə
-        if (Array.isArray(rawOptions)) {
-          // Massiv boşdursa
-          if (rawOptions.length === 0) {
-            console.log('Raw options is an empty array');
-            return [];
-          }
-          
-          // Massiv element stringdirsə və JSON ola bilərsə
-          if (rawOptions.length === 1 && typeof rawOptions[0] === 'string') {
-            try {
-              // Məsələn, ['[{"label":"Option 1","value":"opt1"}]'] formatında ola bilər
-              const innerContent = rawOptions[0];
-              if (innerContent.startsWith('[') && innerContent.endsWith(']')) {
-                const parsedInner = JSON.parse(innerContent);
-                console.log('Parsed inner JSON array:', parsedInner);
-                return Array.isArray(parsedInner) ? parsedInner : []; 
-              }
-            } catch(e) {
-              console.error('Error parsing inner JSON string:', e);
-            }
-          }
-          
-          // Hər bir element objektdirsə və label/value var isa, birbaşa qaytar
-          if (typeof rawOptions[0] === 'object' && rawOptions[0] !== null) {
-            if ('label' in rawOptions[0] && 'value' in rawOptions[0]) {
-              console.log('Options already in correct format');
-              return rawOptions;
-            }
-          }
-        }
-        
-        // 3. String formatında JSON
-        if (typeof rawOptions === 'string') {
-          try {
-            // Escape edilmiş simvolları düzəlt
-            let cleanString = rawOptions;
-            if (rawOptions.includes('\\"')) {
-              cleanString = rawOptions.replace(/\\\"([^\\\"]*)\\\"/g, '"$1"');
-              console.log('Fixed escaped quotes:', cleanString);
-            }
-            
-            const parsedOptions = JSON.parse(cleanString);
-            console.log('Successfully parsed JSON string:', parsedOptions);
-            if (Array.isArray(parsedOptions)) {
-              return parsedOptions;
-            }
-          } catch(e) {
-            console.error('Error parsing options string:', e);
-          }
-        }
-        
-        // 4. Bazadan JSON objekti kimi gələn məlumatlar
-        if (typeof rawOptions === 'object' && rawOptions !== null && !Array.isArray(rawOptions)) {
-          // {0: {label: "...", value: "..."}, 1: {label: "...", value: "..."}} formatı
-          if (Object.keys(rawOptions).length > 0) {
-            try {
-              const arrayOptions = Object.values(rawOptions);
-              console.log('Converted object to array:', arrayOptions);
-              return arrayOptions;
-            } catch(e) {
-              console.error('Error converting object to array:', e);
-            }
-          }
-        }
-        
-        // 5. Digər halları emal et
-        console.warn('Could not process options format:', rawOptions);
-        return [];
-      };
-      
-      // Bazadan gələn variantları emal edirik
-      const processedOptions = React.useMemo(() => {
-        const fixedOptions = fixDbOptionsFormat(options);
-        
-        // Variantların olub-olmadığını yoxla
-        if (!fixedOptions || !Array.isArray(fixedOptions) || fixedOptions.length === 0) {
-          console.log('No valid options found after processing');
-          
-          // Əgər placeholder və ya sütun adından kontekstual variantlar yarat
-          const lowerPlaceholder = (placeholder || '').toLowerCase();
-          
-          // Kontekstual variantlar
-          if (lowerPlaceholder.includes('bilər') || lowerPlaceholder.includes('ola')) {
-            return [
-              { value: 'ola_bilar', label: 'Ola bilər' },
-              { value: 'ola_bilmez', label: 'Ola bilməz' }
-            ];
-          } else if (lowerPlaceholder.includes('vəziyyət') || lowerPlaceholder.includes('halı')) {
-            return [
-              { value: 'yaxsi', label: 'Yaxşı' },
-              { value: 'orta', label: 'Orta' },
-              { value: 'pis', label: 'Pis' }
-            ];
-          } else {
-            return [
-              { value: 'variant1', label: 'Variant 1' },
-              { value: 'variant2', label: 'Variant 2' },
-              { value: 'variant3', label: 'Variant 3' }
-            ];
-          }
-        }
-        
-        return fixedOptions;
-      }, [options, placeholder]);
-      
-      return (
-        <div className="relative w-full">
-          {/* Debug info - sətrin üstündə göstər */}
-          {!processedOptions.length && (
-            <div className="text-xs text-red-500 mb-1">
-              No options available (Debug: {JSON.stringify(options)})
+  
+  // Select, radio, checkbox renderers
+  const renderSelect = () => {
+    return (
+      <Select 
+        value={localValue} 
+        onValueChange={handleSelectChange}
+        disabled={effectiveDisabled}
+        onOpenChange={(open) => {
+          open && logDebug('Select opened', { options: safeOptions });
+        }}
+      >
+        <SelectTrigger id={id} data-testid={`field-${id || name}`}>
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {debugMode && (
+            <div className="p-1 text-xs text-muted-foreground">
+              Options: {safeOptions.length || 0}
             </div>
           )}
           
-          <select
-            value={value} 
-            onChange={(e) => handleSelectChange(e.target.value)}
-            disabled={false}
-            required={required}
-            className="w-full border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-          >
-            {/* Default "Select an option" sətiri */}
-            <option value="_empty_" disabled>
-              {placeholder || 'Select an option'}
-            </option>
-            
-            {/* Opciyaları render edirik */}
-            {processedOptions.length > 0 ? processedOptions.map((option, index) => {
-              // Opciya formatlarını müxtəlif hallara uyğunlaşdırırıq
-              let optionValue, optionLabel;
-              
-              if (typeof option === 'object' && option !== null) {
-                // {label, value} formatı
-                if ('label' in option && 'value' in option) {
-                  optionLabel = option.label;
-                  optionValue = option.value;
-                } 
-                // {id, name} formatı
-                else if ('id' in option && 'name' in option) {
-                  optionLabel = option.name;
-                  optionValue = option.id;
-                }
-                // {key, text} formatı 
-                else if ('key' in option && 'text' in option) {
-                  optionLabel = option.text;
-                  optionValue = option.key;
-                }
-                // Digər format
-                else {
-                  // Obyektin ilk string dəyərini istifadə et
-                  const entries = Object.entries(option);
-                  if (entries.length > 0) {
-                    optionLabel = String(entries[0][1]); 
-                    optionValue = String(entries[0][0]);
-                  } else {
-                    optionLabel = `Option ${index}`;
-                    optionValue = `option_${index}`;
-                  }
-                }
-              } else {
-                // Primitiv dəyər (string, number)
-                optionLabel = String(option);
-                optionValue = String(option);
-              }
-              
-              // Boş dəyərlərdən qorun
-              const safeValue = optionValue || `option_${index}`;
-              const safeLabel = optionLabel || safeValue;
-              
-              return (
-                <option 
-                  key={`${index}-${safeValue}`} 
-                  value={safeValue}
-                >
-                  {safeLabel}
-                </option>
-              );
-            }) : (
-              <option value="no_options" disabled>
-                No options available
-              </option>
-            )}
-          </select>
-        </div>
-      );
-
-    case 'checkbox':
-      return (
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            checked={value === 'true'}
-            onCheckedChange={handleCheckboxChange}
-            disabled={false} 
-            required={required}
-          />
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            {placeholder}
-          </label>
-        </div>
-      );
-
-    case 'file':
-      return (
+          {safeOptions.length > 0 ? (
+            safeOptions.map((option, index) => (
+              <SelectItem 
+                key={`${index}-${option.value}`} 
+                value={option.value}
+              >
+                {option.label}
+              </SelectItem>
+            ))
+          ) : (
+            <div className="p-2 text-center text-sm text-muted-foreground">
+              {debugMode ? 'No options available (debug)' : 'No options available'}
+            </div>
+          )}
+        </SelectContent>
+      </Select>
+    );
+  };
+  
+  const renderRadio = () => {
+    return (
+      <div className="space-y-2">
+        {debugMode && (
+          <div className="text-xs text-muted-foreground mb-2">
+            Options: {safeOptions.length || 0}
+          </div>
+        )}
+        
+        {safeOptions.length > 0 ? (
+          safeOptions.map((option, index) => (
+            <div key={`radio-${index}-${option.value}`} className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id={`${id || name}-${option.value}`}
+                value={option.value}
+                checked={localValue === option.value}
+                onChange={() => handleSelectChange(option.value)}
+                disabled={effectiveDisabled}
+                className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
+              />
+              <label 
+                htmlFor={`${id || name}-${option.value}`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                {option.label}
+              </label>
+            </div>
+          ))
+        ) : (
+          <div className="text-sm text-muted-foreground">No options available</div>
+        )}
+      </div>
+    );
+  };
+  
+  const renderCheckbox = () => {
+    return (
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id={id}
+          checked={localValue === 'true'}
+          onCheckedChange={handleCheckboxChange}
+          disabled={effectiveDisabled}
+          name={name}
+          data-testid={`field-${id || name}`}
+        />
+        <label
+          htmlFor={id}
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          {placeholder}
+        </label>
+      </div>
+    );
+  };
+  
+  // File input renderer
+  const renderImageUpload = () => {
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          handleValueChange(result, 'image-upload');
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    
+    return (
+      <div className="space-y-2">
         <Input
+          ref={ref as React.Ref<HTMLInputElement>}
           type="file"
-          onChange={handleInputChange}
-          disabled={false} 
-          readOnly={false} 
+          accept="image/*"
+          onChange={handleImageChange}
+          disabled={effectiveDisabled}
           required={required}
+          name={name}
+          id={id}
+          data-testid={`field-${id || name}`}
         />
-      );
-
+        {localValue && localValue.startsWith('data:image') && (
+          <div className="mt-2">
+            <img 
+              src={localValue} 
+              alt="Preview" 
+              className="max-h-40 max-w-full object-contain border rounded"
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+  // Tipə görə rendering - indi daha qısa və oxunaqlıdır
+  switch (type) {
+    case 'text':
+      return renderTextInput('text');
+      
+    case 'textarea':
+      return renderTextarea();
+      
+    case 'number':
+      return renderTextInput('number');
+      
+    case 'email':
+      return renderTextInput('email');
+      
+    case 'date':
+      return renderTextInput('date');
+      
+    case 'select':
+      return renderSelect();
+      
+    case 'radio':
+      return renderRadio();
+      
+    case 'checkbox':
+      return renderCheckbox();
+      
+    case 'image':
+      return renderImageUpload();
+      
     default:
-      return (
-        <Input
-          type="text"
-          value={value}
-          onChange={handleInputChange}
-          disabled={false} 
-          readOnly={false} 
-          required={required}
-          placeholder={placeholder}
-        />
-      );
+      return renderTextInput('text');
   }
-};
+});
+
+FieldRendererSimple.displayName = "FieldRendererSimple";
 
 export default FieldRendererSimple;
