@@ -320,6 +320,60 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  updateProfile: async (updates: Partial<FullUserData>) => {
+    set({ isLoading: true, error: null });
+    try {
+      // Əgər server tərəfində profil yeniləməsi varsa
+      if (updates.email) {
+        const { data, error } = await supabase.auth.updateUser({
+          email: updates.email
+        });
+        if (error) throw error;
+      }
+
+      // Profil məlumatlarını yeniləyirik
+      const currentUser = get().user;
+      if (currentUser) {
+        // Store-da user state-ni yeniləyirik
+        set({ user: { ...currentUser, ...updates } });
+        
+        // Əgər server profil yeniləməsi lazımdırsa
+        // Məsələn, profiles cədvəlində yeniləmə və s.
+      }
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('[useAuthStore] Update profile error:', error);
+      set({ error: error as Error });
+      return { success: false, error };
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  updatePassword: async (newPassword: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (error) throw error;
+      return { success: true };
+    } catch (error: any) {
+      console.error('[useAuthStore] Update password error:', error);
+      set({ error: error as Error });
+      return { success: false, error };
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  hasPermission: (permission: string) => {
+    const { user } = get();
+    if (!user || !user.permissions) return false;
+    return user.permissions.includes(permission);
+  }
 }));
 
 // Selector functions for easier usage
@@ -332,6 +386,12 @@ export const selectUserRole = (state: AuthState) => state.user?.role;
 export const selectRegionId = (state: AuthState) => state.user?.region_id;
 export const selectSectorId = (state: AuthState) => state.user?.sector_id;
 export const selectSchoolId = (state: AuthState) => state.user?.school_id;
+
+// Method selectors
+export const selectUpdateProfile = (state: AuthState) => state.updateProfile;
+export const selectUpdatePassword = (state: AuthState) => state.updatePassword;
+export const selectHasPermission = (state: AuthState) => state.hasPermission;
+export const selectSignOut = (state: AuthState) => state.signOut;
 
 // Utility functions
 export const shouldAuthenticate = (route: string) => {

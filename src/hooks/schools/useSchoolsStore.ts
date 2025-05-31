@@ -5,7 +5,7 @@ import { useRegions } from '@/hooks/regions/useRegions';
 import { useSectors } from '@/hooks/sectors/useSectors';
 import { toast } from 'sonner';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
 export interface SortConfig {
@@ -25,7 +25,7 @@ export const useSchoolsStore = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const { t } = useLanguageSafe();
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const { userRole, sectorId, regionId } = usePermissions();
   const [isOperationComplete, setIsOperationComplete] = useState(false);
   

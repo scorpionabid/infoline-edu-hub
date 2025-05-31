@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
 import { createDeadlineNotification } from '@/services/notificationService';
 
 export const useDeadlineNotifications = () => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
 

@@ -28,7 +28,7 @@ import { useRegions } from '@/hooks/regions/useRegions';
 import { useSectors } from '@/hooks/sectors/useSectors';
 import { useSectorAdmins } from '@/hooks/sectors/useSectorAdmins';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import {
   Select,
@@ -49,7 +49,7 @@ interface SectorsContainerProps {
 
 const SectorsContainer: React.FC<SectorsContainerProps> = ({ isLoading: externalIsLoading }) => {
   const { t } = useLanguageSafe();
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const { userRole, regionId } = usePermissions();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);

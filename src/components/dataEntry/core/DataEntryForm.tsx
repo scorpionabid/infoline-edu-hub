@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -11,6 +11,7 @@ import DataEntryFormContent from './DataEntryFormContent';
 import { DataEntryFormLoading, DataEntryFormError } from '../shared';
 import { toast } from 'sonner';
 import { safeGetByUUID } from '@/utils/dataIndexing';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 // Define the component props
 interface DataEntryFormProps {
@@ -154,6 +155,42 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     return entry.value !== undefined && entry.value !== null ? String(entry.value) : '';
   };
 
+  // usePermissions nəticələrini memoize edirik ki, təkrar hesablama etməyək
+  const permissions = usePermissions();
+  const { 
+    canEditData,
+    userRole,
+    isSuperAdmin,
+    isRegionAdmin,
+    isSectorAdmin,
+    isSchoolAdmin,
+    isTeacher,
+    isUser
+  } = permissions;
+  
+  // Ətrafli icazə debuqlarını əlavə edirik
+  console.log('[DataEntryForm] User permissions:', {
+    userRole,
+    isSuperAdmin,
+    isRegionAdmin,
+    isSectorAdmin, 
+    isSchoolAdmin,
+    isTeacher,
+    isUser,
+    canEditData
+  });
+  
+  // readOnly dəyərini useMemo ilə hesablayırıq - yalnız asılı dəyərlər dəyişdikdə yenidən hesablanacaq
+  const isReadOnly = useMemo(() => {
+    const calculatedReadOnly = !canEditData || readOnly;
+    console.log('[DataEntryForm] Permission state:', { 
+      canEditData, 
+      readOnly, 
+      calculatedReadOnly
+    });
+    return calculatedReadOnly;
+  }, [canEditData, readOnly]);
+
   // Handle form submission with better error handling and debugging
   const onSubmit = async (data: any) => {
     console.log('Form submission triggered with data:', data);
@@ -295,7 +332,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     return (
       <DataEntryFormContent 
         category={category} 
-        readOnly={readOnly}
+        readOnly={isReadOnly}
         key={`form-content-${category.id}`} // Kateqoriya dəyişdikdə komponenti yenidən render etmək üçün
       />
     );
@@ -331,24 +368,25 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
               </div>
             )}
           </CardContent>
-          
-          {!readOnly && (
-            <div className="p-4 bg-background flex justify-end gap-2 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCancel}
-              >
-                {t('cancel')}
-              </Button>
-              <Button
-                type="submit"
-                disabled={!formState.isDirty || formState.isSubmitting || isLoading}
-              >
-                {formState.isSubmitting ? t('saving') : t('save')}
-              </Button>
-            </div>
-          )}
+          <div className="p-4 bg-background flex justify-end gap-2 border-t">
+            {!isReadOnly && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                >
+                  {t('cancel')}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!formState.isDirty || formState.isSubmitting || isLoading}
+                >
+                  {formState.isSubmitting ? t('saving') : t('save')}
+                </Button>
+              </>
+            )}
+          </div>
         </Card>
       </form>
     </FormProvider>

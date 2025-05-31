@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
 interface SectorData {
   name: string;
@@ -14,7 +14,7 @@ interface SectorData {
 export const useCreateSector = () => {
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
 
   const createSector = useCallback(async (data: SectorData) => {
     setLoading(true);

@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { getUserNotifications } from '@/services/notificationService';
 import { useState } from 'react';
 
 export function useNotificationsQuery() {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const [error, setError] = useState<string | null>(null);
   
   const {

@@ -1,10 +1,9 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, Save, Send, Download, Upload, CheckCircle } from 'lucide-react';
+import { AlertCircle, Save, Send, Download, Upload, CheckCircle, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { CategoryWithColumns } from '@/types/category';
@@ -21,6 +20,7 @@ interface DataEntryFormManagerProps {
   onSubmit: () => Promise<void>;
   onExportTemplate: () => void;
   onImportData: (file: File) => Promise<void>;
+  onRefresh?: () => Promise<void>;
   isLoading?: boolean;
   isSaving?: boolean;
   isSubmitting?: boolean;
@@ -37,6 +37,7 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
   onSubmit,
   onExportTemplate,
   onImportData,
+  onRefresh,
   isLoading = false,
   isSaving = false,
   isSubmitting = false,
@@ -122,6 +123,25 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
     }
   }, [completionPercentage, onSubmit, t, toast]);
 
+  // Handle refresh
+  const handleRefresh = useCallback(async () => {
+    if (onRefresh) {
+      try {
+        await onRefresh();
+        toast({
+          title: t('success'),
+          description: t('dataRefreshedSuccessfully'),
+        });
+      } catch (error) {
+        toast({
+          title: t('error'),
+          description: t('errorRefreshingData'),
+          variant: 'destructive'
+        });
+      }
+    }
+  }, [onRefresh, t, toast]);
+
   // Handle file import
   const handleFileImport = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -154,6 +174,55 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
     event.target.value = '';
   }, [onImportData, t, toast]);
 
+  // Debug məlumatı
+  console.group('DataEntryFormManager Debug');
+  console.log('Category:', category);
+  console.log('School ID:', schoolId);
+  console.log('Form data:', formData);
+  console.log('Loading states:', { isLoading, isSaving, isSubmitting });
+  console.groupEnd();
+  
+  // Kateqoriya mövcud olmadıqda və ya yüklənmə prosesində olduqda
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 animate-spin mb-2 mx-auto text-primary" />
+          <p>{t('loadingFormData')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Kateqoriya yoxdursa və ya columns xüsusiyyəti yoxdursa xəbərdarlıq göstər
+  if (!category || !category.id || !category.columns || category.columns.length === 0) {
+    return (
+      <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-lg">
+        <div className="flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+          <div>
+            <h3 className="font-medium text-yellow-800">{t('formDataIssue')}</h3>
+            <p className="text-sm text-yellow-700 mt-1">
+              {!category ? t('categoryNotFound') : 
+               !category.id ? t('invalidCategoryId') : 
+               !category.columns ? t('noColumnsFound') : 
+               t('noColumnsInCategory')}
+            </p>
+            <pre className="mt-2 p-2 bg-yellow-100 rounded text-xs overflow-auto max-h-24">
+              {JSON.stringify({categoryId: category?.id, columnsCount: category?.columns?.length || 0}, null, 2)}
+            </pre>
+            {onRefresh && (
+              <Button size="sm" variant="outline" onClick={handleRefresh} className="mt-2">
+                <RefreshCw className="w-4 h-4 mr-1" />
+                {t('refreshData')}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="space-y-4">
       {/* Header with status and actions */}
@@ -180,11 +249,24 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onExportTemplate}
-                disabled={readOnly}
+                disabled={isLoading || isSaving || isSubmitting}
               >
-                <Download className="w-4 h-4 mr-1" />
+                <Download className="h-4 w-4 mr-2" />
                 {t('downloadTemplate')}
               </Button>
+              
+              {onRefresh && (
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={handleRefresh} 
+                  disabled={isLoading || isSaving || isSubmitting}
+                  className="ml-2"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                  {t('refreshData')}
+                </Button>
+              )}
               
               <div className="relative">
                 <input

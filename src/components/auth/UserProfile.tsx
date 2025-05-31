@@ -2,11 +2,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser, selectSignOut } from '@/hooks/auth/useAuthStore';
 import { LogOut, User, Settings } from 'lucide-react';
 
 const UserProfile: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const user = useAuthStore(selectUser);
+  const signOut = useAuthStore(selectSignOut);
 
   if (!user) return null;
 

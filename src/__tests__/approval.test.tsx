@@ -3,18 +3,20 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import ApprovalPage from '../pages/Approval';
 import { LanguageProvider } from '../context/LanguageContext';
-import { AuthProvider } from '../context/auth/AuthContext';
+// Auth store artıq Zustand-ə köçürülüb
 
 // Mock hooks
-vi.mock('../hooks/auth/useAuth', () => ({
-  useAuth: () => ({
+vi.mock('../hooks/auth/useAuthStore', () => ({
+  useAuthStore: () => ({
     user: {
       id: '123',
       role: 'regionadmin',
-      regionId: '456'
+      region_id: '456'
     },
     isAuthenticated: true
-  })
+  }),
+  selectUser: (state: any) => state.user,
+  selectIsAuthenticated: (state: any) => state.isAuthenticated
 }));
 
 // Mock approval data
@@ -66,11 +68,9 @@ describe('Approval Page', () => {
   it('renders approval page', () => {
     render(
       <MemoryRouter>
-        <AuthProvider>
-          <LanguageProvider>
-            <ApprovalPage />
-          </LanguageProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <ApprovalPage />
+        </LanguageProvider>
       </MemoryRouter>
     );
     expect(screen.getByText('Approval Queue')).toBeInTheDocument();
@@ -80,11 +80,9 @@ describe('Approval Page', () => {
   it('shows message when no pending approvals', async () => {
     render(
       <MemoryRouter>
-        <AuthProvider>
-          <LanguageProvider>
-            <ApprovalPage />
-          </LanguageProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <ApprovalPage />
+        </LanguageProvider>
       </MemoryRouter>
     );
 
@@ -99,11 +97,9 @@ describe('Approval Component Performance', () => {
     
     render(
       <MemoryRouter>
-        <AuthProvider>
-          <LanguageProvider>
-            <ApprovalPage />
-          </LanguageProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <ApprovalPage />
+        </LanguageProvider>
       </MemoryRouter>
     );
     
@@ -124,11 +120,9 @@ describe('Approval Component Performance', () => {
     
     render(
       <MemoryRouter>
-        <AuthProvider>
-          <LanguageProvider>
-            <ApprovalPage />
-          </LanguageProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <ApprovalPage />
+        </LanguageProvider>
       </MemoryRouter>
     );
     

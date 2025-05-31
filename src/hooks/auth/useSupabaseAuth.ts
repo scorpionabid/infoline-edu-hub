@@ -203,6 +203,38 @@ export const useSupabaseAuth = () => {
     }
   }, []);
 
+  // Sign up with email and password
+  const signUp = useCallback(async (email: string, password: string, userData?: any) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Create new user account
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData,
+        }
+      });
+      
+      if (error) throw error;
+      
+      return { 
+        success: true, 
+        session: data.session, 
+        user: data.user,
+        message: 'Qeydiyyat uğurlu oldu. Emailinizə göndərilmiş linkə keçid edin.'
+      };
+    } catch (e: any) {
+      console.error('Error signing up:', e);
+      setError(e.message);
+      return { success: false, error: e.message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Update user profile
   const updateProfile = useCallback(async (profileData: Partial<FullUserData>) => {
     if (!user) {

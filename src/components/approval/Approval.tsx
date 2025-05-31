@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { DataEntryStatus } from '@/types/dataEntry';
 import { PendingApproval } from '@/types/dashboard';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import type { UserRole } from '@/types/user';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import PendingApprovalsTable from './PendingApprovalsTable';
@@ -40,11 +40,14 @@ interface ApprovalRecord extends PendingApproval {
 }
 
 const Approval: React.FC<ApprovalProps> = ({ 
-  user, 
-  userRole, 
-  permissions 
+  user: propUser, 
+  userRole: propUserRole, 
+  permissions: propPermissions 
 }) => {
   const { t } = useLanguage();
+  const user = useAuthStore(selectUser);
+  const permissionsHelper = usePermissions();
+  const userRole = permissionsHelper.userRole;
   const [approvals, setApprovals] = useState<ApprovalRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');

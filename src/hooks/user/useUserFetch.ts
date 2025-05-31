@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectSession } from '@/hooks/auth/useAuthStore';
 import { UserFilter } from '@/hooks/useUserList';
 
 export const useUserFetch = (
@@ -15,7 +15,7 @@ export const useUserFetch = (
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [totalCount, setTotalCount] = useState(0);
-  const { session } = useAuth();
+  const session = useAuthStore(selectSession);
   
   // Add these refs to prevent fetch loops
   const isMounted = useRef(true);

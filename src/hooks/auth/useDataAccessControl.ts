@@ -1,11 +1,11 @@
 
 import { useCallback } from 'react';
 import { usePermissions } from './usePermissions';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useDataAccessControl = () => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const { 
     isSuperAdmin, 
     isRegionAdmin, 

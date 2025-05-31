@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Sector } from '@/types/supabase';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
 
@@ -19,7 +19,7 @@ export const useSectorsStore = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   
   const itemsPerPage = 10;
 

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser, selectIsLoading } from '@/hooks/auth/useAuthStore';
 import { Loader2 } from 'lucide-react';
 import AccountSettings from '@/components/settings/AccountSettings';
 import SecuritySettings from '@/components/settings/SecuritySettings';
@@ -11,7 +11,8 @@ import { useLanguage } from '@/context/LanguageContext';
 
 const Profile = () => {
   const { t } = useLanguage();
-  const { user, loading } = useAuth();
+  const user = useAuthStore(selectUser);
+  const loading = useAuthStore(selectIsLoading);
   const [activeTab, setActiveTab] = useState('account');
 
   if (loading) {

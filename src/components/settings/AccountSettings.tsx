@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser, selectUpdateProfile } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
@@ -23,7 +23,8 @@ const languages: Language[] = [
 ];
 
 export const AccountSettings = () => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
+  const updateProfile = useAuthStore(selectUpdateProfile);
   const { t, language } = useLanguage();
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [email] = useState(user?.email || '');

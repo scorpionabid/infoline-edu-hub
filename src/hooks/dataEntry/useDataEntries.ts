@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
@@ -10,7 +10,7 @@ const useDataEntries = (categoryId: string, schoolId: string) => {
   const [entries, setEntries] = useState<DataEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const { t } = useLanguage();
 
   const fetchEntries = useCallback(async () => {

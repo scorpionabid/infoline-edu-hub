@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useToast } from '@/hooks/common/useToast';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -36,7 +36,7 @@ export interface SectorAdminDashboardData {
 }
 
 export const useSectorAdminDashboard = () => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const { t } = useLanguage();
   const { toast } = useToast();
   

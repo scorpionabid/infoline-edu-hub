@@ -1,11 +1,14 @@
 
 import React, { useState, useCallback } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { Upload, X, FileText, Image as ImageIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -13,59 +16,73 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
+
+// Import field components
+import BaseField from './BaseField';
+
+// Import UI components needed for file upload
 import { cn } from '@/lib/utils';
-import { Upload, X, FileText, Image as ImageIcon } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { useToast } from '@/hooks/use-toast';
+import { ColumnType, ColumnOption } from '@/types/column';
 
-export type ColumnType = 
-  | 'text' 
-  | 'textarea' 
-  | 'number' 
-  | 'email' 
-  | 'phone' 
-  | 'date' 
-  | 'select' 
-  | 'checkbox' 
-  | 'radio' 
-  | 'file' 
-  | 'url';
-
-interface FieldRendererSimpleProps {
+export interface FieldRendererSimpleProps {
+  // Field identification
+  id?: string;
+  name?: string;
+  label?: string;
+  
+  // Field data
   type: ColumnType;
   value: any;
   onChange: (value: any) => void;
   placeholder?: string;
-  options?: Array<{ label: string; value: string }>;
+  options?: ColumnOption[];
+  
+  // Validation 
   validation?: {
     required?: boolean;
-    minLength?: number;
-    maxLength?: number;
     minValue?: number;
     maxValue?: number;
-    pattern?: string;
+    minLength?: number;
+    maxLength?: number;
   };
+  error?: string;
+  
+  // Presentation
   disabled?: boolean;
   readOnly?: boolean;
+  description?: string;
   helpText?: string;
-  name?: string;
-  id?: string;
   className?: string;
 }
 
+/**
+ * FieldRendererSimple - A unified field renderer with simple validation
+ * 
+ * Renders various field types with consistent layout and validation.
+ * Uses BaseField for all field types except those requiring special handling.
+ */
 const FieldRendererSimple: React.FC<FieldRendererSimpleProps> = ({
+  // Field identification props
+  id,
+  name,
+  label,
+  
+  // Field data props
   type,
   value,
   onChange,
   placeholder,
   options = [],
+  
+  // Validation props
   validation,
+  error,
+  
+  // Presentation props
   disabled = false,
   readOnly = false,
   helpText,
-  name,
-  id,
+  description,
   className
 }) => {
   const { t } = useLanguage();
@@ -104,242 +121,311 @@ const FieldRendererSimple: React.FC<FieldRendererSimpleProps> = ({
     onChange(newFiles);
   }, [uploadedFiles, onChange]);
 
-  const baseProps = {
-    disabled: disabled || readOnly,
-    className: cn(
-      "w-full",
-      readOnly && "bg-gray-50 cursor-default",
-      className
-    ),
-    name,
-    id
+  // Sahələrin base və xüsusi xassələrini ayırırıq
+  // Debug məlumatları əlavə edirik
+  console.group(`FieldRendererSimple rendering for ${name || id}`);
+  console.log('Field type:', type);
+  console.log('disabled:', disabled);
+  console.log('readOnly:', readOnly);
+  console.log('value:', value);
+  console.groupEnd();
+  
+  const baseFieldProps = {
+    id: id || name || '',
+    name: name || '',
+    label: label || name || '',
+    required: validation?.required,
+    disabled: disabled,
+    description: description || helpText,
+    error,
+    className
   };
 
+  // Komponentimizin nə qaytarıcağını təyin edirik
   switch (type) {
     case 'text':
     case 'email':
-    case 'phone':
     case 'url':
+    case 'phone':
       return (
-        <div className="space-y-2">
-          <Input
-            {...baseProps}
-            type={type === 'email' ? 'email' : type === 'phone' ? 'tel' : type === 'url' ? 'url' : 'text'}
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            readOnly={readOnly}
-            minLength={validation?.minLength}
-            maxLength={validation?.maxLength}
-            pattern={validation?.pattern}
-          />
-          {helpText && (
-            <p className="text-sm text-muted-foreground">{helpText}</p>
+        <BaseField
+          {...baseFieldProps}
+          renderField={() => (
+            <Input
+              id={id || name}
+              name={name}
+              type={type}
+              placeholder={placeholder}
+              value={value || ''}
+              onChange={(e) => onChange(e.target.value)}
+              disabled={disabled} // yalnız disabled parametrini istifadə edirik
+              readOnly={readOnly} // readOnly ayrıca parametr kimi ötürülür
+              className={cn(
+                'focus:ring-1 focus:ring-primary',
+                error && 'border-destructive',
+                readOnly && 'bg-muted cursor-default'
+              )}
+            />
           )}
-        </div>
+        />
       );
 
     case 'textarea':
       return (
-        <div className="space-y-2">
-          <Textarea
-            {...baseProps}
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            readOnly={readOnly}
-            minLength={validation?.minLength}
-            maxLength={validation?.maxLength}
-            rows={4}
-          />
-          {helpText && (
-            <p className="text-sm text-muted-foreground">{helpText}</p>
+        <BaseField
+          {...baseFieldProps}
+          renderField={() => (
+            <Textarea
+              id={id || name}
+              name={name}
+              value={value || ''}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              disabled={disabled} // yalnız disabled parametrini istifadə edirik
+              readOnly={readOnly} // readOnly ayrıca parametr kimi ötürülür
+              className={cn(
+                'min-h-[120px] resize-y focus:ring-1 focus:ring-primary',
+                error && 'border-destructive',
+                readOnly && 'bg-muted cursor-default'
+              )}
+            />
           )}
-        </div>
+        />
       );
 
     case 'number':
       return (
-        <div className="space-y-2">
-          <Input
-            {...baseProps}
-            type="number"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
-            placeholder={placeholder}
-            readOnly={readOnly}
-            min={validation?.minValue}
-            max={validation?.maxValue}
-          />
-          {helpText && (
-            <p className="text-sm text-muted-foreground">{helpText}</p>
+        <BaseField
+          {...baseFieldProps}
+          renderField={() => (
+            <Input 
+              id={id || name}
+              name={name}
+              type="number"
+              placeholder={placeholder}
+              value={value || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                // Empty value check
+                if (val === '') {
+                  onChange('');
+                  return;
+                }
+                
+                // Number validation and conversion
+                const numValue = parseFloat(val);
+                if (!isNaN(numValue)) {
+                  onChange(numValue);
+                }
+              }}
+              disabled={disabled} 
+              readOnly={readOnly} 
+              className={cn(
+                'focus:ring-1 focus:ring-primary',
+                error && 'border-destructive',
+                readOnly && 'bg-muted cursor-default'
+              )}
+            />
           )}
-        </div>
+        />
       );
-
+      
     case 'date':
       return (
-        <div className="space-y-2">
-          <DatePicker
-            value={value ? new Date(value) : undefined}
-            onChange={(date) => onChange(date?.toISOString().split('T')[0])}
-            disabled={disabled || readOnly}
-            placeholder={placeholder}
-          />
-          {helpText && (
-            <p className="text-sm text-muted-foreground">{helpText}</p>
+        <BaseField
+          {...baseFieldProps}
+          renderField={() => (
+            <Input
+              id={id || name}
+              name={name}
+              type="date"
+              value={value || ''}
+              onChange={(e) => onChange(e.target.value)}
+              disabled={disabled} // yalnız disabled parametrini istifadə edirik
+              readOnly={readOnly} // readOnly ayrıca parametr kimi ötürülür
+              className={cn(
+                'focus:ring-1 focus:ring-primary',
+                error && 'border-destructive',
+                readOnly && 'bg-muted cursor-default'
+              )}
+            />
           )}
-        </div>
+        />
       );
-
+      
     case 'select':
       return (
-        <div className="space-y-2">
-          <Select
-            value={value || ''}
-            onValueChange={onChange}
-            disabled={disabled || readOnly}
-          >
-            <SelectTrigger className={baseProps.className}>
-              <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {helpText && (
-            <p className="text-sm text-muted-foreground">{helpText}</p>
+        <BaseField
+          {...baseFieldProps}
+          renderField={() => (
+            <Select 
+              value={value || ''}
+              onValueChange={onChange}
+              disabled={disabled || readOnly} // readOnly vəziyyətində select değişdirilə bilməz
+            >
+              <SelectTrigger
+                className={cn(
+                  'focus:ring-1 focus:ring-primary w-full',
+                  error && 'border-destructive'
+                )}
+              >
+                <SelectValue placeholder={placeholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {options?.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
-        </div>
+        />
       );
-
+      
     case 'checkbox':
       return (
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id={id}
-              checked={value || false}
-              onCheckedChange={onChange}
-              disabled={disabled || readOnly}
-            />
-            <Label htmlFor={id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              {placeholder}
-            </Label>
-          </div>
-          {helpText && (
-            <p className="text-sm text-muted-foreground">{helpText}</p>
+        <BaseField
+          {...baseFieldProps}
+          renderField={() => (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={id || name}
+                checked={value === true}
+                onCheckedChange={onChange}
+                disabled={disabled || readOnly} // readOnly vəziyyətində checkbox dəyişdirilə bilməz
+                className={cn(
+                  error && 'border-destructive',
+                  readOnly && 'opacity-70'
+                )}
+              />
+            </div>
           )}
-        </div>
+        />
       );
-
+      
     case 'radio':
       return (
-        <div className="space-y-2">
-          <RadioGroup
-            value={value || ''}
-            onValueChange={onChange}
-            disabled={disabled || readOnly}
-          >
-            {options.map((option) => (
-              <div key={option.value} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.value} id={`${id}-${option.value}`} />
-                <Label htmlFor={`${id}-${option.value}`}>{option.label}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-          {helpText && (
-            <p className="text-sm text-muted-foreground">{helpText}</p>
+        <BaseField
+          {...baseFieldProps}
+          renderField={() => (
+            <RadioGroup
+              value={value || ''}
+              onValueChange={onChange}
+              disabled={disabled || readOnly} // readOnly vəziyyətində radio seçimi dəyişdirilə bilməz
+              className={cn(
+                "flex flex-col space-y-1",
+                readOnly && "opacity-70"
+              )}
+            >
+              {options?.map((option) => (
+                <div key={option.value} className="flex items-center space-x-2">
+                  <RadioGroupItem value={option.value} id={`${id || name}-${option.value}`} />
+                  <Label htmlFor={`${id || name}-${option.value}`}>{option.label}</Label>
+                </div>
+              ))}
+            </RadioGroup>
           )}
-        </div>
+        />
       );
 
     case 'file':
+      // Fayl yükləmə sahəsi üçün BaseField istifadə edirik
       return (
-        <div className="space-y-4">
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-            <input
-              type="file"
-              onChange={handleFileUpload}
-              className="hidden"
-              id={`file-upload-${id}`}
-              multiple
-              disabled={disabled || readOnly}
-            />
-            <label 
-              htmlFor={`file-upload-${id}`} 
-              className={cn(
-                "cursor-pointer",
-                (disabled || readOnly) && "cursor-not-allowed opacity-50"
-              )}
-            >
-              <Upload className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-2 text-sm text-gray-600">
-                {placeholder || t('clickToUploadFiles')}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {t('maxFileSize')}: 10MB
-              </p>
-            </label>
-          </div>
-
-          {uploadedFiles.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">{t('uploadedFiles')}:</h4>
-              {uploadedFiles.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex items-center space-x-2">
-                    {file.type.startsWith('image/') ? (
-                      <ImageIcon className="h-4 w-4 text-blue-500" />
-                    ) : (
-                      <FileText className="h-4 w-4 text-gray-500" />
-                    )}
-                    <span className="text-sm">{file.name}</span>
-                    <span className="text-xs text-gray-500">
-                      ({Math.round(file.size / 1024)} KB)
-                    </span>
-                  </div>
-                  {!readOnly && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(index)}
-                      className="h-6 w-6 p-0"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+        <BaseField
+          {...baseFieldProps}
+          renderField={() => (
+            <div className="space-y-4">
+              <div className={cn(
+                "border-2 border-dashed rounded-lg p-6 text-center",
+                error ? "border-destructive" : "border-gray-300"
+              )}>
+                <input
+                  type="file"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id={`file-upload-${id || name}`}
+                  multiple
+                  disabled={disabled}
+                />
+                <label 
+                  htmlFor={`file-upload-${id || name}`} 
+                  className={cn(
+                    "cursor-pointer",
+                    (disabled || readOnly) && "cursor-not-allowed opacity-50"
                   )}
+                >
+                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className={cn(
+                    "mt-2 text-sm",
+                    error ? "text-destructive" : "text-gray-600"
+                  )}>
+                    {placeholder || t('clickToUploadFiles')}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t('maxFileSize')}: 10MB
+                  </p>
+                </label>
+              </div>
+
+              {uploadedFiles.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">{t('uploadedFiles')}:</h4>
+                  {uploadedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div className="flex items-center space-x-2">
+                        {file.type.startsWith('image/') ? (
+                          <ImageIcon className="h-4 w-4 text-blue-500" />
+                        ) : (
+                          <FileText className="h-4 w-4 text-gray-500" />
+                        )}
+                        <span className="text-sm">{file.name}</span>
+                        <span className="text-xs text-gray-500">
+                          ({Math.round(file.size / 1024)} KB)
+                        </span>
+                      </div>
+                      {!readOnly && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
-
-          {helpText && (
-            <p className="text-sm text-muted-foreground">{helpText}</p>
-          )}
-        </div>
+        />
       );
 
     default:
+      // Tanınmayan sahə növləri üçün adi text input göstərək
       return (
-        <div className="space-y-2">
-          <Input
-            {...baseProps}
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            readOnly={readOnly}
-          />
-          {helpText && (
-            <p className="text-sm text-muted-foreground">{helpText}</p>
+        <BaseField
+          {...baseFieldProps}
+          renderField={() => (
+            <Input
+              id={id || name}
+              name={name}
+              type="text"
+              value={value || ''}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              disabled={disabled}
+              readOnly={readOnly}
+              className={cn(
+                'focus:ring-1 focus:ring-primary',
+                error && 'border-destructive'
+              )}
+            />
           )}
-        </div>
+        />
       );
   }
 };

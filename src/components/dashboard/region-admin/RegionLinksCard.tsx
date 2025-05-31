@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link2, ExternalLink } from 'lucide-react';
 import { useEntityLinks } from '@/hooks/common/useEntityLinks';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
 export const RegionLinksCard: React.FC = () => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const regionId = user?.region_id;
   const { links, loading } = useEntityLinks('region', regionId);
 

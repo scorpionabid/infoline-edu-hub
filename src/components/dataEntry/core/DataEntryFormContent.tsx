@@ -5,6 +5,7 @@ import FormFields from './FormFields';
 import { useLanguage } from '@/context/LanguageContext';
 import { Column } from '@/types/column';
 import { safeArrayFind } from '@/utils/dataIndexing';
+import { formatColumns } from '@/utils/dataFormatters';
 
 interface DataEntryFormContentProps {
   category: {
@@ -20,12 +21,26 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('general');
   
+  // Debug məlumatları
+  console.group('DataEntryFormContent Rendering');
+  console.log('Category received:', category);
+  console.log('ReadOnly:', readOnly);
+  console.groupEnd();
+  
   // Safely handle category and columns
   if (!category) {
     console.warn('DataEntryFormContent received undefined category');
     return (
-      <div className="p-4 text-center text-muted-foreground">
-        {t('categoryNotFound')}
+      <div className="p-4 border border-red-300 bg-red-50 rounded-lg">
+        <div className="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          <span className="font-semibold">{t('categoryNotFound')}</span>
+        </div>
+        <div className="mt-2 text-sm">
+          {t('pleaseTryRefreshingThePage')}
+        </div>
       </div>
     );
   }
@@ -39,8 +54,7 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
     );
   }
   
-  // Yeni yaratdığımız formatters funksiyalarını idxal edirik
-  const { formatColumns } = require('@/utils/dataFormatters');
+  // formatColumns funksiyasını faylın yuxarısından idxal etdik
   
   // Ensure columns is an array and filter out any invalid entries
   const safeColumns = React.useMemo(() => {
@@ -193,12 +207,12 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
           <TabsContent key={section} value={section} className="mt-0 p-0">
             <FormFields 
               columns={sections[section]} 
-              readOnly={false} /* HƏMİŞƏ FORMDA REDAKTƏNİ AKTIV EDİRİK */
-              disabled={false} /* HƏMİŞƏ FORMDA REDAKTƏNİ AKTIV EDİRİK */
+              readOnly={readOnly} 
+              disabled={false} 
             />
             {process.env.NODE_ENV === 'development' && (
               <div className="p-2 text-xs bg-muted/20 rounded border mt-4">
-                <p>Debug: Form override active - readOnly and disabled forced to false</p>
+                <p>Debug: ReadOnly={readOnly ? 'true' : 'false'}</p>
               </div>
             )}
           </TabsContent>

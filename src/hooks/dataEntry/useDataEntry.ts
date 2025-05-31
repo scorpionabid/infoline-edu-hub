@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { useValidation } from '../validation';
@@ -37,7 +37,7 @@ export const useDataEntry = ({
   const [entryError, setEntryError] = useState<string | null>(null);
   const [entryId, setEntryId] = useState<string | null>(null);
   
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const { toast } = useToast();
   const { t } = useLanguage();
   

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { School } from '@/types/school';
 import { FullUserData } from '@/types/auth';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
 interface SchoolsContextProps {
   schools: School[];
@@ -31,7 +31,7 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [schools, setSchools] = useState<School[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
 
   const fetchSchools = async (regionId?: string, sectorId?: string) => {
     try {

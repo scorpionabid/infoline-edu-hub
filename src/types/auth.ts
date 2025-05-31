@@ -25,6 +25,7 @@ export interface FullUserData {
   updatedAt?: string;
   created_at?: string;
   updated_at?: string;
+  permissions?: string[];
 }
 
 export interface User {
@@ -72,7 +73,7 @@ export interface AuthState {
   user: FullUserData | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  error: string | null;
+  error: string | Error | null;
   session: any;
   initialized: boolean;
   initializationAttempted: boolean;
@@ -84,4 +85,7 @@ export interface AuthState {
   updateUser: (userData: Partial<FullUserData>) => void;
   clearError: () => void;
   initializeAuth: (loginOnly?: boolean) => Promise<void>;
+  updateProfile: (updates: Partial<FullUserData>) => Promise<{ success: boolean, error?: any }>;
+  updatePassword: (newPassword: string) => Promise<{ success: boolean, error?: any }>;
+  hasPermission: (permission: string) => boolean;
 }

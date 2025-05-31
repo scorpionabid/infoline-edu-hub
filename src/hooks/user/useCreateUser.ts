@@ -2,13 +2,13 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { UserFormData } from '@/types/user';
 
 export const useCreateUser = () => {
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
 
   const createUser = useCallback(async (userData: UserFormData) => {
     if (!userData.full_name || !userData.email || !userData.password) {

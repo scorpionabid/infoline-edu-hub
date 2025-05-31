@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import { FullUserData, UserRole } from '@/types/user';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { toast } from 'sonner';
 import UserForm from './UserForm';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -24,7 +24,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   user 
 }) => {
   const { t } = useLanguage();
-  const { user: currentUser } = useAuth();
+  const currentUser = useAuthStore(selectUser);
   const { isSuperAdmin, isRegionAdmin } = usePermissions();
   const [loading, setLoading] = React.useState(false);
   const [formData, setFormData] = React.useState<any>({});

@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FolderOpen, Download, File } from 'lucide-react';
 import { useEntityFiles } from '@/hooks/common/useEntityFiles';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
 export const SectorFilesCard: React.FC = () => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const sectorId = user?.sector_id;
   const { files, loading, getFileUrl } = useEntityFiles('sector', sectorId);
 

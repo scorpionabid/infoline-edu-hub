@@ -1,7 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { supabase } from '@/lib/supabase';
 import SchoolsContainer from '@/components/schools/SchoolsContainer';
 import { Loader2 } from 'lucide-react';
@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 
 const Schools = () => {
   const { t } = useLanguageSafe();
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const { 
     loading, 
     error, 

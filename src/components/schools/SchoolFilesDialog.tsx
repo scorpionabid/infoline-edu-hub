@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { supabase } from '@/lib/supabase';
 import { UploadFileData } from '@/types/school';
 import { Category } from '@/types/category';
@@ -36,7 +36,7 @@ const SchoolFilesDialog: React.FC<SchoolFilesDialogProps> = ({
 }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const [files, setFiles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(undefined);

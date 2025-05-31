@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import UserList from '@/components/users/UserList';
 import UserHeader from '@/components/users/UserHeader';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 import { Helmet } from 'react-helmet';
@@ -13,7 +13,7 @@ const Users = () => {
   const { t } = useLanguage();
   const { isRegionAdmin, isSuperAdmin, isSectorAdmin, sectorId, regionId } = usePermissions();
   const isAuthorized = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const navigate = useNavigate();
   
   // User list refresh trigger state - incrementing this will refresh the list

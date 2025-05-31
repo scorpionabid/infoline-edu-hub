@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link2, ExternalLink } from 'lucide-react';
 import { useSchoolLinks } from '@/hooks/schools/useSchoolLinks';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
 export const LinksCard: React.FC = () => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const schoolId = user?.school_id;
   const { links, loading } = useSchoolLinks(schoolId);
 

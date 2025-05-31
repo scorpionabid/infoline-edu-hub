@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { ChevronDown, LayoutDashboard, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 
 const DashboardHeader: React.FC = () => {
   const { t } = useLanguageSafe();
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   
   // Dashboard məlumatlarını yeniləmək

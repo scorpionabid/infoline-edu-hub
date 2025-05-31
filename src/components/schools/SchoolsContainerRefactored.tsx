@@ -6,7 +6,7 @@ import { useSchoolPagination } from '@/hooks/schools/useSchoolPagination';
 import { useSchoolAdmins } from '@/hooks/schools/useSchoolAdmins';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -48,7 +48,7 @@ const SchoolsContainerRefactored: React.FC<SchoolsContainerProps> = ({
 }) => {
   const { t } = useLanguageSafe();
   const permissions = usePermissions();
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   
   // İcazələr
   const canManageSchools = () => {

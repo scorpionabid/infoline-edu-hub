@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
 interface RegionData {
   name: string;
@@ -13,7 +13,7 @@ interface RegionData {
 export const useCreateRegion = () => {
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
 
   const createRegion = useCallback(async (data: RegionData) => {
     setLoading(true);

@@ -2,12 +2,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { FullUserData, User, UserRole } from '@/types/user';
 import { toast } from 'sonner';
 
 export const useUserData = () => {
-  const { user: authUser } = useAuth();
+  const user = useAuthStore(selectUser);
   const { userRole } = usePermissions();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -15,7 +15,7 @@ export const useUserData = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!authUser?.id) return;
+      if (!user?.id) return;
 
       try {
         setLoading(true);
@@ -25,7 +25,7 @@ export const useUserData = () => {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', authUser.id)
+          .eq('id', user.id)
           .single();
 
         if (profileError) throw profileError;
@@ -34,15 +34,15 @@ export const useUserData = () => {
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('*, regions(name), sectors(name), schools(name)')
-          .eq('user_id', authUser.id)
+          .eq('user_id', user.id)
           .single();
 
         if (roleError) throw roleError;
 
         // Combine data
         const fullUserData: FullUserData = {
-          id: authUser.id,
-          email: authUser.email || '',
+          id: user.id,
+          email: user.email || '',
           full_name: profileData?.full_name || '',
           role: roleData?.role as UserRole,
           status: profileData?.status || 'active',
@@ -76,7 +76,7 @@ export const useUserData = () => {
     };
 
     fetchUserData();
-  }, [authUser?.id]);
+  }, [user?.id]);
 
   return { userData, loading, error };
 };

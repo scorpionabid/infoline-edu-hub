@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { Column, ColumnType } from '@/types/column';
 import { parseJsonSafe } from '@/utils/json-utils';
 import { CategoryAssignment } from '@/types/category';
@@ -29,7 +29,7 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
   const [isLoading, setIsLoading] = useState(false);
   const [loading, setLoading] = useState(false); // alias for backward compatibility
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
 
   // UUID validation helper
   const isValidUUID = (uuid: string): boolean => {

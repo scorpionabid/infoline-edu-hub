@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { toast } from 'sonner';
 
 export interface School {
@@ -19,7 +19,7 @@ export const useSchool = (schoolId?: string) => {
   const [school, setSchool] = useState<School | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
 
   useEffect(() => {
     const fetchSchool = async () => {

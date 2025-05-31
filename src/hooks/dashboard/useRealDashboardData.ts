@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { 
   SuperAdminDashboardData, 
   RegionAdminDashboardData, 
@@ -16,7 +16,7 @@ import {
 import { UserRole } from '@/types/supabase';
 
 export const useRealDashboardData = () => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);

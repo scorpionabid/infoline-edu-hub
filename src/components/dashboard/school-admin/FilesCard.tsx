@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FolderOpen, Download, File } from 'lucide-react';
 import { useSchoolFiles } from '@/hooks/schools/useSchoolFiles';
-import { useAuth } from '@/context/auth';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
 export const FilesCard: React.FC = () => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const schoolId = user?.school_id;
   const { files, loading, getFileUrl } = useSchoolFiles(schoolId);
 
