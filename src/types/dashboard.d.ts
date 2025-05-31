@@ -49,9 +49,16 @@ export interface SchoolStat {
   id: string;
   name: string;
   completionRate: number;
+  completion_rate?: number; // Geriyə uyğunluq üçün
   totalForms: number;
   completedForms: number;
   pendingForms: number;
+  totalEntries?: number;
+  total_entries?: number;
+  pendingEntries?: number;
+  pending_entries?: number;
+  pendingCount?: number;
+  formsCompleted?: number;
   status: 'active' | 'inactive';
   lastUpdated: string;
 }
@@ -61,7 +68,10 @@ export interface SectorStat {
   name: string;
   schoolCount: number;
   completionRate: number;
+  completion_rate?: number; // Geriyə uyğunluq üçün
+  completion?: number; // Geriyə uyğunluq üçün
   totalSchools: number;
+  total_schools?: number; // Geriyə uyğunluq üçün
   activeSchools: number;
   status: 'active' | 'inactive';
 }
@@ -71,6 +81,10 @@ export interface DashboardFormStats {
   completed: number;
   pending: number;
   rejected: number;
+  approved?: number; // Geriyə uyğunluq üçün əlavə edildi
+  approvedForms?: number; // Geriyə uyğunluq üçün əlavə edildi
+  pendingForms?: number; // Geriyə uyğunluq üçün əlavə edildi
+  rejectedForms?: number; // Geriyə uyğunluq üçün əlavə edildi
   completionRate: number;
 }
 
@@ -83,9 +97,18 @@ export interface SuperAdminDashboardData {
 
 export interface RegionAdminDashboardData {
   stats: DashboardFormStats;
+  status?: DashboardFormStats; // Geriyə uyğunluq üçün əlavə edildi
+  formStats?: DashboardFormStats; // Geriyə uyğunluq üçün əlavə edildi
+  completion?: any; // Geriyə uyğunluq üçün əlavə edildi
+  completionRate?: number; // Geriyə uyğunluq üçün əlavə edildi
   sectors: SectorStat[];
+  sectorStats?: SectorStat[]; // Geriyə uyğunluq üçün əlavə edildi
   schools: SchoolStat[];
+  schoolStats?: SchoolStat[]; // Geriyə uyğunluq üçün əlavə edildi
   recentActivity: any[];
+  pendingApprovals?: any[]; // Geriyə uyğunluq üçün əlavə edildi
+  categories?: any[]; // Geriyə uyğunluq üçün əlavə edildi
+  upcomingDeadlines?: any[]; // Geriyə uyğunluq üçün əlavə edildi
 }
 
 export interface SectorAdminDashboardData {
@@ -100,6 +123,10 @@ export interface SchoolAdminDashboardData {
   upcomingDeadlines: DeadlineItem[];
   pendingForms: FormItem[];
   recentActivity: any[];
+  status?: any; // Geriyə uyğunluq üçün əlavə edildi
+  formStats?: any; // Geriyə uyğunluq üçün əlavə edildi
+  completion?: any; // Geriyə uyğunluq üçün əlavə edildi
+  notifications?: any[]; // Geriyə uyğunluq üçün əlavə edildi
 }
 
 export interface FormTabsProps {

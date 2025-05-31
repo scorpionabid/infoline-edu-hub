@@ -10,7 +10,7 @@ import { useDataEntryRealTime } from '@/hooks/realtime/useRealTimeUpdates';
 interface UseDataEntryManagerOptions {
   categoryId: string;
   schoolId: string;
-  category: CategoryWithColumns;
+  category: CategoryWithColumns | null;
 }
 
 export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataEntryManagerOptions) => {
@@ -140,13 +140,15 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
     setErrors({});
     
     try {
-      // Validate required fields
+      // Validate required fields - safely check if category and columns exist
       const validationErrors: Record<string, string> = {};
-      category.columns?.forEach(column => {
-        if (column.is_required && (!formData[column.id] || formData[column.id].toString().trim() === '')) {
-          validationErrors[column.id] = t('fieldRequired');
-        }
-      });
+      if (category?.columns) {
+        category.columns.forEach(column => {
+          if (column.is_required && (!formData[column.id] || formData[column.id].toString().trim() === '')) {
+            validationErrors[column.id] = t('fieldRequired');
+          }
+        });
+      }
 
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
@@ -192,7 +194,7 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, category.columns, schoolId, categoryId, t, toast]);
+  }, [formData, category, schoolId, categoryId, t, toast]);
 
   // Excel import handler
   const handleImportData = useCallback(async (data: Record<string, any>) => {
@@ -217,6 +219,12 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
     }
   }, [handleSave, t, toast]);
 
+  // Excel export template handler
+  const handleExportTemplate = useCallback(() => {
+    // This will be implemented with the Excel integration
+    console.log('Export template for category:', categoryId);
+  }, [categoryId]);
+
   return {
     formData,
     setFormData: handleFormDataChange,
@@ -230,6 +238,7 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
     handleSave,
     handleSubmit,
     handleImportData,
+    handleExportTemplate,
     refreshData: loadData
   };
 };
