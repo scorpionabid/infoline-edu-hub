@@ -111,7 +111,9 @@ const FormTabs: React.FC<FormTabsProps> = ({
                     <Button
                       size="sm"
                       onClick={() => {
-                        onCategoryChange(category.id);
+                        if (onCategoryChange) {
+                          onCategoryChange(category.id);
+                        }
                         navigateToDataEntry();
                       }}
                       className="flex-1"

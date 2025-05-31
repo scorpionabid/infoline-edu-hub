@@ -61,6 +61,7 @@ export interface SchoolStat {
   formsCompleted?: number;
   status: 'active' | 'inactive';
   lastUpdated: string;
+  lastUpdate?: string; // Geriyə uyğunluq üçün
 }
 
 export interface SectorStat {
@@ -86,6 +87,14 @@ export interface DashboardFormStats {
   pendingForms?: number; // Geriyə uyğunluq üçün əlavə edildi
   rejectedForms?: number; // Geriyə uyğunluq üçün əlavə edildi
   completionRate: number;
+  // Əlavə sahələr dashboard komponentləri üçün
+  draft?: number;
+  dueSoon?: number;
+  overdue?: number;
+  percentage?: number;
+  completion_rate?: number;
+  active?: number;
+  inactive?: number;
 }
 
 export interface SuperAdminDashboardData {
@@ -93,6 +102,16 @@ export interface SuperAdminDashboardData {
   recentActivity: any[];
   topPerformingRegions: any[];
   alerts: any[];
+  // Əlavə sahələr
+  users?: number;
+  regionCount?: number;
+  sectorCount?: number;
+  schoolCount?: number;
+  completion?: {
+    total: number;
+    completed: number;
+    percentage: number;
+  };
 }
 
 export interface RegionAdminDashboardData {
@@ -113,20 +132,36 @@ export interface RegionAdminDashboardData {
 
 export interface SectorAdminDashboardData {
   stats: DashboardFormStats;
+  status?: DashboardFormStats; // Geriyə uyğunluq üçün əlavə edildi
+  formStats?: DashboardFormStats; // Geriyə uyğunluq üçün əlavə edildi
   schools: SchoolStat[];
+  schoolStats?: SchoolStat[]; // Geriyə uyğunluq üçün əlavə edildi
   recentActivity: any[];
   alerts: any[];
+  // Əlavə sahələr
+  completion?: {
+    total: number;
+    completed: number;
+    percentage: number;
+  };
+  completionRate?: number;
+  pendingApprovals?: any[];
+  categories?: any[];
+  upcoming?: any[];
+  pendingForms?: any[];
 }
 
 export interface SchoolAdminDashboardData {
   categories: CategoryItem[];
   upcomingDeadlines: DeadlineItem[];
+  upcoming?: DeadlineItem[]; // Geriyə uyğunluq üçün əlavə edildi
   pendingForms: FormItem[];
   recentActivity: any[];
   status?: any; // Geriyə uyğunluq üçün əlavə edildi
   formStats?: any; // Geriyə uyğunluq üçün əlavə edildi
   completion?: any; // Geriyə uyğunluq üçün əlavə edildi
   notifications?: any[]; // Geriyə uyğunluq üçün əlavə edildi
+  completionRate?: number; // Geriyə uyğunluq üçün əlavə edildi
 }
 
 export interface FormTabsProps {

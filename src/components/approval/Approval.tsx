@@ -20,7 +20,7 @@ import {
 import { DataEntryStatus } from '@/types/dataEntry';
 import { PendingApproval } from '@/types/dashboard';
 import { useAuth } from '@/context/auth';
-import { UserRole } from '@/types/user.d.ts';
+import type { UserRole } from '@/types/user';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import PendingApprovalsTable from './PendingApprovalsTable';
 import ApprovalItem from './ApprovalItem';

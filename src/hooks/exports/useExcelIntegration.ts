@@ -1,81 +1,127 @@
 
-import { useCallback } from 'react';
-import * as XLSX from 'xlsx';
+import { useState, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { CategoryWithColumns } from '@/types/category';
 
-export interface ExcelIntegrationProps {
-  categories: CategoryWithColumns[];
-  onDataImported: (data: Record<string, any>, categoryId: string) => Promise<void>;
+interface UseExcelIntegrationOptions {
+  category: CategoryWithColumns | null;
+  formData: Record<string, any>;
+  onImportData: (data: Record<string, any>) => Promise<void>;
 }
 
-export const useExcelIntegration = ({ categories, onDataImported }: ExcelIntegrationProps) => {
+export const useExcelIntegration = ({ 
+  category, 
+  formData, 
+  onImportData 
+}: UseExcelIntegrationOptions) => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Excel şablonu yüklə
-  const downloadTemplate = useCallback((categoryId: string) => {
-    const category = categories.find(c => c.id === categoryId);
-    if (!category) {
+  const downloadTemplate = useCallback(async () => {
+    if (!category?.columns || category.columns.length === 0) {
       toast({
         title: t('error'),
-        description: t('categoryNotFound'),
+        description: t('noCategoryColumnsForTemplate'),
         variant: 'destructive'
       });
       return;
     }
 
     try {
-      // Şablon başlıqları
-      const headers = ['Column ID', 'Column Name', 'Type', 'Required', 'Value'];
+      setIsProcessing(true);
       
-      // Sütunlar üçün data
-      const rows = category.columns?.map((column: any) => [
-        column.id,
-        column.name,
-        column.type,
-        column.is_required ? 'Yes' : 'No',
-        '' // Boş dəyər sahəsi
-      ]) || [];
-
-      // Excel worksheet yarat
-      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      // Create a simple CSV template instead of Excel
+      const headers = category.columns.map(col => col.name || col.id).join(',');
+      const csvContent = headers + '\n';
       
-      // Sütun genişliklərini təyin et
-      worksheet['!cols'] = [
-        { width: 20 },
-        { width: 30 },
-        { width: 15 },
-        { width: 12 },
-        { width: 30 }
-      ];
-
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, category.name);
-
-      // Faylı yüklə
-      XLSX.writeFile(workbook, `${category.name}_template.xlsx`);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
       
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${category.name || 'template'}_template.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
       toast({
         title: t('success'),
-        description: t('templateDownloaded')
+        description: t('templateDownloaded'),
       });
     } catch (error) {
-      console.error('Template download error:', error);
+      console.error('Error downloading template:', error);
       toast({
         title: t('error'),
-        description: t('templateDownloadError'),
+        description: t('errorDownloadingTemplate'),
         variant: 'destructive'
       });
+    } finally {
+      setIsProcessing(false);
     }
-  }, [categories, t, toast]);
+  }, [category, t, toast]);
 
-  // Excel məlumatlarını import et
-  const importFromExcel = useCallback(async (file: File, categoryId: string) => {
+  const exportData = useCallback(async () => {
+    if (!category?.columns || category.columns.length === 0) {
+      toast({
+        title: t('error'),
+        description: t('noCategoryColumnsForExport'),
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
-      // Fayl validasiyası
-      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      setIsProcessing(true);
+      
+      // Create CSV with current data
+      const headers = category.columns.map(col => col.name || col.id).join(',');
+      const values = category.columns.map(col => formData[col.id] || '').join(',');
+      const csvContent = headers + '\n' + values;
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${category.name || 'data'}_export.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      toast({
+        title: t('success'),
+        description: t('dataExported'),
+      });
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast({
+        title: t('error'),
+        description: t('errorExportingData'),
+        variant: 'destructive'
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [category, formData, t, toast]);
+
+  const importFile = useCallback(async (file: File) => {
+    if (!file) return;
+
+    try {
+      setIsProcessing(true);
+      
+      const text = await file.text();
+      const lines = text.split('\n');
+      
+      if (lines.length < 2) {
         toast({
           title: t('error'),
           description: t('invalidFileFormat'),
@@ -84,116 +130,53 @@ export const useExcelIntegration = ({ categories, onDataImported }: ExcelIntegra
         return;
       }
 
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'buffer' });
+      const headers = lines[0].split(',').map(h => h.trim());
+      const values = lines[1].split(',').map(v => v.trim());
       
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json<any>(worksheet);
-
-      if (jsonData.length === 0) {
+      if (!category?.columns) {
         toast({
           title: t('error'),
-          description: t('noDataInFile'),
+          description: t('noCategoryColumns'),
           variant: 'destructive'
         });
         return;
       }
 
-      // Məlumatları format et
-      const formattedData: Record<string, any> = {};
-      let validRowCount = 0;
+      // Map CSV data to form data
+      const importedData: Record<string, any> = {};
       
-      jsonData.forEach(row => {
-        const columnId = row['Column ID'];
-        const value = row['Value'];
+      category.columns.forEach(column => {
+        const headerIndex = headers.findIndex(h => 
+          h.toLowerCase() === (column.name || column.id).toLowerCase()
+        );
         
-        if (columnId && value !== undefined && value !== '') {
-          formattedData[columnId] = value;
-          validRowCount++;
+        if (headerIndex !== -1 && values[headerIndex]) {
+          importedData[column.id] = values[headerIndex];
         }
       });
 
-      if (validRowCount === 0) {
-        toast({
-          title: t('error'),
-          description: t('noValidDataFound'),
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // Import prosesini başlat
-      await onDataImported(formattedData, categoryId);
+      await onImportData(importedData);
       
       toast({
         title: t('success'),
-        description: t('dataImportedSuccessfully').replace('{count}', validRowCount.toString())
-      });
-
-    } catch (error) {
-      console.error('Excel import error:', error);
-      toast({
-        title: t('error'),
-        description: t('importError'),
-        variant: 'destructive'
-      });
-    }
-  }, [onDataImported, t, toast]);
-
-  // Mövcud məlumatları Excel-ə export et
-  const exportToExcel = useCallback((categoryId: string, data: Record<string, any>) => {
-    const category = categories.find(c => c.id === categoryId);
-    if (!category) {
-      toast({
-        title: t('error'),
-        description: t('categoryNotFound'),
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    try {
-      const headers = ['Column ID', 'Column Name', 'Type', 'Required', 'Value'];
-      
-      const rows = category.columns?.map((column: any) => [
-        column.id,
-        column.name,
-        column.type,
-        column.is_required ? 'Yes' : 'No',
-        data[column.id] || ''
-      ]) || [];
-
-      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      worksheet['!cols'] = [
-        { width: 20 },
-        { width: 30 },
-        { width: 15 },
-        { width: 12 },
-        { width: 30 }
-      ];
-
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, category.name);
-
-      XLSX.writeFile(workbook, `${category.name}_data.xlsx`);
-      
-      toast({
-        title: t('success'),
-        description: t('dataExported')
+        description: t('dataImported'),
       });
     } catch (error) {
-      console.error('Excel export error:', error);
+      console.error('Error importing file:', error);
       toast({
         title: t('error'),
-        description: t('exportError'),
+        description: t('errorImportingFile'),
         variant: 'destructive'
       });
+    } finally {
+      setIsProcessing(false);
     }
-  }, [categories, t, toast]);
+  }, [category, onImportData, t, toast]);
 
   return {
     downloadTemplate,
-    importFromExcel,
-    exportToExcel
+    exportData,
+    importFile,
+    isProcessing
   };
 };

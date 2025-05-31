@@ -346,6 +346,9 @@ const DataEntryPage: React.FC = () => {
   const [schoolCategories, setSchoolCategories] = useState<any[]>([]);
   const [loadingSectorCategories, setLoadingSectorCategories] = useState<boolean>(false);
   
+  // Selected category state for FormTabs
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+
   // Məktəb administratoru üçün kateqoriyaları yükləyirik
   const { 
     categories: allCategories, 
@@ -494,6 +497,14 @@ const DataEntryPage: React.FC = () => {
     setSelectedSchoolName(school && school.name ? school.name : '');
   };
   
+  // Handle category change for FormTabs
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+    const newParams = new URLSearchParams(location.search);
+    newParams.set('categoryId', categoryId);
+    navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
+  };
+
   // Yüklənmə zamanı göstəriləcək komponent
   if ((loadingAllCategories && isSchoolAdmin) || (loadingSectorCategories && isSectorAdmin && activeTab === 'sector') || loadingSchools) {
     return (
