@@ -13,6 +13,8 @@ export interface User {
   status?: UserStatus | string;
   name?: string;
   entityName?: string;
+  created_at?: string;
+  updated_at?: string;
   // Adding support for notification settings
   notification_settings?: NotificationSettings;
   notificationSettings?: NotificationSettings;

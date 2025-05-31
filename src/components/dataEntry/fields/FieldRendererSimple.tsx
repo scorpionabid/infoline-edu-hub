@@ -1,438 +1,347 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+
+import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ColumnType } from '@/types/column';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
+import { cn } from '@/lib/utils';
+import { Upload, X, FileText, Image as ImageIcon } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
 
-// Debug logger function
-const useDebugLogger = (debugMode: boolean) => {
-  return useCallback(
-    (
-      message: string,
-      data?: Record<string, unknown>,
-      groupName?: string,
-      isGroupEnd = false
-    ) => {
-      if (!debugMode) return;
+export type ColumnType = 
+  | 'text' 
+  | 'textarea' 
+  | 'number' 
+  | 'email' 
+  | 'phone' 
+  | 'date' 
+  | 'select' 
+  | 'checkbox' 
+  | 'radio' 
+  | 'file' 
+  | 'url';
 
-      if (groupName && !isGroupEnd) {
-        console.group(groupName);
-      }
-
-      if (data) {
-        console.log(message, data);
-      } else {
-        console.log(message);
-      }
-
-      if (groupName && isGroupEnd) {
-        console.groupEnd();
-      }
-    },
-    [debugMode]
-  );
-};
-
-// Safe error handling wrapper
-const withErrorHandling = <T extends unknown>(
-  fn: (...args: any[]) => T,
-  errorHandler: (error: Error) => void
-) => {
-  return (...args: Parameters<typeof fn>): ReturnType<typeof fn> | undefined => {
-    try {
-      return fn(...args);
-    } catch (error) {
-      errorHandler(error instanceof Error ? error : new Error(String(error)));
-      return undefined;
-    }
-  };
-};
-
-// Format and validate options
-type Option = { label: string; value: string } | string;
-
-const formatOptions = (options: any[] | undefined): { label: string; value: string }[] => {
-  if (!options || !Array.isArray(options) || options.length === 0) {
-    return [];
-  }
-
-  return options.map((option, index) => {
-    if (typeof option === 'object' && option !== null) {
-      return {
-        value: String(option.value || `option-${index}`),
-        label: String(option.label || option.value || option || `Option ${index + 1}`)
-      };
-    }
-    return {
-      value: String(option || `option-${index}`),
-      label: String(option || `Option ${index + 1}`)
-    };
-  });
-};
-
-// Daha yaxşı tip təhlükəsizliyi ilə interface
 interface FieldRendererSimpleProps {
   type: ColumnType;
-  value: string;
-  onChange: (value: string) => void;
-  onBlur?: () => void;
-  disabled?: boolean;
-  required?: boolean;
-  readOnly?: boolean;
-  options?: Array<{ label?: string; value?: string } | string>;
+  value: any;
+  onChange: (value: any) => void;
   placeholder?: string;
+  options?: Array<{ label: string; value: string }>;
+  validation?: {
+    required?: boolean;
+    minLength?: number;
+    maxLength?: number;
+    minValue?: number;
+    maxValue?: number;
+    pattern?: string;
+  };
+  disabled?: boolean;
+  readOnly?: boolean;
+  helpText?: string;
   name?: string;
   id?: string;
+  className?: string;
 }
 
-// TypeScript ilə forwardRef tipini düzgün müəyyən edirik
-type FieldRendererRef = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+const FieldRendererSimple: React.FC<FieldRendererSimpleProps> = ({
+  type,
+  value,
+  onChange,
+  placeholder,
+  options = [],
+  validation,
+  disabled = false,
+  readOnly = false,
+  helpText,
+  name,
+  id,
+  className
+}) => {
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
-const FieldRendererSimple = React.forwardRef<FieldRendererRef, FieldRendererSimpleProps>((
-  {
-    type,
-    value,
-    onChange,
-    onBlur,
-    disabled = false,
-    required = false,
-    readOnly = false,
-    options = [],
-    placeholder = '',
+  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const fileArray = Array.from(files);
+    
+    // Validate file size (max 10MB per file)
+    const maxSize = 10 * 1024 * 1024;
+    const validFiles = fileArray.filter(file => {
+      if (file.size > maxSize) {
+        toast({
+          title: t('error'),
+          description: t('fileTooLarge').replace('{filename}', file.name),
+          variant: 'destructive'
+        });
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length > 0) {
+      setUploadedFiles(prev => [...prev, ...validFiles]);
+      onChange([...uploadedFiles, ...validFiles]);
+    }
+  }, [uploadedFiles, onChange, t, toast]);
+
+  const removeFile = useCallback((index: number) => {
+    const newFiles = uploadedFiles.filter((_, i) => i !== index);
+    setUploadedFiles(newFiles);
+    onChange(newFiles);
+  }, [uploadedFiles, onChange]);
+
+  const baseProps = {
+    disabled: disabled || readOnly,
+    className: cn(
+      "w-full",
+      readOnly && "bg-gray-50 cursor-default",
+      className
+    ),
     name,
     id
-  }, 
-  ref
-) => {
-  // Optimallaşdırılmış state idarəsi
-  const [localValue, setLocalValue] = useState(value || '');
-  
-  // Debug loqları üçün çıxarılmış funksiya
-  const debugMode = process.env.NODE_ENV === 'development';
-  const logDebug = useDebugLogger(debugMode);
-
-  // Props dəyişdikdə lokal state-i yenilə
-  useEffect(() => {
-    if (value !== localValue) {
-      setLocalValue(value || '');
-    }
-  }, [value, localValue]);
-  
-  // Effektiv parametrlər
-  const effectiveDisabled = disabled;
-  const effectiveReadOnly = readOnly;
-  
-  // Komponent yükləndikdə debug loqları
-  useEffect(() => {
-    logDebug(
-      'Field properties', 
-      {
-        type,
-        value,
-        disabled,
-        readOnly,
-        name,
-        id,
-        effectiveState: effectiveDisabled ? 'DISABLED' : effectiveReadOnly ? 'READONLY' : 'EDITABLE'
-      }, 
-      `FieldRendererSimple - ${type} field debugging`
-    );
-    
-    return () => {
-      logDebug('', {}, `FieldRendererSimple - ${type} field debugging`, true);
-    };
-  }, [type, value, disabled, readOnly, name, id, effectiveDisabled, effectiveReadOnly, logDebug]);
-
-  // Mərkəzləşdirilmiş hadisə emalı funksiyaları
-  const handleValueChange = useCallback(
-    (newValue: string, source: string) => {
-      // Xəta emalı wrapper-i ilə bütün dəyişiklikləri təhlükəsiz emal edirik
-      withErrorHandling(
-        () => {
-          // Lokal state-i yenilə
-          setLocalValue(newValue);
-          // Parent komponentə dəyişiklik haqqında xəbər veririk
-          onChange(newValue);
-          
-          // Debug loq
-          logDebug(
-            `Value changed from ${source}`, 
-            {
-              newValue,
-              previousValue: localValue,
-              fieldType: type,
-              fieldName: name
-            },
-            'Value Change Event'
-          );
-        },
-        (error) => {
-          logDebug(
-            'Error handling value change', 
-            { error: error.message, source, newValue },
-            'Error Event'
-          );
-        }
-      )();
-    },
-    [localValue, onChange, type, name, logDebug]
-  );
-  
-  // Konkret hadisə idarəediciləri
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      handleValueChange(e.target.value, 'input');
-    },
-    [handleValueChange]
-  );
-
-  const handleTextareaChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      handleValueChange(e.target.value, 'textarea');
-    },
-    [handleValueChange]
-  );
-
-  const handleSelectChange = useCallback(
-    (selectValue: string) => {
-      handleValueChange(selectValue, 'select');
-    },
-    [handleValueChange]
-  );
-
-  const handleCheckboxChange = useCallback(
-    (checked: boolean) => {
-      const newValue = checked ? 'true' : 'false';
-      handleValueChange(newValue, 'checkbox');
-    },
-    [handleValueChange]
-  );
-
-  // Options massivini təhlükəsiz şəkildə işləmək üçün
-  const safeOptions = useMemo(() => {
-    // formatOptions utility funksiyadan istifadə edirik
-    const formattedOptions = formatOptions(options);
-    
-    // Debug loqları
-    if (formattedOptions.length === 0) {
-      logDebug('Options array is empty or invalid', { rawOptions: options });
-    } else {
-      logDebug('Options processed successfully', { 
-        count: formattedOptions.length,
-        sample: formattedOptions.slice(0, 2)
-      });
-    }
-    
-    return formattedOptions;
-  }, [options, logDebug]);
-  
-  // Basic input props for all field types
-  const baseFieldProps = {
-    value: localValue,
-    onBlur,
-    disabled: effectiveDisabled,
-    readOnly: effectiveReadOnly,
-    required,
-    placeholder,
-    name,
-    id,
-    'data-testid': `field-${id || name}`
   };
 
-  // Text input renderers
-  const renderTextInput = (inputType: string = 'text') => {
-    return (
-      <Input
-        ref={ref as React.Ref<HTMLInputElement>}
-        type={inputType}
-        onChange={handleInputChange}
-        {...baseFieldProps}
-      />
-    );
-  };
-  
-  const renderTextarea = () => {
-    return (
-      <Textarea
-        ref={ref as React.Ref<HTMLTextAreaElement>}
-        onChange={handleTextareaChange}
-        {...baseFieldProps}
-      />
-    );
-  };
-  
-  // Select, radio, checkbox renderers
-  const renderSelect = () => {
-    return (
-      <Select 
-        value={localValue} 
-        onValueChange={handleSelectChange}
-        disabled={effectiveDisabled}
-        onOpenChange={(open) => {
-          open && logDebug('Select opened', { options: safeOptions });
-        }}
-      >
-        <SelectTrigger id={id} data-testid={`field-${id || name}`}>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {debugMode && (
-            <div className="p-1 text-xs text-muted-foreground">
-              Options: {safeOptions.length || 0}
-            </div>
-          )}
-          
-          {safeOptions.length > 0 ? (
-            safeOptions.map((option, index) => (
-              <SelectItem 
-                key={`${index}-${option.value}`} 
-                value={option.value}
-              >
-                {option.label}
-              </SelectItem>
-            ))
-          ) : (
-            <div className="p-2 text-center text-sm text-muted-foreground">
-              {debugMode ? 'No options available (debug)' : 'No options available'}
-            </div>
-          )}
-        </SelectContent>
-      </Select>
-    );
-  };
-  
-  const renderRadio = () => {
-    return (
-      <div className="space-y-2">
-        {debugMode && (
-          <div className="text-xs text-muted-foreground mb-2">
-            Options: {safeOptions.length || 0}
-          </div>
-        )}
-        
-        {safeOptions.length > 0 ? (
-          safeOptions.map((option, index) => (
-            <div key={`radio-${index}-${option.value}`} className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id={`${id || name}-${option.value}`}
-                value={option.value}
-                checked={localValue === option.value}
-                onChange={() => handleSelectChange(option.value)}
-                disabled={effectiveDisabled}
-                className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
-              />
-              <label 
-                htmlFor={`${id || name}-${option.value}`}
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                {option.label}
-              </label>
-            </div>
-          ))
-        ) : (
-          <div className="text-sm text-muted-foreground">No options available</div>
-        )}
-      </div>
-    );
-  };
-  
-  const renderCheckbox = () => {
-    return (
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id={id}
-          checked={localValue === 'true'}
-          onCheckedChange={handleCheckboxChange}
-          disabled={effectiveDisabled}
-          name={name}
-          data-testid={`field-${id || name}`}
-        />
-        <label
-          htmlFor={id}
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          {placeholder}
-        </label>
-      </div>
-    );
-  };
-  
-  // File input renderer
-  const renderImageUpload = () => {
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          handleValueChange(result, 'image-upload');
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-    
-    return (
-      <div className="space-y-2">
-        <Input
-          ref={ref as React.Ref<HTMLInputElement>}
-          type="file"
-          accept="image/*"
-          onChange={handleImageChange}
-          disabled={effectiveDisabled}
-          required={required}
-          name={name}
-          id={id}
-          data-testid={`field-${id || name}`}
-        />
-        {localValue && localValue.startsWith('data:image') && (
-          <div className="mt-2">
-            <img 
-              src={localValue} 
-              alt="Preview" 
-              className="max-h-40 max-w-full object-contain border rounded"
-            />
-          </div>
-        )}
-      </div>
-    );
-  };
-  
-  // Tipə görə rendering - indi daha qısa və oxunaqlıdır
   switch (type) {
     case 'text':
-      return renderTextInput('text');
-      
-    case 'textarea':
-      return renderTextarea();
-      
-    case 'number':
-      return renderTextInput('number');
-      
     case 'email':
-      return renderTextInput('email');
-      
-    case 'date':
-      return renderTextInput('date');
-      
-    case 'select':
-      return renderSelect();
-      
-    case 'radio':
-      return renderRadio();
-      
-    case 'checkbox':
-      return renderCheckbox();
-      
-    case 'image':
-      return renderImageUpload();
-      
-    default:
-      return renderTextInput('text');
-  }
-});
+    case 'phone':
+    case 'url':
+      return (
+        <div className="space-y-2">
+          <Input
+            {...baseProps}
+            type={type === 'email' ? 'email' : type === 'phone' ? 'tel' : type === 'url' ? 'url' : 'text'}
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            readOnly={readOnly}
+            minLength={validation?.minLength}
+            maxLength={validation?.maxLength}
+            pattern={validation?.pattern}
+          />
+          {helpText && (
+            <p className="text-sm text-muted-foreground">{helpText}</p>
+          )}
+        </div>
+      );
 
-FieldRendererSimple.displayName = "FieldRendererSimple";
+    case 'textarea':
+      return (
+        <div className="space-y-2">
+          <Textarea
+            {...baseProps}
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            readOnly={readOnly}
+            minLength={validation?.minLength}
+            maxLength={validation?.maxLength}
+            rows={4}
+          />
+          {helpText && (
+            <p className="text-sm text-muted-foreground">{helpText}</p>
+          )}
+        </div>
+      );
+
+    case 'number':
+      return (
+        <div className="space-y-2">
+          <Input
+            {...baseProps}
+            type="number"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
+            placeholder={placeholder}
+            readOnly={readOnly}
+            min={validation?.minValue}
+            max={validation?.maxValue}
+          />
+          {helpText && (
+            <p className="text-sm text-muted-foreground">{helpText}</p>
+          )}
+        </div>
+      );
+
+    case 'date':
+      return (
+        <div className="space-y-2">
+          <DatePicker
+            value={value ? new Date(value) : undefined}
+            onChange={(date) => onChange(date?.toISOString().split('T')[0])}
+            disabled={disabled || readOnly}
+            placeholder={placeholder}
+          />
+          {helpText && (
+            <p className="text-sm text-muted-foreground">{helpText}</p>
+          )}
+        </div>
+      );
+
+    case 'select':
+      return (
+        <div className="space-y-2">
+          <Select
+            value={value || ''}
+            onValueChange={onChange}
+            disabled={disabled || readOnly}
+          >
+            <SelectTrigger className={baseProps.className}>
+              <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {helpText && (
+            <p className="text-sm text-muted-foreground">{helpText}</p>
+          )}
+        </div>
+      );
+
+    case 'checkbox':
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id={id}
+              checked={value || false}
+              onCheckedChange={onChange}
+              disabled={disabled || readOnly}
+            />
+            <Label htmlFor={id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              {placeholder}
+            </Label>
+          </div>
+          {helpText && (
+            <p className="text-sm text-muted-foreground">{helpText}</p>
+          )}
+        </div>
+      );
+
+    case 'radio':
+      return (
+        <div className="space-y-2">
+          <RadioGroup
+            value={value || ''}
+            onValueChange={onChange}
+            disabled={disabled || readOnly}
+          >
+            {options.map((option) => (
+              <div key={option.value} className="flex items-center space-x-2">
+                <RadioGroupItem value={option.value} id={`${id}-${option.value}`} />
+                <Label htmlFor={`${id}-${option.value}`}>{option.label}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+          {helpText && (
+            <p className="text-sm text-muted-foreground">{helpText}</p>
+          )}
+        </div>
+      );
+
+    case 'file':
+      return (
+        <div className="space-y-4">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <input
+              type="file"
+              onChange={handleFileUpload}
+              className="hidden"
+              id={`file-upload-${id}`}
+              multiple
+              disabled={disabled || readOnly}
+            />
+            <label 
+              htmlFor={`file-upload-${id}`} 
+              className={cn(
+                "cursor-pointer",
+                (disabled || readOnly) && "cursor-not-allowed opacity-50"
+              )}
+            >
+              <Upload className="mx-auto h-12 w-12 text-gray-400" />
+              <p className="mt-2 text-sm text-gray-600">
+                {placeholder || t('clickToUploadFiles')}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {t('maxFileSize')}: 10MB
+              </p>
+            </label>
+          </div>
+
+          {uploadedFiles.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">{t('uploadedFiles')}:</h4>
+              {uploadedFiles.map((file, index) => (
+                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div className="flex items-center space-x-2">
+                    {file.type.startsWith('image/') ? (
+                      <ImageIcon className="h-4 w-4 text-blue-500" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-gray-500" />
+                    )}
+                    <span className="text-sm">{file.name}</span>
+                    <span className="text-xs text-gray-500">
+                      ({Math.round(file.size / 1024)} KB)
+                    </span>
+                  </div>
+                  {!readOnly && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {helpText && (
+            <p className="text-sm text-muted-foreground">{helpText}</p>
+          )}
+        </div>
+      );
+
+    default:
+      return (
+        <div className="space-y-2">
+          <Input
+            {...baseProps}
+            type="text"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            readOnly={readOnly}
+          />
+          {helpText && (
+            <p className="text-sm text-muted-foreground">{helpText}</p>
+          )}
+        </div>
+      );
+  }
+};
 
 export default FieldRendererSimple;

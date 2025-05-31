@@ -26,9 +26,9 @@ import PendingApprovalsTable from './PendingApprovalsTable';
 import ApprovalItem from './ApprovalItem';
 
 interface ApprovalProps {
-  user: any;
-  userRole: UserRole | undefined;
-  permissions: any;
+  user?: any;
+  userRole?: UserRole;
+  permissions?: any;
 }
 
 interface ApprovalRecord extends PendingApproval {
@@ -36,6 +36,7 @@ interface ApprovalRecord extends PendingApproval {
   categoryName: string;
   date: string;
   submittedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 const Approval: React.FC<ApprovalProps> = ({ 
