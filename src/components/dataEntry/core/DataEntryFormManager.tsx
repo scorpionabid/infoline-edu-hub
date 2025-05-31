@@ -8,6 +8,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { CategoryWithColumns } from '@/types/category';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
+import { useForm, FormProvider } from 'react-hook-form';
 import FormFields from './FormFields';
 import DataEntryFormContent from './DataEntryFormContent';
 
@@ -49,6 +50,44 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Initialize React Hook Form
+  const formMethods = useForm({
+    defaultValues: formData || {},
+    mode: 'onChange'
+  });
+
+  // Track if form is being programmatically updated to prevent loops
+  const isUpdatingRef = React.useRef(false);
+
+  // Sync form data with external formData prop (only when not updating internally)
+  useEffect(() => {
+    if (formData && typeof formData === 'object' && !isUpdatingRef.current) {
+      Object.keys(formData).forEach(key => {
+        const currentValue = formMethods.getValues(key);
+        if (currentValue !== formData[key]) {
+          formMethods.setValue(key, formData[key], { shouldValidate: false });
+        }
+      });
+    }
+  }, [formData, formMethods]);
+
+  // Watch form changes and sync with parent (debounced to prevent loops)
+  useEffect(() => {
+    const subscription = formMethods.watch((values, { name, type }) => {
+      if (values && typeof values === 'object' && !isUpdatingRef.current) {
+        isUpdatingRef.current = true;
+        
+        // Use setTimeout to debounce updates
+        setTimeout(() => {
+          onFormDataChange(values);
+          setHasUnsavedChanges(true);
+          isUpdatingRef.current = false;
+        }, 100);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [formMethods, onFormDataChange]);
 
   // Calculate completion percentage
   useEffect(() => {
@@ -317,10 +356,12 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
       {/* Form content */}
       <Card>
         <CardContent className="p-0">
-          <DataEntryFormContent 
-            category={category}
-            readOnly={readOnly}
-          />
+          <FormProvider {...formMethods}>
+            <DataEntryFormContent 
+              category={category}
+              readOnly={readOnly}
+            />
+          </FormProvider>
         </CardContent>
       </Card>
 
