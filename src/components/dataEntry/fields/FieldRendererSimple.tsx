@@ -20,6 +20,16 @@ interface FieldProps {
 }
 
 const FieldRendererSimple: React.FC<FieldProps> = ({ column, disabled = false, readOnly = false }) => {
+  // Safety check for column
+  if (!column || !column.id) {
+    console.warn('FieldRendererSimple: Invalid column provided:', column);
+    return (
+      <div className="p-4 border border-red-200 rounded bg-red-50">
+        <p className="text-red-600 text-sm">Sütun məlumatları tapılmadı</p>
+      </div>
+    );
+  }
+  
   const { register, watch, setValue, formState: { errors } } = useFormContext();
   const value = watch(column.id);
 

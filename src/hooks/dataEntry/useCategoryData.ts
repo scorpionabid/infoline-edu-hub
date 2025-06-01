@@ -137,106 +137,45 @@ export const useCategoryData = ({ categoryId, schoolId }: UseCategoryDataProps =
             ? columnsData.filter(col => col && col.category_id === category.id && isValidUUID(col.id || ''))
             : [];
           
-          // Process column data
+              // Process column data
           const processedColumns: Column[] = categoryColumns
             .filter(column => column && column.id) // Filter out invalid columns
             .map((column: any) => {
-              // Supabase-dən gələn options-ları düzəltmə prosesi
-              console.log(`Processing options for column ${column.name} (${column.id})`);
+              console.log(`Processing column ${column.name} (${column.id}):`, column);
               
-              // Xüsusi SupabaseJSON düzəldicisini istifadə edirik
+              // Simple options processing - don't overcomplicate
               let options = [];
               
-              // Bazadan gələn məlumatların tipini kontrol edirik
-              if (column.type === 'select' || column.type === 'multiselect') {
+              if (column.options) {
                 try {
-                  // Row/xəta məlumatları göstər
-                  console.log(`Raw options for column ${column.name}:`, {
-                    type: typeof column.options,
-                    isArray: Array.isArray(column.options),
-                    rawValue: column.options
-                  });
-                  
-                  // fixSupabaseJsonFormat funksiyamızı istifadə edirik
-                  const processedOptions = fixSupabaseJsonFormat(column.options);
-                  console.log(`Processed options for ${column.name}:`, processedOptions);
-                  
-                  // Əgər nəticə müvəffəqiyyətlidirsə və massivdirsə
-                  if (processedOptions && Array.isArray(processedOptions)) {
-                    options = processedOptions;
+                  if (Array.isArray(column.options)) {
+                    options = column.options;
+                  } else if (typeof column.options === 'string') {
+                    options = JSON.parse(column.options);
                   }
-                  
-                  // Əgər hələ də məlumat yoxdursa, həmin sütun üçün birbaşa bazadan çəkməyə çalış
-                  if (!options.length) {
-                    console.warn(`No options parsed, trying direct DB fetch for column ${column.id}`);
-                    
-                    // Birbaşa bazadan məlumatları yüklə
-                    const getOptionsFromDB = async () => {
-                      try {
-                        const { data, error } = await supabase
-                          .from('columns')
-                          .select('options')
-                          .eq('id', column.id)
-                          .single();
-                        
-                        if (error) throw error;
-                        
-                        if (data && data.options) {
-                          console.log(`DB options for column ${column.name}:`, data.options);
-                          const dbOptions = fixSupabaseJsonFormat(data.options);
-                          
-                          if (dbOptions && Array.isArray(dbOptions) && dbOptions.length > 0) {
-                            // Nəticələri global obyektə təyin edirik
-                            column.options = dbOptions;
-                            options = dbOptions;
-                            console.log(`Successfully loaded options from DB for ${column.name}:`, options);
-                          }
-                        }
-                      } catch (dbErr) {
-                        console.error(`Error fetching options for column ${column.id}:`, dbErr);
-                      }
-                    };
-                    
-                    // Async funksiyanı çağır
-                    getOptionsFromDB();
+                } catch (err) {
+                  console.warn(`Failed to parse options for ${column.name}:`, err);
+                  // Create default options for select types
+                  if (column.type === 'select' || column.type === 'multiselect') {
+                    options = [
+                      { value: 'option1', label: 'Variant 1' },
+                      { value: 'option2', label: 'Variant 2' }
+                    ];
                   }
-                } catch (parseError) {
-                  console.error(`Error processing options for ${column.name}:`, parseError);
                 }
               }
               
-              // Əgər hələ də heç bir variant yoxdursa, test/demo variant əlavə et
-              if ((column.type === 'select' || column.type === 'multiselect') && 
-                  (!options || !Array.isArray(options) || options.length === 0)) {
-                  
-                // Sütun adına görə xüsusi variantlar əlavə et
-                if (column.name.toLowerCase().includes('bilər')) {
-                  options = [
-                    { value: 'ola_bilar', label: 'Ola bilər' },
-                    { value: 'ola_bilmez', label: 'Ola bilməz' }
-                  ];
-                } else if (column.name.toLowerCase().includes('vəziyyət')) {
-                  options = [
-                    { value: 'yaxsi', label: 'Yaxşı' },
-                    { value: 'orta', label: 'Orta' },
-                    { value: 'pis', label: 'Pis' }
-                  ];
-                } else {
-                  options = [
-                    { value: 'option1', label: 'Variant 1' },
-                    { value: 'option2', label: 'Variant 2' },
-                    { value: 'option3', label: 'Variant 3' }
-                  ];
+              // Parse validation safely
+              let validation = {};
+              if (column.validation) {
+                try {
+                  validation = typeof column.validation === 'string' 
+                    ? JSON.parse(column.validation) 
+                    : column.validation;
+                } catch (err) {
+                  console.warn(`Failed to parse validation for ${column.name}:`, err);
                 }
-                
-                console.log(`Created default options for ${column.name}:`, options);
               }
-              
-              // Validation parse etmə prosesi
-              const validation = parseJsonSafe(
-                typeof column.validation === 'string' ? column.validation : JSON.stringify(column.validation || {}), 
-                {}
-              );
 
               // Return the processed column with correct type
               return {

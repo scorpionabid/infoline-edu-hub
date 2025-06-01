@@ -12,18 +12,6 @@ interface FormFieldsProps {
 }
 
 const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false, readOnly = false }) => {
-  // Form values tracking - dəyərləri lokal state-də saxlamaq üçün
-  const [localValues, setLocalValues] = React.useState<Record<string, any>>({});
-  
-  // Props diaqnostikası üçün
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.group('FormFields props diagnostics');
-      console.log('FormFields received props:', { disabled, readOnly });
-      console.log('FormFields local values:', localValues);
-      console.groupEnd();
-    }
-  }, [disabled, readOnly, localValues]);
   // Defensively filter columns to ensure all are valid using our utility functions
   const safeColumns = React.useMemo(() => {
     try {
@@ -64,13 +52,9 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
           <div key={column.id} className="grid gap-2">
             <div className="font-medium">{column.name}</div>
             <FieldRendererSimple
-              type={column.type}
-              value=""
-              onChange={() => {}}
+              column={column}
               disabled={true}
-              required={!!column.is_required}
               readOnly={true}
-              options={column.options}
             />
             {column.description && (
               <p className="text-sm text-muted-foreground">
@@ -105,50 +89,9 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
                 </FormLabel>
                 <FormControl>
                   <FieldRendererSimple
-                    type={column.type}
-                    // Lokal state-dən və ya RHF-dən dəyəri götürmək
-                    value={localValues[column.id] !== undefined ? localValues[column.id] : (field.value || '')} 
-                    onChange={(newValue) => {
-                      try {
-                        // Həm lokal state-ə, həm də form state-ə dəyəri yazaq
-                        setLocalValues(prev => ({
-                          ...prev,
-                          [column.id]: newValue
-                        }));
-                        
-                        // React Hook Form state-ini yenilə 
-                        field.onChange(newValue);
-                        
-                        // Focus dəyişməsini simulyasiya edərək yeniləməni tətiklundər
-                        try { field.onBlur(); } catch (err) {}
-                        
-                        // Debug
-                        if (process.env.NODE_ENV === 'development') {
-                          console.log(`FormFields onChange for ${column.id}:`, { 
-                            newValue, 
-                            fieldName: field.name 
-                          });
-                        }
-                      } catch (err) {
-                        console.error(`Error updating field ${column.id}:`, err);
-                      }
-                    }}
-                    onBlur={() => {
-                      try {
-                        field.onBlur();
-                      } catch (err) {
-                        console.error(`Error on field blur ${column.id}:`, err);
-                      }
-                    }}
-                    // Parent komponentdən gələn props-ları istifadə edirik
-                    disabled={disabled} 
-                    required={!!column.is_required}
-                    readOnly={readOnly} 
-                    // Seçim variantlarını təmin etmək (select, radio kimi sahələr üçün)
-                    options={Array.isArray(column.options) ? column.options : []}
-                    placeholder={column.placeholder || ''}
-                    name={column.id}
-                    id={column.id}
+                    column={column}
+                    disabled={disabled || readOnly}
+                    readOnly={readOnly}
                   />
                 </FormControl>
                 {column.description && (

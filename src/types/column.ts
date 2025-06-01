@@ -9,7 +9,8 @@ export type ColumnType =
   | 'date'
   | 'time'
   | 'email'
-  | 'phone';
+  | 'phone'
+  | 'url';
 
 export interface Column {
   id: string;

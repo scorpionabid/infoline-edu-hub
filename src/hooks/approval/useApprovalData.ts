@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -17,8 +16,6 @@ interface ApprovalItem {
   status: DataEntryStatus;
   entries: any[];
   completionRate: number;
-  sectorId?: string;
-  regionId?: string;
 }
 
 export const useApprovalData = () => {
@@ -30,117 +27,90 @@ export const useApprovalData = () => {
   const [approvedItems, setApprovedItems] = useState<ApprovalItem[]>([]);
   const [rejectedItems, setRejectedItems] = useState<ApprovalItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Use ref to prevent multiple simultaneous loads
+  const loadingRef = useRef(false);
 
-  // Get user role and related IDs for RLS filtering
-  const getUserRoleInfo = useCallback(async () => {
-    if (!user?.id) return null;
-    
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('role, region_id, sector_id, school_id')
-      .eq('user_id', user.id)
-      .single();
-    
-    if (error) {
-      console.error('Error fetching user role:', error);
-      return null;
-    }
-    
-    return data;
-  }, [user?.id]);
-
-  // Build query based on user role and permissions
-  const buildApprovalQuery = useCallback((roleInfo: any) => {
-    let query = supabase
-      .from('data_entries')
-      .select(`
-        id,
-        status,
-        category_id,
-        school_id,
-        created_at,
-        created_by,
-        value,
-        categories (
-          id,
-          name
-        ),
-        schools (
-          id,
-          name,
-          region_id,
-          sector_id
-        )
-      `);
-
-    // Apply RLS filtering based on user role
-    if (roleInfo?.role === 'superadmin') {
-      // SuperAdmin can see all entries
-      query = query.in('status', [DataEntryStatus.PENDING, DataEntryStatus.APPROVED, DataEntryStatus.REJECTED]);
-    } else if (roleInfo?.role === 'regionadmin') {
-      // RegionAdmin can only see entries from their region
-      query = query
-        .in('status', [DataEntryStatus.PENDING, DataEntryStatus.APPROVED, DataEntryStatus.REJECTED])
-        .eq('schools.region_id', roleInfo.region_id);
-    } else if (roleInfo?.role === 'sectoradmin') {
-      // SectorAdmin can only see entries from their sector
-      query = query
-        .in('status', [DataEntryStatus.PENDING, DataEntryStatus.APPROVED, DataEntryStatus.REJECTED])
-        .eq('schools.sector_id', roleInfo.sector_id);
-    } else if (roleInfo?.role === 'schooladmin') {
-      // SchoolAdmin can only see their own school's entries
-      query = query
-        .in('status', [DataEntryStatus.PENDING, DataEntryStatus.APPROVED, DataEntryStatus.REJECTED])
-        .eq('school_id', roleInfo.school_id);
-    } else {
-      // No role found, return empty query
-      return null;
-    }
-
-    return query;
-  }, []);
-
-  // Load approval data with RLS compliance
+  // Simplified data loading without complex joins
   const loadApprovalData = useCallback(async () => {
-    if (!user) return;
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
     
+    // Prevent multiple simultaneous loads
+    if (loadingRef.current) {
+      console.log('Already loading, skipping...');
+      return;
+    }
+    
+    loadingRef.current = true;
     setIsLoading(true);
+    
     try {
-      // Get user role information first
-      const roleInfo = await getUserRoleInfo();
-      if (!roleInfo) {
-        console.warn('No role information found for user');
-        setIsLoading(false);
+      console.log('Loading approval data for user:', user.id);
+      
+      // Step 1: Get data entries (RLS will automatically filter)
+      const { data: entries, error: entriesError } = await supabase
+        .from('data_entries')
+        .select('*')
+        .in('status', ['pending', 'approved', 'rejected']);
+
+      if (entriesError) {
+        console.error('Error loading entries:', entriesError);
+        throw entriesError;
+      }
+
+      console.log('Loaded entries:', entries?.length || 0);
+
+      if (!entries || entries.length === 0) {
+        setPendingApprovals([]);
+        setApprovedItems([]);
+        setRejectedItems([]);
         return;
       }
 
-      // Build and execute query with role-based filtering
-      const query = buildApprovalQuery(roleInfo);
-      if (!query) {
-        console.warn('No valid query built for user role');
-        setIsLoading(false);
-        return;
+      // Step 2: Get unique school IDs
+      const schoolIds = [...new Set(entries.map(e => e.school_id))];
+      const { data: schools, error: schoolsError } = await supabase
+        .from('schools')
+        .select('id, name')
+        .in('id', schoolIds);
+
+      if (schoolsError) {
+        console.error('Error loading schools:', schoolsError);
+        throw schoolsError;
       }
 
-      const { data: entries, error } = await query;
+      // Step 3: Get unique category IDs
+      const categoryIds = [...new Set(entries.map(e => e.category_id))];
+      const { data: categories, error: categoriesError } = await supabase
+        .from('categories')
+        .select('id, name')
+        .in('id', categoryIds);
 
-      if (error) throw error;
+      if (categoriesError) {
+        console.error('Error loading categories:', categoriesError);
+        throw categoriesError;
+      }
 
-      // Group entries by category and school
+      // Step 4: Create lookup maps
+      const schoolMap = new Map(schools?.map(s => [s.id, s.name]) || []);
+      const categoryMap = new Map(categories?.map(c => [c.id, c.name]) || []);
+
+      // Step 5: Group entries by category and school
       const groupedData: Record<string, ApprovalItem> = {};
       
-      entries?.forEach(entry => {
+      entries.forEach(entry => {
         const key = `${entry.category_id}-${entry.school_id}`;
         
         if (!groupedData[key]) {
           groupedData[key] = {
             id: key,
             categoryId: entry.category_id,
-            categoryName: entry.categories?.name || 'Unknown Category',
+            categoryName: categoryMap.get(entry.category_id) || 'Unknown Category',
             schoolId: entry.school_id,
-            schoolName: entry.schools?.name || 'Unknown School',
-            regionId: entry.schools?.region_id,
-            sectorId: entry.schools?.sector_id,
+            schoolName: schoolMap.get(entry.school_id) || 'Unknown School',
             submittedAt: entry.created_at,
             submittedBy: entry.created_by || 'Unknown User',
             status: entry.status as DataEntryStatus,
@@ -150,19 +120,36 @@ export const useApprovalData = () => {
         }
         
         groupedData[key].entries.push(entry);
+        
+        // Update status to the most recent status
+        if (entry.updated_at > groupedData[key].submittedAt) {
+          groupedData[key].status = entry.status as DataEntryStatus;
+          groupedData[key].submittedAt = entry.updated_at;
+        }
       });
 
-      // Calculate completion rates and separate by status
+      // Step 6: Calculate completion rates and separate by status
       const pending: ApprovalItem[] = [];
       const approved: ApprovalItem[] = [];
       const rejected: ApprovalItem[] = [];
 
       Object.values(groupedData).forEach(item => {
-        // Calculate completion rate based on filled fields
+        // Calculate completion rate
         const filledEntries = item.entries.filter(e => e.value && e.value.trim() !== '');
         item.completionRate = item.entries.length > 0 ? (filledEntries.length / item.entries.length) * 100 : 0;
 
-        // Group by status
+        // Group by most common status in the group
+        const statusCounts = item.entries.reduce((acc, entry) => {
+          acc[entry.status] = (acc[entry.status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        const mostCommonStatus = Object.entries(statusCounts)
+          .sort(([,a], [,b]) => b - a)[0]?.[0] as DataEntryStatus;
+        
+        item.status = mostCommonStatus || DataEntryStatus.PENDING;
+
+        // Separate by status
         switch (item.status) {
           case DataEntryStatus.PENDING:
             pending.push(item);
@@ -176,6 +163,8 @@ export const useApprovalData = () => {
         }
       });
 
+      console.log('Grouped data:', { pending: pending.length, approved: approved.length, rejected: rejected.length });
+
       setPendingApprovals(pending);
       setApprovedItems(approved);
       setRejectedItems(rejected);
@@ -183,175 +172,98 @@ export const useApprovalData = () => {
     } catch (error) {
       console.error('Error loading approval data:', error);
       toast({
-        title: t('error'),
-        description: t('errorLoadingApprovalData'),
+        title: t('error') || 'Error',
+        description: t('errorLoadingApprovalData') || 'Error loading approval data',
         variant: 'destructive'
       });
     } finally {
       setIsLoading(false);
+      loadingRef.current = false;
     }
-  }, [user, t, toast, getUserRoleInfo, buildApprovalQuery]);
+  }, [user?.id, t, toast]); // Remove dependencies that cause re-creation
 
-  // Check if user has permission to approve/reject
-  const checkApprovalPermission = useCallback(async (item: ApprovalItem): Promise<boolean> => {
-    if (!user?.id) return false;
-    
-    const roleInfo = await getUserRoleInfo();
-    if (!roleInfo) return false;
-
-    // SuperAdmin can approve everything
-    if (roleInfo.role === 'superadmin') return true;
-    
-    // RegionAdmin can approve items from their region
-    if (roleInfo.role === 'regionadmin' && item.regionId === roleInfo.region_id) return true;
-    
-    // SectorAdmin can approve items from their sector
-    if (roleInfo.role === 'sectoradmin' && item.sectorId === roleInfo.sector_id) return true;
-    
-    // SchoolAdmin cannot approve their own submissions
-    if (roleInfo.role === 'schooladmin') return false;
-    
-    return false;
-  }, [user?.id, getUserRoleInfo]);
-
-  // Approve item with permission check
+  // Simplified approve function
   const approveItem = useCallback(async (itemId: string, comment?: string) => {
-    const item = pendingApprovals.find(i => i.id === itemId);
-    if (!item) return;
-
-    // Check permissions
-    const hasPermission = await checkApprovalPermission(item);
-    if (!hasPermission) {
-      toast({
-        title: t('error'),
-        description: t('noPermissionToApprove'),
-        variant: 'destructive'
-      });
-      return;
-    }
-
     const [categoryId, schoolId] = itemId.split('-');
     
     try {
       const { error } = await supabase
         .from('data_entries')
         .update({
-          status: DataEntryStatus.APPROVED,
+          status: 'approved',
           approved_at: new Date().toISOString(),
           approved_by: user?.id
         })
         .eq('category_id', categoryId)
         .eq('school_id', schoolId)
-        .eq('status', DataEntryStatus.PENDING);
+        .eq('status', 'pending');
 
       if (error) throw error;
       
-      // Reload data
       await loadApprovalData();
       
       toast({
-        title: t('success'),
-        description: t('itemApproved'),
+        title: t('success') || 'Success',
+        description: t('itemApproved') || 'Item approved successfully',
       });
       
     } catch (error) {
       console.error('Error approving item:', error);
       toast({
-        title: t('error'),
-        description: t('errorApprovingItem'),
+        title: t('error') || 'Error',
+        description: t('errorApprovingItem') || 'Error approving item',
         variant: 'destructive'
       });
       throw error;
     }
-  }, [pendingApprovals, checkApprovalPermission, user?.id, loadApprovalData, t, toast]);
+  }, [user?.id, loadApprovalData, t, toast]);
 
-  // Reject item with permission check
+  // Simplified reject function
   const rejectItem = useCallback(async (itemId: string, reason: string) => {
-    const item = pendingApprovals.find(i => i.id === itemId);
-    if (!item) return;
-
-    // Check permissions
-    const hasPermission = await checkApprovalPermission(item);
-    if (!hasPermission) {
-      toast({
-        title: t('error'),
-        description: t('noPermissionToReject'),
-        variant: 'destructive'
-      });
-      return;
-    }
-
     const [categoryId, schoolId] = itemId.split('-');
     
     try {
       const { error } = await supabase
         .from('data_entries')
         .update({
-          status: DataEntryStatus.REJECTED,
+          status: 'rejected',
           rejection_reason: reason,
           rejected_by: user?.id
         })
         .eq('category_id', categoryId)
         .eq('school_id', schoolId)
-        .eq('status', DataEntryStatus.PENDING);
+        .eq('status', 'pending');
 
       if (error) throw error;
       
-      // Reload data
       await loadApprovalData();
       
       toast({
-        title: t('success'),
-        description: t('itemRejected'),
+        title: t('success') || 'Success',
+        description: t('itemRejected') || 'Item rejected successfully',
       });
       
     } catch (error) {
       console.error('Error rejecting item:', error);
       toast({
-        title: t('error'),
-        description: t('errorRejectingItem'),
+        title: t('error') || 'Error',
+        description: t('errorRejectingItem') || 'Error rejecting item',
         variant: 'destructive'
       });
       throw error;
     }
-  }, [pendingApprovals, checkApprovalPermission, user?.id, loadApprovalData, t, toast]);
+  }, [user?.id, loadApprovalData, t, toast]);
 
-  // View item details
   const viewItem = useCallback((item: ApprovalItem) => {
-    // This would typically navigate to a detailed view
     console.log('Viewing item:', item);
   }, []);
 
-  // Setup real-time subscription
+  // Load data on mount - Fixed dependency loop
   useEffect(() => {
-    if (!user?.id) return;
-
-    const channel = supabase
-      .channel('approval-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'data_entries'
-        },
-        (payload) => {
-          console.log('Real-time update received:', payload);
-          // Reload data when there are changes
-          loadApprovalData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, loadApprovalData]);
-
-  // Load data on mount
-  useEffect(() => {
-    loadApprovalData();
-  }, [loadApprovalData]);
+    if (user?.id && !loadingRef.current) {
+      loadApprovalData();
+    }
+  }, [user?.id]); // Only depend on user ID to prevent infinite loop
 
   return {
     pendingApprovals,
@@ -361,7 +273,6 @@ export const useApprovalData = () => {
     approveItem,
     rejectItem,
     viewItem,
-    refreshData: loadApprovalData,
-    checkApprovalPermission
+    refreshData: loadApprovalData
   };
 };
