@@ -2,28 +2,25 @@
 import { useState, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { CategoryWithColumns } from '@/types/category';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
-interface UseExcelIntegrationOptions {
-  category: CategoryWithColumns | null;
-  formData: Record<string, any>;
-  onImportData: (data: Record<string, any>) => Promise<void>;
+export interface UseExcelIntegrationOptions {
+  category?: any;
+  data?: any[];
 }
 
-export const useExcelIntegration = ({ 
-  category, 
-  formData, 
-  onImportData 
-}: UseExcelIntegrationOptions) => {
+export const useExcelIntegration = (options: UseExcelIntegrationOptions = {}) => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Download template
   const downloadTemplate = useCallback(async () => {
-    if (!category?.columns || category.columns.length === 0) {
+    if (!options.category) {
       toast({
         title: t('error'),
-        description: t('noCategoryColumnsForTemplate'),
+        description: 'Category not available for template generation',
         variant: 'destructive'
       });
       return;
@@ -32,23 +29,19 @@ export const useExcelIntegration = ({
     try {
       setIsProcessing(true);
       
-      // Create a simple CSV template instead of Excel
-      const headers = category.columns.map(col => col.name || col.id).join(',');
-      const csvContent = headers + '\n';
+      // Create template data based on category columns
+      const headers = options.category.columns?.map((col: any) => col.name) || ['Sample Column'];
+      const templateData = [headers, ...Array(5).fill(headers.map(() => ''))];
       
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
+      const ws = XLSX.utils.aoa_to_sheet(templateData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Template');
       
-      if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `${category.name || 'template'}_template.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
+      
+      saveAs(data, `${options.category.name || 'Template'}_template.xlsx`);
+      
       toast({
         title: t('success'),
         description: t('templateDownloaded'),
@@ -63,13 +56,14 @@ export const useExcelIntegration = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [category, t, toast]);
+  }, [options.category, t, toast]);
 
+  // Export data
   const exportData = useCallback(async () => {
-    if (!category?.columns || category.columns.length === 0) {
+    if (!options.data || options.data.length === 0) {
       toast({
         title: t('error'),
-        description: t('noCategoryColumnsForExport'),
+        description: 'No data available for export',
         variant: 'destructive'
       });
       return;
@@ -78,24 +72,16 @@ export const useExcelIntegration = ({
     try {
       setIsProcessing(true);
       
-      // Create CSV with current data
-      const headers = category.columns.map(col => col.name || col.id).join(',');
-      const values = category.columns.map(col => formData[col.id] || '').join(',');
-      const csvContent = headers + '\n' + values;
+      // Convert data to worksheet
+      const ws = XLSX.utils.json_to_sheet(options.data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Data');
       
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
       
-      if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `${category.name || 'data'}_export.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-
+      saveAs(data, `export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
       toast({
         title: t('success'),
         description: t('dataExported'),
@@ -110,57 +96,25 @@ export const useExcelIntegration = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [category, formData, t, toast]);
+  }, [options.data, t, toast]);
 
+  // Import file
   const importFile = useCallback(async (file: File) => {
-    if (!file) return;
-
     try {
       setIsProcessing(true);
       
-      const text = await file.text();
-      const lines = text.split('\n');
-      
-      if (lines.length < 2) {
-        toast({
-          title: t('error'),
-          description: t('invalidFileFormat'),
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      const headers = lines[0].split(',').map(h => h.trim());
-      const values = lines[1].split(',').map(v => v.trim());
-      
-      if (!category?.columns) {
-        toast({
-          title: t('error'),
-          description: t('noCategoryColumns'),
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // Map CSV data to form data
-      const importedData: Record<string, any> = {};
-      
-      category.columns.forEach(column => {
-        const headerIndex = headers.findIndex(h => 
-          h.toLowerCase() === (column.name || column.id).toLowerCase()
-        );
-        
-        if (headerIndex !== -1 && values[headerIndex]) {
-          importedData[column.id] = values[headerIndex];
-        }
-      });
-
-      await onImportData(importedData);
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
       
       toast({
         title: t('success'),
-        description: t('dataImported'),
+        description: `${jsonData.length} records imported successfully`,
       });
+      
+      return jsonData;
     } catch (error) {
       console.error('Error importing file:', error);
       toast({
@@ -168,10 +122,11 @@ export const useExcelIntegration = ({
         description: t('errorImportingFile'),
         variant: 'destructive'
       });
+      throw error;
     } finally {
       setIsProcessing(false);
     }
-  }, [category, onImportData, t, toast]);
+  }, [t, toast]);
 
   return {
     downloadTemplate,
