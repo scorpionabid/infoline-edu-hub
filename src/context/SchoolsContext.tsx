@@ -64,7 +64,22 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const createSchool = async (schoolData: Omit<School, 'id'>) => {
+  // Məktəb yaratmaq üçün minimal tələbləri təyin edirləm
+  interface CreateSchoolData {
+    name: string;          // Məcburidir
+    region_id: string;     // Məcburidir
+    sector_id: string;     // Məcburidir
+    address?: string;
+    email?: string;
+    phone?: string;
+    status?: 'active' | 'inactive';
+    admin_id?: string;
+    admin_email?: string;
+    principal_name?: string;
+    [key: string]: any;    // Digər sahələr
+  }
+  
+  const createSchool = async (schoolData: CreateSchoolData) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -77,7 +92,11 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       if (error) throw error;
 
-      setSchools((prev) => [...prev, data as School]);
+      // Supabase-dən qayidan məlumatları School tipində düzgün casting edirləm
+      setSchools((prev) => [...prev, {
+        ...data,
+        status: data.status as 'active' | 'inactive'
+      } as School]);
       
       toast.success('Success', {
         description: 'School created successfully'
@@ -98,9 +117,17 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setIsLoading(true);
       setError(null);
 
+      // Ensure status is either "active" or "inactive"
+      const updatedData = {
+        ...schoolData,
+        status: schoolData.status === "active" || schoolData.status === "inactive" 
+          ? schoolData.status 
+          : "active" // Default value if status is invalid
+      };
+
       const { data, error } = await supabase
         .from('schools')
-        .update(schoolData)
+        .update(updatedData)
         .eq('id', schoolId)
         .select()
         .single();
@@ -108,7 +135,22 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (error) throw error;
 
       setSchools((prev) =>
-        prev.map((school) => (school.id === schoolId ? { ...school, ...data } : school))
+        prev.map((school) => {
+          if (school.id === schoolId) {
+            // Ensure status is either 'active' or 'inactive'
+            const updatedStatus = data.status === 'active' || data.status === 'inactive' 
+              ? (data.status as 'active' | 'inactive') 
+              : 'active' as const;
+              
+            const updatedSchool: School = {
+              ...school,
+              ...data,
+              status: updatedStatus
+            };
+            return updatedSchool;
+          }
+          return school;
+        })
       );
       
       toast.success('Success', {

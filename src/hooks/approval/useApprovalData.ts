@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
+import { DataEntryStatus } from '@/types/dataEntry';
 
 interface ApprovalItem {
   id: string;
@@ -13,7 +14,7 @@ interface ApprovalItem {
   schoolName: string;
   submittedAt: string;
   submittedBy: string;
-  status: 'pending' | 'approved' | 'rejected' | 'draft';
+  status: DataEntryStatus;
   entries: any[];
   completionRate: number;
 }
@@ -54,7 +55,7 @@ export const useApprovalData = () => {
             name
           )
         `)
-        .in('status', ['pending', 'approved', 'rejected']);
+        .in('status', [DataEntryStatus.PENDING, DataEntryStatus.APPROVED, DataEntryStatus.REJECTED]);
 
       if (error) throw error;
 
@@ -73,7 +74,7 @@ export const useApprovalData = () => {
             schoolName: entry.schools?.name || 'Unknown School',
             submittedAt: entry.created_at,
             submittedBy: entry.created_by || 'Unknown User',
-            status: entry.status as any,
+            status: entry.status as DataEntryStatus,
             entries: [],
             completionRate: 0
           };
@@ -94,13 +95,13 @@ export const useApprovalData = () => {
 
         // Group by status
         switch (item.status) {
-          case 'pending':
+          case DataEntryStatus.PENDING:
             pending.push(item);
             break;
-          case 'approved':
+          case DataEntryStatus.APPROVED:
             approved.push(item);
             break;
-          case 'rejected':
+          case DataEntryStatus.REJECTED:
             rejected.push(item);
             break;
         }
@@ -130,13 +131,13 @@ export const useApprovalData = () => {
       const { error } = await supabase
         .from('data_entries')
         .update({
-          status: 'approved',
+          status: DataEntryStatus.APPROVED,
           approved_at: new Date().toISOString(),
           approved_by: user?.id
         })
         .eq('category_id', categoryId)
         .eq('school_id', schoolId)
-        .eq('status', 'pending');
+        .eq('status', DataEntryStatus.PENDING);
 
       if (error) throw error;
       
@@ -157,13 +158,13 @@ export const useApprovalData = () => {
       const { error } = await supabase
         .from('data_entries')
         .update({
-          status: 'rejected',
+          status: DataEntryStatus.REJECTED,
           rejection_reason: reason,
           rejected_by: user?.id
         })
         .eq('category_id', categoryId)
         .eq('school_id', schoolId)
-        .eq('status', 'pending');
+        .eq('status', DataEntryStatus.PENDING);
 
       if (error) throw error;
       
