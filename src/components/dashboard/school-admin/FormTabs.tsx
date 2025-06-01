@@ -1,13 +1,13 @@
 
 import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Clock, AlertTriangle, FileText, CheckCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { FormTabsProps } from '@/types/dashboard';
-import { CalendarDays, FileText, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { FormTabsProps, CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
 
 const FormTabs: React.FC<FormTabsProps> = ({
   categories,
@@ -19,117 +19,94 @@ const FormTabs: React.FC<FormTabsProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-      case 'approved':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'pending':
-      case 'in_progress':
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'rejected':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <FileText className="h-4 w-4 text-gray-500" />;
-    }
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      'completed': { variant: 'default' as const, icon: CheckCircle, className: 'bg-green-500' },
+      'approved': { variant: 'default' as const, icon: CheckCircle, className: 'bg-green-500' },
+      'pending': { variant: 'secondary' as const, icon: Clock, className: 'bg-yellow-500' },
+      'rejected': { variant: 'destructive' as const, icon: AlertTriangle, className: '' },
+      'overdue': { variant: 'destructive' as const, icon: AlertTriangle, className: '' },
+      'in_progress': { variant: 'secondary' as const, icon: FileText, className: 'bg-blue-500' },
+      'not_started': { variant: 'outline' as const, icon: FileText, className: '' }
+    };
+
+    const config = statusConfig[status] || statusConfig['not_started'];
+    const Icon = config.icon;
+
+    return (
+      <Badge variant={config.variant} className={config.className}>
+        <Icon className="w-3 h-3 mr-1" />
+        {t(status)}
+      </Badge>
+    );
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800">{t('completed')}</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">{t('pending')}</Badge>;
-      case 'in_progress':
-        return <Badge className="bg-blue-100 text-blue-800">{t('inProgress')}</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800">{t('rejected')}</Badge>;
-      default:
-        return <Badge variant="secondary">{t('notStarted')}</Badge>;
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'text-red-600';
+      case 'medium': return 'text-yellow-600';
+      case 'low': return 'text-green-600';
+      default: return 'text-gray-600';
     }
   };
 
   return (
     <Tabs defaultValue="categories" className="w-full">
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="categories" className="flex items-center gap-2">
-          <FileText className="h-4 w-4" />
-          {t('categories')}
-        </TabsTrigger>
-        <TabsTrigger value="deadlines" className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4" />
-          {t('deadlines')}
-        </TabsTrigger>
-        <TabsTrigger value="pending" className="flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          {t('pendingForms')}
-        </TabsTrigger>
+        <TabsTrigger value="categories">{t('categories')}</TabsTrigger>
+        <TabsTrigger value="deadlines">{t('upcomingDeadlines')}</TabsTrigger>
+        <TabsTrigger value="forms">{t('pendingForms')}</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="categories" className="mt-4">
-        <div className="grid gap-4">
-          {categories.map((category) => (
+      <TabsContent value="categories" className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          {categories?.map((category: CategoryItem) => (
             <Card key={category.id} className="cursor-pointer hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(category.status)}
-                    <div>
-                      <CardTitle className="text-lg">{category.name}</CardTitle>
-                      {category.description && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {category.description}
-                        </p>
-                      )}
-                    </div>
+                  <div>
+                    <CardTitle className="text-lg">{category.name}</CardTitle>
+                    {category.description && (
+                      <CardDescription className="mt-1">
+                        {category.description}
+                      </CardDescription>
+                    )}
                   </div>
                   {getStatusBadge(category.status)}
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span>{t('progress')}</span>
-                    <span>{Math.round(category.completion || category.completionRate || 0)}%</span>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>{t('progress')}</span>
+                      <span>{category.completionRate || category.completion || 0}%</span>
+                    </div>
+                    <Progress value={category.completionRate || category.completion || 0} className="h-2" />
                   </div>
-                  <Progress 
-                    value={category.completion || category.completionRate || 0} 
-                    className="h-2" 
-                  />
-                  <div className="flex justify-between items-center text-xs text-muted-foreground">
-                    <span>
-                      {category.completedFields || 0} / {category.totalFields || 0} {t('fieldsCompleted')}
-                    </span>
-                    {category.lastUpdated && (
-                      <span>
-                        {t('lastUpdated')}: {new Date(category.lastUpdated).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        if (onCategoryChange) {
-                          onCategoryChange(category.id);
-                        }
-                        navigateToDataEntry();
-                      }}
-                      className="flex-1"
-                    >
-                      {category.status === 'not_started' ? t('startEntry') : t('continueEntry')}
-                    </Button>
-                    {category.deadline && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                      >
-                        {t('deadline')}: {new Date(category.deadline).toLocaleDateString()}
-                      </Button>
-                    )}
-                  </div>
+                  
+                  {category.totalFields && (
+                    <div className="text-sm text-muted-foreground">
+                      {category.completedFields || 0} / {category.totalFields} {t('fieldsCompleted')}
+                    </div>
+                  )}
+                  
+                  {category.lastUpdated && (
+                    <div className="text-xs text-muted-foreground">
+                      {t('lastUpdated')}: {new Date(category.lastUpdated).toLocaleDateString()}
+                    </div>
+                  )}
+                  
+                  <Button 
+                    onClick={() => {
+                      onCategoryChange?.(category.id);
+                      navigateToDataEntry();
+                    }}
+                    className="w-full"
+                    variant={category.status === 'completed' ? 'secondary' : 'default'}
+                  >
+                    {category.status === 'completed' ? t('viewData') : t('enterData')}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -137,71 +114,73 @@ const FormTabs: React.FC<FormTabsProps> = ({
         </div>
       </TabsContent>
 
-      <TabsContent value="deadlines" className="mt-4">
-        <div className="grid gap-3">
-          {upcoming.map((deadline) => (
-            <Card key={deadline.id} className="border-l-4 border-l-orange-500">
-              <CardContent className="pt-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-medium">{deadline.title || deadline.name}</h4>
-                    <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                      <CalendarDays className="h-4 w-4" />
-                      {deadline.deadline}
-                    </div>
-                    <div className="text-xs text-orange-600 mt-1">
-                      {deadline.daysLeft > 0 
-                        ? `${deadline.daysLeft} ${t('daysLeft')}`
-                        : t('overdue')
-                      }
-                    </div>
-                  </div>
-                  <Badge 
-                    variant={deadline.priority === 'high' ? 'destructive' : 'secondary'}
-                  >
-                    {t(deadline.priority)}
+      <TabsContent value="deadlines" className="space-y-4">
+        {upcoming?.map((deadline: DeadlineItem) => (
+          <Card key={deadline.id}>
+            <CardContent className="pt-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold">{deadline.title || deadline.name}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {t('deadline')}: {new Date(deadline.deadline).toLocaleDateString()}
+                  </p>
+                  <p className="text-sm mt-1">
+                    <Clock className="w-4 h-4 inline mr-1" />
+                    {deadline.daysLeft} {t('daysLeft')}
+                  </p>
+                </div>
+                <div className="text-right">
+                  {deadline.priority && (
+                    <Badge variant="outline" className={getPriorityColor(deadline.priority)}>
+                      {t(deadline.priority)}
+                    </Badge>
+                  )}
+                  <Badge variant={deadline.status === 'overdue' ? 'destructive' : 'secondary'} className="ml-2">
+                    {t(deadline.status)}
                   </Badge>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </TabsContent>
 
-      <TabsContent value="pending" className="mt-4">
-        <div className="grid gap-3">
-          {pendingForms.map((form) => (
-            <Card key={form.id} className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardContent className="pt-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-medium">{form.title || form.name}</h4>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {form.category}
+      <TabsContent value="forms" className="space-y-4">
+        {pendingForms?.map((form: FormItem) => (
+          <Card key={form.id} className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="pt-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold">{form.title || form.name}</h3>
+                  {form.category && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {t('category')}: {form.category}
+                    </p>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    {t('lastModified')}: {new Date(form.lastModified).toLocaleDateString()}
+                  </p>
+                  {form.progress !== undefined && (
+                    <div className="mt-2">
+                      <Progress value={form.progress} className="h-2" />
+                      <span className="text-xs text-muted-foreground">{form.progress}% {t('completed')}</span>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {t('lastModified')}: {form.lastModified}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    {getStatusBadge(form.status)}
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {form.progress}% {t('completed')}
-                    </div>
-                  </div>
+                  )}
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-3 w-full"
-                  onClick={() => handleFormClick(form.id)}
-                >
-                  {t('viewForm')}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <div className="text-right">
+                  {getStatusBadge(form.status)}
+                  <Button
+                    onClick={() => handleFormClick(form.id)}
+                    size="sm"
+                    className="mt-2"
+                  >
+                    {t('continue')}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </TabsContent>
     </Tabs>
   );

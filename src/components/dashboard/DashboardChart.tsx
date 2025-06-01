@@ -1,42 +1,50 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { DashboardFormStats } from '@/types/dashboard';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface DashboardChartProps {
-  completion: number;
-  stats?: DashboardFormStats;
+  stats: DashboardFormStats;
 }
 
-const DashboardChart: React.FC<DashboardChartProps> = ({ completion, stats }) => {
+const DashboardChart: React.FC<DashboardChartProps> = ({ stats }) => {
+  const { t } = useLanguage();
+
+  const data = [
+    {
+      name: t('approved'),
+      value: stats.approved || 0,
+      fill: '#10b981'
+    },
+    {
+      name: t('pending'),
+      value: stats.pending || 0,
+      fill: '#f59e0b'
+    },
+    {
+      name: t('rejected'),
+      value: stats.rejected || 0,
+      fill: '#ef4444'
+    },
+    {
+      name: t('draft'),
+      value: stats.draft || 0,
+      fill: '#6b7280'
+    }
+  ];
+
   return (
-    <div className="space-y-4">
-      <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Tamamlanma</span>
-          <span className="text-sm font-medium">{Math.round(completion)}%</span>
-        </div>
-        <Progress value={completion} className="h-2" />
-      </div>
-      
-      {stats && (
-        <div className="grid grid-cols-3 gap-2 pt-4">
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">Təsdiqlənən</span>
-            <span className="text-lg font-medium">{stats.approvedForms || stats.approved || 0}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">Gözləyən</span>
-            <span className="text-lg font-medium">{stats.pendingForms || stats.pending || 0}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">İmtina</span>
-            <span className="text-lg font-medium">{stats.rejectedForms || stats.rejected || 0}</span>
-          </div>
-        </div>
-      )}
-    </div>
+    <ResponsiveContainer width="100%" height={350}>
+      <BarChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="name" />
+        <YAxis />
+        <Tooltip />
+        <Legend />
+        <Bar dataKey="value" fill="#8884d8" />
+      </BarChart>
+    </ResponsiveContainer>
   );
 };
 
