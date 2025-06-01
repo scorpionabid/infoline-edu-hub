@@ -1,149 +1,128 @@
 import React from 'react';
-import { School, Region, Sector } from '@/types/supabase';
 import AddSchoolDialog from './AddSchoolDialog';
 import EditSchoolDialog from './EditSchoolDialog';
 import DeleteSchoolDialog from './DeleteSchoolDialog';
 import SchoolAdminDialog from './SchoolAdminDialog';
-import SchoolLinksDialog from './school-links/SchoolLinksDialog';
-import { SchoolFilesDialog } from './school-files/SchoolFilesDialog';
-import { User } from '@/types/auth';
+import ExistingUserSchoolAdminDialog from './ExistingUserSchoolAdminDialog';
+import { School } from '@/types/school';
+import { Region } from '@/types/school';
+import { Sector } from '@/types/school';
 
 interface SchoolDialogsContainerProps {
-  // Dialog state-ləri
+  // Add School Dialog
   isAddDialogOpen: boolean;
-  isEditDialogOpen: boolean;
-  isDeleteDialogOpen: boolean;
-  isAdminDialogOpen: boolean;
-  isLinkDialogOpen: boolean;
-  isFileDialogOpen: boolean;
+  setIsAddDialogOpen: (open: boolean) => void;
   
-  // Seçilmiş məktəb
+  // Edit School Dialog
+  isEditDialogOpen: boolean;
+  setIsEditDialogOpen: (open: boolean) => void;
   selectedSchool: School | null;
   
-  // Dialog qapatma funksiyaları
-  closeAddDialog: () => void;
-  closeEditDialog: () => void;
-  closeDeleteDialog: () => void;
-  closeAdminDialog: () => void;
-  closeLinkDialog: () => void;
-  closeFilesDialog: () => void;
+  // Delete School Dialog
+  isDeleteDialogOpen: boolean;
+  setIsDeleteDialogOpen: (open: boolean) => void;
   
-  // Form submit funksiyaları
-  onCreateSchool: (data: Omit<School, 'id'>) => Promise<void>;
-  onEditSchool: (school: School) => Promise<void>;
-  onDeleteSchool: (school: School) => Promise<void>;
-  onAssignAdmin: (schoolId: string, userId: string) => Promise<void>;
+  // School Admin Dialog
+  isAdminDialogOpen: boolean;
+  setIsAdminDialogOpen: (open: boolean) => void;
   
-  // Digər data
+  // Existing User Admin Dialog
+  isExistingUserDialogOpen: boolean;
+  setIsExistingUserDialogOpen: (open: boolean) => void;
+  
+  // Data and handlers
   regions: Region[];
   sectors: Sector[];
+  regionNames: Record<string, string>;
+  sectorNames: Record<string, string>;
+  onCreateSchool: (schoolData: Omit<School, 'id'>) => Promise<void>;
+  onUpdateSchool: (schoolData: Partial<School>) => Promise<void>;
+  onDeleteSchool: () => Promise<void>;
+  onCreateAdmin: (adminData: any) => Promise<void>;
+  onAssignExistingUser: () => void;
+  
+  // Loading states
   isSubmitting: boolean;
-  user: User | null;
 }
 
 const SchoolDialogsContainer: React.FC<SchoolDialogsContainerProps> = ({
-  // Dialog state-ləri
   isAddDialogOpen,
+  setIsAddDialogOpen,
   isEditDialogOpen,
-  isDeleteDialogOpen,
-  isAdminDialogOpen,
-  isLinkDialogOpen,
-  isFileDialogOpen,
-  
-  // Seçilmiş məktəb
+  setIsEditDialogOpen,
   selectedSchool,
-  
-  // Dialog qapatma funksiyaları
-  closeAddDialog,
-  closeEditDialog,
-  closeDeleteDialog,
-  closeAdminDialog,
-  closeLinkDialog,
-  closeFilesDialog,
-  
-  // Form submit funksiyaları
-  onCreateSchool,
-  onEditSchool,
-  onDeleteSchool,
-  onAssignAdmin,
-  
-  // Digər data
+  isDeleteDialogOpen,
+  setIsDeleteDialogOpen,
+  isAdminDialogOpen,
+  setIsAdminDialogOpen,
+  isExistingUserDialogOpen,
+  setIsExistingUserDialogOpen,
   regions,
   sectors,
-  isSubmitting,
-  user
+  regionNames,
+  sectorNames,
+  onCreateSchool,
+  onUpdateSchool,
+  onDeleteSchool,
+  onCreateAdmin,
+  onAssignExistingUser,
+  isSubmitting
 }) => {
+
   return (
     <>
       {/* Add School Dialog */}
-      {isAddDialogOpen && (
-        <AddSchoolDialog
-          isOpen={isAddDialogOpen}
-          onClose={closeAddDialog}
-          regions={regions}
-          sectors={sectors}
-          onSubmit={onCreateSchool}
-          isSubmitting={isSubmitting}
-        />
-      )}
-      
+      <AddSchoolDialog
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        regions={regions}
+        sectors={sectors}
+        regionNames={regionNames}
+        sectorNames={sectorNames}
+        onSubmit={onCreateSchool}
+        isSubmitting={isSubmitting}
+      />
+
       {/* Edit School Dialog */}
-      {isEditDialogOpen && selectedSchool && (
+      {selectedSchool && (
         <EditSchoolDialog
-          isOpen={isEditDialogOpen}
-          onClose={closeEditDialog}
           school={selectedSchool}
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
           regions={regions}
           sectors={sectors}
-          onSubmit={onEditSchool}
+          regionNames={regionNames}
+          sectorNames={sectorNames}
+          onSubmit={onUpdateSchool}
           isSubmitting={isSubmitting}
         />
       )}
-      
+
       {/* Delete School Dialog */}
-      {isDeleteDialogOpen && selectedSchool && (
-        <DeleteSchoolDialog
-          isOpen={isDeleteDialogOpen}
-          onClose={closeDeleteDialog}
-          school={selectedSchool}
-          onConfirm={() => onDeleteSchool(selectedSchool)}
-          isSubmitting={isSubmitting}
-        />
-      )}
-      
-      {/* Admin Assignment Dialog */}
-      {isAdminDialogOpen && selectedSchool && (
-        <SchoolAdminDialog
-          isOpen={isAdminDialogOpen}
-          onClose={closeAdminDialog}
-          school={selectedSchool}
-          onSubmit={onAssignAdmin}
-          isSubmitting={isSubmitting}
-        />
-      )}
-      
-      {/* Links Management Dialog */}
-      {isLinkDialogOpen && selectedSchool && (
-        <SchoolLinksDialog
-          isOpen={isLinkDialogOpen}
-          onClose={closeLinkDialog}
-          school={selectedSchool}
-          links={[]}
-          onDelete={async (linkId) => { console.log('Deleting link', linkId); }}
-          onAdd={async (link) => { console.log('Adding link', link); }}
-          isLoading={isSubmitting}
-        />
-      )}
-      
-      {/* Files Management Dialog */}
-      {isFileDialogOpen && selectedSchool && (
-        <SchoolFilesDialog
-          isOpen={isFileDialogOpen}
-          onClose={closeFilesDialog}
-          school={selectedSchool}
-          userRole={user?.role || 'viewer'}
-        />
-      )}
+      <DeleteSchoolDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={onDeleteSchool}
+        schoolName={selectedSchool?.name || ''}
+        isDeleting={isSubmitting}
+      />
+
+      {/* School Admin Dialog */}
+      <SchoolAdminDialog
+        isOpen={isAdminDialogOpen}
+        onClose={() => setIsAdminDialogOpen(false)}
+        schoolId={selectedSchool?.id || ''}
+        onSubmit={onCreateAdmin}
+        isSubmitting={isSubmitting}
+      />
+
+      {/* Existing User Admin Dialog */}
+      <ExistingUserSchoolAdminDialog
+        isOpen={isExistingUserDialogOpen}
+        onClose={() => setIsExistingUserDialogOpen(false)}
+        schoolId={selectedSchool?.id || ''}
+        onSuccess={onAssignExistingUser}
+      />
     </>
   );
 };

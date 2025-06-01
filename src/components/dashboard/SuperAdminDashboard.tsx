@@ -1,102 +1,192 @@
 
 import React from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DashboardFormStats, StatsGridItem } from '@/types/dashboard';
 import StatsGrid from './StatsGrid';
 import DashboardChart from './DashboardChart';
-import CategoryProgressList from './CategoryProgressList';
-import SchoolsCompletionList from './SchoolsCompletionList';
-import { DashboardFormStats } from '@/types/dashboard';
+import { BarChart3, Users, School, MapPin } from 'lucide-react';
 
-const SuperAdminDashboard = ({ data }) => {
-  const stats = [
+interface SuperAdminDashboardProps {
+  dashboardData?: any;
+}
+
+const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData }) => {
+  const { t } = useLanguage();
+
+  // Mock data for demonstration
+  const mockData = {
+    stats: {
+      totalUsers: 150,
+      totalSchools: 85,
+      totalRegions: 12,
+      totalSectors: 45,
+    },
+    completion: {
+      percentage: 78,
+      total: 1250,
+      completed: 975
+    }
+  };
+
+  const formStats: DashboardFormStats = {
+    total: mockData.completion.total || 0,
+    completed: mockData.completion.completed || 0,
+    approved: 800,
+    pending: 175,
+    rejected: 50,
+    dueSoon: 25,
+    overdue: 10,
+    draft: 40,
+    percentage: mockData.completion.percentage || 0,
+    completion_rate: mockData.completion.percentage || 0,
+    completionRate: mockData.completion.percentage || 0,
+  };
+
+  const statsGridData: StatsGridItem[] = [
     {
-      title: 'Aktiv istifadəçilər',
-      value: data.activeUsers || 0,
-      color: 'bg-green-50'
+      title: t('totalApproved'),
+      value: formStats.approved,
+      color: 'text-green-600',
+      description: t('approved')
     },
     {
-      title: 'Ümumi regionlar',
-      value: data.totalRegions || 0,
-      color: 'bg-blue-50'
+      title: t('totalPending'),
+      value: formStats.pending,
+      color: 'text-yellow-600',
+      description: t('pending')
     },
     {
-      title: 'Ümumi sektorlar',
-      value: data.totalSectors || 0,
-      color: 'bg-amber-50'
+      title: t('totalRejected'),
+      value: formStats.rejected,
+      color: 'text-red-600',
+      description: t('rejected')
     },
     {
-      title: 'Ümumi məktəblər',
-      value: data.totalSchools || 0,
-      color: 'bg-purple-50'
+      title: t('totalDraft'),
+      value: formStats.draft,
+      color: 'text-gray-600',
+      description: t('draft')
     }
   ];
 
-  const dashboardStats: DashboardFormStats = {
-    total: data.totalEntries || 0,
-    completed: data.approvedEntries || 0,
-    approved: data.approvedEntries || 0,
-    pending: data.pendingEntries || 0,
-    rejected: data.rejectedEntries || 0,
-    dueSoon: data.dueSoonEntries || 0,
-    overdue: data.overdueEntries || 0,
-    draft: data.draftEntries || 0,
-    percentage: data.completionRate || 0,
-    completion_rate: data.completionRate || 0
-  };
-
   return (
-    <div className="space-y-4">
-      <StatsGrid stats={stats} />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Qeydlərin tamamlanması</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('totalUsers')}
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <DashboardChart 
-              completion={data.completionRate || 0} 
-              stats={dashboardStats} 
-            />
+            <div className="text-2xl font-bold">{mockData.stats.totalUsers}</div>
+            <p className="text-xs text-muted-foreground">
+              +12% {t('fromLastMonth')}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Kateqoriyalar</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('totalSchools')}
+            </CardTitle>
+            <School className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <CategoryProgressList categories={data.categories || []} />
+            <div className="text-2xl font-bold">{mockData.stats.totalSchools}</div>
+            <p className="text-xs text-muted-foreground">
+              +5% {t('fromLastMonth')}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Tamamlanma dərəcələri</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('totalRegions')}
+            </CardTitle>
+            <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <SchoolsCompletionList schools={data.schools || []} />
+            <div className="text-2xl font-bold">{mockData.stats.totalRegions}</div>
+            <p className="text-xs text-muted-foreground">
+              {t('stable')}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Məlumat Statistikası</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('completion')}
+            </CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col">
-                <span className="text-xs text-muted-foreground">İstifadəçilər</span>
-                <span className="text-lg font-medium">{data.activeUsers || 0}</span>
+          <CardContent>
+            <div className="text-2xl font-bold">{mockData.completion.percentage}%</div>
+            <p className="text-xs text-muted-foreground">
+              +8% {t('fromLastMonth')}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>{t('formStatistics')}</CardTitle>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <DashboardChart stats={formStats} />
+          </CardContent>
+        </Card>
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>{t('recentActivity')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <div className="ml-4 space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {t('dataSubmission')}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    ABC Məktəbi - 2 saat əvvəl
+                  </p>
+                </div>
               </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-muted-foreground">Məktəblər</span>
-                <span className="text-lg font-medium">{data.totalSchools || 0}</span>
+              
+              <div className="flex items-center">
+                <div className="ml-4 space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {t('dataApproval')}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    XYZ Sektor - 1 gün əvvəl
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center">
+                <div className="ml-4 space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {t('userRegistration')}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Yeni istifadəçi qeydiyyatdan keçdi - 3 gün əvvəl
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <StatsGrid stats={statsGridData} />
     </div>
   );
 };

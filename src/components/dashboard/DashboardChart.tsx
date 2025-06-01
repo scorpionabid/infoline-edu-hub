@@ -1,42 +1,54 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { DashboardFormStats } from '@/types/dashboard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useLanguage } from '@/context/LanguageContext';
+import { DashboardChartProps } from '@/types/dashboard';
 
-interface DashboardChartProps {
-  completion: number;
-  stats?: DashboardFormStats;
-}
+const DashboardChart: React.FC<DashboardChartProps> = ({ 
+  stats, 
+  showLegend = true, 
+  height = 300 
+}) => {
+  const { t } = useLanguage();
 
-const DashboardChart: React.FC<DashboardChartProps> = ({ completion, stats }) => {
+  const data = [
+    { name: t('approved'), value: stats.approved || 0, color: '#10b981' },
+    { name: t('pending'), value: stats.pending || 0, color: '#f59e0b' },
+    { name: t('rejected'), value: stats.rejected || 0, color: '#ef4444' },
+    { name: t('draft'), value: stats.draft || 0, color: '#6b7280' }
+  ];
+
   return (
-    <div className="space-y-4">
-      <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Tamamlanma</span>
-          <span className="text-sm font-medium">{Math.round(completion)}%</span>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('formStatistics')}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div style={{ height }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+              {showLegend && <Legend />}
+            </PieChart>
+          </ResponsiveContainer>
         </div>
-        <Progress value={completion} className="h-2" />
-      </div>
-      
-      {stats && (
-        <div className="grid grid-cols-3 gap-2 pt-4">
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">Təsdiqlənən</span>
-            <span className="text-lg font-medium">{stats.approvedForms || stats.approved || 0}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">Gözləyən</span>
-            <span className="text-lg font-medium">{stats.pendingForms || stats.pending || 0}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">İmtina</span>
-            <span className="text-lg font-medium">{stats.rejectedForms || stats.rejected || 0}</span>
-          </div>
-        </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -4,31 +4,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { DataEntryStatus } from '@/types/dataEntry';
+import { SectorApprovalItem, SectorDataEntry } from '@/types/sectorData';
 
-interface ApprovalItem {
-  id: string;
-  categoryId: string;
-  categoryName: string;
-  schoolId: string;
-  schoolName: string;
-  submittedAt: string;
-  submittedBy: string;
-  status: DataEntryStatus;
-  entries: any[];
-  completionRate: number;
-  sectorId?: string;
-  regionId?: string;
-}
-
-export const useApprovalData = () => {
+export const useSectorApprovalData = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const user = useAuthStore(selectUser);
   
-  const [pendingApprovals, setPendingApprovals] = useState<ApprovalItem[]>([]);
-  const [approvedItems, setApprovedItems] = useState<ApprovalItem[]>([]);
-  const [rejectedItems, setRejectedItems] = useState<ApprovalItem[]>([]);
+  const [pendingApprovals, setPendingApprovals] = useState<SectorApprovalItem[]>([]);
+  const [approvedItems, setApprovedItems] = useState<SectorApprovalItem[]>([]);
+  const [rejectedItems, setRejectedItems] = useState<SectorApprovalItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Get user role and related IDs for RLS filtering
@@ -37,7 +22,7 @@ export const useApprovalData = () => {
     
     const { data, error } = await supabase
       .from('user_roles')
-      .select('role, region_id, sector_id, school_id')
+      .select('role, region_id, sector_id')
       .eq('user_id', user.id)
       .single();
     
@@ -50,14 +35,14 @@ export const useApprovalData = () => {
   }, [user?.id]);
 
   // Build query based on user role and permissions
-  const buildApprovalQuery = useCallback((roleInfo: any) => {
+  const buildSectorApprovalQuery = useCallback((roleInfo: any) => {
     let query = supabase
-      .from('data_entries')
+      .from('sector_data_entries')
       .select(`
         id,
         status,
         category_id,
-        school_id,
+        sector_id,
         created_at,
         created_by,
         value,
@@ -65,43 +50,37 @@ export const useApprovalData = () => {
           id,
           name
         ),
-        schools (
+        sectors (
           id,
           name,
-          region_id,
-          sector_id
+          region_id
         )
       `);
 
     // Apply RLS filtering based on user role
     if (roleInfo?.role === 'superadmin') {
       // SuperAdmin can see all entries
-      query = query.in('status', [DataEntryStatus.PENDING, DataEntryStatus.APPROVED, DataEntryStatus.REJECTED]);
+      query = query.in('status', ['pending', 'approved', 'rejected']);
     } else if (roleInfo?.role === 'regionadmin') {
       // RegionAdmin can only see entries from their region
       query = query
-        .in('status', [DataEntryStatus.PENDING, DataEntryStatus.APPROVED, DataEntryStatus.REJECTED])
-        .eq('schools.region_id', roleInfo.region_id);
+        .in('status', ['pending', 'approved', 'rejected'])
+        .eq('sectors.region_id', roleInfo.region_id);
     } else if (roleInfo?.role === 'sectoradmin') {
-      // SectorAdmin can only see entries from their sector
+      // SectorAdmin can only see their own sector's entries
       query = query
-        .in('status', [DataEntryStatus.PENDING, DataEntryStatus.APPROVED, DataEntryStatus.REJECTED])
-        .eq('schools.sector_id', roleInfo.sector_id);
-    } else if (roleInfo?.role === 'schooladmin') {
-      // SchoolAdmin can only see their own school's entries
-      query = query
-        .in('status', [DataEntryStatus.PENDING, DataEntryStatus.APPROVED, DataEntryStatus.REJECTED])
-        .eq('school_id', roleInfo.school_id);
+        .in('status', ['pending', 'approved', 'rejected'])
+        .eq('sector_id', roleInfo.sector_id);
     } else {
-      // No role found, return empty query
+      // No permission to view sector data
       return null;
     }
 
     return query;
   }, []);
 
-  // Load approval data with RLS compliance
-  const loadApprovalData = useCallback(async () => {
+  // Load sector approval data with RLS compliance
+  const loadSectorApprovalData = useCallback(async () => {
     if (!user) return;
     
     setIsLoading(true);
@@ -115,7 +94,7 @@ export const useApprovalData = () => {
       }
 
       // Build and execute query with role-based filtering
-      const query = buildApprovalQuery(roleInfo);
+      const query = buildSectorApprovalQuery(roleInfo);
       if (!query) {
         console.warn('No valid query built for user role');
         setIsLoading(false);
@@ -126,36 +105,35 @@ export const useApprovalData = () => {
 
       if (error) throw error;
 
-      // Group entries by category and school
-      const groupedData: Record<string, ApprovalItem> = {};
+      // Group entries by category and sector
+      const groupedData: Record<string, SectorApprovalItem> = {};
       
       entries?.forEach(entry => {
-        const key = `${entry.category_id}-${entry.school_id}`;
+        const key = `${entry.category_id}-${entry.sector_id}`;
         
         if (!groupedData[key]) {
           groupedData[key] = {
             id: key,
             categoryId: entry.category_id,
             categoryName: entry.categories?.name || 'Unknown Category',
-            schoolId: entry.school_id,
-            schoolName: entry.schools?.name || 'Unknown School',
-            regionId: entry.schools?.region_id,
-            sectorId: entry.schools?.sector_id,
+            sectorId: entry.sector_id,
+            sectorName: entry.sectors?.name || 'Unknown Sector',
+            regionId: entry.sectors?.region_id,
             submittedAt: entry.created_at,
             submittedBy: entry.created_by || 'Unknown User',
-            status: entry.status as DataEntryStatus,
+            status: entry.status as any,
             entries: [],
             completionRate: 0
           };
         }
         
-        groupedData[key].entries.push(entry);
+        groupedData[key].entries.push(entry as SectorDataEntry);
       });
 
       // Calculate completion rates and separate by status
-      const pending: ApprovalItem[] = [];
-      const approved: ApprovalItem[] = [];
-      const rejected: ApprovalItem[] = [];
+      const pending: SectorApprovalItem[] = [];
+      const approved: SectorApprovalItem[] = [];
+      const rejected: SectorApprovalItem[] = [];
 
       Object.values(groupedData).forEach(item => {
         // Calculate completion rate based on filled fields
@@ -164,13 +142,13 @@ export const useApprovalData = () => {
 
         // Group by status
         switch (item.status) {
-          case DataEntryStatus.PENDING:
+          case 'pending':
             pending.push(item);
             break;
-          case DataEntryStatus.APPROVED:
+          case 'approved':
             approved.push(item);
             break;
-          case DataEntryStatus.REJECTED:
+          case 'rejected':
             rejected.push(item);
             break;
         }
@@ -181,19 +159,19 @@ export const useApprovalData = () => {
       setRejectedItems(rejected);
 
     } catch (error) {
-      console.error('Error loading approval data:', error);
+      console.error('Error loading sector approval data:', error);
       toast({
         title: t('error'),
-        description: t('errorLoadingApprovalData'),
+        description: t('errorLoadingSectorApprovalData'),
         variant: 'destructive'
       });
     } finally {
       setIsLoading(false);
     }
-  }, [user, t, toast, getUserRoleInfo, buildApprovalQuery]);
+  }, [user, t, toast, getUserRoleInfo, buildSectorApprovalQuery]);
 
-  // Check if user has permission to approve/reject
-  const checkApprovalPermission = useCallback(async (item: ApprovalItem): Promise<boolean> => {
+  // Check if user has permission to approve/reject sector data
+  const checkSectorApprovalPermission = useCallback(async (item: SectorApprovalItem): Promise<boolean> => {
     if (!user?.id) return false;
     
     const roleInfo = await getUserRoleInfo();
@@ -205,22 +183,19 @@ export const useApprovalData = () => {
     // RegionAdmin can approve items from their region
     if (roleInfo.role === 'regionadmin' && item.regionId === roleInfo.region_id) return true;
     
-    // SectorAdmin can approve items from their sector
-    if (roleInfo.role === 'sectoradmin' && item.sectorId === roleInfo.sector_id) return true;
-    
-    // SchoolAdmin cannot approve their own submissions
-    if (roleInfo.role === 'schooladmin') return false;
+    // SectorAdmin cannot approve their own submissions
+    if (roleInfo.role === 'sectoradmin') return false;
     
     return false;
   }, [user?.id, getUserRoleInfo]);
 
-  // Approve item with permission check
-  const approveItem = useCallback(async (itemId: string, comment?: string) => {
+  // Approve sector item with permission check
+  const approveSectorItem = useCallback(async (itemId: string, comment?: string) => {
     const item = pendingApprovals.find(i => i.id === itemId);
     if (!item) return;
 
     // Check permissions
-    const hasPermission = await checkApprovalPermission(item);
+    const hasPermission = await checkSectorApprovalPermission(item);
     if (!hasPermission) {
       toast({
         title: t('error'),
@@ -230,48 +205,48 @@ export const useApprovalData = () => {
       return;
     }
 
-    const [categoryId, schoolId] = itemId.split('-');
+    const [categoryId, sectorId] = itemId.split('-');
     
     try {
       const { error } = await supabase
-        .from('data_entries')
+        .from('sector_data_entries')
         .update({
-          status: DataEntryStatus.APPROVED,
+          status: 'approved',
           approved_at: new Date().toISOString(),
           approved_by: user?.id
         })
         .eq('category_id', categoryId)
-        .eq('school_id', schoolId)
-        .eq('status', DataEntryStatus.PENDING);
+        .eq('sector_id', sectorId)
+        .eq('status', 'pending');
 
       if (error) throw error;
       
       // Reload data
-      await loadApprovalData();
+      await loadSectorApprovalData();
       
       toast({
         title: t('success'),
-        description: t('itemApproved'),
+        description: t('sectorItemApproved'),
       });
       
     } catch (error) {
-      console.error('Error approving item:', error);
+      console.error('Error approving sector item:', error);
       toast({
         title: t('error'),
-        description: t('errorApprovingItem'),
+        description: t('errorApprovingSectorItem'),
         variant: 'destructive'
       });
       throw error;
     }
-  }, [pendingApprovals, checkApprovalPermission, user?.id, loadApprovalData, t, toast]);
+  }, [pendingApprovals, checkSectorApprovalPermission, user?.id, loadSectorApprovalData, t, toast]);
 
-  // Reject item with permission check
-  const rejectItem = useCallback(async (itemId: string, reason: string) => {
+  // Reject sector item with permission check
+  const rejectSectorItem = useCallback(async (itemId: string, reason: string) => {
     const item = pendingApprovals.find(i => i.id === itemId);
     if (!item) return;
 
     // Check permissions
-    const hasPermission = await checkApprovalPermission(item);
+    const hasPermission = await checkSectorApprovalPermission(item);
     if (!hasPermission) {
       toast({
         title: t('error'),
@@ -281,64 +256,59 @@ export const useApprovalData = () => {
       return;
     }
 
-    const [categoryId, schoolId] = itemId.split('-');
+    const [categoryId, sectorId] = itemId.split('-');
     
     try {
       const { error } = await supabase
-        .from('data_entries')
+        .from('sector_data_entries')
         .update({
-          status: DataEntryStatus.REJECTED,
+          status: 'rejected',
           rejection_reason: reason,
-          rejected_by: user?.id
+          rejected_by: user?.id,
+          rejected_at: new Date().toISOString()
         })
         .eq('category_id', categoryId)
-        .eq('school_id', schoolId)
-        .eq('status', DataEntryStatus.PENDING);
+        .eq('sector_id', sectorId)
+        .eq('status', 'pending');
 
       if (error) throw error;
       
       // Reload data
-      await loadApprovalData();
+      await loadSectorApprovalData();
       
       toast({
         title: t('success'),
-        description: t('itemRejected'),
+        description: t('sectorItemRejected'),
       });
       
     } catch (error) {
-      console.error('Error rejecting item:', error);
+      console.error('Error rejecting sector item:', error);
       toast({
         title: t('error'),
-        description: t('errorRejectingItem'),
+        description: t('errorRejectingSectorItem'),
         variant: 'destructive'
       });
       throw error;
     }
-  }, [pendingApprovals, checkApprovalPermission, user?.id, loadApprovalData, t, toast]);
+  }, [pendingApprovals, checkSectorApprovalPermission, user?.id, loadSectorApprovalData, t, toast]);
 
-  // View item details
-  const viewItem = useCallback((item: ApprovalItem) => {
-    // This would typically navigate to a detailed view
-    console.log('Viewing item:', item);
-  }, []);
-
-  // Setup real-time subscription
+  // Setup real-time subscription for sector data
   useEffect(() => {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel('approval-changes')
+      .channel('sector-approval-changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'data_entries'
+          table: 'sector_data_entries'
         },
         (payload) => {
-          console.log('Real-time update received:', payload);
+          console.log('Real-time sector approval update received:', payload);
           // Reload data when there are changes
-          loadApprovalData();
+          loadSectorApprovalData();
         }
       )
       .subscribe();
@@ -346,22 +316,21 @@ export const useApprovalData = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, loadApprovalData]);
+  }, [user?.id, loadSectorApprovalData]);
 
   // Load data on mount
   useEffect(() => {
-    loadApprovalData();
-  }, [loadApprovalData]);
+    loadSectorApprovalData();
+  }, [loadSectorApprovalData]);
 
   return {
     pendingApprovals,
     approvedItems,
     rejectedItems,
     isLoading,
-    approveItem,
-    rejectItem,
-    viewItem,
-    refreshData: loadApprovalData,
-    checkApprovalPermission
+    approveSectorItem,
+    rejectSectorItem,
+    refreshData: loadSectorApprovalData,
+    checkSectorApprovalPermission
   };
 };

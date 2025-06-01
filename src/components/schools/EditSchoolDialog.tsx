@@ -1,60 +1,61 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useLanguage } from '@/context/LanguageContext';
-import { School, Region, Sector } from '@/types/school';
 import SchoolForm from './SchoolForm';
+import { School, Region, Sector } from '@/types/school';
 
 interface EditSchoolDialogProps {
+  school: School | null;
   isOpen: boolean;
   onClose: () => void;
-  school: School;
-  onSubmit: (schoolData: School) => Promise<void>;
-  onSuccess?: () => void;
-  regions?: Region[];
-  sectors?: Sector[];
-  regionNames?: Record<string, string>;
-  sectorNames?: Record<string, string>;
-  isSubmitting?: boolean;
+  onSubmit: (data: Partial<School>) => Promise<void>;
+  isSubmitting: boolean;
+  regions: Region[];
+  sectors: Sector[];
+  regionNames: Record<string, string>;
+  sectorNames: Record<string, string>;
 }
 
 const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
+  school,
   isOpen,
   onClose,
-  school,
   onSubmit,
-  onSuccess,
   isSubmitting,
-  regions = [],
-  sectors = [],
-  regionNames = {},
-  sectorNames = {}
+  regions,
+  sectors,
+  regionNames,
+  sectorNames,
 }) => {
   const { t } = useLanguage();
 
-  const handleSubmit = async (data: Partial<School>) => {
-    await onSubmit(data as School);
-    if (onSuccess) onSuccess();
-  };
+  if (!school) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('editSchool')}</DialogTitle>
+          <DialogDescription>
+            {t('editSchoolDescription')}
+          </DialogDescription>
         </DialogHeader>
-
-        <div className="overflow-y-auto pr-1 max-h-[calc(90vh-120px)]">
-          <SchoolForm
-            initialData={school}
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting || false}
-            regions={regions}
-            sectors={sectors}
-            regionNames={regionNames}
-            sectorNames={sectorNames}
-          />
-        </div>
+        <SchoolForm
+          school={school}
+          onSubmit={onSubmit}
+          isSubmitting={isSubmitting}
+          regions={regions}
+          sectors={sectors}
+          regionNames={regionNames}
+          sectorNames={sectorNames}
+        />
       </DialogContent>
     </Dialog>
   );

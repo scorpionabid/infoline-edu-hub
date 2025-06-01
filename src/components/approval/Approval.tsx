@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -22,7 +21,6 @@ import { PendingApproval } from '@/types/dashboard';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import type { UserRole } from '@/types/user';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import PendingApprovalsTable from './PendingApprovalsTable';
 import ApprovalItem from './ApprovalItem';
 
 interface ApprovalProps {
@@ -51,8 +49,6 @@ const Approval: React.FC<ApprovalProps> = ({
   const [approvals, setApprovals] = useState<ApprovalRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const mockApprovals: ApprovalRecord[] = [
     {
@@ -92,41 +88,27 @@ const Approval: React.FC<ApprovalProps> = ({
   const totalApproved = approvals.filter(item => item.status === 'approved').length;
   const totalRejected = approvals.filter(item => item.status === 'rejected').length;
 
-  const handleApprove = (id: string) => {
+  const handleApprove = (approvalId: string) => {
     setApprovals(approvals.map(item =>
-      item.id === id ? { ...item, status: 'approved' as const } : item
+      item.id === approvalId ? { ...item, status: 'approved' as const } : item
     ));
   };
 
-  const handleReject = (id: string) => {
+  const handleReject = (approvalId: string) => {
     setApprovals(approvals.map(item =>
-      item.id === id ? { ...item, status: 'rejected' as const } : item
+      item.id === approvalId ? { ...item, status: 'rejected' as const } : item
     ));
   };
 
-  const handleView = (id: string) => {
-    console.log(`Viewing approval with id ${id}`);
+  const handleView = (approvalId: string) => {
+    console.log(`Viewing approval with id ${approvalId}`);
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleStatusChange = (value: string) => {
-    setSelectedStatus(value);
-  };
-
-  const filteredBySearch = approvals.filter(item =>
-    item.schoolName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredByStatus = selectedStatus === 'all' 
-    ? approvals 
-    : approvals.filter(item => item.status === selectedStatus);
-
-  const combinedFiltered = filteredBySearch.filter(item =>
-    selectedStatus === 'all' || item.status === selectedStatus
-  );
+  const filteredApprovals = approvals.filter(item => {
+    const matchesSearch = item.schoolName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="container mx-auto py-6">
@@ -141,9 +123,9 @@ const Approval: React.FC<ApprovalProps> = ({
                 type="text"
                 placeholder={t('searchBySchoolName')}
                 value={searchTerm}
-                onChange={handleSearchChange}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <Select onValueChange={handleStatusChange} defaultValue={selectedStatus}>
+              <Select onValueChange={setSelectedStatus} defaultValue={selectedStatus}>
                 <SelectTrigger>
                   <SelectValue placeholder={t('filterByStatus')} />
                 </SelectTrigger>
@@ -155,6 +137,7 @@ const Approval: React.FC<ApprovalProps> = ({
                 </SelectContent>
               </Select>
             </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Card>
                 <CardContent className="text-center">
@@ -181,8 +164,9 @@ const Approval: React.FC<ApprovalProps> = ({
                 </CardContent>
               </Card>
             </div>
+
             <div className="space-y-4">
-              {combinedFiltered.map((approval) => (
+              {filteredApprovals.map((approval) => (
                 <ApprovalItem
                   key={approval.id}
                   approval={approval}
