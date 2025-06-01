@@ -23,7 +23,7 @@ import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
 import Profile from "@/pages/Profile";
-import Approvals from "@/pages/Approval";
+import ApprovalPage from "@/pages/Approval";
 
 import { UserRole } from "@/types/supabase";
 
@@ -204,7 +204,7 @@ const AppRoutes = () => (
       
       <Route path="/approvals" element={
         <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
-          <Approvals />
+          <ApprovalPage />
         </ProtectedRoute>
       } />
       
