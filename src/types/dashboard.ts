@@ -1,4 +1,3 @@
-
 export interface DashboardFormStats {
   total: number;
   completed: number;
@@ -130,12 +129,12 @@ export interface SectorStat {
   id: string;
   name: string;
   schoolCount: number;
+  totalSchools: number;
+  activeSchools: number;
   completionRate: number;
   completion_rate?: number;
   completion?: number;
-  totalSchools: number;
   total_schools?: number;
-  activeSchools: number;
   status: 'active' | 'inactive';
 }
 

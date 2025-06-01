@@ -80,8 +80,24 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ dashboardDa
   ];
 
   const mockSectors = [
-    { id: '1', name: 'Sektor 1', schoolCount: 10, completionRate: 85, status: 'active' as const },
-    { id: '2', name: 'Sektor 2', schoolCount: 8, completionRate: 92, status: 'active' as const }
+    { 
+      id: '1', 
+      name: 'Sektor 1', 
+      schoolCount: 10, 
+      totalSchools: 12,
+      activeSchools: 10,
+      completionRate: 85, 
+      status: 'active' as const 
+    },
+    { 
+      id: '2', 
+      name: 'Sektor 2', 
+      schoolCount: 8, 
+      totalSchools: 10,
+      activeSchools: 8,
+      completionRate: 92, 
+      status: 'active' as const 
+    }
   ];
 
   return (

@@ -28,6 +28,7 @@ export interface Column {
   updated_at?: string;
   description?: string;
   section?: string;
+  key?: string;
 }
 
 export interface ColumnWithValidation extends Column {
@@ -45,6 +46,7 @@ export interface ColumnOption {
   id?: string;
   label: string;
   value: string;
+  disabled?: boolean;
 }
 
 export interface ColumnFormValues {
@@ -82,8 +84,11 @@ export interface FieldProps {
   onChange: (value: string) => void;
   disabled?: boolean;
   readOnly?: boolean;
+  required?: boolean;
   id: string;
+  name?: string;
   placeholder?: string;
   validation?: any;
   options?: ColumnOption[];
+  onBlur?: () => void;
 }

@@ -1,134 +1,72 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import StatsGrid from '@/components/dashboard/StatsGrid';
-import DashboardChart from '@/components/dashboard/DashboardChart';
-import CategoryProgressList from '@/components/dashboard/CategoryProgressList';
-import SchoolsCompletionList from '@/components/dashboard/SchoolsCompletionList';
-import RegionsList from './RegionsList';
-import { SuperAdminDashboardData, DashboardFormStats, CategoryItem } from '@/types/dashboard';
+import { useLanguage } from '@/context/LanguageContext';
+import { DashboardFormStats } from '@/types/dashboard';
+import StatsGrid from '../StatsGrid';
+import DashboardChart from '../DashboardChart';
 
 interface SuperAdminDashboardProps {
-  data: SuperAdminDashboardData;
+  dashboardData?: any;
 }
 
-const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
-  const stats = [
+const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData }) => {
+  const { t } = useLanguage();
+
+  // Mock data for demonstration
+  const mockActiveData = {
+    schools: 150,
+    regions: 10,
+    sectors: 45,
+    users: 200
+  };
+
+  const mockStats: DashboardFormStats = {
+    total: 1000,
+    approved: 750,
+    pending: 150,
+    rejected: 50,
+    dueSoon: 25,
+    overdue: 10,
+    draft: 15,
+    completed: 750,
+    percentage: 75,
+    completion_rate: 75,
+    completionRate: 75
+  };
+
+  const statsGridData = [
     {
-      title: 'Aktiv istifadəçilər',
-      value: data.users?.active || 0,
-      color: 'bg-green-50'
+      title: t('totalSchools'),
+      value: mockActiveData.schools,
+      color: 'text-blue-600',
+      description: t('activeSchools')
     },
     {
-      title: 'Ümumi regionlar',
-      value: data.regionCount || 0,
-      color: 'bg-blue-50'
+      title: t('totalRegions'),
+      value: mockActiveData.regions,
+      color: 'text-green-600',
+      description: t('regions')
     },
     {
-      title: 'Ümumi sektorlar',
-      value: data.sectorCount || 0,
-      color: 'bg-amber-50'
+      title: t('totalSectors'),
+      value: mockActiveData.sectors,
+      color: 'text-purple-600',
+      description: t('sectors')
     },
     {
-      title: 'Ümumi məktəblər',
-      value: data.schoolCount || 0,
-      color: 'bg-purple-50'
+      title: t('totalUsers'),
+      value: mockActiveData.users,
+      color: 'text-orange-600',
+      description: t('users')
     }
   ];
 
-  // Handle completion data safely regardless of whether it's an object or number
-  const completionValue = typeof data.completion === 'object' && data.completion
-    ? data.completion.percentage
-    : (typeof data.completion === 'number' ? data.completion : data.completionRate || 0);
-
-  // Convert categoryData to CategoryItem array if needed
-  const categoryItems: CategoryItem[] = data.categoryData 
-    ? data.categoryData.map(item => ({
-        id: item.id,
-        name: item.name,
-        completionRate: item.completionRate,
-        description: item.description,
-        deadline: item.deadline,
-        status: item.status || 'active'
-      }))
-    : [];
-
-  const formStats: DashboardFormStats = {
-    total: data.entryCount?.total || 0,
-    approved: data.entryCount?.approved || 0,
-    pending: data.entryCount?.pending || 0,
-    rejected: data.entryCount?.rejected || 0,
-    dueSoon: data.entryCount?.dueSoon || 0,
-    overdue: data.entryCount?.overdue || 0,
-    draft: data.entryCount?.draft || 0,
-    completed: data.entryCount?.approved || 0,
-    percentage: completionValue,
-    completion_rate: completionValue
-  };
-
   return (
-    <div className="space-y-4">
-      <StatsGrid stats={stats} />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Qeydlərin tamamlanması</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DashboardChart 
-              completion={completionValue} 
-              stats={formStats} 
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Kateqoriyalar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CategoryProgressList categories={categoryItems} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Məktəblər</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SchoolsCompletionList schools={data.schoolData || []} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Məlumat Statistikası</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col">
-                <span className="text-xs text-muted-foreground">İstifadəçilər</span>
-                <span className="text-lg font-medium">{data.users?.active || 0}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-muted-foreground">Məktəblər</span>
-                <span className="text-lg font-medium">{data.schoolCount || 0}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {data.regionData && data.regionData.length > 0 && (
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Regionlar</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <RegionsList regions={data.regionData} />
-            </CardContent>
-          </Card>
-        )}
+    <div className="space-y-6">
+      <StatsGrid stats={statsGridData} />
+      
+      <div className="grid gap-4 md:grid-cols-2">
+        <DashboardChart stats={mockStats} />
       </div>
     </div>
   );
