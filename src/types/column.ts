@@ -69,6 +69,7 @@ export interface ColumnFormValues {
   };
   category_id?: string;
   section?: string;
+  description?: string; // Əlavə etdik, səhv xətasını həll etmək üçün
 }
 
 export interface ColumnTypeDefinition {

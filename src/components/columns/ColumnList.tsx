@@ -1,17 +1,32 @@
-
 import React from 'react';
-import { Column } from '@/types/column';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Column } from '@/types/column';
+import { Category } from '@/types/category';
 import { Edit, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface ColumnListProps {
   columns: Column[];
-  onEdit?: (column: Column) => void;
-  onDelete?: (columnId: string) => void;
+  categories?: Category[];
+  isLoading?: boolean;
+  isError?: boolean;
+  onEditColumn?: (column: Column) => void;
+  onDeleteColumn?: (id: string, name: string) => void;
+  onUpdateStatus?: (id: string, status: string) => void;
+  canManageColumns?: boolean;
 }
 
-const ColumnList: React.FC<ColumnListProps> = ({ columns, onEdit, onDelete }) => {
+const ColumnList: React.FC<ColumnListProps> = ({ 
+  columns, 
+  categories,
+  isLoading, 
+  isError, 
+  onEditColumn, 
+  onDeleteColumn, 
+  onUpdateStatus,
+  canManageColumns 
+}) => {
   return (
     <div className="space-y-2">
       {columns.map((column) => (
@@ -27,13 +42,13 @@ const ColumnList: React.FC<ColumnListProps> = ({ columns, onEdit, onDelete }) =>
             )}
           </div>
           <div className="flex items-center space-x-1">
-            {onEdit && (
-              <Button variant="ghost" size="sm" onClick={() => onEdit(column)}>
+            {onEditColumn && (
+              <Button variant="ghost" size="sm" onClick={() => onEditColumn(column)}>
                 <Edit className="h-4 w-4" />
               </Button>
             )}
-            {onDelete && (
-              <Button variant="ghost" size="sm" onClick={() => onDelete(column.id)}>
+            {onDeleteColumn && (
+              <Button variant="ghost" size="sm" onClick={() => onDeleteColumn(column.id, column.name)}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}

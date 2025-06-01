@@ -2,7 +2,7 @@ import React from 'react';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Column } from '@/types/column';
 import { useFormContext } from 'react-hook-form';
-import FieldRendererSimple from '../fields/FieldRendererSimple';
+import Field, { ReactHookFormAdapter } from '../fields/Field';
 
 // Define proper types
 interface FormFieldsProps {
@@ -11,6 +11,10 @@ interface FormFieldsProps {
   readOnly?: boolean;
 }
 
+/**
+ * FormFields - Form sütunlarını render edən komponent
+ * Yeni Field komponentindən və ReactHookFormAdapter-dən istifadə edir
+ */
 const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false, readOnly = false }) => {
   // Defensively filter columns to ensure all are valid using our utility functions
   const safeColumns = React.useMemo(() => {
@@ -44,71 +48,52 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
     
   const formContext = useFormContext();
   
-  // Form context not available - static render
+  // Form konteksti yoxdursa
   if (!formContext) {
-    return (
-      <div className="space-y-6">
-        {safeColumns.map(column => (
-          <div key={column.id} className="grid gap-2">
-            <div className="font-medium">{column.name}</div>
-            <FieldRendererSimple
-              column={column}
-              disabled={true}
-              readOnly={true}
-            />
-            {column.description && (
-              <p className="text-sm text-muted-foreground">
-                {column.description}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
-    );
+    console.error('FormFields: No form context found');
+    return <div className="p-4 text-red-500">Form konteksti tapılmadı</div>;
   }
   
+  // React Hook Form adapter
+  const adapter = React.useMemo(() => {
+    return new ReactHookFormAdapter(formContext);
+  }, [formContext]);
+  
   return (
-    <div className="space-y-6 py-2">
-      {safeColumns.map(column => {
-        // Skip columns with invalid IDs
-        if (!column.id || typeof column.id !== 'string') {
-          console.warn('Skipping column with invalid ID:', column);
-          return null;
-        }
-        
-        return (
-          <FormField
-            key={column.id}
-            control={formContext.control}
-            name={column.id}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {column.name}
-                  {column.is_required && <span className="text-destructive ml-1">*</span>}
-                </FormLabel>
-                <FormControl>
-                  <FieldRendererSimple
-                    column={column}
-                    disabled={disabled || readOnly}
-                    readOnly={readOnly}
-                  />
-                </FormControl>
-                {column.description && (
-                  <FormDescription>
-                    {column.description}
-                  </FormDescription>
-                )}
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        );
-      })}
+    <div className="grid gap-6">
+      {safeColumns.map(column => (
+        <FormField
+          key={column.id}
+          control={formContext.control}
+          name={column.id}
+          render={() => (
+            <FormItem>
+              <FormLabel>
+                {column.name}
+                {column.is_required && <span className="text-destructive ml-1">*</span>}
+              </FormLabel>
+              <FormControl>
+                <Field
+                  column={column}
+                  adapter={adapter}
+                  disabled={disabled}
+                  readOnly={readOnly}
+                />
+              </FormControl>
+              {column.description && (
+                <FormDescription>
+                  {column.description}
+                </FormDescription>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ))}
       
       {safeColumns.length === 0 && (
         <div className="py-4 text-center text-muted-foreground">
-          No fields found for this form.
+          Forma üçün sahələr tapılmadı.
         </div>
       )}
     </div>

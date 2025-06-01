@@ -38,10 +38,13 @@ const Login = () => {
   }
 
   // Login formu
+  // Error-u string-ə çeviririk
+  const errorMessage = error instanceof Error ? error.message : error;
+
   return (
     <LoginContainer>
       <LoginHeader />
-      <LoginForm error={error} clearError={clearError} />
+      <LoginForm error={errorMessage} clearError={clearError} />
     </LoginContainer>
   );
 };
