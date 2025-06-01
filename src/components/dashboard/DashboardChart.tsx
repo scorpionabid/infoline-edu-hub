@@ -1,50 +1,54 @@
 
 import React from 'react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { DashboardFormStats } from '@/types/dashboard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useLanguage } from '@/context/LanguageContext';
+import { DashboardChartProps } from '@/types/dashboard';
 
-interface DashboardChartProps {
-  stats: DashboardFormStats;
-}
-
-const DashboardChart: React.FC<DashboardChartProps> = ({ stats }) => {
+const DashboardChart: React.FC<DashboardChartProps> = ({ 
+  stats, 
+  showLegend = true, 
+  height = 300 
+}) => {
   const { t } = useLanguage();
 
   const data = [
-    {
-      name: t('approved'),
-      value: stats.approved || 0,
-      fill: '#10b981'
-    },
-    {
-      name: t('pending'),
-      value: stats.pending || 0,
-      fill: '#f59e0b'
-    },
-    {
-      name: t('rejected'),
-      value: stats.rejected || 0,
-      fill: '#ef4444'
-    },
-    {
-      name: t('draft'),
-      value: stats.draft || 0,
-      fill: '#6b7280'
-    }
+    { name: t('approved'), value: stats.approved || 0, color: '#10b981' },
+    { name: t('pending'), value: stats.pending || 0, color: '#f59e0b' },
+    { name: t('rejected'), value: stats.rejected || 0, color: '#ef4444' },
+    { name: t('draft'), value: stats.draft || 0, color: '#6b7280' }
   ];
 
   return (
-    <ResponsiveContainer width="100%" height={350}>
-      <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Bar dataKey="value" fill="#8884d8" />
-      </BarChart>
-    </ResponsiveContainer>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('formStatistics')}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div style={{ height }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+              {showLegend && <Legend />}
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

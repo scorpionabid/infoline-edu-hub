@@ -27,6 +27,7 @@ export interface Column {
   created_at?: string;
   updated_at?: string;
   description?: string;
+  section?: string;
 }
 
 export interface ColumnWithValidation extends Column {
@@ -63,6 +64,8 @@ export interface ColumnFormValues {
     maxValue?: number;
     pattern?: string;
   };
+  category_id?: string;
+  section?: string;
 }
 
 export interface ColumnTypeDefinition {
@@ -70,4 +73,17 @@ export interface ColumnTypeDefinition {
   label: string;
   description: string;
   icon: string;
+}
+
+// Field Props Interface for components
+export interface FieldProps {
+  columnType: ColumnType;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  readOnly?: boolean;
+  id: string;
+  placeholder?: string;
+  validation?: any;
+  options?: ColumnOption[];
 }

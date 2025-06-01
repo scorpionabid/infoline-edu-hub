@@ -30,13 +30,21 @@ export interface SuperAdminDashboardData {
   totalRegions: number;
   totalSectors: number;
   totalUsers: number;
+  users: number;
+  regionCount: number;
+  sectorCount: number;
+  schoolCount: number;
   active: {
     schools: number;
     regions: number;
     sectors: number;
     users: number;
   };
-  completion: number;
+  completion: {
+    total: number;
+    completed: number;
+    percentage: number;
+  };
   completionRate: number;
   entryCount: {
     total: number;
@@ -194,4 +202,10 @@ export interface StatsGridItem {
   value: string | number;
   color?: string;
   description?: string;
+}
+
+export interface DashboardChartProps {
+  stats: DashboardFormStats;
+  showLegend?: boolean;
+  height?: number;
 }

@@ -79,13 +79,18 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ dashboardDa
     }
   ];
 
+  const mockSectors = [
+    { id: '1', name: 'Sektor 1', schoolCount: 10, completionRate: 85, status: 'active' as const },
+    { id: '2', name: 'Sektor 2', schoolCount: 8, completionRate: 92, status: 'active' as const }
+  ];
+
   return (
     <div className="space-y-6">
       <StatsGrid stats={statsGridData} />
       
       <div className="grid gap-4 md:grid-cols-2">
         <DashboardChart stats={formStats} />
-        <SectorStatsTable />
+        <SectorStatsTable sectors={mockSectors} />
       </div>
     </div>
   );
