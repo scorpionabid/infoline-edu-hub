@@ -7,7 +7,9 @@ export type ColumnType =
   | 'radio' 
   | 'checkbox' 
   | 'date'
-  | 'time';
+  | 'time'
+  | 'email'
+  | 'phone';
 
 export interface Column {
   id: string;
@@ -39,6 +41,7 @@ export interface ColumnWithValidation extends Column {
 }
 
 export interface ColumnOption {
+  id?: string;
   label: string;
   value: string;
 }
@@ -47,6 +50,7 @@ export interface ColumnFormValues {
   name: string;
   type: ColumnType;
   is_required: boolean;
+  order_index?: number;
   placeholder?: string;
   help_text?: string;
   default_value?: string;

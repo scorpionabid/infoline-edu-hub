@@ -11,6 +11,18 @@ export interface DashboardFormStats {
   percentage: number;
   completion_rate: number;
   completionRate: number;
+  active?: {
+    schools?: number;
+    regions?: number;
+    sectors?: number;
+    users?: number;
+  };
+  inactive?: {
+    schools?: number;
+    regions?: number;
+    sectors?: number;
+    users?: number;
+  };
 }
 
 export interface SuperAdminDashboardData {
@@ -175,4 +187,11 @@ export interface FormTabsProps {
   navigateToDataEntry: () => void;
   handleFormClick: (id: string) => void;
   onCategoryChange?: (categoryId: string) => void;
+}
+
+export interface StatsGridItem {
+  title: string;
+  value: string | number;
+  color?: string;
+  description?: string;
 }

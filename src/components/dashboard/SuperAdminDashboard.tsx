@@ -1,10 +1,10 @@
+
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DashboardFormStats } from '@/types/dashboard';
+import { DashboardFormStats, StatsGridItem } from '@/types/dashboard';
 import StatsGrid from './StatsGrid';
 import DashboardChart from './DashboardChart';
-import SchoolsTable from './SchoolsTable';
 import { BarChart3, Users, School, MapPin } from 'lucide-react';
 
 interface SuperAdminDashboardProps {
@@ -42,6 +42,33 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
     completion_rate: mockData.completion.percentage || 0,
     completionRate: mockData.completion.percentage || 0,
   };
+
+  const statsGridData: StatsGridItem[] = [
+    {
+      title: t('totalApproved'),
+      value: formStats.approved,
+      color: 'text-green-600',
+      description: t('approved')
+    },
+    {
+      title: t('totalPending'),
+      value: formStats.pending,
+      color: 'text-yellow-600',
+      description: t('pending')
+    },
+    {
+      title: t('totalRejected'),
+      value: formStats.rejected,
+      color: 'text-red-600',
+      description: t('rejected')
+    },
+    {
+      title: t('totalDraft'),
+      value: formStats.draft,
+      color: 'text-gray-600',
+      description: t('draft')
+    }
+  ];
 
   return (
     <div className="space-y-6">
@@ -159,7 +186,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
         </Card>
       </div>
 
-      <StatsGrid stats={formStats} />
+      <StatsGrid stats={statsGridData} />
     </div>
   );
 };
