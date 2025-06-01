@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntryForm, DataEntryStatus } from '@/types/dataEntry';
+import { StatusTransitionService, TransitionContext } from './statusTransitionService';
 
 // Entry interface to represent single data entry
 export interface EntryValue {
@@ -18,40 +19,110 @@ export interface ServiceResponse {
   errors?: Record<string, string>;
 }
 
-// Data entry formunu yadda saxla - updated to accept direct parameters
+// Data entry formunu yadda saxla - Enhanced with status protection
 export const saveDataEntryForm = async (
   schoolId: string,
   categoryId: string,
   entries: EntryValue[]
 ): Promise<ServiceResponse> => {
   try {
-    // Əgər artıq yazılar varsa, mövcud yazıları silirik
-    await supabase
+    console.group('saveDataEntryForm - Enhanced');
+    console.log('Request params:', { schoolId, categoryId, entriesCount: entries.length });
+
+    // ✅ YENİ: Status protection check
+    const currentStatus = await StatusTransitionService.getCurrentStatus(schoolId, categoryId);
+    console.log('Current status:', currentStatus);
+    
+    if (currentStatus === 'approved') {
+      console.warn('Attempted to modify approved entry');
+      console.groupEnd();
+      return {
+        success: false,
+        error: 'Cannot modify approved entries',
+        message: 'Təsdiqlənmiş məlumatlar redaktə edilə bilməz',
+        errors: { general: 'Bu məlumatlar artıq təsdiqlənib və redaktə edilə bilməz' }
+      };
+    }
+
+    // Get current user for validation
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('User authentication failed:', userError);
+      console.groupEnd();
+      return {
+        success: false,
+        error: 'Authentication required',
+        message: 'İstifadəçi girişi tələb olunur'
+      };
+    }
+
+    // ✅ YENİ: Get user role for validation
+    const { data: userRoles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .limit(1);
+    
+    const userRole = userRoles?.[0]?.role;
+    if (!userRole) {
+      console.error('User role not found');
+      console.groupEnd();
+      return {
+        success: false,
+        error: 'User role not found',
+        message: 'İstifadəçi rolu tapılmadı'
+      };
+    }
+
+    console.log('User validation successful:', { userId: user.id, role: userRole });
+
+    // ✅ DEĞİŞDİRİLMİŞ: Transaction-based save for data integrity
+    const { error: deleteError } = await supabase
       .from('data_entries')
       .delete()
       .eq('category_id', categoryId)
       .eq('school_id', schoolId);
 
-    // Yeni yazıları əlavə edirik
-    for (const entry of entries) {
-      await supabase.from('data_entries').insert({
+    if (deleteError) {
+      console.error('Error deleting existing entries:', deleteError);
+      throw deleteError;
+    }
+
+    // Insert new entries
+    const insertPromises = entries.map(entry => 
+      supabase.from('data_entries').insert({
         school_id: schoolId,
         category_id: categoryId,
         column_id: entry.columnId,
         value: entry.value,
-        status: entry.status || 'draft',
-        created_by: (await supabase.auth.getUser()).data.user?.id
-      });
+        status: entry.status || currentStatus || 'draft',
+        created_by: user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+    );
+
+    const results = await Promise.all(insertPromises);
+    
+    // Check for any insert errors
+    const insertErrors = results.filter(result => result.error);
+    if (insertErrors.length > 0) {
+      console.error('Insert errors:', insertErrors);
+      throw new Error('Failed to save some entries');
     }
+
+    console.log('Data saved successfully:', results.length, 'entries');
+    console.groupEnd();
 
     return {
       success: true,
       id: `form-${Date.now()}`,
-      status: 'draft',
+      status: currentStatus || 'draft',
       message: 'Data saved successfully'
     };
   } catch (error: any) {
     console.error('Form yadda saxlanarkən xəta baş verdi:', error);
+    console.groupEnd();
     return {
       success: false,
       error: error.message || 'Bilinməyən xəta',
@@ -137,30 +208,112 @@ export const getDataEntries = async (
   }
 };
 
-// Təsdiq üçün göndər - yenilənmiş versiya birbaşa school və category ID-lərini qəbul edir
+// Təsdiq üçün göndər - Enhanced with status transition validation
 export const submitForApproval = async (
   schoolId: string,
-  categoryId: string
+  categoryId: string,
+  comment?: string
 ): Promise<ServiceResponse> => {
   try {
-    // Burada təsdiq üçün göndərmə əməliyyatı həyata keçirilir
-    // Status yenilənməsi
+    console.group('submitForApproval - Enhanced');
+    console.log('Request params:', { schoolId, categoryId, comment });
 
-    await supabase
-      .from('data_entries')
-      .update({
-        status: 'pending'
-      })
-      .eq('school_id', schoolId)
-      .eq('category_id', categoryId);
+    // Get current user and role
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('User authentication failed:', userError);
+      console.groupEnd();
+      return {
+        success: false,
+        error: 'Authentication required',
+        message: 'İstifadəçi girişi tələb olunur'
+      };
+    }
 
-    return { 
-      success: true, 
-      status: 'pending',
-      message: 'Data submitted for approval' 
+    const { data: userRoles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .limit(1);
+    
+    const userRole = userRoles?.[0]?.role;
+    if (!userRole) {
+      console.error('User role not found');
+      console.groupEnd();
+      return {
+        success: false,
+        error: 'User role not found',
+        message: 'İstifadəçi rolu tapılmadı'
+      };
+    }
+
+    // ✅ YENİ: Get current status and validate transition
+    const currentStatus = await StatusTransitionService.getCurrentStatus(schoolId, categoryId);
+    console.log('Current status:', currentStatus);
+    
+    if (!currentStatus) {
+      console.error('Could not determine current status');
+      console.groupEnd();
+      return {
+        success: false,
+        error: 'Could not determine current status',
+        message: 'Mövcud status təyin edilə bilmədi'
+      };
+    }
+
+    // ✅ YENİ: Validate transition using StatusTransitionService
+    const transitionContext: TransitionContext = {
+      schoolId,
+      categoryId,
+      userId: user.id,
+      userRole,
+      comment
     };
+
+    const canTransition = await StatusTransitionService.canTransition(
+      currentStatus,
+      'pending',
+      transitionContext
+    );
+
+    if (!canTransition.allowed) {
+      console.warn('Transition not allowed:', canTransition.reason);
+      console.groupEnd();
+      return {
+        success: false,
+        error: canTransition.reason,
+        message: 'Status keçidi mümkün deyil',
+        errors: { transition: canTransition.reason || 'Status transition not allowed' }
+      };
+    }
+
+    // ✅ YENİ: Execute transition using StatusTransitionService
+    const transitionResult = await StatusTransitionService.executeTransition(
+      currentStatus,
+      'pending',
+      transitionContext
+    );
+
+    console.log('Transition result:', transitionResult);
+    console.groupEnd();
+
+    if (transitionResult.success) {
+      return {
+        success: true,
+        status: 'pending',
+        message: transitionResult.message || 'Data submitted for approval'
+      };
+    } else {
+      return {
+        success: false,
+        error: transitionResult.error,
+        message: transitionResult.message || 'Error submitting data',
+        errors: { transition: transitionResult.error || 'Transition failed' }
+      };
+    }
   } catch (error: any) {
     console.error('Təsdiq üçün göndərilirkən xəta baş verdi:', error);
+    console.groupEnd();
     return {
       success: false,
       error: error.message || 'Bilinməyən xəta',

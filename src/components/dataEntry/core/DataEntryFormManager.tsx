@@ -3,11 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { AlertCircle, Save, Send, Download, Upload, CheckCircle, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { CategoryWithColumns } from '@/types/category';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
+import { StatusPermissions } from '@/hooks/auth/useStatusPermissions';
 import { useForm, FormProvider } from 'react-hook-form';
 import FormFields from './FormFields';
 import DataEntryFormContent from './DataEntryFormContent';
@@ -27,6 +31,14 @@ interface DataEntryFormManagerProps {
   isSubmitting?: boolean;
   errors?: Record<string, string>;
   readOnly?: boolean;
+  
+  // ✅ YENİ: Status-related props
+  entryStatus?: DataEntryStatus;
+  statusPermissions?: StatusPermissions;
+  onStatusTransition?: (newStatus: DataEntryStatus, comment?: string) => Promise<void>;
+  onApprove?: (comment?: string) => Promise<void>;
+  onReject?: (reason: string) => Promise<void>;
+  onReset?: () => Promise<void>;
 }
 
 const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
@@ -43,13 +55,27 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
   isSaving = false,
   isSubmitting = false,
   errors = {},
-  readOnly = false
+  readOnly = false,
+  
+  // ✅ YENİ: Status-related props
+  entryStatus,
+  statusPermissions,
+  onStatusTransition,
+  onApprove,
+  onReject,
+  onReset
 }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // ✅ YENİ: Approval/rejection dialog states
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [showRejectionDialog, setShowRejectionDialog] = useState(false);
+  const [approvalComment, setApprovalComment] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
 
   // Initialize React Hook Form
   const formMethods = useForm({
@@ -213,6 +239,61 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
     event.target.value = '';
   }, [onImportData, t, toast]);
 
+  // ✅ YENİ: Handle approval with comment
+  const handleApprovalClick = useCallback(() => {
+    setShowApprovalDialog(true);
+  }, []);
+
+  const handleApprovalConfirm = useCallback(async () => {
+    try {
+      await onApprove?.(approvalComment);
+      setShowApprovalDialog(false);
+      setApprovalComment('');
+      toast({
+        title: t('success'),
+        description: t('dataApproved'),
+      });
+    } catch (error) {
+      toast({
+        title: t('error'),
+        description: t('errorApprovingData'),
+        variant: 'destructive'
+      });
+    }
+  }, [onApprove, approvalComment, t, toast]);
+
+  // ✅ YENİ: Handle rejection with reason
+  const handleRejectionClick = useCallback(() => {
+    setShowRejectionDialog(true);
+  }, []);
+
+  const handleRejectionConfirm = useCallback(async () => {
+    if (!rejectionReason.trim()) {
+      toast({
+        title: t('error'),
+        description: t('rejectionReasonRequired'),
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      await onReject?.(rejectionReason);
+      setShowRejectionDialog(false);
+      setRejectionReason('');
+      toast({
+        title: t('success'),
+        description: t('dataRejected'),
+      });
+    } catch (error) {
+      toast({
+        title: t('error'),
+        description: t('errorRejectingData'),
+        variant: 'destructive'
+      });
+    }
+  }, [onReject, rejectionReason, t, toast]);
+
   // Debug məlumatı
   console.group('DataEntryFormManager Debug');
   console.log('Category:', category);
@@ -281,6 +362,23 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
                     `${Math.round(completionPercentage)}% ${t('completed')}`
                   )}
                 </Badge>
+                
+                {/* ✅ YENİ: Status badge */}
+                {entryStatus && entryStatus !== 'draft' && (
+                  <Badge 
+                    variant={
+                      entryStatus === 'approved' ? 'default' :
+                      entryStatus === 'pending' ? 'secondary' :
+                      entryStatus === 'rejected' ? 'destructive' : 'outline'
+                    }
+                    className="ml-2"
+                  >
+                    {entryStatus === 'approved' && <CheckCircle className="w-3 h-3 mr-1" />}
+                    {entryStatus === 'pending' && <RefreshCw className="w-3 h-3 mr-1" />}
+                    {entryStatus === 'rejected' && <AlertCircle className="w-3 h-3 mr-1" />}
+                    {t(entryStatus)}
+                  </Badge>
+                )}
               </CardTitle>
             </div>
             <div className="flex items-center gap-2">
@@ -376,36 +474,156 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
         </div>
         
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleSave}
-            disabled={isSaving || readOnly}
-          >
-            {isSaving ? (
-              <>{t('saving')}...</>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-1" />
-                {t('saveDraft')}
-              </>
-            )}
-          </Button>
+          {/* ✅ YENİ: Status-aware action buttons */}
+          {statusPermissions?.canEdit && (
+            <Button
+              variant="outline"
+              onClick={handleSave}
+              disabled={isSaving || readOnly}
+            >
+              {isSaving ? (
+                <>{t('saving')}...</>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-1" />
+                  {t('saveDraft')}
+                </>
+              )}
+            </Button>
+          )}
           
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting || completionPercentage < 100 || readOnly || Object.keys(errors).length > 0}
-          >
-            {isSubmitting ? (
-              <>{t('submitting')}...</>
-            ) : (
-              <>
-                <Send className="w-4 h-4 mr-1" />
-                {t('submitForApproval')}
-              </>
-            )}
-          </Button>
+          {statusPermissions?.canSubmit && (
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || completionPercentage < 100 || readOnly || Object.keys(errors).length > 0}
+            >
+              {isSubmitting ? (
+                <>{t('submitting')}...</>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-1" />
+                  {t('submitForApproval')}
+                </>
+              )}
+            </Button>
+          )}
+          
+          {/* Approval actions for reviewers */}
+          {statusPermissions?.canApprove && (
+            <Button
+              variant="default"
+              onClick={handleApprovalClick}
+              disabled={isLoading}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle className="w-4 h-4 mr-1" />
+              {t('approve')}
+            </Button>
+          )}
+          
+          {statusPermissions?.canReject && (
+            <Button
+              variant="destructive"
+              onClick={handleRejectionClick}
+              disabled={isLoading}
+            >
+              <AlertCircle className="w-4 h-4 mr-1" />
+              {t('reject')}
+            </Button>
+          )}
+          
+          {statusPermissions?.canReset && (
+            <Button
+              variant="outline"
+              onClick={() => onReset?.()}
+              disabled={isLoading}
+            >
+              <RefreshCw className="w-4 h-4 mr-1" />
+              {t('resetToDraft')}
+            </Button>
+          )}
         </div>
       </div>
+      
+      {/* ✅ YENİ: Approval Dialog */}
+      <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('approveData')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="approval-comment">{t('approvalComment')} ({t('optional')})</Label>
+              <Textarea
+                id="approval-comment"
+                placeholder={t('enterApprovalComment')}
+                value={approvalComment}
+                onChange={(e) => setApprovalComment(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowApprovalDialog(false);
+                setApprovalComment('');
+              }}
+            >
+              {t('cancel')}
+            </Button>
+            <Button
+              onClick={handleApprovalConfirm}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle className="w-4 h-4 mr-1" />
+              {t('approve')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* ✅ YENİ: Rejection Dialog */}
+      <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('rejectData')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejection-reason">{t('rejectionReason')} <span className="text-red-500">*</span></Label>
+              <Textarea
+                id="rejection-reason"
+                placeholder={t('enterRejectionReason')}
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                className="min-h-[100px]"
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRejectionDialog(false);
+                setRejectionReason('');
+              }}
+            >
+              {t('cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRejectionConfirm}
+              disabled={!rejectionReason.trim()}
+            >
+              <AlertCircle className="w-4 h-4 mr-1" />
+              {t('reject')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

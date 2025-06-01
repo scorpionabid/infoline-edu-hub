@@ -2,16 +2,19 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle, Clock, XCircle, FileEdit, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
-import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import DataEntryFormManager from '@/components/dataEntry/core/DataEntryFormManager';
 import { useDataEntryManager } from '@/hooks/dataEntry/useDataEntryManager';
+import { useStatusUIConfig } from '@/hooks/auth/useStatusPermissions';
+import { DataEntryStatus } from '@/types/core/dataEntry';
 
 // DataEntryForm Props
 interface DataEntryFormProps {
@@ -63,66 +66,39 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     checkSession();
   }, []);
   
-  // İcazələri və məlumatların redaktə etmə statusunu təyin etmək - Təkmilləşdirilmiş versiya
+  // ✅ DEĞİŞDİRİLMİŞ: Status-aware permissions using dataManager
   useEffect(() => {
-    // İstifadəçi və permissions-ın yoxlanması
-    if (!user) {
-      console.warn('DataEntry form: İstifadəçi məlumatları yüklənməyib');
+    // Wait for dataManager to be initialized
+    if (!dataManager || !dataManager.statusPermissions) {
       setFormStatus('view');
       setReadOnly(true);
       return;
     }
     
-    if (!permissions) {
-      console.warn('DataEntry form: Permissions obyekti yüklənməyib');
-      setFormStatus('view');
-      setReadOnly(true);
-      return;
-    }
+    const statusPerms = dataManager.statusPermissions;
+    
+    // Set form status based on status permissions
+    setFormStatus(statusPerms.canEdit ? 'edit' : 'view');
+    setReadOnly(statusPerms.readOnly);
 
-    // İcazələrə əsasən form statusunun qəti təyini
-    const hasEditPermission = permissions?.canEditData === true;
-    
-    // Force-read state-i sıfırlamaq və icazələri yenidən tətbiq etmək
-    setFormStatus(hasEditPermission ? 'edit' : 'view');
-    setReadOnly(!hasEditPermission);
-
-    // Ətraflı diaqnostika məlumatı
-    console.group('DataEntry Form Permissions Diagnostic');
-    console.log('User details:', {
-      id: user?.id || 'unknown',
-      role: user?.role || 'unknown',
-      region_id: user?.region_id,
-      sector_id: user?.sector_id,
-      school_id: user?.school_id
+    // Enhanced diagnostic logging
+    console.group('DataEntry Form - Status-Aware Permissions');
+    console.log('Entry Status:', dataManager.entryStatus);
+    console.log('Status Permissions:', {
+      canEdit: statusPerms.canEdit,
+      canSubmit: statusPerms.canSubmit,
+      canApprove: statusPerms.canApprove,
+      readOnly: statusPerms.readOnly,
+      allowedActions: statusPerms.allowedActions
     });
-    
-    console.log('Permission details:', {
-      canEditData: permissions?.canEditData,
-      hasSubmitPermission: permissions?.hasSubmitPermission,
-      isSuperAdmin: permissions?.isSuperAdmin,
-      isRegionAdmin: permissions?.isRegionAdmin,
-      isSectorAdmin: permissions?.isSectorAdmin,
-      isSchoolAdmin: permissions?.isSchoolAdmin
-    });
-    
-    console.log('Form status result:', {
-      formStatus: hasEditPermission ? 'edit' : 'view',
-      readOnly: !hasEditPermission,
-      permissions_loaded: !!permissions
+    console.log('Alerts:', statusPerms.alerts);
+    console.log('Form State:', {
+      formStatus: statusPerms.canEdit ? 'edit' : 'view',
+      readOnly: statusPerms.readOnly,
+      readOnlyReason: dataManager.readOnlyReason
     });
     console.groupEnd();
-    
-    // Debug informasiyası - əvvəlki formatı saxlayırıq geriyə uygunluq üçün
-    console.log('DataEntry form permissions:', {
-      user_id: user?.id,
-      user_role: user?.role,
-      can_edit: permissions?.canEditData === true,
-      can_submit: permissions?.hasSubmitPermission === true,
-      readOnly: readOnly,
-      formStatus: formStatus
-    });
-  }, [user, permissions]);
+  }, [dataManager?.statusPermissions, dataManager?.entryStatus]);
   
   // Safe categories check
   const safeCategories = React.useMemo(() => {
@@ -132,6 +108,9 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     }
     return categories.filter(cat => cat && cat.id);
   }, [categories]);
+  
+  // Status UI configuration hook for category display
+  const statusUIConfig = useStatusUIConfig(dataManager?.entryStatus);
   
   // Selected category with safety check
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
@@ -343,38 +322,96 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           <CardContent className="p-0">
             <ScrollArea className="h-[calc(100vh-15rem)]">
               <div className="space-y-1 p-2">
-                {safeCategories.map((category, index) => (
-                  <Button
-                    key={category.id || `category-${index}`}
-                    variant={selectedCategory?.id === category.id ? "default" : "ghost"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      selectedCategory?.id === category.id && "font-medium"
-                    )}
-                    onClick={() => {
-                      setCurrentCategoryIndex(index);
-                      setSelectedCategory(category);
-                    }}
-                  >
-                    {category.name || `Category ${index + 1}`}
-                    {/* Status göstəricilərini yalnız pending, approved və rejected üçün göstəririk */}
-                    {dataManager.entryStatus && dataManager.entryStatus !== 'draft' && (
-                      <span className={cn(
-                        "ml-auto text-xs px-2 py-0.5 rounded-full",
-                        dataManager.entryStatus === 'pending' && "bg-blue-100 text-blue-800",
-                        dataManager.entryStatus === 'approved' && "bg-green-100 text-green-800",
-                        dataManager.entryStatus === 'rejected' && "bg-red-100 text-red-800"
-                      )}>
-                        {t(dataManager.entryStatus)}
-                      </span>
-                    )}
-                  </Button>
-                ))}
+                {safeCategories.map((category, index) => {
+                  const isSelected = selectedCategory?.id === category.id;
+                  const statusUIConfig = useStatusUIConfig(dataManager.entryStatus);
+                  
+                  return (
+                    <Button
+                      key={category.id || `category-${index}`}
+                      variant={isSelected ? "default" : "ghost"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        isSelected && "font-medium"
+                      )}
+                      onClick={() => {
+                        setCurrentCategoryIndex(index);
+                        setSelectedCategory(category);
+                      }}
+                    >
+                      <span className="flex-1">{category.name || `Category ${index + 1}`}</span>
+                      
+                      {/* ✅ YENİ: Enhanced status display with proper icons */}
+                      {isSelected && dataManager.entryStatus && dataManager.entryStatus !== DataEntryStatus.DRAFT && (
+                        <div className="ml-2 flex items-center gap-1">
+                          {dataManager.entryStatus === DataEntryStatus.PENDING && <Clock className="w-3 h-3" />}
+                          {dataManager.entryStatus === DataEntryStatus.APPROVED && <CheckCircle className="w-3 h-3" />}
+                          {dataManager.entryStatus === DataEntryStatus.REJECTED && <XCircle className="w-3 h-3" />}
+                          
+                          <Badge 
+                            variant={statusUIConfig.badge.variant as any} 
+                            className="text-xs"
+                          >
+                            {t(dataManager.entryStatus)}
+                          </Badge>
+                        </div>
+                      )}
+                    </Button>
+                  );
+                })}
               </div>
             </ScrollArea>
           </CardContent>
         </Card>
       </div>
+      
+      {/* ✅ YENİ: Status alert display */}
+      {dataManager?.statusPermissions?.alerts?.message && (
+        <div className="md:col-span-4 mb-4">
+          <Alert 
+            variant={dataManager.statusPermissions.alerts.type === 'error' ? 'destructive' : 'default'}
+            className={cn(
+              dataManager.entryStatus === DataEntryStatus.APPROVED && "bg-green-50 border-green-200",
+              dataManager.entryStatus === DataEntryStatus.PENDING && "bg-blue-50 border-blue-200",
+              dataManager.entryStatus === DataEntryStatus.REJECTED && "bg-red-50 border-red-200"
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {dataManager.entryStatus === DataEntryStatus.APPROVED && <CheckCircle className="h-4 w-4 text-green-600" />}
+                {dataManager.entryStatus === DataEntryStatus.PENDING && <Clock className="h-4 w-4 text-blue-600" />}
+                {dataManager.entryStatus === DataEntryStatus.REJECTED && <XCircle className="h-4 w-4 text-red-600" />}
+                {(!dataManager.entryStatus || dataManager.entryStatus === DataEntryStatus.DRAFT) && <FileEdit className="h-4 w-4" />}
+                
+                <div>
+                  <AlertTitle className="text-sm font-medium">
+                    {dataManager.statusPermissions.alerts.type === 'success' && t('statusApproved')}
+                    {dataManager.statusPermissions.alerts.type === 'info' && t('statusInfo')}
+                    {dataManager.statusPermissions.alerts.type === 'warning' && t('statusWarning')}
+                    {dataManager.statusPermissions.alerts.type === 'error' && t('statusRejected')}
+                  </AlertTitle>
+                  <AlertDescription className="text-sm">
+                    {dataManager.statusPermissions.alerts.message}
+                  </AlertDescription>
+                </div>
+              </div>
+              
+              {/* Status-specific action buttons */}
+              {dataManager.statusPermissions.allowedActions.includes('reset') && (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => dataManager.handleReset()}
+                  disabled={dataManager.isLoading}
+                >
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                  {t('resetToDraft')}
+                </Button>
+              )}
+            </div>
+          </Alert>
+        </div>
+      )}
       
       {/* Data entry form with manager */}
       <div className="md:col-span-3">
@@ -392,7 +429,14 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           isSaving={dataManager.isSaving}
           isSubmitting={dataManager.isSubmitting}
           errors={dataManager.errors}
-          readOnly={readOnly}
+          readOnly={dataManager.readOnly}
+          // ✅ YENİ: Status-related props
+          entryStatus={dataManager.entryStatus}
+          statusPermissions={dataManager.statusPermissions}
+          onStatusTransition={dataManager.handleStatusTransition}
+          onApprove={dataManager.handleApprove}
+          onReject={dataManager.handleReject}
+          onReset={dataManager.handleReset}
         />
       </div>
     </div>

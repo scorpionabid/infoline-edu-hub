@@ -138,3 +138,140 @@ Common patterns for access rules:
    - User having a valid role
    - Auth store being properly initialized
    - Permissions hook correctly identifying user capabilities
+
+## Status Management API (YENİ)
+
+Status İdarəetmə API-si məlumat status dəyişikliklərini idarə edir.
+
+### Status Əldə etmə
+
+**Endpoint:** `GET /api/status/current`
+
+**Məqsəd:** Mövcud məlumat status-unu əldə etmək
+
+**Parameters:**
+- `schoolId` (string, required): Məktəb ID-si
+- `categoryId` (string, required): Kateqoriya ID-si
+
+**Response:**
+```json
+{
+  "success": true,
+  "status": "draft", // draft, pending, approved, rejected
+  "lastChanged": "2025-06-01T10:30:00Z",
+  "changedBy": "user-id"
+}
+```
+
+### Status Keçidi
+
+**Endpoint:** `POST /api/status/transition`
+
+**Məqsəd:** Status dəyişikliyi etmək
+
+**Request Body:**
+```json
+{
+  "schoolId": "school-123",
+  "categoryId": "category-456",
+  "currentStatus": "draft",
+  "newStatus": "pending",
+  "comment": "Ready for approval"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Status successfully changed",
+  "newStatus": "pending",
+  "transitionId": "transition-log-id"
+}
+```
+
+### Status Tarixçəsi
+
+**Endpoint:** `GET /api/status/history`
+
+**Məqsəd:** Məlumat status dəyişiklik tarixçəsi
+
+**Parameters:**
+- `dataEntryId` (string, required): Məlumat entry ID-si
+- `limit` (number, optional): Nəticə sayı (default: 50)
+
+**Response:**
+```json
+{
+  "success": true,
+  "history": [
+    {
+      "id": "log-123",
+      "oldStatus": "draft",
+      "newStatus": "pending",
+      "changedAt": "2025-06-01T10:30:00Z",
+      "changedBy": "user-id",
+      "changedByName": "John Doe",
+      "comment": "Submitted for approval"
+    }
+  ],
+  "total": 1
+}
+```
+
+### Status İcazələri
+
+**Endpoint:** `GET /api/status/permissions`
+
+**Məqsəd:** İstifadəçinin status əməliyyatları icazələrini əldə etmək
+
+**Parameters:**
+- `entryStatus` (string, required): Mövcud status
+- `schoolId` (string, required): Məktəb ID-si
+- `categoryId` (string, required): Kateqoriya ID-si
+
+**Response:**
+```json
+{
+  "success": true,
+  "permissions": {
+    "canEdit": true,
+    "canSubmit": true,
+    "canApprove": false,
+    "canReject": false,
+    "canReset": false,
+    "readOnly": false,
+    "allowedActions": ["edit", "submit"]
+  }
+}
+```
+
+### Status Validation
+
+**Endpoint:** `POST /api/status/validate`
+
+**Məqsəd:** Status keçidinin mümkün olub-olmadığını yoxlamaq
+
+**Request Body:**
+```json
+{
+  "currentStatus": "draft",
+  "newStatus": "pending",
+  "schoolId": "school-123",
+  "categoryId": "category-456"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "valid": true,
+  "reason": "Transition allowed",
+  "requiredFields": []
+}
+```
+
+---
+
+Bu API dokumentə İnfoLine platformasının REST API-lərini əhatə edir və developer-lər üçün aydın və detallı istifadə təlimatları təqdim edir.

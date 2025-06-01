@@ -5,11 +5,15 @@ import { useToast } from '@/hooks/use-toast';
 import { CategoryWithColumns } from '@/types/category';
 import { DataEntryForm, DataEntry } from '@/types/dataEntry';
 import { saveDataEntryForm, submitForApproval, getDataEntries, EntryValue, ServiceResponse } from '@/services/dataEntryService';
+import { StatusTransitionService, TransitionContext } from '@/services/statusTransitionService';
+import { useStatusPermissions } from '@/hooks/auth/useStatusPermissions';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { DataEntryStatus } from '@/types/core/dataEntry';
 // Real-time updates are temporarily disabled
 // import { useDataEntryRealTime } from '@/hooks/realtime/useRealTimeUpdates';
 
-// Define the status type directly from DataEntry to avoid type errors
-type DataEntryStatus = DataEntry['status'];
+// Status type is now imported from core types
+// type DataEntryStatus = DataEntry['status']; // Removed - using imported type
 
 interface UseDataEntryManagerOptions {
   categoryId: string;
@@ -20,16 +24,20 @@ interface UseDataEntryManagerOptions {
 export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataEntryManagerOptions) => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const user = useAuthStore(state => state.user);
   
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [entryStatus, setEntryStatus] = useState<DataEntryStatus>('draft');
+  const [entryStatus, setEntryStatus] = useState<DataEntryStatus | undefined>(undefined);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // ✅ YENİ: Status-based permissions
+  const statusPermissions = useStatusPermissions(entryStatus, categoryId, schoolId);
   
   // Məlumatların sonsuz dövrə yüklənməsini idarə etmək üçün ref-lər
   const isDataLoaded = useRef<boolean>(false);
@@ -126,9 +134,15 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
         setFormData(dataMap);
         setHasUnsavedChanges(false);
         
-        // Status təyinatı
+        // ✅ DEĞİŞDİRİLMİŞ: Enhanced status assignment
         if (result.data.length > 0) {
-          setEntryStatus(result.data[0].status as DataEntryStatus);
+          const status = result.data[0].status as DataEntryStatus;
+          setEntryStatus(status);
+          console.log('Status set from data:', status);
+        } else {
+          // Default to draft for new entries
+          setEntryStatus(DataEntryStatus.DRAFT);
+          console.log('Status set to default: draft');
         }
         
         // Uğurlu yükləmə ilə flag və keş yenilənir
@@ -231,8 +245,12 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
     return () => clearTimeout(autoSaveTimer);
   }, [formData, hasUnsavedChanges, entryStatus]);
 
-  // Save as draft
+  // ✅ ENHANCED: Save with status validation
   const handleSave = useCallback(async (): Promise<void> => {
+    console.group('handleSave - Enhanced');
+    console.log('Save attempt:', { categoryId, schoolId, canEdit: statusPermissions.canEdit });
+    
+    // Pre-validation checks
     if (!categoryId || categoryId === '' || !schoolId || schoolId === '') {
       console.warn('Cannot save - missing category ID or school ID');
       toast({
@@ -240,7 +258,26 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
         description: t('missingRequiredData'),
         variant: 'destructive'
       });
+      console.groupEnd();
       return;
+    }
+    
+    // ✅ YENİ: Status permission check
+    if (!statusPermissions.canEdit) {
+      const errorMessage = entryStatus === DataEntryStatus.APPROVED 
+        ? t('cannotModifyApprovedData')
+        : entryStatus === DataEntryStatus.PENDING
+        ? t('cannotModifyPendingData')
+        : t('cannotEditInCurrentStatus');
+      
+      console.warn('Save blocked by status permissions:', { entryStatus, canEdit: statusPermissions.canEdit });
+      toast({
+        title: t('error'),
+        description: errorMessage,
+        variant: 'destructive'
+      });
+      console.groupEnd();
+      throw new Error(errorMessage);
     }
     
     if (!category || !category.columns) {
@@ -250,6 +287,7 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
         description: t('categoryDataMissing'),
         variant: 'destructive'
       });
+      console.groupEnd();
       throw new Error('Category data missing');
     }
     
@@ -271,29 +309,42 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
         }
       });
       
-      // Call service to save data
+      console.log('Saving entries:', entries.length);
+      
+      // Call enhanced service to save data
       const result = await saveDataEntryForm(schoolId, categoryId, entries);
       
       if (result.success) {
         setLastSaved(new Date().toISOString());
         setHasUnsavedChanges(false);
-        // Update status if needed
-        if (result.status) {
+        
+        // Update status if changed
+        if (result.status && result.status !== entryStatus) {
           setEntryStatus(result.status as DataEntryStatus);
+          console.log('Status updated after save:', result.status);
         }
         
         toast({
           title: t('success'),
           description: result.message || t('dataSavedSuccessfully'),
         });
+        
+        console.log('Save successful');
       } else {
         // Handle errors properly
         setErrors(result.errors || { general: result.error || 'Unknown error' });
+        
+        // Special handling for status-related errors
+        if (result.error?.includes('approved')) {
+          setEntryStatus(DataEntryStatus.APPROVED); // Update local status
+        }
+        
         toast({
           title: t('error'),
           description: result.message || t('errorSavingData'),
           variant: 'destructive'
         });
+        console.error('Save failed:', result.error);
         throw new Error(result.error || 'Error saving data');
       }
     } catch (error: any) {
@@ -306,11 +357,15 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
       throw error;
     } finally {
       setIsSaving(false);
+      console.groupEnd();
     }
-  }, [categoryId, schoolId, category, formData, t, toast]);
+  }, [categoryId, schoolId, category, formData, statusPermissions, entryStatus, t, toast]);
 
-  // Submit for approval
+  // ✅ ENHANCED: Submit with status transition validation
   const handleSubmit = useCallback(async (): Promise<void> => {
+    console.group('handleSubmit - Enhanced');
+    console.log('Submit attempt:', { categoryId, schoolId, canSubmit: statusPermissions.canSubmit });
+    
     if (!categoryId || categoryId === '' || !schoolId || schoolId === '') {
       console.warn('Cannot submit - missing category ID or school ID');
       toast({
@@ -318,20 +373,57 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
         description: t('missingRequiredData'),
         variant: 'destructive'
       });
+      console.groupEnd();
       return;
+    }
+    
+    // ✅ YENİ: Status permission check
+    if (!statusPermissions.canSubmit) {
+      const errorMessage = entryStatus === DataEntryStatus.APPROVED 
+        ? t('dataAlreadyApproved')
+        : entryStatus === DataEntryStatus.PENDING
+        ? t('dataAlreadyPending') 
+        : t('cannotSubmitInCurrentStatus');
+      
+      console.warn('Submit blocked by status permissions:', { entryStatus, canSubmit: statusPermissions.canSubmit });
+      toast({
+        title: t('error'),
+        description: errorMessage,
+        variant: 'destructive'
+      });
+      console.groupEnd();
+      throw new Error(errorMessage);
+    }
+    
+    // ✅ YENİ: Check if all required fields are filled
+    if (!statusPermissions.statusInfo.canTransitionTo.includes(DataEntryStatus.PENDING)) {
+      toast({
+        title: t('error'),
+        description: t('pleaseCompleteAllRequiredFields'),
+        variant: 'destructive'
+      });
+      console.groupEnd();
+      throw new Error('Required fields not completed');
     }
     
     setIsSubmitting(true);
     try {
       // First save the form to ensure all data is up to date
+      console.log('Saving before submit...');
       await handleSave();
       
-      // Then submit for approval
-      const result = await submitForApproval(schoolId, categoryId);
+      // ✅ YENİ: Enhanced submit with status transition
+      console.log('Executing submit with status transition...');
+      const result = await submitForApproval(schoolId, categoryId, 'Submitted for approval');
       
       if (result.success) {
-        // Update status from response or set to pending
-        setEntryStatus(result.status as DataEntryStatus || 'pending');
+        // Update status from response
+        const newStatus = result.status as DataEntryStatus || DataEntryStatus.PENDING;
+        setEntryStatus(newStatus);
+        setHasUnsavedChanges(false);
+        
+        console.log('Submit successful, new status:', newStatus);
+        
         toast({
           title: t('success'),
           description: result.message || t('dataSubmittedForApproval'),
@@ -339,9 +431,20 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
       } else {
         // Handle errors properly
         setErrors(result.errors || { general: result.error || 'Unknown error' });
+        
+        console.error('Submit failed:', result.error);
+        
+        // Special error messages for transition failures
+        let errorMessage = result.message || t('errorSubmittingData');
+        if (result.error?.includes('transition')) {
+          errorMessage = t('statusTransitionNotAllowed');
+        } else if (result.error?.includes('required')) {
+          errorMessage = t('pleaseCompleteAllRequiredFields');
+        }
+        
         toast({
           title: t('error'),
-          description: result.message || t('errorSubmittingData'),
+          description: errorMessage,
           variant: 'destructive'
         });
         throw new Error(result.error || 'Error submitting data');
@@ -356,8 +459,9 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
       throw error;
     } finally {
       setIsSubmitting(false);
+      console.groupEnd();
     }
-  }, [categoryId, schoolId, handleSave, t, toast]);
+  }, [categoryId, schoolId, statusPermissions, entryStatus, handleSave, t, toast]);
 
   // Excel import handler
   const handleImportData = useCallback(async (data: Record<string, any>): Promise<void> => {
@@ -428,22 +532,107 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
     }
   }, [categoryId, schoolId, loadData, t, toast]);
 
+  // ✅ YENİ: Status transition handler for approval/rejection actions
+  const handleStatusTransition = useCallback(async (
+    newStatus: DataEntryStatus,
+    comment?: string
+  ): Promise<void> => {
+    if (!user || !entryStatus) {
+      throw new Error('User or current status not available');
+    }
+    
+    console.group('handleStatusTransition');
+    console.log('Transition request:', { from: entryStatus, to: newStatus, comment });
+    
+    try {
+      // Get user role
+      const userRole = user.role;
+      if (!userRole) {
+        throw new Error('User role not found');
+      }
+      
+      const transitionContext: TransitionContext = {
+        schoolId,
+        categoryId,
+        userId: user.id,
+        userRole,
+        comment
+      };
+      
+      // Execute transition
+      const result = await StatusTransitionService.executeTransition(
+        entryStatus,
+        newStatus,
+        transitionContext
+      );
+      
+      if (result.success) {
+        setEntryStatus(newStatus);
+        await loadData(true); // Refresh data
+        
+        console.log('Status transition successful:', newStatus);
+        
+        toast({
+          title: t('success'),
+          description: result.message || t('statusUpdatedSuccessfully'),
+        });
+      } else {
+        console.error('Status transition failed:', result.error);
+        throw new Error(result.error || 'Status transition failed');
+      }
+    } catch (error: any) {
+      console.error('Error in status transition:', error);
+      toast({
+        title: t('error'),
+        description: error.message || t('statusTransitionFailed'),
+        variant: 'destructive'
+      });
+      throw error;
+    } finally {
+      console.groupEnd();
+    }
+  }, [schoolId, categoryId, entryStatus, user, loadData, t, toast]);
+  
   return {
+    // Core data
     formData,
     setFormData,
+    
+    // Loading states
     isLoading,
     isSaving,
     isSubmitting,
     isRefreshing,
+    
+    // Status and errors
     errors,
     entryStatus,
     lastSaved,
     hasUnsavedChanges,
+    
+    // ✅ YENİ: Status-based permissions
+    statusPermissions,
+    canEdit: statusPermissions.canEdit,
+    canSubmit: statusPermissions.canSubmit,
+    canApprove: statusPermissions.canApprove,
+    canReject: statusPermissions.canReject,
+    readOnly: statusPermissions.readOnly,
+    readOnlyReason: !statusPermissions.canEdit ? 
+      (entryStatus === DataEntryStatus.APPROVED ? 'approved' : 
+       entryStatus === DataEntryStatus.PENDING ? 'pending' : 'noPermission') : null,
+    
+    // Core actions
     handleFormDataChange,
     handleSave,
     handleSubmit,
     handleExportTemplate,
     handleImportData,
-    refreshData
+    refreshData,
+    
+    // ✅ YENİ: Status transition actions
+    handleStatusTransition,
+    handleApprove: (comment?: string) => handleStatusTransition(DataEntryStatus.APPROVED, comment),
+    handleReject: (reason: string) => handleStatusTransition(DataEntryStatus.REJECTED, reason),
+    handleReset: () => handleStatusTransition(DataEntryStatus.DRAFT, 'Reset to draft')
   };
 };

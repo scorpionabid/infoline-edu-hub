@@ -206,7 +206,7 @@ Kateqoriyalara aid sütunların təsvirini saxlayır.
 | category_id | uuid | YES | Kateqoriya ID-si (foreign key) |
 | column_id | uuid | YES | Sütun ID-si (foreign key) |
 | value | text | NO | Daxil edilmiş dəyər |
-| status | text | NO | Status (Gözləmədə, Təsdiqlənmiş, Rədd edilmiş) |
+| status | text | NO | Status (draft, pending, approved, rejected) - DEFAULT: 'draft' |
 | created_at | timestamp with time zone | YES | Yaradılma tarixi |
 | updated_at | timestamp with time zone | YES | Yenilənmə tarixi |
 | created_by | uuid | NO | Yaradan istifadəçi ID-si |
@@ -218,11 +218,42 @@ Kateqoriyalara aid sütunların təsvirini saxlayır.
 
 **Indekslər:**
 - `data_entries_pkey`: Primary key indeksi `id` sütunu üzərində
+- `idx_data_entries_status`: Status üzərində indeks (yeni əlavə)
+
+**Check Constraints:**
+- `status CHECK (status IN ('draft', 'pending', 'approved', 'rejected'))`: Status dəyərlərinin məhdudlaşdırılması
 
 **Foreign Keys:**
 - `data_entries_school_id_fkey`: `school_id` sütunu `schools` cədvəlinin `id` sütununa istinad edir
 - `data_entries_category_id_fkey`: `category_id` sütunu `categories` cədvəlinin `id` sütununa istinad edir
 - `data_entries_column_id_fkey`: `column_id` sütunu `columns` cədvəlinin `id` sütununa istinad edir
+
+### 2.6a. `status_transition_log` - Status Keçidi Tarixçəsi (YENİ)
+
+Məlumat status dəyişikliklərinin audit trail-ini saxlayır.
+
+| Sütun Adı | Tip | Məcburi | Təsvir |
+|-----------|-----|---------|--------|
+| id | uuid | YES | Unikal identifikator (primary key) |
+| data_entry_id | varchar(255) | YES | Kompozit ID (schoolId-categoryId) |
+| old_status | text | YES | Əvvəlki status |
+| new_status | text | YES | Yeni status |
+| changed_by | uuid | YES | Dəyişdirən istifadəçi ID-si (foreign key) |
+| changed_at | timestamp with time zone | NO | Dəyişiklik tarixi (DEFAULT: NOW()) |
+| comment | text | NO | Şərh (təsdiq/rədd səbəbi) |
+| metadata | jsonb | NO | Əlavə məlumatlar (JSON) |
+
+**Indekslər:**
+- `status_transition_log_pkey`: Primary key indeksi `id` sütunu üzərində
+- `idx_status_transition_log_entry_id`: Data entry ID üzərində indeks
+- `idx_status_transition_log_changed_at`: Dəyişiklik tarixi üzərində indeks (DESC)
+- `idx_status_transition_log_changed_by`: Dəyişdirən istifadəçi üzərində indeks
+
+**Check Constraints:**
+- `valid_status_values CHECK (old_status IN ('draft', 'pending', 'approved', 'rejected') AND new_status IN ('draft', 'pending', 'approved', 'rejected'))`: Status dəyərlərinin validasiyası
+
+**Foreign Keys:**
+- `status_transition_log_changed_by_fkey`: `changed_by` sütunu `auth.users` cədvəlinin `id` sütununa istinad edir
 
 ### 2.7. `sector_data_entries` - Sektor məlumat girişləri
 
@@ -417,6 +448,7 @@ categories (1) ───► columns (1) ───► data_entries (n)
 | check_data_entry_approval | UPDATE | data_entries | check_approval_permissions() | Məlumat təsdiqləmə icazələrini yoxlayır |
 | check_region_name_before_insert_update | INSERT, UPDATE | regions | check_region_name_uniqueness() | Region adının unikal olmasını təmin edir |
 | data_change_notification_trigger | INSERT, UPDATE, DELETE | data_entries | notify_data_change() | Məlumat dəyişdikdə bildiriş göndərir |
+| data_entries_status_validation | UPDATE | data_entries | validate_status_transition() | Status dəyişikliklərini təsdiqləyir və audit log yaratır (YENİ) |
 | on_data_entry_insert | INSERT | data_entries | notify_on_data_entry_insert() | Yeni məlumat daxil edildikdə bildiriş göndərir |
 | sector_data_completion_update | INSERT, UPDATE, DELETE | data_entries | update_sector_completion_rate() | Sektor tamamlanma faizini yeniləyir |
 | sector_data_status_change_notification | UPDATE | sector_data_entries | notify_on_sector_data_status_change() | Sektor məlumat statusu dəyişdikdə bildiriş göndərir |
@@ -441,6 +473,7 @@ categories (1) ───► columns (1) ───► data_entries (n)
 | notify_data_change | Məlumat dəyişikliyi haqqında bildiriş göndərir |
 | update_entries_status | Məlumat statusunu yeniləyir |
 | validate_column_value | Sütun dəyərinin validasiyasını edir |
+| validate_status_transition | Status keçidlərini validasiya edir və audit log yaradır (YENİ) |
 
 ## 5. RLS (Row Level Security) Siyasətləri
 
@@ -544,6 +577,13 @@ categories (1) ───► columns (1) ───► data_entries (n)
 | Users can view files they have access to | authenticated | SELECT | Bucket ID-nin 'school-files' olması və istifadəçinin authenticated olması |
 | Users can update files they have access to | authenticated | UPDATE | Bucket ID-nin 'school-files' olması və istifadəçinin authenticated olması |
 | Users can delete files they have access to | authenticated | DELETE | Bucket ID-nin 'school-files' olması və istifadəçinin authenticated olması |
+
+### 5.13. `status_transition_log` üçün RLS (YENİ)
+
+| Siyasət Adı | Rol | Əmr | Şərt |
+|-------------|-----|-----|------|
+| status_transition_read_policy | authenticated | SELECT | SuperAdmin bütün log-lara, diğərləri yalnız öz sahelərindeki dəyişikliklərə baxa bilər |
+| status_transition_insert_policy | authenticated | INSERT | Yalnız öz istifadəçi ID-si ilə log əlavə edə bilər |
 
 
 
@@ -861,7 +901,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Hesabat ixracı üçün məlumat hazırlayan funksiya
 CREATE OR REPLACE FUNCTION generate_report_data(
     p_report_id uuid
-) RETURNS json AS $$
+) RETURNS json AS $
 DECLARE
     v_report_type text;
     v_params json;
@@ -901,7 +941,30 @@ BEGIN
     
     RETURN v_result;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+### 11.3. Status Transition Helper Views (YENİ)
+
+```sql
+-- Status history görünüşü
+CREATE OR REPLACE VIEW status_history_view AS
+SELECT 
+  stl.id,
+  stl.data_entry_id,
+  stl.old_status,
+  stl.new_status,
+  stl.changed_at,
+  stl.comment,
+  p.full_name as changed_by_name,
+  p.email as changed_by_email,
+  stl.metadata
+FROM status_transition_log stl
+LEFT JOIN profiles p ON stl.changed_by = p.id
+ORDER BY stl.changed_at DESC;
+
+-- Grant access to the view
+GRANT SELECT ON status_history_view TO authenticated;
 ```
 
 ## 12. Verilənlər Bazası Səhvləri və Troubleshooting
