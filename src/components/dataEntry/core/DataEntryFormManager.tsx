@@ -6,15 +6,20 @@ import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Save, Send, Download, Upload, CheckCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, Save, Send, CheckCircle, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { CategoryWithColumns } from '@/types/category';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
 import { StatusPermissions } from '@/hooks/auth/useStatusPermissions';
+import { ImportResult } from '@/types/excel';
 import { useForm, FormProvider } from 'react-hook-form';
 import FormFields from './FormFields';
 import DataEntryFormContent from './DataEntryFormContent';
+import ExcelActions from '@/components/dataEntry/ExcelActions';
+import { useExcelImport } from '@/hooks/excel/useExcelImport';
+import { useExcelExport } from '@/hooks/excel/useExcelExport';
 
 interface DataEntryFormManagerProps {
   category: CategoryWithColumns;
@@ -67,6 +72,7 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
 }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const user = useAuthStore(state => state.user);
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -76,6 +82,49 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
   const [approvalComment, setApprovalComment] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+
+  // ✅ YENİ: Enhanced Excel hooks
+  const excelImport = useExcelImport({
+    category,
+    schoolId,
+    onImportComplete: handleExcelImportComplete,
+    onProgress: (progress) => {
+      console.log('Excel import progress:', progress);
+      // Bu progress məlumatını istifadəçiyə göstərmək üçün istifadə edə bilərik
+    }
+  });
+  
+  const excelExport = useExcelExport({
+    category,
+    schoolId,
+    onExportComplete: (success) => {
+      if (success) {
+        toast({
+          title: t('success'),
+          description: t('dataExportedSuccessfully')
+        });
+      }
+    }
+  });
+
+  // Handle Excel import completion
+  function handleExcelImportComplete(result: ImportResult) {
+    if (result.success) {
+      // Refresh form data after successful import
+      onRefresh?.();
+      
+      toast({
+        title: t('success'),
+        description: t('excelImportCompleted').replace('{count}', String(result.successfulRows))
+      });
+    } else {
+      toast({
+        title: t('error'),
+        description: result.message || t('excelImportFailed'),
+        variant: 'destructive'
+      });
+    }
+  }
 
   // Initialize React Hook Form
   const formMethods = useForm({
@@ -206,38 +255,6 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
       }
     }
   }, [onRefresh, t, toast]);
-
-  // Handle file import
-  const handleFileImport = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-      toast({
-        title: t('error'),
-        description: t('pleaseUploadExcelFile'),
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    try {
-      await onImportData(file);
-      toast({
-        title: t('success'),
-        description: t('dataImportedSuccessfully'),
-      });
-    } catch (error) {
-      toast({
-        title: t('error'),
-        description: t('errorImportingData'),
-        variant: 'destructive'
-      });
-    }
-
-    // Reset file input
-    event.target.value = '';
-  }, [onImportData, t, toast]);
 
   // ✅ YENİ: Handle approval with comment
   const handleApprovalClick = useCallback(() => {
@@ -382,15 +399,16 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
               </CardTitle>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onExportTemplate}
-                disabled={isLoading || isSaving || isSubmitting}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {t('downloadTemplate')}
-              </Button>
+              {/* ✅ YENİ: Enhanced Excel Actions */}
+              <ExcelActions
+                category={category}
+                schoolId={schoolId}
+                userId={user?.id}
+                onImportComplete={handleExcelImportComplete}
+                // Legacy compatibility
+                onDownloadLegacy={onExportTemplate}
+                onUploadLegacy={onImportData}
+              />
               
               {onRefresh && (
                 <Button 
@@ -404,24 +422,6 @@ const DataEntryFormManager: React.FC<DataEntryFormManagerProps> = ({
                   {t('refreshData')}
                 </Button>
               )}
-              
-              <div className="relative">
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileImport}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  disabled={readOnly}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={readOnly}
-                >
-                  <Upload className="w-4 h-4 mr-1" />
-                  {t('importData')}
-                </Button>
-              </div>
             </div>
           </div>
           

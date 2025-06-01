@@ -66,6 +66,54 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     checkSession();
   }, []);
   
+  // Bu useEffect-i dataManager yaradıldıqdan sonra köçürürük
+  
+  // Safe categories check
+  const safeCategories = React.useMemo(() => {
+    if (!Array.isArray(categories)) {
+      console.warn('DataEntryForm: categories is not an array:', categories);
+      return [];
+    }
+    return categories.filter(cat => cat && cat.id);
+  }, [categories]);
+  
+  // Selected category with safety check
+  const [selectedCategory, setSelectedCategory] = useState<any>(null);
+  
+  useEffect(() => {
+    if (initialCategoryId && safeCategories.length > 0) {
+      const category = safeCategories.find(cat => cat.id === initialCategoryId);
+      if (category) {
+        setSelectedCategory(category);
+      } else if (safeCategories.length > 0) {
+        setSelectedCategory(safeCategories[0]);
+      }
+    } else if (safeCategories.length > 0) {
+      setSelectedCategory(safeCategories[0]);
+    }
+  }, [initialCategoryId, safeCategories]);
+
+  // Data entry manager hook - only initialize when we have valid data
+  const shouldInitializeManager = !!selectedCategory && !!selectedCategory.id && !!schoolId;
+
+  // Debug məlumatları
+  console.group('DataEntry Component - Initial Values');
+  console.log('Selected Category:', selectedCategory);
+  console.log('School ID:', schoolId);
+  console.log('Should Initialize Manager:', shouldInitializeManager);
+  console.groupEnd();
+  
+  // Məlumat menecerini initializə etmək
+  // loadRetryCount değişdikdə təkrar yüklənməsini təmin etmək üçün dependency kimi əlavə edilib
+  const dataManager = useDataEntryManager({
+    categoryId: shouldInitializeManager ? selectedCategory?.id : '',
+    schoolId: shouldInitializeManager ? schoolId : '',
+    category: selectedCategory
+  });
+  
+  // Status UI configuration hook for category display
+  const statusUIConfig = useStatusUIConfig(dataManager?.entryStatus);
+  
   // ✅ DEĞİŞDİRİLMİŞ: Status-aware permissions using dataManager
   useEffect(() => {
     // Wait for dataManager to be initialized
@@ -99,52 +147,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     });
     console.groupEnd();
   }, [dataManager?.statusPermissions, dataManager?.entryStatus]);
-  
-  // Safe categories check
-  const safeCategories = React.useMemo(() => {
-    if (!Array.isArray(categories)) {
-      console.warn('DataEntryForm: categories is not an array:', categories);
-      return [];
-    }
-    return categories.filter(cat => cat && cat.id);
-  }, [categories]);
-  
-  // Status UI configuration hook for category display
-  const statusUIConfig = useStatusUIConfig(dataManager?.entryStatus);
-  
-  // Selected category with safety check
-  const [selectedCategory, setSelectedCategory] = useState<any>(null);
-  
-  useEffect(() => {
-    if (initialCategoryId && safeCategories.length > 0) {
-      const category = safeCategories.find(cat => cat.id === initialCategoryId);
-      if (category) {
-        setSelectedCategory(category);
-      } else if (safeCategories.length > 0) {
-        setSelectedCategory(safeCategories[0]);
-      }
-    } else if (safeCategories.length > 0) {
-      setSelectedCategory(safeCategories[0]);
-    }
-  }, [initialCategoryId, safeCategories]);
-
-  // Data entry manager hook - only initialize when we have valid data
-  const shouldInitializeManager = !!selectedCategory && !!selectedCategory.id && !!schoolId;
-
-  // Debug məlumatları
-  console.group('DataEntry Component - Initial Values');
-  console.log('Selected Category:', selectedCategory);
-  console.log('School ID:', schoolId);
-  console.log('Should Initialize Manager:', shouldInitializeManager);
-  console.groupEnd();
-  
-  // Məlumat menecerini initializə etmək
-  // loadRetryCount değişdikdə təkrar yüklənməsini təmin etmək üçün dependency kimi əlavə edilib
-  const dataManager = useDataEntryManager({
-    categoryId: shouldInitializeManager ? selectedCategory.id : '',
-    schoolId: shouldInitializeManager ? schoolId : '',
-    category: selectedCategory
-  });
   
   // loadRetryCount dəyişdikdə məcburi yenidən yükləmə
   useEffect(() => {
@@ -324,7 +326,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
               <div className="space-y-1 p-2">
                 {safeCategories.map((category, index) => {
                   const isSelected = selectedCategory?.id === category.id;
-                  const statusUIConfig = useStatusUIConfig(dataManager.entryStatus);
+                  // Hook-u map içərisində istifadə etmirik
                   
                   return (
                     <Button
@@ -349,7 +351,9 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                           {dataManager.entryStatus === DataEntryStatus.REJECTED && <XCircle className="w-3 h-3" />}
                           
                           <Badge 
-                            variant={statusUIConfig.badge.variant as any} 
+                            variant={dataManager.entryStatus === DataEntryStatus.APPROVED ? "success" :
+                                    dataManager.entryStatus === DataEntryStatus.PENDING ? "outline" :
+                                    dataManager.entryStatus === DataEntryStatus.REJECTED ? "destructive" : "default"} 
                             className="text-xs"
                           >
                             {t(dataManager.entryStatus)}
@@ -415,29 +419,38 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
       
       {/* Data entry form with manager */}
       <div className="md:col-span-3">
-        <DataEntryFormManager
-          category={selectedCategory}
-          schoolId={schoolId || ''}
-          formData={dataManager.formData}
-          onFormDataChange={dataManager.setFormData}
-          onSave={dataManager.handleSave}
-          onSubmit={dataManager.handleSubmit}
-          onExportTemplate={dataManager.handleExportTemplate}
-          onImportData={dataManager.handleImportData}
-          onRefresh={dataManager.refreshData}
-          isLoading={dataManager.isLoading || dataManager.isRefreshing}
-          isSaving={dataManager.isSaving}
-          isSubmitting={dataManager.isSubmitting}
-          errors={dataManager.errors}
-          readOnly={dataManager.readOnly}
-          // ✅ YENİ: Status-related props
-          entryStatus={dataManager.entryStatus}
-          statusPermissions={dataManager.statusPermissions}
-          onStatusTransition={dataManager.handleStatusTransition}
-          onApprove={dataManager.handleApprove}
-          onReject={dataManager.handleReject}
-          onReset={dataManager.handleReset}
-        />
+        {selectedCategory ? (
+          <DataEntryFormManager
+            category={selectedCategory}
+            schoolId={schoolId || ''}
+            formData={dataManager.formData}
+            onFormDataChange={dataManager.setFormData}
+            onSave={dataManager.handleSave}
+            onSubmit={dataManager.handleSubmit}
+            onExportTemplate={dataManager.handleExportTemplate}
+            onImportData={dataManager.handleImportData}
+            onRefresh={dataManager.refreshData}
+            isLoading={dataManager.isLoading || dataManager.isRefreshing}
+            isSaving={dataManager.isSaving}
+            isSubmitting={dataManager.isSubmitting}
+            errors={dataManager.errors}
+            readOnly={dataManager.readOnly}
+            // ✅ YENİ: Status-related props
+            entryStatus={dataManager.entryStatus}
+            statusPermissions={dataManager.statusPermissions}
+            onStatusTransition={dataManager.handleStatusTransition}
+            onApprove={dataManager.handleApprove}
+            onReject={dataManager.handleReject}
+            onReset={dataManager.handleReset}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full p-6 border rounded-lg border-dashed">
+            <div className="text-center">
+              <h3 className="font-medium">{t('selectCategoryToViewForm')}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{t('pleaseSelectCategoryFromList')}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
