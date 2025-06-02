@@ -516,9 +516,14 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
         
         // Tamamla
         const finalResult: ImportResult = {
+          success: failedRows === 0,
           totalRows,
           successfulRows,
-          failedRows
+          failedRows,
+          errors: simulationErrors || [],
+          message: failedRows === 0 
+            ? `${totalRows} məlumat uğurla import edildi.` 
+            : `${successfulRows} məlumat uğurla import edildi, ${failedRows} məlumatda xəta var.`
         };
         
         setImportResult(finalResult);

@@ -38,6 +38,28 @@ export default defineConfig(({ mode }) => ({
       alias: {
         '@': path.resolve(__dirname, './src')
       }
+    },
+    // Coverage konfiqurasiyası
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/setupTests.ts',
+        'src/__tests__/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        'dist/',
+        'build/'
+      ],
+      thresholds: {
+        global: {
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80
+        }
+      }
     }
   }
 }));

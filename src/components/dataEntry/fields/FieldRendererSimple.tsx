@@ -5,7 +5,7 @@ import Field, { ReactHookFormAdapter } from './Field';
 import { Column, ColumnType } from '@/types/column';
 
 // İnterfeysləri saxlayırıq ki, geriyə uyğunluq olsun
-export { ColumnType };
+export type { ColumnType };
 
 export interface FieldProps {
   type?: ColumnType;
