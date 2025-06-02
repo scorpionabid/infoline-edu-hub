@@ -10,7 +10,9 @@ export type ColumnType =
   | 'time'
   | 'email'
   | 'phone'
-  | 'url';
+  | 'url'
+  | 'password'
+  | 'file';
 
 export interface Column {
   id: string;
@@ -30,6 +32,8 @@ export interface Column {
   description?: string;
   section?: string;
   key?: string;
+  parent_column_id?: string;
+  version?: number;
 }
 
 export interface ColumnWithValidation extends Column {
@@ -69,19 +73,22 @@ export interface ColumnFormValues {
   };
   category_id?: string;
   section?: string;
-  description?: string; // Əlavə etdik, səhv xətasını həll etmək üçün
+  description?: string;
 }
 
 export interface ColumnTypeDefinition {
   value: ColumnType;
   label: string;
   description: string;
-  icon: string;
+  icon: React.ReactNode;
+  hasOptions?: boolean;
 }
 
 // Field Props Interface for components
 export interface FieldProps {
-  columnType: ColumnType;
+  type?: ColumnType;
+  columnType?: ColumnType;
+  column?: Column;
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
@@ -93,4 +100,5 @@ export interface FieldProps {
   validation?: any;
   options?: ColumnOption[];
   onBlur?: () => void;
+  onValueChange?: (value: any) => void;
 }

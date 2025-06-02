@@ -1,10 +1,10 @@
+
 import React from 'react';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Column } from '@/types/column';
 import { useFormContext } from 'react-hook-form';
 import Field, { ReactHookFormAdapter } from '../fields/Field';
 
-// Define proper types
 interface FormFieldsProps {
   columns?: Column[];
   disabled?: boolean;
@@ -16,7 +16,6 @@ interface FormFieldsProps {
  * Yeni Field komponentindən və ReactHookFormAdapter-dən istifadə edir
  */
 const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false, readOnly = false }) => {
-  // Defensively filter columns to ensure all are valid using our utility functions
   const safeColumns = React.useMemo(() => {
     try {
       if (!Array.isArray(columns)) {
@@ -33,7 +32,6 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
           console.warn('FormFields found column without ID:', col);
           return false;
         }
-        // Additional UUID validation - checking if id is a valid string
         if (typeof col.id !== 'string' || col.id.trim() === '') {
           console.warn('FormFields found column with invalid ID format:', col.id);
           return false;
@@ -48,13 +46,11 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
     
   const formContext = useFormContext();
   
-  // Form konteksti yoxdursa
   if (!formContext) {
     console.error('FormFields: No form context found');
     return <div className="p-4 text-red-500">Form konteksti tapılmadı</div>;
   }
   
-  // React Hook Form adapter
   const adapter = React.useMemo(() => {
     return new ReactHookFormAdapter(formContext);
   }, [formContext]);

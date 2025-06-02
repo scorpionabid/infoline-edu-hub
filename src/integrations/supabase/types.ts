@@ -758,6 +758,39 @@ export type Database = {
           },
         ]
       }
+      status_transition_log: {
+        Row: {
+          changed_at: string | null
+          changed_by: string | null
+          comment: string | null
+          data_entry_id: string
+          id: string
+          metadata: Json | null
+          new_status: string
+          old_status: string
+        }
+        Insert: {
+          changed_at?: string | null
+          changed_by?: string | null
+          comment?: string | null
+          data_entry_id: string
+          id?: string
+          metadata?: Json | null
+          new_status: string
+          old_status: string
+        }
+        Update: {
+          changed_at?: string | null
+          changed_by?: string | null
+          comment?: string | null
+          data_entry_id?: string
+          id?: string
+          metadata?: Json | null
+          new_status?: string
+          old_status?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -843,7 +876,20 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      status_history_view: {
+        Row: {
+          changed_at: string | null
+          changed_by_email: string | null
+          changed_by_name: string | null
+          comment: string | null
+          data_entry_id: string | null
+          id: string | null
+          metadata: Json | null
+          new_status: string | null
+          old_status: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       assign_region_admin: {

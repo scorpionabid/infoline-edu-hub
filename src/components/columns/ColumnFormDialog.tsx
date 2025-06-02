@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Column, ColumnFormValues } from '@/types/column';
-import { useForm, Control, FieldValues, UseFormReturn } from 'react-hook-form';
 import { useColumnForm } from '@/hooks/columns/useColumnForm';
 import { Category } from '@/types/category';
 import ColumnTypeSelector from './columnDialog/ColumnTypeSelector';
@@ -22,25 +21,24 @@ import OptionsField from './columnDialog/OptionsField';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface ColumnFormDialogProps {
-  isOpen: boolean; // was 'open'
+  isOpen: boolean;
   onClose: () => void;
-  editColumn?: Column | null; // was 'column'
+  editColumn?: Column | null;
   categories?: Category[];
   columns?: Column[];
   isSubmitting?: boolean;
-  onSaveColumn: (columnData: any) => Promise<boolean>; // was 'onSave'
+  onSaveColumn: (columnData: any) => Promise<boolean>;
 }
 
 const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
   isOpen,
   onClose,
-  editColumn, // was 'column'
+  editColumn,
   categories,
   columns,
   isSubmitting,
-  onSaveColumn // was 'onSave'
+  onSaveColumn
 }) => {
-  // Uyğunluq üçün köhnə dəyişən adlarını istifadə edirik
   const column = editColumn;
   const categoryId = column?.category_id;
   const onSave = onSaveColumn;
@@ -59,7 +57,7 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
     isEditMode
   } = useColumnForm({ column, categoryId, onSave });
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: ColumnFormValues) => {
     const success = await onSubmit(data);
     if (success) {
       onClose();
@@ -80,10 +78,8 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        {/* @ts-ignore - İdeal həll deyil, amma indiki problemi həll edir */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            {/* @ts-ignore */}
             <FormField
               control={form.control}
               name="name"
@@ -115,7 +111,6 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
               />
             )}
 
-            {/* @ts-ignore */}
             <FormField
               control={form.control}
               name="placeholder"
@@ -130,7 +125,6 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
               )}
             />
 
-            {/* @ts-ignore */}
             <FormField
               control={form.control}
               name="help_text"
@@ -145,7 +139,6 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
               )}
             />
 
-            {/* @ts-ignore */}
             <FormField
               control={form.control}
               name="is_required"

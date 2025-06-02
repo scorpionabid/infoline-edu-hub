@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Control } from 'react-hook-form';
 import { ColumnType, ColumnTypeDefinition } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
-import { Type, Hash, Mail, Phone, Calendar, ChevronDown, CheckSquare, Circle, FileText } from 'lucide-react';
+import { Type, Hash, Mail, Phone, Calendar, ChevronDown, CheckSquare, Circle, FileText, Link, Lock, Upload } from 'lucide-react';
 
 export interface ColumnTypeSelectorProps {
   control: Control<any>;
@@ -46,6 +46,18 @@ const columnTypeDefinitions: ColumnTypeDefinition[] = [
     icon: <Phone className="h-4 w-4" />
   },
   {
+    value: 'url',
+    label: 'URL',
+    description: 'URL address input',
+    icon: <Link className="h-4 w-4" />
+  },
+  {
+    value: 'password',
+    label: 'Password',
+    description: 'Password input',
+    icon: <Lock className="h-4 w-4" />
+  },
+  {
     value: 'date',
     label: 'Date',
     description: 'Date picker input',
@@ -70,6 +82,12 @@ const columnTypeDefinitions: ColumnTypeDefinition[] = [
     label: 'Checkbox',
     description: 'Checkbox input',
     icon: <CheckSquare className="h-4 w-4" />
+  },
+  {
+    value: 'file',
+    label: 'File',
+    description: 'File upload input',
+    icon: <Upload className="h-4 w-4" />
   }
 ];
 
@@ -122,4 +140,3 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({
 };
 
 export default ColumnTypeSelector;
-
