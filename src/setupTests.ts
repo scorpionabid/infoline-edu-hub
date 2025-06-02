@@ -292,12 +292,13 @@ vi.mock('sonner', () => ({
   Toaster: ({ children }: { children?: React.ReactNode }) => children
 }));
 
-// React Router mock
+// React Router mock - improved
+const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: vi.fn(() => vi.fn()),
+    useNavigate: () => mockNavigate,
     useLocation: vi.fn(() => ({ pathname: '/', search: '', hash: '', state: null })),
     useParams: vi.fn(() => ({})),
     useSearchParams: vi.fn(() => [new URLSearchParams(), vi.fn()])
@@ -353,12 +354,47 @@ export const TEST_SCHOOL = {
   status: 'active' as const
 };
 
+export const TEST_APPROVAL_ITEM = {
+  id: 'test-approval-id',
+  categoryId: 'test-category-id',
+  categoryName: 'Test Category',
+  schoolId: 'test-school-id',
+  schoolName: 'Test School',
+  submittedAt: '2025-06-02T10:00:00Z',
+  submittedBy: 'Test User',
+  status: 'pending' as const,
+  entries: [
+    {
+      id: 'test-entry-1',
+      schoolId: 'test-school-id',
+      categoryId: 'test-category-id',
+      columnId: 'test-column-1',
+      value: 'Test Value 1',
+      status: 'pending' as const
+    },
+    {
+      id: 'test-entry-2',
+      schoolId: 'test-school-id',
+      categoryId: 'test-category-id',
+      columnId: 'test-column-2',
+      value: 'Test Value 2',
+      status: 'pending' as const
+    }
+  ],
+  completionRate: 75
+};
+
+// Export navigate mock for test access
+export { mockNavigate };
+
 // Global test utilities
 global.testUtils = {
   TEST_USER,
   TEST_REGION,
   TEST_SCHOOL,
-  createMockZustandStore
+  TEST_APPROVAL_ITEM,
+  createMockZustandStore,
+  mockNavigate
 };
 
 // Type augmentation for global test utilities
@@ -367,6 +403,8 @@ declare global {
     TEST_USER: typeof TEST_USER;
     TEST_REGION: typeof TEST_REGION;
     TEST_SCHOOL: typeof TEST_SCHOOL;
+    TEST_APPROVAL_ITEM: typeof TEST_APPROVAL_ITEM;
     createMockZustandStore: typeof createMockZustandStore;
+    mockNavigate: typeof mockNavigate;
   };
 }

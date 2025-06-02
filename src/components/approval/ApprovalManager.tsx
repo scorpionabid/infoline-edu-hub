@@ -169,7 +169,7 @@ const ApprovalManager: React.FC<ApprovalManagerProps> = ({
         <CardContent className="pt-0">
           <div className="flex justify-between items-center">
             <div className="text-sm text-muted-foreground">
-              {item.entries.length} {t('dataEntries')}
+              {item.entries?.length || 0} {t('dataEntries')}
             </div>
             
             <div className="flex gap-2">
