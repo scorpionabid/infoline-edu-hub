@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 import { UserRole } from '../types/supabase';
 import { LanguageProvider } from '../context/LanguageContext';
-import { AuthProvider } from '../context/auth/AuthContext';
+
 
 // Mock data
 const mockCategory = {
@@ -37,8 +37,8 @@ vi.mock('../hooks/category/useCategoryColumns', () => ({
   })
 }));
 
-vi.mock('../hooks/auth/useAuth', () => ({
-  useAuth: () => ({
+vi.mock('@/hooks/auth/useAuthStore', () => ({
+  useAuthStore: () => ({
     user: {
       id: '123',
       role: 'superadmin' as UserRole,
@@ -129,11 +129,9 @@ describe('Category Columns Tests', () => {
   it('should render category columns', () => {
     render(
       <MemoryRouter>
-        <AuthProvider>
-          <LanguageProvider>
-            <MockCategoryColumnsUI categoryId={1} />
-          </LanguageProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <MockCategoryColumnsUI categoryId={1} />
+        </LanguageProvider>
       </MemoryRouter>
     );
     
@@ -145,11 +143,9 @@ describe('Category Columns Tests', () => {
   it('should show the add column form when button is clicked', async () => {
     render(
       <MemoryRouter>
-        <AuthProvider>
-          <LanguageProvider>
-            <MockCategoryColumnsUI categoryId={1} />
-          </LanguageProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <MockCategoryColumnsUI categoryId={1} />
+        </LanguageProvider>
       </MemoryRouter>
     );
 
@@ -164,11 +160,9 @@ describe('Category Columns Tests', () => {
   it('should edit a column when edit button is clicked', async () => {
     render(
       <MemoryRouter>
-        <AuthProvider>
-          <LanguageProvider>
-            <MockCategoryColumnsUI categoryId={1} />
-          </LanguageProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <MockCategoryColumnsUI categoryId={1} />
+        </LanguageProvider>
       </MemoryRouter>
     );
 
@@ -192,11 +186,9 @@ describe('Category Columns Performance Tests', () => {
     
     render(
       <MemoryRouter>
-        <AuthProvider>
-          <LanguageProvider>
-            <MockCategoryColumnsUI categoryId={1} />
-          </LanguageProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <MockCategoryColumnsUI categoryId={1} />
+        </LanguageProvider>
       </MemoryRouter>
     );
 
