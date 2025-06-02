@@ -1,1 +1,143 @@
-import { useState, useCallback } from 'react';\nimport { useLanguage } from '@/context/LanguageContext';\nimport { useToast } from '@/hooks/use-toast';\nimport { CategoryWithColumns } from '@/types/category';\nimport { ExcelService } from '@/services/excelService';\nimport { ExportOptions } from '@/types/excel';\n\ninterface UseExcelExportOptions {\n  category: CategoryWithColumns;\n  schoolId: string;\n  onExportComplete?: (success: boolean) => void;\n}\n\nexport const useExcelExport = ({\n  category,\n  schoolId,\n  onExportComplete\n}: UseExcelExportOptions) => {\n  const { t } = useLanguage();\n  const { toast } = useToast();\n  \n  // State management\n  const [isExporting, setIsExporting] = useState(false);\n  const [lastExportInfo, setLastExportInfo] = useState<{\n    fileName: string;\n    timestamp: string;\n    rowCount: number;\n  } | null>(null);\n  \n  /**\n   * Export data to Excel\n   */\n  const exportData = useCallback(async (options?: ExportOptions) => {\n    if (!category?.id) {\n      toast({\n        title: t('error'),\n        description: t('categoryNotAvailable'),\n        variant: 'destructive'\n      });\n      return;\n    }\n    \n    if (!schoolId) {\n      toast({\n        title: t('error'),\n        description: t('schoolNotAvailable'),\n        variant: 'destructive'\n      });\n      return;\n    }\n    \n    try {\n      setIsExporting(true);\n      \n      await ExcelService.downloadExport(\n        schoolId,\n        category.id,\n        category.name,\n        {\n          format: 'xlsx',\n          includeMetadata: true,\n          includeHeaders: true,\n          ...options\n        }\n      );\n      \n      // Update last export info\n      const exportInfo = {\n        fileName: `${category.name}_export_${new Date().toISOString().split('T')[0]}.xlsx`,\n        timestamp: new Date().toISOString(),\n        rowCount: 0 // This would be updated with actual row count from service\n      };\n      \n      setLastExportInfo(exportInfo);\n      \n      toast({\n        title: t('success'),\n        description: t('dataExportedSuccessfully'),\n      });\n      \n      onExportComplete?.(true);\n      \n    } catch (error: any) {\n      console.error('Export failed:', error);\n      \n      toast({\n        title: t('error'),\n        description: error.message || t('errorExportingData'),\n        variant: 'destructive'\n      });\n      \n      onExportComplete?.(false);\n      throw error;\n    } finally {\n      setIsExporting(false);\n    }\n  }, [category, schoolId, onExportComplete, t, toast]);\n  \n  /**\n   * Export filtered data\n   */\n  const exportFilteredData = useCallback(async (\n    filters: {\n      status?: string[];\n      dateRange?: { start: string; end: string };\n      columns?: string[];\n    },\n    options?: ExportOptions\n  ) => {\n    await exportData({\n      filterByStatus: filters.status,\n      dateRange: filters.dateRange,\n      customColumns: filters.columns,\n      ...options\n    });\n  }, [exportData]);\n  \n  /**\n   * Export as CSV\n   */\n  const exportAsCSV = useCallback(async (options?: ExportOptions) => {\n    await exportData({\n      format: 'csv',\n      includeMetadata: false,\n      ...options\n    });\n  }, [exportData]);\n  \n  return {\n    // State\n    isExporting,\n    lastExportInfo,\n    \n    // Actions\n    exportData,\n    exportFilteredData,\n    exportAsCSV,\n    \n    // Computed\n    canExport: !isExporting && category && schoolId\n  };\n};\n
+
+import { useState, useCallback } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { CategoryWithColumns } from '@/types/category';
+import { ExcelService } from '@/services/excelService';
+import { ExportOptions } from '@/types/excel';
+
+interface UseExcelExportOptions {
+  category: CategoryWithColumns;
+  schoolId: string;
+  onExportComplete?: (success: boolean) => void;
+}
+
+export const useExcelExport = ({
+  category,
+  schoolId,
+  onExportComplete
+}: UseExcelExportOptions) => {
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  
+  // State management
+  const [isExporting, setIsExporting] = useState(false);
+  const [lastExportInfo, setLastExportInfo] = useState<{
+    fileName: string;
+    timestamp: string;
+    rowCount: number;
+  } | null>(null);
+  
+  /**
+   * Export data to Excel
+   */
+  const exportData = useCallback(async (options?: ExportOptions) => {
+    if (!category?.id) {
+      toast({
+        title: t('error'),
+        description: t('categoryNotAvailable'),
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (!schoolId) {
+      toast({
+        title: t('error'),
+        description: t('schoolNotAvailable'),
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    try {
+      setIsExporting(true);
+      
+      await ExcelService.downloadExport(
+        schoolId,
+        category.id,
+        category.name,
+        {
+          format: 'xlsx',
+          includeMetadata: true,
+          includeHeaders: true,
+          ...options
+        }
+      );
+      
+      // Update last export info
+      const exportInfo = {
+        fileName: `${category.name}_export_${new Date().toISOString().split('T')[0]}.xlsx`,
+        timestamp: new Date().toISOString(),
+        rowCount: 0 // This would be updated with actual row count from service
+      };
+      
+      setLastExportInfo(exportInfo);
+      
+      toast({
+        title: t('success'),
+        description: t('dataExportedSuccessfully'),
+      });
+      
+      onExportComplete?.(true);
+      
+    } catch (error: any) {
+      console.error('Export failed:', error);
+      
+      toast({
+        title: t('error'),
+        description: error.message || t('errorExportingData'),
+        variant: 'destructive'
+      });
+      
+      onExportComplete?.(false);
+      throw error;
+    } finally {
+      setIsExporting(false);
+    }
+  }, [category, schoolId, onExportComplete, t, toast]);
+  
+  /**
+   * Export filtered data
+   */
+  const exportFilteredData = useCallback(async (
+    filters: {
+      status?: string[];
+      dateRange?: { start: string; end: string };
+      columns?: string[];
+    },
+    options?: ExportOptions
+  ) => {
+    await exportData({
+      filterByStatus: filters.status,
+      dateRange: filters.dateRange,
+      customColumns: filters.columns,
+      ...options
+    });
+  }, [exportData]);
+  
+  /**
+   * Export as CSV
+   */
+  const exportAsCSV = useCallback(async (options?: ExportOptions) => {
+    await exportData({
+      format: 'csv',
+      includeMetadata: false,
+      ...options
+    });
+  }, [exportData]);
+  
+  return {
+    // State
+    isExporting,
+    lastExportInfo,
+    
+    // Actions
+    exportData,
+    exportFilteredData,
+    exportAsCSV,
+    
+    // Computed
+    canExport: !isExporting && category && schoolId
+  };
+};

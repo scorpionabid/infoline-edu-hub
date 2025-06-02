@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -170,4 +171,191 @@ export const useExcelImport = ({
       setLastImportResult(null);
       
       // Initialize progress
-      const initialProgress: ImportProgress = {\n        phase: 'parsing',\n        currentRow: 0,\n        totalRows: 0,\n        successfulRows: 0,\n        failedRows: 0,\n        percentage: 0,\n        message: t('preparingImport')\n      };\n      \n      setImportProgress(initialProgress);\n      onProgress?.(initialProgress);\n      \n      // Simulate progress updates (in real implementation, this would come from the service)\n      const progressInterval = setInterval(() => {\n        setImportProgress(prev => {\n          if (!prev || importAbortController.current?.signal.aborted) return prev;\n          \n          let newProgress = { ...prev };\n          \n          switch (prev.phase) {\n            case 'parsing':\n              newProgress.percentage = Math.min(prev.percentage + 8, 20);\n              newProgress.message = t('parsingFile');\n              if (newProgress.percentage >= 20) {\n                newProgress.phase = 'validating';\n                newProgress.message = t('validatingData');\n              }\n              break;\n            case 'validating':\n              newProgress.percentage = Math.min(prev.percentage + 12, 40);\n              if (newProgress.percentage >= 40) {\n                newProgress.phase = 'processing';\n                newProgress.message = t('savingData');\n              }\n              break;\n            case 'processing':\n              newProgress.percentage = Math.min(prev.percentage + 15, 90);\n              break;\n          }\n          \n          onProgress?.(newProgress);\n          return newProgress;\n        });\n      }, 500);\n      \n      // Perform actual import\n      const result = await ExcelService.importExcelFile(file, category.id, schoolId, user.id);\n      \n      clearInterval(progressInterval);\n      \n      // Final progress update\n      const finalProgress: ImportProgress = {\n        phase: 'completed',\n        currentRow: result.totalRows,\n        totalRows: result.totalRows,\n        successfulRows: result.successfulRows,\n        failedRows: result.failedRows,\n        percentage: 100,\n        message: result.success ? t('importCompleted') : t('importCompletedWithErrors')\n      };\n      \n      setImportProgress(finalProgress);\n      onProgress?.(finalProgress);\n      \n      // Store results\n      setLastImportResult(result);\n      setErrors(result.errors);\n      \n      // Show notification\n      toast({\n        title: result.success ? t('success') : t('warning'),\n        description: result.message,\n        variant: result.success ? 'default' : 'destructive'\n      });\n      \n      // Notify completion\n      onImportComplete?.(result);\n      \n      return result;\n      \n    } catch (error: any) {\n      console.error('Import failed:', error);\n      \n      const errorResult: ImportResult = {\n        success: false,\n        totalRows: 0,\n        successfulRows: 0,\n        failedRows: 0,\n        errors: [{ row: 0, column: 'general', value: '', error: error.message, severity: 'error' }],\n        message: error.message || t('importFailed')\n      };\n      \n      setLastImportResult(errorResult);\n      setErrors(errorResult.errors);\n      \n      // Final progress with error\n      const errorProgress: ImportProgress = {\n        phase: 'failed',\n        currentRow: 0,\n        totalRows: 0,\n        successfulRows: 0,\n        failedRows: 0,\n        percentage: 0,\n        message: error.message || t('importFailed')\n      };\n      \n      setImportProgress(errorProgress);\n      onProgress?.(errorProgress);\n      \n      toast({\n        title: t('error'),\n        description: error.message || t('importFailed'),\n        variant: 'destructive'\n      });\n      \n      throw error;\n    } finally {\n      setIsImporting(false);\n      importAbortController.current = null;\n    }\n  }, [user?.id, category?.id, schoolId, validateFile, onProgress, onImportComplete, t, toast]);\n  \n  /**\n   * Cancel ongoing import operation\n   */\n  const cancelImport = useCallback(() => {\n    if (importAbortController.current) {\n      importAbortController.current.abort();\n      setIsImporting(false);\n      setImportProgress(null);\n      \n      toast({\n        title: t('info'),\n        description: t('importCancelled')\n      });\n    }\n  }, [t, toast]);\n  \n  /**\n   * Reset import state\n   */\n  const resetImport = useCallback(() => {\n    setImportProgress(null);\n    setLastImportResult(null);\n    setErrors([]);\n  }, []);\n  \n  /**\n   * Get import statistics\n   */\n  const getImportStats = useCallback(() => {\n    if (!lastImportResult) return null;\n    \n    return {\n      totalRows: lastImportResult.totalRows,\n      successfulRows: lastImportResult.successfulRows,\n      failedRows: lastImportResult.failedRows,\n      successRate: lastImportResult.totalRows > 0 \n        ? Math.round((lastImportResult.successfulRows / lastImportResult.totalRows) * 100)\n        : 0,\n      hasErrors: lastImportResult.errors.length > 0,\n      errorCount: lastImportResult.errors.length\n    };\n  }, [lastImportResult]);\n  \n  return {\n    // State\n    isImporting,\n    isDownloadingTemplate,\n    importProgress,\n    lastImportResult,\n    errors,\n    \n    // Actions\n    downloadTemplate,\n    validateFile,\n    previewFile,\n    importFile,\n    cancelImport,\n    resetImport,\n    \n    // Computed\n    canImport: !isImporting && category && schoolId && user?.id,\n    canCancel: isImporting && importAbortController.current,\n    importStats: getImportStats()\n  };\n};\n
+      const initialProgress: ImportProgress = {
+        phase: 'parsing',
+        currentRow: 0,
+        totalRows: 0,
+        successfulRows: 0,
+        failedRows: 0,
+        percentage: 0,
+        message: t('preparingImport')
+      };
+      
+      setImportProgress(initialProgress);
+      onProgress?.(initialProgress);
+      
+      // Simulate progress updates (in real implementation, this would come from the service)
+      const progressInterval = setInterval(() => {
+        setImportProgress(prev => {
+          if (!prev || importAbortController.current?.signal.aborted) return prev;
+          
+          let newProgress = { ...prev };
+          
+          switch (prev.phase) {
+            case 'parsing':
+              newProgress.percentage = Math.min(prev.percentage + 8, 20);
+              newProgress.message = t('parsingFile');
+              if (newProgress.percentage >= 20) {
+                newProgress.phase = 'validating';
+                newProgress.message = t('validatingData');
+              }
+              break;
+            case 'validating':
+              newProgress.percentage = Math.min(prev.percentage + 12, 40);
+              if (newProgress.percentage >= 40) {
+                newProgress.phase = 'processing';
+                newProgress.message = t('savingData');
+              }
+              break;
+            case 'processing':
+              newProgress.percentage = Math.min(prev.percentage + 15, 90);
+              break;
+          }
+          
+          onProgress?.(newProgress);
+          return newProgress;
+        });
+      }, 500);
+      
+      // Perform actual import
+      const result = await ExcelService.importExcelFile(file, category.id, schoolId, user.id);
+      
+      clearInterval(progressInterval);
+      
+      // Final progress update
+      const finalProgress: ImportProgress = {
+        phase: 'completed',
+        currentRow: result.totalRows,
+        totalRows: result.totalRows,
+        successfulRows: result.successfulRows,
+        failedRows: result.failedRows,
+        percentage: 100,
+        message: result.success ? t('importCompleted') : t('importCompletedWithErrors')
+      };
+      
+      setImportProgress(finalProgress);
+      onProgress?.(finalProgress);
+      
+      // Store results
+      setLastImportResult(result);
+      setErrors(result.errors);
+      
+      // Show notification
+      toast({
+        title: result.success ? t('success') : t('warning'),
+        description: result.message,
+        variant: result.success ? 'default' : 'destructive'
+      });
+      
+      // Notify completion
+      onImportComplete?.(result);
+      
+      return result;
+      
+    } catch (error: any) {
+      console.error('Import failed:', error);
+      
+      const errorResult: ImportResult = {
+        success: false,
+        totalRows: 0,
+        successfulRows: 0,
+        failedRows: 0,
+        errors: [{ row: 0, column: 'general', value: '', error: error.message, severity: 'error' }],
+        message: error.message || t('importFailed')
+      };
+      
+      setLastImportResult(errorResult);
+      setErrors(errorResult.errors);
+      
+      // Final progress with error
+      const errorProgress: ImportProgress = {
+        phase: 'failed',
+        currentRow: 0,
+        totalRows: 0,
+        successfulRows: 0,
+        failedRows: 0,
+        percentage: 0,
+        message: error.message || t('importFailed')
+      };
+      
+      setImportProgress(errorProgress);
+      onProgress?.(errorProgress);
+      
+      toast({
+        title: t('error'),
+        description: error.message || t('importFailed'),
+        variant: 'destructive'
+      });
+      
+      throw error;
+    } finally {
+      setIsImporting(false);
+      importAbortController.current = null;
+    }
+  }, [user?.id, category?.id, schoolId, validateFile, onProgress, onImportComplete, t, toast]);
+  
+  /**
+   * Cancel ongoing import operation
+   */
+  const cancelImport = useCallback(() => {
+    if (importAbortController.current) {
+      importAbortController.current.abort();
+      setIsImporting(false);
+      setImportProgress(null);
+      
+      toast({
+        title: t('info'),
+        description: t('importCancelled')
+      });
+    }
+  }, [t, toast]);
+  
+  /**
+   * Reset import state
+   */
+  const resetImport = useCallback(() => {
+    setImportProgress(null);
+    setLastImportResult(null);
+    setErrors([]);
+  }, []);
+  
+  /**
+   * Get import statistics
+   */
+  const getImportStats = useCallback(() => {
+    if (!lastImportResult) return null;
+    
+    return {
+      totalRows: lastImportResult.totalRows,
+      successfulRows: lastImportResult.successfulRows,
+      failedRows: lastImportResult.failedRows,
+      successRate: lastImportResult.totalRows > 0 
+        ? Math.round((lastImportResult.successfulRows / lastImportResult.totalRows) * 100)
+        : 0,
+      hasErrors: lastImportResult.errors.length > 0,
+      errorCount: lastImportResult.errors.length
+    };
+  }, [lastImportResult]);
+  
+  return {
+    // State
+    isImporting,
+    isDownloadingTemplate,
+    importProgress,
+    lastImportResult,
+    errors,
+    
+    // Actions
+    downloadTemplate,
+    validateFile,
+    previewFile,
+    importFile,
+    cancelImport,
+    resetImport,
+    
+    // Computed
+    canImport: !isImporting && category && schoolId && user?.id,
+    canCancel: isImporting && importAbortController.current,
+    importStats: getImportStats()
+  };
+};
