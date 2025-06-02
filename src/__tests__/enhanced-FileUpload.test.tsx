@@ -27,19 +27,40 @@ import {
 } from './enhanced-test-utils';
 
 // FIXED: Mock without top-level variables to avoid hoisting issues
-vi.mock('react-dropzone', () => ({
-  useDropzone: vi.fn(() => ({
-    getRootProps: vi.fn(() => ({
-      'data-testid': 'dropzone-root'
-    })),
-    getInputProps: vi.fn(() => ({
-      'data-testid': 'file-input',
-      type: 'file'
-    })),
-    isDragActive: false,
-    fileRejections: []
-  }))
-}));
+vi.mock('react-dropzone', () => {
+  const actual = vi.importActual('react-dropzone');
+  return {
+    ...actual,
+    useDropzone: vi.fn().mockImplementation((options) => {
+      const mockRef = { current: null };
+      return {
+        isFocused: false,
+        isDragActive: false,
+        isDragAccept: false,
+        isDragReject: false,
+        isFileDialogActive: false,
+        acceptedFiles: [],
+        fileRejections: [],
+        rootRef: mockRef,
+        inputRef: mockRef,
+        getRootProps: vi.fn().mockImplementation((props = {}) => ({
+          ...props,
+          'data-testid': 'dropzone-root',
+          ref: mockRef
+        })),
+        getInputProps: vi.fn().mockImplementation((props = {}) => ({
+          ...props,
+          'data-testid': 'file-input',
+          type: 'file',
+          onChange: vi.fn(),
+          onClick: vi.fn()
+        })),
+        open: vi.fn(),
+        ...options
+      };
+    })
+  };
+});
 
 // Import mocked module
 import { useDropzone } from 'react-dropzone';
@@ -139,18 +160,37 @@ describe('Enhanced FileUpload Tests - FIXED', () => {
     mockOnFileUpload.mockClear();
     mockUseDropzone.mockClear();
     
-    // Setup default mock behavior
-    mockUseDropzone.mockReturnValue({
-      getRootProps: vi.fn(() => ({
-        'data-testid': 'dropzone-root'
-      })),
-      getInputProps: vi.fn(() => ({
-        'data-testid': 'file-input',
-        type: 'file'
-      })),
+    // Setup default mock behavior with all required DropzoneState properties
+    const mockRef = { current: null };
+    const mockState = {
+      isFocused: false,
       isDragActive: false,
-      fileRejections: []
-    });
+      isDragAccept: false,
+      isDragReject: false,
+      isFileDialogActive: false,
+      acceptedFiles: [],
+      fileRejections: [],
+      rootRef: mockRef,
+      inputRef: mockRef,
+      getRootProps: vi.fn().mockImplementation((props = {}) => ({
+        ...props,
+        'data-testid': 'dropzone-root',
+        ref: mockRef
+      })),
+      getInputProps: vi.fn().mockImplementation((props = {}) => ({
+        ...props,
+        'data-testid': 'file-input',
+        type: 'file',
+        onChange: vi.fn(),
+        onClick: vi.fn()
+      })),
+      open: vi.fn()
+    } as const;
+    
+    mockUseDropzone.mockImplementation((options) => ({
+      ...mockState,
+      ...options
+    }));
   });
 
   describe('Component Rendering', () => {
@@ -175,9 +215,8 @@ describe('Enhanced FileUpload Tests - FIXED', () => {
       
       renderWithProviders(<MockFileUpload {...customProps} />);
       
-      expect(screen.getByText((content, element) => {
-        return element?.textContent?.includes('.pdf, .jpg, .png') || false;
-      })).toBeInTheDocument();
+      // Use exact text matching that MockFileUpload renders
+      expect(screen.getByText('Dəstəklənən formatlar: .pdf, .jpg, .png')).toBeInTheDocument();
     });
 
     it('displays max file size correctly', () => {
@@ -192,11 +231,16 @@ describe('Enhanced FileUpload Tests - FIXED', () => {
     });
 
     it('applies custom className', () => {
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <MockFileUpload {...defaultProps} className="custom-upload" />
       );
       
-      expect(container.firstChild).toHaveClass('custom-upload');
+      // Find the root div by its test id and check its parent for the custom class
+      const dropzoneRoot = screen.getByTestId('dropzone-root');
+      const rootDiv = dropzoneRoot.closest('.space-y-4');
+      
+      expect(rootDiv).toBeInTheDocument();
+      expect(rootDiv).toHaveClass('custom-upload');
     });
 
     it('shows loading state', () => {
@@ -401,9 +445,8 @@ describe('Enhanced FileUpload Tests - FIXED', () => {
       
       renderWithProviders(<MockFileUpload {...imageUploadProps} />);
       
-      expect(screen.getByText((content, element) => {
-        return element?.textContent?.includes('.jpg, .png, .gif') || false;
-      })).toBeInTheDocument();
+      // Use exact text matching that MockFileUpload renders
+      expect(screen.getByText('Dəstəklənən formatlar: .jpg, .png, .gif')).toBeInTheDocument();
       expect(screen.getByText(/2\.0.*MB/i)).toBeInTheDocument();
     });
 
