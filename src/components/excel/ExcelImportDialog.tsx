@@ -7,9 +7,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { useTranslation } from '@/hooks/use-translation'; // Düzəliş: useLanguage => useTranslation
+import { useLanguage } from '@/context/LanguageContext'; // Fixed: use correct import path
 import { useToast } from '@/hooks/use-toast';
-import { ExcelService } from '@/services/excel-services'; // Düzəliş: excel-service => excel-services
+import { ExcelService } from '@/services/excelService'; // Fixed: use correct service name
 import { CategoryWithColumns } from '@/types/category';
 import { ImportResult, ImportError, ImportProgress } from '@/types/excel';
 import { Info, Download, Upload, FileSpreadsheet, CheckCircle, AlertTriangle, ArrowLeft, ArrowRight, X, Eye } from 'lucide-react';
@@ -310,7 +310,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
   userId,
   onImportComplete
 }) => {
-  const { t } = useTranslation();
+  const { t } = useLanguage(); // Fixed: use useLanguage instead of useTranslation
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -445,12 +445,11 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
   // Handle template download
   const handleDownloadTemplate = useCallback(() => {
     // Excel service-dən şablon yüklə
-    ExcelService.downloadTemplate(category)
+    ExcelService.downloadTemplate(category, schoolId)
       .then(() => {
         toast({
           title: t('success'),
           description: t('templateDownloaded'),
-          variant: 'default'
         });
       })
       .catch((error) => {
@@ -461,7 +460,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
           variant: 'destructive'
         });
       });
-  }, [category, t, toast]);
+  }, [category, schoolId, t, toast]);
 
   // Import simulyasiyası
   const simulateImport = useCallback(() => {
@@ -552,6 +551,13 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
     setCurrentStep('processing');
     simulateImport();
   }, [selectedFile, simulateImport]);
+
+  // Missing function that was being called
+  const handleStartImport = useCallback(() => {
+    if (currentStep === 'preview') {
+      handleImport();
+    }
+  }, [currentStep, handleImport]);
 
   // renderStepContent - müxtəlif addımlar arasında keçid
   const renderStepContent = useCallback(() => {
