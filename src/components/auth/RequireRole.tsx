@@ -3,7 +3,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore, selectIsAuthenticated, selectIsLoading } from '@/hooks/auth/useAuthStore';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { UserRole } from '@/types/role';
+import { UserRole } from '@/types/auth';
 import LoadingScreen from './LoadingScreen';
 
 interface RequireRoleProps {

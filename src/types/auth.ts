@@ -1,7 +1,16 @@
+// ============================================================================
+// İnfoLine Auth Types - Unified Type System
+// ============================================================================
+// Bu fayl bütün auth-related type definitions-ları birləşdirir
+// Əvvəlki duplikat fayllar: hooks/auth/types.ts, hooks/auth/permissionTypes.ts
 
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
 export type UserStatus = 'active' | 'inactive' | 'pending' | 'suspended';
+
+// ============================================================================
+// Core User Interfaces
+// ============================================================================
 
 export interface FullUserData {
   id: string;
@@ -26,7 +35,7 @@ export interface FullUserData {
   created_at?: string;
   updated_at?: string;
   permissions?: string[];
-  preferences?: any; // İstifadəçi tərcihləri - notification_settings və digər tərcihləri saxlamaq üçün
+  preferences?: any;
 }
 
 export interface User {
@@ -45,6 +54,10 @@ export interface User {
   created_at?: string;
   updated_at?: string;
 }
+
+// ============================================================================
+// Auth Context and Hook Interfaces
+// ============================================================================
 
 export interface AuthContextType {
   user: FullUserData | null;
@@ -69,7 +82,10 @@ export interface UseAuthResult {
   isAuthenticated: boolean;
 }
 
-// Auth store interface
+// ============================================================================
+// Auth Store Interface (Zustand)
+// ============================================================================
+
 export interface AuthState {
   user: FullUserData | null;
   isLoading: boolean;
@@ -90,3 +106,227 @@ export interface AuthState {
   updatePassword: (newPassword: string) => Promise<{ success: boolean, error?: any }>;
   hasPermission: (permission: string) => boolean;
 }
+
+// ============================================================================
+// Permission System Types
+// ============================================================================
+// Birləşdirildi: hooks/auth/permissionTypes.ts
+
+export type PermissionLevel = 'read' | 'write' | 'admin' | 'owner';
+
+export interface PermissionChecker {
+  canRead: boolean;
+  canWrite: boolean;
+  canAdmin: boolean;
+  canOwn: boolean;
+  hasMinimumLevel: (level: PermissionLevel) => boolean;
+}
+
+export interface PermissionResult {
+  allowed: boolean;
+  reason?: string;
+  level?: PermissionLevel;
+}
+
+export interface UsePermissionsResult {
+  hasRole: (role: string | string[]) => boolean;
+  hasRoleAtLeast: (minimumRole: string) => boolean;
+  canAccessRoute: (allowedRoles: string[]) => boolean;
+  isSuperAdmin: boolean;
+  isRegionAdmin: boolean;
+  isSectorAdmin: boolean;
+  isSchoolAdmin: boolean;
+  isTeacher: boolean;
+  isUser: boolean;
+  userEntityId: string | undefined;
+  userRole: string | undefined;
+  regionId: string | undefined;
+  sectorId: string | undefined;
+  schoolId: string | undefined;
+  canManageCategories: boolean;
+  canApproveData: boolean;
+  canEditData: boolean;
+  hasSubmitPermission: boolean;
+}
+
+// ============================================================================
+// Data Access Control Types
+// ============================================================================
+// Birləşdirildi: useDataAccessControl types
+
+export interface DataAccessConfig {
+  entityType: 'region' | 'sector' | 'school' | 'category' | 'data';
+  entityId?: string;
+  operation: 'read' | 'write' | 'delete' | 'approve';
+  targetUserId?: string;
+}
+
+export interface DataAccessResult {
+  hasAccess: boolean;
+  reason?: string;
+  allowedFields?: string[];
+  restrictedFields?: string[];
+}
+
+// ============================================================================
+// Auth Utilities and Helpers
+// ============================================================================
+
+export interface AuthUtilities {
+  shouldAuthenticate: (route: string) => boolean;
+  isProtectedRoute: (route: string) => boolean;
+  getRedirectPath: (userRole: UserRole) => string;
+  normalizeRole: (role: string) => UserRole;
+  hasMinimumRole: (userRole: UserRole, minimumRole: UserRole) => boolean;
+}
+
+// ============================================================================
+// Route Protection Types
+// ============================================================================
+
+export interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles?: UserRole[];
+  redirectUrl?: string;
+  requireAuth?: boolean;
+}
+
+export interface PublicRouteProps {
+  children: React.ReactNode;
+  restricted?: boolean;
+}
+
+// ============================================================================
+// Notification Settings (Auth Related)
+// ============================================================================
+
+export interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  inApp: boolean;
+  system: boolean;
+  deadline: boolean;
+  sms: boolean;
+  deadlineReminders: boolean;
+  statusUpdates: boolean;
+  weeklyReports: boolean;
+}
+
+// ============================================================================
+// Login/Register Form Types
+// ============================================================================
+
+export interface LoginFormData {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+export interface RegisterFormData {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  fullName: string;
+  role?: UserRole;
+  phone?: string;
+  position?: string;
+}
+
+export interface ResetPasswordFormData {
+  email: string;
+}
+
+export interface UpdatePasswordFormData {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+// ============================================================================
+// API Response Types
+// ============================================================================
+
+export interface AuthApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface SignInResponse extends AuthApiResponse {
+  data?: {
+    user: FullUserData;
+    session: any;
+    accessToken: string;
+  };
+}
+
+export interface ProfileUpdateResponse extends AuthApiResponse {
+  data?: {
+    user: FullUserData;
+  };
+}
+
+// ============================================================================
+// State Management Types
+// ============================================================================
+
+export interface AuthReducerAction {
+  type: 'SIGN_IN' | 'SIGN_OUT' | 'SET_USER' | 'SET_LOADING' | 'SET_ERROR' | 'CLEAR_ERROR';
+  payload?: any;
+}
+
+export interface AuthReducerState {
+  user: FullUserData | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+// ============================================================================
+// Error Types
+// ============================================================================
+
+export interface AuthError {
+  code: string;
+  message: string;
+  details?: any;
+}
+
+export type AuthErrorCode = 
+  | 'AUTH_ERROR'
+  | 'INVALID_CREDENTIALS' 
+  | 'USER_NOT_FOUND'
+  | 'EMAIL_NOT_VERIFIED'
+  | 'PASSWORD_TOO_WEAK'
+  | 'EMAIL_ALREADY_EXISTS'
+  | 'NETWORK_ERROR'
+  | 'PERMISSION_DENIED'
+  | 'SESSION_EXPIRED';
+
+// ============================================================================
+// Exports for backward compatibility
+// ============================================================================
+
+// Type aliases for existing code compatibility
+export type { UserRole as Role };
+export type { FullUserData as UserData };
+export type { AuthState as AuthStoreState };
+
+// Default export for main auth types
+export default {
+  UserRole,
+  UserStatus,
+  FullUserData,
+  AuthState,
+  UsePermissionsResult,
+  PermissionLevel,
+  PermissionResult,
+  DataAccessConfig,
+  DataAccessResult,
+  ProtectedRouteProps,
+  PublicRouteProps,
+  AuthApiResponse,
+  AuthError,
+  AuthErrorCode
+} as const;
