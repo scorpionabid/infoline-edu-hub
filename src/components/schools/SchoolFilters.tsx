@@ -1,135 +1,73 @@
 
 import React from 'react';
-import { Search, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Region } from '@/types/supabase';
-import { useLanguage } from '@/context/LanguageContext';
-import { usePermissions } from '@/hooks/auth/usePermissions';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search } from 'lucide-react';
 
 interface SchoolFiltersProps {
-  searchTerm: string;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
   selectedRegion: string;
+  setSelectedRegion: (region: string) => void;
   selectedSector: string;
-  selectedStatus: string;
-  filteredSectors: {
-    id: string;
-    name: string;
-    regionId: string;
-  }[];
-  regions: Region[];
-  handleSearch: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleRegionFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  handleSectorFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  handleStatusFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  resetFilters: () => void;
+  setSelectedSector: (sector: string) => void;
+  regions: any[];
+  sectors: any[];
+  loadingRegions: boolean;
+  loadingSectors: boolean;
 }
 
-const SchoolFilters: React.FC<SchoolFiltersProps> = ({
-  searchTerm,
+export const SchoolFilters: React.FC<SchoolFiltersProps> = ({
+  searchQuery,
+  setSearchQuery,
   selectedRegion,
+  setSelectedRegion,
   selectedSector,
-  selectedStatus,
-  filteredSectors,
+  setSelectedSector,
   regions,
-  handleSearch,
-  handleRegionFilter,
-  handleSectorFilter,
-  handleStatusFilter,
-  resetFilters
+  sectors,
+  loadingRegions,
+  loadingSectors
 }) => {
-  const { t } = useLanguage();
-  const { userRole } = usePermissions();
-  const hasActiveFilters = searchTerm || selectedRegion || selectedSector || selectedStatus;
-  
-  // sektoradmin olduqda region və sektor filterlərini göstərməmək üçün
-  const isSectorAdmin = userRole === 'sectoradmin';
-
   return (
-    <div className="space-y-4 mb-6">
-      <div className={`grid grid-cols-1 ${isSectorAdmin ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-4'} gap-4`}>
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t('searchSchools')}
-            className="pl-8"
-            value={searchTerm}
-            onChange={handleSearch}
-          />
-          {searchTerm && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="absolute right-1 top-1.5 h-5 w-5" 
-              onClick={() => handleSearch({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-        
-        {/* Region filtri - yalnız superadmin və regionadmin üçün göstərmək */}
-        {!isSectorAdmin && (
-          <div>
-            <select
-              value={selectedRegion}
-              onChange={handleRegionFilter}
-              className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              aria-label={t('filterByRegion')}
-            >
-              <option value="">{t('allRegions')}</option>
-              {regions.map(region => (
-                <option key={region.id} value={region.id}>{region.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-        
-        {/* Sektor filtri - yalnız superadmin və regionadmin üçün göstərmək */}
-        {!isSectorAdmin && selectedRegion && (
-          <div>
-            <select
-              value={selectedSector}
-              onChange={handleSectorFilter}
-              disabled={!selectedRegion && filteredSectors.length === 0}
-              className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              aria-label={t('filterBySector')}
-            >
-              <option value="">{t('allSectors')}</option>
-              {filteredSectors.map(sector => (
-                <option key={sector.id} value={sector.id}>{sector.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-        
-        <div>
-          <select
-            value={selectedStatus}
-            onChange={handleStatusFilter}
-            className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-label={t('filterByStatus')}
-          >
-            <option value="">{t('allStatuses')}</option>
-            <option value="active">{t('active')}</option>
-            <option value="inactive">{t('inactive')}</option>
-          </select>
-        </div>
+    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Input
+          placeholder="Məktəb axtar..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
       </div>
       
-      {hasActiveFilters && (
-        <div className="flex justify-end">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={resetFilters}
-            className="text-sm flex items-center gap-1"
-          >
-            <X className="h-3 w-3" />
-            {t('resetFilters')}
-          </Button>
-        </div>
-      )}
+      <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+        <SelectTrigger className="w-full sm:w-48">
+          <SelectValue placeholder="Rayon seç" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">Bütün rayonlar</SelectItem>
+          {!loadingRegions && regions.map((region) => (
+            <SelectItem key={region.id} value={region.id}>
+              {region.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={selectedSector} onValueChange={setSelectedSector}>
+        <SelectTrigger className="w-full sm:w-48">
+          <SelectValue placeholder="Sektor seç" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">Bütün sektorlar</SelectItem>
+          {!loadingSectors && sectors.map((sector) => (
+            <SelectItem key={sector.id} value={sector.id}>
+              {sector.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 };
