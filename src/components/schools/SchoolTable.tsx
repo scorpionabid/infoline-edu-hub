@@ -1,22 +1,25 @@
-import React, { useState } from 'react';
-import { School } from '@/types/school';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+
+import React from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Edit, Eye, Bell, Link, Users, File, MoreVertical } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { SchoolFilesDialog } from './SchoolFilesDialog';
+import { 
+  Edit, 
+  Trash2, 
+  FileText, 
+  Link,
+  UserPlus,
+  MoreHorizontal
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { SchoolLinksDialog } from './SchoolLinksDialog';
-import { SchoolAdminDialog } from './SchoolAdminDialog';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
+import { SchoolFilesDialog } from './SchoolFilesDialog';
+import { School, Region, Sector } from '@/types/school';
 
 interface SchoolTableProps {
   schools: School[];
@@ -41,154 +44,124 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
   regionNames,
   sectorNames
 }) => {
-  const [isFilesDialogOpen, setIsFilesDialogOpen] = useState(false);
-  const [isLinksDialogOpen, setIsLinksDialogOpen] = useState(false);
-  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
-  const [selectedSchoolForFiles, setSelectedSchoolForFiles] = useState<School | null>(null);
-  const [selectedSchoolForLinks, setSelectedSchoolForLinks] = useState<School | null>(null);
-  const [selectedSchoolForAdmin, setSelectedSchoolForAdmin] = useState<School | null>(null);
-
-  const handleViewFiles = (school: School) => {
-    setSelectedSchoolForFiles(school);
-    setIsFilesDialogOpen(true);
-  };
+  const [isLinksDialogOpen, setIsLinksDialogOpen] = React.useState(false);
+  const [selectedSchoolForLinks, setSelectedSchoolForLinks] = React.useState<School | null>(null);
+  const [isFilesDialogOpen, setIsFilesDialogOpen] = React.useState(false);
+  const [selectedSchoolForFiles, setSelectedSchoolForFiles] = React.useState<School | null>(null);
 
   const handleViewLinks = (school: School) => {
     setSelectedSchoolForLinks(school);
     setIsLinksDialogOpen(true);
+    onViewLinks(school);
   };
 
-  const handleAssignAdmin = (school: School) => {
-    setSelectedSchoolForAdmin(school);
-    setIsAdminDialogOpen(true);
+  const handleViewFiles = (school: School) => {
+    setSelectedSchoolForFiles(school);
+    setIsFilesDialogOpen(true);
+    onViewFiles(school);
   };
+
+  if (isLoading) {
+    return (
+      <div className="w-full p-8 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-2 text-muted-foreground">Məktəblər yüklənir...</p>
+      </div>
+    );
+  }
+
+  if (!schools.length) {
+    return (
+      <div className="w-full p-8 text-center">
+        <p className="text-muted-foreground">Heç bir məktəb tapılmadı</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="border rounded-md">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Məktəb Adı</TableHead>
-            <TableHead>Region</TableHead>
-            <TableHead>Sektor</TableHead>
-            <TableHead className="text-center">Tamamlanma</TableHead>
-            <TableHead className="text-center">Status</TableHead>
-            <TableHead className="text-center">Əməliyyatlar</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            // Loading skeleton
-            Array.from({ length: 3 }).map((_, index) => (
-              <TableRow key={index}>
-                <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
-                <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
-                <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
-                <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
-                <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
-                <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
-              </TableRow>
-            ))
-          ) : schools.length === 0 ? (
-            // Empty state
+    <>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                Məlumat yoxdur
-              </TableCell>
+              <TableHead>Ad</TableHead>
+              <TableHead>Region</TableHead>
+              <TableHead>Sektor</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Telefon</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead className="text-right">Əməliyyatlar</TableHead>
             </TableRow>
-          ) : (
-            // Data rows
-            schools.map((school) => (
+          </TableHeader>
+          <TableBody>
+            {schools.map((school) => (
               <TableRow key={school.id}>
                 <TableCell className="font-medium">{school.name}</TableCell>
-                <TableCell>{regionNames[school.region_id]}</TableCell>
-                <TableCell>{sectorNames[school.sector_id]}</TableCell>
-                <TableCell className="text-center">
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">
-                      {school.completion_rate}%
-                    </div>
-                    <Progress
-                      value={school.completion_rate || 0}
-                      className="w-24 h-2"
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <Badge variant={school.status === 'active' ? 'outline' : 'destructive'}>
-                    {school.status}
+                <TableCell>{regionNames[school.region_id] || school.region_id}</TableCell>
+                <TableCell>{sectorNames[school.sector_id] || school.sector_id}</TableCell>
+                <TableCell>
+                  <Badge variant={school.status === 'active' ? 'default' : 'secondary'}>
+                    {school.status === 'active' ? 'Aktiv' : 'Deaktiv'}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit(school)}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Redaktə et
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleViewFiles(school)}>
-                        <File className="w-4 h-4 mr-2" />
-                        Fayllara bax
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleViewLinks(school)}>
-                        <Link className="w-4 h-4 mr-2" />
-                        Linklərə bax
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDelete(school)}>
-                        <Eye className="w-4 h-4 mr-2" />
-                        Sil
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleAssignAdmin(school)}>
-                        <Users className="w-4 h-4 mr-2" />
-                        Admin təyin et
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Bell className="w-4 h-4 mr-2" />
-                        Bildiriş göndər
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <TableCell>{school.phone || '-'}</TableCell>
+                <TableCell>{school.email || '-'}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(school)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleViewFiles(school)}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Fayllar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewLinks(school)}>
+                          <Link className="h-4 w-4 mr-2" />
+                          Linklər
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onAssignAdmin(school)}>
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Admin təyin et
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onDelete(school)} className="text-destructive">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Sil
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-      
-      {selectedSchoolForFiles && (
-        <SchoolFilesDialog
-          isOpen={isFilesDialogOpen}
-          onOpenChange={setIsFilesDialogOpen}
-          schoolId={selectedSchoolForFiles.id || ''}
-          files={[]}
-        />
-      )}
-      
-      {selectedSchoolForLinks && (
-        <SchoolLinksDialog
-          isOpen={isLinksDialogOpen}
-          onOpenChange={setIsLinksDialogOpen}
-          schoolId={selectedSchoolForLinks.id || ''}
-        />
-      )}
-      
-      {selectedSchoolForAdmin && (
-        <SchoolAdminDialog
-          isOpen={isAdminDialogOpen}
-          onClose={() => setIsAdminDialogOpen(false)}
-          school={selectedSchoolForAdmin}
-          onSubmit={async (adminData: any) => {
-            console.log('Admin data submitted:', adminData);
-            setIsAdminDialogOpen(false);
-          }}
-          isSubmitting={false}
-        />
-      )}
-    </div>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Links Dialog */}
+      <SchoolLinksDialog
+        open={isLinksDialogOpen}
+        onOpenChange={setIsLinksDialogOpen}
+        schoolId={selectedSchoolForLinks?.id || ''}
+      />
+
+      {/* Files Dialog */}
+      <SchoolFilesDialog
+        open={isFilesDialogOpen}
+        onOpenChange={setIsFilesDialogOpen}
+        schoolId={selectedSchoolForFiles?.id || ''}
+      />
+    </>
   );
 };

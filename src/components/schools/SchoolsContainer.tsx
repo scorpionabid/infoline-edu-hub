@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { SchoolHeader } from './SchoolHeader';
 import { SchoolTable } from './SchoolTable';
@@ -7,7 +8,7 @@ import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
 import { useRegionsQuery } from '@/hooks/api/regions/useRegionsQuery';
 import { useSectorsQuery } from '@/hooks/api/sectors/useSectorsQuery';
 import { useSchoolDialogHandlers } from '@/hooks/schools';
-import { adaptSchoolsArrayFromSupabase, adaptRegionsArrayFromSupabase, adaptSectorsArrayFromSupabase } from '@/utils/typeAdapters';
+import { adaptSchoolsArrayFromSupabase, adaptRegionsArrayFromSupabase, adaptSectorsArrayFromSupabase, adaptSchoolFromSupabase } from '@/utils/typeAdapters';
 
 export const SchoolsContainer: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,8 +104,6 @@ export const SchoolsContainer: React.FC = () => {
         onViewFiles={handleViewFiles}
         onViewLinks={handleViewLinks}
         onAssignAdmin={handleAssignAdmin}
-        regions={adaptRegionsArrayFromSupabase(regions)}
-        sectors={adaptSectorsArrayFromSupabase(sectors)}
         regionNames={regionNames}
         sectorNames={sectorNames}
       />
@@ -132,3 +131,6 @@ export const SchoolsContainer: React.FC = () => {
     </div>
   );
 };
+
+// Add default export
+export default SchoolsContainer;

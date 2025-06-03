@@ -19,9 +19,7 @@ export const adaptSchoolFromSupabase = (supabaseSchool: SupabaseSchool): School 
     school_type: supabaseSchool.school_type,
     student_count: supabaseSchool.student_count,
     teacher_count: supabaseSchool.teacher_count,
-    class_count: supabaseSchool.class_count,
-    region_name: '',
-    sector_name: ''
+    class_count: supabaseSchool.class_count
   };
 };
 

@@ -42,8 +42,6 @@ interface LocalSchool {
   completion_rate: number;
   status: 'active' | 'inactive';
   last_updated?: string;
-  region_name?: string;
-  sector_name?: string;
   region_id: string;
   sector_id: string;
 }
@@ -69,8 +67,6 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
       completion_rate: 85,
       status: 'active',
       last_updated: '2024-01-15',
-      region_name: 'Bakı',
-      sector_name: 'Mərkəz',
       region_id: 'baku-region',
       sector_id: 'center-sector'
     },
@@ -80,8 +76,6 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
       completion_rate: 45,
       status: 'active',
       last_updated: '2024-01-10',
-      region_name: 'Bakı',
-      sector_name: 'Mərkəz',
       region_id: 'baku-region',
       sector_id: 'center-sector'
     },
@@ -91,8 +85,6 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
       completion_rate: 92,
       status: 'active',
       last_updated: '2024-01-18',
-      region_name: 'Gəncə',
-      sector_name: 'Şimal',
       region_id: 'ganja-region',
       sector_id: 'north-sector'
     },
@@ -102,8 +94,6 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
       completion_rate: 23,
       status: 'active',
       last_updated: '2024-01-05',
-      region_name: 'Füzuli',
-      sector_name: 'Cənub',
       region_id: 'fuzuli-region',
       sector_id: 'south-sector'
     }
@@ -177,9 +167,7 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
       name: school.name,
       region_id: school.region_id,
       sector_id: school.sector_id,
-      status: school.status,
-      region_name: school.region_name || '',
-      sector_name: school.sector_name || ''
+      status: school.status
     };
     setSingleNotificationSchool(schoolType);
   };
@@ -235,9 +223,7 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
       name: school.name,
       region_id: school.region_id,
       sector_id: school.sector_id,
-      status: school.status,
-      region_name: school.region_name || '',
-      sector_name: school.sector_name || ''
+      status: school.status
     } as SchoolType));
 
   return (
