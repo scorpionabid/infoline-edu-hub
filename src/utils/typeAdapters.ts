@@ -61,7 +61,7 @@ export const adaptSectorsArrayFromSupabase = (supabaseSectors: SupabaseSector[])
 // School to Supabase adapters
 export const adaptSchoolToSupabase = (school: School): SupabaseSchool => {
   return {
-    id: school.id,
+    id: school.id || '',
     name: school.name,
     region_id: school.region_id,
     sector_id: school.sector_id,

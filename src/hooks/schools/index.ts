@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 
 export const useSchoolDialogHandlers = (handlers: {
@@ -41,3 +40,5 @@ export const useSchoolDialogHandlers = (handlers: {
     handleAddClick
   };
 };
+
+export * from './useSchools';

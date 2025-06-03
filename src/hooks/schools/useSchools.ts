@@ -1,51 +1,40 @@
+
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/school';
-import { useToast } from '@/components/ui/use-toast';
 
-export const useSchools = (sectorId?: string, regionId?: string) => {
+// Mock hook for schools - replace with actual Supabase integration when available
+export const useSchools = (sectorId?: string) => {
   const [schools, setSchools] = useState<School[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const { toast } = useToast();
-
-  const fetchSchools = async () => {
-    setLoading(true);
-    try {
-      let query = supabase
-        .from('schools')
-        .select('*')
-        .order('name');
-
-      if (sectorId) {
-        query = query.eq('sector_id', sectorId);
-      }
-
-      if (regionId) {
-        query = query.eq('region_id', regionId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setSchools(data || []);
-    } catch (err: any) {
-      setError(err);
-      toast({
-        title: 'Error',
-        description: `Failed to fetch schools: ${err.message}`,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchSchools();
-  }, [sectorId, regionId]);
+    setLoading(true);
+    // Mock data based on sector filter
+    const mockSchools: School[] = [
+      {
+        id: '1',
+        name: 'Məktəb 1',
+        region_id: 'region-1',
+        sector_id: sectorId || 'sector-1',
+        status: 'active'
+      },
+      {
+        id: '2', 
+        name: 'Məktəb 2',
+        region_id: 'region-1',
+        sector_id: sectorId || 'sector-1',
+        status: 'active'
+      }
+    ];
 
-  return { schools, loading, error, refetch: fetchSchools };
+    setTimeout(() => {
+      const filteredSchools = sectorId 
+        ? mockSchools.filter(school => school.sector_id === sectorId)
+        : mockSchools;
+      setSchools(filteredSchools);
+      setLoading(false);
+    }, 500);
+  }, [sectorId]);
+
+  return { schools, loading };
 };
-
-export default useSchools;

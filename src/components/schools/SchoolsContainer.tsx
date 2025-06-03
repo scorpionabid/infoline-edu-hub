@@ -5,8 +5,8 @@ import { SchoolTable } from './SchoolTable';
 import { SchoolFilters } from './SchoolFilters';
 import { SchoolDialogsContainer } from './SchoolDialogsContainer';
 import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
-import { useRegionsQuery } from '@/hooks/api/regions/useRegionsQuery';
-import { useSectorsQuery } from '@/hooks/api/sectors/useSectorsQuery';
+import { useRegions } from '@/hooks/regions';
+import { useSectors } from '@/hooks/sectors';
 import { useSchoolDialogHandlers } from '@/hooks/schools';
 import { adaptSchoolsArrayFromSupabase, adaptRegionsArrayFromSupabase, adaptSectorsArrayFromSupabase, adaptSchoolFromSupabase } from '@/utils/typeAdapters';
 
@@ -28,8 +28,8 @@ export const SchoolsContainer: React.FC = () => {
     loading,
     deleteSchool
   } = useSchoolsQuery();
-  const { regions, loading: loadingRegions } = useRegionsQuery();
-  const { sectors, loading: loadingSectors } = useSectorsQuery();
+  const { regions, loading: loadingRegions } = useRegions();
+  const { sectors, loading: loadingSectors } = useSectors();
   const {
     handleDeleteSchool,
     handleViewFiles,
@@ -94,11 +94,11 @@ export const SchoolsContainer: React.FC = () => {
       />
 
       <SchoolTable
-        schools={adaptSchoolsArrayFromSupabase(filteredSchools)}
+        schools={filteredSchools}
         isLoading={loading}
         onEdit={setEditingSchool}
         onDelete={(school) => {
-          setSchoolToDelete(adaptSchoolFromSupabase(school));
+          setSchoolToDelete(school);
           setIsDeleteDialogOpen(true);
         }}
         onViewFiles={handleViewFiles}
