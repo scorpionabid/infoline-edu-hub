@@ -12,6 +12,9 @@ export interface User {
   sector_id?: string;
   school_id?: string;
   position?: string;
+  school_name?: string;
+  region_name?: string;
+  sector_name?: string;
 }
 
 export interface UserFilter {
@@ -39,6 +42,18 @@ export interface FullUserData extends User {
   name?: string;
 }
 
+export interface NotificationSettings {
+  email: boolean;
+  sms: boolean;
+  push: boolean;
+  inApp: boolean;
+  system: boolean;
+  deadline: boolean;
+  deadlineReminders: boolean;
+  statusUpdates: boolean;
+  weeklyReports: boolean;
+}
+
 export interface UserFormData {
   email: string;
   full_name: string;
@@ -49,10 +64,4 @@ export interface UserFormData {
   school_id?: string;
   language?: string;
   notifications?: NotificationSettings;
-}
-
-export interface NotificationSettings {
-  email: boolean;
-  sms: boolean;
-  push: boolean;
 }

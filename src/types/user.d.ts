@@ -15,6 +15,12 @@ export interface User {
   entityName?: string;
   created_at?: string;
   updated_at?: string;
+  school_id?: string;
+  sector_id?: string;
+  region_id?: string;
+  school_name?: string;
+  region_name?: string;
+  sector_name?: string;
   // Adding support for notification settings
   notification_settings?: NotificationSettings;
   notificationSettings?: NotificationSettings;
@@ -23,10 +29,10 @@ export interface User {
 export interface NotificationSettings {
   email: boolean;
   push: boolean;
+  sms: boolean;
   inApp: boolean;
   system: boolean;
   deadline: boolean;
-  sms?: boolean;
   deadlineReminders: boolean;
   statusUpdates: boolean;
   weeklyReports: boolean;

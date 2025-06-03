@@ -2,60 +2,33 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-interface ResponsiveHeadingProps {
-  level: 1 | 2 | 3 | 4 | 5 | 6;
+interface ResponsiveTypographyProps {
   children: React.ReactNode;
+  variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'small';
   className?: string;
 }
 
-const ResponsiveHeading: React.FC<ResponsiveHeadingProps> = ({ 
-  level, 
-  children, 
-  className 
+export const ResponsiveTypography: React.FC<ResponsiveTypographyProps> = ({
+  children,
+  variant = 'p',
+  className
 }) => {
-  const baseClasses = "font-semibold text-foreground";
-  
-  const sizeClasses = {
-    1: "text-xl sm:text-2xl lg:text-3xl",
-    2: "text-lg sm:text-xl lg:text-2xl", 
-    3: "text-base sm:text-lg lg:text-xl",
-    4: "text-sm sm:text-base lg:text-lg",
-    5: "text-sm lg:text-base",
-    6: "text-xs sm:text-sm"
+  const baseClasses = {
+    h1: 'text-2xl md:text-3xl lg:text-4xl font-bold',
+    h2: 'text-xl md:text-2xl lg:text-3xl font-semibold',
+    h3: 'text-lg md:text-xl lg:text-2xl font-medium',
+    h4: 'text-base md:text-lg lg:text-xl font-medium',
+    p: 'text-sm md:text-base',
+    small: 'text-xs md:text-sm'
   };
 
-  const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+  const Tag = variant as keyof JSX.IntrinsicElements;
 
   return (
-    <Tag className={cn(baseClasses, sizeClasses[level], className)}>
+    <Tag className={cn(baseClasses[variant], className)}>
       {children}
     </Tag>
   );
 };
 
-interface ResponsiveTextProps {
-  variant?: 'body' | 'small' | 'large' | 'muted';
-  children: React.ReactNode;
-  className?: string;
-}
-
-const ResponsiveText: React.FC<ResponsiveTextProps> = ({ 
-  variant = 'body', 
-  children, 
-  className 
-}) => {
-  const variants = {
-    body: "text-sm sm:text-base",
-    small: "text-xs sm:text-sm",
-    large: "text-base sm:text-lg",
-    muted: "text-xs sm:text-sm text-muted-foreground"
-  };
-
-  return (
-    <p className={cn(variants[variant], className)}>
-      {children}
-    </p>
-  );
-};
-
-export { ResponsiveHeading, ResponsiveText };
+export default ResponsiveTypography;

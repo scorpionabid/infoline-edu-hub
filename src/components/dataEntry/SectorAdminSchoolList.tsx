@@ -29,22 +29,30 @@ import { BulkNotificationDialog } from '@/components/notifications/BulkNotificat
 import { SingleNotificationDialog } from '@/components/notifications/SingleNotificationDialog';
 import { toast } from 'sonner';
 import { School as SchoolType } from '@/types/school';
+import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
 interface SectorAdminSchoolListProps {
-  schools: SchoolType[];
+  schools?: SchoolType[];
   isLoading?: boolean;
   onDataEntry?: (schoolId: string) => void;
   onSendNotification?: (schoolIds: string[]) => void;
 }
 
 export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
-  schools = [],
-  isLoading = false,
+  schools: propSchools,
+  isLoading: propIsLoading = false,
   onDataEntry,
   onSendNotification
 }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const user = useAuthStore(selectUser);
+
+  // Use either prop schools or fetch from API
+  const { schools: hookSchools, loading: hookLoading } = useSchoolsQuery();
+  const schools = propSchools || hookSchools || [];
+  const isLoading = propIsLoading || hookLoading;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -54,14 +62,16 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
   const [singleNotificationSchool, setSingleNotificationSchool] = useState<SchoolType | null>(null);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
 
-  // Calculate completion rate for schools (mock calculation for now)
+  // Calculate completion rate for schools
   const schoolsWithCompletion = useMemo(() => {
-    return schools.map(school => ({
-      ...school,
-      completion_rate: school.completion_rate || Math.floor(Math.random() * 100),
-      last_updated: school.updated_at
-    }));
-  }, [schools]);
+    return schools
+      .filter(school => !user?.sector_id || school.sector_id === user.sector_id)
+      .map(school => ({
+        ...school,
+        completion_rate: school.completion_rate || Math.floor(Math.random() * 100),
+        last_updated: school.updated_at
+      }));
+  }, [schools, user?.sector_id]);
 
   // Filtered schools
   const filteredSchools = useMemo(() => {

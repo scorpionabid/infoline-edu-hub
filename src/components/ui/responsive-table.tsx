@@ -3,94 +3,42 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { useMobile } from '@/hooks/common/useMobile';
 
 interface ResponsiveTableProps {
   children: React.ReactNode;
   className?: string;
-  showScrollbar?: boolean;
+  scrollable?: boolean;
+  height?: string;
 }
 
-const ResponsiveTable: React.FC<ResponsiveTableProps> = ({ 
-  children, 
+export const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
+  children,
   className,
-  showScrollbar = true 
+  scrollable = true,
+  height = '400px'
 }) => {
-  const isMobile = useMobile();
+  const tableContent = (
+    <Table className={cn('min-w-full', className)}>
+      {children}
+    </Table>
+  );
 
-  if (isMobile) {
+  if (scrollable) {
     return (
-      <div className="border rounded-lg overflow-hidden">
-        <ScrollArea className="w-full" type={showScrollbar ? 'auto' : 'never'}>
-          <div className="min-w-[600px]">
-            <Table className={cn('text-sm', className)}>
-              {children}
-            </Table>
-          </div>
-        </ScrollArea>
-      </div>
+      <ScrollArea className="rounded-md border" style={{ height }}>
+        <div className="overflow-x-auto">
+          {tableContent}
+        </div>
+      </ScrollArea>
     );
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table className={className}>
-        {children}
-      </Table>
+    <div className="overflow-x-auto rounded-md border">
+      {tableContent}
     </div>
   );
 };
 
-// Mobile-optimized table cell
-interface ResponsiveTableCellProps {
-  children: React.ReactNode;
-  className?: string;
-  hideOnMobile?: boolean;
-}
-
-const ResponsiveTableCell: React.FC<ResponsiveTableCellProps> = ({ 
-  children, 
-  className,
-  hideOnMobile = false 
-}) => {
-  const isMobile = useMobile();
-
-  if (isMobile && hideOnMobile) {
-    return null;
-  }
-
-  return (
-    <TableCell className={cn(
-      'px-2 py-3 sm:px-4',
-      isMobile && 'text-xs',
-      className
-    )}>
-      {children}
-    </TableCell>
-  );
-};
-
-// Mobile-optimized table header
-const ResponsiveTableHead: React.FC<ResponsiveTableCellProps> = ({ 
-  children, 
-  className,
-  hideOnMobile = false 
-}) => {
-  const isMobile = useMobile();
-
-  if (isMobile && hideOnMobile) {
-    return null;
-  }
-
-  return (
-    <TableHead className={cn(
-      'px-2 py-3 sm:px-4',
-      isMobile && 'text-xs font-medium',
-      className
-    )}>
-      {children}
-    </TableHead>
-  );
-};
-
-export { ResponsiveTable, ResponsiveTableCell, ResponsiveTableHead, TableBody, TableHeader, TableRow };
+export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow };
+export default ResponsiveTable;
