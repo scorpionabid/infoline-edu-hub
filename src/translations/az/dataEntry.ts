@@ -100,7 +100,35 @@ const dataEntryTranslations = {
   rejectConfirmationTitle: 'Formu rədd et',
   rejectConfirmationDescription: 'Bu formu rədd etmək istədiyinizə əminsiniz?',
   fixValidationErrors: 'Zəhmət olmasa, validasiya xətalarını düzəldin',
-  loading: 'Yüklənir...'
+  loading: 'Yüklənir...',
+  
+  // Quick Wins üçün yeni translation-lar
+  selectSchool: 'Məktəb seçin',
+  searchSchools: 'Məktəb axtarın...',
+  schoolsSelected: 'məktəb seçildi',
+  clearSearch: 'Axtarışı təmizlə',
+  noSchoolsFound: 'Heç bir məktəb tapılmadı',
+  overallCompletion: 'Ümumi tamamlanma',
+  categoriesCompleted: 'kateqoriya tamamlandı',
+  fieldsCompleted: 'sahə tamamlandı',
+  selectCategoryToStart: 'Başlamaq üçün kateqoriya seçin',
+  chooseFromCategoriesList: 'Sol tərəfdəki siyahıdan seçin',
+  previousCategory: 'Əvvəlki',
+  nextCategory: 'Növbəti',
+  saveData: 'Yadda saxla',
+  submitForApproval: 'Təsdiq üçün göndər',
+  unsavedChanges: 'Yadda saxlanmamış dəyişikliklər',
+  saving: 'Yadda saxlanır...',
+  submitting: 'Göndərilir...',
+  loadingSchools: 'Məktəblər yüklənir...',
+  noSchoolSelected: 'Məktəb seçilməyib',
+  students: 'şagird',
+  schools: 'məktəb',
+  formWillAppearHere: 'Form burada görünəcək',
+  selectCategoryToViewForm: 'Formu görmək üçün kateqoriya seçin',
+  pleaseSelectCategoryFromList: 'Zəhmət olmasa siyahıdan kateqoriya seçin',
+  noCategorySelected: 'Kateqoriya seçilməyib',
+  pleaseSelectCategory: 'Zəhmət olmasa kateqoriya seçin'
 };
 
 export default dataEntryTranslations;

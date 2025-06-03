@@ -172,4 +172,201 @@
   .error-message {
     @apply text-destructive text-center p-4;
   }
+  
+  /* Quick Wins üçün yeni sillər */
+  
+  /* Line clamp utility for long text */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* Smooth transitions for interactions */
+  .transition-all-200 {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .transition-all-300 {
+    transition: all 0.3s ease-in-out;
+  }
+  
+  /* Progress bar animations */
+  .progress-bar-smooth {
+    transition: width 0.5s ease-in-out;
+  }
+  
+  /* Floating action bar backdrop */
+  .backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  
+  /* School selector enhancements */
+  .school-card {
+    @apply cursor-pointer transition-all duration-200 hover:shadow-md;
+  }
+  
+  .school-card-selected {
+    @apply border-primary bg-primary/5 shadow-md;
+  }
+  
+  .school-card-unselected {
+    @apply border-gray-200 hover:border-gray-300;
+  }
+  
+  /* Category navigation enhancements */
+  .category-button {
+    @apply w-full justify-start text-left font-normal h-auto p-3 transition-all duration-200;
+  }
+  
+  .category-button-selected {
+    @apply font-medium bg-primary text-primary-foreground;
+  }
+  
+  .category-button-unselected {
+    @apply hover:bg-muted;
+  }
+  
+  .category-progress-bar {
+    @apply w-full bg-gray-200 rounded-full h-1.5;
+  }
+  
+  .category-progress-fill {
+    @apply h-1.5 rounded-full transition-all duration-300;
+  }
+  
+  /* Progress header enhancements */
+  .progress-header {
+    @apply mb-6;
+  }
+  
+  .progress-main-bar {
+    @apply w-full bg-gray-200 rounded-full h-3;
+  }
+  
+  .progress-main-fill {
+    @apply bg-primary h-3 rounded-full transition-all duration-500;
+  }
+  
+  /* Form action bar enhancements */
+  .form-action-bar {
+    @apply sticky bottom-4 bg-white/95 backdrop-blur-sm border shadow-lg;
+  }
+  
+  .dark .form-action-bar {
+    @apply bg-background/95;
+  }
+  
+  /* Grid responsive improvements */
+  @media (max-width: 768px) {
+    .grid-cols-auto-fit {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    
+    .form-action-bar {
+      @apply mx-2;
+    }
+    
+    .progress-header {
+      @apply px-2;
+    }
+  }
+  
+  /* Scroll area enhancements */
+  .scroll-area-smooth {
+    scroll-behavior: smooth;
+  }
+  
+  /* Focus ring improvements */
+  .focus-ring-improved {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  }
+  
+  /* Animation classes */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+  
+  /* Badge enhancements */
+  .badge-success {
+    @apply bg-green-100 text-green-800 border-green-300;
+  }
+  
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800 border-yellow-300;
+  }
+  
+  .badge-error {
+    @apply bg-red-100 text-red-800 border-red-300;
+  }
+  
+  .badge-info {
+    @apply bg-blue-100 text-blue-800 border-blue-300;
+  }
+  
+  /* Dark mode badge adjustments */
+  .dark .badge-success {
+    @apply bg-green-900/30 text-green-300 border-green-800;
+  }
+  
+  .dark .badge-warning {
+    @apply bg-yellow-900/30 text-yellow-300 border-yellow-800;
+  }
+  
+  .dark .badge-error {
+    @apply bg-red-900/30 text-red-300 border-red-800;
+  }
+  
+  .dark .badge-info {
+    @apply bg-blue-900/30 text-blue-300 border-blue-800;
+  }
+}
+
+/* Keyframe animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
