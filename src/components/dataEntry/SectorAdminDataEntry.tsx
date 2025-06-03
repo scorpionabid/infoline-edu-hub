@@ -34,8 +34,9 @@ import {
 import { BulkNotificationDialog } from '@/components/notifications/BulkNotificationDialog';
 import { SingleNotificationDialog } from '@/components/notifications/SingleNotificationDialog';
 import { toast } from 'sonner';
+import { School as SchoolType } from '@/types/school';
 
-interface School {
+interface LocalSchool {
   id: string;
   name: string;
   completion_rate: number;
@@ -43,6 +44,8 @@ interface School {
   last_updated?: string;
   region_name?: string;
   sector_name?: string;
+  region_id: string;
+  sector_id: string;
 }
 
 interface SectorAdminDataEntryProps {
@@ -59,7 +62,7 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
   const { t } = useLanguage();
 
   // Mock data
-  const schools: School[] = [
+  const schools: LocalSchool[] = [
     {
       id: '1',
       name: 'Azərbaycan Dövlət Universitet Məktəbi',
@@ -67,7 +70,9 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
       status: 'active',
       last_updated: '2024-01-15',
       region_name: 'Bakı',
-      sector_name: 'Mərkəz'
+      sector_name: 'Mərkəz',
+      region_id: 'baku-region',
+      sector_id: 'center-sector'
     },
     {
       id: '2', 
@@ -76,7 +81,9 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
       status: 'active',
       last_updated: '2024-01-10',
       region_name: 'Bakı',
-      sector_name: 'Mərkəz'
+      sector_name: 'Mərkəz',
+      region_id: 'baku-region',
+      sector_id: 'center-sector'
     },
     {
       id: '3',
@@ -85,7 +92,9 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
       status: 'active',
       last_updated: '2024-01-18',
       region_name: 'Gəncə',
-      sector_name: 'Şimal'
+      sector_name: 'Şimal',
+      region_id: 'ganja-region',
+      sector_id: 'north-sector'
     },
     {
       id: '4',
@@ -94,7 +103,9 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
       status: 'active',
       last_updated: '2024-01-05',
       region_name: 'Füzuli',
-      sector_name: 'Cənub'
+      sector_name: 'Cənub',
+      region_id: 'fuzuli-region',
+      sector_id: 'south-sector'
     }
   ];
 
@@ -103,7 +114,7 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
   const [completionFilter, setCompletionFilter] = useState('all');
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   const [isBulkNotificationOpen, setIsBulkNotificationOpen] = useState(false);
-  const [singleNotificationSchool, setSingleNotificationSchool] = useState<School | null>(null);
+  const [singleNotificationSchool, setSingleNotificationSchool] = useState<SchoolType | null>(null);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
 
   // Filtered schools
@@ -159,8 +170,18 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
     setIsBulkNotificationOpen(true);
   };
 
-  const handleSingleNotification = (school: School) => {
-    setSingleNotificationSchool(school);
+  const handleSingleNotification = (school: LocalSchool) => {
+    // Convert LocalSchool to SchoolType
+    const schoolType: SchoolType = {
+      id: school.id,
+      name: school.name,
+      region_id: school.region_id,
+      sector_id: school.sector_id,
+      status: school.status,
+      region_name: school.region_name || '',
+      sector_name: school.sector_name || ''
+    };
+    setSingleNotificationSchool(schoolType);
   };
 
   const sendBulkNotification = async (notificationData: any) => {
@@ -205,6 +226,19 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
       return <Badge className="bg-red-100 text-red-800">Aşağı</Badge>;
     }
   };
+
+  // Convert filtered schools to SchoolType for the bulk notification dialog
+  const selectedSchoolsForNotification = filteredSchools
+    .filter(school => selectedSchools.includes(school.id))
+    .map(school => ({
+      id: school.id,
+      name: school.name,
+      region_id: school.region_id,
+      sector_id: school.sector_id,
+      status: school.status,
+      region_name: school.region_name || '',
+      sector_name: school.sector_name || ''
+    } as SchoolType));
 
   return (
     <div className="space-y-6">
@@ -299,7 +333,6 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
         </CardHeader>
 
         <CardContent>
-          {/* Schools Table */}
           <div className="space-y-4">
             {/* Select All */}
             <div className="flex items-center space-x-2 pb-2 border-b">
@@ -392,7 +425,7 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
       <BulkNotificationDialog
         isOpen={isBulkNotificationOpen}
         onClose={() => setIsBulkNotificationOpen(false)}
-        selectedSchools={filteredSchools.filter(school => selectedSchools.includes(school.id))}
+        selectedSchools={selectedSchoolsForNotification}
         onSend={sendBulkNotification}
         isLoading={isNotificationLoading}
       />

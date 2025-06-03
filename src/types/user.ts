@@ -4,6 +4,18 @@ export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladm
 
 export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | string;
 
+export interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  inApp: boolean;
+  system: boolean;
+  deadline: boolean;
+  sms?: boolean;
+  deadlineReminders: boolean;
+  statusUpdates: boolean;
+  weeklyReports: boolean;
+}
+
 export interface User {
   id: string;
   full_name?: string;
@@ -15,21 +27,19 @@ export interface User {
   entityName?: string;
   created_at?: string;
   updated_at?: string;
-  // Adding support for notification settings
+  phone?: string;
+  position?: string;
   notification_settings?: NotificationSettings;
   notificationSettings?: NotificationSettings;
 }
 
-export interface NotificationSettings {
-  email: boolean;
-  push: boolean;
-  inApp: boolean;
-  system: boolean;
-  deadline: boolean;
-  sms?: boolean;
-  deadlineReminders: boolean;
-  statusUpdates: boolean;
-  weeklyReports: boolean;
+export interface UserFilter {
+  role?: UserRole;
+  status?: UserStatus;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  search?: string;
 }
 
 export interface FullUserData {
@@ -56,7 +66,6 @@ export interface FullUserData {
     sector?: string;
     school?: string;
   } | string;
-  // Support both camelCase and snake_case for backward compatibility
   notification_settings?: NotificationSettings;
   notificationSettings?: NotificationSettings;
   preferences?: any;
@@ -78,6 +87,7 @@ export interface UserFormData {
   sector_id?: string;
   language?: string;
   avatar_url?: string;
+  phone?: string;
   notification_settings?: NotificationSettings;
   notificationSettings?: NotificationSettings;
 }
