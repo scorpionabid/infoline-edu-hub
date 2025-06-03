@@ -1,4 +1,3 @@
-
 const dataEntryTranslations = {
   dataEntry: 'Məlumat daxil etmə',
   form: 'Form',
@@ -101,8 +100,6 @@ const dataEntryTranslations = {
   rejectConfirmationDescription: 'Bu formu rədd etmək istədiyinizə əminsiniz?',
   fixValidationErrors: 'Zəhmət olmasa, validasiya xətalarını düzəldin',
   loading: 'Yüklənir...',
-  
-  // Quick Wins üçün yeni translation-lar
   selectSchool: 'Məktəb seçin',
   searchSchools: 'Məktəb axtarın...',
   schoolsSelected: 'məktəb seçildi',
@@ -128,7 +125,20 @@ const dataEntryTranslations = {
   selectCategoryToViewForm: 'Formu görmək üçün kateqoriya seçin',
   pleaseSelectCategoryFromList: 'Zəhmət olmasa siyahıdan kateqoriya seçin',
   noCategorySelected: 'Kateqoriya seçilməyib',
-  pleaseSelectCategory: 'Zəhmət olmasa kateqoriya seçin'
+  pleaseSelectCategory: 'Zəhmət olmasa kateqoriya seçin',
+  
+  // Additional translations
+  totalSchools: 'Ümumi məktəblər',
+  onTrack: 'Normal gedişat',
+  needsAttention: 'Diqqət tələb edir',
+  overdue: 'Gecikmiş',
+  unknown: 'Naməlum',
+  averageCompletion: 'Orta tamamlanma',
+  sendNotification: 'Bildiriş göndər',
+  sendReminder: 'Xatırlatma göndər',
+  schoolDataEntry: 'Məktəb məlumat daxiletməsi',
+  enterData: 'Məlumat daxil et',
+  notStarted: 'Başlanmayıb'
 };
 
 export default dataEntryTranslations;

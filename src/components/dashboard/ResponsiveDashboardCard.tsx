@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { ResponsiveCard } from '@/components/ui/responsive-card';
-import { useResponsive } from '@/hooks/common/useResponsive';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface ResponsiveDashboardCardProps {
@@ -11,10 +11,10 @@ interface ResponsiveDashboardCardProps {
   icon?: React.ReactNode;
   trend?: {
     value: number;
-    label: string;
-    type: 'up' | 'down' | 'neutral';
+    isPositive: boolean;
   };
   className?: string;
+  variant?: 'default' | 'success' | 'warning' | 'error';
 }
 
 export const ResponsiveDashboardCard: React.FC<ResponsiveDashboardCardProps> = ({
@@ -23,44 +23,39 @@ export const ResponsiveDashboardCard: React.FC<ResponsiveDashboardCardProps> = (
   description,
   icon,
   trend,
-  className
+  className,
+  variant = 'default'
 }) => {
-  const { isMobile } = useResponsive();
+  const getVariantStyles = () => {
+    switch (variant) {
+      case 'success':
+        return 'border-green-200 bg-green-50';
+      case 'warning':
+        return 'border-yellow-200 bg-yellow-50';
+      case 'error':
+        return 'border-red-200 bg-red-50';
+      default:
+        return '';
+    }
+  };
 
   return (
-    <ResponsiveCard
-      variant={isMobile ? "compact" : "default"}
-      className={cn(
-        "h-full",
-        className
-      )}
-      title={title}
-      description={description}
-      content={
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col">
-            <div className="text-2xl sm:text-3xl font-bold">{value}</div>
-            {trend && (
-              <div className={cn(
-                "text-sm flex items-center gap-1",
-                trend.type === 'up' && "text-green-600",
-                trend.type === 'down' && "text-red-600",
-                trend.type === 'neutral' && "text-gray-600"
-              )}>
-                <span>{trend.value > 0 ? '+' : ''}{trend.value}%</span>
-                <span>{trend.label}</span>
-              </div>
-            )}
-          </div>
-          {icon && (
-            <div className="text-2xl sm:text-3xl opacity-50">
-              {icon}
-            </div>
-          )}
-        </div>
-      }
-    />
+    <Card className={cn(getVariantStyles(), className)}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {icon && <div className="h-4 w-4">{icon}</div>}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {description && (
+          <p className="text-xs text-muted-foreground">{description}</p>
+        )}
+        {trend && (
+          <Badge variant={trend.isPositive ? 'default' : 'destructive'} className="mt-2">
+            {trend.isPositive ? '+' : ''}{trend.value}%
+          </Badge>
+        )}
+      </CardContent>
+    </Card>
   );
 };
-
-export default ResponsiveDashboardCard;
