@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
@@ -15,6 +16,7 @@ import { SimpleSchoolSelector } from '@/components/dataEntry/SimpleSchoolSelecto
 import { CategoryNavigation } from '@/components/dataEntry/CategoryNavigation';
 import { ProgressHeader } from '@/components/dataEntry/ProgressHeader';
 import { FormActionBar } from '@/components/dataEntry/FormActionBar';
+import { SectorAdminSchoolList } from '@/components/dataEntry/SectorAdminSchoolList';
 
 // Custom components and hooks
 import DataEntryFormComponent from '@/components/dataEntry/DataEntryForm';
@@ -147,6 +149,25 @@ const DataEntry = () => {
   const displaySchoolName = isSectorAdmin 
     ? selectedSchoolName 
     : user?.school_name || '';
+
+  // Handle school selection from sector admin list
+  const handleSchoolDataEntry = (schoolId: string) => {
+    const school = schools.find(s => s.id === schoolId);
+    if (school) {
+      setSelectedSchoolId(schoolId);
+      setSelectedSchoolName(school.name);
+      setSchoolSelectorSelectedId(schoolId);
+      setSchoolSelectorSelectedName(school.name);
+      
+      // Switch to school tab and navigate
+      setTabValue('school');
+      
+      // Update URL
+      const newParams = new URLSearchParams(location.search);
+      newParams.set('schoolId', schoolId);
+      navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
+    }
+  };
   
   if (loading) {
     return (
@@ -174,111 +195,196 @@ const DataEntry = () => {
           <TabsList>
             <TabsTrigger value="school">
               <School className="mr-2 h-4 w-4" />
-              {t('schoolCategories')}
+              {t('schoolCategories') || 'Məktəb Kateqoriyaları'}
             </TabsTrigger>
             <TabsTrigger value="sector">
               <Building className="mr-2 h-4 w-4" />
-              {t('sectorCategories')}
+              {t('sectorCategories') || 'Sektor Kateqoriyaları'}
             </TabsTrigger>
           </TabsList>
-        </Tabs>
-      )}
-      
-      {/* Enhanced School Selector for sector admin */}
-      {isSectorAdmin && tabValue === 'school' && (
-        <SimpleSchoolSelector
-          schools={schools || []}
-          selectedSchoolId={selectedSchoolId}
-          onSchoolSelect={(schoolId) => {
-            handleSchoolChange(schoolId);
-            // Reset category selection when changing schools
-            setSelectedCategoryId(null);
-          }}
-          searchQuery={schoolSearchQuery}
-          onSearchChange={setSchoolSearchQuery}
-        />
-      )}
-      
-      {/* Display warning if no school selected for sector admin */}
-      {isSectorAdmin && tabValue === 'school' && !selectedSchoolId && (
-        <Alert variant="default" className="mb-6">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>{t('noSchoolSelected')}</AlertTitle>
-        </Alert>
-      )}
-      
-      {/* Display categories or warning if none available */}
-      {!displayCategories?.length ? (
-        <Alert variant="default" className="mb-6">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>{t('noCategories')}</AlertTitle>
-        </Alert>
-      ) : (
-        // Main content area with sidebar and form
-        (tabValue === 'sector' || !isSectorAdmin || (isSectorAdmin && selectedSchoolId)) && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Left sidebar - Category Navigation */}
-            <div className="lg:col-span-1">
-              <CategoryNavigation
-                categories={displayCategories}
-                selectedCategoryId={selectedCategoryId}
-                onCategorySelect={setSelectedCategoryId}
-              />
-            </div>
-            
-            {/* Main content area */}
-            <div className="lg:col-span-3 space-y-6">
-              {selectedCategoryId ? (
-                <div className="space-y-6">
-                  {/* Render data entry form with selected category */}
-                  <DataEntryFormComponent 
-                    schoolId={effectiveSchoolId || undefined}
-                    categories={displayCategories}
-                    initialCategoryId={selectedCategoryId}
-                    isSectorAdmin={isSectorAdmin}
-                    schoolName={displaySchoolName}
-                  />
+
+          <TabsContent value="school" className="space-y-6">
+            {/* Enhanced School Selector for sector admin */}
+            <SimpleSchoolSelector
+              schools={schools || []}
+              selectedSchoolId={selectedSchoolId}
+              onSchoolSelect={(schoolId) => {
+                handleSchoolChange(schoolId);
+                // Reset category selection when changing schools
+                setSelectedCategoryId(null);
+              }}
+              searchQuery={schoolSearchQuery}
+              onSearchChange={setSchoolSearchQuery}
+            />
+
+            {/* Display warning if no school selected for sector admin */}
+            {!selectedSchoolId && (
+              <Alert variant="default" className="mb-6">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>{t('noSchoolSelected')}</AlertTitle>
+              </Alert>
+            )}
+
+            {/* Display categories or warning if none available */}
+            {!displayCategories?.length ? (
+              <Alert variant="default" className="mb-6">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>{t('noCategories')}</AlertTitle>
+              </Alert>
+            ) : (
+              // Main content area with sidebar and form
+              selectedSchoolId && (
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  {/* Left sidebar - Category Navigation */}
+                  <div className="lg:col-span-1">
+                    <CategoryNavigation
+                      categories={displayCategories}
+                      selectedCategoryId={selectedCategoryId}
+                      onCategorySelect={setSelectedCategoryId}
+                    />
+                  </div>
                   
-                  {/* Enhanced Form Action Bar */}
-                  <FormActionBar
-                    onPrevious={canGoPrevious ? goToPrevious : undefined}
-                    onNext={canGoNext ? goToNext : undefined}
-                    canPrevious={canGoPrevious}
-                    canNext={canGoNext}
-                    currentIndex={currentCategoryIndex}
-                    totalCount={displayCategories.length}
-                    hasUnsavedChanges={false} // This should come from form state
-                    onSave={async () => {
-                      // This should trigger save from the form component
-                      toast.success(t('saved'));
-                    }}
-                    onSubmit={async () => {
-                      // This should trigger submit from the form component
-                      toast.success(t('submitted'));
-                    }}
-                  />
-                </div>
-              ) : (
-                // Empty state when no category is selected
-                <div className="empty-state-container">
-                  <div className="text-center space-y-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-                      <School className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {t('selectCategoryToStart')}
-                      </h3>
-                      <p className="text-gray-500 mt-1">
-                        {t('chooseFromCategoriesList')}
-                      </p>
-                    </div>
+                  {/* Main content area */}
+                  <div className="lg:col-span-3 space-y-6">
+                    {selectedCategoryId ? (
+                      <div className="space-y-6">
+                        {/* Render data entry form with selected category */}
+                        <DataEntryFormComponent 
+                          schoolId={effectiveSchoolId || undefined}
+                          categories={displayCategories}
+                          initialCategoryId={selectedCategoryId}
+                          isSectorAdmin={isSectorAdmin}
+                          schoolName={displaySchoolName}
+                        />
+                        
+                        {/* Enhanced Form Action Bar */}
+                        <FormActionBar
+                          onPrevious={canGoPrevious ? goToPrevious : undefined}
+                          onNext={canGoNext ? goToNext : undefined}
+                          canPrevious={canGoPrevious}
+                          canNext={canGoNext}
+                          currentIndex={currentCategoryIndex}
+                          totalCount={displayCategories.length}
+                          hasUnsavedChanges={false}
+                          onSave={async () => {
+                            toast.success(t('saved'));
+                          }}
+                          onSubmit={async () => {
+                            toast.success(t('submitted'));
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      // Empty state when no category is selected
+                      <div className="empty-state-container">
+                        <div className="text-center space-y-4">
+                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                            <School className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {t('selectCategoryToStart')}
+                            </h3>
+                            <p className="text-gray-500 mt-1">
+                              {t('chooseFromCategoriesList')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
+              )
+            )}
+          </TabsContent>
+
+          <TabsContent value="sector" className="space-y-6">
+            {/* Sector Admin School List */}
+            <SectorAdminSchoolList
+              schools={schools || []}
+              isLoading={schoolsLoading}
+              onDataEntry={handleSchoolDataEntry}
+              onSendNotification={(schoolIds) => {
+                toast.success(`${schoolIds.length} məktəbə bildiriş göndərildi`);
+              }}
+            />
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {/* Content for non-sector admin users */}
+      {!isSectorAdmin && (
+        <>
+          {/* Display categories or warning if none available */}
+          {!displayCategories?.length ? (
+            <Alert variant="default" className="mb-6">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>{t('noCategories')}</AlertTitle>
+            </Alert>
+          ) : (
+            // Main content area with sidebar and form
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Left sidebar - Category Navigation */}
+              <div className="lg:col-span-1">
+                <CategoryNavigation
+                  categories={displayCategories}
+                  selectedCategoryId={selectedCategoryId}
+                  onCategorySelect={setSelectedCategoryId}
+                />
+              </div>
+              
+              {/* Main content area */}
+              <div className="lg:col-span-3 space-y-6">
+                {selectedCategoryId ? (
+                  <div className="space-y-6">
+                    {/* Render data entry form with selected category */}
+                    <DataEntryFormComponent 
+                      schoolId={effectiveSchoolId || undefined}
+                      categories={displayCategories}
+                      initialCategoryId={selectedCategoryId}
+                      isSectorAdmin={isSectorAdmin}
+                      schoolName={displaySchoolName}
+                    />
+                    
+                    {/* Enhanced Form Action Bar */}
+                    <FormActionBar
+                      onPrevious={canGoPrevious ? goToPrevious : undefined}
+                      onNext={canGoNext ? goToNext : undefined}
+                      canPrevious={canGoPrevious}
+                      canNext={canGoNext}
+                      currentIndex={currentCategoryIndex}
+                      totalCount={displayCategories.length}
+                      hasUnsavedChanges={false}
+                      onSave={async () => {
+                        toast.success(t('saved'));
+                      }}
+                      onSubmit={async () => {
+                        toast.success(t('submitted'));
+                      }}
+                    />
+                  </div>
+                ) : (
+                  // Empty state when no category is selected
+                  <div className="empty-state-container">
+                    <div className="text-center space-y-4">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                        <School className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">
+                          {t('selectCategoryToStart')}
+                        </h3>
+                        <p className="text-gray-500 mt-1">
+                          {t('chooseFromCategoriesList')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )
+          )}
+        </>
       )}
     </div>
   );

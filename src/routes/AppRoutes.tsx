@@ -25,7 +25,6 @@ import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
 import Profile from "@/pages/Profile";
 import ApprovalPage from "@/pages/Approval";
-import EnhancedSectorDataEntry from "@/pages/EnhancedSectorDataEntry";
 
 import { UserRole } from "@/types/supabase";
 
@@ -165,8 +164,6 @@ const AppRoutes = () => (
       <Route path="/data-entry" element={<DataEntry />} />
       
       <Route path="/data-entry/:categoryId" element={<DataEntry />} />
-      
-      <Route path="/enhanced-data-entry" element={<EnhancedSectorDataEntry />} />
     </Route>
     
     {/* Default Routes */}

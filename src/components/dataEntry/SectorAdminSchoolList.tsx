@@ -30,69 +30,21 @@ import { SingleNotificationDialog } from '@/components/notifications/SingleNotif
 import { toast } from 'sonner';
 import { School as SchoolType } from '@/types/school';
 
-interface LocalSchool {
-  id: string;
-  name: string;
-  completion_rate: number;
-  status: 'active' | 'inactive';
-  last_updated?: string;
-  region_id: string;
-  sector_id: string;
-}
-
-interface EnhancedSectorAdminDataEntryProps {
+interface SectorAdminSchoolListProps {
+  schools: SchoolType[];
+  isLoading?: boolean;
   onDataEntry?: (schoolId: string) => void;
   onSendNotification?: (schoolIds: string[]) => void;
-  onBulkAction?: (action: string, schoolIds: string[]) => void;
 }
 
-export const EnhancedSectorAdminDataEntry: React.FC<EnhancedSectorAdminDataEntryProps> = ({
+export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
+  schools = [],
+  isLoading = false,
   onDataEntry,
-  onSendNotification,
-  onBulkAction
+  onSendNotification
 }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-
-  // Mock data
-  const schools: LocalSchool[] = [
-    {
-      id: '1',
-      name: 'Azərbaycan Dövlət Universitet Məktəbi',
-      completion_rate: 85,
-      status: 'active',
-      last_updated: '2024-01-15',
-      region_id: 'baku-region',
-      sector_id: 'center-sector'
-    },
-    {
-      id: '2', 
-      name: 'Qafqaz Universitet Lisey Məktəbi',
-      completion_rate: 45,
-      status: 'active',
-      last_updated: '2024-01-10',
-      region_id: 'baku-region',
-      sector_id: 'center-sector'
-    },
-    {
-      id: '3',
-      name: 'Nizami adına Məktəb',
-      completion_rate: 92,
-      status: 'active',
-      last_updated: '2024-01-18',
-      region_id: 'ganja-region',
-      sector_id: 'north-sector'
-    },
-    {
-      id: '4',
-      name: 'Füzuli rayon məktəbi',
-      completion_rate: 23,
-      status: 'active',
-      last_updated: '2024-01-05',
-      region_id: 'fuzuli-region',
-      sector_id: 'south-sector'
-    }
-  ];
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -102,9 +54,18 @@ export const EnhancedSectorAdminDataEntry: React.FC<EnhancedSectorAdminDataEntry
   const [singleNotificationSchool, setSingleNotificationSchool] = useState<SchoolType | null>(null);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
 
+  // Calculate completion rate for schools (mock calculation for now)
+  const schoolsWithCompletion = useMemo(() => {
+    return schools.map(school => ({
+      ...school,
+      completion_rate: school.completion_rate || Math.floor(Math.random() * 100),
+      last_updated: school.updated_at
+    }));
+  }, [schools]);
+
   // Filtered schools
   const filteredSchools = useMemo(() => {
-    return schools.filter(school => {
+    return schoolsWithCompletion.filter(school => {
       const matchesSearch = school.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || school.status === statusFilter;
       const matchesCompletion = 
@@ -115,7 +76,7 @@ export const EnhancedSectorAdminDataEntry: React.FC<EnhancedSectorAdminDataEntry
       
       return matchesSearch && matchesStatus && matchesCompletion;
     });
-  }, [schools, searchTerm, statusFilter, completionFilter]);
+  }, [schoolsWithCompletion, searchTerm, statusFilter, completionFilter]);
 
   // Stats
   const stats = useMemo(() => {
@@ -148,7 +109,14 @@ export const EnhancedSectorAdminDataEntry: React.FC<EnhancedSectorAdminDataEntry
 
   // Navigation handlers
   const handleDataEntry = (schoolId: string) => {
-    navigate(`/data-entry?schoolId=${schoolId}`);
+    if (onDataEntry) {
+      onDataEntry(schoolId);
+    } else {
+      // Navigate to data entry with school ID
+      const newParams = new URLSearchParams(window.location.search);
+      newParams.set('schoolId', schoolId);
+      navigate(`/data-entry?${newParams.toString()}`);
+    }
   };
 
   const handleSchoolNameClick = (schoolId: string) => {
@@ -164,15 +132,8 @@ export const EnhancedSectorAdminDataEntry: React.FC<EnhancedSectorAdminDataEntry
     setIsBulkNotificationOpen(true);
   };
 
-  const handleSingleNotification = (school: LocalSchool) => {
-    const schoolType: SchoolType = {
-      id: school.id,
-      name: school.name,
-      region_id: school.region_id,
-      sector_id: school.sector_id,
-      status: school.status
-    };
-    setSingleNotificationSchool(schoolType);
+  const handleSingleNotification = (school: SchoolType) => {
+    setSingleNotificationSchool(school);
   };
 
   const sendBulkNotification = async (notificationData: any) => {
@@ -216,24 +177,19 @@ export const EnhancedSectorAdminDataEntry: React.FC<EnhancedSectorAdminDataEntry
     }
   };
 
-  const selectedSchoolsForNotification = filteredSchools
-    .filter(school => selectedSchools.includes(school.id))
-    .map(school => ({
-      id: school.id,
-      name: school.name,
-      region_id: school.region_id,
-      sector_id: school.sector_id,
-      status: school.status
-    } as SchoolType));
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <School className="h-8 w-8 animate-pulse mx-auto mb-2" />
+          <p>{t('loadingSchools')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Sektor Admin - Məlumat Daxiletməsi</h1>
-        <p className="text-muted-foreground">Məktəb məlumatlarını idarə edin və məlumat daxil edin</p>
-      </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -428,7 +384,7 @@ export const EnhancedSectorAdminDataEntry: React.FC<EnhancedSectorAdminDataEntry
       <BulkNotificationDialog
         isOpen={isBulkNotificationOpen}
         onClose={() => setIsBulkNotificationOpen(false)}
-        selectedSchools={selectedSchoolsForNotification}
+        selectedSchools={filteredSchools.filter(school => selectedSchools.includes(school.id))}
         onSend={sendBulkNotification}
         isLoading={isNotificationLoading}
       />
@@ -447,4 +403,4 @@ export const EnhancedSectorAdminDataEntry: React.FC<EnhancedSectorAdminDataEntry
   );
 };
 
-export default EnhancedSectorAdminDataEntry;
+export default SectorAdminSchoolList;
