@@ -12,7 +12,8 @@ import {
   ClipboardList,
   Columns,
   Building,
-  Building2
+  Building2,
+  BookOpen
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useTranslation';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -119,6 +120,13 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole: rawUserRole, isOpen, onTogg
       href: '/data-entry', 
       icon: FileText,
       visible: true
+    },
+    { 
+      id: 'enhanced-data-entry',
+      label: 'Sektor Admin Panel', 
+      href: '/enhanced-data-entry', 
+      icon: BookOpen,
+      visible: isSectorAdmin
     },
     { 
       id: 'approvals',

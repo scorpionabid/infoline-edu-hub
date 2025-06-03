@@ -31,6 +31,7 @@ const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarO
     { id: 'columns', label: t('columns') || 'Sütunlar', path: '/columns', visible: ['superadmin', 'regionadmin'].includes(userRole as string) },
     { id: 'users', label: t('users') || 'İstifadəçilər', path: '/users', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
     { id: 'data-entry', label: t('dataEntry') || 'Məlumat daxiletmə', path: '/data-entry', visible: ['superadmin', 'sectoradmin', 'schooladmin'].includes(userRole as string) },
+    { id: 'enhanced-data-entry', label: 'Sektor Admin Panel', path: '/enhanced-data-entry', visible: userRole === 'sectoradmin' },
     { id: 'approvals', label: t('approvals') || 'Təsdiqlər', path: '/approvals', visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole as string) },
     { id: 'settings', label: t('settings') || 'Parametrlər', path: '/settings', visible: true },
   ];

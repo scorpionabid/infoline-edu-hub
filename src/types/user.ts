@@ -11,6 +11,7 @@ export interface User {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  position?: string;
 }
 
 export interface UserFilter {
@@ -30,4 +31,28 @@ export interface CreateUserData {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+}
+
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+
+export interface FullUserData extends User {
+  name?: string;
+}
+
+export interface UserFormData {
+  email: string;
+  full_name: string;
+  phone?: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  language?: string;
+  notifications?: NotificationSettings;
+}
+
+export interface NotificationSettings {
+  email: boolean;
+  sms: boolean;
+  push: boolean;
 }
