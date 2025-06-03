@@ -1,250 +1,157 @@
-import React, { useState, useMemo } from 'react';
-import { School, Region, Sector } from '@/types/supabase';
-import { useSchoolDialogs } from '@/hooks/schools/useSchoolDialogs';
-import { useSchoolFilters } from '@/hooks/schools/useSchoolFilters';
-import { useSchoolPagination } from '@/hooks/schools/useSchoolPagination';
-import { useSchoolAdmins } from '@/hooks/schools/useSchoolAdmins';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useEffect } from 'react';
+import { SchoolHeaderContainer } from './SchoolHeaderContainer';
+import { SchoolFiltersContainer } from './SchoolFiltersContainer';
+import { SchoolTableContainer } from './SchoolTableContainer';
+import { SchoolDialogsContainer } from './SchoolDialogsContainer';
+import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
+import { useRegionsQuery } from '@/hooks/api/regions/useRegionsQuery';
+import { useSectorsQuery } from '@/hooks/api/sectors/useSectorsQuery';
+import { School, Region, Sector } from '@/types/school';
+import { adaptSchoolsArrayFromSupabase, adaptRegionsArrayFromSupabase, adaptSectorsArrayFromSupabase } from '@/utils/typeAdapters';
 
-// Alt komponentlər
-import SchoolHeaderContainer from './SchoolHeaderContainer';
-import SchoolFiltersContainer from './SchoolFiltersContainer';
-import SchoolTableContainer from './SchoolTableContainer';
-import SchoolDialogsContainer from './SchoolDialogsContainer';
+export const SchoolsContainerRefactored: React.FC = () => {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [schoolToDelete, setSchoolToDelete] = useState<School | null>(null);
+  const [isFilesDialogOpen, setIsFilesDialogOpen] = useState(false);
+  const [selectedSchoolForFiles, setSelectedSchoolForFiles] = useState<School | null>(null);
+  const [isLinksDialogOpen, setIsLinksDialogOpen] = useState(false);
+  const [selectedSchoolForLinks, setSelectedSchoolForLinks] = useState<School | null>(null);
+  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  const [schoolForAdmin, setSchoolForAdmin] = useState<School | null>(null);
+  const [editingSchool, setEditingSchool] = useState<School | null>(null);
 
-// Yardımçı funksiyalar
-import exportSchoolsToExcel from '@/utils/exportSchoolsToExcel';
+  const {
+    schools: initialSchools,
+    loading,
+    deleteSchool,
+    error,
+    refresh
+  } = useSchoolsQuery();
 
-interface SchoolsContainerProps {
-  schools: School[];
-  regions: Region[];
-  sectors: Sector[];
-  isLoading: boolean;
-  onRefresh: () => void;
-  onCreate: (school: Omit<School, 'id'>) => Promise<void>;
-  onEdit: (school: School) => Promise<void>;
-  onDelete: (school: School) => Promise<void>;
-  onAssignAdmin: (schoolId: string, userId: string) => Promise<void>;
-  regionNames: { [key: string]: string };
-  sectorNames: { [key: string]: string };
-}
+  const { regions: initialRegions } = useRegionsQuery();
+  const { sectors: initialSectors } = useSectorsQuery();
 
-const SchoolsContainerRefactored: React.FC<SchoolsContainerProps> = ({
-  schools,
-  regions,
-  sectors,
-  isLoading,
-  onRefresh,
-  onCreate,
-  onEdit,
-  onDelete,
-  onAssignAdmin,
-  regionNames,
-  sectorNames
-}) => {
-  const { t } = useLanguageSafe();
-  const permissions = usePermissions();
-  const user = useAuthStore(selectUser);
-  
-  // İcazələr
-  const canManageSchools = () => {
-    return user?.role === 'superadmin' || 
-           user?.role === 'regionadmin' || 
-           user?.role === 'sectoradmin';
+  const [schools, setSchools] = useState<School[]>([]);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [sectors, setSectors] = useState<Sector[]>([]);
+
+  useEffect(() => {
+    if (initialSchools) {
+      setSchools(initialSchools);
+    }
+  }, [initialSchools]);
+
+  useEffect(() => {
+    if (initialRegions) {
+      setRegions(initialRegions);
+    }
+  }, [initialRegions]);
+
+  useEffect(() => {
+    if (initialSectors) {
+      setSectors(initialSectors);
+    }
+  }, [initialSectors]);
+
+  const handleDeleteSchool = (school: School) => {
+    setSchoolToDelete(school);
+    setIsDeleteDialogOpen(true);
   };
-  
-  const canEditSchool = (school: School) => {
-    if (user?.role === 'superadmin') return true;
-    if (user?.role === 'regionadmin' && user.region_id === school.region_id) return true;
-    if (user?.role === 'sectoradmin' && user.sector_id === school.sector_id) return true;
-    return false;
-  };
-  
-  const canDeleteSchool = (school: School) => {
-    return user?.role === 'superadmin';
-  };
-  
-  const canAssignAdmin = (school: School) => {
-    if (user?.role === 'superadmin') return true;
-    if (user?.role === 'regionadmin' && user.region_id === school.region_id) return true;
-    return false;
-  };
-  
-  // Form əməliyyatları üçün submitting state
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Dialog idarəetmə hook-u
-  const dialogs = useSchoolDialogs();
-  
-  // Filter hook-u
-  const filters = useSchoolFilters(Array.isArray(schools) ? schools : []);
-  
-  // Pagination hook-u
-  const pagination = useSchoolPagination(filters.filteredSchools);
-  
-  // Məktəb ID-lərini əldə edirik
-  const schoolIds = useMemo(() => 
-    Array.isArray(schools) ? schools.map(school => school.id) : [], 
-    [schools]
-  );
-  
-  // Məktəb adminlərini əldə edirik
-  const { adminMap, isLoading: isAdminsLoading } = useSchoolAdmins(schoolIds);
-  
-  // Əməliyyat funksiyaları
-  const handleCreateSchool = async (data: Omit<School, 'id'>) => {
-    setIsSubmitting(true);
-    try {
-      await onCreate(data);
-      dialogs.closeAddDialog();
-      toast.success(t('schoolCreated'));
-    } catch (error) {
-      toast.error(t('errorCreatingSchool'));
-      console.error('Error creating school:', error);
-    } finally {
-      setIsSubmitting(false);
+
+  const confirmDeleteSchool = async () => {
+    if (schoolToDelete) {
+      await deleteSchool(schoolToDelete.id || '');
+      setIsDeleteDialogOpen(false);
+      setSchoolToDelete(null);
+      refresh();
     }
   };
-  
-  const handleEditSchool = async (school: School) => {
-    setIsSubmitting(true);
-    try {
-      await onEdit(school);
-      dialogs.closeEditDialog();
-      toast.success(t('schoolUpdated'));
-    } catch (error) {
-      toast.error(t('errorUpdatingSchool'));
-      console.error('Error updating school:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+
+  const handleViewFiles = (school: School) => {
+    setSelectedSchoolForFiles(school);
+    setIsFilesDialogOpen(true);
   };
-  
-  const handleDeleteSchool = async (school: School) => {
-    setIsSubmitting(true);
-    try {
-      await onDelete(school);
-      dialogs.closeDeleteDialog();
-      toast.success(t('schoolDeleted'));
-    } catch (error) {
-      toast.error(t('errorDeletingSchool'));
-      console.error('Error deleting school:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+
+  const handleViewLinks = (school: School) => {
+    setSelectedSchoolForLinks(school);
+    setIsLinksDialogOpen(true);
   };
-  
-  const handleAssignAdmin = async (schoolId: string, userId: string) => {
-    setIsSubmitting(true);
-    try {
-      await onAssignAdmin(schoolId, userId);
-      dialogs.closeAdminDialog();
-      toast.success(t('adminAssigned'));
-    } catch (error) {
-      toast.error(t('errorAssigningAdmin'));
-      console.error('Error assigning admin:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+
+  const handleAssignAdmin = (school: School) => {
+    setSchoolForAdmin(school);
+    setIsAdminDialogOpen(true);
   };
-  
-  const handleExportToExcel = () => {
-    if (!schools || filters.filteredSchools.length === 0) {
-      toast.warning(t('noSchoolsToExport') || 'İxrac etmək üçün məktəb tapılmadı');
-      return;
-    }
-    
-    try {
-      exportSchoolsToExcel(filters.filteredSchools, {
-        fileName: 'infoLine_məktəblər.xlsx',
-        sheetName: t('schools') || 'Məktəblər'
-      });
-      toast.success(t('exportSuccess') || 'Məktəblər Excel formatında uğurla ixrac edildi');
-    } catch (error) {
-      toast.error(t('exportError') || 'Excel ixracı zamanı xəta baş verdi');
-      console.error('Error exporting to Excel:', error);
-    }
+
+  const handleCloseDialog = () => {
+    setIsDeleteDialogOpen(false);
+    setIsFilesDialogOpen(false);
+    setIsLinksDialogOpen(false);
+    setIsAdminDialogOpen(false);
+    setSchoolToDelete(null);
+    setSelectedSchoolForFiles(null);
+    setSelectedSchoolForLinks(null);
+    setSchoolForAdmin(null);
   };
-  
+
+  const regionNames: Record<string, string> = regions.reduce((acc: Record<string, string>, region: Region) => {
+    acc[region.id] = region.name;
+    return acc;
+  }, {});
+
+  const sectorNames: Record<string, string> = sectors.reduce((acc: Record<string, string>, sector: Sector) => {
+    acc[sector.id] = sector.name;
+    return acc;
+  }, {});
+
+  const [filters, setFilters] = useState({
+    search: '',
+    region: '',
+    sector: '',
+    status: ''
+  });
+
+  const filteredSchools = schools.filter(school => {
+    const searchRegex = new RegExp(filters.search, 'i');
+    const matchesSearch = searchRegex.test(school.name);
+    const matchesRegion = filters.region === '' || school.region_id === filters.region;
+    const matchesSector = filters.sector === '' || school.sector_id === filters.sector;
+    const matchesStatus = filters.status === '' || school.status === filters.status;
+
+    return matchesSearch && matchesRegion && matchesSector && matchesStatus;
+  });
+
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header Component */}
-      <SchoolHeaderContainer
-        onAdd={dialogs.openAddDialog}
-        onExport={handleExportToExcel}
-        onRefresh={onRefresh}
-        isLoading={isLoading}
-        canManageSchools={canManageSchools()}
-        schoolsCount={filters.filteredSchools.length}
-      />
+    <div className="space-y-6">
+      <SchoolHeaderContainer />
       
-      {/* Filters Component */}
-      <SchoolFiltersContainer
-        searchTerm={filters.searchTerm}
-        regionFilter={filters.regionFilter}
-        sectorFilter={filters.sectorFilter}
-        statusFilter={filters.statusFilter}
-        regions={regions}
-        sectors={sectors}
-        setSearchTerm={filters.setSearchTerm}
-        setRegionFilter={filters.setRegionFilter}
-        setSectorFilter={filters.setSectorFilter}
-        setStatusFilter={filters.setStatusFilter}
-        resetFilters={filters.resetFilters}
-      />
-      
-      {/* Table Component */}
+      <SchoolFiltersContainer />
+
       <SchoolTableContainer
-        schools={schools}
-        filteredSchools={filters.filteredSchools}
-        paginatedSchools={pagination.paginatedSchools}
-        currentPage={pagination.currentPage}
-        totalPages={pagination.totalPages}
+        schools={adaptSchoolsArrayFromSupabase(filteredSchools)}
+        isLoading={loading}
+        onEdit={setEditingSchool}
+        onDelete={handleDeleteSchool}
+        onViewFiles={handleViewFiles}
+        onViewLinks={handleViewLinks}
+        onAssignAdmin={handleAssignAdmin}
+        regions={adaptRegionsArrayFromSupabase(regions)}
+        sectors={adaptSectorsArrayFromSupabase(sectors)}
         regionNames={regionNames}
         sectorNames={sectorNames}
-        adminMap={adminMap}
-        isAdminsLoading={isAdminsLoading}
-        onPageChange={pagination.goToPage}
-        onEdit={dialogs.handleEditDialogOpen}
-        onDelete={dialogs.handleDeleteDialogOpen}
-        onAdmin={dialogs.handleAdminDialogOpen}
-        onLinks={dialogs.handleLinkDialogOpen}
-        onFiles={dialogs.handleFilesDialogOpen}
-        canEditSchool={canEditSchool}
-        canDeleteSchool={canDeleteSchool}
-        canAssignAdmin={canAssignAdmin}
       />
-      
-      {/* Dialogs Component */}
+
       <SchoolDialogsContainer
-        isAddDialogOpen={dialogs.isAddDialogOpen}
-        isEditDialogOpen={dialogs.isEditDialogOpen}
-        isDeleteDialogOpen={dialogs.isDeleteDialogOpen}
-        isAdminDialogOpen={dialogs.isAdminDialogOpen}
-        isLinkDialogOpen={dialogs.isLinkDialogOpen}
-        isFileDialogOpen={dialogs.isFileDialogOpen}
-        selectedSchool={dialogs.selectedSchool}
-        closeAddDialog={dialogs.closeAddDialog}
-        closeEditDialog={dialogs.closeEditDialog}
-        closeDeleteDialog={dialogs.closeDeleteDialog}
-        closeAdminDialog={dialogs.closeAdminDialog}
-        closeLinkDialog={dialogs.closeLinkDialog}
-        closeFilesDialog={dialogs.closeFilesDialog}
-        onCreateSchool={handleCreateSchool}
-        onEditSchool={handleEditSchool}
-        onDeleteSchool={handleDeleteSchool}
-        onAssignAdmin={handleAssignAdmin}
-        regions={regions}
-        sectors={sectors}
-        isSubmitting={isSubmitting}
-        user={user}
+        isDeleteDialogOpen={isDeleteDialogOpen}
+        onDeleteDialogClose={() => setIsDeleteDialogOpen(false)}
+        onDeleteConfirm={confirmDeleteSchool}
+        schoolToDelete={schoolToDelete}
+        isDeleting={false}
+        isAdminDialogOpen={isAdminDialogOpen}
+        onAdminDialogClose={() => setIsAdminDialogOpen(false)}
+        schoolForAdmin={schoolForAdmin}
+        onAdminSubmit={async () => {}}
+        isSubmittingAdmin={false}
       />
     </div>
   );
 };
-
-export default SchoolsContainerRefactored;

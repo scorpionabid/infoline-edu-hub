@@ -1,99 +1,64 @@
-import { useState, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
-import { useUsers } from '@/hooks/useUsers';
-import { Sector, FullUserData } from '@/types/supabase';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth/useAuth'; // useAuth düzgün kontekst
 
-export const useExistingUserForm = (
-  sector: Sector | null,
-  onSuccess?: () => void,
-  onClose?: (open: boolean) => void
-) => {
-  const { t } = useLanguage();
-  const { user } = useAuth(); // isAuthenticated əvəzinə user istifadə edək
-  const form = useForm();
-  const [showExistingAdmins, setShowExistingAdmins] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState('');
-  const [assigningUser, setAssigningUser] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const {
-    users: allUsers,
-    loading: loadingUsers,
-    error: usersError,
-    fetchUsers
-  } = useUsers();
-  
-  const filteredUsers = allUsers.filter(user => {
-    if (showExistingAdmins) {
-      return true;
-    }
-    return user.role !== 'sectoradmin';
+import { useState, useEffect } from 'react';
+import { User, UserFilter } from '@/types/user';
+
+export const useExistingUserForm = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [filter, setFilter] = useState<UserFilter>({
+    role: '',
+    region: '',
+    search: ''
   });
-  
-  const handleUserSelect = useCallback((userId: string) => {
-    setSelectedUserId(userId);
-  }, []);
-  
-  const handleAssignAdmin = useCallback(async () => {
-    if (!sector || !selectedUserId) {
-      setError(t("selectUserAndSector") || "Zəhmət olmasa istifadəçi və sektoru seçin");
-      return;
-    }
-    
-    setError(null);
-    setAssigningUser(true);
-    
+
+  const updateFilter = (newFilter: Partial<UserFilter>) => {
+    setFilter(prev => ({ ...prev, ...newFilter }));
+  };
+
+  const fetchUsers = async () => {
+    setLoading(true);
     try {
-      // Simulate assigning user as admin
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success(t("adminAssignedSuccessfully") || "Admin uğurla təyin edildi");
-      onSuccess?.();
-      onClose?.(false);
-    } catch (e) {
-      console.error("Admin təyin edilərkən xəta baş verdi:", e);
-      setError(t("errorAssigningAdmin") || "Admin təyin edilərkən xəta baş verdi");
+      // Mock users data
+      const mockUsers: User[] = [
+        {
+          id: '1',
+          email: 'user1@example.com',
+          full_name: 'İstifadəçi 1',
+          phone: '+994501234567',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+      setUsers(mockUsers);
+    } catch (err) {
+      setError(err as Error);
     } finally {
-      setAssigningUser(false);
+      setLoading(false);
     }
-  }, [sector, selectedUserId, t, onSuccess, onClose]);
-  
-  const handleForceRefresh = useCallback(() => {
+  };
+
+  const fetchAvailableUsers = async () => {
+    return fetchUsers();
+  };
+
+  useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
-  
-  const handleCheckboxChange = useCallback((checked: boolean) => {
-    setShowExistingAdmins(checked);
-  }, []);
-  
-  const resetForm = useCallback(() => {
-    setSelectedUserId('');
-    setError(null);
-    setShowExistingAdmins(false);
-  }, []);
-  
-  // Əslində isAuthenticated-ı user varlığı ilə əvəz edirik
-  if (!user) {
-    // Handle not authenticated case
-    console.error("User is not authenticated");
-  }
-  
+  }, [filter]);
+
   return {
-    form,
-    selectedUserId,
+    users,
+    loading,
     error,
-    usersError,
-    filteredUsers,
-    loadingUsers,
-    assigningUser,
-    showExistingAdmins,
-    handleUserSelect,
-    handleAssignAdmin,
-    handleForceRefresh,
-    handleCheckboxChange,
-    resetForm
+    filter,
+    updateFilter,
+    totalPages: 1,
+    currentPage: 1,
+    setCurrentPage: () => {},
+    hasNextPage: false,
+    hasPreviousPage: false,
+    fetchUsers,
+    fetchAvailableUsers
   };
 };

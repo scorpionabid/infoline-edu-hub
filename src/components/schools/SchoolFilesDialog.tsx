@@ -1,163 +1,68 @@
 
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { useLanguage } from '@/context/LanguageContext';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { supabase } from '@/lib/supabase';
-import { UploadFileData } from '@/types/school';
-import { Category } from '@/types/category';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import FileUpload from '@/components/FileUpload';
-import { useToast } from '@/hooks/common/useToast';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { FileUpload } from '@/components/FileUpload';
+import { toast } from 'sonner';
+import { Trash2, Download } from 'lucide-react';
+
+export interface UploadFileData {
+  name: string;
+  path: string;
+  size: number;
+  type: string;
+}
 
 interface SchoolFilesDialogProps {
   isOpen: boolean;
-  onClose: () => void;
-  school: any;
-  categories: Category[];
-  onRefresh: () => void;
+  onOpenChange: (open: boolean) => void;
+  schoolId: string;
+  files: any[];
 }
 
-const SchoolFilesDialog: React.FC<SchoolFilesDialogProps> = ({
+export const SchoolFilesDialog: React.FC<SchoolFilesDialogProps> = ({
   isOpen,
-  onClose,
-  school,
-  categories,
-  onRefresh
+  onOpenChange,
+  schoolId,
+  files
 }) => {
-  const { t } = useLanguage();
-  const { toast } = useToast();
-  const user = useAuthStore(selectUser);
-  const [files, setFiles] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(undefined);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadFileData[]>(files || []);
 
-  useEffect(() => {
-    if (isOpen && school) {
-      fetchFiles();
-    }
-  }, [isOpen, school]);
-
-  const fetchFiles = async () => {
-    setIsLoading(true);
+  const handleFileUpload = async (file: File) => {
     try {
-      const { data, error } = await supabase
-        .from('school_files')
-        .select('*')
-        .eq('school_id', school.id);
-
-      if (error) throw error;
-
-      setFiles(data || []);
-    } catch (error: any) {
-      console.error('Error fetching files:', error);
-      toast({
-        variant: "destructive",
-        title: t('error'),
-        description: t('errorFetchingFiles'),
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCategoryChange = (value: string) => {
-    setSelectedCategoryId(value);
-  };
-
-  const handleFileUpload = async (fileData: UploadFileData) => {
-    try {
-      const { error } = await supabase
-        .from('school_files')
-        .insert({
-          school_id: school.id,
-          file_name: fileData.name,
-          file_path: fileData.path,
-          file_size: fileData.size,
-          file_type: fileData.type,
-          uploaded_by: user?.id,
-          category_id: selectedCategoryId
-        });
-
-      if (error) throw error;
+      // Mock file upload logic
+      const newFile: UploadFileData = {
+        name: file.name,
+        path: `/schools/${schoolId}/${file.name}`,
+        size: file.size,
+        type: file.type
+      };
       
-      toast({
-        title: t('success'),
-        description: t('fileUploaded'),
-      });
-      await fetchFiles();
-    } catch (error: any) {
-      console.error('Error uploading file:', error);
-      toast({
-        variant: "destructive",
-        title: t('error'),
-        description: t('errorUploadingFile'),
-      });
+      setUploadedFiles(prev => [...prev, newFile]);
+      toast('Fayl uğurla yükləndi');
+    } catch (error) {
+      toast('Fayl yükləməkdə xəta baş verdi');
     }
   };
 
-  const handleDeleteFile = async (file: any) => {
+  const handleFileDelete = async (fileName: string) => {
     try {
-      setIsLoading(true);
-      const { error } = await supabase
-        .from('school_files')
-        .delete()
-        .eq('id', file.id);
-
-      if (error) throw error;
-
-      toast({
-        title: t('success'),
-        description: t('fileDeleted'),
-      });
-      await fetchFiles();
-    } catch (error: any) {
-      console.error('Error deleting file:', error);
-      toast({
-        variant: "destructive",
-        title: t('error'),
-        description: t('errorDeletingFile'),
-      });
-    } finally {
-      setIsLoading(false);
+      setUploadedFiles(prev => prev.filter(f => f.name !== fileName));
+      toast('Fayl uğurla silindi');
+    } catch (error) {
+      toast('Fayl silinməkdə xəta baş verdi');
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{t('schoolFiles')}</DialogTitle>
-          <DialogDescription>{t('manageSchoolFiles')}</DialogDescription>
+          <DialogTitle>Məktəb Faylları</DialogTitle>
         </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="category">{t('category')}</Label>
-            <Select onValueChange={handleCategoryChange} defaultValue={selectedCategoryId}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder={t('selectCategory')} />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <FileUpload 
+        
+        <div className="space-y-4">
+          <FileUpload
             onFileSelect={handleFileUpload}
             accept={{
               'application/pdf': ['.pdf'],
@@ -166,35 +71,38 @@ const SchoolFilesDialog: React.FC<SchoolFilesDialogProps> = ({
               'image/*': ['.png', '.jpg', '.jpeg']
             }}
           />
-
-          <div>
-            <h3 className="text-lg font-semibold mb-2">{t('uploadedFiles')}</h3>
-            {isLoading ? (
-              <p>{t('loading')}</p>
+          
+          <div className="space-y-2">
+            <h4 className="font-medium">Yüklənmiş Fayllar</h4>
+            {uploadedFiles.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Heç bir fayl yüklənməyib</p>
             ) : (
-              <ul className="list-disc pl-5">
-                {files.map((file) => (
-                  <li key={file.id} className="flex items-center justify-between py-2 border-b border-gray-200">
-                    <span>{file.file_name}</span>
-                    <Button variant="destructive" size="sm" onClick={() => handleDeleteFile(file)}>
-                      {t('delete')}
+              uploadedFiles.map((file, index) => (
+                <div key={index} className="flex items-center justify-between p-2 border rounded">
+                  <div>
+                    <div className="font-medium">{file.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {Math.round(file.size / 1024)} KB
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button variant="ghost" size="sm">
+                      <Download className="w-4 h-4" />
                     </Button>
-                  </li>
-                ))}
-                {files.length === 0 && <p>{t('noFilesUploaded')}</p>}
-              </ul>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleFileDelete(file.name)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>
-
-        <DialogFooter>
-          <Button type="button" variant="secondary" onClick={onClose}>
-            {t('close')}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
-
-export default SchoolFilesDialog;

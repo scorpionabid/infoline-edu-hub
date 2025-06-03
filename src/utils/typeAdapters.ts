@@ -5,10 +5,9 @@ import { School, Region, Sector } from '@/types/school';
 export const adaptSchoolFromSupabase = (school: SupabaseSchool): School => {
   return {
     ...school,
-    name: school.name,
     status: (school.status === 'active' || school.status === 'inactive') ? school.status : 'active',
-    region_id: school.region_id,
-    sector_id: school.sector_id
+    created_at: school.created_at || new Date().toISOString(),
+    updated_at: school.updated_at || new Date().toISOString()
   } as School;
 };
 
