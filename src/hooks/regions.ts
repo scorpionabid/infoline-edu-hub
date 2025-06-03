@@ -19,5 +19,5 @@ export const useRegions = () => {
     }, 300);
   }, []);
 
-  return { regions, isLoading };
+  return { regions, isLoading, loading: isLoading };
 };

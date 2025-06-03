@@ -54,7 +54,13 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const { sectors } = useSectors();
   const { schools } = useSchools();
 
-  const initialRole: UserRole = entityTypes.includes('school') ? 'schooladmin' : entityTypes.includes('sector') ? 'sectoradmin' : entityTypes.includes('region') ? 'regionadmin' : 'user';
+  const initialRole: UserRole = entityTypes.includes('school') 
+    ? 'schooladmin' 
+    : entityTypes.includes('sector') 
+    ? 'sectoradmin' 
+    : entityTypes.includes('region') 
+    ? 'regionadmin' 
+    : 'schooladmin'; // Changed from 'user' to 'schooladmin'
 
   const [formData, setFormData] = useState<UserFormData>(() => ({
     email: '',

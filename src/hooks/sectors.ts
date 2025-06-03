@@ -6,11 +6,26 @@ export const useSectors = (regionId?: string) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Mock sectors data
+    // Mock sectors data with proper typing
     const mockSectors = [
-      { id: '1', name: 'Sektor 1', region_id: '1', status: 'active' },
-      { id: '2', name: 'Sektor 2', region_id: '1', status: 'active' },
-      { id: '3', name: 'Sektor 3', region_id: '2', status: 'active' }
+      { 
+        id: '1', 
+        name: 'Sektor 1', 
+        region_id: '1', 
+        status: 'active' as 'active' | 'inactive'
+      },
+      { 
+        id: '2', 
+        name: 'Sektor 2', 
+        region_id: '1', 
+        status: 'active' as 'active' | 'inactive'
+      },
+      { 
+        id: '3', 
+        name: 'Sektor 3', 
+        region_id: '2', 
+        status: 'active' as 'active' | 'inactive'
+      }
     ];
     
     setTimeout(() => {
@@ -19,5 +34,5 @@ export const useSectors = (regionId?: string) => {
     }, 300);
   }, [regionId]);
 
-  return { sectors, isLoading };
+  return { sectors, isLoading, loading: isLoading };
 };

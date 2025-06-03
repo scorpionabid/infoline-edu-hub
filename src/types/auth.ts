@@ -33,12 +33,18 @@ export interface FullUserData {
   avatar?: string;
   status?: UserStatus;
   lastLogin?: string;
+  last_login?: string;
   createdAt?: string;
   updatedAt?: string;
   created_at?: string;
   updated_at?: string;
   permissions?: string[];
   preferences?: any;
+  entityName?: string | {
+    region?: string;
+    sector?: string;
+    school?: string;
+  };
 }
 
 export interface User {
@@ -246,6 +252,20 @@ export interface UpdatePasswordFormData {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
+}
+
+export interface UserFormData {
+  email: string;
+  full_name: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  language?: string;
+  status?: UserStatus;
+  notifications?: NotificationSettings;
+  notificationSettings?: NotificationSettings;
 }
 
 // ============================================================================

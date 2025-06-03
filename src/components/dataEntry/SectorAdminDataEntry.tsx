@@ -161,13 +161,15 @@ export const SectorAdminDataEntry: React.FC<SectorAdminDataEntryProps> = ({
   };
 
   const handleSingleNotification = (school: LocalSchool) => {
-    // Convert LocalSchool to SchoolType
+    // Convert LocalSchool to SchoolType with all required properties
     const schoolType: SchoolType = {
       id: school.id,
       name: school.name,
       region_id: school.region_id,
       sector_id: school.sector_id,
-      status: school.status
+      status: school.status,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
     setSingleNotificationSchool(schoolType);
   };
