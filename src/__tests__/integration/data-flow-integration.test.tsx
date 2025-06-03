@@ -48,8 +48,10 @@ describe('Data Flow Integration Tests', () => {
         .from('data_entries')
         .insert({
           school_id: '1',
+          category_id: '1',
+          column_id: '1',
+          value: 'test',
           status: 'draft',
-          data: {},
         })
         .select();
 
