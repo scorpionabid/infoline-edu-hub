@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DataEntryFormManager } from './core';
 import { 
   Search, 
   Edit, 
@@ -32,14 +34,14 @@ import { School as SchoolType } from '@/types/school';
 import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
-interface SectorAdminSchoolListProps {
+interface SchoolManagementProps {
   schools?: SchoolType[];
   isLoading?: boolean;
   onDataEntry?: (schoolId: string) => void;
   onSendNotification?: (schoolIds: string[]) => void;
 }
 
-export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
+export const SchoolManagement: React.FC<SchoolManagementProps> = ({
   schools: propSchools,
   isLoading: propIsLoading = false,
   onDataEntry,
@@ -61,6 +63,10 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
   const [isBulkNotificationOpen, setIsBulkNotificationOpen] = useState(false);
   const [singleNotificationSchool, setSingleNotificationSchool] = useState<SchoolType | null>(null);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
+  
+  // YENİ: Modal states
+  const [selectedSchoolForDataEntry, setSelectedSchoolForDataEntry] = useState<string | null>(null);
+  const [isDataEntryModalOpen, setIsDataEntryModalOpen] = useState(false);
 
   // Calculate completion rate for schools
   const schoolsWithCompletion = useMemo(() => {
@@ -122,11 +128,18 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
     if (onDataEntry) {
       onDataEntry(schoolId);
     } else {
-      // Navigate to data entry with school ID
-      const newParams = new URLSearchParams(window.location.search);
-      newParams.set('schoolId', schoolId);
-      navigate(`/data-entry?${newParams.toString()}`);
+      // Modal açma
+      setSelectedSchoolForDataEntry(schoolId);
+      setIsDataEntryModalOpen(true);
     }
+  };
+
+  // YENİ: Modal completion handler
+  const handleDataEntryComplete = () => {
+    setIsDataEntryModalOpen(false);
+    setSelectedSchoolForDataEntry(null);
+    toast.success('Məlumatlar uğurla saxlanıldı');
+    // Reload school data if needed
   };
 
   const handleSchoolNameClick = (schoolId: string) => {
@@ -176,6 +189,13 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
       setIsNotificationLoading(false);
     }
   };
+
+  // YENİ: Selected school info
+  const selectedSchool = useMemo(() => {
+    return selectedSchoolForDataEntry 
+      ? filteredSchools.find(s => s.id === selectedSchoolForDataEntry)
+      : null;
+  }, [selectedSchoolForDataEntry, filteredSchools]);
 
   const getCompletionBadge = (rate: number) => {
     if (rate >= 80) {
@@ -409,8 +429,43 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
           isLoading={isNotificationLoading}
         />
       )}
+
+      {/* YENİ: Data Entry Modal */}
+      <Dialog open={isDataEntryModalOpen} onOpenChange={setIsDataEntryModalOpen}>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <School className="h-5 w-5" />
+              {selectedSchool && `${selectedSchool.name} üçün məlumat daxil etmə`}
+            </DialogTitle>
+            <div className="text-sm text-muted-foreground">
+              Sektor administratoru olaraq daxil etdiyiniz məlumatlar avtomatik təsdiqlənəcək.
+            </div>
+          </DialogHeader>
+          
+          {selectedSchoolForDataEntry && (
+            <div className="mt-4">
+              <DataEntryFormManager
+                schoolId={selectedSchoolForDataEntry}
+                category={selectedSchool ? {
+                  id: 'temp-category',
+                  name: 'Məktəb Məlumatları',
+                  columns: []
+                } : undefined}
+                formData={{}}
+                onFormDataChange={() => {}}
+                onSave={async () => {}}
+                onSubmit={async () => {}}
+                onExportTemplate={() => {}}
+                onImportData={async () => {}}
+                readOnly={false}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-export default SectorAdminSchoolList;
+export default SchoolManagement;

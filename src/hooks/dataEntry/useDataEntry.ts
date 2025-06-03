@@ -130,6 +130,10 @@ export const useDataEntry = ({
         throw new Error('Invalid form data');
       }
 
+      // ✅ YENİ: Auto-approval logic for SectorAdmin
+      const isAutoApprove = user?.role === 'sectoradmin';
+      const defaultStatus = isAutoApprove ? 'approved' : 'pending';
+      
       // Convert form data to entries format with safety checks
       const entriesToSave = Object.entries(formData)
         .filter(([columnId, value]) => columnId && columnId.trim() !== '')
@@ -138,7 +142,12 @@ export const useDataEntry = ({
           category_id: currentCategory.id,
           school_id: schoolId,
           value: String(value || ''),
-          status: 'pending' as DataEntryStatus
+          status: defaultStatus as DataEntryStatus,
+          // ✅ YENİ: Auto-approval metadata
+          ...(isAutoApprove && {
+            approved_by: user.id,
+            approved_at: new Date().toISOString()
+          })
         }));
 
       if (entriesToSave.length === 0) {
@@ -160,9 +169,14 @@ export const useDataEntry = ({
 
       if (error) throw error;
 
+      // ✅ YENİ: Fərqli mesaj göstərməsi
+      const message = isAutoApprove 
+        ? t('dataApprovedAndSaved') || 'Məlumatlar avtomatik təsdiqləndi və yadda saxlandı'
+        : t('dataSubmittedSuccessfully');
+        
       toast({
         title: t('success'),
-        description: t('dataSubmittedSuccessfully'),
+        description: message,
       });
 
       if (onComplete) onComplete();

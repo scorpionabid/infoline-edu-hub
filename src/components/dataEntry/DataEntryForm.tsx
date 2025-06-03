@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import DataEntryFormManager from '@/components/dataEntry/core/DataEntryFormManager';
+import { DataEntryFormManager } from '@/components/dataEntry/core';
 import { useDataEntryManager } from '@/hooks/dataEntry/useDataEntryManager';
 import { useStatusUIConfig } from '@/hooks/auth/useStatusPermissions';
 import { DataEntryStatus } from '@/types/core/dataEntry';

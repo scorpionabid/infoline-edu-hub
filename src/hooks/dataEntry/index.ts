@@ -20,5 +20,9 @@ export { useSchool } from './useSchool';
 export { useSectorDataEntry } from './useSectorDataEntry';
 export { useCategoryStatus } from './useCategoryStatus';
 
+// YENİ: Refactored hook-lar
+export { useSectorCategories } from './useSectorCategories';
+export { useSchoolManagement } from './useSchoolManagement';
+
 // Köhnə interfeys və funksionallıq uyğunluğu
 export * from './useDataEntry';

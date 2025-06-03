@@ -19,5 +19,9 @@ export { default as EntryField } from './fields/EntryField';
 // Status komponentləri yenidən ixrac
 export { StatusBadge } from './status';
 
+// YENİ: Refactored komponentlər
+export { SectorDataEntry } from './SectorDataEntry';
+export { SchoolManagement } from './SchoolManagement';
+
 // Legacy komponentlər - bunlar əvvəlki import əmrlərinin işləməsi üçün
 // Gələcəkdə bu şəkildə birbaşa ixrac edilməli və ya daha yaxşı adlandırılmalıdır

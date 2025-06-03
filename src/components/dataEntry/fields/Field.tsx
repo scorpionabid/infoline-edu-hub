@@ -101,12 +101,50 @@ const Field: React.FC<FieldProps> = ({
     adapter.setValue(column.id, date);
   };
 
+  // Options-ın təhlükəsiz işlənməsi
+  const getSafeOptions = (options: any): ColumnOption[] => {
+    // Əgər options mövcud deyilsə, boş array qaytar
+    if (!options) {
+      return [];
+    }
+    
+    // Əgər artıq array-dirsə və düzgün formatdadırsa, qaytar
+    if (Array.isArray(options)) {
+      return options.filter(opt => opt && (opt.label || opt.value));
+    }
+    
+    // Əgər string-dirsə, JSON parse etməyə çalış
+    if (typeof options === 'string') {
+      try {
+        const parsed = JSON.parse(options);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(opt => opt && (opt.label || opt.value));
+        }
+      } catch (e) {
+        console.warn(`[Field] Failed to parse options JSON for ${column.name}:`, options);
+        return [];
+      }
+    }
+    
+    // Əgər object-dirsə və values var, onu array-ə çevir
+    if (typeof options === 'object' && options.values) {
+      return Array.isArray(options.values) ? options.values : [];
+    }
+    
+    console.warn(`[Field] Invalid options format for ${column.name}:`, options);
+    return [];
+  };
+  
+  const safeOptions = getSafeOptions(column.options);
+
   // Debug məlumatları
   console.log(`[Field] Rendering field for ${column.name}:`, {
     columnType: column.type,
     value: localValue,
     readOnly: effectiveReadOnly,
-    disabled: effectiveDisabled
+    disabled: effectiveDisabled,
+    optionsCount: safeOptions.length,
+    rawOptions: column.options
   });
 
   // Render funksiyası
@@ -175,11 +213,17 @@ const Field: React.FC<FieldProps> = ({
               <SelectValue placeholder={column.placeholder || `${column.name} seçin`} />
             </SelectTrigger>
             <SelectContent>
-              {column.options?.map((option: ColumnOption, index: number) => (
-                <SelectItem key={option.value || index} value={option.value || option.label || String(index)}>
-                  {option.label || option.value || String(index)}
+              {safeOptions.length > 0 ? (
+                safeOptions.map((option: ColumnOption, index: number) => (
+                  <SelectItem key={option.value || index} value={option.value || option.label || String(index)}>
+                    {option.label || option.value || String(index)}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="no-options" disabled>
+                  Seçənək tapılmadı
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         );
@@ -191,12 +235,18 @@ const Field: React.FC<FieldProps> = ({
             value={localValue || ''}
             onValueChange={handleRadioChange}
           >
-            {column.options?.map((option: ColumnOption, index: number) => (
-              <div key={option.value || index} className="flex items-center space-x-2 py-1">
-                <RadioGroupItem value={option.value || option.label || String(index)} id={`${column.id}-${option.value || index}`} />
-                <Label htmlFor={`${column.id}-${option.value || index}`}>{option.label || option.value || String(index)}</Label>
+            {safeOptions.length > 0 ? (
+              safeOptions.map((option: ColumnOption, index: number) => (
+                <div key={option.value || index} className="flex items-center space-x-2 py-1">
+                  <RadioGroupItem value={option.value || option.label || String(index)} id={`${column.id}-${option.value || index}`} />
+                  <Label htmlFor={`${column.id}-${option.value || index}`}>{option.label || option.value || String(index)}</Label>
+                </div>
+              ))
+            ) : (
+              <div className="text-sm text-muted-foreground py-2">
+                Seçənək tapılmadı
               </div>
-            ))}
+            )}
           </RadioGroup>
         );
 

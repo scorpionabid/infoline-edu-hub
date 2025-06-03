@@ -19,11 +19,13 @@ export interface ServiceResponse {
   errors?: Record<string, string>;
 }
 
-// Data entry formunu yadda saxla - Enhanced with status protection
+// Data entry formunu yadda saxla - Enhanced with status protection and auto-approval
 export const saveDataEntryForm = async (
   schoolId: string,
   categoryId: string,
-  entries: EntryValue[]
+  entries: EntryValue[],
+  userRole?: string,  // ✅ YENİ parameter
+  userId?: string     // ✅ YENİ parameter
 ): Promise<ServiceResponse> => {
   try {
     console.group('saveDataEntryForm - Enhanced');
@@ -76,6 +78,11 @@ export const saveDataEntryForm = async (
 
     console.log('User validation successful:', { userId: user.id, role: userRole });
 
+    // ✅ YENİ: Auto-approval logic
+    const isAutoApprove = userRole === 'sectoradmin';
+    const defaultStatus = isAutoApprove ? 'approved' : 'draft';
+    console.log('Auto-approval logic:', { isAutoApprove, defaultStatus });
+
     // ✅ DEĞİŞDİRİLMİŞ: Transaction-based save for data integrity
     const { error: deleteError } = await supabase
       .from('data_entries')
@@ -88,15 +95,18 @@ export const saveDataEntryForm = async (
       throw deleteError;
     }
 
-    // Insert new entries
+    // Insert new entries with auto-approval
     const insertPromises = entries.map(entry => 
       supabase.from('data_entries').insert({
         school_id: schoolId,
         category_id: categoryId,
         column_id: entry.columnId,
         value: entry.value,
-        status: entry.status || currentStatus || 'draft',
+        status: entry.status || defaultStatus,
         created_by: user.id,
+        // ✅ YENİ: Auto-approval metadata
+        approved_by: isAutoApprove ? (userId || user.id) : null,
+        approved_at: isAutoApprove ? new Date().toISOString() : null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -117,8 +127,8 @@ export const saveDataEntryForm = async (
     return {
       success: true,
       id: `form-${Date.now()}`,
-      status: currentStatus || 'draft',
-      message: 'Data saved successfully'
+      status: defaultStatus,
+      message: isAutoApprove ? 'Data automatically approved' : 'Data saved successfully'
     };
   } catch (error: any) {
     console.error('Form yadda saxlanarkən xəta baş verdi:', error);
