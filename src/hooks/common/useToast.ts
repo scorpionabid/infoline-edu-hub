@@ -1,46 +1,30 @@
 
-import { toast } from 'sonner';
+import { toast as sonnerToast } from 'sonner';
+
+export interface ToastOptions {
+  title?: string;
+  description?: string;
+  variant?: 'default' | 'destructive';
+}
 
 export const useToast = () => {
-  const showToast = (message: string | { title: string; description?: string; variant?: string }) => {
-    if (typeof message === 'string') {
-      toast(message);
+  const toast = (options: ToastOptions | string) => {
+    if (typeof options === 'string') {
+      sonnerToast(options);
     } else {
-      if (message.variant === 'destructive') {
-        toast.error(message.title, message.description ? { description: message.description } : {});
+      const { title, description, variant = 'default' } = options;
+      
+      if (variant === 'destructive') {
+        sonnerToast.error(title || 'Error', {
+          description: description
+        });
       } else {
-        toast(message.title, message.description ? { description: message.description } : {});
+        sonnerToast.success(title || 'Success', {
+          description: description
+        });
       }
     }
   };
 
-  const success = (message: string | { title: string; description?: string }) => {
-    if (typeof message === 'string') {
-      toast.success(message);
-    } else {
-      toast.success(message.title, message.description ? { description: message.description } : {});
-    }
-  };
-
-  const error = (message: string | { title: string; description?: string }) => {
-    if (typeof message === 'string') {
-      toast.error(message);
-    } else {
-      toast.error(message.title, message.description ? { description: message.description } : {});
-    }
-  };
-
-  const warning = (message: string) => toast.warning(message);
-  const info = (message: string) => toast.info(message);
-
-  // Return both individual methods and the main toast function
-  return {
-    toast: showToast,
-    success,
-    error,
-    warning,
-    info
-  };
+  return { toast };
 };
-
-export default useToast;
