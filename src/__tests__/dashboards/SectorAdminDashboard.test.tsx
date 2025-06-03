@@ -23,7 +23,7 @@ import { renderWithProviders } from '../test-utils';
 // Mock the SectorAdminDashboard component
 const MockSectorAdminDashboard = () => {
   return (
-    <div role="main" data-testid="sectoradmin-dashboard">
+    <div data-testid="sectoradmin-dashboard">
       <header>
         <h1>Sector Admin Dashboard</h1>
         <div data-testid="sector-info">

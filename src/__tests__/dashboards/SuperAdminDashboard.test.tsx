@@ -24,7 +24,7 @@ import { renderWithProviders } from '../test-utils';
 // We'll create a simple mock since the actual component might have complex dependencies
 const MockSuperAdminDashboard = () => {
   return (
-    <div role="main" data-testid="superadmin-dashboard">
+    <div data-testid="superadmin-dashboard">
       <header>
         <h1>Super Admin Dashboard</h1>
         <nav role="navigation">

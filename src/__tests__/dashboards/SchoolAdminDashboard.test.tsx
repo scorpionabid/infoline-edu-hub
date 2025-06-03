@@ -23,7 +23,7 @@ import { renderWithProviders } from '../test-utils';
 // Mock the SchoolAdminDashboard component
 const MockSchoolAdminDashboard = () => {
   return (
-    <div role="main" data-testid="schooladmin-dashboard">
+    <div data-testid="schooladmin-dashboard">
       <header>
         <h1>School Admin Dashboard</h1>
         <div data-testid="school-info">
