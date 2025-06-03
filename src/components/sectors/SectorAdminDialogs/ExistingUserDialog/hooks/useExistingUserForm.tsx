@@ -8,7 +8,6 @@ export const useExistingUserForm = () => {
   const [error, setError] = useState<Error | null>(null);
   const [filter, setFilter] = useState<UserFilter>({
     role: '',
-    region: '',
     search: ''
   });
 

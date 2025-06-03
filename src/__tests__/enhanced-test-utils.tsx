@@ -59,18 +59,34 @@ export const assertButtonIsClickable = async (buttonText: string) => {
   await userEvent.click(button);
 };
 
-export const createTestUser = () => ({
+export const createTestUser = (overrides?: any) => ({
   id: 'test-user-id',
   email: 'test@example.com',
-  full_name: 'Test User'
+  full_name: 'Test User',
+  role: 'superadmin',
+  ...overrides
 });
 
 export const ApiMockHelper = {
   mockSuccess: (data: any) => Promise.resolve({ data, error: null }),
-  mockError: (error: string) => Promise.resolve({ data: null, error })
+  mockError: (error: string) => Promise.resolve({ data: null, error }),
+  mockSupabaseAuth: (user?: any) => ({
+    data: { user: user || createTestUser() },
+    error: null
+  }),
+  mockEdgeFunctions: () => ({
+    data: { success: true },
+    error: null
+  })
 };
 
 export const mockStoreManager = {
   reset: () => {},
-  setState: (state: any) => {}
+  setState: (state: any) => {},
+  mockAuthStore: (user?: any) => ({
+    isAuthenticated: true,
+    user: user || createTestUser(),
+    signIn: jest.fn(),
+    signOut: jest.fn()
+  })
 };

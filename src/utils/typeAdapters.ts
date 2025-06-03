@@ -9,17 +9,15 @@ export const adaptSchoolFromSupabase = (supabaseSchool: SupabaseSchool): School 
     region_id: supabaseSchool.region_id || '',
     sector_id: supabaseSchool.sector_id || '',
     status: (supabaseSchool.status as 'active' | 'inactive') || 'active',
-    created_at: supabaseSchool.created_at,
-    updated_at: supabaseSchool.updated_at,
+    created_at: supabaseSchool.created_at || new Date().toISOString(),
+    updated_at: supabaseSchool.updated_at || new Date().toISOString(),
     address: supabaseSchool.address,
     phone: supabaseSchool.phone,
     email: supabaseSchool.email,
-    director_name: supabaseSchool.director_name,
-    director_phone: supabaseSchool.director_phone,
-    school_type: supabaseSchool.school_type,
+    principal_name: supabaseSchool.principal_name,
     student_count: supabaseSchool.student_count,
     teacher_count: supabaseSchool.teacher_count,
-    class_count: supabaseSchool.class_count
+    type: supabaseSchool.type
   };
 };
 
@@ -32,8 +30,8 @@ export const adaptRegionFromSupabase = (supabaseRegion: SupabaseRegion): Region 
     id: supabaseRegion.id || '',
     name: supabaseRegion.name || '',
     status: (supabaseRegion.status as 'active' | 'inactive') || 'active',
-    created_at: supabaseRegion.created_at,
-    updated_at: supabaseRegion.updated_at,
+    created_at: supabaseRegion.created_at || new Date().toISOString(),
+    updated_at: supabaseRegion.updated_at || new Date().toISOString(),
     description: supabaseRegion.description
   };
 };
@@ -48,8 +46,8 @@ export const adaptSectorFromSupabase = (supabaseSector: SupabaseSector): Sector 
     name: supabaseSector.name || '',
     region_id: supabaseSector.region_id || '',
     status: (supabaseSector.status as 'active' | 'inactive') || 'active',
-    created_at: supabaseSector.created_at,
-    updated_at: supabaseSector.updated_at,
+    created_at: supabaseSector.created_at || new Date().toISOString(),
+    updated_at: supabaseSector.updated_at || new Date().toISOString(),
     description: supabaseSector.description
   };
 };
@@ -71,12 +69,10 @@ export const adaptSchoolToSupabase = (school: School): SupabaseSchool => {
     address: school.address,
     phone: school.phone,
     email: school.email,
-    director_name: school.director_name,
-    director_phone: school.director_phone,
-    school_type: school.school_type,
+    principal_name: school.principal_name,
     student_count: school.student_count,
     teacher_count: school.teacher_count,
-    class_count: school.class_count
+    type: school.type
   };
 };
 
