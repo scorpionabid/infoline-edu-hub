@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -8,9 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { supabase } from '@/lib/supabase';
@@ -18,6 +17,7 @@ import { UploadFileData } from '@/types/school';
 import { Category } from '@/types/category';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FileUpload from '@/components/FileUpload';
+import { useToast } from '@/hooks/common/useToast';
 
 interface SchoolFilesDialogProps {
   isOpen: boolean;
@@ -90,11 +90,18 @@ const SchoolFilesDialog: React.FC<SchoolFilesDialogProps> = ({
 
       if (error) throw error;
       
-      toast.success(t('fileUploaded'));
+      toast({
+        title: t('success'),
+        description: t('fileUploaded'),
+      });
       await fetchFiles();
     } catch (error: any) {
       console.error('Error uploading file:', error);
-      toast.error(t('errorUploadingFile'));
+      toast({
+        variant: "destructive",
+        title: t('error'),
+        description: t('errorUploadingFile'),
+      });
     }
   };
 
@@ -108,11 +115,18 @@ const SchoolFilesDialog: React.FC<SchoolFilesDialogProps> = ({
 
       if (error) throw error;
 
-      toast.success(t('fileDeleted'));
+      toast({
+        title: t('success'),
+        description: t('fileDeleted'),
+      });
       await fetchFiles();
     } catch (error: any) {
       console.error('Error deleting file:', error);
-      toast.error(t('errorDeletingFile'));
+      toast({
+        variant: "destructive",
+        title: t('error'),
+        description: t('errorDeletingFile'),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -143,7 +157,15 @@ const SchoolFilesDialog: React.FC<SchoolFilesDialogProps> = ({
             </Select>
           </div>
 
-          <FileUpload onUpload={handleFileUpload} />
+          <FileUpload 
+            onFileSelect={handleFileUpload}
+            accept={{
+              'application/pdf': ['.pdf'],
+              'application/msword': ['.doc'],
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+              'image/*': ['.png', '.jpg', '.jpeg']
+            }}
+          />
 
           <div>
             <h3 className="text-lg font-semibold mb-2">{t('uploadedFiles')}</h3>

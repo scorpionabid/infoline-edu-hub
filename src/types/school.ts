@@ -1,16 +1,16 @@
 
 export interface School {
   id?: string;
-  name?: string;
+  name: string;
   address?: string;
   email?: string;
   phone?: string;
-  status?: 'active' | 'inactive';
+  status: 'active' | 'inactive';
   completion_rate?: number;
   completionRate?: number;
-  region_id?: string;
+  region_id: string;
   regionId?: string;
-  sector_id?: string;
+  sector_id: string;
   sectorId?: string;
   admin_id?: string;
   adminId?: string;
@@ -35,7 +35,7 @@ export interface Region {
   id: string;
   name: string;
   description?: string;
-  status?: 'active' | 'inactive';
+  status: 'active' | 'inactive';
   admin_id?: string;
   adminId?: string;
   admin_email?: string;
@@ -50,7 +50,7 @@ export interface Sector {
   description?: string;
   region_id: string;
   regionId?: string;
-  status?: 'active' | 'inactive';
+  status: 'active' | 'inactive';
   admin_id?: string;
   adminId?: string;
   admin_email?: string;
@@ -59,6 +59,13 @@ export interface Sector {
   completionRate?: number;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface UploadFileData {
+  name: string;
+  path: string;
+  size: number;
+  type: string;
 }
 
 export interface SchoolFormData {
@@ -103,4 +110,26 @@ export const adaptToSchoolStat = (school: any): SchoolStat => {
     status: school.status === 'active' ? 'active' : 'inactive',
     lastUpdated: school.updated_at || school.updatedAt || new Date().toISOString()
   };
+};
+
+// Adapter functions to convert between supabase and local types
+export const adaptSchoolFromSupabase = (school: any): School => {
+  return {
+    ...school,
+    status: (school.status === 'active' || school.status === 'inactive') ? school.status : 'active'
+  } as School;
+};
+
+export const adaptRegionFromSupabase = (region: any): Region => {
+  return {
+    ...region,
+    status: (region.status === 'active' || region.status === 'inactive') ? region.status : 'active'
+  } as Region;
+};
+
+export const adaptSectorFromSupabase = (sector: any): Sector => {
+  return {
+    ...sector,
+    status: (sector.status === 'active' || sector.status === 'inactive') ? sector.status : 'active'
+  } as Sector;
 };

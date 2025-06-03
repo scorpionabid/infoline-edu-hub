@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/context/LanguageContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/common/useToast';
 import { useAvailableUsers } from '@/hooks/user/useAvailableUsers';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -33,7 +33,7 @@ const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDialogProps
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [isAssigning, setIsAssigning] = useState(false);
   
-  const { data: availableUsers = [], isLoading } = useAvailableUsers();
+  const { users: availableUsers = [], loading } = useAvailableUsers();
 
   const handleAssign = async () => {
     if (!selectedUserId || !schoolId) return;
@@ -57,7 +57,10 @@ const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDialogProps
 
       if (error) throw error;
 
-      if (data?.success) {
+      // Handle both string and object responses
+      const response = typeof data === 'string' ? JSON.parse(data) : data;
+      
+      if (response?.success) {
         toast({
           title: t('success'),
           description: t('schoolAdminAssignedSuccessfully'),
@@ -65,7 +68,7 @@ const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDialogProps
         onSuccess();
         onClose();
       } else {
-        throw new Error(data?.error || 'Assignment failed');
+        throw new Error(response?.error || 'Assignment failed');
       }
     } catch (error: any) {
       console.error('Error assigning school admin:', error);
@@ -112,7 +115,7 @@ const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDialogProps
             </Button>
             <Button 
               onClick={handleAssign} 
-              disabled={!selectedUserId || isAssigning || isLoading}
+              disabled={!selectedUserId || isAssigning || loading}
             >
               {isAssigning ? t('assigning') : t('assign')}
             </Button>

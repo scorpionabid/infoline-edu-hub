@@ -1,60 +1,39 @@
 
 import { School as SupabaseSchool, Region as SupabaseRegion, Sector as SupabaseSector } from '@/types/supabase';
-import { School as SchoolType, Region as RegionType, Sector as SectorType } from '@/types/school';
+import { School, Region, Sector } from '@/types/school';
 
-/**
- * Adapts a School object from supabase.d.ts format to school.ts format
- */
-export function adaptSchoolFromSupabase(school: SupabaseSchool): SchoolType {
+export const adaptSchoolFromSupabase = (school: SupabaseSchool): School => {
   return {
     ...school,
-    status: school.status || 'active',
-  } as SchoolType;
-}
+    name: school.name,
+    status: (school.status === 'active' || school.status === 'inactive') ? school.status : 'active',
+    region_id: school.region_id,
+    sector_id: school.sector_id
+  } as School;
+};
 
-/**
- * Adapts a School object from school.ts format to supabase.d.ts format
- */
-export function adaptSchoolToSupabase(school: SchoolType): SupabaseSchool {
-  const { created_at, updated_at, ...rest } = school;
-  
-  return {
-    ...rest,
-    created_at: typeof created_at === 'string' ? created_at : created_at?.toISOString(),
-    updated_at: typeof updated_at === 'string' ? updated_at : updated_at?.toISOString(),
-  } as SupabaseSchool;
-}
-
-/**
- * Adapts a Region object from supabase.d.ts format to school.ts format
- */
-export function adaptRegionFromSupabase(region: SupabaseRegion): RegionType {
+export const adaptRegionFromSupabase = (region: SupabaseRegion): Region => {
   return {
     ...region,
-    status: region.status || 'active',
-  } as RegionType;
-}
+    status: (region.status === 'active' || region.status === 'inactive') ? region.status : 'active'
+  } as Region;
+};
 
-/**
- * Adapts a Region array from supabase.d.ts format to school.ts format
- */
-export function adaptRegionsFromSupabase(regions: SupabaseRegion[]): RegionType[] {
-  return regions.map(adaptRegionFromSupabase);
-}
-
-/**
- * Adapts a Sector object from supabase.d.ts format to school.ts format
- */
-export function adaptSectorFromSupabase(sector: SupabaseSector): SectorType {
+export const adaptSectorFromSupabase = (sector: SupabaseSector): Sector => {
   return {
     ...sector,
-    status: sector.status || 'active',
-  } as SectorType;
-}
+    status: (sector.status === 'active' || sector.status === 'inactive') ? sector.status : 'active'
+  } as Sector;
+};
 
-/**
- * Adapts a Sector array from supabase.d.ts format to school.ts format
- */
-export function adaptSectorsFromSupabase(sectors: SupabaseSector[]): SectorType[] {
+export const adaptSchoolsArrayFromSupabase = (schools: SupabaseSchool[]): School[] => {
+  return schools.map(adaptSchoolFromSupabase);
+};
+
+export const adaptRegionsArrayFromSupabase = (regions: SupabaseRegion[]): Region[] => {
+  return regions.map(adaptRegionFromSupabase);
+};
+
+export const adaptSectorsArrayFromSupabase = (sectors: SupabaseSector[]): Sector[] => {
   return sectors.map(adaptSectorFromSupabase);
-}
+};

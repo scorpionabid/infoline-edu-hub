@@ -1,12 +1,12 @@
 
 import React, { useRef, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window';
-import { useVirtualScrolling } from '@/hooks/performance/useVirtualScrolling';
 
 interface VirtualTableProps<T> {
   items: T[];
   itemHeight: number;
   height: number;
+  width?: number;
   renderItem: (item: T, index: number) => React.ReactNode;
   className?: string;
 }
@@ -15,6 +15,7 @@ function VirtualTable<T>({
   items,
   itemHeight,
   height,
+  width = 300,
   renderItem,
   className = '',
 }: VirtualTableProps<T>) {
@@ -41,6 +42,7 @@ function VirtualTable<T>({
     <List
       ref={listRef}
       height={height}
+      width={width}
       itemCount={items.length}
       itemSize={itemHeight}
       className={className}
