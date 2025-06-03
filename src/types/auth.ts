@@ -24,6 +24,9 @@ export interface FullUserData {
   sectorId?: string;
   school_id?: string;
   schoolId?: string;
+  school_name?: string;
+  region_name?: string;
+  sector_name?: string;
   phone?: string;
   position?: string;
   language?: string;
@@ -46,11 +49,14 @@ export interface User {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  school_name?: string;
+  region_name?: string;
+  sector_name?: string;
   phone?: string;
   position?: string;
   language?: string;
   avatar?: string;
-  status?: UserStatus;
+  status?: 'active' | 'inactive';
   created_at?: string;
   updated_at?: string;
 }

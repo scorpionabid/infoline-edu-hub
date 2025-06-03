@@ -62,7 +62,7 @@ export const DataEntryContainer: React.FC = () => {
         <DataEntryContent
           displayCategories={displayCategories}
           selectedSchoolId={user?.school_id}
-          selectedSchoolName={user?.school_name || ''}
+          selectedSchoolName={user?.school_name || user?.name || ''}
           overallProgress={overallProgress}
           categoryStats={categoryStats}
           isSectorAdmin={false}

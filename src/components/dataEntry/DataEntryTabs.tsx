@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataEntryContent } from './DataEntryContent';
 import { SectorAdminSchoolList } from './SectorAdminSchoolList';
 import { useSchoolSelector } from '@/hooks/dataEntry/useSchoolSelector';
-import { User } from '@/types/user';
+import { FullUserData } from '@/types/auth';
 
 interface DataEntryTabsProps {
   tabValue: string;
@@ -17,7 +17,7 @@ interface DataEntryTabsProps {
   displayCategories: any[];
   overallProgress: number;
   categoryStats: { completed: number; total: number };
-  user: User | null;
+  user: FullUserData | null;
 }
 
 export const DataEntryTabs: React.FC<DataEntryTabsProps> = ({
@@ -72,7 +72,14 @@ export const DataEntryTabs: React.FC<DataEntryTabsProps> = ({
           overallProgress={overallProgress}
           categoryStats={categoryStats}
           isSectorAdmin={true}
-          schools={schools}
+          schools={schools.map(school => ({
+            ...school,
+            region_id: school.region_id || '',
+            sector_id: school.sector_id || '',
+            status: (school.status as 'active' | 'inactive') || 'active',
+            created_at: school.created_at || new Date().toISOString(),
+            updated_at: school.updated_at || new Date().toISOString()
+          }))}
           schoolSearchQuery={schoolSearchQuery}
           setSchoolSearchQuery={setSchoolSearchQuery}
           handleSchoolChange={handleSchoolChange}
@@ -81,7 +88,14 @@ export const DataEntryTabs: React.FC<DataEntryTabsProps> = ({
 
       <TabsContent value="sector" className="space-y-6">
         <SectorAdminSchoolList
-          schools={schools || []}
+          schools={schools.map(school => ({
+            ...school,
+            region_id: school.region_id || '',
+            sector_id: school.sector_id || '',
+            status: (school.status as 'active' | 'inactive') || 'active',
+            created_at: school.created_at || new Date().toISOString(),
+            updated_at: school.updated_at || new Date().toISOString()
+          }))}
           isLoading={false}
           onDataEntry={handleSchoolDataEntry}
           onSendNotification={(schoolIds) => {

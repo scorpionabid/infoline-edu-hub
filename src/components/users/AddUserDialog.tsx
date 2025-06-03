@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from 'sonner';
-import { UserRole } from '@/types/role';
+import { UserRole } from '@/types/auth';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   Dialog,
@@ -23,13 +24,21 @@ import { useSchools } from '@/hooks/schools';
 import { Region } from '@/types/school';
 import { Sector } from '@/types/school';
 import { School } from '@/types/school';
-import { UserFormData } from '@/types/user';
 
 interface AddUserDialogProps {
   open: boolean;
   onClose: () => void;
   onComplete?: () => void;
   entityTypes?: Array<'region' | 'sector' | 'school'>;
+}
+
+interface UserFormData {
+  email: string;
+  full_name: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
 }
 
 const AddUserDialog: React.FC<AddUserDialogProps> = ({ 
@@ -42,25 +51,24 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { regions } = useRegions();
-  const { sectors } = useSectors(entityTypes.includes('region') ? entityTypes[0] : undefined);
-  const { schools } = useSchools(entityTypes.includes('sector') ? entityTypes[1] : undefined);
+  const { sectors } = useSectors();
+  const { schools } = useSchools();
 
   const initialRole: UserRole = entityTypes.includes('school') ? 'schooladmin' : entityTypes.includes('sector') ? 'sectoradmin' : entityTypes.includes('region') ? 'regionadmin' : 'user';
 
   const [formData, setFormData] = useState<UserFormData>(() => ({
     email: '',
-    password: '',
     full_name: '',
     role: initialRole,
-    region_id: entityTypes.includes('region') ? entityTypes[0] : '',
-    sector_id: entityTypes.includes('sector') ? entityTypes[1] : '',
-    school_id: entityTypes.includes('school') ? entityTypes[2] : '',
+    region_id: '',
+    sector_id: '',
+    school_id: '',
   }));
 
   const formSchema = z.object({
     email: z.string().email({ message: t('invalidEmail') }),
     full_name: z.string().min(2, { message: t('fullNameRequired') }),
-    role: z.enum(['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin', 'user'], {
+    role: z.enum(['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'], {
       required_error: t('roleRequired'),
     }),
     region_id: z.string().optional(),
@@ -74,38 +82,16 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       email: '',
       full_name: '',
       role: initialRole,
-      region_id: entityTypes.includes('region') ? entityTypes[0] : '',
-      sector_id: entityTypes.includes('sector') ? entityTypes[1] : '',
-      school_id: entityTypes.includes('school') ? entityTypes[2] : '',
+      region_id: '',
+      sector_id: '',
+      school_id: '',
     },
   });
 
-  useEffect(() => {
-    if (entityTypes.includes('region') && entityTypes[0]) {
-      setFormData((prevData) => ({
-        ...prevData,
-        region_id: entityTypes[0],
-      }));
-    }
-    if (entityTypes.includes('sector') && entityTypes[1]) {
-      setFormData((prevData) => ({
-        ...prevData,
-        sector_id: entityTypes[1],
-      }));
-    }
-    if (entityTypes.includes('school') && entityTypes[2]) {
-      setFormData((prevData) => ({
-        ...prevData,
-        school_id: entityTypes[2],
-      }));
-    }
-  }, [entityTypes]);
-
   const availableRoles = [
-    { value: 'user', label: t('user') },
-    { value: 'schooladmin', label: t('schoolAdmin') },
-    { value: 'sectoradmin', label: t('sectorAdmin') },
-    { value: 'regionadmin', label: t('regionAdmin') },
+    { value: 'schooladmin' as UserRole, label: t('schoolAdmin') },
+    { value: 'sectoradmin' as UserRole, label: t('sectorAdmin') },
+    { value: 'regionadmin' as UserRole, label: t('regionAdmin') },
   ];
 
   const handleRoleChange = (value: string) => {
@@ -113,14 +99,12 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     setFormData((prevData) => ({
       ...prevData,
       role: newRole,
-      // Clear fields based on role selection
       region_id: newRole === 'regionadmin' || newRole === 'sectoradmin' ? prevData.region_id : '',
       sector_id: newRole === 'sectoradmin' ? prevData.sector_id : '',
       school_id: newRole === 'schooladmin' ? prevData.school_id : '',
     }));
   };
 
-  // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -134,15 +118,6 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     setError(null);
 
     try {
-      // Call the createUser function from the auth store
-      // Assuming createUser now accepts the entire UserFormData object
-      // and handles the password generation internally
-      // const { data: newUser, error: createError } = await createUser(data);
-      // if (createError) {
-      //   setError(createError.message || t('createUserError'));
-      //   return;
-      // }
-
       // Simulate success
       toast.success(t('userCreatedSuccessfully'));
       onComplete?.();
@@ -170,189 +145,185 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
             {error && (
               <p className="text-red-500 text-sm">{error}</p>
             )}
-            <div className="space-y-2">
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('email')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder="example@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="full_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('fullName')}</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder={t('enterFullName')} 
+                      {...field} 
+                      value={formData.full_name}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleInputChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('role')}</FormLabel>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      handleRoleChange(value);
+                    }}
+                    value={formData.role}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('selectRole')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {availableRoles.map((role) => (
+                        <SelectItem key={role.value} value={role.value}>
+                          {role.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {(formData.role === 'regionadmin' || formData.role === 'sectoradmin') && (
               <FormField
                 control={form.control}
-                name="email"
+                name="region_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('email')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="example@example.com" {...field} />
-                    </FormControl>
+                    <FormLabel>{t('region')}</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          region_id: value,
+                          sector_id: '',
+                        }));
+                      }}
+                      value={formData.region_id}
+                      disabled={isLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('selectRegion')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {regions?.map((region) => (
+                          <SelectItem key={region.id} value={region.id}>
+                            {region.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-                <FormField
-                  control={form.control}
-                  name="full_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('fullName')}</FormLabel>
+            )}
+
+            {formData.role === 'sectoradmin' && formData.region_id && (
+              <FormField
+                control={form.control}
+                name="sector_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('sector')}</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          sector_id: value,
+                        }));
+                      }}
+                      value={formData.sector_id}
+                      disabled={isLoading || !formData.region_id}
+                    >
                       <FormControl>
-                        <Input 
-                          placeholder={t('enterFullName')} 
-                          {...field} 
-                          value={formData.full_name}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            handleInputChange(e);
-                          }}
-                        />
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('selectSector')} />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Role selection */}
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('role')}</FormLabel>
-                      <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          handleRoleChange(value);
-                        }}
-                        value={formData.role}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t('selectRole')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {availableRoles.map((role) => (
-                            <SelectItem key={role.value} value={role.value}>
-                              {role.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Region selection - only shown for certain roles */}
-                {(formData.role === 'regionadmin' || formData.role === 'sectoradmin') && (
-                  <FormField
-                    control={form.control}
-                    name="region_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('region')}</FormLabel>
-                        <Select
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            setFormData((prev) => ({
-                              ...prev,
-                              region_id: value,
-                              sector_id: '', // Reset sector when region changes
-                            }));
-                          }}
-                          value={formData.region_id}
-                          disabled={isLoading}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t('selectRegion')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {regions?.map((region) => (
-                              <SelectItem key={region.id} value={region.id}>
-                                {region.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <SelectContent>
+                        {sectors?.map((sector) => (
+                          <SelectItem key={sector.id} value={sector.id}>
+                            {sector.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
+            )}
 
-                {/* Sector selection - only shown for sectoradmin */}
-                {formData.role === 'sectoradmin' && formData.region_id && (
-                  <FormField
-                    control={form.control}
-                    name="sector_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('sector')}</FormLabel>
-                        <Select
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            setFormData((prev) => ({
-                              ...prev,
-                              sector_id: value,
-                            }));
-                          }}
-                          value={formData.sector_id}
-                          disabled={isLoading || !formData.region_id}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t('selectSector')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {sectors?.map((sector) => (
-                              <SelectItem key={sector.id} value={sector.id}>
-                                {sector.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {formData.role === 'schooladmin' && (
+              <FormField
+                control={form.control}
+                name="school_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('school')}</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          school_id: value,
+                        }));
+                      }}
+                      value={formData.school_id}
+                      disabled={isLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('selectSchool')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {schools?.map((school) => (
+                          <SelectItem key={school.id} value={school.id}>
+                            {school.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                 )}
-
-                {/* School selection - only shown for schooladmin */}
-                {formData.role === 'schooladmin' && (
-                  <FormField
-                    control={form.control}
-                    name="school_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('school')}</FormLabel>
-                        <Select
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            setFormData((prev) => ({
-                              ...prev,
-                              school_id: value,
-                            }));
-                          }}
-                          value={formData.school_id}
-                          disabled={isLoading}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t('selectSchool')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {schools?.map((school) => (
-                              <SelectItem key={school.id} value={school.id}>
-                                {school.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+              />
+            )}
 
             <Button type="submit" disabled={isLoading}>
               {isLoading ? (
