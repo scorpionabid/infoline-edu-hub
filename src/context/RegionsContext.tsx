@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,7 @@ interface Sector {
   id: string;
   name: string;
   region_id: string;
+  status: 'active' | 'inactive';
 }
 
 interface RegionsContextType {
@@ -53,7 +55,12 @@ export const RegionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
 
         setRegions(regionsData || []);
-        setSectors(sectorsData || []);
+        setSectors((sectorsData || []).map(sector => ({
+          ...sector,
+          status: (sector.status === 'active' || sector.status === 'inactive') 
+            ? sector.status 
+            : 'active' as const
+        })));
         setError(null);
       } catch (err: any) {
         setError(err.message || 'An unexpected error occurred.');
@@ -86,3 +93,6 @@ export const useRegions = () => {
   }
   return context;
 };
+
+// Export for backwards compatibility
+export const useRegionsContext = useRegions;

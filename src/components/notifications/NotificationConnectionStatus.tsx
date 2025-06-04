@@ -2,7 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Wifi, WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
+import { WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { ConnectionHealth } from '@/hooks/notifications/useEnhancedNotifications';
 
@@ -24,19 +24,8 @@ export const NotificationConnectionStatus: React.FC<NotificationConnectionStatus
   const getStatusBadge = () => {
     switch (health.health) {
       case 'excellent':
-        return (
-          <Badge variant="default" className="bg-green-500 text-white">
-            <Wifi className="h-3 w-3 mr-1" />
-            {t('connected')}
-          </Badge>
-        );
       case 'good':
-        return (
-          <Badge variant="secondary" className="bg-yellow-500 text-white">
-            <Wifi className="h-3 w-3 mr-1" />
-            {t('connected')}
-          </Badge>
-        );
+        return null; // Don't show badge for good connections
       case 'poor':
         return (
           <Badge variant="destructive">
@@ -72,17 +61,15 @@ export const NotificationConnectionStatus: React.FC<NotificationConnectionStatus
           )}
         </div>
 
-        {health.health !== 'excellent' && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onReconnect}
-            className="h-6 px-2 text-xs"
-          >
-            <RefreshCw className="h-3 w-3 mr-1" />
-            {t('reconnect')}
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onReconnect}
+          className="h-6 px-2 text-xs"
+        >
+          <RefreshCw className="h-3 w-3 mr-1" />
+          {t('reconnect')}
+        </Button>
       </div>
     </div>
   );

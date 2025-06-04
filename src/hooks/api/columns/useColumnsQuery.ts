@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Column, ColumnFormValues } from '@/types/column';
@@ -14,7 +15,24 @@ export const useColumnsQuery = (categoryId: string) => {
         .order('order_index');
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform data to match Column interface
+      return (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        category_id: item.category_id,
+        placeholder: item.placeholder,
+        help_text: item.help_text,
+        is_required: item.is_required,
+        default_value: item.default_value,
+        options: item.options,
+        validation: item.validation,
+        order_index: item.order_index,
+        status: item.status as 'active' | 'inactive',
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
     },
     enabled: !!categoryId
   });
