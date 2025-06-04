@@ -1,60 +1,64 @@
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/common/useToast';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const useApprovalProcess = () => {
-  const [loading, setLoading] = useState(false);
-  const { success, error } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const approveEntry = async (entryId: string, reason?: string) => {
-    setLoading(true);
+  const approveEntry = async (entryId: string, comment?: string) => {
+    setIsProcessing(true);
     try {
-      const { error: dbError } = await supabase
+      const { error } = await supabase
         .from('data_entries')
         .update({
           status: 'approved',
-          approved_at: new Date().toISOString()
+          approved_at: new Date().toISOString(),
+          approved_by: (await supabase.auth.getUser()).data.user?.id
         })
         .eq('id', entryId);
 
-      if (dbError) throw dbError;
-      
-      success('Məlumat təsdiqləndi');
-    } catch (err) {
-      error('Təsdiqləmə zamanı xəta baş verdi');
-      throw err;
+      if (error) throw error;
+
+      toast.success('Məlumat təsdiqləndi');
+      return true;
+    } catch (error: any) {
+      console.error('Error approving entry:', error);
+      toast.error('Təsdiqləmə zamanı xəta baş verdi');
+      return false;
     } finally {
-      setLoading(false);
+      setIsProcessing(false);
     }
   };
 
   const rejectEntry = async (entryId: string, reason: string) => {
-    setLoading(true);
+    setIsProcessing(true);
     try {
-      const { error: dbError } = await supabase
+      const { error } = await supabase
         .from('data_entries')
         .update({
           status: 'rejected',
           rejection_reason: reason,
-          rejected_at: new Date().toISOString()
+          rejected_by: (await supabase.auth.getUser()).data.user?.id
         })
         .eq('id', entryId);
 
-      if (dbError) throw dbError;
-      
-      success('Məlumat rədd edildi');
-    } catch (err) {
-      error('Rədd etmə zamanı xəta baş verdi');
-      throw err;
+      if (error) throw error;
+
+      toast.success('Məlumat rədd edildi');
+      return true;
+    } catch (error: any) {
+      console.error('Error rejecting entry:', error);
+      toast.error('Rədd etmə zamanı xəta baş verdi');
+      return false;
     } finally {
-      setLoading(false);
+      setIsProcessing(false);
     }
   };
 
   return {
-    loading,
     approveEntry,
-    rejectEntry
+    rejectEntry,
+    isProcessing
   };
 };

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog,
@@ -87,7 +88,7 @@ const UserDetailsSection = ({ user }: { user: FullUserData }) => {
           <div className="flex justify-between py-1 border-b">
             <span className="text-sm text-muted-foreground">{t('region')}</span>
             <span className="text-sm font-medium">
-              {isEntityObject(user.entityName) ? user.entityName.region : user.region_id}
+              {user.entityName && isEntityObject(user.entityName) ? user.entityName.region : user.region_id}
             </span>
           </div>
         )}
@@ -97,7 +98,7 @@ const UserDetailsSection = ({ user }: { user: FullUserData }) => {
           <div className="flex justify-between py-1 border-b">
             <span className="text-sm text-muted-foreground">{t('sector')}</span>
             <span className="text-sm font-medium">
-              {isEntityObject(user.entityName) ? user.entityName.sector : user.sector_id}
+              {user.entityName && isEntityObject(user.entityName) ? user.entityName.sector : user.sector_id}
             </span>
           </div>
         )}
@@ -107,7 +108,7 @@ const UserDetailsSection = ({ user }: { user: FullUserData }) => {
           <div className="flex justify-between py-1 border-b">
             <span className="text-sm text-muted-foreground">{t('school')}</span>
             <span className="text-sm font-medium">
-              {isEntityObject(user.entityName) ? user.entityName.school : user.school_id}
+              {user.entityName && isEntityObject(user.entityName) ? user.entityName.school : user.school_id}
             </span>
           </div>
         )}

@@ -1,67 +1,81 @@
 
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+
+export type UserStatus = 'active' | 'inactive' | 'blocked';
+
 export interface User {
   id: string;
   email: string;
   full_name?: string;
+  name?: string;
+  role?: UserRole;
+  status?: UserStatus;
   phone?: string;
-  status: 'active' | 'inactive';
-  created_at: string;
-  updated_at: string;
-  role?: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
   position?: string;
-  school_name?: string;
-  region_name?: string;
-  sector_name?: string;
-}
-
-export interface UserFilter {
-  role?: string;
-  search?: string;
-  status?: string;
+  language?: string;
+  avatar?: string;
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  last_login?: string;
+  created_at?: string;
+  updated_at?: string;
 }
-
-export interface CreateUserData {
-  email: string;
-  full_name: string;
-  phone?: string;
-  role: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-}
-
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
 export interface FullUserData extends User {
+  // Database fields
+  full_name: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  last_login?: string;
+  language?: string;
+  avatar?: string;
+  
+  // Alias fields for compatibility
   name?: string;
-}
-
-export interface NotificationSettings {
-  email: boolean;
-  sms: boolean;
-  push: boolean;
-  inApp: boolean;
-  system: boolean;
-  deadline: boolean;
-  deadlineReminders: boolean;
-  statusUpdates: boolean;
-  weeklyReports: boolean;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  lastLogin?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  
+  // Additional fields
+  adminEntity?: any;
+  entityName?: {
+    region?: string;
+    sector?: string;
+    school?: string;
+  };
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+  };
 }
 
 export interface UserFormData {
+  fullName: string;
   email: string;
-  full_name: string;
-  phone?: string;
   role: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  status?: UserStatus;
+  phone?: string;
+  position?: string;
   language?: string;
-  notifications?: NotificationSettings;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+  };
+}
+
+export interface CreateUserData extends Omit<UserFormData, 'status'> {
+  password?: string;
+}
+
+export interface UpdateUserData extends Partial<FullUserData> {
+  password?: string;
 }

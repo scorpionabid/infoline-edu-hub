@@ -4,20 +4,23 @@ export interface Sector {
   name: string;
   description?: string;
   region_id: string;
-  status: string; // Changed to required to match other interfaces
-  created_at: string; // Changed to required to match other interfaces
-  updated_at: string; // Changed to required to match other interfaces
   admin_id?: string;
   admin_email?: string;
+  status: 'active' | 'inactive';
   completion_rate?: number;
-  regionName?: string; // Added to match usage in components
-  region_name?: string; // Added to match usage in components
+  created_at: string;
+  updated_at: string;
 }
 
-export interface SectorFormData {
-  id?: string;
+export interface CreateSectorData {
   name: string;
   description?: string;
   region_id: string;
-  status?: 'active' | 'inactive' | 'blocked';
+  admin_id?: string;
+  admin_email?: string;
+}
+
+export interface UpdateSectorData extends Partial<CreateSectorData> {
+  status?: 'active' | 'inactive';
+  completion_rate?: number;
 }
