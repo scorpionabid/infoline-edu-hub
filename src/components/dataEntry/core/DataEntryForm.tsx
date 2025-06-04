@@ -1,395 +1,112 @@
-import React, { useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { FormProvider, useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
-import { useDataEntryState } from '@/hooks/dataEntry/useDataEntryState';
-import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
-import { useLanguage } from '@/context/LanguageContext';
-import DataEntryFormContent from './DataEntryFormContent';
-import { DataEntryFormLoading, DataEntryFormError } from '../shared';
-import { toast } from 'sonner';
-import { safeGetByUUID } from '@/utils/dataIndexing';
-import { usePermissions } from '@/hooks/auth/usePermissions';
 
-// Define the component props
+import React from 'react';
+import { Form } from '@/components/ui/form';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useForm } from 'react-hook-form';
+import { useDataEntryState } from '@/hooks/business/dataEntry/useDataEntryState';
+import DataEntryFormContent from './DataEntryFormContent';
+import { useCategoryQuery } from '@/hooks/api/categories/useCategoryQuery';
+import { Loader2, AlertCircle } from 'lucide-react';
+
 interface DataEntryFormProps {
-  schoolId?: string;
-  categoryId?: string;
+  categoryId: string;
+  schoolId: string;
+  onSubmit?: (data: any) => void;
   readOnly?: boolean;
-  onSave?: (data: any) => Promise<boolean>;
-  onCancel?: () => void;
 }
 
-// The main component with standardized UUID handling
 const DataEntryForm: React.FC<DataEntryFormProps> = ({
+  categoryId,
   schoolId,
-  categoryId: propCategoryId,
-  readOnly = false,
-  onSave,
-  onCancel
+  onSubmit,
+  readOnly = false
 }) => {
-  const { t } = useLanguage();
-  const navigate = useNavigate();
-  const params = useParams();
-  
-  // Use provided IDs or fallback to URL params, with empty string as final fallback
-  const resolvedCategoryId = propCategoryId || params.categoryId || '';
-  const resolvedSchoolId = schoolId || params.schoolId || '';
-  
-  // Setup form with safety measures and better configuration
-  const methods = useForm({
-    defaultValues: {},
-    mode: 'onChange',
-    shouldUnregister: false, // DOM-dan silindikdə field-ləri qeydiyyatdan çıxarmamaq
-    reValidateMode: 'onChange', // Dəyişikliklərdə validasiya etmək
-    criteriaMode: 'all' // Bütün xətaları göstərmək
+  // Category data
+  const { category, isLoading: categoryLoading, isError: categoryError } = useCategoryQuery({
+    categoryId,
+    enabled: !!categoryId
   });
-  
-  const { reset, formState, handleSubmit } = methods;
 
-  // Get category data and entries - handle loading and error states properly
-  const { 
-    category, 
-    isLoading: categoryLoading, 
-    error: categoryError 
-  } = useCategoryData({
-    categoryId: resolvedCategoryId
-  });
-  
+  // Data entry state
   const {
-    dataEntries,
-    entriesMap, // Use entriesMap directly from the hook
+    entries,
     isLoading: entriesLoading,
-    error: entriesError,
-    saveDataEntries,
-    fetchDataEntries
+    isError: entriesError,
+    updateEntryValue
   } = useDataEntryState({
-    categoryId: resolvedCategoryId,
-    schoolId: resolvedSchoolId
+    categoryId,
+    schoolId,
+    enabled: !!categoryId && !!schoolId
   });
-  
-  // Add defensive console logs to help with debugging
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug('DataEntryForm - IDs and state:', {
-        categoryId: resolvedCategoryId, 
-        schoolId: resolvedSchoolId,
-        entriesMapAvailable: entriesMap ? 'yes' : 'no', 
-        entriesMapKeys: entriesMap ? Object.keys(entriesMap).length : 0,
-        dataEntriesCount: Array.isArray(dataEntries) ? dataEntries.length : 'not an array'
-      });
-    }
-  }, [resolvedCategoryId, resolvedSchoolId, entriesMap, dataEntries]);
-  
-  // Set form values from data entries with enhanced safety
-  useEffect(() => {
-    try {
-      // Skip if entriesMap is not valid
-      if (!entriesMap || typeof entriesMap !== 'object') {
-        console.warn('Cannot set form values: entriesMap is not a valid object');
-        return;
-      }
 
-      // Now safely extract values with proper type checks
-      const formValues: Record<string, string> = {};
-      
-      Object.keys(entriesMap).forEach(columnId => {
-        try {
-          if (!columnId || typeof columnId !== 'string') {
-            console.warn('Invalid column ID in entriesMap:', columnId);
-            return;
-          }
-          
-          const entry = entriesMap[columnId];
-          
-          // Skip if entry is invalid
-          if (!entry || typeof entry !== 'object') {
-            console.warn(`Invalid entry for column ${columnId} in entriesMap:`, entry);
-            return;
-          }
-          
-          // Safe conversion to string for form value
-          const entryValue = entry.value;
-          const safeValue = entryValue !== undefined && entryValue !== null 
-            ? String(entryValue) 
-            : '';
-            
-          formValues[columnId] = safeValue;
-          
-        } catch (err) {
-          console.error(`Error processing entry for column ${columnId}:`, err);
-        }
-      });
-      
-      // Only reset if we have values
-      if (Object.keys(formValues).length > 0) {
-        if (process.env.NODE_ENV === 'development') {
-          console.debug('Setting form values:', formValues);
-        }
-        reset(formValues);
-      } else {
-        console.log('No form values to set');
-      }
-    } catch (error) {
-      console.error('Error setting form values:', error);
-      toast.error(t('errorLoadingFormData'));
-    }
-  }, [entriesMap, reset, t]);
-
-  // Fetch data on mount and when dependencies change
-  useEffect(() => {
-    if (resolvedCategoryId && resolvedSchoolId) {
-      fetchDataEntries();
-    }
-  }, [fetchDataEntries, resolvedCategoryId, resolvedSchoolId]);
-
-  // Safe function to get an entry value using our utility
-  const safeGetEntryValue = (columnId: string | null | undefined): string => {
-    if (!columnId) return '';
-    
-    const entry = safeGetByUUID(entriesMap, columnId);
-    if (!entry) return '';
-    
-    return entry.value !== undefined && entry.value !== null ? String(entry.value) : '';
-  };
-
-  // usePermissions nəticələrini memoize edirik ki, təkrar hesablama etməyək
-  const permissions = usePermissions();
-  const { 
-    canEditData,
-    userRole,
-    isSuperAdmin,
-    isRegionAdmin,
-    isSectorAdmin,
-    isSchoolAdmin,
-    isTeacher,
-    isUser
-  } = permissions;
-  
-  // Ətrafli icazə debuqlarını əlavə edirik
-  console.log('[DataEntryForm] User permissions:', {
-    userRole,
-    isSuperAdmin,
-    isRegionAdmin,
-    isSectorAdmin, 
-    isSchoolAdmin,
-    isTeacher,
-    isUser,
-    canEditData
+  // Form setup
+  const form = useForm({
+    defaultValues: {}
   });
-  
-  // readOnly dəyərini useMemo ilə hesablayırıq - yalnız asılı dəyərlər dəyişdikdə yenidən hesablanacaq
-  const isReadOnly = useMemo(() => {
-    const calculatedReadOnly = !canEditData || readOnly;
-    console.log('[DataEntryForm] Permission state:', { 
-      canEditData, 
-      readOnly, 
-      calculatedReadOnly
-    });
-    return calculatedReadOnly;
-  }, [canEditData, readOnly]);
 
-  // Handle form submission with better error handling and debugging
-  const onSubmit = async (data: any) => {
-    console.log('Form submission triggered with data:', data);
-    try {
-      if (!category || !category.columns) {
-        toast.error(t('categoryOrColumnsUndefined'));
-        return;
-      }
-
-      const formattedEntries = Object.entries(data).map(([columnId, value]) => {
-        // Try to find existing entry for this column
-        const existingEntry = safeGetByUUID(entriesMap, columnId);
-        
-        // Prepare the entry with all required fields
-        return {
-          id: existingEntry?.id || undefined, // Use undefined for new entries
-          school_id: resolvedSchoolId,
-          category_id: resolvedCategoryId,
-          column_id: columnId,
-          value: value !== undefined ? String(value) : '',
-          status: existingEntry?.status || 'draft',
-          created_at: existingEntry?.created_at || new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-      });
-
-      // First try to use the onSave prop if provided
-      if (typeof onSave === 'function') {
-        const success = await onSave(formattedEntries);
-        if (success) {
-          toast.success(t('dataSavedSuccessfully'));
-          return;
-        }
-      } else {
-        // Otherwise use our internal save function
-        await saveDataEntries(formattedEntries);
-      }
-    } catch (error: any) {
-      console.error('Error saving data:', error);
-      toast.error(`${t('errorSavingData')}: ${error.message || 'Unknown error'}`);
-    }
-  };
-
-  // Cancel handler
-  const handleCancel = () => {
-    if (typeof onCancel === 'function') {
-      onCancel();
-    } else {
-      navigate(-1);
-    }
-  };
-  
-  // Loading states with better error handling
   const isLoading = categoryLoading || entriesLoading;
   const hasError = categoryError || entriesError;
-  
-  // Debug information for troubleshooting
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug('DataEntryForm render state:', {
-        categoryId: resolvedCategoryId,
-        schoolId: resolvedSchoolId,
-        isLoading,
-        hasError,
-        categoryAvailable: !!category,
-        entriesMapSize: entriesMap ? Object.keys(entriesMap).length : 0
-      });
-    }
-  }, [resolvedCategoryId, resolvedSchoolId, isLoading, hasError, category, entriesMap]);
 
-  // Form status diaqnostikası
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.group('DataEntryForm State Diagnostic');
-      console.log('Form state:', {
-        isLoading,
-        hasError,
-        hasCategoryData: !!category,
-        readOnly,
-        hasEntriesData: !!entriesMap && Object.keys(entriesMap).length > 0
-      });
-      console.groupEnd();
-    }
-  }, [isLoading, hasError, category, readOnly, entriesMap]);
-
-  // Safe render function that won't crash on undefined - Təkmilləşdirilmiş versiya
-  const renderFormContent = () => {
-    // Yüklənmə vəziyyətində form
-    if (isLoading) {
-      return (
-        <div className="p-4">
-          <DataEntryFormLoading />
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 p-2 text-xs text-muted-foreground border rounded">
-              Loading state active - fetching {resolvedCategoryId ? `category ${resolvedCategoryId}` : 'categories'}
-            </div>
-          )}
-        </div>
-      );
-    }
-    
-    // Xəta vəziyyətində form
-    if (hasError) {
-      return (
-        <div className="p-4">
-          <DataEntryFormError 
-            error={categoryError || entriesError || 'Unknown error'} 
-            onRetry={fetchDataEntries}
-          />
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 p-2 text-xs text-muted-foreground border rounded">
-              Error state: {categoryError || entriesError || 'Unknown error'}
-            </div>
-          )}
-        </div>
-      );
-    }
-    
-    // Kateqoriya tapılmadıqda
-    if (!category) {
-      return (
-        <div className="p-4 flex flex-col items-center justify-center min-h-[200px]">
-          <div className="text-center text-lg text-muted-foreground mb-4">
-            {t('categoryNotFound')}
-          </div>
-          <Button variant="outline" onClick={fetchDataEntries}>
-            {t('refresh')}
-          </Button>
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 p-2 text-xs text-muted-foreground border rounded">
-              Category ID requested: {resolvedCategoryId || 'none'}
-            </div>
-          )}
-        </div>
-      );
-    }
-    
-    // Əsas məzmun - bütün şərtlər yerləşdikdə
+  if (isLoading) {
     return (
-      <DataEntryFormContent 
-        category={category} 
-        readOnly={isReadOnly}
-        key={`form-content-${category.id}`} // Kateqoriya dəyişdikdə komponenti yenidən render etmək üçün
-      />
+      <Card>
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin mr-2" />
+            <span>Məlumatlar yüklənir...</span>
+          </div>
+        </CardContent>
+      </Card>
     );
+  }
+
+  if (hasError || !category) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center text-red-600">
+            <AlertCircle className="h-8 w-8 mr-2" />
+            <span>Kateqoriya məlumatları yüklənə bilmədi</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const handleSubmit = (data: any) => {
+    if (onSubmit) {
+      onSubmit(data);
+    }
   };
 
   return (
-    <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Card className="w-full border shadow-sm">
-          <CardHeader className="bg-card">
-            <CardTitle className="text-xl font-semibold">
-              {category?.name || t('dataEntry')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {renderFormContent()}
-            {/* Debug information - dev mode only */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="p-4 text-xs border-t border-dashed">
-                <details>
-                  <summary className="cursor-pointer">Debug Info</summary>
-                  <pre className="mt-2 text-xs overflow-auto max-h-40">
-                    {JSON.stringify({
-                      isDirty: formState.isDirty,
-                      isSubmitting: formState.isSubmitting,
-                      isLoading: isLoading,
-                      hasEntries: entriesMap ? Object.keys(entriesMap).length : 0,
-                      formValues: methods.getValues(),
-                      errors: formState.errors
-                    }, null, 2)}
-                  </pre>
-                </details>
+    <Card>
+      <CardHeader>
+        <CardTitle>{category.name}</CardTitle>
+        {category.description && (
+          <p className="text-sm text-muted-foreground">{category.description}</p>
+        )}
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <DataEntryFormContent
+              category={category}
+              readOnly={readOnly}
+            />
+            
+            {!readOnly && (
+              <div className="flex justify-end pt-4 border-t">
+                <Button type="submit">
+                  Yadda saxla
+                </Button>
               </div>
             )}
-          </CardContent>
-          <div className="p-4 bg-background flex justify-end gap-2 border-t">
-            {!isReadOnly && (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancel}
-                >
-                  {t('cancel')}
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!formState.isDirty || formState.isSubmitting || isLoading}
-                >
-                  {formState.isSubmitting ? t('saving') : t('save')}
-                </Button>
-              </>
-            )}
-          </div>
-        </Card>
-      </form>
-    </FormProvider>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 

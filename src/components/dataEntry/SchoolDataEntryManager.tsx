@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useDataEntry } from '@/hooks/dataEntry/useDataEntry';
+import { useDataEntry } from '@/hooks/business/dataEntry/useDataEntry';
 import { useCategoriesQuery } from '@/hooks/api/categories/useCategoriesQuery';
-import { DataEntryForm } from './core/DataEntryForm';
+import DataEntryForm from './core/DataEntryForm';
 import { FieldRenderer } from './fields/FieldRenderer';
 import { AlertCircle, Clock, CheckCircle2, Loader2 } from 'lucide-react';
 
@@ -24,20 +24,20 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   
   // Load categories
-  const { categories, isLoading: categoriesLoading } = useCategoriesQuery();
+  const { categories, loading: categoriesLoading } = useCategoriesQuery();
   
   // Load data entry for selected category
   const {
-    formData,
-    categories: categoryColumns,
+    category,
+    columns,
     entries,
     isLoading: dataLoading,
     isSubmitting,
-    handleInputChange,
-    handleSubmit,
-    handleSave,
     completionPercentage,
-    hasAllRequiredData
+    hasAllRequiredData,
+    updateEntryValue,
+    saveAll,
+    submitAll
   } = useDataEntry({
     categoryId: selectedCategoryId,
     schoolId,
@@ -46,7 +46,6 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
 
   const loading = categoriesLoading || dataLoading;
   const selectedCategory = categories.find(c => c.id === selectedCategoryId);
-  const categoryData = categoryColumns.find(c => c.id === selectedCategoryId);
 
   return (
     <div className="h-full flex flex-col space-y-4">
@@ -96,7 +95,7 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
                   {completionPercentage}% tamamlandı
                 </Badge>
                 <Badge variant="outline">
-                  {categoryData?.columns?.length || 0} sahə
+                  {columns?.length || 0} sahə
                 </Badge>
               </div>
             </div>
@@ -107,9 +106,9 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
                 <Loader2 className="h-8 w-8 animate-spin" />
                 <span className="ml-2">Məlumatlar yüklənir...</span>
               </div>
-            ) : categoryData?.columns && categoryData.columns.length > 0 ? (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {categoryData.columns.map((column) => (
+            ) : columns && columns.length > 0 ? (
+              <form onSubmit={(e) => { e.preventDefault(); submitAll(); }} className="space-y-4">
+                {columns.map((column) => (
                   <div key={column.id} className="space-y-2">
                     <label className="text-sm font-medium">
                       {column.name}
@@ -117,11 +116,9 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
                     </label>
                     <FieldRenderer
                       column={column}
-                      value={formData[column.id] || ''}
-                      onChange={handleInputChange}
-                      onValueChange={(value) => handleInputChange({
-                        target: { name: column.id, value }
-                      } as React.ChangeEvent<HTMLInputElement>)}
+                      value={entries.find(e => e.column_id === column.id)?.value || ''}
+                      onChange={(e) => updateEntryValue(column.id, e.target.value)}
+                      onValueChange={(value) => updateEntryValue(column.id, value)}
                     />
                     {column.help_text && (
                       <p className="text-xs text-muted-foreground">{column.help_text}</p>
@@ -135,7 +132,7 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={handleSave}
+                      onClick={saveAll}
                       disabled={isSubmitting}
                     >
                       <Clock className="h-4 w-4 mr-2" />

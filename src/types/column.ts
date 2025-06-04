@@ -4,6 +4,7 @@ export enum ColumnType {
   TEXTAREA = 'textarea', 
   NUMBER = 'number',
   SELECT = 'select',
+  RADIO = 'radio',
   CHECKBOX = 'checkbox',
   SWITCH = 'switch',
   DATE = 'date',
@@ -18,8 +19,10 @@ export interface Column {
   is_required: boolean;
   placeholder?: string;
   help_text?: string;
+  description?: string;
+  section?: string;
   default_value?: string;
-  options?: any[];
+  options?: ColumnOption[];
   validation?: any;
   order_index: number;
   status: 'active' | 'inactive';
@@ -30,6 +33,29 @@ export interface Column {
 export interface ColumnOption {
   value: string;
   label: string;
+  disabled?: boolean;
+  id?: string;
+}
+
+export interface ColumnFormValues {
+  name: string;
+  type: ColumnType;
+  is_required: boolean;
+  placeholder?: string;
+  help_text?: string;
+  description?: string;
+  section?: string;
+  default_value?: string;
+  options?: ColumnOption[];
+  validation?: any;
+  order_index: number;
+}
+
+export interface ColumnTypeDefinition {
+  value: ColumnType;
+  label: string;
+  description?: string;
+  icon?: string;
 }
 
 export interface CategoryWithColumns {

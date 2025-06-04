@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { useDataEntriesQuery } from '@/hooks/api/dataEntry/useDataEntriesQuery';
 import { useIndexedData } from '@/hooks/core/useIndexedData';
@@ -10,19 +11,14 @@ export interface UseDataEntryStateProps {
   categoryId: string;
   schoolId: string;
   enabled?: boolean;
+  user?: any;
+  isSectorAdmin?: boolean;
+  categoryIdFromUrl?: string;
+  schoolIdFromUrl?: string;
 }
 
 /**
  * Məlumat daxil etmə vəziyyətini idarə etmək üçün yüksək səviyyəli hook
- * 
- * Bu hook aşağıdakı funksionallığı təmin edir:
- * - Məlumat daxil etmələrini əldə etmək
- * - Məlumat daxil etmələrini UUID əsasında indeksləmək
- * - Məlumat daxil etmələrini saxlamaq
- * - Məlumat daxil etmələrinin statusunu yeniləmək
- * 
- * @param props Hook parametrləri
- * @returns Məlumat daxil etmə vəziyyəti və əlaqədar funksiyalar
  */
 export function useDataEntryState({
   categoryId,

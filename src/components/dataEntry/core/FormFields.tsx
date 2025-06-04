@@ -76,9 +76,9 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false,
                   readOnly={readOnly}
                 />
               </FormControl>
-              {column.description && (
+              {column.help_text && (
                 <FormDescription>
-                  {column.description}
+                  {column.help_text}
                 </FormDescription>
               )}
               <FormMessage />

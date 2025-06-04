@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import FormFields from './FormFields';
 import { useLanguage } from '@/context/LanguageContext';
-import { Column } from '@/types/column';
+import { Column, ColumnType } from '@/types/column';
 import { safeArrayFind } from '@/utils/dataIndexing';
 import { formatColumns } from '@/utils/dataFormatters';
 
