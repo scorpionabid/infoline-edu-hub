@@ -516,12 +516,14 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
                       </td>
                       <td className="p-2">
                         <div className="flex items-center space-x-2">
-                          {/* TEST MODAL BUTTON */}
+                          {/* TEST MODAL BUTTON - Fixed UUID */}
                           <Button
                             onClick={() => {
-                              console.log('[SchoolManagement] TEST button clicked!');
+                              console.log('[SchoolManagement] TEST button clicked for school:', school.id);
+                              // Use actual school ID instead of concatenating
+                              setSelectedSchoolForDataEntry(school.id);
                               setIsDataEntryModalOpen(true);
-                              setSelectedSchoolForDataEntry('test-' + school.id);
+                              console.log('[SchoolManagement] Modal opened for school ID:', school.id);
                             }}
                             className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-xs"
                           >

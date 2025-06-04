@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDataEntry } from '@/hooks/dataEntry/useDataEntry';
-import { DataEntryFormManager } from './core';
+import { FieldRenderer } from './fields';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,8 @@ import {
   Clock, 
   AlertCircle,
   BookOpen,
-  School
+  School,
+  Save
 } from 'lucide-react';
 
 interface SchoolDataEntryManagerProps {
@@ -56,10 +57,21 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
     onComplete
   });
 
-  // Ilk kategoriyanı avtomatik sec
+  // Ilk kategoriyanı avtomatik sec + debug
   useEffect(() => {
+    console.log('[SchoolDataEntryManager] Categories loaded:', {
+      categoriesLength: categories.length,
+      selectedCategoryId,
+      categories: categories.map(c => ({
+        id: c.id,
+        name: c.name,
+        columnsCount: c.columns?.length || 0
+      }))
+    });
+    
     if (categories.length > 0 && !selectedCategoryId) {
       const firstCategory = categories[0];
+      console.log('[SchoolDataEntryManager] Auto-selecting first category:', firstCategory.name);
       setSelectedCategoryId(firstCategory.id);
       handleCategoryChange(firstCategory);
     }
@@ -210,31 +222,76 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
         </CardContent>
       </Card>
 
-      {/* Current Category Form */}
+      {/* Current Category Form - Simple Form with FieldRenderer */}
       <div className="flex-1 overflow-hidden">
         {currentCategory && (
-          <DataEntryFormManager
-            category={currentCategory}
-            schoolId={schoolId}
-            formData={formData}
-            onFormDataChange={handleFormDataChange}
-            onSave={handleFormSave}
-            onSubmit={handleFormSubmit}
-            onExportTemplate={() => {
-              // Excel template download logic
-              console.log('Downloading template for category:', currentCategory.name);
-            }}
-            onImportData={async (file: File) => {
-              // Excel import logic
-              console.log('Importing Excel file:', file.name);
-            }}
-            isLoading={loadingEntry}
-            isSaving={isAutoSaving}
-            isSubmitting={isSubmitting}
-            readOnly={false}
-            // Auto-approval for sector admin
-            entryStatus={user?.role === 'sectoradmin' ? 'approved' : 'pending'}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                {currentCategory.name} - Məlumat Daxil Etmə
+                {user?.role === 'sectoradmin' && (
+                  <Badge className="bg-green-100 text-green-800">
+                    Avtomatik Təsdiq
+                  </Badge>
+                )}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {user?.role === 'sectoradmin' 
+                  ? 'Sektor administratoru olaraq daxil etdiyiniz məlumatlar avtomatik təsdiqlənəcək.'
+                  : 'Məlumatları daxil edin və təsdiq üçün göndərin.'
+                }
+              </p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {currentCategory.columns?.map((column) => (
+                  <div key={column.id} className="space-y-2">
+                    <FieldRenderer
+                      column={column}
+                      value={formData[column.id] || ''}
+                      onValueChange={(value) => {
+                        console.log(`Field ${column.id} changed to:`, value);
+                        handleChange(column.id, value);
+                      }}
+                    />
+                  </div>
+                ))}
+                
+                {currentCategory.columns?.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Bu kateqoriya üçün sahələr tapılmadı</p>
+                  </div>
+                )}
+                
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSave}
+                    disabled={isAutoSaving}
+                  >
+                    {isAutoSaving ? 'Saxlanılır...' : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Yadda saxla
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Göndərilir...' : (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        {user?.role === 'sectoradmin' ? 'Saxla və Təsdiqlə' : 'Təsdiq üçün göndər'}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

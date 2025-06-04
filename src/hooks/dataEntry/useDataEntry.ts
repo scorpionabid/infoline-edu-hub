@@ -284,8 +284,8 @@ export const useDataEntry = ({
       return;
     }
     
-    const MAX_RETRIES = 2; // Maksimum yenidən cəhd sayı
-    const TIMEOUT_MS = 10000; // Zaman aşımını 10 saniyəyə endirik
+    const MAX_RETRIES = 3; // Maksimum yenidən cəhd sayı artırıldı
+    const TIMEOUT_MS = 30000; // Zaman aşımı 30 saniyəyə artırıldı
     
     console.group(`Loading data for category ${categoryId} and school ${schoolId} (attempt ${retryCount + 1})`);
     setLoadingEntry(true);
