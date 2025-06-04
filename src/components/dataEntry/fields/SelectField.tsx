@@ -46,7 +46,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
             // Handle string options
             if (typeof option === 'string') {
               // Ensure value is never empty string
-              const value = option.trim() || `default-${uniqueKey}`;
+              const value = option && String(option).trim() ? String(option).trim() : `default-${uniqueKey}`;
               return { 
                 id: uniqueKey,
                 value: value,
@@ -86,7 +86,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
             return parsedOptions.map((option, index) => {
               const uniqueKey = `option-${index}-${column.id}`;
               if (typeof option === 'string') {
-                const value = option.trim() || `default-${uniqueKey}`;
+                const value = option && String(option).trim() ? String(option).trim() : `default-${uniqueKey}`;
                 return { id: uniqueKey, value: value, label: option || value };
               } else {
                 const value = (option.value && String(option.value).trim()) || option.id || uniqueKey;
@@ -141,17 +141,19 @@ const SelectField: React.FC<SelectFieldProps> = ({
         </SelectItem>
         {options.length > 0 ? (
           options.map((option) => {
-            // Safety check for option - ensure value is never empty
-            if (!option || !option.value || option.value.trim() === '') {
+            // Safety check for option - ensure value is never empty and is always a string
+            if (!option || !option.value || String(option.value).trim() === '') {
               return null;
             }
+            
+            const safeValue = String(option.value).trim();
             
             return (
               <SelectItem 
                 key={`${column.id}-${option.id}`} 
-                value={option.value}
+                value={safeValue}
               >
-                {option.label || option.value || ''}
+                {option.label || safeValue || ''}
               </SelectItem>
             );
           })

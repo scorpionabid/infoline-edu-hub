@@ -1,3 +1,4 @@
+
 // Core column types
 export type ColumnType = 
   | 'text' 

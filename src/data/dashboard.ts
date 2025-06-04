@@ -1,13 +1,45 @@
-
-import {
+import { 
+  SuperAdminDashboardData, 
   DashboardStatus,
-  FormItem,
-  CategoryItem,
-  DeadlineItem,
-  PendingApproval,
-  SchoolStat,
-  SectorStat,
+  RegionAdminDashboardData, 
+  SectorAdminDashboardData, 
+  SchoolAdminDashboardData 
 } from '@/types/dashboard';
+
+const mockForms = [
+  {
+    id: "form-1",
+    name: "Məktəb İnfrastrukturu",
+    status: "pending" as DashboardStatus,
+    lastModified: "2024-01-15",
+    completionRate: 75,
+    submissions: 45
+  },
+  {
+    id: "form-2", 
+    name: "Müəllim Sayı",
+    status: "approved" as DashboardStatus,
+    lastModified: "2024-01-14",
+    completionRate: 100,
+    submissions: 52
+  },
+  {
+    id: "form-3",
+    name: "Şagird Statistikası", 
+    status: "rejected" as DashboardStatus,
+    lastModified: "2024-01-13",
+    completionRate: 60,
+    submissions: 38
+  },
+  {
+    id: "form-4",
+    name: "Texniki Avadanlıq",
+    status: "completed" as DashboardStatus,
+    lastModified: "2024-01-12",
+    completionRate: 95,
+    submissions: 41
+  }
+];
 
 export const mockDashboardStatus: DashboardStatus = {
   total: 120,
@@ -275,3 +307,201 @@ export const mockSectorFormItems: FormItem[] = [
     deadline: '2024-12-20T23:59:59Z'
   }
 ];
+
+export const getMockSuperAdminData = (): SuperAdminDashboardData => ({
+  forms: mockForms,
+  stats: {
+    totalForms: 150,
+    completedForms: 120,
+    pendingForms: 30,
+    approvalRate: 85
+  },
+  categories: [
+    { id: "cat-1", name: "İnfrastruktur", status: "active", completionRate: 78 },
+    { id: "cat-2", name: "Kadrlar", status: "active", completionRate: 92 },
+    { id: "cat-3", name: "Təhsil", status: "pending", completionRate: 65 }
+  ],
+  deadlines: [
+    {
+      id: "deadline-1",
+      name: "Q1 Hesabat",
+      deadline: "2024-03-31",
+      dueDate: "2024-03-31",
+      status: "approaching",
+      daysLeft: 15
+    }
+  ],
+  schools: {
+    totalSchools: 1250,
+    activeSchools: 1180,
+    inactiveSchools: 70
+  },
+  sectors: {
+    totalSectors: 45,
+    activeSectors: 42,
+    inactiveSectors: 3
+  },
+  regions: {
+    totalRegions: 12,
+    activeRegions: 12,
+    inactiveRegions: 0
+  }
+});
+
+export const getMockRegionAdminData = (): RegionAdminDashboardData => ({
+  forms: mockForms,
+  stats: {
+    totalForms: 75,
+    completedForms: 60,
+    pendingForms: 15,
+    approvalRate: 88
+  },
+  categories: [
+    { id: "cat-1", name: "İnfrastruktur", status: "active", completionRate: 78 },
+    { id: "cat-2", name: "Kadrlar", status: "active", completionRate: 92 }
+  ],
+  deadlines: [
+    {
+      id: "deadline-1",
+      name: "Q1 Hesabat",
+      deadline: "2024-03-31", 
+      dueDate: "2024-03-31",
+      status: "approaching",
+      daysLeft: 15
+    }
+  ],
+  sectors: [
+    {
+      id: "sector-1",
+      name: "Nəsimi",
+      schoolCount: 25,
+      totalSchools: 25,
+      activeSchools: 24,
+      completionRate: 85,
+      status: "active"
+    }
+  ]
+});
+
+export const getMockSectorAdminData = (): SectorAdminDashboardData => ({
+  forms: [
+    {
+      id: "form-1",
+      name: "Məktəb İnfrastrukturu",
+      status: "pending" as DashboardStatus,
+      lastModified: "2024-01-15",
+      completionRate: 75,
+      submissions: 12
+    },
+    {
+      id: "form-2",
+      name: "Müəllim Sayı", 
+      status: "approved" as DashboardStatus,
+      lastModified: "2024-01-14",
+      completionRate: 100,
+      submissions: 15
+    },
+    {
+      id: "form-3",
+      name: "Şagird Statistikası",
+      status: "rejected" as DashboardStatus,
+      lastModified: "2024-01-13", 
+      completionRate: 60,
+      submissions: 8
+    },
+    {
+      id: "form-4",
+      name: "Texniki Avadanlıq",
+      status: "completed" as DashboardStatus,
+      lastModified: "2024-01-12",
+      completionRate: 95,
+      submissions: 14
+    },
+    {
+      id: "form-5",
+      name: "Maliyyə Hesabatı",
+      status: "in_progress" as DashboardStatus,
+      lastModified: "2024-01-11",
+      completionRate: 40,
+      submissions: 6
+    },
+    {
+      id: "form-6",
+      name: "Kitabxana Fondu",
+      status: "not_started" as DashboardStatus,
+      lastModified: "2024-01-10",
+      completionRate: 0,
+      submissions: 0
+    }
+  ],
+  stats: {
+    totalForms: 25,
+    completedForms: 20,
+    pendingForms: 5,
+    approvalRate: 92
+  },
+  categories: [
+    { id: "cat-1", name: "İnfrastruktur", status: "active", completionRate: 78 },
+    { id: "cat-2", name: "Kadrlar", status: "active", completionRate: 92 }
+  ],
+  deadlines: [
+    {
+      id: "deadline-1",
+      name: "Q1 Hesabat",
+      deadline: "2024-03-31",
+      dueDate: "2024-03-31", 
+      status: "approaching",
+      daysLeft: 15
+    }
+  ],
+  schools: [
+    {
+      id: "school-1",
+      name: "Məktəb #1",
+      completionRate: 85,
+      totalForms: 5,
+      completedForms: 4,
+      pendingForms: 1,
+      status: "active",
+      lastUpdated: "2024-01-15"
+    }
+  ]
+});
+
+export const getMockSchoolAdminData = (): SchoolAdminDashboardData => ({
+  forms: [
+    {
+      id: "form-1",
+      name: "Məktəb İnfrastrukturu",
+      status: "pending" as DashboardStatus,
+      lastModified: "2024-01-15",
+      completionRate: 75
+    },
+    {
+      id: "form-2",
+      name: "Müəllim Sayı",
+      status: "approved" as DashboardStatus,
+      lastModified: "2024-01-14", 
+      completionRate: 100
+    }
+  ],
+  stats: {
+    totalForms: 8,
+    completedForms: 6,
+    pendingForms: 2,
+    approvalRate: 95
+  },
+  categories: [
+    { id: "cat-1", name: "İnfrastruktur", status: "approved", completionRate: 100 }
+  ],
+  deadlines: [
+    {
+      id: "deadline-1",
+      name: "Q1 Hesabat",
+      deadline: "2024-03-31",
+      dueDate: "2024-03-31",
+      status: "approaching",
+      daysLeft: 15
+    }
+  ]
+});
