@@ -115,7 +115,7 @@ export const useDataEntry = ({
     console.groupEnd();
   }, [formData]);
 
-  // Handle form submission with enhanced error handling
+  // Handle form submission with enhanced error handling and auto-approval
   const handleSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault();
     setIsSubmitting(true);
@@ -130,9 +130,31 @@ export const useDataEntry = ({
         throw new Error('Invalid form data');
       }
 
-      // ✅ YENİ: Auto-approval logic for SectorAdmin
+      // ✅ ENHANCED: Auto-approval logic for SectorAdmin with more robust checking
       const isAutoApprove = user?.role === 'sectoradmin';
-      const defaultStatus = isAutoApprove ? 'approved' : 'pending';
+      let defaultStatus = 'pending';
+      let approvalMetadata = {};
+      
+      if (isAutoApprove) {
+        // Verify sector admin has access to this school
+        const { data: schoolData, error: schoolError } = await supabase
+          .from('schools')
+          .select('sector_id')
+          .eq('id', schoolId)
+          .single();
+        
+        if (schoolError) throw schoolError;
+        
+        if (schoolData.sector_id === user.sector_id) {
+          defaultStatus = 'approved';
+          approvalMetadata = {
+            approved_by: user.id,
+            approved_at: new Date().toISOString(),
+            auto_approved: true,
+            approval_reason: 'Automatic approval by sector admin'
+          };
+        }
+      }
       
       // Convert form data to entries format with safety checks
       const entriesToSave = Object.entries(formData)
@@ -143,11 +165,8 @@ export const useDataEntry = ({
           school_id: schoolId,
           value: String(value || ''),
           status: defaultStatus as DataEntryStatus,
-          // ✅ YENİ: Auto-approval metadata
-          ...(isAutoApprove && {
-            approved_by: user.id,
-            approved_at: new Date().toISOString()
-          })
+          created_by: user?.id,
+          ...approvalMetadata
         }));
 
       if (entriesToSave.length === 0) {
@@ -159,7 +178,7 @@ export const useDataEntry = ({
         return;
       }
 
-      // Save to database
+      // Save to database with upsert for existing entries
       const { error } = await supabase
         .from('data_entries')
         .upsert(entriesToSave, {
@@ -169,16 +188,19 @@ export const useDataEntry = ({
 
       if (error) throw error;
 
-      // ✅ YENİ: Fərqli mesaj göstərməsi
+      // ✅ ENHANCED: More detailed success messages
       const message = isAutoApprove 
         ? t('dataApprovedAndSaved') || 'Məlumatlar avtomatik təsdiqləndi və yadda saxlandı'
-        : t('dataSubmittedSuccessfully');
+        : t('dataSubmittedSuccessfully') || 'Məlumatlar təsdiq üçün göndərildi';
         
       toast({
         title: t('success'),
         description: message,
       });
 
+      // Reset form state after successful submission
+      setIsDataModified(false);
+      
       if (onComplete) onComplete();
     } catch (err: any) {
       console.error('Error submitting form:', err);
@@ -190,7 +212,7 @@ export const useDataEntry = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, schoolId, currentCategory, toast, t, onComplete]);
+  }, [formData, schoolId, currentCategory, user, toast, t, onComplete]);
 
   // Handle save as draft with enhanced validation
   const handleSave = useCallback(async () => {
@@ -540,13 +562,12 @@ export const useDataEntry = ({
     isAutoSaving,
     isSubmitting,
     handleInputChange,
-    // Yeni əlavə edilmiş handleChange funksiyası
     handleChange,
     handleSubmit,
     handleSave,
     handleReset,
     handleCategoryChange,
-    loadDataForSchool: loadCategories, // Alias for backward compatibility
+    loadDataForSchool: loadCategories,
     entries,
     submitForApproval: async () => Promise.resolve(),
     saveStatus,
@@ -555,7 +576,6 @@ export const useDataEntry = ({
     entryStatus,
     entryError,
     entryId,
-    // Functions expected by tests
     saveEntry,
     updateEntry,
     deleteEntry,
