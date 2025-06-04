@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Bell, Check, X, Filter, Search, Archive } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEnhancedNotificationContext } from '@/context/EnhancedNotificationContext';
-import { Notification } from '@/types/notification';
+import { AppNotification } from '@/types/notification';
 
 export interface NotificationSystemProps {
   maxItems?: number;
@@ -221,7 +222,7 @@ const EnhancedNotificationSystem: React.FC<NotificationSystemProps> = ({
                     
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-gray-400">
-                        {new Date(notification.created_at).toLocaleString('az-AZ')}
+                        {new Date(notification.created_at || notification.createdAt || '').toLocaleString('az-AZ')}
                       </span>
                     </div>
                   </div>

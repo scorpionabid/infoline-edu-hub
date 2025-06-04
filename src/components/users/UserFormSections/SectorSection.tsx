@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { useLanguageSafe } from "@/context/LanguageContext";
 import { useRegionsContext } from "@/context/RegionsContext";
-import { Sector } from "@/types/school";
+import { Sector } from "@/types/sector";
 import { UserFormData } from "@/types/user";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -20,8 +20,8 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const regionId = watch("region_id");
-  const sectorId = watch("sector_id");
+  const regionId = watch("regionId");
+  const sectorId = watch("sectorId");
 
   // fetchSectorsByRegion funksiyasını burada təyin edirik
   const fetchSectorsByRegion = async (regionId: string) => {
@@ -33,7 +33,12 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
         .eq('status', 'active');
 
       if (error) throw error;
-      return data || [];
+      
+      // Type assertion to ensure status is correct type
+      return (data || []).map(sector => ({
+        ...sector,
+        status: sector.status as 'active' | 'inactive'
+      }));
     } catch (err) {
       console.error('Error fetching sectors:', err);
       return [];
@@ -50,7 +55,7 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
           
           // If current sectorId doesn't exist in the new sectors list, reset it
           if (sectorId && !sectorsData.find(s => s.id === sectorId)) {
-            setValue("sector_id", "");
+            setValue("sectorId", "");
           }
         } catch (err) {
           console.error("Error loading sectors:", err);
@@ -59,7 +64,7 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
         }
       } else {
         setSectors([]);
-        setValue("sector_id", "");
+        setValue("sectorId", "");
       }
     };
     
@@ -67,26 +72,26 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
   }, [regionId, setValue, sectorId]);
 
   const handleRegionChange = (value: string) => {
-    setValue("region_id", value);
-    setValue("sector_id", ""); // Clear sector when region changes
-    setValue("school_id", ""); // Clear school when region changes
+    setValue("regionId", value);
+    setValue("sectorId", ""); // Clear sector when region changes
+    setValue("schoolId", ""); // Clear school when region changes
   };
 
   const handleSectorChange = (value: string) => {
-    setValue("sector_id", value);
-    setValue("school_id", ""); // Clear school when sector changes
+    setValue("sectorId", value);
+    setValue("schoolId", ""); // Clear school when sector changes
   };
 
   return (
     <div className="grid gap-4 mb-4">
       <div className="space-y-2">
-        <Label htmlFor="region_id">{t("region")}</Label>
+        <Label htmlFor="regionId">{t("region")}</Label>
         <Select
-          value={getValues("region_id") || ""}
+          value={getValues("regionId") || ""}
           onValueChange={handleRegionChange}
           disabled={disabled}
         >
-          <SelectTrigger id="region_id">
+          <SelectTrigger id="regionId">
             <SelectValue placeholder={t("selectRegion")} />
           </SelectTrigger>
           <SelectContent>
@@ -100,13 +105,13 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="sector_id">{t("sector")}</Label>
+        <Label htmlFor="sectorId">{t("sector")}</Label>
         <Select
-          value={getValues("sector_id") || ""}
+          value={getValues("sectorId") || ""}
           onValueChange={handleSectorChange}
           disabled={disabled || loading || !regionId}
         >
-          <SelectTrigger id="sector_id">
+          <SelectTrigger id="sectorId">
             <SelectValue placeholder={loading ? t("loading") : t("selectSector")} />
           </SelectTrigger>
           <SelectContent>

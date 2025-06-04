@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -21,24 +22,24 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  const isFiltering = !!data.sector_id;
+  const isFiltering = !!(data.sectorId || data.sector_id);
 
-  if (hideSection || !(data.role === 'schooladmin' && (data.sector_id))) {
+  if (hideSection || !(data.role === 'schooladmin' && isFiltering)) {
     return null;
   }
 
   return (
     <FormField
       control={form.control}
-      name="school_id"
+      name="schoolId"
       render={({ field }) => (
         <FormItem>
           <FormLabel>{t('school')}</FormLabel>
           <Select
-            value={data.school_id || "none"}
+            value={data.schoolId || data.school_id || "none"}
             onValueChange={(value) => {
               field.onChange(value === "none" ? null : value);
-              onFormChange('school_id', value === "none" ? null : value);
+              onFormChange('schoolId', value === "none" ? null : value);
             }}
             disabled={!isFiltering || filteredSchools.length === 0}
           >

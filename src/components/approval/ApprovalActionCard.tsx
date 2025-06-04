@@ -17,7 +17,7 @@ export const ApprovalActionCard: React.FC<ApprovalActionCardProps> = ({
   onApprove,
   onReject
 }) => {
-  const { approveEntry, rejectEntry, loading } = useApprovalProcess();
+  const { approveEntry, rejectEntry, isProcessing } = useApprovalProcess();
 
   const handleApprove = async () => {
     try {
@@ -70,7 +70,7 @@ export const ApprovalActionCard: React.FC<ApprovalActionCardProps> = ({
               <Button
                 size="sm"
                 onClick={handleApprove}
-                disabled={loading}
+                disabled={isProcessing}
                 className="flex-1"
               >
                 <CheckCircle className="w-4 h-4 mr-1" />
@@ -80,7 +80,7 @@ export const ApprovalActionCard: React.FC<ApprovalActionCardProps> = ({
                 size="sm"
                 variant="outline"
                 onClick={handleReject}
-                disabled={loading}
+                disabled={isProcessing}
                 className="flex-1"
               >
                 <XCircle className="w-4 h-4 mr-1" />

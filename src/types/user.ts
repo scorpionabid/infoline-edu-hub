@@ -3,6 +3,26 @@ export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladm
 
 export type UserStatus = 'active' | 'inactive' | 'blocked';
 
+export interface NotificationSettings {
+  email: boolean;
+  system: boolean;
+  inApp?: boolean;
+  sms?: boolean;
+  push?: boolean;
+  deadlineReminders?: boolean;
+  statusUpdates?: boolean;
+  weeklyReports?: boolean;
+}
+
+export interface UserFilter {
+  role: string;
+  search: string;
+  status?: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -14,12 +34,16 @@ export interface User {
   position?: string;
   language?: string;
   avatar?: string;
+  avatar_url?: string;
   region_id?: string;
   sector_id?: string;
   school_id?: string;
   last_login?: string;
+  last_sign_in_at?: string;
   created_at?: string;
   updated_at?: string;
+  notification_settings?: NotificationSettings;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface FullUserData extends User {
@@ -49,27 +73,26 @@ export interface FullUserData extends User {
     school?: string;
   };
   twoFactorEnabled?: boolean;
-  notificationSettings?: {
-    email: boolean;
-    system: boolean;
-  };
+  notification_settings?: NotificationSettings;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface UserFormData {
-  fullName: string;
-  email: string;
-  role: UserRole;
+  fullName?: string;
+  email?: string;
+  role?: UserRole;
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
   status?: UserStatus;
   phone?: string;
   position?: string;
   language?: string;
-  notificationSettings?: {
-    email: boolean;
-    system: boolean;
-  };
+  notification_settings?: NotificationSettings;
+  notificationSettings?: NotificationSettings;
 }
 
 export interface CreateUserData extends Omit<UserFormData, 'status'> {

@@ -10,6 +10,8 @@ export interface Sector {
   completion_rate?: number;
   created_at: string;
   updated_at: string;
+  region_name?: string;
+  regionName?: string;
 }
 
 export interface CreateSectorData {
