@@ -65,6 +65,15 @@ const CreateSchoolDialog: React.FC<CreateSchoolDialogProps> = ({
     setValue('sector_id', ''); // Reset sector when region changes
   };
 
+  // Filter out any regions/sectors with empty IDs or invalid data
+  const validRegions = regions.filter(region => 
+    region && region.id && String(region.id).trim() !== '' && region.name
+  );
+  
+  const validSectors = filteredSectors.filter(sector => 
+    sector && sector.id && String(sector.id).trim() !== '' && sector.name
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
@@ -91,21 +100,23 @@ const CreateSchoolDialog: React.FC<CreateSchoolDialogProps> = ({
                 <Label htmlFor="region_id">{t('region')}</Label>
                 <Select 
                   onValueChange={onRegionChange} 
-                  defaultValue={watch('region_id')}
+                  defaultValue={watch('region_id') || undefined}
                 >
                   <SelectTrigger id="region_id" className={errors.region_id ? 'border-red-500' : ''}>
                     <SelectValue placeholder={t('selectRegion')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {regions.map(region => {
-                      // Ensure region has valid ID
-                      const regionId = region.id || `region-${region.name || Math.random()}`;
-                      return (
-                        <SelectItem key={regionId} value={regionId}>
-                          {region.name || 'Unknown Region'}
+                    {validRegions.length > 0 ? (
+                      validRegions.map(region => (
+                        <SelectItem key={region.id} value={region.id}>
+                          {region.name}
                         </SelectItem>
-                      );
-                    })}
+                      ))
+                    ) : (
+                      <SelectItem value="no-regions" disabled>
+                        {t('noRegionsAvailable') || 'No regions available'}
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.region_id && (
@@ -117,22 +128,24 @@ const CreateSchoolDialog: React.FC<CreateSchoolDialogProps> = ({
                 <Label htmlFor="sector_id">{t('sector')}</Label>
                 <Select 
                   onValueChange={(value) => setValue('sector_id', value)} 
-                  defaultValue={watch('sector_id')}
+                  defaultValue={watch('sector_id') || undefined}
                   disabled={!selectedRegionId}
                 >
                   <SelectTrigger id="sector_id" className={errors.sector_id ? 'border-red-500' : ''}>
                     <SelectValue placeholder={t('selectSector')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {filteredSectors.map(sector => {
-                      // Ensure sector has valid ID
-                      const sectorId = sector.id || `sector-${sector.name || Math.random()}`;
-                      return (
-                        <SelectItem key={sectorId} value={sectorId}>
-                          {sector.name || 'Unknown Sector'}
+                    {validSectors.length > 0 ? (
+                      validSectors.map(sector => (
+                        <SelectItem key={sector.id} value={sector.id}>
+                          {sector.name}
                         </SelectItem>
-                      );
-                    })}
+                      ))
+                    ) : (
+                      <SelectItem value="no-sectors" disabled>
+                        {selectedRegionId ? (t('noSectorsAvailable') || 'No sectors available') : (t('selectRegionFirst') || 'Select region first')}
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.sector_id && (
@@ -183,7 +196,7 @@ const CreateSchoolDialog: React.FC<CreateSchoolDialogProps> = ({
               <Label htmlFor="status">{t('status')}</Label>
               <Select 
                 onValueChange={(value) => setValue('status', value as any)} 
-                defaultValue={watch('status')}
+                defaultValue={watch('status') || 'active'}
               >
                 <SelectTrigger id="status">
                   <SelectValue placeholder={t('selectStatus')} />

@@ -66,6 +66,11 @@ export const SectorAdminUserSelector: React.FC<SectorAdminUserSelectorProps> = (
     return details.length > 0 ? `(${details.join(' • ')})` : '';
   };
   
+  // Filter out users with empty or invalid IDs
+  const validUsers = users.filter(user => 
+    user && user.id && String(user.id).trim() !== ''
+  );
+  
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
@@ -89,7 +94,7 @@ export const SectorAdminUserSelector: React.FC<SectorAdminUserSelectorProps> = (
         </div>
       ) : (
         <>
-          {users.length === 0 ? (
+          {validUsers.length === 0 ? (
             <div className="p-6 text-center border rounded-md border-dashed">
               <AlertCircle className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
               <p className="text-sm text-muted-foreground mb-3">
@@ -115,24 +120,19 @@ export const SectorAdminUserSelector: React.FC<SectorAdminUserSelectorProps> = (
               </SelectTrigger>
               <SelectContent>
                 <ScrollArea className="h-72">
-                  {users.map((user, index) => {
-                    // Ensure user.id is never empty
-                    const userId = user.id || `user-${index}-${Math.random().toString(36).slice(2)}`;
-                    
-                    return (
-                      <SelectItem key={userId} value={userId} className="py-2">
-                        <div className="flex flex-col">
-                          <div className="flex items-center">
-                            <UserPlus className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span className="font-medium">{user.full_name || 'İsimsiz İstifadəçi'}</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground ml-6">
-                            {formatUserDetails(user)}
-                          </div>
+                  {validUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id} className="py-2">
+                      <div className="flex flex-col">
+                        <div className="flex items-center">
+                          <UserPlus className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span className="font-medium">{user.full_name || 'İsimsiz İstifadəçi'}</span>
                         </div>
-                      </SelectItem>
-                    );
-                  })}
+                        <div className="text-xs text-muted-foreground ml-6">
+                          {formatUserDetails(user)}
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </ScrollArea>
               </SelectContent>
             </Select>
