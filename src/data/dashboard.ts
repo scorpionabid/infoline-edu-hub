@@ -1,142 +1,128 @@
 
-import { FormItem, DeadlineItem, NotificationStats } from '@/types/dashboard';
+import { FormItem, DeadlineItem } from '@/types/dashboard';
 
 export const mockFormItems: FormItem[] = [
   {
     id: '1',
-    title: 'Məktəb Məlumatları',
-    category: 'school_info',
+    title: 'Məktəb məlumatları',
+    category: 'Ümumi',
     status: 'approved',
     progress: 100,
-    updated_at: '2024-01-15T10:30:00Z',
-    deadline: '2024-01-31T23:59:59Z',
-    school_id: 'school_1'
+    deadline: '2024-01-15',
+    school_id: 'school-1'
   },
   {
-    id: '2', 
-    title: 'Müəllim Məlumatları',
-    category: 'teacher_info',
+    id: '2',
+    title: 'Müəllim məlumatları',
+    category: 'Kadrlar',
     status: 'pending',
-    progress: 65,
-    updated_at: '2024-01-14T16:45:00Z',
-    deadline: '2024-02-15T23:59:59Z',
-    school_id: 'school_1'
+    progress: 75,
+    deadline: '2024-01-20',
+    school_id: 'school-1'
   },
   {
     id: '3',
-    title: 'Tələbə Statistikaları', 
-    category: 'student_stats',
-    status: 'pending',
+    title: 'Şagird məlumatları',
+    category: 'Təhsil',
+    status: 'draft',
     progress: 30,
-    updated_at: '2024-01-13T09:15:00Z',
-    deadline: '2024-02-28T23:59:59Z',
-    school_id: 'school_1'
+    deadline: '2024-01-25',
+    school_id: 'school-1'
   },
   {
     id: '4',
-    title: 'Maliyyə Hesabatı',
-    category: 'finance_report', 
-    status: 'draft',
-    progress: 0,
-    updated_at: '2024-01-12T14:20:00Z',
-    deadline: '2024-03-15T23:59:59Z',
-    school_id: 'school_1'
+    title: 'Maliyyə hesabatı',
+    category: 'Maliyyə',
+    status: 'rejected',
+    progress: 50,
+    deadline: '2024-01-30',
+    school_id: 'school-1'
   }
 ];
 
-export const mockDeadlines: DeadlineItem[] = [
+export const mockDeadlineItems: DeadlineItem[] = [
   {
     id: '1',
-    title: 'Məktəb Məlumatları',
-    deadline: '2024-01-31T23:59:59Z',
+    title: 'Müəllim məlumatları',
+    name: 'Müəllim məlumatları',
+    deadline: '2024-01-20',
     status: 'upcoming',
-    priority: 'high'
+    priority: 'high',
+    daysLeft: 5
   },
   {
     id: '2',
-    title: 'Müəllim Hesabatı',
-    deadline: '2024-02-15T23:59:59Z',
+    title: 'Şagird məlumatları',
+    name: 'Şagird məlumatları',
+    deadline: '2024-01-25',
     status: 'upcoming',
-    priority: 'medium'
+    priority: 'medium',
+    daysLeft: 10
   },
   {
     id: '3',
-    title: 'Maliyyə Hesabatı',
-    deadline: '2024-03-15T23:59:59Z', 
+    title: 'Maliyyə hesabatı',
+    name: 'Maliyyə hesabatı',
+    deadline: '2024-01-30',
     status: 'upcoming',
-    priority: 'low'
+    priority: 'low',
+    daysLeft: 15
   }
 ];
 
-export const mockRecentActivity: FormItem[] = [
+export const mockSchoolFormItems: FormItem[] = [
   {
-    id: '1',
-    title: 'Məktəb profili yeniləndi',
-    category: 'school_info',
-    status: 'draft',
-    progress: 85,
-    updated_at: '2024-01-15T14:30:00Z',
-    deadline: '2024-01-31T23:59:59Z',
-    school_id: 'school_1'
-  },
-  {
-    id: '2', 
-    title: 'Müəllim siyahısı əlavə edildi',
-    category: 'teacher_info',
-    status: 'draft',
-    progress: 45,
-    updated_at: '2024-01-15T12:15:00Z',
-    deadline: '2024-02-15T23:59:59Z',
-    school_id: 'school_1'
-  },
-  {
-    id: '3',
-    title: 'Tələbə sayı yeniləndi',
-    category: 'student_stats', 
-    status: 'draft',
-    progress: 90,
-    updated_at: '2024-01-15T09:45:00Z',
-    deadline: '2024-02-28T23:59:59Z',
-    school_id: 'school_1'
-  }
-];
-
-export const mockPendingApprovals: FormItem[] = [
-  {
-    id: '1',
-    title: 'Məktəb İnformasiyası',
-    category: 'school_info',
-    status: 'pending',
+    id: '5',
+    title: 'Təhsil keyfiyyəti',
+    category: 'Keyfiyyət',
+    status: 'approved',
     progress: 100,
-    updated_at: '2024-01-14T16:30:00Z',
-    deadline: '2024-01-31T23:59:59Z',
-    school_id: 'school_1'
+    deadline: '2024-02-01',
+    school_id: 'school-2'
   },
   {
-    id: '2',
-    title: 'Müəllim Məlumatları', 
-    category: 'teacher_info',
+    id: '6',
+    title: 'İnfrastruktur məlumatları',
+    category: 'İnfrastruktur',
     status: 'pending',
-    progress: 75,
-    updated_at: '2024-01-14T14:20:00Z',
-    deadline: '2024-02-15T23:59:59Z',
-    school_id: 'school_1'
+    progress: 60,
+    deadline: '2024-02-05',
+    school_id: 'school-2'
   },
   {
-    id: '3',
-    title: 'Tələbə Hesabatı',
-    category: 'student_stats',
-    status: 'draft', 
-    progress: 60,
-    updated_at: '2024-01-14T11:10:00Z',
-    deadline: '2024-02-28T23:59:59Z',
-    school_id: 'school_1'
+    id: '7',
+    title: 'Məzun məlumatları',
+    category: 'Məzunlar',
+    status: 'draft',
+    progress: 25,
+    deadline: '2024-02-10',
+    school_id: 'school-2'
+  },
+  {
+    id: '8',
+    title: 'Sosial fəaliyyət',
+    category: 'Sosial',
+    status: 'approved',
+    progress: 100,
+    deadline: '2024-02-15',
+    school_id: 'school-3'
+  },
+  {
+    id: '9',
+    title: 'Texnologiya istifadəsi',
+    category: 'Texnologiya',
+    status: 'pending',
+    progress: 80,
+    deadline: '2024-02-20',
+    school_id: 'school-3'
+  },
+  {
+    id: '10',
+    title: 'Beynəlxalq əlaqələr',
+    category: 'Beynəlxalq',
+    status: 'draft',
+    progress: 40,
+    deadline: '2024-02-25',
+    school_id: 'school-3'
   }
 ];
-
-export const mockNotificationStats: NotificationStats = {
-  total: 15,
-  unread: 3,
-  today: 5,
-  thisWeek: 12
-};

@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnFormValues } from '@/types/column';
+import { Column, ColumnFormValues, ColumnType } from '@/types/column';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useColumnsQuery = (categoryId: string) => {
@@ -20,7 +20,7 @@ export const useColumnsQuery = (categoryId: string) => {
       return (data || []).map(item => ({
         id: item.id,
         name: item.name,
-        type: item.type,
+        type: item.type as ColumnType,
         category_id: item.category_id,
         placeholder: item.placeholder,
         help_text: item.help_text,

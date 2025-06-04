@@ -3,13 +3,14 @@ import React, { useState } from 'react';
 import ReportHeader from '@/components/reports/ReportHeader';
 import ReportList from '@/components/reports/ReportList';
 import SchoolColumnTable from '@/components/reports/SchoolColumnTable';
+import ReportDashboard from '@/components/reports/advanced/ReportDashboard';
 import { useLanguage } from '@/context/LanguageContext';
 import { Helmet } from 'react-helmet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Reports: React.FC = () => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState("schools-columns");
+  const [activeTab, setActiveTab] = useState("advanced");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   
   return (
@@ -25,7 +26,10 @@ const Reports: React.FC = () => {
           />
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="advanced">
+                {t("advancedReporting")}
+              </TabsTrigger>
               <TabsTrigger value="schools-columns">
                 {t("schoolColumnReportTitle")}
               </TabsTrigger>
@@ -33,6 +37,10 @@ const Reports: React.FC = () => {
                 {t("allReports")}
               </TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="advanced" className="mt-4">
+              <ReportDashboard />
+            </TabsContent>
             
             <TabsContent value="schools-columns" className="mt-4">
               <SchoolColumnTable categoryId={selectedCategoryId} />

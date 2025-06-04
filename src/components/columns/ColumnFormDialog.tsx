@@ -2,98 +2,111 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
-import { useColumnForm } from '@/hooks/columns/useColumnForm';
-import { Column, ColumnFormValues } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
+import { Column, ColumnFormValues } from '@/types/column';
 import ColumnBasicFields from './columnDialog/ColumnBasicFields';
 import ColumnTypeSelector from './columnDialog/ColumnTypeSelector';
-import ColumnOptionsManager from './columnDialog/ColumnOptionsManager';
 import ColumnAdvancedSettings from './columnDialog/ColumnAdvancedSettings';
+import ColumnOptionsManager from './columnDialog/ColumnOptionsManager';
+import { useColumnForm } from '@/hooks/columns/useColumnForm';
 
-export interface ColumnFormDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  column?: Column | null;
-  categoryId?: string;
-  onSave?: (data: ColumnFormValues) => Promise<boolean>;
+interface ColumnFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  column?: Column;
+  categoryId: string;
+  onSave?: (column: ColumnFormValues) => void;
 }
 
 const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
   column,
   categoryId,
   onSave
 }) => {
   const { t } = useLanguage();
-  
+  const [options, setOptions] = useState<Array<{ value: string; label: string }>>(
+    column?.options ? JSON.parse(JSON.stringify(column.options)) : []
+  );
+  const [newOption, setNewOption] = useState({ value: '', label: '' });
+
   const {
     form,
     isLoading,
-    selectedType,
-    onTypeChange,
-    options,
-    addOption,
-    removeOption,
-    newOption,
-    setNewOption,
-    onSubmit,
-    isEditMode
-  } = useColumnForm({ column, categoryId, onSave });
+    onSubmit
+  } = useColumnForm({
+    column,
+    categoryId,
+    onSuccess: () => {
+      onOpenChange(false);
+      if (onSave) {
+        onSave(form.getValues());
+      }
+    }
+  });
 
   const handleNewOptionChange = (field: 'value' | 'label', value: string) => {
     setNewOption(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = async (data: ColumnFormValues) => {
-    const success = await onSubmit(data);
-    if (success) {
-      onClose();
+  const handleAddOption = () => {
+    if (newOption.value && newOption.label) {
+      setOptions(prev => [...prev, newOption]);
+      setNewOption({ value: '', label: '' });
+      form.setValue('options', JSON.stringify(options.concat([newOption])));
     }
   };
 
+  const handleRemoveOption = (index: number) => {
+    const updatedOptions = options.filter((_, i) => i !== index);
+    setOptions(updatedOptions);
+    form.setValue('options', JSON.stringify(updatedOptions));
+  };
+
+  const selectedType = form.watch('type');
+  const showOptions = ['select', 'radio', 'checkbox'].includes(selectedType);
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditMode ? t('editColumn') : t('createColumn')}
+            {column ? t('editColumn') : t('addColumn')}
           </DialogTitle>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <ColumnBasicFields control={form.control} />
-            
-            <ColumnTypeSelector 
-              control={form.control}
-              selectedType={selectedType}
-              onTypeChange={onTypeChange}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <ColumnBasicFields control={form.control} />
+          
+          <ColumnTypeSelector control={form.control} />
+          
+          {showOptions && (
+            <ColumnOptionsManager
+              options={options}
+              newOption={newOption}
+              onNewOptionChange={handleNewOptionChange}
+              onAddOption={handleAddOption}
+              onRemoveOption={handleRemoveOption}
             />
+          )}
+          
+          <ColumnAdvancedSettings control={form.control} />
 
-            {(['select', 'radio', 'checkbox'].includes(selectedType)) && (
-              <ColumnOptionsManager
-                options={options}
-                newOption={newOption}
-                onNewOptionChange={handleNewOptionChange}
-                onAddOption={addOption}
-                onRemoveOption={removeOption}
-              />
-            )}
-
-            <ColumnAdvancedSettings control={form.control} />
-
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onClose}>
-                {t('cancel')}
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? t('saving') : (isEditMode ? t('update') : t('create'))}
-              </Button>
-            </div>
-          </form>
-        </Form>
+          <div className="flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
+              {t('cancel')}
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? t('saving') : (column ? t('update') : t('create'))}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

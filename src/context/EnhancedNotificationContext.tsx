@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useEnhancedNotifications } from '@/hooks/notifications/useEnhancedNotifications';
+import { useEnhancedNotifications as useEnhancedNotificationsHook } from '@/hooks/notifications/useEnhancedNotifications';
 
 interface EnhancedNotificationContextType {
   notifications: any[];
@@ -16,7 +16,7 @@ interface EnhancedNotificationContextType {
 const EnhancedNotificationContext = createContext<EnhancedNotificationContextType | undefined>(undefined);
 
 export const EnhancedNotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const notificationData = useEnhancedNotifications();
+  const notificationData = useEnhancedNotificationsHook();
 
   return (
     <EnhancedNotificationContext.Provider value={notificationData}>
@@ -25,7 +25,7 @@ export const EnhancedNotificationProvider: React.FC<{ children: ReactNode }> = (
   );
 };
 
-export const useEnhancedNotifications = () => {
+export const useEnhancedNotificationContext = () => {
   const context = useContext(EnhancedNotificationContext);
   if (!context) {
     // Return default values if context is not available
