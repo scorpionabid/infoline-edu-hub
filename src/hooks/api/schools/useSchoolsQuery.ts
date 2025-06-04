@@ -25,13 +25,19 @@ export const useSchoolsQuery = () => {
       
       // Filter by user role
       if (user?.role === 'sectoradmin' && user.sector_id) {
+        console.log(`[useSchoolsQuery] Applying sector filter: sector_id = ${user.sector_id}`);
         query = query.eq('sector_id', user.sector_id);
       } else if (user?.role === 'regionadmin' && user.region_id) {
+        console.log(`[useSchoolsQuery] Applying region filter: region_id = ${user.region_id}`);
         query = query.eq('region_id', user.region_id);
+      } else {
+        console.log('[useSchoolsQuery] No filter applied - showing all schools');
       }
       // SuperAdmin sees all schools - no filter needed
       
+      console.log('[useSchoolsQuery] Executing query...');
       const { data, error: fetchError } = await query;
+      console.log('[useSchoolsQuery] Query result:', { data, error: fetchError });
       
       if (fetchError) {
         throw new Error(fetchError.message);
@@ -64,6 +70,15 @@ export const useSchoolsQuery = () => {
       setSchools(schoolsData);
       
       console.log(`[useSchoolsQuery] Loaded ${schoolsData.length} schools for user role: ${user?.role}`);
+      console.log('[useSchoolsQuery] Debug Info:', {
+        userRole: user?.role,
+        userSectorId: user?.sector_id,
+        userRegionId: user?.region_id,
+        rawData: data,
+        schoolsData: schoolsData,
+        queryApplied: user?.role === 'sectoradmin' ? `sector_id = ${user.sector_id}` : 
+                      user?.role === 'regionadmin' ? `region_id = ${user.region_id}` : 'no filter'
+      });
       
     } catch (err: any) {
       console.error('Error fetching schools:', err);

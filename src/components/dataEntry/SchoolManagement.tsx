@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DataEntryFormManager } from './core';
+import { useDataEntry } from '@/hooks/dataEntry/useDataEntry';
+import { SchoolDataEntryManager } from './SchoolDataEntryManager';
 import { 
   Search, 
   Edit, 
@@ -18,7 +20,8 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckCircle2,
-  FileText
+  FileText,
+  X
 } from 'lucide-react';
 import {
   Select,
@@ -53,8 +56,78 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
 
   // Use either prop schools or fetch from API
   const { schools: hookSchools, loading: hookLoading } = useSchoolsQuery();
-  const schools = propSchools || hookSchools || [];
+  
+  // TEMPORARY TEST DATA - for debugging
+  const testSchools = [
+    {
+      id: 'test-1',
+      name: 'Test Məktəb 1',
+      region_id: 'test-region',
+      sector_id: user?.sector_id || 'test-sector',
+      status: 'active' as const,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      completion_rate: 45,
+      principal_name: 'Test Direktor 1',
+      address: 'Test ünvan 1',
+      phone: '+994501234567',
+      email: 'school1@test.com'
+    },
+    {
+      id: 'test-2',
+      name: 'Test Məktəb 2',
+      region_id: 'test-region',
+      sector_id: user?.sector_id || 'test-sector',
+      status: 'active' as const,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      completion_rate: 72,
+      principal_name: 'Test Direktor 2',
+      address: 'Test ünvan 2',
+      phone: '+994501234568',
+      email: 'school2@test.com'
+    },
+    {
+      id: 'test-3',
+      name: 'Test Məktəb 3',
+      region_id: 'test-region',
+      sector_id: user?.sector_id || 'test-sector',
+      status: 'active' as const,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      completion_rate: 88,
+      principal_name: 'Test Direktor 3',
+      address: 'Test ünvan 3',
+      phone: '+994501234569',
+      email: 'school3@test.com'
+    }
+  ];
+  
+  // Use test data if no real data
+  // For development: Always show test data if no real data available
+  const schools = propSchools || hookSchools || testSchools;
   const isLoading = propIsLoading || hookLoading;
+
+  // DEBUG: Console log for troubleshooting
+  console.log('[SchoolManagement] Debug Info:', {
+    user: user,
+    userRole: user?.role,
+    userSectorId: user?.sector_id,
+    propSchools: propSchools,
+    hookSchools: hookSchools,
+    testSchools: testSchools,
+    finalSchools: schools,
+    schoolsLength: schools.length,
+    isLoading: isLoading,
+    hookLoading: hookLoading,
+    usingTestData: !propSchools && !hookSchools
+  });
+  
+  // Show warning if using test data
+  const usingTestData = !propSchools && !hookSchools;
+  if (usingTestData) {
+    console.warn('[SchoolManagement] Using TEST DATA - not real database data!');
+  }
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -70,18 +143,58 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
 
   // Calculate completion rate for schools
   const schoolsWithCompletion = useMemo(() => {
-    return schools
-      .filter(school => !user?.sector_id || school.sector_id === user.sector_id)
-      .map(school => ({
-        ...school,
-        completion_rate: school.completion_rate || Math.floor(Math.random() * 100),
-        last_updated: school.updated_at
-      }));
-  }, [schools, user?.sector_id]);
+    console.log('[SchoolManagement] Processing schools for completion...', {
+      inputSchools: schools,
+      userSectorId: user?.sector_id,
+      userRole: user?.role,
+      schoolsSample: schools.slice(0, 3).map(s => ({
+        id: s.id,
+        name: s.name,
+        sector_id: s.sector_id,
+        region_id: s.region_id
+      }))
+    });
+    
+    // TEMPORARY FIX: Don't filter by sector for now to debug
+    // Later we'll implement proper sector filtering
+    let filteredSchools = schools;
+    
+    // DEBUG: Show sector comparison
+    if (user?.role === 'sectoradmin' && user?.sector_id) {
+      const matchingSchools = schools.filter(school => school.sector_id === user.sector_id);
+      console.log('[SchoolManagement] Sector filtering debug:', {
+        userSectorId: user.sector_id,
+        totalSchools: schools.length,
+        matchingSchools: matchingSchools.length,
+        sampleSchoolSectors: schools.slice(0, 5).map(s => s.sector_id),
+        allUniqueSectors: [...new Set(schools.map(s => s.sector_id))]
+      });
+      
+      // For now, show all schools regardless of sector (for debugging)
+      // filteredSchools = matchingSchools;
+      filteredSchools = schools; // TEMPORARY: Show all
+    }
+    
+    const result = filteredSchools.map(school => ({
+      ...school,
+      completion_rate: school.completion_rate || Math.floor(Math.random() * 100),
+      last_updated: school.updated_at
+    }));
+    
+    console.log('[SchoolManagement] Final schools with completion:', result.length, result.slice(0, 3));
+    return result;
+  }, [schools, user?.sector_id, user?.role]);
 
   // Filtered schools
   const filteredSchools = useMemo(() => {
-    return schoolsWithCompletion.filter(school => {
+    console.log('[SchoolManagement] Applying filters...', {
+      schoolsWithCompletion: schoolsWithCompletion,
+      searchTerm: searchTerm,
+      statusFilter: statusFilter,
+      completionFilter: completionFilter
+    });
+    
+    const result = schoolsWithCompletion.filter(school => {
       const matchesSearch = school.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || school.status === statusFilter;
       const matchesCompletion = 
@@ -90,9 +203,34 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
         (completionFilter === 'medium' && school.completion_rate >= 40 && school.completion_rate < 80) ||
         (completionFilter === 'low' && school.completion_rate < 40);
       
-      return matchesSearch && matchesStatus && matchesCompletion;
+      const matches = matchesSearch && matchesStatus && matchesCompletion;
+      
+      if (!matches) {
+        console.log(`[SchoolManagement] School '${school.name}' filtered out:`, {
+          matchesSearch,
+          matchesStatus,
+          matchesCompletion,
+          school
+        });
+      }
+      
+      return matches;
     });
+    
+    console.log('[SchoolManagement] Final filtered schools:', result);
+    return result;
   }, [schoolsWithCompletion, searchTerm, statusFilter, completionFilter]);
+
+  // DEBUG: Modal state tracking
+  useEffect(() => {
+    console.log('[SchoolManagement] Modal state changed:', {
+      selectedSchoolForDataEntry,
+      isDataEntryModalOpen,
+      selectedSchool: selectedSchoolForDataEntry 
+        ? filteredSchools.find(s => s.id === selectedSchoolForDataEntry)
+        : null
+    });
+  }, [selectedSchoolForDataEntry, isDataEntryModalOpen, filteredSchools]);
 
   // Stats
   const stats = useMemo(() => {
@@ -125,12 +263,21 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
 
   // Navigation handlers
   const handleDataEntry = (schoolId: string) => {
+    console.log('[SchoolManagement] handleDataEntry called with schoolId:', schoolId);
+    
     if (onDataEntry) {
+      console.log('[SchoolManagement] Calling onDataEntry prop');
       onDataEntry(schoolId);
     } else {
+      console.log('[SchoolManagement] Opening modal for schoolId:', schoolId);
       // Modal açma
       setSelectedSchoolForDataEntry(schoolId);
       setIsDataEntryModalOpen(true);
+      
+      console.log('[SchoolManagement] Modal state updated:', {
+        selectedSchoolForDataEntry: schoolId,
+        isDataEntryModalOpen: true
+      });
     }
   };
 
@@ -369,8 +516,23 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
                       </td>
                       <td className="p-2">
                         <div className="flex items-center space-x-2">
+                          {/* TEST MODAL BUTTON */}
                           <Button
-                            onClick={() => handleDataEntry(school.id)}
+                            onClick={() => {
+                              console.log('[SchoolManagement] TEST button clicked!');
+                              setIsDataEntryModalOpen(true);
+                              setSelectedSchoolForDataEntry('test-' + school.id);
+                            }}
+                            className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-xs"
+                          >
+                            TEST
+                          </Button>
+                          
+                          <Button
+                            onClick={() => {
+                              console.log('[SchoolManagement] Button clicked for school:', school.id, school.name);
+                              handleDataEntry(school.id);
+                            }}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm"
                           >
                             <Edit className="h-4 w-4 mr-1" />
@@ -430,38 +592,50 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
         />
       )}
 
-      {/* YENİ: Data Entry Modal */}
+      {/* YENİ: Data Entry Modal - Tab üslubunda */}
+      {console.log('[SchoolManagement] Rendering modal with state:', {
+        isDataEntryModalOpen,
+        selectedSchoolForDataEntry,
+        selectedSchool
+      })}
       <Dialog open={isDataEntryModalOpen} onOpenChange={setIsDataEntryModalOpen}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <School className="h-5 w-5" />
-              {selectedSchool && `${selectedSchool.name} üçün məlumat daxil etmə`}
-            </DialogTitle>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <School className="h-5 w-5" />
+                {selectedSchool && `${selectedSchool.name} üçün məlumat daxil etmə`}
+                {!selectedSchool && 'Məlumat daxil etmə'}
+              </DialogTitle>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => {
+                  console.log('[SchoolManagement] Modal close button clicked');
+                  setIsDataEntryModalOpen(false);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
             <div className="text-sm text-muted-foreground">
               Sektor administratoru olaraq daxil etdiyiniz məlumatlar avtomatik təsdiqlənəcək.
             </div>
           </DialogHeader>
           
-          {selectedSchoolForDataEntry && (
-            <div className="mt-4">
-              <DataEntryFormManager
+          <div className="flex-1 overflow-hidden">
+            {selectedSchoolForDataEntry ? (
+              <SchoolDataEntryManager
                 schoolId={selectedSchoolForDataEntry}
-                category={selectedSchool ? {
-                  id: 'temp-category',
-                  name: 'Məktəb Məlumatları',
-                  columns: []
-                } : undefined}
-                formData={{}}
-                onFormDataChange={() => {}}
-                onSave={async () => {}}
-                onSubmit={async () => {}}
-                onExportTemplate={() => {}}
-                onImportData={async () => {}}
-                readOnly={false}
+                onComplete={handleDataEntryComplete}
+                onClose={() => setIsDataEntryModalOpen(false)}
               />
-            </div>
-          )}
+            ) : (
+              <div className="p-4 text-center">
+                <p>Heç bir məktəb seçilməyib</p>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
