@@ -14,11 +14,11 @@ const SchoolStatsCard: React.FC<SchoolStatsCardProps> = ({ stats }) => {
   // Məktəb statistikalarını hesabla
   const activeSchools = stats.filter(s => s.status === 'active').length;
   const totalCompletionRate = stats.length > 0 
-    ? stats.reduce((sum, s) => sum + (s.completionRate || s.completion_rate || 0), 0) / stats.length 
+    ? stats.reduce((sum, s) => sum + (s.completionRate || 0), 0) / stats.length 
     : 0;
     
   const pendingForms = stats.reduce((sum, s) => sum + (s.pendingForms || s.pendingCount || 0), 0);
-  const completedForms = stats.reduce((sum, s) => sum + (s.formsCompleted || 0), 0);
+  const completedForms = stats.reduce((sum, s) => sum + (s.completedForms || 0), 0);
   const totalForms = stats.reduce((sum, s) => sum + (s.totalForms || 0), 0);
 
   return (

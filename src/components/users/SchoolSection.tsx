@@ -26,6 +26,11 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
     return null;
   }
 
+  // Filter out schools with empty or invalid IDs
+  const validSchools = filteredSchools.filter(school => 
+    school && school.id && String(school.id).trim() !== '' && school.name
+  );
+
   return (
     <FormField
       control={form.control}
@@ -34,12 +39,12 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
         <FormItem>
           <FormLabel>{t('school')}</FormLabel>
           <Select
-            value={data.schoolId || data.school_id || "none"}
+            value={data.schoolId || data.school_id || undefined}
             onValueChange={(value) => {
-              field.onChange(value === "none" ? null : value);
-              onFormChange('schoolId', value === "none" ? null : value);
+              field.onChange(value);
+              onFormChange('schoolId', value);
             }}
-            disabled={filteredSchools.length === 0}
+            disabled={validSchools.length === 0}
           >
             <FormControl>
               <SelectTrigger>
@@ -47,20 +52,13 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="none">{t('selectSchool')}</SelectItem>
-              {filteredSchools.map((school) => {
-                // Ensure school has valid ID and value is never empty
-                const schoolId = school.id && String(school.id).trim() 
-                  ? String(school.id).trim() 
-                  : `school-${school.name || Math.random().toString(36).substring(7)}`;
-                
-                return (
-                  <SelectItem key={schoolId} value={schoolId}>
-                    {school.name || 'Unknown School'}
+              {validSchools.length > 0 ? (
+                validSchools.map((school) => (
+                  <SelectItem key={school.id} value={school.id}>
+                    {school.name}
                   </SelectItem>
-                );
-              })}
-              {filteredSchools.length === 0 && (
+                ))
+              ) : (
                 <SelectItem value="no-schools-found" disabled>
                   {t('noSchoolsFound') || 'Məktəb tapılmadı'}
                 </SelectItem>

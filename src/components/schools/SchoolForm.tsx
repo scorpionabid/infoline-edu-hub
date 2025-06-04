@@ -57,10 +57,19 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
 
   const watchedRegionId = watch('region_id');
 
+  // Filter regions and sectors to ensure no empty IDs
+  const validRegions = regions.filter(region => 
+    region && region.id && String(region.id).trim() !== '' && region.name
+  );
+
+  const validSectors = sectors.filter(sector => 
+    sector && sector.id && String(sector.id).trim() !== '' && sector.name
+  );
+
   // Filter sectors based on selected region
   useEffect(() => {
     if (watchedRegionId) {
-      const filtered = sectors.filter(sector => sector.region_id === watchedRegionId);
+      const filtered = validSectors.filter(sector => sector.region_id === watchedRegionId);
       setFilteredSectors(filtered);
       setSelectedRegionId(watchedRegionId);
       
@@ -72,7 +81,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
     } else {
       setFilteredSectors([]);
     }
-  }, [watchedRegionId, sectors, setValue, watch]);
+  }, [watchedRegionId, validSectors, setValue, watch]);
 
   const onFormSubmit = async (data: Omit<School, 'id'>) => {
     try {
@@ -109,22 +118,24 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
         <div>
           <Label htmlFor="region_id">{t('region')} *</Label>
           <Select
-            value={watch('region_id') || ''}
+            value={watch('region_id') || undefined}
             onValueChange={(value) => setValue('region_id', value)}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('selectRegion')} />
             </SelectTrigger>
             <SelectContent>
-              {regions.map(region => {
-                // Ensure region has valid ID
-                const regionId = region.id || `region-${region.name || Math.random()}`;
-                return (
-                  <SelectItem key={regionId} value={regionId}>
-                    {regionNames[regionId] || region.name || 'Unknown Region'}
+              {validRegions.length > 0 ? (
+                validRegions.map(region => (
+                  <SelectItem key={region.id} value={region.id}>
+                    {regionNames[region.id] || region.name}
                   </SelectItem>
-                );
-              })}
+                ))
+              ) : (
+                <SelectItem value="no-regions" disabled>
+                  {t('noRegionsAvailable') || 'No regions available'}
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
           {errors.region_id && (
@@ -135,7 +146,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
         <div>
           <Label htmlFor="sector_id">{t('sector')} *</Label>
           <Select
-            value={watch('sector_id') || ''}
+            value={watch('sector_id') || undefined}
             onValueChange={(value) => setValue('sector_id', value)}
             disabled={!selectedRegionId}
           >
@@ -143,15 +154,17 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               <SelectValue placeholder={t('selectSector')} />
             </SelectTrigger>
             <SelectContent>
-              {filteredSectors.map(sector => {
-                // Ensure sector has valid ID
-                const sectorId = sector.id || `sector-${sector.name || Math.random()}`;
-                return (
-                  <SelectItem key={sectorId} value={sectorId}>
-                    {sectorNames[sectorId] || sector.name || 'Unknown Sector'}
+              {filteredSectors.length > 0 ? (
+                filteredSectors.map(sector => (
+                  <SelectItem key={sector.id} value={sector.id}>
+                    {sectorNames[sector.id] || sector.name}
                   </SelectItem>
-                );
-              })}
+                ))
+              ) : (
+                <SelectItem value="no-sectors" disabled>
+                  {selectedRegionId ? (t('noSectorsAvailable') || 'No sectors available') : (t('selectRegionFirst') || 'Select region first')}
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
           {errors.sector_id && (

@@ -21,6 +21,9 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
   };
 
   const mockStats: DashboardFormStats = {
+    completedForms: 750,
+    pendingForms: 150,
+    approvalRate: 75,
     total: 1000,
     approved: 750,
     pending: 150,

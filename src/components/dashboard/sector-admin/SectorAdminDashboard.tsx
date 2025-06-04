@@ -14,6 +14,9 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ dashboardDa
 
   // Mock data for demonstration
   const mockStats: DashboardFormStats = {
+    completedForms: 150,
+    pendingForms: 35,
+    approvalRate: 75,
     total: 200,
     completed: 150,
     approved: 130,
@@ -30,25 +33,25 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ dashboardDa
   const statsGridData = [
     {
       title: t('totalApproved'),
-      value: mockStats.approved,
+      value: mockStats.approved || 0,
       color: 'text-green-600',
       description: t('approved')
     },
     {
       title: t('totalPending'),
-      value: mockStats.pending,
+      value: mockStats.pending || 0,
       color: 'text-yellow-600',
       description: t('pending')
     },
     {
       title: t('totalRejected'),
-      value: mockStats.rejected,
+      value: mockStats.rejected || 0,
       color: 'text-red-600',
       description: t('rejected')
     },
     {
       title: t('completion'),
-      value: `${mockStats.percentage}%`,
+      value: `${mockStats.percentage || 0}%`,
       color: 'text-blue-600',
       description: t('completionRate')
     }
