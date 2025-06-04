@@ -97,11 +97,15 @@ const CreateSchoolDialog: React.FC<CreateSchoolDialogProps> = ({
                     <SelectValue placeholder={t('selectRegion')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {regions.map(region => (
-                      <SelectItem key={region.id} value={region.id}>
-                        {region.name}
-                      </SelectItem>
-                    ))}
+                    {regions.map(region => {
+                      // Ensure region has valid ID
+                      const regionId = region.id || `region-${region.name || Math.random()}`;
+                      return (
+                        <SelectItem key={regionId} value={regionId}>
+                          {region.name || 'Unknown Region'}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
                 {errors.region_id && (
@@ -120,11 +124,15 @@ const CreateSchoolDialog: React.FC<CreateSchoolDialogProps> = ({
                     <SelectValue placeholder={t('selectSector')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {filteredSectors.map(sector => (
-                      <SelectItem key={sector.id} value={sector.id}>
-                        {sector.name}
-                      </SelectItem>
-                    ))}
+                    {filteredSectors.map(sector => {
+                      // Ensure sector has valid ID
+                      const sectorId = sector.id || `sector-${sector.name || Math.random()}`;
+                      return (
+                        <SelectItem key={sectorId} value={sectorId}>
+                          {sector.name || 'Unknown Sector'}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
                 {errors.sector_id && (

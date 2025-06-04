@@ -107,7 +107,7 @@ const SchoolColumnTable: React.FC<SchoolColumnTableProps> = ({ categoryId, schoo
     { id: "col-3", name: "Otaq sayı", type: "number" }
   ];
 
-  // Mock data with sample schools for demonstration
+  // Mock data with sample schools for demonstration - ensure no empty IDs
   const mockSchools = [
     { 
       id: "school-1", 
@@ -196,40 +196,44 @@ const SchoolColumnTable: React.FC<SchoolColumnTableProps> = ({ categoryId, schoo
               <TableHead className="w-[120px]">Region</TableHead>
               <TableHead className="w-[120px]">Sektor</TableHead>
               {mockColumns.map(column => (
-                <TableHead key={column.id}>{column.name}</TableHead>
+                <TableHead key={column.id || `col-${Math.random()}`}>{column.name}</TableHead>
               ))}
               <TableHead className="w-[100px]">Əməliyyatlar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockSchools.map(school => (
-              <TableRow key={school.id}>
-                <TableCell>
-                  <Checkbox 
-                    checked={selectedSchools.includes(school.id)} 
-                    onCheckedChange={() => toggleSchoolSelection(school.id)}
-                  />
-                </TableCell>
-                <TableCell>{school.name}</TableCell>
-                <TableCell>{school.region}</TableCell>
-                <TableCell>{school.sector}</TableCell>
-                {mockColumns.map(column => (
-                  <TableCell key={column.id}>
-                    {school.data.find(d => d.columnId === column.id)?.value || "-"}
+            {mockSchools.map(school => {
+              // Ensure school has valid ID
+              const schoolId = school.id || `school-${school.name || Math.random()}`;
+              return (
+                <TableRow key={schoolId}>
+                  <TableCell>
+                    <Checkbox 
+                      checked={selectedSchools.includes(schoolId)} 
+                      onCheckedChange={() => toggleSchoolSelection(schoolId)}
+                    />
                   </TableCell>
-                ))}
-                <TableCell>
-                  <div className="flex space-x-1">
-                    <Button variant="ghost" size="icon">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon">
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                  <TableCell>{school.name}</TableCell>
+                  <TableCell>{school.region}</TableCell>
+                  <TableCell>{school.sector}</TableCell>
+                  {mockColumns.map(column => (
+                    <TableCell key={column.id || `col-${Math.random()}`}>
+                      {school.data.find(d => d.columnId === column.id)?.value || "-"}
+                    </TableCell>
+                  ))}
+                  <TableCell>
+                    <div className="flex space-x-1">
+                      <Button variant="ghost" size="icon">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon">
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </ScrollArea>

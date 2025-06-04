@@ -116,11 +116,15 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               <SelectValue placeholder={t('selectRegion')} />
             </SelectTrigger>
             <SelectContent>
-              {regions.map(region => (
-                <SelectItem key={region.id} value={region.id}>
-                  {regionNames[region.id] || region.name}
-                </SelectItem>
-              ))}
+              {regions.map(region => {
+                // Ensure region has valid ID
+                const regionId = region.id || `region-${region.name || Math.random()}`;
+                return (
+                  <SelectItem key={regionId} value={regionId}>
+                    {regionNames[regionId] || region.name || 'Unknown Region'}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
           {errors.region_id && (
@@ -139,11 +143,15 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               <SelectValue placeholder={t('selectSector')} />
             </SelectTrigger>
             <SelectContent>
-              {filteredSectors.map(sector => (
-                <SelectItem key={sector.id} value={sector.id}>
-                  {sectorNames[sector.id] || sector.name}
-                </SelectItem>
-              ))}
+              {filteredSectors.map(sector => {
+                // Ensure sector has valid ID
+                const sectorId = sector.id || `sector-${sector.name || Math.random()}`;
+                return (
+                  <SelectItem key={sectorId} value={sectorId}>
+                    {sectorNames[sectorId] || sector.name || 'Unknown Sector'}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
           {errors.sector_id && (

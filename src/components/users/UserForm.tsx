@@ -260,19 +260,24 @@ const UserForm: React.FC<UserFormProps> = ({
             {t('region')} {isFieldRequired('regionId') && <span className="text-red-500">*</span>}
           </Label>
           <Select
-            value={formData.regionId}
-            onValueChange={(value) => handleChange('regionId', value)}
+            value={formData.regionId || 'NONE'}
+            onValueChange={(value) => handleChange('regionId', value === 'NONE' ? null : value)}
             disabled={isFieldDisabled('regionId') || !isSuperAdmin || loading.regions}
           >
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectRegion')} />
             </SelectTrigger>
             <SelectContent>
-              {regions.map((region) => (
-                <SelectItem key={region.id} value={region.id}>
-                  {region.name}
-                </SelectItem>
-              ))}
+              <SelectItem value="NONE">{t('selectRegion')}</SelectItem>
+              {regions.map((region) => {
+                // Ensure region has valid ID
+                const regionId = region.id || `region-${region.name || Math.random()}`;
+                return (
+                  <SelectItem key={regionId} value={regionId}>
+                    {region.name || 'Unknown Region'}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -285,19 +290,24 @@ const UserForm: React.FC<UserFormProps> = ({
             {t('sector')} {isFieldRequired('sectorId') && <span className="text-red-500">*</span>}
           </Label>
           <Select
-            value={formData.sectorId}
-            onValueChange={(value) => handleChange('sectorId', value)}
+            value={formData.sectorId || 'NONE'}
+            onValueChange={(value) => handleChange('sectorId', value === 'NONE' ? null : value)}
             disabled={isFieldDisabled('sectorId') || !formData.regionId || loading.sectors}
           >
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectSector')} />
             </SelectTrigger>
             <SelectContent>
-              {sectors.map((sector) => (
-                <SelectItem key={sector.id} value={sector.id}>
-                  {sector.name}
-                </SelectItem>
-              ))}
+              <SelectItem value="NONE">{t('selectSector')}</SelectItem>
+              {sectors.map((sector) => {
+                // Ensure sector has valid ID
+                const sectorId = sector.id || `sector-${sector.name || Math.random()}`;
+                return (
+                  <SelectItem key={sectorId} value={sectorId}>
+                    {sector.name || 'Unknown Sector'}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -310,19 +320,24 @@ const UserForm: React.FC<UserFormProps> = ({
             {t('school')} {isFieldRequired('schoolId') && <span className="text-red-500">*</span>}
           </Label>
           <Select
-            value={formData.schoolId}
-            onValueChange={(value) => handleChange('schoolId', value)}
+            value={formData.schoolId || 'NONE'}
+            onValueChange={(value) => handleChange('schoolId', value === 'NONE' ? null : value)}
             disabled={isFieldDisabled('schoolId') || !formData.sectorId || loading.schools}
           >
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectSchool')} />
             </SelectTrigger>
             <SelectContent>
-              {schools.map((school) => (
-                <SelectItem key={school.id} value={school.id}>
-                  {school.name}
-                </SelectItem>
-              ))}
+              <SelectItem value="NONE">{t('selectSchool')}</SelectItem>
+              {schools.map((school) => {
+                // Ensure school has valid ID
+                const schoolId = school.id || `school-${school.name || Math.random()}`;
+                return (
+                  <SelectItem key={schoolId} value={schoolId}>
+                    {school.name || 'Unknown School'}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -335,7 +350,7 @@ const UserForm: React.FC<UserFormProps> = ({
             {t('language')}
           </Label>
           <Select
-            value={formData.language}
+            value={formData.language || 'az'}
             onValueChange={(value) => handleChange('language', value)}
             disabled={isFieldDisabled('language')}
           >

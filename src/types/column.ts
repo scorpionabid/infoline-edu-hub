@@ -1,4 +1,3 @@
-
 // Core column types
 export type ColumnType = 
   | 'text' 
@@ -65,6 +64,23 @@ export interface Column {
 }
 
 export interface ColumnFormData {
+  name: string;
+  type: ColumnType;
+  category_id: string;
+  placeholder?: string;
+  help_text?: string;
+  description?: string;
+  section?: string;
+  color?: string;
+  is_required: boolean;
+  default_value?: string;
+  options?: ColumnOption[];
+  validation?: ValidationRules | any;
+  order_index?: number;
+  status?: 'active' | 'inactive';
+}
+
+export interface ColumnFormValues {
   name: string;
   type: ColumnType;
   category_id: string;
