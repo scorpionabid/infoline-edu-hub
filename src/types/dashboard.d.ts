@@ -1,3 +1,4 @@
+
 import { AppNotification } from './notification';
 
 export interface SchoolAdminDashboardData {
@@ -65,6 +66,27 @@ export interface DashboardStatus {
   pending: number;
   approved: number;
   rejected: number;
+  // Additional status fields
+  schools?: {
+    total: number;
+    active: number;
+    inactive: number;
+  };
+  sectors?: {
+    total: number;
+    active: number;
+    inactive: number;
+  };
+  regions?: {
+    total: number;
+    active: number;
+    inactive: number;
+  };
+  users?: {
+    total: number;
+    active: number;
+    inactive: number;
+  };
 }
 
 export interface DashboardFormStats {
@@ -81,6 +103,7 @@ export interface CategoryItem {
   icon?: string;
   color?: string;
   completionRate?: number;
+  status: 'active' | 'inactive';
 }
 
 export interface FormItem {
@@ -89,20 +112,24 @@ export interface FormItem {
   status: 'pending' | 'approved' | 'rejected';
   submissions?: number;
   completion?: number;
-  deadline?: string; // Added missing deadline property
+  deadline?: string;
 }
 
 export interface DeadlineItem {
   id: string;
   title: string;
+  name: string;
   deadline: string;
   description?: string;
-  status?: 'active' | 'completed' | 'overdue';
+  status?: 'upcoming' | 'overdue' | 'completed';
+  daysLeft: number;
 }
 
 export interface PendingApproval {
   id: string;
-  title: string;
+  name: string;
+  school: string;
+  date: string;
   description: string;
   status: 'pending' | 'approved' | 'rejected';
 }
@@ -112,6 +139,10 @@ export interface SchoolStat {
   name: string;
   completionRate: number;
   status?: 'active' | 'inactive';
+  totalForms: number;
+  completedForms: number;
+  pendingForms: number;
+  lastUpdated: string;
 }
 
 export interface SectorStat {
@@ -120,4 +151,7 @@ export interface SectorStat {
   completionRate: number;
   schoolCount?: number;
   studentCount?: number;
+  totalSchools: number;
+  activeSchools: number;
+  status: 'active' | 'inactive';
 }

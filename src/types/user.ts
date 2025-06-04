@@ -1,5 +1,4 @@
-
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user' | 'schooluser';
 
 export type UserStatus = 'active' | 'inactive' | 'blocked';
 

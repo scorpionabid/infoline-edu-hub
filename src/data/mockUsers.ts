@@ -1,65 +1,86 @@
-
-import { User } from '@/types/user';
-
-export const mockUsers: User[] = [
+[
   {
     id: '1',
-    email: 'admin@infoline.edu.az',
-    full_name: 'Sistem Admin',
-    role: 'superadmin',
-    status: 'active',
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-15T12:00:00Z',
-    region_id: null,
-    sector_id: null,
-    school_id: null
+    email: 'super.admin@infoline.edu.az',
+    full_name: 'Super Admin',
+    role: 'superadmin' as const,
+    status: 'active' as const,
+    created_at: '2024-01-01T00:00:00Z'
   },
   {
-    id: '2', 
+    id: '2',
     email: 'region.admin@infoline.edu.az',
-    full_name: 'Rayon Admin',
-    role: 'regionadmin',
-    status: 'active', 
-    created_at: '2024-01-02T00:00:00Z',
-    updated_at: '2024-01-14T10:30:00Z',
-    region_id: 'region_1',
-    sector_id: null,
-    school_id: null
+    full_name: 'Bölgə Admini',
+    role: 'regionadmin' as const,
+    region_id: '1',
+    status: 'active' as const,
+    created_at: '2024-01-01T00:00:00Z'
   },
   {
     id: '3',
-    email: 'sector.admin@infoline.edu.az', 
-    full_name: 'Sektor Admin',
-    role: 'sectoradmin',
-    status: 'active',
-    created_at: '2024-01-03T00:00:00Z',
-    updated_at: '2024-01-13T16:45:00Z',
-    region_id: 'region_1',
-    sector_id: 'sector_1', 
-    school_id: null
+    email: 'sector.admin@infoline.edu.az',
+    full_name: 'Sektor Admini',
+    role: 'sectoradmin' as const,
+    sector_id: '1',
+    status: 'active' as const,
+    created_at: '2024-01-01T00:00:00Z'
   },
   {
     id: '4',
     email: 'school.admin@infoline.edu.az',
-    full_name: 'Məktəb Admin',
-    role: 'schooladmin',
-    status: 'inactive',
-    created_at: '2024-01-04T00:00:00Z',
-    updated_at: '2024-01-12T14:20:00Z',
-    region_id: 'region_1',
-    sector_id: 'sector_1',
-    school_id: 'school_1'
+    full_name: 'Məktəb Admini',
+    role: 'schooladmin' as const,
+    school_id: '1',
+    status: 'active' as const,
+    created_at: '2024-01-01T00:00:00Z'
   },
   {
     id: '5',
+    email: 'user1@infoline.edu.az',
+    full_name: 'Adi İstifadəçi 1',
+    role: 'user' as const,
+    status: 'active' as const,
+    created_at: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: '6',
+    email: 'user2@infoline.edu.az',
+    full_name: 'Adi İstifadəçi 2',
+    role: 'user' as const,
+    status: 'inactive' as const,
+    created_at: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: '7',
+    email: 'user3@infoline.edu.az',
+    full_name: 'Adi İstifadəçi 3',
+    role: 'user' as const,
+    status: 'active' as const,
+    created_at: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: '8',
+    email: 'user4@infoline.edu.az',
+    full_name: 'Adi İstifadəçi 4',
+    role: 'user' as const,
+    status: 'inactive' as const,
+    created_at: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: '9',
+    email: 'user5@infoline.edu.az',
+    full_name: 'Adi İstifadəçi 5',
+    role: 'user' as const,
+    status: 'active' as const,
+    created_at: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: '10',
     email: 'school.user@infoline.edu.az',
     full_name: 'Məktəb İstifadəçisi',
-    role: 'schooluser',
-    status: 'active',
-    created_at: '2024-01-05T00:00:00Z', 
-    updated_at: '2024-01-11T09:15:00Z',
-    region_id: 'region_1',
-    sector_id: 'sector_1',
-    school_id: 'school_1'
-  }
-];
+    role: 'user' as const, // Changed from 'schooluser' to 'user'
+    school_id: '1',
+    status: 'active' as const,
+    created_at: '2024-01-01T00:00:00Z'
+  },
+]

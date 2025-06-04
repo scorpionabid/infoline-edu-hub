@@ -159,6 +159,7 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           id: string
+          rejected_at: string | null
           rejected_by: string | null
           rejection_reason: string | null
           school_id: string
@@ -175,6 +176,7 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           id?: string
+          rejected_at?: string | null
           rejected_by?: string | null
           rejection_reason?: string | null
           school_id: string
@@ -191,6 +193,7 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           id?: string
+          rejected_at?: string | null
           rejected_by?: string | null
           rejection_reason?: string | null
           school_id?: string
@@ -1307,6 +1310,7 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           id: string
+          rejected_at: string | null
           rejected_by: string | null
           rejection_reason: string | null
           school_id: string

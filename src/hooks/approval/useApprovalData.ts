@@ -136,7 +136,8 @@ export const useApprovalData = () => {
       Object.values(groupedData).forEach(item => {
         // Calculate completion rate
         const filledEntries = item.entries.filter(e => e.value && e.value.trim() !== '');
-        item.completionRate = item.entries.length > 0 ? (filledEntries.length / item.entries.length) * 100 : 0;
+        const completionValue = item.entries.length > 0 ? (filledEntries.length / item.entries.length) * 100 : 0;
+        item.completionRate = Math.round(completionValue);
 
         // Group by most common status in the group
         const statusCounts = item.entries.reduce((acc, entry) => {
