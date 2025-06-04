@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useDataEntryState } from '@/hooks/business/dataEntry/useDataEntryState';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
@@ -13,36 +13,45 @@ export interface UseAutoSaveProps {
   enabled?: boolean;
 }
 
+export interface UseAutoSaveResult {
+  saveNow: () => Promise<void>;
+  getLastSaveTime: () => number;
+  isSaving: boolean;
+  autoSaveEnabled: boolean;
+  lastSaveTime: number;
+}
+
 /**
- * Avtomatik saxlama hook-u
- * Forma məlumatlarını müəyyən intervallarla avtomatik olaraq yadda saxlayır
+ * Auto-save hook for form data
+ * Automatically saves form data at specified intervals
  */
 export function useAutoSave({
   categoryId,
   schoolId,
   formData,
   isDataModified,
-  autoSaveInterval = 30000, // 30 saniyə
+  autoSaveInterval = 30000, // 30 seconds
   enabled = true
-}: UseAutoSaveProps) {
+}: UseAutoSaveProps): UseAutoSaveResult {
   const { t } = useLanguage();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveTimeRef = useRef<number>(0);
+  const [lastSaveTime, setLastSaveTime] = useState<number>(0);
   
   const { saveEntries, isSaving } = useDataEntryState({
     categoryId,
     schoolId,
-    enabled: false // Yalnız saxlama üçün istifadə edirik
+    enabled: false // Only used for saving functionality
   });
   
-  // Avtomatik saxlama funksiyası
+  // Auto-save function
   const performAutoSave = useCallback(async () => {
-    if (!enabled || !isDataModified || isSaving) {
+    if (!enabled || !isDataModified || isSaving || !categoryId || !schoolId) {
       return;
     }
     
     try {
-      // Form məlumatlarını entries formatına çeviririk
+      // Convert form data to entries format
       const entriesToSave = Object.entries(formData)
         .filter(([columnId, value]) => columnId && columnId.trim() !== '')
         .map(([columnId, value]) => ({
@@ -56,35 +65,37 @@ export function useAutoSave({
       
       if (entriesToSave.length > 0) {
         await saveEntries(entriesToSave);
-        lastSaveTimeRef.current = Date.now();
+        const saveTime = Date.now();
+        lastSaveTimeRef.current = saveTime;
+        setLastSaveTime(saveTime);
         
-        // Kiçik bildiriş göstəririk
-        toast.success(t('autoSaveComplete'), {
+        // Show subtle notification
+        toast.success(t('autoSaveComplete') || 'Auto-saved', {
           duration: 2000,
           position: 'bottom-right'
         });
       }
     } catch (error) {
       console.error('Auto-save failed:', error);
-      toast.error(t('autoSaveFailed'), {
+      toast.error(t('autoSaveFailed') || 'Auto-save failed', {
         duration: 3000,
         position: 'bottom-right'
       });
     }
   }, [enabled, isDataModified, isSaving, formData, categoryId, schoolId, saveEntries, t]);
   
-  // Interval təyin etmək
+  // Set up interval
   useEffect(() => {
     if (!enabled || !isDataModified) {
       return;
     }
     
-    // Mövcud interval-ı təmizlə
+    // Clear existing interval
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
     
-    // Yeni interval təyin et
+    // Set new interval
     intervalRef.current = setInterval(() => {
       performAutoSave();
     }, autoSaveInterval);
@@ -98,7 +109,7 @@ export function useAutoSave({
     };
   }, [enabled, isDataModified, autoSaveInterval, performAutoSave]);
   
-  // Komponent unmount olduqda interval-ı təmizlə
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (intervalRef.current) {
@@ -107,12 +118,12 @@ export function useAutoSave({
     };
   }, []);
   
-  // Manual saxlama funksiyası
+  // Manual save function
   const saveNow = useCallback(async () => {
     await performAutoSave();
   }, [performAutoSave]);
   
-  // Son saxlama vaxtını qaytarırıq
+  // Get last save time
   const getLastSaveTime = useCallback(() => {
     return lastSaveTimeRef.current;
   }, []);
@@ -121,7 +132,8 @@ export function useAutoSave({
     saveNow,
     getLastSaveTime,
     isSaving,
-    autoSaveEnabled: enabled && isDataModified
+    autoSaveEnabled: enabled && isDataModified,
+    lastSaveTime
   };
 }
 

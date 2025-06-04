@@ -16,8 +16,8 @@ export interface UseRealTimeValidationProps {
 }
 
 /**
- * Real-time validasiya hook-u
- * Forma sahələrini real vaxtda yoxlayır və xətaları göstərir
+ * Real-time validation hook for form fields
+ * Validates form fields in real-time and shows errors/warnings
  */
 export function useRealTimeValidation({
   columns,
@@ -28,47 +28,47 @@ export function useRealTimeValidation({
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [warnings, setWarnings] = useState<ValidationError[]>([]);
   
-  // Validasiya funksiyası
+  // Validate individual field
   const validateField = useCallback((column: Column, value: any): ValidationError[] => {
     const fieldErrors: ValidationError[] = [];
     
     if (!enabled) return fieldErrors;
     
-    // Tələb olunan sahələri yoxla
+    // Check required fields
     if (column.is_required && (!value || String(value).trim() === '')) {
       fieldErrors.push({
         columnId: column.id,
-        message: t('fieldRequired', { field: column.name }),
+        message: t('fieldRequired') || `${column.name} is required`,
         severity: 'error'
       });
       return fieldErrors;
     }
     
-    // Əgər dəyər boşdursa, digər yoxlamaları keç
+    // Skip validation if value is empty (but not required)
     if (!value || String(value).trim() === '') {
       return fieldErrors;
     }
     
-    // Tip əsaslı validasiya
+    // Type-based validation
     switch (column.type) {
       case 'number':
         if (isNaN(Number(value))) {
           fieldErrors.push({
             columnId: column.id,
-            message: t('fieldMustBeNumber', { field: column.name }),
+            message: t('fieldMustBeNumber') || `${column.name} must be a number`,
             severity: 'error'
           });
         } else {
           const numValue = Number(value);
           
-          // Min/max yoxlamaları
+          // Min/max validation
           if (column.validation) {
             const validation = column.validation as any;
             
             if (validation.min !== undefined && numValue < validation.min) {
               fieldErrors.push({
                 columnId: column.id,
-                message: t('fieldMinValue', { field: column.name, min: validation.min }),
+                message: t('fieldMinValue') || `${column.name} must be at least ${validation.min}`,
                 severity: 'error'
               });
             }
@@ -76,25 +76,8 @@ export function useRealTimeValidation({
             if (validation.max !== undefined && numValue > validation.max) {
               fieldErrors.push({
                 columnId: column.id,
-                message: t('fieldMaxValue', { field: column.name, max: validation.max }),
+                message: t('fieldMaxValue') || `${column.name} must be at most ${validation.max}`,
                 severity: 'error'
-              });
-            }
-            
-            // Xəbərdarlıq həddləri
-            if (validation.warnAbove !== undefined && numValue > validation.warnAbove) {
-              fieldErrors.push({
-                columnId: column.id,
-                message: t('fieldValueHigh', { field: column.name, threshold: validation.warnAbove }),
-                severity: 'warning'
-              });
-            }
-            
-            if (validation.warnBelow !== undefined && numValue < validation.warnBelow) {
-              fieldErrors.push({
-                columnId: column.id,
-                message: t('fieldValueLow', { field: column.name, threshold: validation.warnBelow }),
-                severity: 'warning'
               });
             }
           }
@@ -106,71 +89,17 @@ export function useRealTimeValidation({
         if (!emailRegex.test(String(value))) {
           fieldErrors.push({
             columnId: column.id,
-            message: t('fieldInvalidEmail', { field: column.name }),
+            message: t('fieldInvalidEmail') || `${column.name} must be a valid email`,
             severity: 'error'
           });
         }
         break;
-        
-      case 'phone':
-        const phoneRegex = /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/;
-        if (!phoneRegex.test(String(value))) {
-          fieldErrors.push({
-            columnId: column.id,
-            message: t('fieldInvalidPhone', { field: column.name }),
-            severity: 'error'
-          });
-        }
-        break;
-        
-      case 'url':
-        try {
-          new URL(String(value));
-        } catch {
-          fieldErrors.push({
-            columnId: column.id,
-            message: t('fieldInvalidUrl', { field: column.name }),
-            severity: 'error'
-          });
-        }
-        break;
-    }
-    
-    // Uzunluq yoxlamaları
-    if (column.validation) {
-      const validation = column.validation as any;
-      const strValue = String(value);
-      
-      if (validation.minLength !== undefined && strValue.length < validation.minLength) {
-        fieldErrors.push({
-          columnId: column.id,
-          message: t('fieldMinLength', { field: column.name, length: validation.minLength }),
-          severity: 'error'
-        });
-      }
-      
-      if (validation.maxLength !== undefined && strValue.length > validation.maxLength) {
-        fieldErrors.push({
-          columnId: column.id,
-          message: t('fieldMaxLength', { field: column.name, length: validation.maxLength }),
-          severity: 'error'
-        });
-      }
-      
-      // Pattern (regex) yoxlaması
-      if (validation.pattern && !new RegExp(validation.pattern).test(strValue)) {
-        fieldErrors.push({
-          columnId: column.id,
-          message: validation.patternMessage || t('fieldPatternError', { field: column.name }),
-          severity: 'error'
-        });
-      }
     }
     
     return fieldErrors;
   }, [enabled, t]);
   
-  // Bütün sahələri validasiya et
+  // Validate all fields
   const validateAllFields = useCallback(() => {
     if (!enabled) {
       setErrors([]);
@@ -198,27 +127,27 @@ export function useRealTimeValidation({
     setWarnings(allWarnings);
   }, [enabled, columns, formData, validateField]);
   
-  // Form məlumatları dəyişdikdə validasiya et
+  // Validate when form data changes
   useEffect(() => {
     validateAllFields();
   }, [validateAllFields]);
   
-  // Spesifik sahə üçün xəta al
+  // Get error for specific field
   const getFieldError = useCallback((columnId: string): ValidationError | undefined => {
     return errors.find(error => error.columnId === columnId);
   }, [errors]);
   
-  // Spesifik sahə üçün xəbərdarlıq al
+  // Get warning for specific field
   const getFieldWarning = useCallback((columnId: string): ValidationError | undefined => {
     return warnings.find(warning => warning.columnId === columnId);
   }, [warnings]);
   
-  // Forma etibarlıdır?
+  // Is form valid?
   const isValid = useMemo(() => {
     return errors.length === 0;
   }, [errors]);
   
-  // Tələb olunan sahələr doldurulub?
+  // Are all required fields filled?
   const hasAllRequiredFields = useMemo(() => {
     const requiredColumns = columns.filter(col => col.is_required);
     return requiredColumns.every(col => {
