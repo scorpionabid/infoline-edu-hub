@@ -1,3 +1,4 @@
 
 export { useToast } from './useToast';
-export { default as useToastDefault } from './useToast';
+export { useEntityFiles } from './useEntityFiles';
+export { useEntityLinks } from './useEntityLinks';

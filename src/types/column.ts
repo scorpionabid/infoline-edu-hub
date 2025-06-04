@@ -26,13 +26,7 @@ export interface ColumnOption {
   label: string;
   disabled?: boolean;
   description?: string;
-  [key: string]: string | boolean | undefined; // For JSON compatibility
-}
-
-export interface ColumnValidation {
-  type: 'required' | 'min' | 'max' | 'pattern' | 'email' | 'url';
-  value?: string | number;
-  message?: string;
+  [key: string]: string | boolean | undefined;
 }
 
 export interface ValidationRules {
@@ -70,7 +64,7 @@ export interface Column {
   updated_at: string;
 }
 
-export interface ColumnFormValues {
+export interface ColumnFormData {
   name: string;
   type: ColumnType;
   category_id: string;
@@ -110,7 +104,6 @@ export interface BasicColumnFieldsProps {
   isEditMode: boolean;
 }
 
-// Column type definitions for UI
 export const columnTypes: { value: ColumnType; label: string; description?: string }[] = [
   { value: 'text', label: 'Text', description: 'Single line text input' },
   { value: 'textarea', label: 'Textarea', description: 'Multi-line text input' },
@@ -131,8 +124,6 @@ export const columnTypes: { value: ColumnType; label: string; description?: stri
   { value: 'json', label: 'JSON', description: 'JSON data input' }
 ];
 
-// Helper function to ensure objects are JSON compatible
 export function ensureJson<T>(value: T): any {
   return JSON.parse(JSON.stringify(value));
 }
-

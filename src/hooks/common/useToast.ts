@@ -5,26 +5,54 @@ export interface ToastOptions {
   title?: string;
   description?: string;
   variant?: 'default' | 'destructive';
+  duration?: number;
 }
 
-export const useToast = () => {
-  const toast = (options: ToastOptions | string) => {
-    if (typeof options === 'string') {
-      sonnerToast(options);
+const toast = (options: string | ToastOptions) => {
+  if (typeof options === 'string') {
+    sonnerToast(options);
+  } else {
+    if (options.variant === 'destructive') {
+      sonnerToast.error(options.title || 'Error', {
+        description: options.description,
+        duration: options.duration
+      });
     } else {
-      const { title, description, variant = 'default' } = options;
-      
-      if (variant === 'destructive') {
-        sonnerToast.error(title || 'Error', {
-          description: description
-        });
+      sonnerToast.success(options.title || 'Success', {
+        description: options.description,
+        duration: options.duration
+      });
+    }
+  }
+};
+
+const useToast = () => {
+  return {
+    toast: (options: string | ToastOptions) => {
+      if (typeof options === 'string') {
+        sonnerToast(options);
       } else {
-        sonnerToast.success(title || 'Success', {
-          description: description
-        });
+        if (options.variant === 'destructive') {
+          sonnerToast.error(options.title || 'Error', {
+            description: options.description,
+            duration: options.duration
+          });
+        } else {
+          sonnerToast.success(options.title || 'Success', {
+            description: options.description,
+            duration: options.duration
+          });
+        }
       }
+    },
+    success: (title: string, description?: string) => {
+      sonnerToast.success(title, { description });
+    },
+    error: (title: string, description?: string) => {
+      sonnerToast.error(title, { description });
     }
   };
-
-  return { toast };
 };
+
+export { useToast };
+export default useToast;

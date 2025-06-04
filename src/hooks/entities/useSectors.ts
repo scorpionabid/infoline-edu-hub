@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Sector } from '@/types/sector';
@@ -19,10 +20,6 @@ export const useSectors = (regionId?: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    fetchSectors(regionId);
-  }, [regionId]);
-
   const fetchSectors = async (filterRegionId?: string) => {
     try {
       setLoading(true);
@@ -32,7 +29,6 @@ export const useSectors = (regionId?: string) => {
         .select('*')
         .order('name');
       
-      // Apply region filter if provided
       if (filterRegionId || regionId) {
         query = query.eq('region_id', filterRegionId || regionId);
       }
@@ -49,6 +45,10 @@ export const useSectors = (regionId?: string) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchSectors(regionId);
+  }, [regionId]);
 
   const createSector = async (sector: Omit<Sector, 'id'>) => {
     try {

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
@@ -28,17 +29,14 @@ export const useApprovalData = () => {
   const [rejectedItems, setRejectedItems] = useState<ApprovalItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Use ref to prevent multiple simultaneous loads
   const loadingRef = useRef(false);
 
-  // Simplified data loading without complex joins
   const loadApprovalData = useCallback(async () => {
     if (!user?.id) {
       setIsLoading(false);
       return;
     }
     
-    // Prevent multiple simultaneous loads
     if (loadingRef.current) {
       console.log('Already loading, skipping...');
       return;
@@ -50,7 +48,6 @@ export const useApprovalData = () => {
     try {
       console.log('Loading approval data for user:', user.id);
       
-      // Step 1: Get data entries (RLS will automatically filter)
       const { data: entries, error: entriesError } = await supabase
         .from('data_entries')
         .select('*')
@@ -70,7 +67,6 @@ export const useApprovalData = () => {
         return;
       }
 
-      // Step 2: Get unique school IDs
       const schoolIds = [...new Set(entries.map(e => e.school_id))];
       const { data: schools, error: schoolsError } = await supabase
         .from('schools')
@@ -82,7 +78,6 @@ export const useApprovalData = () => {
         throw schoolsError;
       }
 
-      // Step 3: Get unique category IDs
       const categoryIds = [...new Set(entries.map(e => e.category_id))];
       const { data: categories, error: categoriesError } = await supabase
         .from('categories')
@@ -94,11 +89,9 @@ export const useApprovalData = () => {
         throw categoriesError;
       }
 
-      // Step 4: Create lookup maps
       const schoolMap = new Map(schools?.map(s => [s.id, s.name]) || []);
       const categoryMap = new Map(categories?.map(c => [c.id, c.name]) || []);
 
-      // Step 5: Group entries by category and school
       const groupedData: Record<string, ApprovalItem> = {};
       
       entries.forEach(entry => {
@@ -121,25 +114,22 @@ export const useApprovalData = () => {
         
         groupedData[key].entries.push(entry);
         
-        // Update status to the most recent status
         if (entry.updated_at > groupedData[key].submittedAt) {
           groupedData[key].status = entry.status as DataEntryStatus;
           groupedData[key].submittedAt = entry.updated_at;
         }
       });
 
-      // Step 6: Calculate completion rates and separate by status
       const pending: ApprovalItem[] = [];
       const approved: ApprovalItem[] = [];
       const rejected: ApprovalItem[] = [];
 
       Object.values(groupedData).forEach(item => {
-        // Calculate completion rate
         const filledEntries = item.entries.filter(e => e.value && e.value.trim() !== '');
-        const completionValue = item.entries.length > 0 ? (filledEntries.length / item.entries.length) * 100 : 0;
+        const totalEntries = item.entries.length;
+        const completionValue = totalEntries > 0 ? (filledEntries.length / totalEntries) * 100 : 0;
         item.completionRate = Math.round(completionValue);
 
-        // Group by most common status in the group
         const statusCounts = item.entries.reduce((acc, entry) => {
           acc[entry.status] = (acc[entry.status] || 0) + 1;
           return acc;
@@ -150,7 +140,6 @@ export const useApprovalData = () => {
         
         item.status = mostCommonStatus || DataEntryStatus.PENDING;
 
-        // Separate by status
         switch (item.status) {
           case DataEntryStatus.PENDING:
             pending.push(item);
@@ -181,9 +170,8 @@ export const useApprovalData = () => {
       setIsLoading(false);
       loadingRef.current = false;
     }
-  }, [user?.id, t, toast]); // Remove dependencies that cause re-creation
+  }, [user?.id, t, toast]);
 
-  // Simplified approve function
   const approveItem = useCallback(async (itemId: string, comment?: string) => {
     const [categoryId, schoolId] = itemId.split('-');
     
@@ -219,7 +207,6 @@ export const useApprovalData = () => {
     }
   }, [user?.id, loadApprovalData, t, toast]);
 
-  // Simplified reject function
   const rejectItem = useCallback(async (itemId: string, reason: string) => {
     const [categoryId, schoolId] = itemId.split('-');
     
@@ -259,12 +246,11 @@ export const useApprovalData = () => {
     console.log('Viewing item:', item);
   }, []);
 
-  // Load data on mount - Fixed dependency loop
   useEffect(() => {
     if (user?.id && !loadingRef.current) {
       loadApprovalData();
     }
-  }, [user?.id]); // Only depend on user ID to prevent infinite loop
+  }, [user?.id]);
 
   return {
     pendingApprovals,

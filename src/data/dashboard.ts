@@ -41,6 +41,8 @@ export const mockFormItems: FormItem[] = [
     id: '1',
     name: 'Müəllim məlumatları',
     status: 'pending' as const,
+    lastModified: '2024-12-31T23:59:59Z',
+    completionRate: 75,
     submissions: 25,
     completion: 75,
     deadline: '2024-12-31T23:59:59Z'
@@ -49,6 +51,8 @@ export const mockFormItems: FormItem[] = [
     id: '2', 
     name: 'Şagird məlumatları',
     status: 'approved' as const,
+    lastModified: '2024-11-30T23:59:59Z',
+    completionRate: 90,
     submissions: 30,
     completion: 90,
     deadline: '2024-11-30T23:59:59Z'
@@ -57,6 +61,8 @@ export const mockFormItems: FormItem[] = [
     id: '3',
     name: 'İnfrastruktur məlumatları', 
     status: 'rejected' as const,
+    lastModified: '2024-10-31T23:59:59Z',
+    completionRate: 45,
     submissions: 15,
     completion: 45,
     deadline: '2024-10-31T23:59:59Z'
@@ -65,6 +71,8 @@ export const mockFormItems: FormItem[] = [
     id: '4',
     name: 'Maliyyə hesabatı',
     status: 'pending' as const,
+    lastModified: '2024-12-15T23:59:59Z',
+    completionRate: 60,
     submissions: 20,
     completion: 60,
     deadline: '2024-12-15T23:59:59Z'
@@ -76,25 +84,25 @@ export const mockCategoryItems: CategoryItem[] = [
     id: '1',
     name: 'Ümumi məlumatlar',
     completionRate: 80,
-    status: 'active'
+    status: 'completed'
   },
   {
     id: '2',
     name: 'Müəllimlər',
     completionRate: 65,
-    status: 'active'
+    status: 'in_progress'
   },
   {
     id: '3',
     name: 'Şagirdlər',
     completionRate: 90,
-    status: 'active'
+    status: 'completed'
   },
   {
     id: '4',
     name: 'İnfrastruktur',
     completionRate: 75,
-    status: 'active'
+    status: 'in_progress'
   },
 ];
 
@@ -128,18 +136,16 @@ export const mockDeadlineItems: DeadlineItem[] = [
 export const mockPendingApprovals: PendingApproval[] = [
   {
     id: '1',
-    name: 'Təmir hesabatı',
-    school: '1 nömrəli məktəb',
+    schoolName: '1 nömrəli məktəb',
+    categoryName: 'Təmir hesabatı',
     date: '2024-05-20',
-    description: 'Təmir hesabatı təsdiqi gözləyir',
     status: 'pending'
   },
   {
     id: '2',
-    name: 'Müəllim ərizəsi',
-    school: '2 nömrəli məktəb',
+    schoolName: '2 nömrəli məktəb',
+    categoryName: 'Müəllim ərizəsi',
     date: '2024-05-22',
-    description: 'Müəllim ərizəsi təsdiqi gözləyir',
     status: 'pending'
   },
 ];
@@ -212,6 +218,8 @@ export const mockSectorFormItems: FormItem[] = [
     id: '1',
     name: 'Bölgə məlumatları',
     status: 'pending' as const,
+    lastModified: '2024-12-31T23:59:59Z',
+    completionRate: 75,
     submissions: 85,
     completion: 75,
     deadline: '2024-12-31T23:59:59Z'
@@ -220,6 +228,8 @@ export const mockSectorFormItems: FormItem[] = [
     id: '2',
     name: 'Məktəb siyahısı',
     status: 'approved' as const,
+    lastModified: '2024-11-30T23:59:59Z',
+    completionRate: 90,
     submissions: 120,
     completion: 90,
     deadline: '2024-11-30T23:59:59Z'
@@ -228,6 +238,8 @@ export const mockSectorFormItems: FormItem[] = [
     id: '3',
     name: 'Müəllim hesabatı',
     status: 'rejected' as const,
+    lastModified: '2024-10-31T23:59:59Z',
+    completionRate: 45,
     submissions: 65,
     completion: 45,
     deadline: '2024-10-31T23:59:59Z'
@@ -236,6 +248,8 @@ export const mockSectorFormItems: FormItem[] = [
     id: '4',
     name: 'Şagird statistikası',
     status: 'pending' as const,
+    lastModified: '2024-12-15T23:59:59Z',
+    completionRate: 80,
     submissions: 95,
     completion: 80,
     deadline: '2024-12-15T23:59:59Z'
@@ -244,6 +258,8 @@ export const mockSectorFormItems: FormItem[] = [
     id: '5',
     name: 'Texniki avadanlıq',
     status: 'approved' as const,
+    lastModified: '2024-11-15T23:59:59Z',
+    completionRate: 85,
     submissions: 75,
     completion: 85,
     deadline: '2024-11-15T23:59:59Z'
@@ -252,6 +268,8 @@ export const mockSectorFormItems: FormItem[] = [
     id: '6',
     name: 'Məlumat təhlükəsizliyi',
     status: 'pending' as const,
+    lastModified: '2024-12-20T23:59:59Z',
+    completionRate: 70,
     submissions: 55,
     completion: 70,
     deadline: '2024-12-20T23:59:59Z'

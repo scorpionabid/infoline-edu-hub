@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -10,8 +11,8 @@ interface School {
   address: string;
   phone: string;
   email: string;
-  website: string;
-  logo_url: string;
+  website?: string;
+  logo_url?: string;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
@@ -51,9 +52,7 @@ export const useSchools = () => {
 
       if (error) throw error;
 
-      // Update local state
       setSchools(prev => prev.filter(school => school.id !== schoolId));
-      
       toast.success('Məktəb uğurla silindi');
     } catch (error) {
       console.error('Error deleting school:', error);
@@ -69,6 +68,6 @@ export const useSchools = () => {
     isError: false,
     error: null as any,
     refetch: fetchSchools,
-    deleteSchool // Add deleteSchool to returned functions
+    deleteSchool
   };
 };
