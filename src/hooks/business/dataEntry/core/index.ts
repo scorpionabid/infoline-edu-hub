@@ -5,11 +5,20 @@ export { useDataEntryValidation } from './useDataEntryValidation';
 export { useDataEntryProgress } from './useDataEntryProgress';
 export { useDataEntryFormState } from './useDataEntryFormState';
 
-// Types
+// Types from individual hooks
 export type { 
-  UseDataEntryManagerProps,
   ValidationRule,
-  ValidationResult,
-  ProgressMetrics,
+  ValidationResult
+} from './useDataEntryValidation';
+
+export type {
+  ProgressMetrics
+} from './useDataEntryProgress';
+
+export type {
   FormState
+} from './useDataEntryFormState';
+
+export type {
+  UseDataEntryManagerProps
 } from './useDataEntryManager';

@@ -30,6 +30,9 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
   };
 
   const formStats: DashboardFormStats = {
+    completedForms: mockData.completion.completed || 0,
+    pendingForms: 175,
+    approvalRate: 85,
     total: mockData.completion.total || 0,
     completed: mockData.completion.completed || 0,
     approved: 800,
@@ -46,25 +49,25 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
   const statsGridData: StatsGridItem[] = [
     {
       title: t('totalApproved'),
-      value: formStats.approved,
+      value: formStats.approved || 0,
       color: 'text-green-600',
       description: t('approved')
     },
     {
       title: t('totalPending'),
-      value: formStats.pending,
+      value: formStats.pending || 0,
       color: 'text-yellow-600',
       description: t('pending')
     },
     {
       title: t('totalRejected'),
-      value: formStats.rejected,
+      value: formStats.rejected || 0,
       color: 'text-red-600',
       description: t('rejected')
     },
     {
       title: t('totalDraft'),
-      value: formStats.draft,
+      value: formStats.draft || 0,
       color: 'text-gray-600',
       description: t('draft')
     }

@@ -151,6 +151,13 @@ export interface SchoolAdminDashboardData {
   stats: DashboardFormStats;
   categories: CategoryItem[];
   deadlines: DeadlineItem[];
+  notifications?: any[];
+  status?: any;
+  formStats?: any;
+  completion?: any;
+  completionRate?: number;
+  upcoming?: DeadlineItem[];
+  pendingForms?: FormItem[];
 }
 
 // Additional interfaces for component props
@@ -171,7 +178,7 @@ export interface FormTabsProps {
   categories?: CategoryItem[];
   upcoming?: DeadlineItem[];
   pendingForms?: FormItem[];
-  navigateToDataEntry: () => void;
-  handleFormClick: (formId: string) => void;
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (formId: string) => void;
   onCategoryChange?: (categoryId: string) => void;
 }

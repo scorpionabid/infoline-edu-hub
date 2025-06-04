@@ -15,6 +15,9 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ dashboardDa
 
   // Mock data for demonstration
   const mockStats: DashboardFormStats = {
+    completedForms: 380,
+    pendingForms: 85,
+    approvalRate: 76,
     total: 500,
     completed: 380,
     approved: 320,
@@ -25,20 +28,13 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ dashboardDa
     overdue: 5,
     percentage: 76,
     completion_rate: 76,
-    completionRate: 76,
-    active: {
-      schools: 25,
-      sectors: 8,
-      users: 45
-    },
-    inactive: {
-      schools: 3,
-      sectors: 1,
-      users: 2
-    }
+    completionRate: 76
   };
 
   const formStats: DashboardFormStats = {
+    completedForms: mockStats.completedForms,
+    pendingForms: mockStats.pendingForms,
+    approvalRate: mockStats.approvalRate,
     total: mockStats.total,
     pending: mockStats.pending,
     approved: mockStats.approved,
@@ -55,25 +51,25 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ dashboardDa
   const statsGridData = [
     {
       title: t('totalApproved'),
-      value: mockStats.approved,
+      value: mockStats.approved || 0,
       color: 'text-green-600',
       description: t('approved')
     },
     {
       title: t('totalPending'),
-      value: mockStats.pending,
+      value: mockStats.pending || 0,
       color: 'text-yellow-600',
       description: t('pending')
     },
     {
       title: t('totalRejected'),
-      value: mockStats.rejected,
+      value: mockStats.rejected || 0,
       color: 'text-red-600',
       description: t('rejected')
     },
     {
       title: t('completion'),
-      value: `${mockStats.percentage}%`,
+      value: `${mockStats.percentage || 0}%`,
       color: 'text-blue-600',
       description: t('completionRate')
     }
