@@ -1,555 +1,104 @@
-
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/context/LanguageContext';
-import { useValidation } from '../validation';
+// Legacy useDataEntry hook - Simplified for backward compatibility
+// For new development, use useDataEntryManager or specific hooks from common/
+import { useDataEntryManager } from './useDataEntryManager';
 import { CategoryWithColumns } from '@/types/category';
-import { DataEntry, DataEntryStatus, DataEntrySaveStatus } from '@/types/dataEntry';
 
-// Props for useDataEntry hook
 interface UseDataEntryProps {
   schoolId?: string;
   categoryId?: string;
   onComplete?: () => void;
 }
 
+/**
+ * @deprecated Use useDataEntryManager or specific hooks from common/ folder
+ * This hook is maintained for backward compatibility only
+ */
 export const useDataEntry = ({ 
-  schoolId, 
-  categoryId,
+  schoolId = '', 
+  categoryId = '',
   onComplete 
 }: UseDataEntryProps) => {
-  // Core state
-  const [formData, setFormData] = useState<Record<string, any>>({});
-  const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [entries, setEntries] = useState<DataEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
-  const [isDataModified, setIsDataModified] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryWithColumns | undefined>(undefined);
-  const [currentCategory, setCurrentCategory] = useState<CategoryWithColumns | undefined>(undefined);
-  const [loadingEntry, setLoadingEntry] = useState(false);
-  const [entryStatus, setEntryStatus] = useState<Record<string, string>>({});
-  const [entryError, setEntryError] = useState<string | null>(null);
-  const [entryId, setEntryId] = useState<string | null>(null);
   
-  const user = useAuthStore(selectUser);
-  const { toast } = useToast();
-  const { t } = useLanguage();
+  // Use the refactored manager hook
+  const manager = useDataEntryManager({
+    categoryId,
+    schoolId,
+    category: null, // Will be loaded internally
+    enableRealTime: false, // Disable for legacy compatibility
+    enableCache: true,
+    autoSave: true
+  });
   
-  const validation = useValidation(categories, entries);
-  
-  // Improved form data management functions
-  const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    if (!event || !event.target) {
-      console.warn('handleInputChange: Invalid event object');
-      return;
-    }
+  // Legacy compatibility wrapper
+  return {
+    // Legacy interface mapping
+    formData: manager.formData,
+    updateFormData: manager.handleFormDataChange,
+    categories: [], // Not implemented in legacy interface
+    selectedCategory: undefined,
+    currentCategory: undefined,
+    loading: manager.isLoading,
+    loadingEntry: manager.isLoading,
+    submitting: manager.isSubmitting,
+    isAutoSaving: manager.isSaving,
+    isSubmitting: manager.isSubmitting,
     
-    const { name, value } = event.target;
-    if (!name) {
-      console.warn('handleInputChange: Missing name attribute');
-      return;
-    }
-    
-    console.group('handleInputChange call');
-    console.log('Input event received:', { 
-      name, 
-      value, 
-      type: event.target.type,
-      currentFormData: formData
-    });
-    
-    setFormData(prev => {
-      const newData = {
-        ...prev,
-        [name]: value
-      };
-      console.log('Form data will be updated to:', newData);
-      return newData;
-    });
-    
-    setIsDataModified(true);
-    console.groupEnd();
-  }, [formData]);
-  
-  const handleChange = useCallback((name: string, value: any) => {
-    if (!name) {
-      console.warn('handleChange: Missing name parameter');
-      return;
-    }
-    
-    console.group('handleChange call');
-    console.log('Direct change received:', { 
-      name, 
-      value, 
-      currentFormData: formData
-    });
-    
-    setFormData(prev => {
-      const newData = {
-        ...prev,
-        [name]: value
-      };
-      console.log('Form data will be updated to:', newData);
-      return newData;
-    });
-    
-    setIsDataModified(true);
-    console.groupEnd();
-  }, [formData]);
-
-  // Enhanced form submission with auto-approval for SectorAdmin
-  const handleSubmit = useCallback(async (event: React.FormEvent) => {
-    event.preventDefault();
-    setIsSubmitting(true);
-    
-    try {
-      if (!schoolId || !currentCategory?.id) {
-        throw new Error('Missing required school or category ID');
+    // Legacy handlers
+    handleInputChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      if (event?.target?.name && event?.target?.value !== undefined) {
+        manager.handleFieldChange(event.target.name, event.target.value);
       }
-
-      if (!formData || typeof formData !== 'object') {
-        throw new Error('Invalid form data');
+    },
+    handleChange: manager.handleFieldChange,
+    handleSubmit: async (event?: React.FormEvent) => {
+      if (event) event.preventDefault();
+      const result = await manager.handleSubmit();
+      if (result?.success && onComplete) {
+        onComplete();
       }
-
-      // ✅ ENHANCED: Auto-approval logic for SectorAdmin
-      const isAutoApprove = user?.role === 'sectoradmin';
-      let defaultStatus = 'pending';
-      let approvalMetadata = {};
-      
-      if (isAutoApprove) {
-        // Verify sector admin has access to this school
-        const { data: schoolData, error: schoolError } = await supabase
-          .from('schools')
-          .select('sector_id')
-          .eq('id', schoolId)
-          .single();
-        
-        if (schoolError) throw schoolError;
-        
-        if (schoolData.sector_id === user.sector_id) {
-          defaultStatus = 'approved';
-          approvalMetadata = {
-            approved_by: user.id,
-            approved_at: new Date().toISOString(),
-            auto_approved: true,
-            approval_reason: 'Automatic approval by sector admin'
-          };
-        }
-      }
-      
-      // Convert form data to entries format with safety checks
-      const entriesToSave = Object.entries(formData)
-        .filter(([columnId, value]) => columnId && columnId.trim() !== '')
-        .map(([columnId, value]) => ({
-          column_id: columnId,
-          category_id: currentCategory.id,
-          school_id: schoolId,
-          value: String(value || ''),
-          status: defaultStatus as DataEntryStatus,
-          created_by: user?.id,
-          ...approvalMetadata
-        }));
-
-      if (entriesToSave.length === 0) {
-        toast({
-          title: t('warning'),
-          description: t('noDataToSubmit'),
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // Save to database with upsert for existing entries
-      const { error } = await supabase
-        .from('data_entries')
-        .upsert(entriesToSave, {
-          onConflict: 'column_id,school_id,category_id',
-          ignoreDuplicates: false,
-        });
-
-      if (error) throw error;
-
-      // ✅ ENHANCED: More detailed success messages
-      const message = isAutoApprove 
-        ? t('dataApprovedAndSaved') || 'Məlumatlar avtomatik təsdiqləndi və yadda saxlandı'
-        : t('dataSubmittedSuccessfully') || 'Məlumatlar təsdiq üçün göndərildi';
-        
-      toast({
-        title: t('success'),
-        description: message,
-      });
-
-      // Reset form state after successful submission
-      setIsDataModified(false);
-      
-      if (onComplete) onComplete();
-    } catch (err: any) {
-      console.error('Error submitting form:', err);
-      toast({
-        title: t('error'),
-        description: err.message || t('errorSubmittingData'),
-        variant: 'destructive'
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [formData, schoolId, currentCategory, user, toast, t, onComplete]);
-
-  // Enhanced save as draft function
-  const handleSave = useCallback(async () => {
-    setIsAutoSaving(true);
+      return result;
+    },
+    handleSave: manager.handleSave,
+    handleReset: manager.resetForm,
+    handleCategoryChange: () => {
+      console.warn('handleCategoryChange is deprecated. Use category-specific hooks instead.');
+    },
     
-    try {
-      if (!schoolId || !currentCategory?.id) {
-        throw new Error('Missing required school or category ID');
-      }
-
-      if (!formData || typeof formData !== 'object') {
-        console.warn('handleSave: Invalid form data, skipping save');
-        return;
-      }
-
-      // Convert form data to entries format
-      const entriesToSave = Object.entries(formData)
-        .filter(([columnId, value]) => columnId && columnId.trim() !== '')
-        .map(([columnId, value]) => ({
-          column_id: columnId,
-          category_id: currentCategory.id,
-          school_id: schoolId,
-          value: String(value || ''),
-          status: 'draft' as DataEntryStatus
-        }));
-
-      if (entriesToSave.length === 0) {
-        console.log('handleSave: No data to save');
-        return;
-      }
-
-      const { error } = await supabase
-        .from('data_entries')
-        .upsert(entriesToSave, {
-          onConflict: 'column_id,school_id,category_id',
-          ignoreDuplicates: false,
-        });
-
-      if (error) throw error;
-
-      setIsDataModified(false);
-      toast({
-        title: t('success'),
-        description: t('dataSavedSuccessfully'),
-      });
-    } catch (err: any) {
-      console.error('Error saving form:', err);
-      toast({
-        title: t('error'),
-        description: err.message || t('errorSavingData'),
-        variant: 'destructive'
-      });
-    } finally {
-      setIsAutoSaving(false);
-    }
-  }, [formData, schoolId, currentCategory, toast, t]);
-
-  // Form reset handler
-  const handleReset = useCallback(() => {
-    setFormData({});
-    setIsDataModified(false);
-    console.log('Form data reset');
-  }, []);
-
-  // Category change handler with enhanced safety
-  const handleCategoryChange = useCallback((category: CategoryWithColumns) => {
-    if (!category || !category.id) {
-      console.warn('handleCategoryChange: Invalid category');
-      return;
-    }
+    // Legacy data loading
+    loadDataForSchool: () => manager.loadData(),
+    entries: manager.entries,
+    submitForApproval: manager.handleSubmit,
     
-    setCurrentCategory(category);
-    setSelectedCategory(category);
+    // Legacy state
+    saveStatus: manager.lastSaved ? 'saved' : 'pending',
+    isDataModified: manager.isDataModified,
+    error: manager.error || null,
+    entryStatus: manager.entryStatus ? { [categoryId]: manager.entryStatus } : {},
+    entryError: manager.error,
+    entryId: null,
     
-    // Reset form data when category changes
-    setFormData({});
-    setIsDataModified(false);
-    
-    // Load existing data for this category
-    if (schoolId) {
-      loadDataForCategory(schoolId, category.id);
-    }
-  }, [schoolId]);
-
-  // Enhanced loadDataForCategory with retry logic and error handling
-  const loadDataForCategory = useCallback(async (schoolId: string, categoryId: string, retryCount = 0) => {
-    if (!schoolId || !categoryId) {
-      console.warn('loadDataForCategory: Missing required parameters');
-      return;
-    }
-    
-    const MAX_RETRIES = 3;
-    const TIMEOUT_MS = 30000;
-    
-    console.group(`Loading data for category ${categoryId} and school ${schoolId} (attempt ${retryCount + 1})`);
-    setLoadingEntry(true);
-    if (retryCount === 0) setEntryError(null);
-    
-    const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error(`Data loading timeout after ${TIMEOUT_MS/1000} seconds`));
-      }, TIMEOUT_MS);
-    });
-    
-    try {
-      const dataPromise = supabase
-        .from('data_entries')
-        .select('id, column_id, value, status, school_id, category_id, created_at, updated_at')
-        .eq('school_id', schoolId)
-        .eq('category_id', categoryId);
-
-      const { data, error } = await Promise.race([
-        dataPromise,
-        timeoutPromise
-      ]);
-
-      if (error) throw error;
-
-      console.log(`Received ${data?.length || 0} entries for category ${categoryId}`);
-
-      const newFormData: Record<string, string> = {};
-      if (data && Array.isArray(data)) {
-        data.forEach(entry => {
-          if (entry && entry.column_id && entry.value !== null && entry.value !== undefined) {
-            newFormData[entry.column_id] = String(entry.value);
-            console.log(`Setting field ${entry.column_id} = ${entry.value}`);
-          }
-        });
-      }
-
-      console.log('Setting form data:', newFormData);
-      setFormData(newFormData);
-      
-      const typedEntries = data?.map(entry => ({
-        ...entry,
-        school_id: entry.school_id || schoolId,
-        category_id: entry.category_id || categoryId,
-        created_at: entry.created_at || new Date().toISOString(),
-        updated_at: entry.updated_at || new Date().toISOString()
-      })) || [];
-      
-      setEntries(typedEntries);
-      setIsDataModified(false);
-      setEntryError(null);
-      
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-    } catch (err: any) {
-      console.error('Error loading category data:', err);
-      
-      if (retryCount < MAX_RETRIES) {
-        console.log(`Retrying data load (${retryCount + 1}/${MAX_RETRIES})...`);
-        await new Promise(resolve => setTimeout(resolve, 1000)); 
-        setLoadingEntry(false);
-        console.groupEnd();
-        return loadDataForCategory(schoolId, categoryId, retryCount + 1);
-      }
-      
-      setEntryError(err.message || 'Məlumatları yükləmək mümkün olmadı. Zəhmət olmasa səhifəni yeniləyin.');
-      toast({
-        variant: "destructive",
-        title: "Xəta",
-        description: "Məlumatları yükləmək mümkün olmadı. Səhifəni yeniləyə bilərsiniz.",
-      });
-      
-      setFormData({});
-      setEntries([]);
-      await new Promise(resolve => setTimeout(resolve, 500)); 
-    } finally {
-      setLoadingEntry(false);
-      console.log('Loading state finished');
-      console.groupEnd();
-    }
-  }, [toast]);
-  
-  // Load categories with enhanced error handling
-  const loadCategories = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('priority', { ascending: true });
-      
-      if (error) throw error;
-      
-      if (!data || !Array.isArray(data) || data.length === 0) {
-        setCategories([]);
-        return;
-      }
-      
-      // Load columns for categories with proper error handling
-      const columnsPromises = data.map(async (category) => {
-        if (!category || !category.id) {
-          console.warn('loadCategories: Invalid category found:', category);
-          return null;
-        }
-        
-        try {
-          const { data: columns, error: columnsError } = await supabase
-            .from('columns')
-            .select('*')
-            .eq('category_id', category.id)
-            .order('order_index', { ascending: true });
-          
-          if (columnsError) throw columnsError;
-          
-          return {
-            ...category,
-            columns: columns || []
-          };
-        } catch (err) {
-          console.error(`Error loading columns for category ${category.id}:`, err);
-          return {
-            ...category,
-            columns: []
-          };
-        }
-      });
-      
-      const categoriesWithColumns = (await Promise.all(columnsPromises))
-        .filter(Boolean) as CategoryWithColumns[];
-      
-      setCategories(categoriesWithColumns);
-      
-      if (categoryId) {
-        const category = categoriesWithColumns.find(cat => cat.id === categoryId);
-        if (category) {
-          setCurrentCategory(category);
-          setSelectedCategory(category);
-        }
-      }
-      
-    } catch (err: any) {
-      console.error('Error loading categories:', err);
-      setError(err.message || 'Failed to load categories');
-    } finally {
-      setLoading(false);
-    }
-  }, [categoryId]);
-
-  // Test compatibility functions
-  const saveEntry = useCallback(async (data: any) => {
-    try {
-      const response = await supabase
-        .from('data_entries')
-        .insert(data)
-        .select()
-        .single();
-      
-      if (response.error) throw response.error;
-      
-      return response.data;
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to save entry');
-    }
-  }, []);
-
-  const updateEntry = useCallback(async (id: string, data: any) => {
-    try {
-      const { error } = await supabase
-        .from('data_entries')
-        .update(data)
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      return true;
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to update entry');
-    }
-  }, []);
-
-  const deleteEntry = useCallback(async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('data_entries')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      return true;
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to delete entry');
-    }
-  }, []);
-
-  const importExcel = useCallback(async (file: File) => {
-    try {
-      // Mock implementation for now
-      return {
-        success: true,
-        importedCount: 10,
-        failedCount: 0
-      };
-    } catch (err: any) {
+    // Legacy CRUD operations (simplified)
+    saveEntry: async (data: any) => {
+      manager.handleFormDataChange(data);
+      return await manager.handleSave();
+    },
+    updateEntry: async (id: string, data: any) => {
+      manager.handleFormDataChange(data);
+      return await manager.handleSave();
+    },
+    deleteEntry: async (id: string) => {
+      console.warn('deleteEntry is not supported in legacy interface');
+      return Promise.resolve(false);
+    },
+    importExcel: async (file: File) => {
+      console.warn('importExcel is not fully implemented in legacy interface');
       return {
         success: false,
         importedCount: 0,
         failedCount: 1,
-        errors: [{ row: 1, error: err.message }]
+        errors: [{ row: 1, error: 'Use useDataEntryManager for Excel import functionality' }]
       };
     }
-  }, []);
-  
-  // Load data when category and school are selected
-  useEffect(() => {
-    if (currentCategory && schoolId) {
-      loadDataForCategory(schoolId, currentCategory.id);
-    }
-  }, [currentCategory, schoolId, loadDataForCategory]);
-  
-  // Initial loading
-  useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
-  
-  return {
-    formData,
-    updateFormData: setFormData,
-    categories,
-    selectedCategory,
-    currentCategory,
-    loading,
-    loadingEntry,
-    submitting,
-    isAutoSaving,
-    isSubmitting,
-    handleInputChange,
-    handleChange,
-    handleSubmit,
-    handleSave,
-    handleReset,
-    handleCategoryChange,
-    loadDataForSchool: loadCategories,
-    entries,
-    submitForApproval: async () => Promise.resolve(),
-    saveStatus,
-    isDataModified,
-    error,
-    entryStatus,
-    entryError,
-    entryId,
-    saveEntry,
-    updateEntry,
-    deleteEntry,
-    importExcel
   };
 };
 

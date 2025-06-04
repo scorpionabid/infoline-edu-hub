@@ -1,613 +1,225 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+// Refactored and simplified DataEntry Manager
+// Combines specialized hooks for a complete data entry solution
+import { useState, useCallback, useEffect } from 'react';
+import { CategoryWithColumns } from '@/types/category';
+import { DataEntryStatus } from '@/types/core/dataEntry';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { CategoryWithColumns } from '@/types/category';
-import { DataEntryForm, DataEntry } from '@/types/dataEntry';
-import { saveDataEntryForm, submitForApproval, getDataEntries, EntryValue, ServiceResponse } from '@/services/dataEntryService';
-import { StatusTransitionService, TransitionContext } from '@/services/statusTransitionService';
-import { useStatusPermissions } from '@/hooks/auth/useStatusPermissions';
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
-import { DataEntryStatus } from '@/types/core/dataEntry';
-// ✅ YENİ: Real-time updates activated
-import { useRealTimeDataEntry } from '@/hooks/dataEntry/useRealTimeDataEntry';
-import ConflictResolutionDialog from '@/components/dataEntry/dialogs/ConflictResolutionDialog';
 
-// Status type is now imported from core types
-// type DataEntryStatus = DataEntry['status']; // Removed - using imported type
+// Import our specialized hooks
+import useFormManager from './common/useFormManager';
+import useDataLoader from './common/useDataLoader';
+import useSaveManager from './common/useSaveManager';
+import useStatusManager from './common/useStatusManager';
+import useCacheManager from './common/useCacheManager';
+import { useRealTimeDataEntry } from './common/useRealTimeDataEntry';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
 interface UseDataEntryManagerOptions {
   categoryId: string;
   schoolId: string;
   category: CategoryWithColumns | null;
+  enableRealTime?: boolean;
+  enableCache?: boolean;
+  autoSave?: boolean;
 }
 
-export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataEntryManagerOptions) => {
+export const useDataEntryManager = ({ 
+  categoryId, 
+  schoolId, 
+  category,
+  enableRealTime = true,
+  enableCache = true,
+  autoSave = true
+}: UseDataEntryManagerOptions) => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const user = useAuthStore(state => state.user);
   
-  const [formData, setFormData] = useState<Record<string, any>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [entryStatus, setEntryStatus] = useState<DataEntryStatus | undefined>(undefined);
-  const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  // Additional state for integration
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
   
-  // ✅ YENİ: Status-based permissions
-  const statusPermissions = useStatusPermissions(entryStatus, categoryId, schoolId);
+  // Initialize specialized hooks
+  const formManager = useFormManager({ categoryId, schoolId, category });
   
-  // ✅ YENİ: Real-time collaboration state
-  const [showConflictDialog, setShowConflictDialog] = useState(false);
-  const [conflictData, setConflictData] = useState<any[]>([]);
-  const [serverData, setServerData] = useState<Record<string, any>>({});
-  const [localChangesSnapshot, setLocalChangesSnapshot] = useState<Record<string, any>>({});
+  const dataLoader = useDataLoader({ 
+    categoryId, 
+    schoolId, 
+    useCache: enableCache 
+  });
   
-  // Məlumatların sonsuz dövrə yüklənməsini idarə etmək üçün ref-lər
-  const isDataLoaded = useRef<boolean>(false);
-  const loadAttempts = useRef<number>(0);
-  const lastLoadTime = useRef<number>(0);
-  
-  // Keş idarəsi üçün funksiyalar
-  const getDataFromCache = useCallback(() => {
-    try {
-      const cacheKey = `data_${categoryId}_${schoolId}`;
-      const cachedData = localStorage.getItem(cacheKey);
-      if (!cachedData) return null;
-      
-      const { data, timestamp } = JSON.parse(cachedData);
-      // 5 dəqiqəlik keş valid vaxtı
-      if (Date.now() - timestamp < 5 * 60 * 1000) {
-        return data;
-      }
-      
-      // Keş vaxtı keçibsə təmizlə
-      localStorage.removeItem(cacheKey);
-      return null;
-    } catch (error) {
-      console.warn('Cache parsing error:', error);
-      return null;
+  const saveManager = useSaveManager({
+    categoryId,
+    schoolId,
+    category,
+    onSaveSuccess: () => {
+      setLastSaved(new Date().toISOString());
+      formManager.setInitialData(formManager.formData); // Reset modification tracking
+    },
+    onSaveError: (error) => {
+      console.error('Save error:', error);
     }
-  }, [categoryId, schoolId]);
+  });
   
-  const saveDataToCache = useCallback((data: any) => {
-    try {
-      const cacheKey = `data_${categoryId}_${schoolId}`;
-      const cacheData = {
-        data,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-    } catch (error) {
-      console.warn('Cache saving error:', error);
+  const statusManager = useStatusManager({
+    categoryId,
+    schoolId,
+    onStatusChange: (newStatus) => {
+      console.log('Status changed:', newStatus);
     }
-  }, [categoryId, schoolId]);
+  });
   
-  // ✅ YENİ: Real-time data change handler
+  const cacheManager = useCacheManager({ categoryId, schoolId });
+  
+  // Real-time data change handler
   const handleRealTimeDataChange = useCallback((payload: any) => {
     console.log('Real-time data change received:', payload);
     
     if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
-      const updatedData = { ...formData };
-      updatedData[payload.new.column_id] = payload.new.value;
-      
-      // Update form data without triggering unsaved changes flag
-      setFormData(updatedData);
-      
-      // Save to cache
-      saveDataToCache(updatedData);
-      
-      console.log('Form data updated from real-time:', payload.new.column_id);
+      formManager.handleFieldChange(payload.new.column_id, payload.new.value);
     } else if (payload.eventType === 'DELETE') {
-      const updatedData = { ...formData };
-      delete updatedData[payload.old.column_id];
-      setFormData(updatedData);
-      saveDataToCache(updatedData);
+      const newData = { ...formManager.formData };
+      delete newData[payload.old.column_id];
+      formManager.updateFormData(newData);
     }
-  }, [formData, saveDataToCache]);
+  }, [formManager]);
   
-  // ✅ YENİ: Real-time conflict handler
-  const handleRealTimeConflict = useCallback((conflictInfo: any) => {
-    console.warn('Data conflict detected:', conflictInfo);
-    
-    // Snapshot current local changes
-    setLocalChangesSnapshot({ ...formData });
-    
-    // Prepare server data
-    const serverChanges = {
-      [conflictInfo.columnId]: conflictInfo.serverValue
-    };
-    setServerData(serverChanges);
-    
-    // Prepare conflict data for dialog
-    const conflicts = [{
-      columnId: conflictInfo.columnId,
-      columnName: category?.columns.find(col => col.id === conflictInfo.columnId)?.name || conflictInfo.columnId,
-      localValue: conflictInfo.localValue || formData[conflictInfo.columnId],
-      serverValue: conflictInfo.serverValue,
-      lastModified: conflictInfo.lastModified,
-      modifiedBy: conflictInfo.modifiedBy,
-      modifiedByName: 'Other User' // This could be enhanced with actual user names
-    }];
-    
-    setConflictData(conflicts);
-    setShowConflictDialog(true);
-  }, [formData, category]);
-  
-  // ✅ YENİ: Conflict resolution handler
-  const handleConflictResolution = useCallback((
-    resolution: 'local' | 'server' | 'merge' | 'field-by-field',
-    fieldResolutions?: Record<string, 'local' | 'server'>
-  ) => {
-    console.log('Resolving conflict with strategy:', resolution);
-    
-    let resolvedData = { ...formData };
-    
-    switch (resolution) {
-      case 'local':
-        // Keep all local changes
-        resolvedData = { ...localChangesSnapshot };
-        break;
-        
-      case 'server':
-        // Use all server changes
-        Object.keys(serverData).forEach(key => {
-          resolvedData[key] = serverData[key];
-        });
-        break;
-        
-      case 'merge':
-        // Smart merge - prefer newer values, but this is simplified
-        Object.keys(serverData).forEach(key => {
-          resolvedData[key] = serverData[key]; // For now, prefer server in merge
-        });
-        break;
-        
-      case 'field-by-field':
-        if (fieldResolutions) {
-          Object.keys(fieldResolutions).forEach(columnId => {
-            if (fieldResolutions[columnId] === 'local') {
-              resolvedData[columnId] = localChangesSnapshot[columnId];
-            } else {
-              resolvedData[columnId] = serverData[columnId];
-            }
-          });
-        }
-        break;
-    }
-    
-    // Apply resolved data
-    setFormData(resolvedData);
-    setHasUnsavedChanges(true); // Mark as changed so user can save
-    
-    // Clear conflict state
-    setShowConflictDialog(false);
-    setConflictData([]);
-    setServerData({});
-    setLocalChangesSnapshot({});
-    
-    toast({
-      title: t('success'),
-      description: t('conflictResolved'),
-    });
-  }, [formData, localChangesSnapshot, serverData, t, toast]);
-  
-  // ✅ YENİ: Real-time hook initialization
+  // Real-time hook (optional)
   const realTimeHook = useRealTimeDataEntry({
     categoryId,
     schoolId,
     userId: user?.id,
     onDataChange: handleRealTimeDataChange,
-    onConflict: handleRealTimeConflict,
-    enabled: !isSaving && !isSubmitting && isDataLoaded.current,
-    conflictDetectionWindow: 3000 // 3 seconds
+    enabled: enableRealTime && !saveManager.isSaving && !saveManager.isSubmitting
   });
-
-  // Təkmilləşdirilmiş loadData funksiyası
-  const loadData = useCallback(async (forceRefresh: boolean = false): Promise<void> => {
-    // İlkin yoxlama - əgər ID-lər yoxdursa, yükləmə prosesini dayandır
-    if (!categoryId || categoryId === '' || !schoolId || schoolId === '') {
-      console.log('Skipping data load - missing required IDs');
-      setIsLoading(false);
-      return;
-    }
-    
-    // Qısa müddətli təkrar yükləmələrin qarşısını al
-    const now = Date.now();
-    if (!forceRefresh && now - lastLoadTime.current < 2000) {
-      console.log('Throttling data load - too frequent requests');
-      return;
-    }
-    lastLoadTime.current = now;
-    
-    // Yalnız yükləmə ilə məşğul deyiliksa davam et
-    if (isLoading && !forceRefresh) {
-      console.log('Already loading data - skipping duplicate request');
-      return;
-    }
-    
-    // Max yükləmə cəhdlərini məhdudlaşdır
-    loadAttempts.current += 1;
-    if (loadAttempts.current > 3 && !forceRefresh) {
-      console.warn('Max load attempts reached, stopping auto-retries');
-      setIsLoading(false);
-      return;
-    }
-    
-    // Əgər məcburi yeniləmə deyilsə və məlumat artıq yüklənibsə, keşdən oxu
-    if (!forceRefresh && isDataLoaded.current) {
-      const cachedData = getDataFromCache();
-      if (cachedData) {
-        console.log('Using cached data');
-        setFormData(cachedData);
-        setIsLoading(false);
-        return;
-      }
-    }
-    
-    // Serverdən məlumat yükləmə prosesi
-    setIsLoading(true);
+  
+  // Load initial data
+  const loadData = useCallback(async (forceRefresh = false) => {
     try {
-      const result = await getDataEntries(schoolId, categoryId);
-      if (result.success && result.data) {
-        const dataMap: Record<string, any> = {};
-        result.data.forEach(entry => {
-          dataMap[entry.columnId] = entry.value;
-        });
+      const result = await dataLoader.loadData(schoolId, categoryId, forceRefresh);
+      
+      if (result) {
+        formManager.setInitialData(result.data);
+        formManager.setEntries(result.entries);
         
-        setFormData(dataMap);
-        setHasUnsavedChanges(false);
-        
-        // ✅ DEĞİŞDİRİLMİŞ: Enhanced status assignment
-        if (result.data.length > 0) {
-          const status = result.data[0].status as DataEntryStatus;
-          setEntryStatus(status);
-          console.log('Status set from data:', status);
+        // Set status from first entry
+        if (result.entries.length > 0) {
+          const status = result.entries[0].status as DataEntryStatus;
+          statusManager.updateStatus(status);
         } else {
-          // Default to draft for new entries
-          setEntryStatus(DataEntryStatus.DRAFT);
-          console.log('Status set to default: draft');
+          statusManager.updateStatus(DataEntryStatus.DRAFT);
         }
-        
-        // Uğurlu yükləmə ilə flag və keş yenilənir
-        isDataLoaded.current = true;
-        saveDataToCache(dataMap);
-      } else {
-        // 0 nəticə boşluğu fərqli qəbul edilir (xəta deyil)
-        if (result.data?.length === 0) {
-          isDataLoaded.current = true; // Data is just empty
-          setFormData({});
-          return;
-        }
-        
-        console.error('Error in API response:', result.error || result.message);
-        toast({
-          title: t('error'),
-          description: result.message || t('errorLoadingData'),
-          variant: 'destructive'
-        });
-        setErrors(result.errors || {});
       }
     } catch (error: any) {
       console.error('Error loading data:', error);
-      
-      // Məcburi yeniləmədə istifadəçiyə bildiriş göndəririk
-      if (forceRefresh) {
-        toast({
-          title: t('error'),
-          description: t('errorLoadingData'),
-          variant: 'destructive'
-        });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [categoryId, schoolId, t, toast, isLoading, getDataFromCache, saveDataToCache]);
-  
-  // Vahid əsas useEffect - ilkin yükləmə və polling birləşdirilib
-  useEffect(() => {
-    // Əgər ID-lər yoxdursa, yükləmə prosesini dayandır
-    if (!categoryId || !schoolId) {
-      setIsLoading(false);
-      return;
-    }
-    
-    // Məlumatları bir dəfə yüklə
-    if (!isDataLoaded.current) {
-      console.log('Initial data load');
-      loadData(false);
-    }
-    
-    // Polling və page visibility izləmə
-    let isPageActive = true;
-    
-    const handleVisibilityChange = () => {
-      isPageActive = document.visibilityState === 'visible';
-      
-      // Səhifə görünüş halına geri döndükdə və son yükləmədən çox vaxt keçibsə
-      if (isPageActive && Date.now() - lastLoadTime.current > 60000) {
-        console.log('Page became visible again, refreshing data');
-        loadData(false);
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Polling intervalı - əvvəlki kimi 30 saniyə, amma daha diqqətli şərtlərlə
-    const pollInterval = setInterval(() => {
-      if (isPageActive && !isSaving && !isSubmitting && isDataLoaded.current) {
-        console.log('Polling for data updates...');
-        // forceRefresh=false: serverdə dəyişiklik olmaya bilər, polling adi yoxlamadır
-        loadData(false);
-      }
-    }, 30000);
-    
-    // Təmizləmə
-    return () => {
-      clearInterval(pollInterval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [categoryId, schoolId, loadData, isSaving, isSubmitting]);
-
-  // Handle form data changes
-  const handleFormDataChange = useCallback((newData: Record<string, any>) => {
-    setFormData(newData);
-    setErrors({}); // Clear errors when data changes
-    setHasUnsavedChanges(true);
-  }, []);
-
-  // Auto-save functionality
-  useEffect(() => {
-    if (!hasUnsavedChanges) return;
-
-    const autoSaveTimer = setTimeout(() => {
-      if (entryStatus === 'draft') {
-        handleSave();
-      }
-    }, 30000); // Auto-save after 30 seconds
-
-    return () => clearTimeout(autoSaveTimer);
-  }, [formData, hasUnsavedChanges, entryStatus]);
-
-  // ✅ ENHANCED: Save with status validation
-  const handleSave = useCallback(async (): Promise<void> => {
-    console.group('handleSave - Enhanced');
-    console.log('Save attempt:', { categoryId, schoolId, canEdit: statusPermissions.canEdit });
-    
-    // Pre-validation checks
-    if (!categoryId || categoryId === '' || !schoolId || schoolId === '') {
-      console.warn('Cannot save - missing category ID or school ID');
       toast({
         title: t('error'),
-        description: t('missingRequiredData'),
+        description: error.message || t('errorLoadingData'),
         variant: 'destructive'
       });
-      console.groupEnd();
-      return;
     }
-    
-    // ✅ YENİ: Status permission check
-    if (!statusPermissions.canEdit) {
-      const errorMessage = entryStatus === DataEntryStatus.APPROVED 
+  }, [dataLoader, formManager, statusManager, schoolId, categoryId, t, toast]);
+  
+  // Enhanced save function
+  const handleSave = useCallback(async () => {
+    if (!statusManager.canEdit) {
+      const errorMessage = statusManager.readOnlyReason === 'approved' 
         ? t('cannotModifyApprovedData')
-        : entryStatus === DataEntryStatus.PENDING
+        : statusManager.readOnlyReason === 'pending'
         ? t('cannotModifyPendingData')
         : t('cannotEditInCurrentStatus');
       
-      console.warn('Save blocked by status permissions:', { entryStatus, canEdit: statusPermissions.canEdit });
       toast({
         title: t('error'),
         description: errorMessage,
         variant: 'destructive'
       });
-      console.groupEnd();
-      throw new Error(errorMessage);
-    }
-    
-    if (!category || !category.columns) {
-      console.warn('Cannot save - category or columns missing');
-      toast({
-        title: t('error'),
-        description: t('categoryDataMissing'),
-        variant: 'destructive'
-      });
-      console.groupEnd();
-      throw new Error('Category data missing');
-    }
-    
-    setIsSaving(true);
-    setErrors({});
-    
-    try {
-      // Create entries array from formData
-      const entries: EntryValue[] = [];
-      
-      // Loop through columns to create entries
-      category.columns.forEach(column => {
-        const value = formData[column.id];
-        if (value !== undefined) {
-          entries.push({
-            columnId: column.id,
-            value: value
-          });
-        }
-      });
-      
-      console.log('Saving entries:', entries.length);
-      
-      // Call enhanced service to save data
-      const result = await saveDataEntryForm(schoolId, categoryId, entries);
-      
-      if (result.success) {
-        setLastSaved(new Date().toISOString());
-        setHasUnsavedChanges(false);
-        
-        // ✅ YENİ: Update real-time timestamp to prevent self-conflicts
-        realTimeHook.updateTimestamp();
-        
-        // Update status if changed
-        if (result.status && result.status !== entryStatus) {
-          setEntryStatus(result.status as DataEntryStatus);
-          console.log('Status updated after save:', result.status);
-        }
-        
-        toast({
-          title: t('success'),
-          description: result.message || t('dataSavedSuccessfully'),
-        });
-        
-        console.log('Save successful');
-      } else {
-        // Handle errors properly
-        setErrors(result.errors || { general: result.error || 'Unknown error' });
-        
-        // Special handling for status-related errors
-        if (result.error?.includes('approved')) {
-          setEntryStatus(DataEntryStatus.APPROVED); // Update local status
-        }
-        
-        toast({
-          title: t('error'),
-          description: result.message || t('errorSavingData'),
-          variant: 'destructive'
-        });
-        console.error('Save failed:', result.error);
-        throw new Error(result.error || 'Error saving data');
-      }
-    } catch (error: any) {
-      console.error('Error saving data:', error);
-      toast({
-        title: t('error'),
-        description: error.message || t('errorSavingData'),
-        variant: 'destructive'
-      });
-      throw error;
-    } finally {
-      setIsSaving(false);
-      console.groupEnd();
-    }
-  }, [categoryId, schoolId, category, formData, statusPermissions, entryStatus, realTimeHook, t, toast]);
-
-  // ✅ ENHANCED: Submit with status transition validation
-  const handleSubmit = useCallback(async (): Promise<void> => {
-    console.group('handleSubmit - Enhanced');
-    console.log('Submit attempt:', { categoryId, schoolId, canSubmit: statusPermissions.canSubmit });
-    
-    if (!categoryId || categoryId === '' || !schoolId || schoolId === '') {
-      console.warn('Cannot submit - missing category ID or school ID');
-      toast({
-        title: t('error'),
-        description: t('missingRequiredData'),
-        variant: 'destructive'
-      });
-      console.groupEnd();
       return;
     }
     
-    // ✅ YENİ: Status permission check
-    if (!statusPermissions.canSubmit) {
-      const errorMessage = entryStatus === DataEntryStatus.APPROVED 
+    const result = await saveManager.saveAsDraft(formManager.formData);
+    
+    if (result.success && result.status) {
+      statusManager.updateStatus(result.status);
+    }
+    
+    return result;
+  }, [formManager, saveManager, statusManager, t, toast]);
+  
+  // Enhanced submit function
+  const handleSubmit = useCallback(async () => {
+    if (!statusManager.canSubmit) {
+      const errorMessage = statusManager.entryStatus === DataEntryStatus.APPROVED 
         ? t('dataAlreadyApproved')
-        : entryStatus === DataEntryStatus.PENDING
+        : statusManager.entryStatus === DataEntryStatus.PENDING
         ? t('dataAlreadyPending') 
         : t('cannotSubmitInCurrentStatus');
       
-      console.warn('Submit blocked by status permissions:', { entryStatus, canSubmit: statusPermissions.canSubmit });
       toast({
         title: t('error'),
         description: errorMessage,
         variant: 'destructive'
       });
-      console.groupEnd();
-      throw new Error(errorMessage);
+      return;
     }
     
-    // ✅ YENİ: Check if all required fields are filled
-    if (!statusPermissions.statusInfo.canTransitionTo.includes(DataEntryStatus.PENDING)) {
+    // Validate before submit
+    const validation = formManager.validateForm();
+    if (!validation.isValid) {
       toast({
-        title: t('error'),
-        description: t('pleaseCompleteAllRequiredFields'),
+        title: t('validationError'),
+        description: t('pleaseFixErrors'),
         variant: 'destructive'
       });
-      console.groupEnd();
-      throw new Error('Required fields not completed');
+      return;
     }
     
-    setIsSubmitting(true);
+    const result = await saveManager.submitForApproval(formManager.formData);
+    
+    if (result.success && result.status) {
+      statusManager.updateStatus(result.status);
+    }
+    
+    return result;
+  }, [formManager, saveManager, statusManager, t, toast]);
+  
+  // Manual refresh
+  const refreshData = useCallback(async () => {
+    setIsRefreshing(true);
     try {
-      // First save the form to ensure all data is up to date
-      console.log('Saving before submit...');
-      await handleSave();
+      await dataLoader.refreshData(schoolId, categoryId);
+      await loadData(true);
       
-      // ✅ YENİ: Enhanced submit with status transition
-      console.log('Executing submit with status transition...');
-      const result = await submitForApproval(schoolId, categoryId, 'Submitted for approval');
-      
-      if (result.success) {
-        // Update status from response
-        const newStatus = result.status as DataEntryStatus || DataEntryStatus.PENDING;
-        setEntryStatus(newStatus);
-        setHasUnsavedChanges(false);
-        
-        console.log('Submit successful, new status:', newStatus);
-        
-        toast({
-          title: t('success'),
-          description: result.message || t('dataSubmittedForApproval'),
-        });
-      } else {
-        // Handle errors properly
-        setErrors(result.errors || { general: result.error || 'Unknown error' });
-        
-        console.error('Submit failed:', result.error);
-        
-        // Special error messages for transition failures
-        let errorMessage = result.message || t('errorSubmittingData');
-        if (result.error?.includes('transition')) {
-          errorMessage = t('statusTransitionNotAllowed');
-        } else if (result.error?.includes('required')) {
-          errorMessage = t('pleaseCompleteAllRequiredFields');
-        }
-        
-        toast({
-          title: t('error'),
-          description: errorMessage,
-          variant: 'destructive'
-        });
-        throw new Error(result.error || 'Error submitting data');
-      }
+      toast({
+        title: t('success'),
+        description: t('dataRefreshed'),
+      });
     } catch (error: any) {
-      console.error('Error submitting data:', error);
+      console.error('Error refreshing data:', error);
       toast({
         title: t('error'),
-        description: error.message || t('errorSubmittingData'),
+        description: error.message || t('errorRefreshingData'),
         variant: 'destructive'
       });
-      throw error;
     } finally {
-      setIsSubmitting(false);
-      console.groupEnd();
+      setIsRefreshing(false);
     }
-  }, [categoryId, schoolId, statusPermissions, entryStatus, handleSave, t, toast]);
-
+  }, [dataLoader, loadData, schoolId, categoryId, t, toast]);
+  
   // Excel import handler
-  const handleImportData = useCallback(async (data: Record<string, any>): Promise<void> => {
+  const handleImportData = useCallback(async (data: Record<string, any>) => {
     if (!data || Object.keys(data).length === 0) {
       toast({
         title: t('error'),
         description: t('noDataToImport'),
         variant: 'destructive'
       });
-      throw new Error('No data to import');
+      return;
     }
-
+    
     try {
-      setFormData(prevData => ({ ...prevData, ...data }));
-      setHasUnsavedChanges(true);
-      
-      // Auto-save imported data
+      formManager.updateFormData({ ...formManager.formData, ...data });
       await handleSave();
       
       toast({
@@ -621,172 +233,99 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
         description: error.message || t('errorImportingData'),
         variant: 'destructive'
       });
-      throw error;
     }
-  }, [handleSave, t, toast]);
-
-  // Excel export template handler
-  const handleExportTemplate = useCallback(() => {
-    // This will be implemented with the Excel integration
-    console.log('Export template for category:', categoryId);
-  }, [categoryId]);
-
-  // Manual refresh function with loading indicator
-  const refreshData = useCallback(async (): Promise<void> => {
-    if (!categoryId || categoryId === '' || !schoolId || schoolId === '') {
-      console.warn('Cannot refresh - missing category ID or school ID');
-      // Don't show error toast to users when the app is just initializing
-      // Only show errors on explicit user actions
-      return;
+  }, [formManager, handleSave, t, toast]);
+  
+  // Load data when IDs change
+  useEffect(() => {
+    if (categoryId && schoolId) {
+      loadData();
     }
+  }, [categoryId, schoolId, loadData]);
+  
+  // Auto-save functionality
+  useEffect(() => {
+    if (!autoSave || !formManager.isDataModified || saveManager.isSaving) return;
     
-    setIsRefreshing(true);
-    try {
-      await loadData(true); // Force refresh
-      toast({
-        title: t('success'),
-        description: t('dataRefreshed'),
-      });
-    } catch (error: any) {
-      console.error('Error refreshing data:', error);
-      toast({
-        title: t('error'),
-        description: error.message || t('errorRefreshingData'),
-        variant: 'destructive'
-      });
-      setErrors(error.errors || { general: error.message || 'Unknown error' });
-      throw error;
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [categoryId, schoolId, loadData, t, toast]);
-
-  // ✅ YENİ: Status transition handler for approval/rejection actions
-  const handleStatusTransition = useCallback(async (
-    newStatus: DataEntryStatus,
-    comment?: string
-  ): Promise<void> => {
-    if (!user || !entryStatus) {
-      throw new Error('User or current status not available');
-    }
-    
-    console.group('handleStatusTransition');
-    console.log('Transition request:', { from: entryStatus, to: newStatus, comment });
-    
-    try {
-      // Get user role
-      const userRole = user.role;
-      if (!userRole) {
-        throw new Error('User role not found');
+    const timer = setTimeout(() => {
+      if (statusManager.canEdit) {
+        handleSave();
       }
-      
-      const transitionContext: TransitionContext = {
-        schoolId,
-        categoryId,
-        userId: user.id,
-        userRole,
-        comment
-      };
-      
-      // Execute transition
-      const result = await StatusTransitionService.executeTransition(
-        entryStatus,
-        newStatus,
-        transitionContext
-      );
-      
-      if (result.success) {
-        setEntryStatus(newStatus);
-        await loadData(true); // Refresh data
-        
-        console.log('Status transition successful:', newStatus);
-        
-        toast({
-          title: t('success'),
-          description: result.message || t('statusUpdatedSuccessfully'),
-        });
-      } else {
-        console.error('Status transition failed:', result.error);
-        throw new Error(result.error || 'Status transition failed');
-      }
-    } catch (error: any) {
-      console.error('Error in status transition:', error);
-      toast({
-        title: t('error'),
-        description: error.message || t('statusTransitionFailed'),
-        variant: 'destructive'
-      });
-      throw error;
-    } finally {
-      console.groupEnd();
-    }
-  }, [schoolId, categoryId, entryStatus, user, loadData, t, toast]);
+    }, 30000); // Auto-save after 30 seconds
+    
+    return () => clearTimeout(timer);
+  }, [autoSave, formManager.isDataModified, saveManager.isSaving, statusManager.canEdit, handleSave]);
   
   return {
-    // Core data
-    formData,
-    setFormData,
+    // Core data from form manager
+    formData: formManager.formData,
+    isDataModified: formManager.isDataModified,
+    validationErrors: formManager.validationErrors,
+    entries: formManager.entries,
     
     // Loading states
-    isLoading,
-    isSaving,
-    isSubmitting,
+    isLoading: dataLoader.isLoading,
+    isSaving: saveManager.isSaving,
+    isSubmitting: saveManager.isSubmitting,
     isRefreshing,
     
-    // Status and errors
-    errors,
-    entryStatus,
-    lastSaved,
-    hasUnsavedChanges,
+    // Status and permissions
+    entryStatus: statusManager.entryStatus,
+    statusPermissions: statusManager.statusPermissions,
+    canEdit: statusManager.canEdit,
+    canSubmit: statusManager.canSubmit,
+    canApprove: statusManager.canApprove,
+    canReject: statusManager.canReject,
+    readOnly: statusManager.readOnly,
+    readOnlyReason: statusManager.readOnlyReason,
     
-    // ✅ YENİ: Status-based permissions
-    statusPermissions,
-    canEdit: statusPermissions.canEdit,
-    canSubmit: statusPermissions.canSubmit,
-    canApprove: statusPermissions.canApprove,
-    canReject: statusPermissions.canReject,
-    readOnly: statusPermissions.readOnly,
-    readOnlyReason: !statusPermissions.canEdit ? 
-      (entryStatus === DataEntryStatus.APPROVED ? 'approved' : 
-       entryStatus === DataEntryStatus.PENDING ? 'pending' : 'noPermission') : null,
+    // Form actions
+    handleFormDataChange: formManager.updateFormData,
+    handleFieldChange: formManager.handleFieldChange,
+    validateForm: formManager.validateForm,
+    resetForm: formManager.resetForm,
     
-    // Core actions
-    handleFormDataChange,
+    // Save actions
     handleSave,
     handleSubmit,
-    handleExportTemplate,
     handleImportData,
+    
+    // Status actions
+    handleStatusTransition: statusManager.executeTransition,
+    handleApprove: statusManager.approveDraft,
+    handleReject: statusManager.rejectEntry,
+    handleReset: statusManager.resetToDraft,
+    
+    // Data actions
     refreshData,
+    loadData,
     
-    // ✅ YENİ: Status transition actions
-    handleStatusTransition,
-    handleApprove: (comment?: string) => handleStatusTransition(DataEntryStatus.APPROVED, comment),
-    handleReject: (reason: string) => handleStatusTransition(DataEntryStatus.REJECTED, reason),
-    handleReset: () => handleStatusTransition(DataEntryStatus.DRAFT, 'Reset to draft'),
+    // Status info
+    statusDisplay: statusManager.statusDisplay,
+    completionStatus: formManager.completionStatus,
+    lastSaved,
     
-    // ✅ YENİ: Real-time collaboration
-    realTime: {
+    // Real-time (if enabled)
+    realTime: enableRealTime ? {
       isConnected: realTimeHook.isConnected,
       activeUsers: realTimeHook.activeUsers,
       activeUserCount: realTimeHook.activeUserCount,
-      connectionStatus: realTimeHook.connectionStatus,
-      reconnect: realTimeHook.reconnect,
-      getStats: realTimeHook.getConnectionStats
-    },
+      connectionStatus: realTimeHook.connectionStatus
+    } : undefined,
     
-    // ✅ YENİ: Conflict resolution
-    conflict: {
-      showDialog: showConflictDialog,
-      conflictData,
-      serverData,
-      localChanges: localChangesSnapshot,
-      onResolve: handleConflictResolution,
-      onCancel: () => {
-        setShowConflictDialog(false);
-        setConflictData([]);
-        setServerData({});
-        setLocalChangesSnapshot({});
-      }
-    }
+    // Cache utilities (if enabled)
+    cache: enableCache ? {
+      stats: cacheManager.getCacheStats(),
+      clear: cacheManager.clearCache,
+      isValid: cacheManager.isCacheValid
+    } : undefined,
+    
+    // Legacy compatibility
+    errors: formManager.validationErrors,
+    hasUnsavedChanges: formManager.isDataModified,
+    setFormData: formManager.updateFormData,
+    error: dataLoader.error
   };
 };
+
+export default useDataEntryManager;
