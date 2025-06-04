@@ -24,3 +24,13 @@ export function createLookupMap<T>(items: T[], keyProperty: keyof T, valueProper
     return acc;
   }, {} as Record<string, any>);
 }
+
+export function safeArrayFind<T>(array: T[], predicate: (item: T) => boolean): T | undefined {
+  if (!Array.isArray(array)) return undefined;
+  return array.find(predicate);
+}
+
+export function safeGetByUUID<T extends { id: string }>(items: T[], id: string): T | undefined {
+  if (!Array.isArray(items) || !id) return undefined;
+  return items.find(item => item.id === id);
+}

@@ -51,11 +51,16 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
             </FormControl>
             <SelectContent>
               <SelectItem value="NONE">{t('selectSchool')}</SelectItem>
-              {filteredSchools.map((school) => (
-                <SelectItem key={school.id} value={school.id}>
-                  {school.name}
-                </SelectItem>
-              ))}
+              {filteredSchools.map((school) => {
+                // Ensure school ID is never empty
+                const schoolId = school.id && school.id.trim() ? school.id : `school-${school.name || 'unknown'}`;
+                
+                return (
+                  <SelectItem key={schoolId} value={schoolId}>
+                    {school.name || 'Unknown School'}
+                  </SelectItem>
+                );
+              })}
               {filteredSchools.length === 0 && (
                 <div className="p-2 text-center text-sm text-muted-foreground">
                   {t('noSchoolsFound') || 'Məktəb tapılmadı'}

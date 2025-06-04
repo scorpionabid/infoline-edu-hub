@@ -40,10 +40,8 @@ function RegionSection<TFieldValues extends FieldValues>({
               <SelectContent>
                 <SelectItem value="NONE">{t('selectRegion')}</SelectItem>
                 {regions.map((region) => {
-                  // Ensure region has valid ID and value is never empty
-                  const regionId = region.id && String(region.id).trim() 
-                    ? String(region.id).trim() 
-                    : `region-${region.name || Math.random().toString(36).substring(7)}`;
+                  // Ensure region ID is never empty
+                  const regionId = region.id && region.id.trim() ? region.id : `region-${region.name || 'unknown'}`;
                   
                   return (
                     <SelectItem key={regionId} value={regionId}>

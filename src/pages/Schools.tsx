@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useLanguageSafe } from '@/context/LanguageContext';
@@ -41,7 +42,9 @@ const Schools = () => {
   const regionNames = React.useMemo(() => {
     const regionMap: { [key: string]: string } = {};
     regions?.forEach(region => {
-      regionMap[region.id] = region.name;
+      // Ensure region ID is never empty
+      const regionId = region.id && region.id.trim() ? region.id : `region-${region.name || 'unknown'}`;
+      regionMap[regionId] = region.name || 'Unknown Region';
     });
     return regionMap;
   }, [regions]);
@@ -49,7 +52,9 @@ const Schools = () => {
   const sectorNames = React.useMemo(() => {
     const sectorMap: { [key: string]: string } = {};
     sectors?.forEach(sector => {
-      sectorMap[sector.id] = sector.name;
+      // Ensure sector ID is never empty
+      const sectorId = sector.id && sector.id.trim() ? sector.id : `sector-${sector.name || 'unknown'}`;
+      sectorMap[sectorId] = sector.name || 'Unknown Sector';
     });
     return sectorMap;
   }, [sectors]);

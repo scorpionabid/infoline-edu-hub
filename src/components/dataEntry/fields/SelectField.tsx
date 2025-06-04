@@ -38,44 +38,39 @@ const SelectField: React.FC<SelectFieldProps> = ({
       // Handle array of options
       if (Array.isArray(column.options)) {
         return column.options
-          .filter(option => option !== null && option !== undefined) // Filter out null/undefined options
+          .filter(option => option !== null && option !== undefined)
           .map((option, index) => {
-            // Create a stable, unique key that doesn't rely on Date.now()
             const uniqueKey = `option-${index}-${column.id}`;
             
-            // Handle string options
             if (typeof option === 'string') {
-              // Ensure value is never empty string
-              const value = option && String(option).trim() ? String(option).trim() : `default-${uniqueKey}`;
+              // Ensure value is never empty string - use fallback
+              const optionValue = option && option.trim() ? option : `fallback-${uniqueKey}`;
               return { 
                 id: uniqueKey,
-                value: value,
-                label: option || value
+                value: optionValue,
+                label: option || optionValue
               };
             } 
-            
-            // Handle object options
             else if (typeof option === 'object' && option !== null) {
               const id = option.id || uniqueKey;
-              // Ensure value is never empty string
-              const value = (option.value && String(option.value).trim()) || id || `default-${uniqueKey}`;
+              // Ensure value is never empty string - use fallback
+              const optionValue = (option.value && String(option.value).trim()) || `fallback-${uniqueKey}`;
               return {
                 id,
-                value,
-                label: option.label || value
+                value: optionValue,
+                label: option.label || optionValue
               };
             } 
-            
-            // Fallback for unexpected types
             else {
-              const value = String(option || '').trim() || `default-${uniqueKey}`;
+              const optionValue = String(option || '').trim() || `fallback-${uniqueKey}`;
               return {
                 id: uniqueKey,
-                value: value,
-                label: value
+                value: optionValue,
+                label: optionValue
               };
             }
-          });
+          })
+          .filter(option => option.value && option.value.trim() !== ''); // Final filter to remove any empty values
       }
       
       // Handle string-formatted options (JSON)
@@ -83,20 +78,22 @@ const SelectField: React.FC<SelectFieldProps> = ({
         try {
           const parsedOptions = JSON.parse(column.options);
           if (Array.isArray(parsedOptions)) {
-            return parsedOptions.map((option, index) => {
-              const uniqueKey = `option-${index}-${column.id}`;
-              if (typeof option === 'string') {
-                const value = option && String(option).trim() ? String(option).trim() : `default-${uniqueKey}`;
-                return { id: uniqueKey, value: value, label: option || value };
-              } else {
-                const value = (option.value && String(option.value).trim()) || option.id || uniqueKey;
-                return { 
-                  id: option.id || uniqueKey,
-                  value: value, 
-                  label: option.label || value
-                };
-              }
-            });
+            return parsedOptions
+              .map((option, index) => {
+                const uniqueKey = `option-${index}-${column.id}`;
+                if (typeof option === 'string') {
+                  const optionValue = option && option.trim() ? option : `fallback-${uniqueKey}`;
+                  return { id: uniqueKey, value: optionValue, label: option || optionValue };
+                } else {
+                  const optionValue = (option.value && String(option.value).trim()) || `fallback-${uniqueKey}`;
+                  return { 
+                    id: option.id || uniqueKey,
+                    value: optionValue, 
+                    label: option.label || optionValue
+                  };
+                }
+              })
+              .filter(option => option.value && option.value.trim() !== '');
           }
           return [];
         } catch (parseErr) {
@@ -115,13 +112,12 @@ const SelectField: React.FC<SelectFieldProps> = ({
   // Ensure value is always a valid string, never empty
   const safeValue = React.useMemo(() => {
     if (value === undefined || value === null || value === '') {
-      return 'NONE'; // Default placeholder value
+      return 'NONE';
     }
     return String(value);
   }, [value]);
 
   const handleValueChange = (newValue: string) => {
-    // Convert NONE back to empty string for the form
     onValueChange(newValue === 'NONE' ? '' : newValue);
   };
 
@@ -135,25 +131,22 @@ const SelectField: React.FC<SelectFieldProps> = ({
         <SelectValue placeholder={column.placeholder || 'Select an option'} />
       </SelectTrigger>
       <SelectContent>
-        {/* Always add a placeholder option */}
         <SelectItem value="NONE">
           {column.placeholder || 'Select an option'}
         </SelectItem>
         {options.length > 0 ? (
           options.map((option) => {
-            // Safety check for option - ensure value is never empty and is always a string
-            if (!option || !option.value || String(option.value).trim() === '') {
+            // Double-check that value is not empty before rendering
+            if (!option || !option.value || option.value.trim() === '') {
               return null;
             }
-            
-            const safeValue = String(option.value).trim();
             
             return (
               <SelectItem 
                 key={`${column.id}-${option.id}`} 
-                value={safeValue}
+                value={option.value}
               >
-                {option.label || safeValue || ''}
+                {option.label || option.value}
               </SelectItem>
             );
           })

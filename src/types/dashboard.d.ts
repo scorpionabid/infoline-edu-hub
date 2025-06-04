@@ -45,6 +45,14 @@ export interface SchoolStat {
   lastUpdated: string;
 }
 
+export interface PendingApproval {
+  id: string;
+  schoolName: string;
+  categoryName: string;
+  date: string;
+  status: string;
+}
+
 export interface DashboardFormStats {
   totalForms: number;
   completedForms: number;
