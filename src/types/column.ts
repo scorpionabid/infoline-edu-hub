@@ -8,7 +8,11 @@ export enum ColumnType {
   CHECKBOX = 'checkbox',
   SWITCH = 'switch',
   DATE = 'date',
-  EMAIL = 'email'
+  EMAIL = 'email',
+  PHONE = 'phone',
+  URL = 'url',
+  PASSWORD = 'password',
+  FILE = 'file'
 }
 
 export interface Column {
@@ -49,6 +53,7 @@ export interface ColumnFormValues {
   options?: ColumnOption[];
   validation?: any;
   order_index: number;
+  category_id?: string;
 }
 
 export interface ColumnTypeDefinition {

@@ -1,133 +1,104 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Column, ColumnType, ColumnOption, ColumnFormValues } from '@/types/column';
+import { ColumnType, ColumnFormValues } from '@/types/column';
 
-const columnFormSchema = z.object({
-  name: z.string().min(1, 'Column name is required'),
-  type: z.string().min(1, 'Column type is required'),
-  is_required: z.boolean().default(false),
+const columnSchema = z.object({
+  name: z.string().min(1, 'Ad tələb olunur'),
+  type: z.nativeEnum(ColumnType),
+  is_required: z.boolean(),
   placeholder: z.string().optional(),
   help_text: z.string().optional(),
+  description: z.string().optional(),
+  section: z.string().optional(),
   default_value: z.string().optional(),
-  order_index: z.number().optional(),
-  category_id: z.string().optional(),
   options: z.array(z.object({
-    id: z.string().optional(),
+    value: z.string(),
     label: z.string(),
-    value: z.string()
+    disabled: z.boolean().optional(),
+    id: z.string().optional(),
   })).optional(),
-  validation: z.any().optional()
+  validation: z.any().optional(),
+  order_index: z.number(),
+  category_id: z.string().optional(),
 });
 
-interface UseColumnFormProps {
-  column?: Column | null;
-  categoryId?: string;
-  onSave: (columnData: any) => Promise<boolean>;
+export interface UseColumnFormProps {
+  defaultValues?: Partial<ColumnFormValues>;
+  onSubmit?: (data: ColumnFormValues) => void;
 }
 
-export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps) => {
-  const isEditMode = !!column;
-  const [selectedType, setSelectedType] = useState<ColumnType>(column?.type || 'text');
-  const [options, setOptions] = useState<ColumnOption[]>(column?.options || []);
-  const [newOption, setNewOption] = useState<Partial<ColumnOption>>({ label: '', value: '' });
-  const [isLoading, setIsLoading] = useState(false);
-
+export const useColumnForm = ({ defaultValues, onSubmit }: UseColumnFormProps = {}) => {
+  const [options, setOptions] = useState<Array<{ value: string; label: string }>>([]);
+  
   const form = useForm<ColumnFormValues>({
-    resolver: zodResolver(columnFormSchema),
+    resolver: zodResolver(columnSchema),
     defaultValues: {
-      name: column?.name || '',
-      type: column?.type || 'text',
-      is_required: column?.is_required || false,
-      placeholder: column?.placeholder || '',
-      help_text: column?.help_text || '',
-      default_value: column?.default_value || '',
-      order_index: column?.order_index || 0,
-      category_id: categoryId || column?.category_id,
-      options: column?.options || [],
-      validation: column?.validation || {}
-    }
+      name: '',
+      type: defaultValues?.type || ColumnType.TEXT,
+      is_required: false,
+      placeholder: '',
+      help_text: '',
+      description: '',
+      section: '',
+      default_value: '',
+      options: [],
+      order_index: 0,
+      category_id: defaultValues?.category_id || '',
+      ...defaultValues,
+    },
   });
 
-  // Update form when column changes
-  useEffect(() => {
-    if (column) {
-      form.reset({
-        name: column.name,
-        type: column.type,
-        is_required: column.is_required,
-        placeholder: column.placeholder || '',
-        help_text: column.help_text || '',
-        default_value: column.default_value || '',
-        order_index: column.order_index || 0,
-        category_id: column.category_id,
-        options: column.options || [],
-        validation: column.validation || {}
-      });
-      setSelectedType(column.type);
-      setOptions(column.options || []);
-    }
-  }, [column, form]);
+  const selectedType = form.watch('type');
 
-  const onTypeChange = (newType: ColumnType) => {
-    setSelectedType(newType);
-    form.setValue('type', newType);
+  const handleSubmit = (data: ColumnFormValues) => {
+    const formData = {
+      ...data,
+      type: selectedType,
+    };
+
+    if (onSubmit) {
+      onSubmit(formData);
+    }
+  };
+
+  const updateFormData = (data: Partial<ColumnFormValues>) => {
+    Object.entries(data).forEach(([key, value]) => {
+      form.setValue(key as keyof ColumnFormValues, value);
+    });
   };
 
   const addOption = () => {
-    if (newOption.label && newOption.value) {
-      const optionToAdd: ColumnOption = {
-        id: String(Date.now()),
-        label: newOption.label,
-        value: newOption.value
-      };
-      
-      const updatedOptions = [...options, optionToAdd];
-      setOptions(updatedOptions);
-      form.setValue('options', updatedOptions);
-      setNewOption({ label: '', value: '' });
-    }
+    const newOptions = [...options, { value: '', label: '' }];
+    setOptions(newOptions);
+    form.setValue('options', newOptions);
   };
 
-  const removeOption = (optionToRemove: ColumnOption) => {
-    const updatedOptions = options.filter(opt => opt.id !== optionToRemove.id);
-    setOptions(updatedOptions);
-    form.setValue('options', updatedOptions);
+  const removeOption = (index: number) => {
+    const newOptions = options.filter((_, i) => i !== index);
+    setOptions(newOptions);
+    form.setValue('options', newOptions);
   };
 
-  const onSubmit = async (values: ColumnFormValues) => {
-    setIsLoading(true);
-    try {
-      // Convert form values to proper format
-      const columnData = {
-        ...values,
-        validation: values.validation || {},
-        options: values.options || []
-      };
-
-      const success = await onSave(columnData);
-      return success;
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
+  const updateOption = (index: number, field: 'value' | 'label', value: string) => {
+    const newOptions = [...options];
+    newOptions[index][field] = value;
+    setOptions(newOptions);
+    form.setValue('options', newOptions);
   };
 
   return {
     form,
-    selectedType,
-    onTypeChange,
     options,
-    setOptions,
+    selectedType,
+    handleSubmit: form.handleSubmit(handleSubmit),
+    updateFormData,
     addOption,
     removeOption,
-    newOption,
-    setNewOption,
-    onSubmit,
-    isEditMode,
-    isLoading
+    updateOption,
+    isValid: form.formState.isValid,
+    errors: form.formState.errors,
   };
 };

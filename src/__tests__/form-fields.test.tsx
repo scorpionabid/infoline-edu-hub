@@ -6,15 +6,17 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { FormFields } from '../components/dataEntry/core';
 import { FormField } from '../components/ui/form';
 import FieldRendererSimple from '../components/dataEntry/fields/FieldRendererSimple';
-import type { Column } from '../types/column';
+import type { Column, ColumnType } from '../types/column';
 
 // Test üçün Column mock data yaradırıq
 const createMockColumn = (overrides: Partial<Column> = {}): Column => ({
   id: 'test-column-id',
   name: 'Test Column',
-  type: 'text',
+  type: ColumnType.TEXT,
   is_required: false,
   category_id: 'test-category-id',
+  order_index: 1,
+  status: 'active',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   ...overrides
@@ -114,7 +116,7 @@ describe('FieldRendererSimple Component Tests', () => {
     // Test simple props without form context (should render test component)
     render(
       <FieldRendererSimple
-        type="text"
+        type={ColumnType.TEXT}
         value=""
         onChange={handleChange}
         disabled={false}
@@ -134,7 +136,7 @@ describe('FieldRendererSimple Component Tests', () => {
     
     render(
       <FieldRendererSimple
-        type="text"
+        type={ColumnType.TEXT}
         value=""
         onChange={handleChange}
         disabled={false}
@@ -152,7 +154,7 @@ describe('FieldRendererSimple Component Tests', () => {
     
     render(
       <FieldRendererSimple
-        type="text"
+        type={ColumnType.TEXT}
         value=""
         onChange={handleChange}
         disabled={true}
@@ -170,7 +172,7 @@ describe('FieldRendererSimple Component Tests', () => {
     
     render(
       <FieldRendererSimple
-        type="text"
+        type={ColumnType.TEXT}
         value="initial"
         onChange={handleChange}
         disabled={false}

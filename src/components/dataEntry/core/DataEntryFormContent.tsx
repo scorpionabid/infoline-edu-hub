@@ -54,8 +54,6 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
     );
   }
   
-  // formatColumns funksiyasını faylın yuxarısından idxal etdik
-  
   // Ensure columns is an array and filter out any invalid entries
   const safeColumns = React.useMemo(() => {
     try {
@@ -136,9 +134,6 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
           return; // Skip invalid columns
         }
         
-        // Generate a stable ID to use as key
-        const stableKey = `${column.id}`;
-        
         // Safely determine section with fallback to general
         const section = column.section && typeof column.section === 'string' && column.section.trim() !== '' 
           ? column.section.trim().toLowerCase() 
@@ -149,11 +144,8 @@ const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({ category, r
           sectionMap[section] = [];
         }
         
-        // Add column to its section
-        sectionMap[section].push({
-          ...column,
-          key: stableKey // Add a stable key for React rendering
-        });
+        // Add column to its section without modifying the original column
+        sectionMap[section].push(column);
       });
       
       return sectionMap;
