@@ -1,82 +1,87 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-interface UseImageOptimizationOptions {
-  quality?: number;
-  format?: 'webp' | 'jpeg' | 'png';
+interface ImageOptimizationOptions {
   lazy?: boolean;
   placeholder?: string;
+  quality?: number;
+  fallback?: string;
 }
 
-/**
- * Hook for optimizing image loading and display
- */
 export const useImageOptimization = (
   src: string,
-  options: UseImageOptimizationOptions = {}
+  options: ImageOptimizationOptions = {}
 ) => {
-  const { quality = 80, format = 'webp', lazy = true, placeholder } = options;
-  const [loaded, setLoaded] = useState(false);
+  const {
+    lazy = true,
+    placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PC9zdmc+',
+    quality = 85,
+    fallback = '/images/default-placeholder.svg'
+  } = options;
+
+  const [imageSrc, setImageSrc] = useState(lazy ? placeholder : src);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [inView, setInView] = useState(!lazy);
-  
-  // Optimize image URL (if using a CDN that supports query parameters)
-  const optimizedSrc = useCallback(() => {
-    if (!src) return '';
-    
-    const url = new URL(src, window.location.origin);
-    
-    // Add optimization parameters (adjust based on your CDN)
-    if (quality !== 80) {
-      url.searchParams.set('quality', quality.toString());
-    }
-    
-    if (format !== 'jpeg') {
-      url.searchParams.set('format', format);
-    }
-    
-    return url.toString();
-  }, [src, quality, format]);
-  
-  // Preload image
+  const imgRef = useRef<HTMLImageElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
   useEffect(() => {
-    if (!inView || !src) return;
-    
-    const img = new Image();
-    
-    img.onload = () => setLoaded(true);
-    img.onerror = () => setError(true);
-    img.src = optimizedSrc();
-    
-    return () => {
-      img.onload = null;
-      img.onerror = null;
-    };
-  }, [inView, src, optimizedSrc]);
-  
-  // Intersection observer for lazy loading
-  const ref = useCallback((node: HTMLElement | null) => {
-    if (!lazy || !node) return;
-    
+    if (!lazy) {
+      loadImage(src);
+      return;
+    }
+
+    // Intersection Observer for lazy loading
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          observer.disconnect();
-        }
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            loadImage(src);
+            observer.unobserve(entry.target);
+          }
+        });
       },
       { threshold: 0.1 }
     );
+
+    observerRef.current = observer;
+
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [src, lazy]);
+
+  const loadImage = (source: string) => {
+    setIsLoading(true);
+    setError(false);
+
+    const img = new Image();
     
-    observer.observe(node);
-    
-    return () => observer.disconnect();
-  }, [lazy]);
-  
+    img.onload = () => {
+      setImageSrc(source);
+      setIsLoading(false);
+    };
+
+    img.onerror = () => {
+      setError(true);
+      setImageSrc(fallback);
+      setIsLoading(false);
+    };
+
+    img.src = source;
+  };
+
   return {
-    src: loaded ? optimizedSrc() : placeholder,
-    loaded,
+    imgRef,
+    src: imageSrc,
+    isLoading,
     error,
-    ref,
+    reload: () => loadImage(src)
   };
 };

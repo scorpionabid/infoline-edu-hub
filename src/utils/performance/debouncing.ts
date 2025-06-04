@@ -1,5 +1,82 @@
+import { useCallback, useRef, useEffect, useState } from 'react';
 
-import { useCallback, useRef } from 'react';
+/**
+ * Debounce function that delays execution until after a specified time
+ */
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout;
+  
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
+
+/**
+ * Throttle function that limits execution to once per specified time period
+ */
+export function throttle<T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let lastFunc: NodeJS.Timeout;
+  let lastRan: number;
+  
+  return (...args: Parameters<T>) => {
+    if (!lastRan) {
+      func(...args);
+      lastRan = Date.now();
+    } else {
+      clearTimeout(lastFunc);
+      lastFunc = setTimeout(() => {
+        if ((Date.now() - lastRan) >= limit) {
+          func(...args);
+          lastRan = Date.now();
+        }
+      }, limit - (Date.now() - lastRan));
+    }
+  };
+}
+
+/**
+ * React hook for debounced value
+ */
+export function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+/**
+ * React hook for debounced callback
+ */
+export function useDebouncedCallback<T extends (...args: any[]) => any>(
+  callback: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
+
+  return useCallback(
+    debounce((...args: Parameters<T>) => {
+      callbackRef.current(...args);
+    }, delay),
+    [delay]
+  );
+}
 
 /**
  * Enhanced debounce hook with immediate execution option

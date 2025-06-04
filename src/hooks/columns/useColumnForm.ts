@@ -1,122 +1,65 @@
 
-import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Column, ColumnType, ColumnFormValues, ColumnOption } from '@/types/column';
-import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
+import { ColumnFormValues, Column, UseColumnFormProps } from '@/types/column';
+import { useColumnMutation } from '@/hooks/api/columns/useColumnsQuery';
 
-const columnSchema = z.object({
-  name: z.string().min(1, 'Ad tələb olunur'),
-  type: z.nativeEnum(ColumnType),
-  is_required: z.boolean(),
+const columnFormSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  type: z.string().min(1, 'Type is required'),
+  category_id: z.string().min(1, 'Category is required'),
   placeholder: z.string().optional(),
   help_text: z.string().optional(),
-  description: z.string().optional(),
-  section: z.string().optional(),
+  is_required: z.boolean().default(true),
   default_value: z.string().optional(),
-  options: z.array(z.object({
-    value: z.string(),
-    label: z.string(),
-    disabled: z.boolean().optional(),
-    id: z.string().optional(),
-  })).optional(),
+  options: z.any().optional(),
   validation: z.any().optional(),
-  order_index: z.number(),
-  category_id: z.string().optional(),
+  order_index: z.number().default(0),
+  status: z.enum(['active', 'inactive']).default('active'),
 });
 
-interface UseColumnFormProps {
-  column?: Column | null;
-  categoryId?: string;
-  onSave?: (data: ColumnFormValues) => Promise<boolean>;
-}
-
-export const useColumnForm = ({ column, categoryId, onSave }: UseColumnFormProps) => {
-  const { t } = useLanguage();
-  const [isLoading, setIsLoading] = useState(false);
-  const [options, setOptions] = useState<ColumnOption[]>([]);
-  const [newOption, setNewOption] = useState({ value: '', label: '' });
-  
-  const isEditMode = !!column;
+export const useColumnForm = ({ column, categoryId, onSuccess }: UseColumnFormProps) => {
+  const { createMutation, updateMutation } = useColumnMutation();
   
   const form = useForm<ColumnFormValues>({
-    resolver: zodResolver(columnSchema),
+    resolver: zodResolver(columnFormSchema),
     defaultValues: {
       name: column?.name || '',
-      type: column?.type || ColumnType.TEXT,
-      is_required: column?.is_required || false,
+      type: column?.type || 'text',
+      category_id: categoryId,
       placeholder: column?.placeholder || '',
       help_text: column?.help_text || '',
-      description: column?.description || '',
-      section: column?.section || '',
+      is_required: column?.is_required ?? true,
       default_value: column?.default_value || '',
       options: column?.options || [],
+      validation: column?.validation || {},
       order_index: column?.order_index || 0,
-      category_id: column?.category_id || categoryId || '',
+      status: column?.status || 'active',
     },
   });
 
-  const selectedType = form.watch('type');
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  useEffect(() => {
-    if (column?.options) {
-      setOptions(column.options);
-    }
-  }, [column]);
-
-  const onTypeChange = (type: ColumnType) => {
-    form.setValue('type', type);
-  };
-
-  const addOption = () => {
-    if (newOption.value && newOption.label) {
-      const updatedOptions = [...options, { ...newOption, id: crypto.randomUUID() }];
-      setOptions(updatedOptions);
-      form.setValue('options', updatedOptions);
-      setNewOption({ value: '', label: '' });
-    }
-  };
-
-  const removeOption = (id: string) => {
-    const updatedOptions = options.filter(option => option.id !== id);
-    setOptions(updatedOptions);
-    form.setValue('options', updatedOptions);
-  };
-
-  const onSubmit = async (data: ColumnFormValues): Promise<boolean> => {
-    if (!onSave) return false;
-    
+  const onSubmit = async (data: ColumnFormValues) => {
     try {
-      setIsLoading(true);
-      
-      const formData = {
-        ...data,
-        options: options.length > 0 ? options : undefined,
-        category_id: data.category_id || categoryId || '',
-      };
-
-      const success = await onSave(formData);
-      return success;
+      if (column) {
+        await updateMutation.mutateAsync({ ...column, ...data });
+        toast.success('Column updated successfully');
+      } else {
+        await createMutation.mutateAsync(data);
+        toast.success('Column created successfully');
+      }
+      onSuccess();
     } catch (error) {
-      console.error('Error saving column:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
+      toast.error('Failed to save column');
     }
   };
 
   return {
     form,
     isLoading,
-    selectedType,
-    onTypeChange,
-    options,
-    addOption,
-    removeOption,
-    newOption,
-    setNewOption,
-    onSubmit,
-    isEditMode,
+    onSubmit: form.handleSubmit(onSubmit),
   };
 };

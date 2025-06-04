@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { Column, ColumnFormValues } from '@/types/column';
+import { Column, ColumnFormValues, ColumnOption } from '@/types/column';
 import ColumnBasicFields from './columnDialog/ColumnBasicFields';
 import ColumnTypeSelector from './columnDialog/ColumnTypeSelector';
 import ColumnAdvancedSettings from './columnDialog/ColumnAdvancedSettings';
@@ -26,8 +26,8 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
   onSave
 }) => {
   const { t } = useLanguage();
-  const [options, setOptions] = useState<Array<{ value: string; label: string }>>(
-    column?.options ? JSON.parse(JSON.stringify(column.options)) : []
+  const [options, setOptions] = useState<ColumnOption[]>(
+    column?.options || []
   );
   const [newOption, setNewOption] = useState({ value: '', label: '' });
 
@@ -52,16 +52,17 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
 
   const handleAddOption = () => {
     if (newOption.value && newOption.label) {
-      setOptions(prev => [...prev, newOption]);
+      const updatedOptions = [...options, newOption];
+      setOptions(updatedOptions);
       setNewOption({ value: '', label: '' });
-      form.setValue('options', JSON.stringify(options.concat([newOption])));
+      form.setValue('options', updatedOptions);
     }
   };
 
   const handleRemoveOption = (index: number) => {
     const updatedOptions = options.filter((_, i) => i !== index);
     setOptions(updatedOptions);
-    form.setValue('options', JSON.stringify(updatedOptions));
+    form.setValue('options', updatedOptions);
   };
 
   const selectedType = form.watch('type');

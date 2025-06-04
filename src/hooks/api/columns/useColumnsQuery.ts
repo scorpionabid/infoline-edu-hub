@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnFormValues, ColumnType } from '@/types/column';
+import { Column, ColumnFormValues, ColumnType, ColumnOption } from '@/types/column';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useColumnsQuery = (categoryId: string) => {
@@ -26,7 +26,7 @@ export const useColumnsQuery = (categoryId: string) => {
         help_text: item.help_text,
         is_required: item.is_required,
         default_value: item.default_value,
-        options: item.options,
+        options: typeof item.options === 'string' ? JSON.parse(item.options) : (item.options as ColumnOption[] || []),
         validation: item.validation,
         order_index: item.order_index,
         status: item.status as 'active' | 'inactive',
@@ -42,9 +42,15 @@ export const useColumnMutation = () => {
   const queryClient = useQueryClient();
 
   const createColumn = async (column: ColumnFormValues): Promise<Column> => {
+    const columnData = {
+      ...column,
+      options: column.options ? JSON.stringify(column.options) : null,
+      validation: column.validation ? JSON.stringify(column.validation) : null,
+    };
+
     const { data, error } = await supabase
       .from('columns')
-      .insert([column])
+      .insert([columnData])
       .select()
       .single();
 
@@ -53,9 +59,15 @@ export const useColumnMutation = () => {
   };
 
   const updateColumn = async (column: Column): Promise<Column> => {
+    const columnData = {
+      ...column,
+      options: column.options ? JSON.stringify(column.options) : null,
+      validation: column.validation ? JSON.stringify(column.validation) : null,
+    };
+
     const { data, error } = await supabase
       .from('columns')
-      .update(column)
+      .update(columnData)
       .eq('id', column.id)
       .select()
       .single();
