@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
@@ -43,8 +44,7 @@ export const useDataEntry = ({
   
   const validation = useValidation(categories, entries);
   
-  // Təkmilləşdirilmiş form data işləmə funksiyaları
-  // HTML event-ləri üçün handleInputChange
+  // Improved form data management functions
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     if (!event || !event.target) {
       console.warn('handleInputChange: Invalid event object');
@@ -57,7 +57,6 @@ export const useDataEntry = ({
       return;
     }
     
-    // Əvvəlcə daha ətraflı loq çıxaraq
     console.group('handleInputChange call');
     console.log('Input event received:', { 
       name, 
@@ -66,7 +65,6 @@ export const useDataEntry = ({
       currentFormData: formData
     });
     
-    // Form data-nı atomik əməliyyatla yeniləyirik
     setFormData(prev => {
       const newData = {
         ...prev,
@@ -76,17 +74,10 @@ export const useDataEntry = ({
       return newData;
     });
     
-    // Dəyişikliyi qeyd edirik
     setIsDataModified(true);
     console.groupEnd();
-    
-    // Debug modüldə form state-i loq edirik
-    setTimeout(() => {
-      console.log('Updated form state after handleInputChange:', formData);
-    }, 100);
   }, [formData]);
   
-  // Dirək dəyər üçün handleChange - FieldRendererSimple komponentindən çağrıla bilər
   const handleChange = useCallback((name: string, value: any) => {
     if (!name) {
       console.warn('handleChange: Missing name parameter');
@@ -100,7 +91,6 @@ export const useDataEntry = ({
       currentFormData: formData
     });
     
-    // Form data-nı yeniləyirik
     setFormData(prev => {
       const newData = {
         ...prev,
@@ -110,12 +100,11 @@ export const useDataEntry = ({
       return newData;
     });
     
-    // Dəyişikliyi qeyd edirik
     setIsDataModified(true);
     console.groupEnd();
   }, [formData]);
 
-  // Handle form submission with enhanced error handling and auto-approval
+  // Enhanced form submission with auto-approval for SectorAdmin
   const handleSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault();
     setIsSubmitting(true);
@@ -125,12 +114,11 @@ export const useDataEntry = ({
         throw new Error('Missing required school or category ID');
       }
 
-      // Validate that formData exists and is an object
       if (!formData || typeof formData !== 'object') {
         throw new Error('Invalid form data');
       }
 
-      // ✅ ENHANCED: Auto-approval logic for SectorAdmin with more robust checking
+      // ✅ ENHANCED: Auto-approval logic for SectorAdmin
       const isAutoApprove = user?.role === 'sectoradmin';
       let defaultStatus = 'pending';
       let approvalMetadata = {};
@@ -214,7 +202,7 @@ export const useDataEntry = ({
     }
   }, [formData, schoolId, currentCategory, user, toast, t, onComplete]);
 
-  // Handle save as draft with enhanced validation
+  // Enhanced save as draft function
   const handleSave = useCallback(async () => {
     setIsAutoSaving(true);
     
@@ -223,7 +211,6 @@ export const useDataEntry = ({
         throw new Error('Missing required school or category ID');
       }
 
-      // Validate formData
       if (!formData || typeof formData !== 'object') {
         console.warn('handleSave: Invalid form data, skipping save');
         return;
@@ -245,7 +232,6 @@ export const useDataEntry = ({
         return;
       }
 
-      // Save to database
       const { error } = await supabase
         .from('data_entries')
         .upsert(entriesToSave, {
@@ -272,14 +258,14 @@ export const useDataEntry = ({
     }
   }, [formData, schoolId, currentCategory, toast, t]);
 
-  // Handle form reset
+  // Form reset handler
   const handleReset = useCallback(() => {
     setFormData({});
     setIsDataModified(false);
     console.log('Form data reset');
   }, []);
 
-  // Handle category change with enhanced safety
+  // Category change handler with enhanced safety
   const handleCategoryChange = useCallback((category: CategoryWithColumns) => {
     if (!category || !category.id) {
       console.warn('handleCategoryChange: Invalid category');
@@ -299,21 +285,20 @@ export const useDataEntry = ({
     }
   }, [schoolId]);
 
-  // Təkmilləşdirilmiş loadDataForCategory - zəmanət altına alınmış yüklənmə, yenidən cəhd və xəta idarəetməsi
+  // Enhanced loadDataForCategory with retry logic and error handling
   const loadDataForCategory = useCallback(async (schoolId: string, categoryId: string, retryCount = 0) => {
     if (!schoolId || !categoryId) {
       console.warn('loadDataForCategory: Missing required parameters');
       return;
     }
     
-    const MAX_RETRIES = 3; // Maksimum yenidən cəhd sayı artırıldı
-    const TIMEOUT_MS = 30000; // Zaman aşımı 30 saniyəyə artırıldı
+    const MAX_RETRIES = 3;
+    const TIMEOUT_MS = 30000;
     
     console.group(`Loading data for category ${categoryId} and school ${schoolId} (attempt ${retryCount + 1})`);
     setLoadingEntry(true);
-    if (retryCount === 0) setEntryError(null); // Yalnız ilk cəhddə xəta mesajını təmizlə
+    if (retryCount === 0) setEntryError(null);
     
-    // Timeout promise
     const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) => {
       setTimeout(() => {
         reject(new Error(`Data loading timeout after ${TIMEOUT_MS/1000} seconds`));
@@ -321,14 +306,12 @@ export const useDataEntry = ({
     });
     
     try {
-      // Ana sorğu - bütün lazımi sahələri seçirik ki tip uyğunsuzluğu olmasın
       const dataPromise = supabase
         .from('data_entries')
         .select('id, column_id, value, status, school_id, category_id, created_at, updated_at')
         .eq('school_id', schoolId)
         .eq('category_id', categoryId);
 
-      // Timeout və sorğu yarışı
       const { data, error } = await Promise.race([
         dataPromise,
         timeoutPromise
@@ -338,7 +321,6 @@ export const useDataEntry = ({
 
       console.log(`Received ${data?.length || 0} entries for category ${categoryId}`);
 
-      // Convert entries to form data with proper validation
       const newFormData: Record<string, string> = {};
       if (data && Array.isArray(data)) {
         data.forEach(entry => {
@@ -352,10 +334,8 @@ export const useDataEntry = ({
       console.log('Setting form data:', newFormData);
       setFormData(newFormData);
       
-      // Ensure data conforms to DataEntry type by ensuring all required fields are present
       const typedEntries = data?.map(entry => ({
         ...entry,
-        // Ensure these fields exist even if the database didn't return them
         school_id: entry.school_id || schoolId,
         category_id: entry.category_id || categoryId,
         created_at: entry.created_at || new Date().toISOString(),
@@ -364,28 +344,21 @@ export const useDataEntry = ({
       
       setEntries(typedEntries);
       setIsDataModified(false);
-      setEntryError(null); // Uğurlu yükləmədə xəta mesajını təmizlə
+      setEntryError(null);
       
-      // Yüklənmə tamamlandıqda 200ms gözləyərək UI-in yenilənməsi üçün vaxt ver
       await new Promise(resolve => setTimeout(resolve, 200));
       
     } catch (err: any) {
       console.error('Error loading category data:', err);
       
-      // Əgər hələ yenidən cəhd etmək imkanımız varsa
       if (retryCount < MAX_RETRIES) {
         console.log(`Retrying data load (${retryCount + 1}/${MAX_RETRIES})...`);
-        
-        // 1 saniyə gözlədikdən sonra yenidən cəhd et
         await new Promise(resolve => setTimeout(resolve, 1000)); 
         setLoadingEntry(false);
         console.groupEnd();
-        
-        // Rekursiv olaraq yenidən cəhd edirik
         return loadDataForCategory(schoolId, categoryId, retryCount + 1);
       }
       
-      // Bütün cəhdlər uğursuz olduqda
       setEntryError(err.message || 'Məlumatları yükləmək mümkün olmadı. Zəhmət olmasa səhifəni yeniləyin.');
       toast({
         variant: "destructive",
@@ -393,11 +366,8 @@ export const useDataEntry = ({
         description: "Məlumatları yükləmək mümkün olmadı. Səhifəni yeniləyə bilərsiniz.",
       });
       
-      // Boş form data-sı qur
       setFormData({});
       setEntries([]);
-      
-      // Error zamanı 500ms gözlə
       await new Promise(resolve => setTimeout(resolve, 500)); 
     } finally {
       setLoadingEntry(false);
@@ -473,7 +443,7 @@ export const useDataEntry = ({
     }
   }, [categoryId]);
 
-  // Functions expected by tests (keeping the same interface)
+  // Test compatibility functions
   const saveEntry = useCallback(async (data: any) => {
     try {
       const response = await supabase

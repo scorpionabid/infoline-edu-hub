@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { useSchoolManagement } from '@/hooks/dataEntry/useSchoolManagement';
+import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { SchoolDataEntryManager } from '@/components/dataEntry/SchoolDataEntryManager';
 import { 
@@ -23,44 +23,117 @@ import {
   Filter
 } from 'lucide-react';
 
-export const SectorAdminSchoolList: React.FC = () => {
+interface SectorAdminSchoolListProps {}
+
+export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = () => {
   const user = useAuthStore(selectUser);
+  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
+  const [selectedSchoolForDataEntry, setSelectedSchoolForDataEntry] = useState<string | null>(null);
+  const [isDataEntryModalOpen, setIsDataEntryModalOpen] = useState(false);
+  const [isBulkNotificationOpen, setIsBulkNotificationOpen] = useState(false);
+  const [isNotificationLoading, setIsNotificationLoading] = useState(false);
   
-  const {
-    schools,
-    stats,
-    isLoading,
-    searchTerm,
-    setSearchTerm,
-    selectedSchools,
-    handleSelectAll,
-    handleSelectSchool,
-    handleDataEntry,
-    handleDataEntryComplete,
-    selectedSchoolForDataEntry,
-    isDataEntryModalOpen,
-    setIsDataEntryModalOpen,
-    handleBulkNotification,
-    isBulkNotificationOpen,
-    setIsBulkNotificationOpen,
-    isNotificationLoading,
-    sendBulkNotification,
-    getCompletionBadge
-  } = useSchoolManagement({
+  // Real schools data from Supabase with sector filtering
+  const { 
+    schools, 
+    isLoading, 
+    isError, 
+    error 
+  } = useSchoolsQuery({
     sectorId: user?.sector_id,
-    onDataEntry: (schoolId) => {
-      console.log('Opening data entry for school:', schoolId);
-    }
+    enabled: !!user?.sector_id
   });
 
+  // Filter schools based on search and status
   const filteredSchools = schools.filter(school => {
+    const matchesSearch = !searchTerm || 
+      school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (school.principal_name && school.principal_name.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    if (!matchesSearch) return false;
+    
     if (statusFilter === 'all') return true;
-    if (statusFilter === 'high' && school.completion_rate >= 80) return true;
-    if (statusFilter === 'medium' && school.completion_rate >= 40 && school.completion_rate < 80) return true;
-    if (statusFilter === 'low' && school.completion_rate < 40) return true;
+    
+    const completionRate = school.completion_rate || 0;
+    if (statusFilter === 'high' && completionRate >= 80) return true;
+    if (statusFilter === 'medium' && completionRate >= 40 && completionRate < 80) return true;
+    if (statusFilter === 'low' && completionRate < 40) return true;
+    
     return false;
   });
+
+  // Calculate stats
+  const stats = {
+    total: schools.length,
+    avgCompletion: schools.length > 0 
+      ? Math.round(schools.reduce((sum, s) => sum + (s.completion_rate || 0), 0) / schools.length)
+      : 0,
+    highCompletion: schools.filter(s => (s.completion_rate || 0) >= 80).length,
+    lowCompletion: schools.filter(s => (s.completion_rate || 0) < 40).length
+  };
+
+  // Selection handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedSchools(filteredSchools.map(s => s.id));
+    } else {
+      setSelectedSchools([]);
+    }
+  };
+
+  const handleSelectSchool = (schoolId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedSchools(prev => [...prev, schoolId]);
+    } else {
+      setSelectedSchools(prev => prev.filter(id => id !== schoolId));
+    }
+  };
+
+  // Data entry handlers
+  const handleDataEntry = (schoolId: string) => {
+    setSelectedSchoolForDataEntry(schoolId);
+    setIsDataEntryModalOpen(true);
+  };
+
+  const handleDataEntryComplete = () => {
+    setIsDataEntryModalOpen(false);
+    setSelectedSchoolForDataEntry(null);
+    // Refresh schools data if needed
+  };
+
+  // Bulk operations
+  const handleBulkNotification = () => {
+    setIsBulkNotificationOpen(true);
+  };
+
+  const sendBulkNotification = async (data: { message: string }) => {
+    setIsNotificationLoading(true);
+    try {
+      // TODO: Implement bulk notification sending
+      console.log('Sending bulk notification to schools:', selectedSchools, data.message);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsBulkNotificationOpen(false);
+      setSelectedSchools([]);
+    } catch (error) {
+      console.error('Error sending bulk notification:', error);
+    } finally {
+      setIsNotificationLoading(false);
+    }
+  };
+
+  // Completion badge helper
+  const getCompletionBadge = (rate: number) => {
+    if (rate >= 80) {
+      return { text: `${rate}%`, className: 'bg-green-100 text-green-800', variant: 'secondary' };
+    } else if (rate >= 40) {
+      return { text: `${rate}%`, className: 'bg-yellow-100 text-yellow-800', variant: 'secondary' };
+    } else {
+      return { text: `${rate}%`, className: 'bg-red-100 text-red-800', variant: 'secondary' };
+    }
+  };
 
   const allSelected = selectedSchools.length === filteredSchools.length && filteredSchools.length > 0;
   const someSelected = selectedSchools.length > 0 && selectedSchools.length < filteredSchools.length;
@@ -71,6 +144,18 @@ export const SectorAdminSchoolList: React.FC = () => {
         <div className="text-center">
           <School className="h-8 w-8 animate-pulse mx-auto mb-2" />
           <p>Məktəblər yüklənir...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+          <p className="text-red-600">Məktəblər yüklənərkən xəta baş verdi</p>
+          <p className="text-sm text-gray-500">{error?.message}</p>
         </div>
       </div>
     );
@@ -224,9 +309,6 @@ export const SectorAdminSchoolList: React.FC = () => {
               <Checkbox
                 checked={allSelected}
                 onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                ref={(el) => {
-                  if (el) el.indeterminate = someSelected;
-                }}
               />
               <span className="text-sm text-muted-foreground">Hamısını seç</span>
             </div>
@@ -235,7 +317,7 @@ export const SectorAdminSchoolList: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             {filteredSchools.map((school) => {
-              const completionBadge = getCompletionBadge(school.completion_rate);
+              const completionBadge = getCompletionBadge(school.completion_rate || 0);
               
               return (
                 <div key={school.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
@@ -280,9 +362,9 @@ export const SectorAdminSchoolList: React.FC = () => {
                         <div className="mt-3">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-medium">Tamamlanma dərəcəsi:</span>
-                            <span className="text-sm">{school.completion_rate}%</span>
+                            <span className="text-sm">{school.completion_rate || 0}%</span>
                           </div>
-                          <Progress value={school.completion_rate} className="h-2" />
+                          <Progress value={school.completion_rate || 0} className="h-2" />
                         </div>
                       </div>
                     </div>

@@ -1,88 +1,48 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+
+import { useState, useCallback } from 'react';
 import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { School } from '@/types/school';
+import { toast } from 'sonner';
 
 interface UseSchoolManagementProps {
-  sectorId?: string | null;
+  sectorId?: string;
   onDataEntry?: (schoolId: string) => void;
-  onSendNotification?: (schoolIds: string[]) => void;
 }
 
-export const useSchoolManagement = ({
-  sectorId,
-  onDataEntry,
-  onSendNotification
-}: UseSchoolManagementProps = {}) => {
-  const navigate = useNavigate();
-  const user = useAuthStore(selectUser);
-  const { schools: allSchools, loading: schoolsLoading } = useSchoolsQuery();
-
-  // Filter states
+export const useSchoolManagement = ({ sectorId, onDataEntry }: UseSchoolManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [completionFilter, setCompletionFilter] = useState('all');
-  
-  // Selection states
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
-  
-  // Modal states
   const [selectedSchoolForDataEntry, setSelectedSchoolForDataEntry] = useState<string | null>(null);
   const [isDataEntryModalOpen, setIsDataEntryModalOpen] = useState(false);
   const [isBulkNotificationOpen, setIsBulkNotificationOpen] = useState(false);
-  const [singleNotificationSchool, setSingleNotificationSchool] = useState<School | null>(null);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
 
-  // Filter schools by sector
-  const schools = useMemo(() => {
-    const targetSectorId = sectorId || user?.sector_id;
-    if (!targetSectorId) return allSchools || [];
-    
-    return (allSchools || []).filter(school => school.sector_id === targetSectorId);
-  }, [allSchools, sectorId, user?.sector_id]);
+  // Get schools data
+  const { schools, isLoading, isError, error } = useSchoolsQuery({
+    sectorId,
+    enabled: !!sectorId
+  });
 
-  // Schools with completion calculation
-  const schoolsWithCompletion = useMemo(() => {
-    return schools.map(school => ({
-      ...school,
-      completion_rate: school.completion_rate || Math.floor(Math.random() * 100), // Temporary calculation
-      last_updated: school.updated_at
-    }));
-  }, [schools]);
+  // Filter schools based on search term
+  const filteredSchools = schools.filter(school => 
+    !searchTerm || 
+    school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (school.principal_name && school.principal_name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
-  // Filtered schools
-  const filteredSchools = useMemo(() => {
-    return schoolsWithCompletion.filter(school => {
-      const matchesSearch = school.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || school.status === statusFilter;
-      const matchesCompletion = 
-        completionFilter === 'all' ||
-        (completionFilter === 'high' && school.completion_rate >= 80) ||
-        (completionFilter === 'medium' && school.completion_rate >= 40 && school.completion_rate < 80) ||
-        (completionFilter === 'low' && school.completion_rate < 40);
-      
-      return matchesSearch && matchesStatus && matchesCompletion;
-    });
-  }, [schoolsWithCompletion, searchTerm, statusFilter, completionFilter]);
-
-  // Statistics
-  const stats = useMemo(() => {
-    const total = filteredSchools.length;
-    const avgCompletion = total > 0 
-      ? Math.round(filteredSchools.reduce((sum, school) => sum + school.completion_rate, 0) / total)
-      : 0;
-    const highCompletion = filteredSchools.filter(s => s.completion_rate >= 80).length;
-    const lowCompletion = filteredSchools.filter(s => s.completion_rate < 40).length;
-    
-    return { total, avgCompletion, highCompletion, lowCompletion };
-  }, [filteredSchools]);
+  // Calculate statistics
+  const stats = {
+    total: schools.length,
+    avgCompletion: schools.length > 0 
+      ? Math.round(schools.reduce((sum, s) => sum + (s.completion_rate || 0), 0) / schools.length)
+      : 0,
+    highCompletion: schools.filter(s => (s.completion_rate || 0) >= 80).length,
+    lowCompletion: schools.filter(s => (s.completion_rate || 0) < 40).length
+  };
 
   // Selection handlers
   const handleSelectAll = useCallback((checked: boolean) => {
     if (checked) {
-      setSelectedSchools(filteredSchools.map(school => school.id));
+      setSelectedSchools(filteredSchools.map(s => s.id));
     } else {
       setSelectedSchools([]);
     }
@@ -98,138 +58,90 @@ export const useSchoolManagement = ({
 
   // Data entry handlers
   const handleDataEntry = useCallback((schoolId: string) => {
+    setSelectedSchoolForDataEntry(schoolId);
+    setIsDataEntryModalOpen(true);
     if (onDataEntry) {
       onDataEntry(schoolId);
-    } else {
-      setSelectedSchoolForDataEntry(schoolId);
-      setIsDataEntryModalOpen(true);
     }
   }, [onDataEntry]);
 
   const handleDataEntryComplete = useCallback(() => {
     setIsDataEntryModalOpen(false);
     setSelectedSchoolForDataEntry(null);
-    toast.success('Məlumatlar uğurla saxlanıldı');
-    // TODO: Reload school data if needed
+    // Could trigger a refresh here if needed
   }, []);
 
-  const handleSchoolNameClick = useCallback((schoolId: string) => {
-    handleDataEntry(schoolId);
-  }, [handleDataEntry]);
-
-  // Notification handlers
+  // Bulk notification handlers
   const handleBulkNotification = useCallback(() => {
-    if (selectedSchools.length === 0) {
-      toast.error('Heç bir məktəb seçilməyib');
-      return;
-    }
     setIsBulkNotificationOpen(true);
-  }, [selectedSchools.length]);
-
-  const handleSingleNotification = useCallback((school: School) => {
-    setSingleNotificationSchool(school);
   }, []);
 
-  const sendBulkNotification = useCallback(async (notificationData: any) => {
+  const sendBulkNotification = useCallback(async (data: { message: string }) => {
     setIsNotificationLoading(true);
     try {
-      // TODO: Implement actual notification sending
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      toast.success(`${selectedSchools.length} məktəbə bildiriş göndərildi`);
-      setSelectedSchools([]);
-      setIsBulkNotificationOpen(false);
+      // TODO: Implement actual bulk notification API
+      console.log('Sending bulk notification to schools:', selectedSchools, data.message);
       
-      if (onSendNotification) {
-        onSendNotification(selectedSchools);
-      }
-    } catch (error) {
-      toast.error('Bildiriş göndərilərkən xəta baş verdi');
-    } finally {
-      setIsNotificationLoading(false);
-    }
-  }, [selectedSchools, onSendNotification]);
-
-  const sendSingleNotification = useCallback(async (notificationData: any) => {
-    setIsNotificationLoading(true);
-    try {
-      // TODO: Implement actual notification sending
+      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('Bildiriş uğurla göndərildi');
-      setSingleNotificationSchool(null);
       
-      if (onSendNotification) {
-        onSendNotification([notificationData.schoolId]);
-      }
+      toast.success(`${selectedSchools.length} məktəbə bildiriş göndərildi`);
+      setIsBulkNotificationOpen(false);
+      setSelectedSchools([]);
     } catch (error) {
+      console.error('Error sending bulk notification:', error);
       toast.error('Bildiriş göndərilərkən xəta baş verdi');
     } finally {
       setIsNotificationLoading(false);
     }
-  }, [onSendNotification]);
+  }, [selectedSchools]);
 
-  // Navigation helpers
-  const navigateToReports = useCallback((schoolId: string) => {
-    navigate(`/reports?schoolId=${schoolId}`);
-  }, [navigate]);
-
-  const navigateToSchoolDetails = useCallback((schoolId: string) => {
-    navigate(`/schools/${schoolId}`);
-  }, [navigate]);
-
-  // Selected school info
-  const selectedSchool = useMemo(() => {
-    return selectedSchoolForDataEntry 
-      ? filteredSchools.find(s => s.id === selectedSchoolForDataEntry)
-      : null;
-  }, [selectedSchoolForDataEntry, filteredSchools]);
+  // Completion badge helper
+  const getCompletionBadge = useCallback((rate: number) => {
+    if (rate >= 80) {
+      return { text: `${rate}%`, className: 'bg-green-100 text-green-800', variant: 'secondary' };
+    } else if (rate >= 40) {
+      return { text: `${rate}%`, className: 'bg-yellow-100 text-yellow-800', variant: 'secondary' };
+    } else {
+      return { text: `${rate}%`, className: 'bg-red-100 text-red-800', variant: 'secondary' };
+    }
+  }, []);
 
   return {
     // Data
-    schools: filteredSchools,
-    schoolsWithCompletion,
+    schools,
+    filteredSchools,
     stats,
-    selectedSchool,
-    isLoading: schoolsLoading,
+    isLoading,
+    isError,
+    error,
 
-    // Filter states
+    // Search and filtering
     searchTerm,
     setSearchTerm,
-    statusFilter,
-    setStatusFilter,
-    completionFilter,
-    setCompletionFilter,
 
-    // Selection states  
+    // Selection
     selectedSchools,
     handleSelectAll,
     handleSelectSchool,
 
-    // Modal states
+    // Data entry
+    handleDataEntry,
+    handleDataEntryComplete,
     selectedSchoolForDataEntry,
     isDataEntryModalOpen,
     setIsDataEntryModalOpen,
+
+    // Bulk operations
+    handleBulkNotification,
     isBulkNotificationOpen,
     setIsBulkNotificationOpen,
-    singleNotificationSchool,
-    setSingleNotificationSchool,
     isNotificationLoading,
-
-    // Handlers
-    handleDataEntry,
-    handleDataEntryComplete,
-    handleSchoolNameClick,
-    handleBulkNotification,
-    handleSingleNotification,
     sendBulkNotification,
-    sendSingleNotification,
-    navigateToReports,
-    navigateToSchoolDetails,
 
-    // Utility functions
-    getCompletionBadge: (rate: number) => {
-      if (rate >= 80) return { variant: 'default', text: 'Yüksək', className: 'bg-green-100 text-green-800' };
-      if (rate >= 40) return { variant: 'secondary', text: 'Orta', className: 'bg-yellow-100 text-yellow-800' };
-      return { variant: 'destructive', text: 'Aşağı', className: 'bg-red-100 text-red-800' };
-    }
+    // Helpers
+    getCompletionBadge
   };
 };
+
+export default useSchoolManagement;
