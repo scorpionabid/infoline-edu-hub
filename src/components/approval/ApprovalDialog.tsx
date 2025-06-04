@@ -1,255 +1,224 @@
 
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { CheckCircle2, XCircle, Loader2, FileText, School, Calendar } from 'lucide-react';
+import { format } from 'date-fns';
 
-interface ApprovalDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  schoolId: string;
-  schoolName: string;
+interface ApprovalItem {
+  id: string;
   categoryId: string;
   categoryName: string;
-  onComplete: () => void;
+  schoolId: string;
+  schoolName: string;
+  submittedAt: string;
+  submittedBy: string;
+  status: 'pending' | 'approved' | 'rejected';
+  entries: any[];
+  completionRate: number;
 }
 
-const ApprovalDialog: React.FC<ApprovalDialogProps> = ({
-  open,
-  onOpenChange,
-  schoolId,
-  schoolName,
-  categoryId,
-  categoryName,
-  onComplete
+interface ApprovalDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  item: ApprovalItem;
+  action: 'approve' | 'reject' | 'view';
+  onApprove?: (comment?: string) => Promise<void>;
+  onReject?: (reason: string) => Promise<void>;
+  isProcessing?: boolean;
+}
+
+export const ApprovalDialog: React.FC<ApprovalDialogProps> = ({
+  isOpen,
+  onClose,
+  item,
+  action,
+  onApprove,
+  onReject,
+  isProcessing = false
 }) => {
-  const { t } = useLanguageSafe();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isApproving, setIsApproving] = useState(false);
-  const [isRejecting, setIsRejecting] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
-  const [entries, setEntries] = useState<any[]>([]);
-  const [showRejectForm, setShowRejectForm] = useState(false);
-
-  // Məlumatları yüklə
-  useEffect(() => {
-    if (open && schoolId && categoryId) {
-      loadEntries();
-    }
-  }, [open, schoolId, categoryId]);
-
-  const loadEntries = async () => {
-    if (!schoolId || !categoryId) return;
-    
-    setIsLoading(true);
-    try {
-      // Gözləmədə olan məlumatları əldə et
-      const { data, error } = await supabase
-        .from('data_entries')
-        .select(`
-          id,
-          value,
-          status,
-          created_at,
-          category_id,
-          column_id,
-          columns (name, type)
-        `)
-        .eq('school_id', schoolId)
-        .eq('category_id', categoryId)
-        .eq('status', 'pending');
-
-      if (error) {
-        throw error;
-      }
-      
-      setEntries(data || []);
-    } catch (err) {
-      console.error('Məlumatları yükləmə xətası:', err);
-      toast.error(t('errorLoadingData'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [comment, setComment] = useState('');
+  const [reason, setReason] = useState('');
 
   const handleApprove = async () => {
-    if (!entries.length) return;
-    
-    setIsApproving(true);
-    try {
-      // Bütün gözləmədə olan məlumatları təsdiqlə
-      const { error } = await supabase
-        .from('data_entries')
-        .update({ 
-          status: 'approved',
-          approved_at: new Date().toISOString()
-        })
-        .eq('school_id', schoolId)
-        .eq('category_id', categoryId)
-        .eq('status', 'pending');
-
-      if (error) {
-        throw error;
-      }
-      
-      toast.success(t('approvalSuccess'));
-      onComplete();
-      onOpenChange(false);
-    } catch (err) {
-      console.error('Təsdiqləmə xətası:', err);
-      toast.error(t('approvalError'));
-    } finally {
-      setIsApproving(false);
+    if (onApprove) {
+      await onApprove(comment);
     }
   };
 
   const handleReject = async () => {
-    if (!rejectReason.trim()) {
-      toast.error(t('rejectReasonRequired'));
-      return;
+    if (onReject && reason.trim()) {
+      await onReject(reason);
     }
-    
-    setIsRejecting(true);
-    try {
-      // Bütün gözləmədə olan məlumatları rədd et
-      const { error } = await supabase
-        .from('data_entries')
-        .update({ 
-          status: 'rejected',
-          rejection_reason: rejectReason 
-        })
-        .eq('school_id', schoolId)
-        .eq('category_id', categoryId)
-        .eq('status', 'pending');
+  };
 
-      if (error) {
-        throw error;
-      }
-      
-      toast.success(t('rejectionSuccess'));
-      onComplete();
-      onOpenChange(false);
-    } catch (err) {
-      console.error('Rədd etmə xətası:', err);
-      toast.error(t('rejectionError'));
-    } finally {
-      setIsRejecting(false);
-      setShowRejectForm(false);
+  const getDialogTitle = () => {
+    switch (action) {
+      case 'approve':
+        return 'Məlumatları Təsdiqlə';
+      case 'reject':
+        return 'Məlumatları Rədd Et';
+      case 'view':
+        return 'Məlumat Təfərrüatları';
+      default:
+        return 'Məlumat';
+    }
+  };
+
+  const getDialogDescription = () => {
+    switch (action) {
+      case 'approve':
+        return 'Bu məlumatları təsdiqləmək istədiyinizə əminsiniz?';
+      case 'reject':
+        return 'Bu məlumatları rədd etmək istədiyinizə əminsiniz? Səbəbi qeyd edin.';
+      case 'view':
+        return 'Məlumat təfərrüatlarını nəzərdən keçirin.';
+      default:
+        return '';
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {t('reviewSubmission')}: {schoolName} - {categoryName}
+          <DialogTitle className="flex items-center gap-2">
+            {action === 'approve' && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+            {action === 'reject' && <XCircle className="h-5 w-5 text-red-600" />}
+            {action === 'view' && <FileText className="h-5 w-5" />}
+            {getDialogTitle()}
           </DialogTitle>
+          <DialogDescription>
+            {getDialogDescription()}
+          </DialogDescription>
         </DialogHeader>
 
-        {isLoading ? (
-          <div className="flex justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : entries.length === 0 ? (
-          <div className="p-8 text-center">
-            {t('noEntriesFound')}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Məlumatların göstərilməsi */}
-            {entries.map((entry) => (
-              <Card key={entry.id} className="p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-muted-foreground">{t('field')}</Label>
-                    <div className="font-medium">{entry.columns?.name || t('unknownField')}</div>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-muted-foreground">{t('value')}</Label>
-                    <div className="font-medium">{entry.value}</div>
-                  </div>
-                </div>
-              </Card>
-            ))}
+        <div className="space-y-4">
+          {/* Item Details */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <School className="h-4 w-4" />
+              <span className="font-medium">Məktəb:</span>
+              <span>{item.schoolName}</span>
+            </div>
             
-            {/* Rədd etmə formu */}
-            {showRejectForm && (
-              <div className="mt-4 space-y-2">
-                <Label htmlFor="reject-reason">{t('rejectReasonLabel')}</Label>
-                <Textarea
-                  id="reject-reason"
-                  placeholder={t('rejectReasonPlaceholder')}
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  className="min-h-[100px]"
-                />
-                <div className="flex justify-end gap-2 mt-2">
-                  <Button variant="outline" onClick={() => setShowRejectForm(false)} disabled={isRejecting}>
-                    {t('cancel')}
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={handleReject} 
-                    disabled={isRejecting || !rejectReason.trim()}
-                  >
-                    {isRejecting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t('rejecting')}
-                      </>
-                    ) : t('confirmReject')}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="font-medium">Kateqoriya:</span>
+              <span>{item.categoryName}</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span className="font-medium">Tarix:</span>
+              <span>{format(new Date(item.submittedAt), 'dd.MM.yyyy HH:mm')}</span>
+            </div>
 
-        <DialogFooter className="gap-2">
-          {!showRejectForm && (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isApproving}
-              >
-                {t('close')}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setShowRejectForm(true)}
-                disabled={isLoading || entries.length === 0}
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                {t('reject')}
-              </Button>
-              <Button
-                variant="default"
-                onClick={handleApprove}
-                disabled={isLoading || entries.length === 0 || isApproving}
-              >
-                {isApproving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('approving')}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    {t('approve')}
-                  </>
-                )}
-              </Button>
-            </>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Status:</span>
+              <Badge variant="outline">{item.status}</Badge>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Tamamlanma:</span>
+              <span>{item.completionRate}%</span>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Entries Summary */}
+          <div className="space-y-2">
+            <h4 className="font-medium">Məlumat Xülasəsi</h4>
+            <div className="text-sm text-muted-foreground">
+              <p>Ümumi sahə sayı: {item.entries.length}</p>
+              <p>Doldurulmuş sahələr: {item.entries.filter(e => e.value && e.value.trim() !== '').length}</p>
+              <p>Boş sahələr: {item.entries.filter(e => !e.value || e.value.trim() === '').length}</p>
+            </div>
+          </div>
+
+          {/* Action-specific content */}
+          {action === 'approve' && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Qeyd (məcburi deyil)</label>
+              <Textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Təsdiq üçün əlavə qeyd..."
+                rows={3}
+              />
+            </div>
           )}
-        </DialogFooter>
+
+          {action === 'reject' && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Rədd səbəbi *</label>
+              <Textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Məlumatları rədd etməyin səbəbini qeyd edin..."
+                rows={3}
+                required
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Dialog Actions */}
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="outline" onClick={onClose} disabled={isProcessing}>
+            {action === 'view' ? 'Bağla' : 'Ləğv et'}
+          </Button>
+          
+          {action === 'approve' && (
+            <Button 
+              onClick={handleApprove} 
+              disabled={isProcessing}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Təsdiqlənir...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Təsdiqlə
+                </>
+              )}
+            </Button>
+          )}
+          
+          {action === 'reject' && (
+            <Button 
+              variant="destructive" 
+              onClick={handleReject} 
+              disabled={isProcessing || !reason.trim()}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Rədd edilir...
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Rədd et
+                </>
+              )}
+            </Button>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

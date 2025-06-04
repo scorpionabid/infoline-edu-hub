@@ -1,182 +1,132 @@
 
-import React, { useState, useEffect } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { DataEntryStatus } from '@/types/dataEntry';
-import { PendingApproval } from '@/types/dashboard';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import type { UserRole } from '@/types/user';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import ApprovalItem from './ApprovalItem';
+import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useApprovalData } from '@/hooks/approval/useApprovalData';
+import { ApprovalTabs } from './ApprovalTabs';
+import { Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
-interface ApprovalProps {
-  user?: any;
-  userRole?: UserRole;
-  permissions?: any;
-}
+export const Approval: React.FC = () => {
+  const {
+    pendingApprovals,
+    approvedItems,
+    rejectedItems,
+    isLoading,
+    approveItem,
+    rejectItem,
+    viewItem
+  } = useApprovalData();
 
-interface ApprovalRecord extends PendingApproval {
-  schoolName: string;
-  categoryName: string;
-  date: string;
-  submittedAt: string;
-  status: 'pending' | 'approved' | 'rejected';
-}
-
-const Approval: React.FC<ApprovalProps> = ({ 
-  user: propUser, 
-  userRole: propUserRole, 
-  permissions: propPermissions 
-}) => {
-  const { t } = useLanguage();
-  const user = useAuthStore(selectUser);
-  const permissionsHelper = usePermissions();
-  const userRole = permissionsHelper.userRole;
-  const [approvals, setApprovals] = useState<ApprovalRecord[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-
-  const mockApprovals: ApprovalRecord[] = [
-    {
-      id: '1',
-      schoolName: 'ABC İbtidai Məktəbi',
-      categoryName: 'Müəllim Məlumatları',
-      date: '2024-01-15',
-      submittedAt: '2024-01-15',
-      created_at: '2024-01-15T00:00:00Z',
-      status: 'pending'
-    },
-    {
-      id: '2',
-      schoolName: 'XYZ Orta Məktəbi',
-      categoryName: 'Şagird Nailiyyətləri',
-      date: '2024-01-20',
-      submittedAt: '2024-01-20',
-      created_at: '2024-01-20T00:00:00Z',
-      status: 'approved'
-    },
-    {
-      id: '3',
-      schoolName: '123 Liseyi',
-      categoryName: 'Tədbir Planları',
-      date: '2024-01-25',
-      submittedAt: '2024-01-25',
-      created_at: '2024-01-25T00:00:00Z',
-      status: 'rejected'
-    },
-  ];
-
-  useEffect(() => {
-    setApprovals(mockApprovals);
-  }, []);
-
-  const totalPending = approvals.filter(item => item.status === 'pending').length;
-  const totalApproved = approvals.filter(item => item.status === 'approved').length;
-  const totalRejected = approvals.filter(item => item.status === 'rejected').length;
-
-  const handleApprove = (approvalId: string) => {
-    setApprovals(approvals.map(item =>
-      item.id === approvalId ? { ...item, status: 'approved' as const } : item
-    ));
-  };
-
-  const handleReject = (approvalId: string) => {
-    setApprovals(approvals.map(item =>
-      item.id === approvalId ? { ...item, status: 'rejected' as const } : item
-    ));
-  };
-
-  const handleView = (approvalId: string) => {
-    console.log(`Viewing approval with id ${approvalId}`);
-  };
-
-  const filteredApprovals = approvals.filter(item => {
-    const matchesSearch = item.schoolName?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus;
-    return matchesSearch && matchesStatus;
-  });
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+          <p>Təsdiq məlumatları yüklənir...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="space-y-6">
+      {/* Header Stats */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Gözləyən</p>
+                <p className="text-2xl font-bold">{pendingApprovals.length}</p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Təsdiqlənmiş</p>
+                <p className="text-2xl font-bold">{approvedItems.length}</p>
+              </div>
+              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Rədd edilmiş</p>
+                <p className="text-2xl font-bold">{rejectedItems.length}</p>
+              </div>
+              <XCircle className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Approval Tabs */}
       <Card>
         <CardHeader>
-          <CardTitle>{t('pendingApprovals')}</CardTitle>
+          <CardTitle>Təsdiq İdarəetməsi</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
-            <div className="flex items-center space-x-4">
-              <Input
-                type="text"
-                placeholder={t('searchBySchoolName')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+          <Tabs defaultValue="pending" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="pending" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Gözləyən
+                {pendingApprovals.length > 0 && (
+                  <Badge variant="secondary">{pendingApprovals.length}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="approved" className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                Təsdiqlənmiş
+                {approvedItems.length > 0 && (
+                  <Badge variant="secondary">{approvedItems.length}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="rejected" className="flex items-center gap-2">
+                <XCircle className="h-4 w-4" />
+                Rədd edilmiş
+                {rejectedItems.length > 0 && (
+                  <Badge variant="secondary">{rejectedItems.length}</Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="pending" className="mt-4">
+              <ApprovalTabs
+                items={pendingApprovals}
+                type="pending"
+                onApprove={approveItem}
+                onReject={rejectItem}
+                onView={viewItem}
               />
-              <Select onValueChange={setSelectedStatus} defaultValue={selectedStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('filterByStatus')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('allStatuses')}</SelectItem>
-                  <SelectItem value="pending">{t('pending')}</SelectItem>
-                  <SelectItem value="approved">{t('approved')}</SelectItem>
-                  <SelectItem value="rejected">{t('rejected')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            </TabsContent>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="text-center">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    {t('totalPending')}
-                  </div>
-                  <div className="text-2xl font-bold">{totalPending}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="text-center">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    {t('totalApproved')}
-                  </div>
-                  <div className="text-2xl font-bold">{totalApproved}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="text-center">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    {t('totalRejected')}
-                  </div>
-                  <div className="text-2xl font-bold">{totalRejected}</div>
-                </CardContent>
-              </Card>
-            </div>
+            <TabsContent value="approved" className="mt-4">
+              <ApprovalTabs
+                items={approvedItems}
+                type="approved"
+                onView={viewItem}
+              />
+            </TabsContent>
 
-            <div className="space-y-4">
-              {filteredApprovals.map((approval) => (
-                <ApprovalItem
-                  key={approval.id}
-                  approval={approval}
-                  onApprove={() => handleApprove(approval.id)}
-                  onReject={() => handleReject(approval.id)}
-                  onView={() => handleView(approval.id)}
-                />
-              ))}
-            </div>
-          </div>
+            <TabsContent value="rejected" className="mt-4">
+              <ApprovalTabs
+                items={rejectedItems}
+                type="rejected"
+                onView={viewItem}
+              />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
