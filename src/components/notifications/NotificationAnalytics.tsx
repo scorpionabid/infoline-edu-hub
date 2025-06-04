@@ -12,11 +12,11 @@ import {
   Info
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { useEnhancedNotifications } from '@/hooks/notifications/useEnhancedNotifications';
+import { useEnhancedNotificationContext } from '@/context/EnhancedNotificationContext';
 
 export const NotificationAnalytics: React.FC = () => {
   const { t } = useLanguage();
-  const { notifications, unreadCount } = useEnhancedNotifications();
+  const { notifications, unreadCount } = useEnhancedNotificationContext();
 
   // Calculate analytics
   const analytics = React.useMemo(() => {
@@ -29,7 +29,7 @@ export const NotificationAnalytics: React.FC = () => {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
     const thisWeek = notifications.filter(n => 
-      new Date(n.createdAt || n.timestamp) >= sevenDaysAgo
+      new Date(n.createdAt || n.created_at || '') >= sevenDaysAgo
     ).length;
 
     // Last 24 hours
@@ -37,7 +37,7 @@ export const NotificationAnalytics: React.FC = () => {
     oneDayAgo.setDate(oneDayAgo.getDate() - 1);
     
     const today = notifications.filter(n => 
-      new Date(n.createdAt || n.timestamp) >= oneDayAgo
+      new Date(n.createdAt || n.created_at || '') >= oneDayAgo
     ).length;
 
     // By type

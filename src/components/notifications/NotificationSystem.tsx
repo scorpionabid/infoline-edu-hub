@@ -27,7 +27,7 @@ const NotificationSystem = () => {
   
   // Ensure notifications are normalized to the AppNotification type
   const notifications: AppNotification[] = rawNotifications.map(notification => 
-    'isRead' in notification ? notification : adaptDashboardNotificationToApp(notification)
+    'is_read' in notification ? notification : adaptDashboardNotificationToApp(notification)
   );
   
   return (
@@ -85,7 +85,7 @@ const NotificationSystem = () => {
                   key={notification.id} 
                   className={cn(
                     "hover:bg-muted transition-colors",
-                    !(notification.isRead || notification.is_read) ? "bg-muted/50" : ""
+                    !notification.is_read ? "bg-muted/50" : ""
                   )}
                 >
                   <NotificationItem 

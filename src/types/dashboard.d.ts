@@ -1,76 +1,13 @@
 import { AppNotification } from './notification';
 
-export type DashboardStatus = {
-  total: number;
-  completed: number;
-  pending: number;
-  rejected: number;
-  approved: number;
-};
-
-export type DashboardFormStats = {
-  totalForms: number;
-  completedForms: number;
-  pendingForms: number;
-  rejectedForms: number;
-  approvedForms: number;
-};
-
-export interface CategoryItem {
-  id: string;
-  name: string;
-  totalForms: number;
-  completedForms: number;
-}
-
-export interface FormItem {
-  id: string;
-  name: string;
-  status: 'completed' | 'pending' | 'rejected' | 'approved';
-  completion?: number;
-  deadline?: string;
-  school?: string;
-}
-
-export interface DeadlineItem {
-  id: string;
-  title: string;
-  deadline: string;
-  status: 'active' | 'completed' | 'pending';
-}
-
-export interface PendingApproval {
-  id: string;
-  title: string;
-  submittedBy: string;
-  submissionDate: string;
-}
-
-export interface SchoolStat {
-  id: string;
-  name: string;
-  totalForms: number;
-  completedForms: number;
-  completionRate: number;
-}
-
-export interface SectorStat {
-  id: string;
-  name: string;
-  totalSchools: number;
-  totalForms: number;
-  completedForms: number;
-  completionRate: number;
-}
-
 export interface SchoolAdminDashboardData {
-  status?: DashboardStatus | null;
-  formStats?: DashboardFormStats | null;
-  categories?: CategoryItem[] | null;
-  forms?: FormItem[] | null;
-  deadlines?: DeadlineItem[] | null;
-  pendingApprovals?: PendingApproval[] | null;
-  notifications?: AppNotification[] | null;
+  status?: DashboardStatus;
+  formStats?: DashboardFormStats;
+  categories?: CategoryItem[];
+  forms?: FormItem[];
+  deadlines?: DeadlineItem[];
+  pendingApprovals?: PendingApproval[];
+  notifications?: AppNotification[];
   completion?: {
     percentage: number;
     total: number;
@@ -79,14 +16,14 @@ export interface SchoolAdminDashboardData {
 }
 
 export interface RegionAdminDashboardData {
-  status?: DashboardStatus | null;
-  formStats?: DashboardFormStats | null;
-  categories?: CategoryItem[] | null;
-  forms?: FormItem[] | null;
-  deadlines?: DeadlineItem[] | null;
-  pendingApprovals?: PendingApproval[] | null;
-  schoolStats?: SchoolStat[] | null;
-  notifications?: AppNotification[] | null;
+  status?: DashboardStatus;
+  formStats?: DashboardFormStats;
+  categories?: CategoryItem[];
+  forms?: FormItem[];
+  deadlines?: DeadlineItem[];
+  pendingApprovals?: PendingApproval[];
+  schoolStats?: SchoolStat[];
+  notifications?: AppNotification[];
   completion?: {
     percentage: number;
     total: number;
@@ -95,14 +32,14 @@ export interface RegionAdminDashboardData {
 }
 
 export interface SectorAdminDashboardData {
-  status?: DashboardStatus | null;
-  formStats?: DashboardFormStats | null;
-  categories?: CategoryItem[] | null;
-  forms?: FormItem[] | null;
-  deadlines?: DeadlineItem[] | null;
-  pendingApprovals?: PendingApproval[] | null;
-  schoolStats?: SchoolStat[] | null;
-  notifications?: AppNotification[] | null;
+  status?: DashboardStatus;
+  formStats?: DashboardFormStats;
+  categories?: CategoryItem[];
+  forms?: FormItem[];
+  deadlines?: DeadlineItem[];
+  pendingApprovals?: PendingApproval[];
+  schoolStats?: SchoolStat[];
+  notifications?: AppNotification[];
   completion?: {
     percentage: number;
     total: number;
@@ -111,19 +48,76 @@ export interface SectorAdminDashboardData {
 }
 
 export interface SuperAdminDashboardData {
-  status?: DashboardStatus | null;
-  formStats?: DashboardFormStats | null;
-  categories?: CategoryItem[] | null;
-  forms?: FormItem[] | null;
-  deadlines?: DeadlineItem[] | null;
-  pendingApprovals?: PendingApproval[] | null;
-  regionStats?: any[] | null;
-  sectorStats?: any[] | null;
-  schoolStats?: any[] | null;
-  notifications?: AppNotification[] | null;
-  completion?: {
-    percentage: number;
-    total: number;
-    completed: number;
-  } | number | null;
+  status?: DashboardStatus;
+  formStats?: DashboardFormStats;
+  categories?: CategoryItem[];
+  forms?: FormItem[];
+  deadlines?: DeadlineItem[];
+  pendingApprovals?: PendingApproval[];
+  regionStats?: any[];
+  sectorStats?: SectorStat[];
+  schoolStats?: SchoolStat[];
+  notifications?: AppNotification[];
+}
+
+export interface DashboardStatus {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+}
+
+export interface DashboardFormStats {
+  totalForms: number;
+  pendingForms: number;
+  approvedForms: number;
+  rejectedForms: number;
+}
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  completionRate?: number;
+}
+
+export interface FormItem {
+  id: string;
+  name: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submissions?: number;
+  completion?: number;
+  deadline?: string; // Added missing deadline property
+}
+
+export interface DeadlineItem {
+  id: string;
+  title: string;
+  deadline: string;
+  description?: string;
+  status?: 'active' | 'completed' | 'overdue';
+}
+
+export interface PendingApproval {
+  id: string;
+  title: string;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  status?: 'active' | 'inactive';
+}
+
+export interface SectorStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  schoolCount?: number;
+  studentCount?: number;
 }

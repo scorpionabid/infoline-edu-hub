@@ -12,6 +12,7 @@ export interface NotificationSettings {
   deadlineReminders?: boolean;
   statusUpdates?: boolean;
   weeklyReports?: boolean;
+  deadline?: boolean; // Added missing deadline property
 }
 
 export interface UserFilter {

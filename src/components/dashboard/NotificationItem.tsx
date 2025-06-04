@@ -48,7 +48,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   };
 
   const handleMarkAsRead = () => {
-    if (onMarkAsRead && !notification.isRead) {
+    if (onMarkAsRead && !notification.is_read) {
       onMarkAsRead(notification.id);
     }
   };
@@ -64,7 +64,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 
   return (
     <Card 
-      className={`cursor-pointer transition-all hover:bg-accent p-3 ${!notification.isRead ? 'bg-accent/50' : ''} ${getPriorityClass(notification.priority)}`}
+      className={`cursor-pointer transition-all hover:bg-accent p-3 ${!notification.is_read ? 'bg-accent/50' : ''} ${getPriorityClass(notification.priority)}`}
       onClick={handleMarkAsRead}
     >
       <div className="flex items-start gap-3">

@@ -59,23 +59,19 @@ const EnhancedNotificationProvider: React.FC<
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const [realtimeEnabled, setRealtimeEnabled] = useState<boolean>(false);
+  const [realtimeChannel, setRealtimeChannel] = useState<any>(null);
 
   useEffect(() => {
     fetchNotifications();
   }, []);
 
   useEffect(() => {
-    if (realtimeEnabled) {
-      setupRealtimeListeners();
-    } else {
-      removeRealtimeListeners();
-    }
-
     return () => {
-      removeRealtimeListeners();
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
     };
-  }, [realtimeEnabled]);
+  }, [realtimeChannel]);
 
   const fetchNotifications = async () => {
     setIsLoading(true);
@@ -103,7 +99,7 @@ const EnhancedNotificationProvider: React.FC<
   };
 
   const setupRealtimeListeners = () => {
-    supabase
+    const channel = supabase
       .channel('public:notifications')
       .on(
         'postgres_changes',
@@ -114,10 +110,15 @@ const EnhancedNotificationProvider: React.FC<
         }
       )
       .subscribe();
+    
+    setRealtimeChannel(channel);
   };
 
   const removeRealtimeListeners = () => {
-    supabase.removeChannel('public:notifications');
+    if (realtimeChannel) {
+      supabase.removeChannel(realtimeChannel);
+      setRealtimeChannel(null);
+    }
   };
 
   const markAsRead = async (notificationId: string) => {
@@ -184,11 +185,22 @@ const EnhancedNotificationProvider: React.FC<
     }
   };
 
-  const createNotification = async (notification: Partial<Notification>) => {
+  const createNotification = async (notificationData: Partial<Notification>) => {
     try {
+      const fullNotification = {
+        title: notificationData.title || 'Untitled',
+        type: notificationData.type || 'info',
+        user_id: notificationData.user_id || '',
+        message: notificationData.message,
+        priority: notificationData.priority,
+        related_entity_id: notificationData.related_entity_id,
+        related_entity_type: notificationData.related_entity_type,
+        is_read: false
+      };
+
       const { data, error: createError } = await supabase
         .from('notifications')
-        .insert([notification])
+        .insert([fullNotification])
         .select('*');
 
       if (createError) throw createError;
@@ -219,11 +231,11 @@ const EnhancedNotificationProvider: React.FC<
   };
 
   const enableRealtime = () => {
-    setRealtimeEnabled(true);
+    setupRealtimeListeners();
   };
 
   const disableRealtime = () => {
-    setRealtimeEnabled(false);
+    removeRealtimeListeners();
   };
 
   const markMultipleAsRead = async (notificationIds: string[]) => {

@@ -110,7 +110,7 @@ export const EnhancedNotificationItem: React.FC<EnhancedNotificationItemProps> =
   return (
     <div className={cn(
       'flex p-3 transition-colors hover:bg-muted/50',
-      !(notification.isRead || notification.is_read) && 'bg-muted/30',
+      !notification.is_read && 'bg-muted/30',
       compact && 'p-2'
     )}>
       {/* Icon */}
@@ -124,7 +124,7 @@ export const EnhancedNotificationItem: React.FC<EnhancedNotificationItemProps> =
         <div className="flex items-start justify-between mb-1">
           <h4 className={cn(
             'text-sm font-medium text-foreground line-clamp-1',
-            !(notification.isRead || notification.is_read) && 'font-semibold'
+            !notification.is_read && 'font-semibold'
           )}>
             {notification.title}
           </h4>
@@ -148,11 +148,11 @@ export const EnhancedNotificationItem: React.FC<EnhancedNotificationItemProps> =
         {/* Footer */}
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">
-            {getRelativeTime(notification.createdAt || notification.timestamp)}
+            {getRelativeTime(notification.createdAt || notification.created_at || '')}
           </span>
           
           {/* Action button */}
-          {!(notification.isRead || notification.is_read) && (
+          {!notification.is_read && (
             <Button
               variant="ghost"
               size="sm"

@@ -30,7 +30,7 @@ const NotificationItem: React.FC<{
   };
 
   return (
-    <div className={`mb-3 p-3 rounded-md ${notification.isRead ? 'bg-muted/50' : 'bg-muted'}`}>
+    <div className={`mb-3 p-3 rounded-md ${notification.is_read ? 'bg-muted/50' : 'bg-muted'}`}>
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-2">
           <div className="mt-0.5">{typeToIcon[notification.type] || <Bell className="h-4 w-4" />}</div>
@@ -43,7 +43,7 @@ const NotificationItem: React.FC<{
           </div>
         </div>
         
-        {!notification.isRead && onMarkAsRead && (
+        {!notification.is_read && onMarkAsRead && (
           <Button 
             variant="ghost" 
             size="sm" 

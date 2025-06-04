@@ -54,7 +54,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     <div
       className={cn(
         'flex p-3 border-b last:border-b-0 transition-colors',
-        notification.isRead ? 'bg-background hover:bg-muted/40' : 'bg-muted/30 hover:bg-muted/40',
+        notification.is_read ? 'bg-background hover:bg-muted/40' : 'bg-muted/30 hover:bg-muted/40',
         getPriorityClass()
       )}
     >
@@ -62,7 +62,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       <div className="flex-1 min-w-0">
         <p className={cn(
           'text-sm font-medium text-foreground',
-          !notification.isRead && 'font-semibold'
+          !notification.is_read && 'font-semibold'
         )}>
           {notification.title}
         </p>
@@ -73,7 +73,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           {getRelativeTime(notification.createdAt)}
         </p>
       </div>
-      {!notification.isRead && (
+      {!notification.is_read && (
         <Button
           variant="ghost"
           size="sm"

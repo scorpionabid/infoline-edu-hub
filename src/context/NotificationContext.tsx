@@ -58,10 +58,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
       
       // Convert DB notification format to app format
-      const appNotifications = data.map(adaptDashboardNotificationToApp);
+      const appNotifications = (data || []).map(adaptDashboardNotificationToApp);
       
       setNotifications(appNotifications);
-      setUnreadCount(appNotifications.filter(n => !(n.isRead || n.is_read)).length);
+      setUnreadCount(appNotifications.filter(n => !n.is_read).length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       setError(error instanceof Error ? error : new Error('Unknown error fetching notifications'));
@@ -82,7 +82,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     try {
       // Update locally first for immediate UI feedback
       setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, isRead: true, is_read: true } : n)
+        prev.map(n => n.id === id ? { ...n, is_read: true, isRead: true } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
       
@@ -103,7 +103,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     
     try {
       // Update locally first
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true, is_read: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true, isRead: true })));
       setUnreadCount(0);
       
       // Update in the database
@@ -147,9 +147,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         title: notification.title || 'Notification',
         message: notification.message || '',
         type: notification.type || 'info',
-        isRead: false,
         is_read: false,
+        isRead: false,
         createdAt: now,
+        created_at: now,
         timestamp: now,
         priority: notification.priority || 'normal',
         user_id: user.id,
@@ -176,7 +177,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     try {
       // Delete locally first
       setNotifications(prev => prev.filter(n => n.id !== id));
-      const wasUnread = notifications.find(n => n.id === id && !(n.isRead || n.is_read));
+      const wasUnread = notifications.find(n => n.id === id && !n.is_read);
       if (wasUnread) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
