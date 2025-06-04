@@ -1,97 +1,97 @@
 
 import React from 'react';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Column } from '@/types/column';
 import { useFormContext } from 'react-hook-form';
-import Field, { ReactHookFormAdapter } from '../fields/Field';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import Field from '@/components/dataEntry/fields/Field';
+import { FormAdapter } from '@/components/dataEntry/fields/adapters/FormAdapter';
+import { Column } from '@/types/column';
+import { useLanguage } from '@/context/LanguageContext';
 
-interface FormFieldsProps {
-  columns?: Column[];
-  disabled?: boolean;
+export interface FormFieldsProps {
+  columns: Column[];
   readOnly?: boolean;
+  disabled?: boolean;
+  className?: string;
 }
 
 /**
- * FormFields - Form sütunlarını render edən komponent
- * Yeni Field komponentindən və ReactHookFormAdapter-dən istifadə edir
+ * Form Fields komponenti - sütunlar əsasında forma sahələrini render edir
+ * React Hook Form ilə inteqrasiya edir və Field komponentini istifadə edir
  */
-const FormFields: React.FC<FormFieldsProps> = ({ columns = [], disabled = false, readOnly = false }) => {
-  const safeColumns = React.useMemo(() => {
-    try {
-      if (!Array.isArray(columns)) {
-        console.warn('FormFields received non-array columns:', columns);
-        return [];
-      }
-      
-      return columns.filter(col => {
-        if (!col || typeof col !== 'object') {
-          console.warn('FormFields found invalid column:', col);
-          return false;
-        }
-        if (!col.id) {
-          console.warn('FormFields found column without ID:', col);
-          return false;
-        }
-        if (typeof col.id !== 'string' || col.id.trim() === '') {
-          console.warn('FormFields found column with invalid ID format:', col.id);
-          return false;
-        }
-        return true;
-      });
-    } catch (err) {
-      console.error('Error filtering columns in FormFields:', err);
-      return [];
-    }
-  }, [columns]);
-    
-  const formContext = useFormContext();
+const FormFields: React.FC<FormFieldsProps> = ({
+  columns,
+  readOnly = false,
+  disabled = false,
+  className = ''
+}) => {
+  const { t } = useLanguage();
+  const form = useFormContext();
   
-  if (!formContext) {
-    console.error('FormFields: No form context found');
-    return <div className="p-4 text-red-500">Form konteksti tapılmadı</div>;
+  // Təhlükəsizlik yoxlanışı
+  if (!Array.isArray(columns)) {
+    console.warn('FormFields: columns is not an array:', columns);
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        {t('noColumnsAvailable')}
+      </div>
+    );
   }
   
-  const adapter = React.useMemo(() => {
-    return new ReactHookFormAdapter(formContext);
-  }, [formContext]);
+  if (columns.length === 0) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        {t('noColumnsAvailable')}
+      </div>
+    );
+  }
   
+  // Form adapter yaradırıq
+  const adapter = new FormAdapter(form, readOnly, disabled);
+  
+  // Debug məlumatları
+  console.log('[FormFields] Rendering fields:', {
+    columnsCount: columns.length,
+    readOnly,
+    disabled,
+    formMethods: !!form
+  });
+
   return (
-    <div className="grid gap-6">
-      {safeColumns.map(column => (
-        <FormField
-          key={column.id}
-          control={formContext.control}
-          name={column.id}
-          render={() => (
-            <FormItem>
-              <FormLabel>
-                {column.name}
-                {column.is_required && <span className="text-destructive ml-1">*</span>}
-              </FormLabel>
-              <FormControl>
-                <Field
-                  column={column}
-                  adapter={adapter}
-                  disabled={disabled}
-                  readOnly={readOnly}
-                />
-              </FormControl>
-              {column.help_text && (
-                <FormDescription>
-                  {column.help_text}
-                </FormDescription>
-              )}
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      ))}
-      
-      {safeColumns.length === 0 && (
-        <div className="py-4 text-center text-muted-foreground">
-          Forma üçün sahələr tapılmadı.
-        </div>
-      )}
+    <div className={`space-y-6 ${className}`}>
+      {columns.map((column) => {
+        if (!column || !column.id) {
+          console.warn('[FormFields] Invalid column found:', column);
+          return null;
+        }
+
+        return (
+          <FormField
+            key={column.id}
+            control={form.control}
+            name={column.id}
+            render={({ field, fieldState }) => (
+              <FormItem>
+                <FormLabel>
+                  {column.name}
+                  {column.is_required && <span className="text-red-500 ml-1">*</span>}
+                </FormLabel>
+                <FormControl>
+                  <Field
+                    column={column}
+                    adapter={adapter}
+                    disabled={disabled}
+                    readOnly={readOnly}
+                  />
+                </FormControl>
+                {column.help_text && (
+                  <p className="text-xs text-muted-foreground">{column.help_text}</p>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        );
+      })}
     </div>
   );
 };

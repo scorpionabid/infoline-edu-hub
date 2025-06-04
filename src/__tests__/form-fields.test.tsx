@@ -6,7 +6,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { FormFields } from '../components/dataEntry/core';
 import { FormField } from '../components/ui/form';
 import FieldRendererSimple from '../components/dataEntry/fields/FieldRendererSimple';
-import type { Column, ColumnType } from '../types/column';
+import { Column, ColumnType } from '../types/column';
 
 // Test üçün Column mock data yaradırıq
 const createMockColumn = (overrides: Partial<Column> = {}): Column => ({
