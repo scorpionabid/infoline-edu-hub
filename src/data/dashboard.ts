@@ -10,32 +10,44 @@ import {
   SuperAdminDashboardData,
   RegionAdminDashboardData,
   SectorAdminDashboardData,
-  SchoolAdminDashboardData
+  SchoolAdminDashboardData,
+  FormItemStatus,
+  CategoryStatus,
+  DeadlineStatus,
+  EntityStatus
 } from '@/types/dashboard';
 
 // Mock data generators
 export const generateMockForms = (count: number = 10): FormItem[] => {
-  const statuses: FormItem['status'][] = ['pending', 'approved', 'rejected', 'completed', 'not_started', 'in_progress', 'overdue'];
+  const statuses: FormItemStatus[] = ['pending', 'approved', 'rejected', 'completed', 'not_started', 'in_progress', 'overdue'];
   
   return Array.from({ length: count }, (_, i) => ({
     id: `form-${i + 1}`,
     name: `Form ${i + 1}`,
     status: statuses[Math.floor(Math.random() * statuses.length)],
     lastModified: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-    completionRate: Math.floor(Math.random() * 100)
+    completionRate: Math.floor(Math.random() * 100),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }));
 };
 
 export const generateMockCategories = (count: number = 8): CategoryItem[] => {
+  const statuses: CategoryStatus[] = ['active', 'inactive', 'pending', 'completed'];
+  
   return Array.from({ length: count }, (_, i) => ({
     id: `category-${i + 1}`,
     name: `Category ${i + 1}`,
-    status: Math.random() > 0.5 ? 'active' : 'inactive',
-    completionRate: Math.floor(Math.random() * 100)
+    status: statuses[Math.floor(Math.random() * statuses.length)],
+    completionRate: Math.floor(Math.random() * 100),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }));
 };
 
 export const generateMockDeadlines = (count: number = 5): DeadlineItem[] => {
+  const statuses: DeadlineStatus[] = ['upcoming', 'overdue', 'completed'];
+  
   return Array.from({ length: count }, (_, i) => {
     const deadline = new Date(Date.now() + Math.random() * 60 * 24 * 60 * 60 * 1000);
     return {
@@ -43,8 +55,10 @@ export const generateMockDeadlines = (count: number = 5): DeadlineItem[] => {
       name: `Deadline ${i + 1}`,
       deadline: deadline.toISOString(),
       dueDate: deadline.toISOString(),
-      status: Math.random() > 0.5 ? 'on_track' : 'overdue',
-      daysLeft: Math.floor(Math.random() * 30)
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      daysLeft: Math.floor(Math.random() * 30),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
   });
 };
@@ -55,11 +69,15 @@ export const generateMockPendingApprovals = (count: number = 6): PendingApproval
     schoolName: `School ${i + 1}`,
     categoryName: `Category ${i + 1}`,
     date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'pending'
+    status: 'pending' as const,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }));
 };
 
 export const generateMockSchoolStats = (count: number = 12): SchoolStat[] => {
+  const statuses: EntityStatus[] = ['active', 'inactive', 'on_track', 'needs_attention'];
+  
   return Array.from({ length: count }, (_, i) => ({
     id: `school-${i + 1}`,
     name: `School ${i + 1}`,
@@ -67,12 +85,16 @@ export const generateMockSchoolStats = (count: number = 12): SchoolStat[] => {
     totalForms: Math.floor(Math.random() * 20) + 5,
     completedForms: Math.floor(Math.random() * 15),
     pendingForms: Math.floor(Math.random() * 5),
-    status: Math.random() > 0.7 ? 'needs_attention' : 'on_track',
-    lastUpdated: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+    status: statuses[Math.floor(Math.random() * statuses.length)],
+    lastUpdated: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }));
 };
 
 export const generateMockSectorStats = (count: number = 6): SectorStat[] => {
+  const statuses: EntityStatus[] = ['active', 'inactive', 'on_track', 'needs_attention'];
+  
   return Array.from({ length: count }, (_, i) => ({
     id: `sector-${i + 1}`,
     name: `Sector ${i + 1}`,
@@ -80,20 +102,18 @@ export const generateMockSectorStats = (count: number = 6): SectorStat[] => {
     totalSchools: Math.floor(Math.random() * 25) + 10,
     activeSchools: Math.floor(Math.random() * 20) + 5,
     completionRate: Math.floor(Math.random() * 100),
-    status: Math.random() > 0.7 ? 'needs_attention' : 'on_track'
+    status: statuses[Math.floor(Math.random() * statuses.length)],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }));
 };
 
 // Dashboard data generators
 export const generateSuperAdminDashboard = (): SuperAdminDashboardData => {
-  const forms = generateMockForms(15);
-  
   return {
-    forms,
     stats: {
-      totalForms: forms.length,
-      completedForms: forms.filter(f => f.status === 'completed').length,
-      pendingForms: forms.filter(f => f.status === 'pending').length,
+      completedForms: Math.floor(Math.random() * 50),
+      pendingForms: Math.floor(Math.random() * 30),
       approvalRate: Math.floor(Math.random() * 100)
     },
     categories: generateMockCategories(8),
@@ -117,14 +137,10 @@ export const generateSuperAdminDashboard = (): SuperAdminDashboardData => {
 };
 
 export const generateRegionAdminDashboard = (): RegionAdminDashboardData => {
-  const forms = generateMockForms(12);
-  
   return {
-    forms,
     stats: {
-      totalForms: forms.length,
-      completedForms: forms.filter(f => f.status === 'completed').length,
-      pendingForms: forms.filter(f => f.status === 'pending').length,
+      completedForms: Math.floor(Math.random() * 40),
+      pendingForms: Math.floor(Math.random() * 25),
       approvalRate: Math.floor(Math.random() * 100)
     },
     categories: generateMockCategories(6),
@@ -134,14 +150,10 @@ export const generateRegionAdminDashboard = (): RegionAdminDashboardData => {
 };
 
 export const generateSectorAdminDashboard = (): SectorAdminDashboardData => {
-  const forms = generateMockForms(10);
-  
   return {
-    forms,
     stats: {
-      totalForms: forms.length,
-      completedForms: forms.filter(f => f.status === 'completed').length,
-      pendingForms: forms.filter(f => f.status === 'pending').length,
+      completedForms: Math.floor(Math.random() * 30),
+      pendingForms: Math.floor(Math.random() * 20),
       approvalRate: Math.floor(Math.random() * 100)
     },
     categories: generateMockCategories(5),
@@ -151,14 +163,10 @@ export const generateSectorAdminDashboard = (): SectorAdminDashboardData => {
 };
 
 export const generateSchoolAdminDashboard = (): SchoolAdminDashboardData => {
-  const forms = generateMockForms(8);
-  
   return {
-    forms,
     stats: {
-      totalForms: forms.length,
-      completedForms: forms.filter(f => f.status === 'completed').length,
-      pendingForms: forms.filter(f => f.status === 'pending').length,
+      completedForms: Math.floor(Math.random() * 20),
+      pendingForms: Math.floor(Math.random() * 15),
       approvalRate: Math.floor(Math.random() * 100)
     },
     categories: generateMockCategories(4),

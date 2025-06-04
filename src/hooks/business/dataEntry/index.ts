@@ -1,3 +1,4 @@
+
 /**
  * Business/DataEntry qovluğundakı bütün hook-ları ixrac edir.
  * Bu fayllar yeni strukturlaşdırılmış və optimizə edilmiş implementasiyaları təmin edir.
@@ -9,17 +10,22 @@ export { default as useDataEntryState } from './useDataEntryState';
 export { default as useTestDataEntry } from './useTestDataEntry';
 export { default as useDataEntryExample } from './useDataEntryExample';
 
+// Core management hooks
+export * from './core';
+
 // Qovluğun özünü default export edirik ki, qrup şəklində import etmək mümkün olsun
 import useDataEntry from './useDataEntry';
 import useDataEntryState from './useDataEntryState';
 import useTestDataEntry from './useTestDataEntry';
 import useDataEntryExample from './useDataEntryExample';
+import { useDataEntryManager } from './core';
 
 const dataEntryHooks = {
   useDataEntry,
   useDataEntryState,
   useTestDataEntry,
-  useDataEntryExample
+  useDataEntryExample,
+  useDataEntryManager
 };
 
 export default dataEntryHooks;
