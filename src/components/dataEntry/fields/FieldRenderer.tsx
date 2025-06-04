@@ -35,8 +35,8 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
     }
   };
 
-  switch (column.type as ColumnType) {
-    case ColumnType.TEXT:
+  switch (column.type) {
+    case 'text':
       return (
         <Input
           name={column.id}
@@ -49,7 +49,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         />
       );
 
-    case ColumnType.TEXTAREA:
+    case 'textarea':
       return (
         <Textarea
           name={column.id}
@@ -63,7 +63,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         />
       );
 
-    case ColumnType.NUMBER:
+    case 'number':
       return (
         <Input
           type="number"
@@ -77,7 +77,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         />
       );
 
-    case ColumnType.SELECT:
+    case 'select':
       const options = Array.isArray(column.options) ? column.options : [];
       return (
         <Select
@@ -98,7 +98,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         </Select>
       );
 
-    case ColumnType.CHECKBOX:
+    case 'checkbox':
       return (
         <div className="flex items-center space-x-2">
           <Checkbox
@@ -110,7 +110,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         </div>
       );
 
-    case ColumnType.SWITCH:
+    case 'switch':
       return (
         <div className="flex items-center space-x-2">
           <Switch
@@ -122,7 +122,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         </div>
       );
 
-    case ColumnType.DATE:
+    case 'date':
       return (
         <Input
           type="date"
@@ -135,7 +135,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         />
       );
 
-    case ColumnType.EMAIL:
+    case 'email':
       return (
         <Input
           type="email"
@@ -165,3 +165,4 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
 };
 
 export default FieldRenderer;
+

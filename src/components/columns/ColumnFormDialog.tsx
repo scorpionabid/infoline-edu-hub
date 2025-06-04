@@ -68,6 +68,10 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
   const selectedType = form.watch('type');
   const showOptions = ['select', 'radio', 'checkbox'].includes(selectedType);
 
+  const handleSubmit = (data: ColumnFormValues) => {
+    onSubmit(data);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -77,7 +81,7 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <ColumnBasicFields control={form.control} />
           
           <ColumnTypeSelector control={form.control} />
@@ -114,3 +118,4 @@ const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
 };
 
 export default ColumnFormDialog;
+

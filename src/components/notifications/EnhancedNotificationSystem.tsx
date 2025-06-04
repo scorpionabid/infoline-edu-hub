@@ -1,401 +1,261 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  Bell, 
-  BellOff, 
-  Check, 
-  Filter, 
-  Search, 
-  RefreshCw,
-  Wifi,
-  WifiOff,
-  Settings,
-  TrendingUp,
-  Clock,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-  X
-} from 'lucide-react';
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Bell, Check, X, Filter, Search, Archive } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
-import { useLanguage } from '@/context/LanguageContext';
-import { useEnhancedNotifications } from '@/context/EnhancedNotificationContext';
-import { useNotificationFilters, useNotificationConnection } from '@/hooks/notifications/useEnhancedNotifications';
-import { EnhancedNotificationItem } from './EnhancedNotificationItem';
-import { NotificationConnectionStatus } from './NotificationConnectionStatus';
-import { NotificationAnalytics } from './NotificationAnalytics';
-import { NotificationSettings } from './NotificationSettings';
+import { useEnhancedNotificationContext } from '@/context/EnhancedNotificationContext';
+import { Notification } from '@/types/notification';
 
-const EnhancedNotificationSystem: React.FC = () => {
-  const { t } = useLanguage();
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('notifications');
-  
-  const { 
-    notifications = [], 
-    unreadCount = 0, 
-    markAsRead = () => {}, 
-    markAllAsRead = () => {}, 
-    clearAll = () => {},
-    refreshNotifications = () => {},
-    isLoading = false,
-    error = null
-  } = useEnhancedNotifications();
-  
-  const { connectionStatus, handleReconnect, getConnectionHealth } = useNotificationConnection();
+export interface NotificationSystemProps {
+  maxItems?: number;
+  showFilters?: boolean;
+  showSearch?: boolean;
+  enableRealtime?: boolean;
+}
+
+const EnhancedNotificationSystem: React.FC<NotificationSystemProps> = ({
+  maxItems = 10,
+  showFilters = true,
+  showSearch = true,
+  enableRealtime = true
+}) => {
   const {
-    filters,
-    filteredNotifications,
-    updateFilter,
-    clearFilters,
-    getFilterOptions
-  } = useNotificationFilters();
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    isLoading,
+    error
+  } = useEnhancedNotificationContext();
 
-  // Get filter options
-  const { types, priorities } = getFilterOptions();
-  
-  // Connection health
-  const connectionHealth = getConnectionHealth();
-  
-  // Priority icon mapping
-  const priorityIcons = {
-    critical: AlertTriangle,
-    high: AlertTriangle,
-    normal: Info,
-    low: Info
-  };
-  
-  // Type icon mapping
-  const typeIcons = {
-    success: CheckCircle,
-    warning: AlertTriangle,
-    error: AlertTriangle,
-    info: Info,
-    deadline: Clock
-  };
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  // Group notifications by status for quick stats
-  const notificationStats = useMemo(() => {
-    const stats = {
-      total: notifications.length,
-      unread: unreadCount,
-      today: 0,
-      critical: 0,
-      high: 0
-    };
+  // Filter notifications based on search and filters
+  const filteredNotifications = notifications.filter(notification => {
+    const matchesSearch = !searchTerm || 
+      notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      notification.message?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const today = new Date().toDateString();
-    
-    notifications.forEach(notification => {
-      const notificationDate = new Date(notification.createdAt || notification.timestamp).toDateString();
-      if (notificationDate === today) {
-        stats.today++;
-      }
-      
-      if (notification.priority === 'critical') {
-        stats.critical++;
-      } else if (notification.priority === 'high') {
-        stats.high++;
-      }
-    });
-    
-    return stats;
-  }, [notifications, unreadCount]);
+    const matchesType = filterType === 'all' || notification.type === filterType;
+    const matchesStatus = filterStatus === 'all' || 
+      (filterStatus === 'read' && notification.is_read) ||
+      (filterStatus === 'unread' && !notification.is_read);
+
+    return matchesSearch && matchesType && matchesStatus;
+  }).slice(0, maxItems);
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      await markAsRead(notificationId);
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
 
   const handleMarkAllAsRead = async () => {
     try {
       await markAllAsRead();
     } catch (error) {
-      console.error('Error marking all as read:', error);
+      console.error('Failed to mark all notifications as read:', error);
     }
   };
 
-  const handleClearAll = async () => {
+  const handleDeleteNotification = async (notificationId: string) => {
     try {
-      await clearAll();
+      await deleteNotification(notificationId);
     } catch (error) {
-      console.error('Error clearing all notifications:', error);
+      console.error('Failed to delete notification:', error);
     }
   };
 
-  const handleRefresh = async () => {
-    try {
-      await refreshNotifications();
-    } catch (error) {
-      console.error('Error refreshing notifications:', error);
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-800 border-red-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'deadline': return '⏰';
+      case 'approval': return '✅';
+      case 'submission': return '📄';
+      case 'system': return '⚙️';
+      case 'warning': return '⚠️';
+      default: return '📬';
+    }
+  };
+
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardContent className="pt-6">
+          <div className="text-center text-red-600">
+            Bildirişləri yükləyərkən xəta baş verdi: {error.message}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
-          aria-label={t('notifications')}
-        >
-          <Bell className="h-5 w-5" />
-          
-          {/* Unread count badge */}
-          {unreadCount > 0 && (
-            <Badge 
-              className={cn(
-                "absolute -top-2 -right-2 px-1.5 py-0.5 text-white text-xs",
-                unreadCount > 99 ? "bg-red-600" : "bg-red-500"
-              )}
-            >
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </Badge>
-          )}
-          
-          {/* Connection status indicator */}
-          <div className={cn(
-            "absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background",
-            connectionHealth.health === 'excellent' ? "bg-green-500" :
-            connectionHealth.health === 'good' ? "bg-yellow-500" :
-            connectionHealth.health === 'poor' ? "bg-orange-500" :
-            "bg-red-500"
-          )} />
-        </Button>
-      </PopoverTrigger>
-      
-      <PopoverContent className="w-96 p-0" align="end">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="flex items-center justify-between p-4 border-b">
-            <div className="flex items-center space-x-2">
-              <Bell className="h-5 w-5" />
-              <span className="font-semibold">{t('notifications')}</span>
-              {isLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
-            </div>
-            
-            <TabsList className="grid w-fit grid-cols-3">
-              <TabsTrigger value="notifications" className="px-2 py-1 text-xs">
-                <Bell className="h-3 w-3 mr-1" />
-                {notificationStats.total}
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="px-2 py-1 text-xs">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                Stats
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="px-2 py-1 text-xs">
-                <Settings className="h-3 w-3" />
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="notifications" className="mt-0">
-            {/* Quick stats */}
-            <div className="px-4 py-2 bg-muted/50">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{t('today')}: {notificationStats.today}</span>
-                <span>{t('unread')}: {notificationStats.unread}</span>
-                <span className="flex items-center space-x-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  <span>{notificationStats.critical + notificationStats.high}</span>
-                </span>
-              </div>
-            </div>
-
-            {/* Connection status */}
-            <NotificationConnectionStatus 
-              status={connectionStatus}
-              health={connectionHealth}
-              onReconnect={handleReconnect}
-            />
-
-            {/* Filters and actions */}
-            <div className="p-3 border-b space-y-3">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t('searchNotifications')}
-                  value={filters.searchTerm}
-                  onChange={(e) => updateFilter('searchTerm', e.target.value)}
-                  className="pl-9 h-8"
-                />
-              </div>
-
-              {/* Filter controls */}
-              <div className="flex items-center space-x-2">
-                <Select value={filters.type} onValueChange={(value) => updateFilter('type', value)}>
-                  <SelectTrigger className="h-8 w-20">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All</SelectItem>
-                    {types.map(type => (
-                      <SelectItem key={type} value={type}>
-                        <div className="flex items-center space-x-1">
-                          {React.createElement(typeIcons[type as keyof typeof typeIcons] || Info, { 
-                            className: "h-3 w-3" 
-                          })}
-                          <span className="capitalize">{type}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={filters.priority} onValueChange={(value) => updateFilter('priority', value)}>
-                  <SelectTrigger className="h-8 w-24">
-                    <SelectValue placeholder="Priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All</SelectItem>
-                    {priorities.map(priority => (
-                      <SelectItem key={priority} value={priority}>
-                        <div className="flex items-center space-x-1">
-                          {React.createElement(priorityIcons[priority as keyof typeof priorityIcons] || Info, { 
-                            className: "h-3 w-3" 
-                          })}
-                          <span className="capitalize">{priority}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={filters.read} onValueChange={(value) => updateFilter('read', value)}>
-                  <SelectTrigger className="h-8 w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="unread">Unread</SelectItem>
-                    <SelectItem value="read">Read</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {(filters.type || filters.priority || filters.read !== 'all' || filters.searchTerm) && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
-                    <X className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex items-center justify-between">
-                <div className="flex space-x-1">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleMarkAllAsRead}
-                    disabled={unreadCount === 0 || isLoading}
-                    className="h-7 px-2 text-xs"
-                  >
-                    <Check className="h-3 w-3 mr-1" />
-                    Mark All Read
-                  </Button>
-                  
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleClearAll}
-                    disabled={notifications.length === 0 || isLoading}
-                    className="h-7 px-2 text-xs"
-                  >
-                    <BellOff className="h-3 w-3 mr-1" />
-                    Clear All
-                  </Button>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRefresh}
-                  disabled={isLoading}
-                  className="h-7 px-2 text-xs"
-                >
-                  <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} />
-                </Button>
-              </div>
-            </div>
-            
-            {/* Error display */}
-            {error && (
-              <div className="p-3 bg-red-50 border-b">
-                <div className="flex items-center space-x-2 text-red-600 text-xs">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span>{error.message}</span>
-                </div>
-              </div>
+    <Card className="w-full">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Bell className="h-5 w-5" />
+            <CardTitle>Bildirişlər</CardTitle>
+            {unreadCount > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {unreadCount}
+              </Badge>
             )}
+          </div>
+          {unreadCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleMarkAllAsRead}
+              disabled={isLoading}
+            >
+              <Check className="h-4 w-4 mr-1" />
+              Hamısını oxunmuş et
+            </Button>
+          )}
+        </div>
+        
+        {showSearch && (
+          <div className="flex items-center space-x-2 mt-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Bildirişlərdə axtar..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        )}
 
-            {/* Notifications list */}
-            <ScrollArea className="h-80">
-              {filteredNotifications.length > 0 ? (
-                <div className="py-1">
-                  {filteredNotifications.map((notification, index) => (
-                    <React.Fragment key={notification.id}>
-                      <div 
-                        className={cn(
-                          "hover:bg-muted/50 transition-colors",
-                          !(notification.isRead || notification.is_read) ? "bg-muted/30" : ""
-                        )}
+        {showFilters && (
+          <div className="flex items-center space-x-2 mt-2">
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Tip" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Hamısı</SelectItem>
+                <SelectItem value="deadline">Müddət</SelectItem>
+                <SelectItem value="approval">Təsdiq</SelectItem>
+                <SelectItem value="submission">Göndəriş</SelectItem>
+                <SelectItem value="system">Sistem</SelectItem>
+                <SelectItem value="warning">Xəbərdarlıq</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Hamısı</SelectItem>
+                <SelectItem value="unread">Oxunmamış</SelectItem>
+                <SelectItem value="read">Oxunmuş</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </CardHeader>
+
+      <CardContent>
+        {isLoading && notifications.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            Bildirişlər yüklənir...
+          </div>
+        ) : filteredNotifications.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            {searchTerm || filterType !== 'all' || filterStatus !== 'all' 
+              ? 'Axtarış nəticəsində bildiriş tapılmadı'
+              : 'Hələ ki bildiriş yoxdur'
+            }
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredNotifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`p-4 rounded-lg border transition-all hover:shadow-sm ${
+                  notification.is_read 
+                    ? 'bg-gray-50 border-gray-200' 
+                    : 'bg-white border-blue-200 shadow-sm'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-lg">{getTypeIcon(notification.type)}</span>
+                      <h4 className={`font-medium ${notification.is_read ? 'text-gray-700' : 'text-gray-900'}`}>
+                        {notification.title}
+                      </h4>
+                      <Badge 
+                        variant="outline" 
+                        className={getPriorityColor(notification.priority || 'normal')}
                       >
-                        <EnhancedNotificationItem 
-                          notification={notification} 
-                          onMarkAsRead={markAsRead}
-                          showPriority={true}
-                          showType={true}
-                        />
-                      </div>
-                      {index < filteredNotifications.length - 1 && (
-                        <Separator className="my-0" />
-                      )}
-                    </React.Fragment>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full p-6 text-center text-muted-foreground">
-                  {notifications.length === 0 ? (
-                    <>
-                      <Bell className="h-12 w-12 mb-3 opacity-50" />
-                      <p className="text-sm">{t('noNotifications')}</p>
-                    </>
-                  ) : (
-                    <>
-                      <Filter className="h-12 w-12 mb-3 opacity-50" />
-                      <p className="text-sm">No notifications match your filters</p>
-                      <Button 
-                        variant="link" 
-                        size="sm" 
-                        onClick={clearFilters}
-                        className="mt-2 text-xs"
+                        {notification.priority || 'normal'}
+                      </Badge>
+                    </div>
+                    
+                    {notification.message && (
+                      <p className={`text-sm mb-2 ${notification.is_read ? 'text-gray-500' : 'text-gray-700'}`}>
+                        {notification.message}
+                      </p>
+                    )}
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400">
+                        {new Date(notification.created_at).toLocaleString('az-AZ')}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-1 ml-4">
+                    {!notification.is_read && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleMarkAsRead(notification.id)}
+                        disabled={isLoading}
                       >
-                        Clear filters
+                        <Check className="h-4 w-4" />
                       </Button>
-                    </>
-                  )}
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteNotification(notification.id)}
+                      disabled={isLoading}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              )}
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="mt-0">
-            <NotificationAnalytics />
-          </TabsContent>
-
-          <TabsContent value="settings" className="mt-0">
-            <NotificationSettings />
-          </TabsContent>
-        </Tabs>
-      </PopoverContent>
-    </Popover>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
 export default EnhancedNotificationSystem;
+

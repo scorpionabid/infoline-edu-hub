@@ -12,7 +12,7 @@ import { Column, ColumnType } from '../types/column';
 const createMockColumn = (overrides: Partial<Column> = {}): Column => ({
   id: 'test-column-id',
   name: 'Test Column',
-  type: ColumnType.TEXT,
+  type: 'text' as ColumnType,
   is_required: false,
   category_id: 'test-category-id',
   order_index: 1,
@@ -116,7 +116,7 @@ describe('FieldRendererSimple Component Tests', () => {
     // Test simple props without form context (should render test component)
     render(
       <FieldRendererSimple
-        type={ColumnType.TEXT}
+        type="text"
         value=""
         onChange={handleChange}
         disabled={false}
@@ -136,7 +136,7 @@ describe('FieldRendererSimple Component Tests', () => {
     
     render(
       <FieldRendererSimple
-        type={ColumnType.TEXT}
+        type="text"
         value=""
         onChange={handleChange}
         disabled={false}
@@ -154,7 +154,7 @@ describe('FieldRendererSimple Component Tests', () => {
     
     render(
       <FieldRendererSimple
-        type={ColumnType.TEXT}
+        type="text"
         value=""
         onChange={handleChange}
         disabled={true}
@@ -172,7 +172,7 @@ describe('FieldRendererSimple Component Tests', () => {
     
     render(
       <FieldRendererSimple
-        type={ColumnType.TEXT}
+        type="text"
         value="initial"
         onChange={handleChange}
         disabled={false}
@@ -188,3 +188,4 @@ describe('FieldRendererSimple Component Tests', () => {
     expect(handleChange).toHaveBeenCalled();
   });
 });
+

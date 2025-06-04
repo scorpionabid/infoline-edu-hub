@@ -1,18 +1,17 @@
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ColumnType, ColumnFormValues } from '@/types/column';
 
 const columnSchema = z.object({
   name: z.string().min(1, 'Ad tələb olunur'),
-  type: z.nativeEnum(ColumnType),
+  type: z.string().min(1, 'Tip tələb olunur'),
+  category_id: z.string().min(1, 'Kateqoriya tələb olunur'),
   is_required: z.boolean(),
   placeholder: z.string().optional(),
   help_text: z.string().optional(),
-  description: z.string().optional(),
-  section: z.string().optional(),
   default_value: z.string().optional(),
   options: z.array(z.object({
     value: z.string(),
@@ -22,7 +21,7 @@ const columnSchema = z.object({
   })).optional(),
   validation: z.any().optional(),
   order_index: z.number(),
-  category_id: z.string().optional(),
+  status: z.enum(['active', 'inactive']).optional(),
 });
 
 export interface UseColumnFormProps {
@@ -37,26 +36,25 @@ export const useColumnForm = ({ defaultValues, onSubmit }: UseColumnFormProps = 
     resolver: zodResolver(columnSchema),
     defaultValues: {
       name: '',
-      type: defaultValues?.type || ColumnType.TEXT,
+      type: 'text',
+      category_id: '',
       is_required: false,
       placeholder: '',
       help_text: '',
-      description: '',
-      section: '',
       default_value: '',
       options: [],
       order_index: 0,
-      category_id: defaultValues?.category_id || '',
+      status: 'active',
       ...defaultValues,
     },
   });
 
   const selectedType = form.watch('type');
 
-  const handleSubmit = (data: ColumnFormValues) => {
+  const handleSubmit: SubmitHandler<ColumnFormValues> = (data) => {
     const formData = {
       ...data,
-      type: selectedType,
+      type: selectedType as ColumnType,
     };
 
     if (onSubmit) {
@@ -102,3 +100,4 @@ export const useColumnForm = ({ defaultValues, onSubmit }: UseColumnFormProps = 
     errors: form.formState.errors,
   };
 };
+
