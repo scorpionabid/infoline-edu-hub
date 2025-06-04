@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ApprovalDialog } from './ApprovalDialog';
+import { ApprovalItem } from '@/types/approval';
+import { DataEntryStatus } from '@/types/dataEntry';
 import { 
   CheckCircle2, 
   XCircle, 
@@ -16,22 +18,9 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 
-interface ApprovalItem {
-  id: string;
-  categoryId: string;
-  categoryName: string;
-  schoolId: string;
-  schoolName: string;
-  submittedAt: string;
-  submittedBy: string;
-  status: 'pending' | 'approved' | 'rejected';
-  entries: any[];
-  completionRate: number;
-}
-
 interface ApprovalTabsProps {
   items: ApprovalItem[];
-  type: 'pending' | 'approved' | 'rejected';
+  type: DataEntryStatus;
   onApprove?: (itemId: string, comment?: string) => Promise<void>;
   onReject?: (itemId: string, reason: string) => Promise<void>;
   onView?: (item: ApprovalItem) => void;
@@ -87,13 +76,13 @@ export const ApprovalTabs: React.FC<ApprovalTabsProps> = ({
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: DataEntryStatus) => {
     switch (status) {
-      case 'pending':
+      case DataEntryStatus.PENDING:
         return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Gözləyən</Badge>;
-      case 'approved':
+      case DataEntryStatus.APPROVED:
         return <Badge variant="secondary" className="bg-green-100 text-green-800">Təsdiqlənmiş</Badge>;
-      case 'rejected':
+      case DataEntryStatus.REJECTED:
         return <Badge variant="secondary" className="bg-red-100 text-red-800">Rədd edilmiş</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -165,7 +154,7 @@ export const ApprovalTabs: React.FC<ApprovalTabsProps> = ({
                     Bax
                   </Button>
                   
-                  {type === 'pending' && (
+                  {type === DataEntryStatus.PENDING && (
                     <>
                       <Button
                         variant="default"

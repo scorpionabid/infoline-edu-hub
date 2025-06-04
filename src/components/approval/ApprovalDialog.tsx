@@ -13,19 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CheckCircle2, XCircle, Loader2, FileText, School, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
-
-interface ApprovalItem {
-  id: string;
-  categoryId: string;
-  categoryName: string;
-  schoolId: string;
-  schoolName: string;
-  submittedAt: string;
-  submittedBy: string;
-  status: 'pending' | 'approved' | 'rejected';
-  entries: any[];
-  completionRate: number;
-}
+import { ApprovalItem } from '@/types/approval';
+import { DataEntryStatus } from '@/types/dataEntry';
 
 interface ApprovalDialogProps {
   isOpen: boolean;

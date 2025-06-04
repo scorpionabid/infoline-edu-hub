@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Column } from '@/types/column';
+import { Column, ColumnType } from '@/types/column';
 
 export interface FieldRendererProps {
   column: Column;
@@ -35,8 +35,8 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
     }
   };
 
-  switch (column.type) {
-    case 'text':
+  switch (column.type as ColumnType) {
+    case ColumnType.TEXT:
       return (
         <Input
           name={column.id}
@@ -49,7 +49,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         />
       );
 
-    case 'textarea':
+    case ColumnType.TEXTAREA:
       return (
         <Textarea
           name={column.id}
@@ -63,7 +63,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         />
       );
 
-    case 'number':
+    case ColumnType.NUMBER:
       return (
         <Input
           type="number"
@@ -77,7 +77,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         />
       );
 
-    case 'select':
+    case ColumnType.SELECT:
       const options = Array.isArray(column.options) ? column.options : [];
       return (
         <Select
@@ -98,7 +98,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         </Select>
       );
 
-    case 'checkbox':
+    case ColumnType.CHECKBOX:
       return (
         <div className="flex items-center space-x-2">
           <Checkbox
@@ -110,7 +110,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         </div>
       );
 
-    case 'switch':
+    case ColumnType.SWITCH:
       return (
         <div className="flex items-center space-x-2">
           <Switch
@@ -122,7 +122,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         </div>
       );
 
-    case 'date':
+    case ColumnType.DATE:
       return (
         <Input
           type="date"
@@ -135,7 +135,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
         />
       );
 
-    case 'email':
+    case ColumnType.EMAIL:
       return (
         <Input
           type="email"

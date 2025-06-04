@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useApprovalData } from '@/hooks/approval/useApprovalData';
 import { ApprovalTabs } from './ApprovalTabs';
+import { DataEntryStatus } from '@/types/dataEntry';
 import { Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
 export const Approval: React.FC = () => {
@@ -104,7 +105,7 @@ export const Approval: React.FC = () => {
             <TabsContent value="pending" className="mt-4">
               <ApprovalTabs
                 items={pendingApprovals}
-                type="pending"
+                type={DataEntryStatus.PENDING}
                 onApprove={approveItem}
                 onReject={rejectItem}
                 onView={viewItem}
@@ -114,7 +115,7 @@ export const Approval: React.FC = () => {
             <TabsContent value="approved" className="mt-4">
               <ApprovalTabs
                 items={approvedItems}
-                type="approved"
+                type={DataEntryStatus.APPROVED}
                 onView={viewItem}
               />
             </TabsContent>
@@ -122,7 +123,7 @@ export const Approval: React.FC = () => {
             <TabsContent value="rejected" className="mt-4">
               <ApprovalTabs
                 items={rejectedItems}
-                type="rejected"
+                type={DataEntryStatus.REJECTED}
                 onView={viewItem}
               />
             </TabsContent>
