@@ -1,98 +1,179 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Minus,
+  Bell,
+  CheckCircle,
+  AlertTriangle,
+  Info
+} from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { useEnhancedNotifications } from '@/hooks/notifications/useEnhancedNotifications';
 
 export const NotificationAnalytics: React.FC = () => {
-  // Mock analytics data
-  const analytics = {
-    totalNotifications: 156,
-    readRate: 78,
-    avgResponseTime: '2.3h',
-    criticalNotifications: 12,
-    trends: {
-      thisWeek: 23,
-      lastWeek: 18,
-      growth: 27.8
-    },
-    byType: [
-      { type: 'info', count: 89, percentage: 57 },
-      { type: 'warning', count: 34, percentage: 22 },
-      { type: 'error', count: 21, percentage: 13 },
-      { type: 'success', count: 12, percentage: 8 }
-    ]
+  const { t } = useLanguage();
+  const { notifications, unreadCount } = useEnhancedNotifications();
+
+  // Calculate analytics
+  const analytics = React.useMemo(() => {
+    const total = notifications.length;
+    const unread = unreadCount;
+    const readRate = total > 0 ? ((total - unread) / total) * 100 : 0;
+
+    // Last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const thisWeek = notifications.filter(n => 
+      new Date(n.createdAt || n.timestamp) >= sevenDaysAgo
+    ).length;
+
+    // Last 24 hours
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    
+    const today = notifications.filter(n => 
+      new Date(n.createdAt || n.timestamp) >= oneDayAgo
+    ).length;
+
+    // By type
+    const byType = notifications.reduce((acc, notification) => {
+      const type = notification.type || 'info';
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // By priority
+    const byPriority = notifications.reduce((acc, notification) => {
+      const priority = notification.priority || 'normal';
+      acc[priority] = (acc[priority] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      total,
+      unread,
+      readRate,
+      thisWeek,
+      today,
+      byType,
+      byPriority
+    };
+  }, [notifications, unreadCount]);
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'warning':
+        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case 'error':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Info className="h-4 w-4 text-blue-500" />;
+    }
   };
 
   return (
-    <div className="p-4 space-y-4 max-h-80 overflow-y-auto">
+    <div className="p-4 space-y-4">
+      {/* Overview Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Ümumi bildirişlər</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold">{analytics.totalNotifications}</div>
-            <div className="flex items-center text-xs text-green-600">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              +{analytics.trends.growth}%
+        <Card className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">{t('total')}</p>
+              <p className="text-lg font-semibold">{analytics.total}</p>
             </div>
-          </CardContent>
+            <Bell className="h-8 w-8 text-muted-foreground" />
+          </div>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Oxunma nisbəti</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold">{analytics.readRate}%</div>
-            <Progress value={analytics.readRate} className="h-1 mt-1" />
-          </CardContent>
+        <Card className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">{t('unread')}</p>
+              <p className="text-lg font-semibold">{analytics.unread}</p>
+            </div>
+            <div className="flex items-center">
+              {analytics.unread > 0 ? (
+                <TrendingUp className="h-4 w-4 text-red-500" />
+              ) : (
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              )}
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">{t('thisWeek')}</p>
+              <p className="text-lg font-semibold">{analytics.thisWeek}</p>
+            </div>
+            <TrendingUp className="h-4 w-4 text-blue-500" />
+          </div>
+        </Card>
+
+        <Card className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">{t('readRate')}</p>
+              <p className="text-lg font-semibold">{Math.round(analytics.readRate)}%</p>
+            </div>
+            <div className="w-12 h-2 bg-muted rounded-full">
+              <div 
+                className="h-full bg-green-500 rounded-full transition-all"
+                style={{ width: `${analytics.readRate}%` }}
+              />
+            </div>
+          </div>
         </Card>
       </div>
 
+      {/* By Type */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Növlərə görə bölgü</CardTitle>
+          <CardTitle className="text-sm">{t('byType')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {analytics.byType.map((item) => (
-            <div key={item.type} className="flex items-center justify-between text-xs">
+          {Object.entries(analytics.byType).map(([type, count]) => (
+            <div key={type} className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                {item.type === 'error' ? (
-                  <AlertTriangle className="h-3 w-3 text-red-500" />
-                ) : item.type === 'success' ? (
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                ) : (
-                  <div className="h-3 w-3 rounded-full bg-blue-500" />
-                )}
-                <span className="capitalize">{item.type}</span>
+                {getTypeIcon(type)}
+                <span className="text-sm capitalize">{type}</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <span>{item.count}</span>
-                <div className="w-12 bg-gray-200 rounded-full h-1">
-                  <div 
-                    className="bg-blue-500 h-1 rounded-full" 
-                    style={{ width: `${item.percentage}%` }}
-                  />
-                </div>
-              </div>
+              <Badge variant="secondary" className="text-xs">
+                {count}
+              </Badge>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className="text-lg font-bold text-red-600">{analytics.criticalNotifications}</div>
-          <div className="text-xs text-gray-600">Kritik bildirişlər</div>
-        </div>
-        
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className="text-lg font-bold">{analytics.avgResponseTime}</div>
-          <div className="text-xs text-gray-600">Orta cavab vaxtı</div>
-        </div>
-      </div>
+      {/* By Priority */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">{t('byPriority')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {Object.entries(analytics.byPriority).map(([priority, count]) => (
+            <div key={priority} className="flex items-center justify-between">
+              <span className="text-sm capitalize">{priority}</span>
+              <Badge 
+                variant={priority === 'critical' ? 'destructive' : 
+                         priority === 'high' ? 'default' : 'secondary'}
+                className="text-xs"
+              >
+                {count}
+              </Badge>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 };

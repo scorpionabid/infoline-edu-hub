@@ -1,194 +1,145 @@
 
-import { CategoryItem, DeadlineItem, FormItem, SchoolAdminDashboardData, DashboardFormStats } from '@/types/dashboard';
+import { FormItem, DeadlineItem, NotificationStats } from '@/types/dashboard';
 
-// Example implementation of dashboard data for the school admin
-export const mockSchoolAdminDashboardData: SchoolAdminDashboardData = {
-  completion: {
-    percentage: 68,
-    total: 25,
-    completed: 17
-  },
-  status: {
-    pending: 5,
-    approved: 17,
-    rejected: 2,
-    draft: 1,
-    total: 25
-  },
-  formStats: {
-    pending: 5,
-    approved: 17,
-    rejected: 2,
-    draft: 1,
-    dueSoon: 3,
-    overdue: 2,
-    total: 25,
-    completed: 17,
-    percentage: 68
-  },
-  categories: [
-    {
-      id: 'cat1',
-      name: 'Məktəb haqqında ümumi məlumat',
-      completionRate: 100,
-      status: 'completed',
-      description: 'Məktəb haqqında əsas məlumatlar'
-    },
-    {
-      id: 'cat2',
-      name: 'Müəllimlər və şagirdlər',
-      completionRate: 75,
-      status: 'in-progress',
-      description: 'Müəllim və şagird məlumatları'
-    },
-    {
-      id: 'cat3',
-      name: 'İnfrastruktur',
-      completionRate: 30,
-      status: 'in-progress',
-      description: 'Məktəb infrastrukturu haqqında'
-    },
-    {
-      id: 'cat4',
-      name: 'Tədris planı',
-      completionRate: 0,
-      status: 'not-started',
-      description: 'Tədris planı və proqramlar'
-    }
-  ],
-  pendingForms: [
-    {
-      id: 'form1',
-      title: 'Müəllimlərin siyahısı',
-      status: 'pending',
-      categoryName: 'Müəllimlər və şagirdlər',
-      categoryId: 'cat2',
-      deadline: new Date(2023, 6, 15).toISOString()
-    },
-    {
-      id: 'form2',
-      title: 'Məktəb infrastrukturu',
-      status: 'draft',
-      categoryName: 'İnfrastruktur',
-      categoryId: 'cat3',
-      deadline: new Date(2023, 7, 10).toISOString()
-    },
-    {
-      id: 'form3',
-      title: 'Şagirdlərin nəticələri',
-      status: 'pending',
-      categoryName: 'Müəllimlər və şagirdlər',
-      categoryId: 'cat2',
-      deadline: new Date(2023, 7, 25).toISOString()
-    }
-  ],
-  upcoming: [
-    {
-      id: 'deadline1',
-      title: 'İnfrastruktur məlumatlarının doldurulması',
-      categoryId: 'cat3',
-      categoryName: 'İnfrastruktur',
-      deadline: new Date(2023, 6, 30).toISOString(),
-      daysLeft: 5,
-      status: 'pending'
-    },
-    {
-      id: 'deadline2',
-      title: 'Şagird nəticələrinin yüklənməsi',
-      categoryId: 'cat2',
-      categoryName: 'Müəllimlər və şagirdlər',
-      deadline: new Date(2023, 7, 15).toISOString(),
-      daysLeft: 20,
-      status: 'not-started'
-    }
-  ]
-};
-
-// Example deadline items
-export const mockDeadlineItems: DeadlineItem[] = [
-  {
-    id: 'deadline1',
-    title: 'İnfrastruktur məlumatları',
-    categoryName: 'İnfrastruktur',
-    deadline: new Date(2023, 6, 30).toISOString(),
-    daysLeft: 5
-  },
-  {
-    id: 'deadline2',
-    title: 'Müəllim məlumatları',
-    categoryName: 'Müəllimlər və şagirdlər',
-    deadline: new Date(2023, 7, 10).toISOString(),
-    daysLeft: 15
-  },
-  {
-    id: 'deadline3',
-    title: 'Tədris planı',
-    categoryName: 'Tədris planı',
-    deadline: new Date(2023, 8, 5).toISOString(),
-    daysLeft: 40
-  }
-];
-
-// Example form items
 export const mockFormItems: FormItem[] = [
   {
-    id: 'form1',
-    title: 'Məktəb infrastrukturu',
-    categoryName: 'İnfrastruktur',
-    status: 'pending',
-    deadline: new Date(2023, 6, 30).toISOString()
+    id: '1',
+    title: 'Məktəb Məlumatları',
+    category: 'school_info',
+    status: 'completed',
+    progress: 100,
+    updatedAt: '2024-01-15T10:30:00Z',
+    deadline: '2024-01-31T23:59:59Z',
+    school_id: 'school_1'
   },
   {
-    id: 'form2',
-    title: 'Müəllimlər siyahısı',
-    categoryName: 'Müəllimlər və şagirdlər',
-    status: 'draft',
-    deadline: new Date(2023, 7, 10).toISOString()
+    id: '2', 
+    title: 'Müəllim Məlumatları',
+    category: 'teacher_info',
+    status: 'in_progress',
+    progress: 65,
+    updatedAt: '2024-01-14T16:45:00Z',
+    deadline: '2024-02-15T23:59:59Z',
+    school_id: 'school_1'
   },
   {
-    id: 'form3',
-    title: 'Şagirdlərin sayı',
-    categoryName: 'Müəllimlər və şagirdlər',
-    status: 'pending',
-    deadline: new Date(2023, 7, 15).toISOString()
+    id: '3',
+    title: 'Tələbə Statistikaları', 
+    category: 'student_stats',
+    status: 'in_progress',
+    progress: 30,
+    updatedAt: '2024-01-13T09:15:00Z',
+    deadline: '2024-02-28T23:59:59Z',
+    school_id: 'school_1'
   },
   {
-    id: 'form4',
-    title: 'Tədris planı',
-    categoryName: 'Tədris planı',
-    status: 'not-started',
-    deadline: new Date(2023, 8, 5).toISOString()
+    id: '4',
+    title: 'Maliyyə Hesabatı',
+    category: 'finance_report', 
+    status: 'not_started',
+    progress: 0,
+    updatedAt: '2024-01-12T14:20:00Z',
+    deadline: '2024-03-15T23:59:59Z',
+    school_id: 'school_1'
   }
 ];
 
-// Example categories
-export const mockCategories: CategoryItem[] = [
+export const mockDeadlines: DeadlineItem[] = [
   {
-    id: 'cat1',
-    name: 'Məktəb haqqında ümumi məlumat',
-    completionRate: 100,
-    status: 'completed',
-    description: 'Məktəb haqqında əsas məlumatlar'
+    id: '1',
+    title: 'Məktəb Məlumatları',
+    category: 'Məktəb İnformasiyası',
+    deadline: '2024-01-31T23:59:59Z',
+    status: 'upcoming',
+    priority: 'high'
   },
   {
-    id: 'cat2',
-    name: 'Müəllimlər və şagirdlər',
-    completionRate: 75,
-    status: 'in-progress',
-    description: 'Müəllim və şagird məlumatları'
+    id: '2',
+    title: 'Müəllim Hesabatı',
+    category: 'Kadr Məlumatları', 
+    deadline: '2024-02-15T23:59:59Z',
+    status: 'upcoming',
+    priority: 'normal'
   },
   {
-    id: 'cat3',
-    name: 'İnfrastruktur',
-    completionRate: 30,
-    status: 'in-progress',
-    description: 'Məktəb infrastrukturu haqqında'
-  },
-  {
-    id: 'cat4',
-    name: 'Tədris planı',
-    completionRate: 0,
-    status: 'not-started',
-    description: 'Tədris planı və proqramlar'
+    id: '3',
+    title: 'Maliyyə Hesabatı',
+    category: 'Maliyyə',
+    deadline: '2024-03-15T23:59:59Z', 
+    status: 'upcoming',
+    priority: 'low'
   }
 ];
+
+export const mockRecentActivity: FormItem[] = [
+  {
+    id: '1',
+    title: 'Məktəb profili yeniləndi',
+    category: 'school_info',
+    status: 'draft',
+    progress: 85,
+    updatedAt: '2024-01-15T14:30:00Z',
+    deadline: '2024-01-31T23:59:59Z',
+    school_id: 'school_1'
+  },
+  {
+    id: '2', 
+    title: 'Müəllim siyahısı əlavə edildi',
+    category: 'teacher_info',
+    status: 'draft',
+    progress: 45,
+    updatedAt: '2024-01-15T12:15:00Z',
+    deadline: '2024-02-15T23:59:59Z',
+    school_id: 'school_1'
+  },
+  {
+    id: '3',
+    title: 'Tələbə sayı yeniləndi',
+    category: 'student_stats', 
+    status: 'draft',
+    progress: 90,
+    updatedAt: '2024-01-15T09:45:00Z',
+    deadline: '2024-02-28T23:59:59Z',
+    school_id: 'school_1'
+  }
+];
+
+export const mockPendingApprovals: FormItem[] = [
+  {
+    id: '1',
+    title: 'Məktəb İnformasiyası',
+    category: 'school_info',
+    status: 'in_progress',
+    progress: 100,
+    updatedAt: '2024-01-14T16:30:00Z',
+    deadline: '2024-01-31T23:59:59Z',
+    school_id: 'school_1'
+  },
+  {
+    id: '2',
+    title: 'Müəllim Məlumatları', 
+    category: 'teacher_info',
+    status: 'in_progress',
+    progress: 75,
+    updatedAt: '2024-01-14T14:20:00Z',
+    deadline: '2024-02-15T23:59:59Z',
+    school_id: 'school_1'
+  },
+  {
+    id: '3',
+    title: 'Tələbə Hesabatı',
+    category: 'student_stats',
+    status: 'not_started', 
+    progress: 60,
+    updatedAt: '2024-01-14T11:10:00Z',
+    deadline: '2024-02-28T23:59:59Z',
+    school_id: 'school_1'
+  }
+];
+
+export const mockNotificationStats: NotificationStats = {
+  total: 15,
+  unread: 3,
+  today: 5,
+  thisWeek: 12
+};

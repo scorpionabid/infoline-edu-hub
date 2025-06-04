@@ -1,33 +1,83 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useAuth } from './auth';
-import { useLanguageSafe } from './LanguageContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface Region {
   id: string;
   name: string;
-  description?: string;
-  status?: string;
-  admin_id?: string;
-  admin_email?: string;
-  admin_name?: string;
-  created_at?: string;
-  updated_at?: string;
+}
+
+interface Sector {
+  id: string;
+  name: string;
+  region_id: string;
 }
 
 interface RegionsContextType {
   regions: Region[];
-  loading: boolean;
-  error: Error | null;
-  addRegion: (region: Omit<Region, 'id'>) => Promise<Region>;
-  updateRegion: (id: string, region: Partial<Region>) => Promise<Region>;
-  deleteRegion: (id: string) => Promise<void>;
-  getRegion: (id: string) => Region | undefined;
-  refetchRegions: () => Promise<void>;
+  sectors: Sector[];
+  isLoading: boolean;
+  error: any;
 }
 
 const RegionsContext = createContext<RegionsContextType | undefined>(undefined);
+
+export const RegionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [sectors, setSectors] = useState<Sector[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchRegionsAndSectors = async () => {
+      setIsLoading(true);
+      try {
+        const { data: regionsData, error: regionsError } = await supabase
+          .from('regions')
+          .select('*')
+          .order('name', { ascending: true });
+
+        if (regionsError) {
+          throw new Error(`Error fetching regions: ${regionsError.message}`);
+        }
+
+        const { data: sectorsData, error: sectorsError } = await supabase
+          .from('sectors')
+          .select('*')
+          .order('name', { ascending: true });
+
+        if (sectorsError) {
+          throw new Error(`Error fetching sectors: ${sectorsError.message}`);
+        }
+
+        setRegions(regionsData || []);
+        setSectors(sectorsData || []);
+        setError(null);
+      } catch (err: any) {
+        setError(err.message || 'An unexpected error occurred.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRegionsAndSectors();
+  }, [user]);
+
+  const value: RegionsContextType = {
+    regions,
+    sectors,
+    isLoading,
+    error,
+  };
+
+  return (
+    <RegionsContext.Provider value={value}>
+      {children}
+    </RegionsContext.Provider>
+  );
+};
 
 export const useRegions = () => {
   const context = useContext(RegionsContext);
@@ -35,158 +85,4 @@ export const useRegions = () => {
     throw new Error('useRegions must be used within a RegionsProvider');
   }
   return context;
-};
-
-export const useRegionsContext = () => useContext(RegionsContext);
-
-export const RegionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const { user } = useAuth();
-  const { t } = useLanguageSafe();
-
-  const fetchRegions = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { data, error } = await supabase
-        .from('regions')
-        .select('*')
-        .eq('status', 'active')
-        .order('name');
-        
-      if (error) throw error;
-      
-      setRegions(data || []);
-    } catch (err) {
-      console.error('Error fetching regions:', err);
-      setError(err as Error);
-      toast.error(t('errorFetchingRegions'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addRegion = async (region: Omit<Region, 'id'>): Promise<Region> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const newRegion = {
-        name: region.name, // Required property
-        description: region.description || '',
-        admin_id: region.admin_id || null,
-        admin_email: region.admin_email || null,
-        status: region.status || 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      const { data, error } = await supabase
-        .from('regions')
-        .insert(newRegion)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      setRegions(prev => [...prev, data]);
-      toast.success(t('regionAdded'));
-      
-      return data;
-    } catch (err) {
-      console.error('Error adding region:', err);
-      setError(err as Error);
-      toast.error(t('errorAddingRegion'));
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateRegion = async (id: string, region: Partial<Region>): Promise<Region> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const updatedRegion = {
-        ...region,
-        updated_at: new Date().toISOString()
-      };
-      
-      const { data, error } = await supabase
-        .from('regions')
-        .update(updatedRegion)
-        .eq('id', id)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      setRegions(prev => prev.map(r => r.id === id ? { ...r, ...data } : r));
-      toast.success(t('regionUpdated'));
-      
-      return data;
-    } catch (err) {
-      console.error('Error updating region:', err);
-      setError(err as Error);
-      toast.error(t('errorUpdatingRegion'));
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteRegion = async (id: string): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { error } = await supabase
-        .from('regions')
-        .update({ status: 'inactive', updated_at: new Date().toISOString() })
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      setRegions(prev => prev.filter(r => r.id !== id));
-      toast.success(t('regionDeleted'));
-    } catch (err) {
-      console.error('Error deleting region:', err);
-      setError(err as Error);
-      toast.error(t('errorDeletingRegion'));
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getRegion = (id: string): Region | undefined => {
-    return regions.find(r => r.id === id);
-  };
-
-  const refetchRegions = async (): Promise<void> => {
-    await fetchRegions();
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchRegions();
-    }
-  }, [user]);
-
-  const value: RegionsContextType = {
-    regions,
-    loading,
-    error,
-    addRegion,
-    updateRegion,
-    deleteRegion,
-    getRegion,
-    refetchRegions
-  };
-
-  return <RegionsContext.Provider value={value}>{children}</RegionsContext.Provider>;
 };

@@ -2,125 +2,173 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/context/LanguageContext';
-import { useToast } from '@/hooks/common/useToast';
+import { useToast } from '@/hooks/use-toast';
 
 export const NotificationSettings: React.FC = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
   
   const [settings, setSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: false,
-    deadlineReminders: true,
+    email: true,
+    push: true,
+    inApp: true,
+    system: true,
+    deadline: true,
+    statusUpdates: true,
     weeklyReports: false,
-    systemAlerts: true
+    realTime: true
   });
 
-  const handleSettingChange = (key: keyof typeof settings) => {
-    setSettings(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleToggle = (key: keyof typeof settings) => {
+    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleSave = () => {
-    // Save logic here
-    toast({
-      title: t('settingsSaved'),
-      description: t('settingsSavedDescription')
-    });
-  };
-
-  const handleReset = () => {
-    setSettings({
-      emailNotifications: true,
-      pushNotifications: false,
-      deadlineReminders: true,
-      weeklyReports: false,
-      systemAlerts: true
-    });
-    
-    toast({
-      title: t('settingsReset'),
-      description: t('settingsResetDescription')
-    });
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: t('settingsSaved'),
+        description: t('notificationSettingsUpdated'),
+      });
+    } catch (error) {
+      toast({
+        title: t('error'),
+        description: t('failedToSaveSettings'),
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('notificationSettings')}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
+    <div className="p-4 space-y-4">
+      {/* General Settings */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">{t('generalSettings')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label htmlFor="email-notifications">
-              {t('emailNotifications')}
-            </Label>
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">{t('emailNotifications')}</Label>
+              <p className="text-xs text-muted-foreground">{t('receiveEmailNotifications')}</p>
+            </div>
             <Switch
-              id="email-notifications"
-              checked={settings.emailNotifications}
-              onCheckedChange={() => handleSettingChange('emailNotifications')}
+              checked={settings.email}
+              onCheckedChange={() => handleToggle('email')}
             />
           </div>
-          
+
           <div className="flex items-center justify-between">
-            <Label htmlFor="push-notifications">
-              {t('pushNotifications')}
-            </Label>
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">{t('pushNotifications')}</Label>
+              <p className="text-xs text-muted-foreground">{t('receivePushNotifications')}</p>
+            </div>
             <Switch
-              id="push-notifications"
-              checked={settings.pushNotifications}
-              onCheckedChange={() => handleSettingChange('pushNotifications')}
+              checked={settings.push}
+              onCheckedChange={() => handleToggle('push')}
             />
           </div>
-          
+
           <div className="flex items-center justify-between">
-            <Label htmlFor="deadline-reminders">
-              {t('deadlineReminders')}
-            </Label>
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">{t('inAppNotifications')}</Label>
+              <p className="text-xs text-muted-foreground">{t('showInAppNotifications')}</p>
+            </div>
             <Switch
-              id="deadline-reminders"
-              checked={settings.deadlineReminders}
-              onCheckedChange={() => handleSettingChange('deadlineReminders')}
+              checked={settings.inApp}
+              onCheckedChange={() => handleToggle('inApp')}
             />
           </div>
-          
+        </CardContent>
+      </Card>
+
+      {/* System Notifications */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">{t('systemNotifications')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label htmlFor="weekly-reports">
-              {t('weeklyReports')}
-            </Label>
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">{t('deadlineReminders')}</Label>
+              <p className="text-xs text-muted-foreground">{t('notifyBeforeDeadlines')}</p>
+            </div>
             <Switch
-              id="weekly-reports"
+              checked={settings.deadline}
+              onCheckedChange={() => handleToggle('deadline')}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">{t('statusUpdates')}</Label>
+              <p className="text-xs text-muted-foreground">{t('notifyOnStatusChanges')}</p>
+            </div>
+            <Switch
+              checked={settings.statusUpdates}
+              onCheckedChange={() => handleToggle('statusUpdates')}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center space-x-2">
+                <Label className="text-sm font-medium">{t('realTimeUpdates')}</Label>
+                <Badge variant="secondary" className="text-xs">Live</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">{t('instantNotifications')}</p>
+            </div>
+            <Switch
+              checked={settings.realTime}
+              onCheckedChange={() => handleToggle('realTime')}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Reports */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">{t('reports')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">{t('weeklyReports')}</Label>
+              <p className="text-xs text-muted-foreground">{t('receiveWeeklyDigest')}</p>
+            </div>
+            <Switch
               checked={settings.weeklyReports}
-              onCheckedChange={() => handleSettingChange('weeklyReports')}
+              onCheckedChange={() => handleToggle('weeklyReports')}
             />
           </div>
-          
-          <div className="flex items-center justify-between">
-            <Label htmlFor="system-alerts">
-              {t('systemAlerts')}
-            </Label>
-            <Switch
-              id="system-alerts"
-              checked={settings.systemAlerts}
-              onCheckedChange={() => handleSettingChange('systemAlerts')}
-            />
-          </div>
-        </div>
-        
-        <div className="flex space-x-2">
-          <Button onClick={handleSave}>
-            {t('saveSettings')}
-          </Button>
-          <Button variant="outline" onClick={handleReset}>
-            {t('resetSettings')}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Save Button */}
+      <Button 
+        onClick={handleSave} 
+        disabled={isSaving}
+        className="w-full"
+      >
+        {isSaving ? t('saving') : t('saveSettings')}
+      </Button>
+    </div>
   );
 };
+
+export default NotificationSettings;
