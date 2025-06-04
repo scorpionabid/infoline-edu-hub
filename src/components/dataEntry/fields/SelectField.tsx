@@ -41,21 +41,24 @@ const SelectField: React.FC<SelectFieldProps> = ({
           .filter(option => option !== null && option !== undefined) // Filter out null/undefined options
           .map((option, index) => {
             // Create a stable, unique key that doesn't rely on Date.now()
-            const uniqueKey = `option-${index}-${column.id}-${index}`;
+            const uniqueKey = `option-${index}-${column.id}`;
             
             // Handle string options
             if (typeof option === 'string') {
+              // Ensure value is never empty string
+              const value = option.trim() || `default-${uniqueKey}`;
               return { 
                 id: uniqueKey,
-                value: option,
-                label: option
+                value: value,
+                label: option || value
               };
             } 
             
             // Handle object options
             else if (typeof option === 'object' && option !== null) {
               const id = option.id || uniqueKey;
-              const value = String(option.value !== undefined ? option.value : id);
+              // Ensure value is never empty string
+              const value = (option.value && String(option.value).trim()) || id || `default-${uniqueKey}`;
               return {
                 id,
                 value,
@@ -65,10 +68,11 @@ const SelectField: React.FC<SelectFieldProps> = ({
             
             // Fallback for unexpected types
             else {
+              const value = String(option || '').trim() || `default-${uniqueKey}`;
               return {
                 id: uniqueKey,
-                value: String(option || ''),
-                label: String(option || '')
+                value: value,
+                label: value
               };
             }
           });
@@ -80,14 +84,16 @@ const SelectField: React.FC<SelectFieldProps> = ({
           const parsedOptions = JSON.parse(column.options);
           if (Array.isArray(parsedOptions)) {
             return parsedOptions.map((option, index) => {
-              const uniqueKey = `option-${index}-${column.id}-${index}`;
+              const uniqueKey = `option-${index}-${column.id}`;
               if (typeof option === 'string') {
-                return { id: uniqueKey, value: option, label: option };
+                const value = option.trim() || `default-${uniqueKey}`;
+                return { id: uniqueKey, value: value, label: option || value };
               } else {
+                const value = (option.value && String(option.value).trim()) || option.id || uniqueKey;
                 return { 
                   id: option.id || uniqueKey,
-                  value: String(option.value || uniqueKey), 
-                  label: option.label || String(option.value || `Option ${index}`)
+                  value: value, 
+                  label: option.label || value
                 };
               }
             });
@@ -106,26 +112,37 @@ const SelectField: React.FC<SelectFieldProps> = ({
     }
   }, [column.id, column.options]);
 
-  // Ensure value is always a valid string
+  // Ensure value is always a valid string, never empty
   const safeValue = React.useMemo(() => {
-    if (value === undefined || value === null) return '';
+    if (value === undefined || value === null || value === '') {
+      return 'NONE'; // Default placeholder value
+    }
     return String(value);
   }, [value]);
+
+  const handleValueChange = (newValue: string) => {
+    // Convert NONE back to empty string for the form
+    onValueChange(newValue === 'NONE' ? '' : newValue);
+  };
 
   return (
     <Select 
       value={safeValue} 
-      onValueChange={onValueChange} 
+      onValueChange={handleValueChange} 
       disabled={isDisabled}
     >
       <SelectTrigger>
         <SelectValue placeholder={column.placeholder || 'Select an option'} />
       </SelectTrigger>
       <SelectContent>
+        {/* Always add a placeholder option */}
+        <SelectItem value="NONE">
+          {column.placeholder || 'Select an option'}
+        </SelectItem>
         {options.length > 0 ? (
           options.map((option) => {
-            // Safety check for option
-            if (!option || !option.id || !option.value) {
+            // Safety check for option - ensure value is never empty
+            if (!option || !option.value || option.value.trim() === '') {
               return null;
             }
             
@@ -139,7 +156,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
             );
           })
         ) : (
-          <SelectItem value="" disabled>No options available</SelectItem>
+          <SelectItem value="no-options" disabled>No options available</SelectItem>
         )}
       </SelectContent>
     </Select>

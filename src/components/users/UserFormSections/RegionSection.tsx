@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,7 +31,7 @@ function RegionSection<TFieldValues extends FieldValues>({
           <FormControl>
             <Select
               value={field.value || 'NONE'}
-              onValueChange={(value) => field.onChange(value === 'NONE' ? '' : value)}
+              onValueChange={(value) => field.onChange(value === 'NONE' ? null : value)}
               disabled={disabled}
             >
               <SelectTrigger>

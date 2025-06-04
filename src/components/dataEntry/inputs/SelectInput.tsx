@@ -24,15 +24,19 @@ export const SelectInput = <T extends Record<string, any>>({
     : [];
 
   const handleChange = (newValue: string) => {
-    onChange(newValue);
+    // Convert NONE back to empty string for the form
+    onChange(newValue === 'NONE' ? '' : newValue);
   };
+
+  // Ensure value is never empty string for Select component
+  const safeValue = value || 'NONE';
 
   return (
     <div className="space-y-2">
       {column.name && <FormLabel>{column.name}</FormLabel>}
       
       <Select
-        value={value || ''}
+        value={safeValue}
         onValueChange={handleChange}
         disabled={disabled}
       >
@@ -40,9 +44,12 @@ export const SelectInput = <T extends Record<string, any>>({
           <SelectValue placeholder={column.placeholder || 'Seçin'} />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="NONE">{column.placeholder || 'Seçin'}</SelectItem>
           {options.map((option, index) => {
             // Always generate a valid value, never empty string
-            const optionValue = option.value ? option.value : `option-${index}-${option.label || Math.random().toString(36).substring(7)}`;
+            const optionValue = option.value && option.value.trim() 
+              ? option.value 
+              : `option-${index}-${option.label || Math.random().toString(36).substring(7)}`;
             
             return (
               <SelectItem key={optionValue} value={optionValue}>
