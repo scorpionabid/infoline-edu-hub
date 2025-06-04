@@ -1,32 +1,62 @@
-import { useMemo } from 'react';
-import { createIndexedMap, safeGetByUUID } from '@/utils/dataIndexing';
 
-/**
- * Hər hansı bir massivi ID-yə görə indekslənmiş obyektə çevirmək üçün hook
- * Bu hook, UUID əsaslı axtarış əməliyyatlarını optimallaşdırır və TypeScript tipləmə dəstəyi təmin edir
- */
-export function useIndexedData<T extends { [key: string]: any }>(
-  items: T[] | null | undefined,
-  keyField: keyof T = 'id' as keyof T
-): {
-  map: Record<string, T>;
-  getItem: (id: string | null | undefined) => T | null;
-  hasItem: (id: string | null | undefined) => boolean;
-} {
-  // İndekslənmiş map obyektini yaradırıq
-  const map = useMemo(() => {
-    return createIndexedMap(items, keyField);
-  }, [items, keyField]);
-  
-  // Element almaq üçün təhlükəsiz funksiya
-  const getItem = useMemo(() => {
-    return (id: string | null | undefined) => safeGetByUUID(map, id);
-  }, [map]);
-  
-  // Elementin mövcudluğunu yoxlamaq üçün funksiya
-  const hasItem = useMemo(() => {
-    return (id: string | null | undefined) => !!id && !!map[id];
-  }, [map]);
-  
-  return { map, getItem, hasItem };
+import { useMemo } from 'react';
+
+export interface UseIndexedDataProps<T extends Record<string, any>> {
+  items: T[];
+  keyProperty: keyof T;
 }
+
+export interface UseIndexedDataResult<T> {
+  map: Record<string, T>;
+  getItem: (key: string) => T | undefined;
+  hasItem: (key: string) => boolean;
+  keys: string[];
+  values: T[];
+}
+
+export function useIndexedData<T extends Record<string, any>>(
+  items: T[],
+  keyProperty: keyof T = 'id'
+): UseIndexedDataResult<T> {
+  return useMemo(() => {
+    const map: Record<string, T> = {};
+    
+    if (!Array.isArray(items)) {
+      return {
+        map,
+        getItem: () => undefined,
+        hasItem: () => false,
+        keys: [],
+        values: []
+      };
+    }
+    
+    items.forEach(item => {
+      if (item && item[keyProperty]) {
+        const key = String(item[keyProperty]);
+        map[key] = item;
+      }
+    });
+    
+    const getItem = (key: string): T | undefined => {
+      return map[key];
+    };
+    
+    const hasItem = (key: string): boolean => {
+      return key in map;
+    };
+    
+    const keys = Object.keys(map);
+    const values = Object.values(map);
+    
+    return {
+      map,
+      getItem,
+      hasItem,
+      keys,
+      values
+    };
+  }, [items, keyProperty]);
+}
+
+export default useIndexedData;
