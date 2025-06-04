@@ -2,101 +2,97 @@
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Control } from 'react-hook-form';
-import { ColumnType, ColumnTypeDefinition } from '@/types/column';
+import { ColumnType } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
-import { Type, Hash, Mail, Phone, Calendar, ChevronDown, CheckSquare, Circle, FileText, Link, Lock, Upload } from 'lucide-react';
+import { TextIcon, AlignLeft, Hash, Mail, Phone, Link, Lock, Calendar, List, Circle, Square, FileIcon } from 'lucide-react';
 
 export interface ColumnTypeSelectorProps {
-  control: Control<any>;
-  selectedType?: ColumnType;
+  control: any;
+  selectedType: ColumnType;
   onTypeChange: (type: ColumnType) => void;
 }
 
-const columnTypeDefinitions: ColumnTypeDefinition[] = [
-  {
-    value: 'text',
-    label: 'Text',
-    description: 'Single line text input',
-    icon: <Type className="h-4 w-4" />
-  },
-  {
-    value: 'textarea',
-    label: 'Textarea',
-    description: 'Multi-line text input',
-    icon: <FileText className="h-4 w-4" />
-  },
-  {
-    value: 'number',
-    label: 'Number',
-    description: 'Numeric input',
-    icon: <Hash className="h-4 w-4" />
-  },
-  {
-    value: 'email',
-    label: 'Email',
-    description: 'Email address input',
-    icon: <Mail className="h-4 w-4" />
-  },
-  {
-    value: 'phone',
-    label: 'Phone',
-    description: 'Phone number input',
-    icon: <Phone className="h-4 w-4" />
-  },
-  {
-    value: 'url',
-    label: 'URL',
-    description: 'URL address input',
-    icon: <Link className="h-4 w-4" />
-  },
-  {
-    value: 'password',
-    label: 'Password',
-    description: 'Password input',
-    icon: <Lock className="h-4 w-4" />
-  },
-  {
-    value: 'date',
-    label: 'Date',
-    description: 'Date picker input',
-    icon: <Calendar className="h-4 w-4" />
-  },
-  {
-    value: 'select',
-    label: 'Select',
-    description: 'Dropdown selection',
-    icon: <ChevronDown className="h-4 w-4" />,
-    hasOptions: true
-  },
-  {
-    value: 'radio',
-    label: 'Radio',
-    description: 'Radio button selection',
-    icon: <Circle className="h-4 w-4" />,
-    hasOptions: true
-  },
-  {
-    value: 'checkbox',
-    label: 'Checkbox',
-    description: 'Checkbox input',
-    icon: <CheckSquare className="h-4 w-4" />
-  },
-  {
-    value: 'file',
-    label: 'File',
-    description: 'File upload input',
-    icon: <Upload className="h-4 w-4" />
-  }
-];
-
-const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({
-  control,
-  selectedType,
-  onTypeChange
+const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ 
+  control, 
+  selectedType, 
+  onTypeChange 
 }) => {
   const { t } = useLanguage();
+
+  const columnTypes = [
+    {
+      value: ColumnType.TEXT,
+      label: t('text'),
+      icon: TextIcon,
+      description: t('singleLineText')
+    },
+    {
+      value: ColumnType.TEXTAREA,
+      label: t('textarea'),
+      icon: AlignLeft,
+      description: t('multiLineText')
+    },
+    {
+      value: ColumnType.NUMBER,
+      label: t('number'),
+      icon: Hash,
+      description: t('numericValue')
+    },
+    {
+      value: ColumnType.EMAIL,
+      label: t('email'),
+      icon: Mail,
+      description: t('emailAddress')
+    },
+    {
+      value: ColumnType.PHONE,
+      label: t('phone'),
+      icon: Phone,
+      description: t('phoneNumber')
+    },
+    {
+      value: ColumnType.URL,
+      label: t('url'),
+      icon: Link,
+      description: t('webAddress')
+    },
+    {
+      value: ColumnType.PASSWORD,
+      label: t('password'),
+      icon: Lock,
+      description: t('passwordField')
+    },
+    {
+      value: ColumnType.DATE,
+      label: t('date'),
+      icon: Calendar,
+      description: t('dateSelection')
+    },
+    {
+      value: ColumnType.SELECT,
+      label: t('select'),
+      icon: List,
+      description: t('dropdownSelection')
+    },
+    {
+      value: ColumnType.RADIO,
+      label: t('radio'),
+      icon: Circle,
+      description: t('radioButtons')
+    },
+    {
+      value: ColumnType.CHECKBOX,
+      label: t('checkbox'),
+      icon: Square,
+      description: t('checkboxes')
+    },
+    {
+      value: ColumnType.FILE,
+      label: t('file'),
+      icon: FileIcon,
+      description: t('fileUpload')
+    }
+  ];
 
   return (
     <FormField
@@ -105,33 +101,35 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({
       render={({ field }) => (
         <FormItem>
           <FormLabel>{t('columnType')}</FormLabel>
-          <Select 
-            onValueChange={(value) => {
-              field.onChange(value);
-              onTypeChange(value as ColumnType);
-            }} 
-            defaultValue={field.value}
-            value={selectedType || field.value}
-          >
-            <FormControl>
+          <FormControl>
+            <Select 
+              value={field.value} 
+              onValueChange={(value) => {
+                field.onChange(value);
+                onTypeChange(value as ColumnType);
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder={t('selectColumnType')} />
               </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {columnTypeDefinitions.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  <div className="flex items-center space-x-2">
-                    <span>{type.icon}</span>
-                    <span>{type.label}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {type.value}
-                    </Badge>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectContent>
+                {columnTypes.map((type) => {
+                  const IconComponent = type.icon;
+                  return (
+                    <SelectItem key={type.value} value={type.value}>
+                      <div className="flex items-center gap-2">
+                        <IconComponent className="h-4 w-4" />
+                        <div>
+                          <div className="font-medium">{type.label}</div>
+                          <div className="text-xs text-muted-foreground">{type.description}</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </FormControl>
           <FormMessage />
         </FormItem>
       )}

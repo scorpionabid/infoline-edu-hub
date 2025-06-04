@@ -48,16 +48,14 @@ const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
   
   // Dinamik schema yaradırıq
   const schema = React.useMemo(() => {
-    const schemaObject: Record<string, any> = {};
+    const schemaObject: Record<string, z.ZodTypeAny> = {};
     
     columns.forEach(column => {
-      let fieldSchema = z.any();
+      let fieldSchema: z.ZodTypeAny = z.string().optional();
       
       // Tələb olunan sahələr
       if (column.is_required) {
         fieldSchema = z.string().min(1, t('fieldRequired', { field: column.name }));
-      } else {
-        fieldSchema = z.string().optional();
       }
       
       // Tip əsaslı validasiya
@@ -69,8 +67,8 @@ const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
           break;
         case 'email':
           fieldSchema = column.is_required
-            ? z.string().email(t('fieldInvalidEmail', { field: column.name }))
-            : z.string().email(t('fieldInvalidEmail', { field: column.name })).optional();
+            ? z.string().email(t('fieldInvalidEmail', { field: column.name })).min(1, t('fieldRequired', { field: column.name }))
+            : z.string().email(t('fieldInvalidEmail', { field: column.name })).optional().or(z.literal(''));
           break;
       }
       
