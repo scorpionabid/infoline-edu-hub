@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -9,8 +8,9 @@ import { StatusTransitionService, TransitionContext } from '@/services/statusTra
 import { useStatusPermissions } from '@/hooks/auth/useStatusPermissions';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { DataEntryStatus } from '@/types/core/dataEntry';
-// Real-time updates are temporarily disabled
-// import { useDataEntryRealTime } from '@/hooks/realtime/useRealTimeUpdates';
+// ✅ YENİ: Real-time updates activated
+import { useRealTimeDataEntry } from '@/hooks/dataEntry/useRealTimeDataEntry';
+import ConflictResolutionDialog from '@/components/dataEntry/dialogs/ConflictResolutionDialog';
 
 // Status type is now imported from core types
 // type DataEntryStatus = DataEntry['status']; // Removed - using imported type
@@ -38,6 +38,12 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
   
   // ✅ YENİ: Status-based permissions
   const statusPermissions = useStatusPermissions(entryStatus, categoryId, schoolId);
+  
+  // ✅ YENİ: Real-time collaboration state
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [conflictData, setConflictData] = useState<any[]>([]);
+  const [serverData, setServerData] = useState<Record<string, any>>({});
+  const [localChangesSnapshot, setLocalChangesSnapshot] = useState<Record<string, any>>({});
   
   // Məlumatların sonsuz dövrə yüklənməsini idarə etmək üçün ref-lər
   const isDataLoaded = useRef<boolean>(false);
@@ -78,6 +84,126 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
       console.warn('Cache saving error:', error);
     }
   }, [categoryId, schoolId]);
+  
+  // ✅ YENİ: Real-time data change handler
+  const handleRealTimeDataChange = useCallback((payload: any) => {
+    console.log('Real-time data change received:', payload);
+    
+    if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+      const updatedData = { ...formData };
+      updatedData[payload.new.column_id] = payload.new.value;
+      
+      // Update form data without triggering unsaved changes flag
+      setFormData(updatedData);
+      
+      // Save to cache
+      saveDataToCache(updatedData);
+      
+      console.log('Form data updated from real-time:', payload.new.column_id);
+    } else if (payload.eventType === 'DELETE') {
+      const updatedData = { ...formData };
+      delete updatedData[payload.old.column_id];
+      setFormData(updatedData);
+      saveDataToCache(updatedData);
+    }
+  }, [formData, saveDataToCache]);
+  
+  // ✅ YENİ: Real-time conflict handler
+  const handleRealTimeConflict = useCallback((conflictInfo: any) => {
+    console.warn('Data conflict detected:', conflictInfo);
+    
+    // Snapshot current local changes
+    setLocalChangesSnapshot({ ...formData });
+    
+    // Prepare server data
+    const serverChanges = {
+      [conflictInfo.columnId]: conflictInfo.serverValue
+    };
+    setServerData(serverChanges);
+    
+    // Prepare conflict data for dialog
+    const conflicts = [{
+      columnId: conflictInfo.columnId,
+      columnName: category?.columns.find(col => col.id === conflictInfo.columnId)?.name || conflictInfo.columnId,
+      localValue: conflictInfo.localValue || formData[conflictInfo.columnId],
+      serverValue: conflictInfo.serverValue,
+      lastModified: conflictInfo.lastModified,
+      modifiedBy: conflictInfo.modifiedBy,
+      modifiedByName: 'Other User' // This could be enhanced with actual user names
+    }];
+    
+    setConflictData(conflicts);
+    setShowConflictDialog(true);
+  }, [formData, category]);
+  
+  // ✅ YENİ: Conflict resolution handler
+  const handleConflictResolution = useCallback((
+    resolution: 'local' | 'server' | 'merge' | 'field-by-field',
+    fieldResolutions?: Record<string, 'local' | 'server'>
+  ) => {
+    console.log('Resolving conflict with strategy:', resolution);
+    
+    let resolvedData = { ...formData };
+    
+    switch (resolution) {
+      case 'local':
+        // Keep all local changes
+        resolvedData = { ...localChangesSnapshot };
+        break;
+        
+      case 'server':
+        // Use all server changes
+        Object.keys(serverData).forEach(key => {
+          resolvedData[key] = serverData[key];
+        });
+        break;
+        
+      case 'merge':
+        // Smart merge - prefer newer values, but this is simplified
+        Object.keys(serverData).forEach(key => {
+          resolvedData[key] = serverData[key]; // For now, prefer server in merge
+        });
+        break;
+        
+      case 'field-by-field':
+        if (fieldResolutions) {
+          Object.keys(fieldResolutions).forEach(columnId => {
+            if (fieldResolutions[columnId] === 'local') {
+              resolvedData[columnId] = localChangesSnapshot[columnId];
+            } else {
+              resolvedData[columnId] = serverData[columnId];
+            }
+          });
+        }
+        break;
+    }
+    
+    // Apply resolved data
+    setFormData(resolvedData);
+    setHasUnsavedChanges(true); // Mark as changed so user can save
+    
+    // Clear conflict state
+    setShowConflictDialog(false);
+    setConflictData([]);
+    setServerData({});
+    setLocalChangesSnapshot({});
+    
+    toast({
+      title: t('success'),
+      description: t('conflictResolved'),
+    });
+  }, [formData, localChangesSnapshot, serverData, t, toast]);
+  
+  // ✅ YENİ: Real-time hook initialization
+  const realTimeHook = useRealTimeDataEntry({
+    categoryId,
+    schoolId,
+    userId: user?.id,
+    onDataChange: handleRealTimeDataChange,
+    onConflict: handleRealTimeConflict,
+    enabled: !isSaving && !isSubmitting && isDataLoaded.current,
+    conflictDetectionWindow: 3000 // 3 seconds
+  });
 
   // Təkmilləşdirilmiş loadData funksiyası
   const loadData = useCallback(async (forceRefresh: boolean = false): Promise<void> => {
@@ -318,6 +444,9 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
         setLastSaved(new Date().toISOString());
         setHasUnsavedChanges(false);
         
+        // ✅ YENİ: Update real-time timestamp to prevent self-conflicts
+        realTimeHook.updateTimestamp();
+        
         // Update status if changed
         if (result.status && result.status !== entryStatus) {
           setEntryStatus(result.status as DataEntryStatus);
@@ -359,7 +488,7 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
       setIsSaving(false);
       console.groupEnd();
     }
-  }, [categoryId, schoolId, category, formData, statusPermissions, entryStatus, t, toast]);
+  }, [categoryId, schoolId, category, formData, statusPermissions, entryStatus, realTimeHook, t, toast]);
 
   // ✅ ENHANCED: Submit with status transition validation
   const handleSubmit = useCallback(async (): Promise<void> => {
@@ -513,7 +642,7 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
     
     setIsRefreshing(true);
     try {
-      await loadData();
+      await loadData(true); // Force refresh
       toast({
         title: t('success'),
         description: t('dataRefreshed'),
@@ -633,6 +762,31 @@ export const useDataEntryManager = ({ categoryId, schoolId, category }: UseDataE
     handleStatusTransition,
     handleApprove: (comment?: string) => handleStatusTransition(DataEntryStatus.APPROVED, comment),
     handleReject: (reason: string) => handleStatusTransition(DataEntryStatus.REJECTED, reason),
-    handleReset: () => handleStatusTransition(DataEntryStatus.DRAFT, 'Reset to draft')
+    handleReset: () => handleStatusTransition(DataEntryStatus.DRAFT, 'Reset to draft'),
+    
+    // ✅ YENİ: Real-time collaboration
+    realTime: {
+      isConnected: realTimeHook.isConnected,
+      activeUsers: realTimeHook.activeUsers,
+      activeUserCount: realTimeHook.activeUserCount,
+      connectionStatus: realTimeHook.connectionStatus,
+      reconnect: realTimeHook.reconnect,
+      getStats: realTimeHook.getConnectionStats
+    },
+    
+    // ✅ YENİ: Conflict resolution
+    conflict: {
+      showDialog: showConflictDialog,
+      conflictData,
+      serverData,
+      localChanges: localChangesSnapshot,
+      onResolve: handleConflictResolution,
+      onCancel: () => {
+        setShowConflictDialog(false);
+        setConflictData([]);
+        setServerData({});
+        setLocalChangesSnapshot({});
+      }
+    }
   };
 };
