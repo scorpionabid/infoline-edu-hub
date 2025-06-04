@@ -44,7 +44,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
             
             if (typeof option === 'string') {
               // Ensure value is never empty string - use fallback
-              const optionValue = option && option.trim() ? option : `fallback-${uniqueKey}`;
+              const optionValue = option && String(option).trim() ? option : `fallback-${uniqueKey}`;
               return { 
                 id: uniqueKey,
                 value: optionValue,
@@ -70,7 +70,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
               };
             }
           })
-          .filter(option => option.value && option.value.trim() !== ''); // Final filter to remove any empty values
+          .filter(option => option.value && String(option.value).trim() !== ''); // Final filter to remove any empty values
       }
       
       // Handle string-formatted options (JSON)
@@ -82,7 +82,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
               .map((option, index) => {
                 const uniqueKey = `option-${index}-${column.id}`;
                 if (typeof option === 'string') {
-                  const optionValue = option && option.trim() ? option : `fallback-${uniqueKey}`;
+                  const optionValue = option && String(option).trim() ? option : `fallback-${uniqueKey}`;
                   return { id: uniqueKey, value: optionValue, label: option || optionValue };
                 } else {
                   const optionValue = (option.value && String(option.value).trim()) || `fallback-${uniqueKey}`;
@@ -93,7 +93,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
                   };
                 }
               })
-              .filter(option => option.value && option.value.trim() !== '');
+              .filter(option => option.value && String(option.value).trim() !== '');
           }
           return [];
         } catch (parseErr) {
@@ -137,7 +137,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
         {options.length > 0 ? (
           options.map((option) => {
             // Double-check that value is not empty before rendering
-            if (!option || !option.value || option.value.trim() === '') {
+            if (!option || !option.value || String(option.value).trim() === '') {
               return null;
             }
             

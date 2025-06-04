@@ -1,3 +1,4 @@
+
 import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 import { FieldRenderer } from '@/components/dataEntry/fields/FieldRenderer';
@@ -17,9 +18,9 @@ interface VirtualizedFormFieldsProps {
   readOnly?: boolean;
   errors?: Record<string, string>;
   className?: string;
-  virtualizationThreshold?: number; // Number of fields to trigger virtualization
-  itemHeight?: number; // Height of each form field in pixels
-  maxHeight?: number; // Maximum height of virtualized container
+  virtualizationThreshold?: number;
+  itemHeight?: number;
+  maxHeight?: number;
   showSearch?: boolean;
   showFilters?: boolean;
   groupByCategory?: boolean;
@@ -70,9 +71,6 @@ const VirtualizedFormFields: React.FC<VirtualizedFormFieldsProps> = ({
   
   // Collapsed groups state (for grouping mode)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
-  
-  // Field visibility for performance (only render visible fields)
-  const [visibleRange, setVisibleRange] = useState({ start: 0, end: 10 });
 
   // Memoized filtered and sorted columns
   const processedColumns = useMemo(() => {
@@ -149,7 +147,6 @@ const VirtualizedFormFields: React.FC<VirtualizedFormFieldsProps> = ({
 
   // Handle field value changes with optimization
   const handleFieldChange = useCallback((fieldId: string, value: any) => {
-    // Debounce rapid changes to prevent excessive re-renders
     onFieldChange(fieldId, value);
   }, [onFieldChange]);
 
@@ -215,14 +212,13 @@ const VirtualizedFormFields: React.FC<VirtualizedFormFieldsProps> = ({
               column={column}
               value={formData[column.id]}
               onChange={(value) => handleFieldChange(column.id, value)}
-              error={errors[column.id]}
               readOnly={readOnly}
             />
           </CardContent>
         </Card>
       </div>
     );
-  }, [processedColumns, formData, handleFieldChange, errors, readOnly]);
+  }, [processedColumns, formData, handleFieldChange, readOnly]);
 
   // Render grouped fields (non-virtualized for groups)
   const renderGroupedFields = () => {
@@ -255,7 +251,6 @@ const VirtualizedFormFields: React.FC<VirtualizedFormFieldsProps> = ({
                         column={column}
                         value={formData[column.id]}
                         onChange={(value) => handleFieldChange(column.id, value)}
-                        error={errors[column.id]}
                         readOnly={readOnly}
                       />
                     ))}
@@ -280,7 +275,6 @@ const VirtualizedFormFields: React.FC<VirtualizedFormFieldsProps> = ({
                 column={column}
                 value={formData[column.id]}
                 onChange={(value) => handleFieldChange(column.id, value)}
-                error={errors[column.id]}
                 readOnly={readOnly}
               />
             </CardContent>
@@ -372,10 +366,11 @@ const VirtualizedFormFields: React.FC<VirtualizedFormFieldsProps> = ({
           <CardContent className="p-2">
             <List
               ref={listRef}
+              width="100%"
               height={containerHeight}
               itemCount={processedColumns.length}
               itemSize={itemHeight}
-              overscanCount={5} // Render 5 extra items for smooth scrolling
+              overscanCount={5}
               className="virtualized-list"
             >
               {renderFieldItem}
@@ -388,17 +383,6 @@ const VirtualizedFormFields: React.FC<VirtualizedFormFieldsProps> = ({
       ) : (
         // Regular rendering for smaller forms
         renderRegularFields()
-      )}
-
-      {/* Debug Info (development only) */}
-      {process.env.NODE_ENV === 'development' && (
-        <Card>
-          <CardContent className="p-4 text-sm text-muted-foreground">
-            <div>Mode: {shouldVirtualize ? 'Virtualized' : groupByCategory ? 'Grouped' : 'Regular'}</div>
-            <div>Fields: {processedColumns.length} / {columns.length}</div>
-            <div>Container Height: {shouldVirtualize ? `${containerHeight}px` : 'Auto'}</div>
-          </CardContent>
-        </Card>
       )}
     </div>
   );
