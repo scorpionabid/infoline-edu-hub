@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Save, Send, Download, Upload } from 'lucide-react';
+import { AlertCircle, Save, Send, FileText, Download, Upload } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/context/LanguageContext';
 import { DataEntryStatus } from '@/types/dataEntry';
@@ -12,13 +12,13 @@ interface DataEntryFormProps {
   title?: string;
   className?: string;
   
-  // Save and submit handlers - fixed return types to Promise<void>
+  // Save and submit handlers - düzəldilmiş return tipləri
   onSave?: () => Promise<void>;
   onSubmit?: () => Promise<void>;
   onExportTemplate?: () => Promise<void>;
   onUploadData?: (file: File) => Promise<void>;
   
-  // Status management - fixed return types to Promise<void>
+  // Status management - düzəldilmiş return tipləri
   onStatusChange?: (newStatus: DataEntryStatus, comment?: string) => Promise<void>;
   onApprove?: (comment?: string) => Promise<void>;
   onReject?: (reason: string) => Promise<void>;

@@ -5,6 +5,7 @@ export { default as useValidation } from './useValidation';
 export { default as useFormState } from './useFormState';
 export { default as useDataSync } from './useDataSync';
 export { default as useErrorRecovery } from './useErrorRecovery';
+export { default as useBaseDataEntry } from './useBaseDataEntry';
 
 // Real-time functionality
 export { default as useRealTimeSync } from './useRealTimeSync';
@@ -26,3 +27,4 @@ export type { ConflictData, UseConflictResolutionResult } from './useConflictRes
 export type { OfflineState, UseOfflineSupportResult } from './useOfflineSupport';
 export type { CacheEntry, UseDataCacheResult } from './useDataCache';
 export type { BatchUpdate, UseBatchUpdatesResult } from './useBatchUpdates';
+export type { UseBaseDataEntryOptions, UseBaseDataEntryResult } from './useBaseDataEntry';

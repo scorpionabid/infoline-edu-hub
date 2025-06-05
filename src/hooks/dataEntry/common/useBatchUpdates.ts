@@ -3,42 +3,42 @@ import { useState, useCallback } from 'react';
 
 export interface BatchUpdate {
   id: string;
-  operation: 'create' | 'update' | 'delete';
+  type: 'create' | 'update' | 'delete';
   data: any;
   timestamp: Date;
 }
 
 export interface UseBatchUpdatesResult {
   pendingUpdates: BatchUpdate[];
-  addUpdate: (update: Omit<BatchUpdate, 'id' | 'timestamp'>) => void;
-  removeUpdate: (id: string) => void;
+  addUpdate: (update: BatchUpdate) => void;
   processBatch: () => Promise<void>;
   clearBatch: () => void;
+  batchSize: number;
 }
 
 export const useBatchUpdates = (): UseBatchUpdatesResult => {
   const [pendingUpdates, setPendingUpdates] = useState<BatchUpdate[]>([]);
 
-  const addUpdate = useCallback((update: Omit<BatchUpdate, 'id' | 'timestamp'>) => {
-    const batchUpdate: BatchUpdate = {
-      ...update,
-      id: `batch_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      timestamp: new Date()
-    };
-    
-    setPendingUpdates(prev => [...prev, batchUpdate]);
-  }, []);
-
-  const removeUpdate = useCallback((id: string) => {
-    setPendingUpdates(prev => prev.filter(update => update.id !== id));
+  const addUpdate = useCallback((update: BatchUpdate) => {
+    setPendingUpdates(prev => [...prev, update]);
   }, []);
 
   const processBatch = useCallback(async () => {
-    // Mock batch processing - replace with actual implementation
-    console.log('Processing batch of', pendingUpdates.length, 'updates');
-    
-    // Clear after processing
-    setPendingUpdates([]);
+    if (pendingUpdates.length === 0) return;
+
+    try {
+      // Mock batch processing - replace with actual implementation
+      console.log('Processing batch updates:', pendingUpdates);
+      
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Clear processed updates
+      setPendingUpdates([]);
+    } catch (error) {
+      console.error('Batch processing failed:', error);
+      throw error;
+    }
   }, [pendingUpdates]);
 
   const clearBatch = useCallback(() => {
@@ -48,9 +48,9 @@ export const useBatchUpdates = (): UseBatchUpdatesResult => {
   return {
     pendingUpdates,
     addUpdate,
-    removeUpdate,
     processBatch,
-    clearBatch
+    clearBatch,
+    batchSize: pendingUpdates.length
   };
 };
 
