@@ -12,10 +12,6 @@ export interface UseDataEntryStateProps {
   categoryId: string;
   schoolId: string;
   enabled?: boolean;
-  user?: any;
-  isSectorAdmin?: boolean;
-  categoryIdFromUrl?: string;
-  schoolIdFromUrl?: string;
 }
 
 /**
@@ -28,6 +24,7 @@ export function useDataEntryState({
 }: UseDataEntryStateProps) {
   // Current user əldə edirik
   const user = useAuthStore(selectUser);
+  
   // Data entries sorğusu
   const {
     entries = [],
@@ -42,7 +39,7 @@ export function useDataEntryState({
   } = useDataEntriesQuery({ 
     categoryId, 
     schoolId,
-    enabled
+    enabled: enabled && !!categoryId && !!schoolId
   });
   
   // UUID ilə indekslənmiş entries map
@@ -54,20 +51,30 @@ export function useDataEntryState({
   
   // Mövcud entries-ləri kopyalayıb yeniləyən funksiya
   const updateEntryValue = (columnId: string, value: any) => {
+    if (!columnId) {
+      console.warn('Column ID is required for updating entry value');
+      return;
+    }
+
     const existingEntry = getEntryByColumnId(columnId);
     
     // Mövcud və ya yeni entry hazırlayırıq
     const updatedEntry = existingEntry 
-      ? { ...existingEntry, value, updated_at: new Date().toISOString() }
+      ? { 
+          ...existingEntry, 
+          value, 
+          updated_at: new Date().toISOString() 
+        }
       : {
           column_id: columnId,
           category_id: categoryId,
           school_id: schoolId,
           value,
           status: DataEntryStatus.DRAFT,
-          // created_by sahəsini buradan kaldırırıq - API layer-də əlavə ediləcək
           updated_at: new Date().toISOString()
         };
+    
+    console.log('Updating entry value:', { columnId, value, updatedEntry });
     
     // Yalnız bir entry yeniləyirik
     saveEntries([updatedEntry]);
@@ -75,6 +82,12 @@ export function useDataEntryState({
   
   // Bütün entries-ləri birdən yeniləyən funksiya
   const updateAllEntries = (updatedEntries: Partial<DataEntry>[]) => {
+    if (!Array.isArray(updatedEntries) || updatedEntries.length === 0) {
+      console.warn('No entries to update');
+      return;
+    }
+    
+    console.log('Updating all entries:', { count: updatedEntries.length });
     saveEntries(updatedEntries);
   };
   
@@ -98,7 +111,10 @@ export function useDataEntryState({
     refetch,
     
     // Xam sorğu funksiyaları
-    saveEntries
+    saveEntries,
+    
+    // User məlumatları
+    user
   };
 }
 

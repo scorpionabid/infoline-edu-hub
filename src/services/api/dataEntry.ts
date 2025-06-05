@@ -1,7 +1,6 @@
+
 import { supabase } from '@/lib/supabase';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
-// useAuthStore hook-u service layer-də çağırılmamalıdır
-// User ID-ni component layer-dən parameter kimi alacağıq
 
 /**
  * Məlumat daxil etmələrini əldə etmək üçün sorğu parametrləri
@@ -13,13 +12,9 @@ export interface FetchDataEntriesOptions {
 
 /**
  * Məlumat daxil etmələrini əldə etmək üçün mərkəzi servis funksiyası
- * 
- * @param options Sorğu parametrləri (kateqoriya ID və məktəb ID)
- * @returns Məlumat daxil etmələri massivi
  */
 export async function fetchDataEntries({ categoryId, schoolId }: FetchDataEntriesOptions): Promise<DataEntry[]> {
   try {
-    // Tələb olunan ID-lərin mövcudluğunu yoxlayırıq
     if (!categoryId || !schoolId) {
       console.error('Missing required IDs for data entries fetch:', { categoryId, schoolId });
       throw new Error('Kateqoriya və ya məktəb ID-si çatışmır');
@@ -27,7 +22,6 @@ export async function fetchDataEntries({ categoryId, schoolId }: FetchDataEntrie
 
     console.log(`Fetching data entries for category ${categoryId} and school ${schoolId}`);
     
-    // Supabase sorğusu
     const { data, error } = await supabase
       .from('data_entries')
       .select('*')
@@ -40,13 +34,11 @@ export async function fetchDataEntries({ categoryId, schoolId }: FetchDataEntrie
       throw error;
     }
 
-    // Potensial boş data halını idarə edirik
     if (!data) {
       console.log('No data entries found');
       return [];
     }
 
-    // Təmizlənmiş və təhlükəsiz data entries qaytarırıq
     const safeEntries = data.map(entry => ({
       ...entry,
       value: entry.value !== undefined && entry.value !== null ? entry.value : '',
@@ -63,12 +55,6 @@ export async function fetchDataEntries({ categoryId, schoolId }: FetchDataEntrie
 
 /**
  * Məlumat daxil etmələrini saxlamaq üçün mərkəzi servis funksiyası
- * 
- * @param entries Saxlanılacaq məlumat daxil etmələri
- * @param categoryId Kateqoriya ID
- * @param schoolId Məktəb ID
- * @param userId İstifadəçi ID (created_by üçün)
- * @returns Əməliyyatın nəticəsi
  */
 export async function saveDataEntries(
   entries: Partial<DataEntry>[],
@@ -77,18 +63,15 @@ export async function saveDataEntries(
   userId?: string | null
 ): Promise<DataEntry[]> {
   try {
-    // Tələb olunan ID-lərin mövcudluğunu yoxlayırıq
     if (!categoryId || !schoolId) {
       throw new Error('Kateqoriya və ya məktəb ID-si çatışmır');
     }
 
-    // Entries massivinin etibarlılığını yoxlayırıq
     if (!Array.isArray(entries) || entries.length === 0) {
       throw new Error('Saxlanılacaq məlumat yoxdur');
     }
 
     console.log('About to save data entries:', { categoryId, schoolId, entriesCount: entries.length, userId });
-    console.log('User ID type and value:', { userId, type: typeof userId, isNull: userId === null, isUndefined: userId === undefined });
     
     // Əvvəlcə mövcud entries-ləri əldə edirik
     const { data: existingEntries, error: fetchError } = await supabase
@@ -114,31 +97,36 @@ export async function saveDataEntries(
     const entriesToUpdate: any[] = [];
 
     entries.forEach(entry => {
-      // Tələb olunan ID-lərin mövcudluğunu yoxlayırıq
       if (!entry.column_id) {
         console.warn('Entry without column_id found:', entry);
         throw new Error('Sütun ID-si olmayan məlumat daxil etməsi');
       }
       
-      // Təmizlənmiş məlumat hazırlayırıq
+      // UUID validation və safe handling
+      let safeUserId = null;
+      if (userId && userId !== 'system') {
+        // UUID formatını yoxlayırıq
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(userId)) {
+          safeUserId = userId;
+        }
+      }
+      
       const processedEntry = {
         column_id: entry.column_id,
         category_id: categoryId,
         school_id: schoolId,
         value: entry.value ?? '',
         status: entry.status || DataEntryStatus.DRAFT,
-        created_by: userId && userId !== 'system' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId) ? userId : null, // UUID validation + block 'system'
+        created_by: safeUserId, // Safe UUID handling
         updated_at: new Date().toISOString()
       };
 
-      // Mövcudluq yoxlanışı
       const existingId = existingMap.get(entry.column_id);
       
       if (existingId) {
-        // Yenile
         entriesToUpdate.push({ ...processedEntry, id: existingId });
       } else {
-        // Əlavə et
         entriesToInsert.push(processedEntry);
       }
     });
@@ -155,8 +143,6 @@ export async function saveDataEntries(
 
       if (insertError) {
         console.error('Error inserting data entries:', insertError);
-        console.error('Insert error details:', JSON.stringify(insertError, null, 2));
-        console.error('Failed entries:', JSON.stringify(entriesToInsert, null, 2));
         throw insertError;
       }
 
@@ -198,10 +184,6 @@ export async function saveDataEntries(
 
 /**
  * Bütün məlumat daxil etmələrini yeniləmək üçün mərkəzi servis funksiyası
- * 
- * @param entries Yenilənəcək məlumat daxil etmələri
- * @param status Yeni status
- * @returns Əməliyyatın nəticəsi
  */
 export async function updateDataEntriesStatus(
   entries: DataEntry[],
@@ -212,14 +194,12 @@ export async function updateDataEntriesStatus(
       throw new Error('Yenilənəcək məlumat yoxdur');
     }
 
-    // ID-ləri əldə edirik
     const entryIds = entries.map(entry => entry.id).filter(Boolean);
     
     if (entryIds.length === 0) {
       throw new Error('Etibarlı ID-ləri olan məlumat daxil etmələri tapılmadı');
     }
 
-    // Supabase sorğusu - update
     const { error } = await supabase
       .from('data_entries')
       .update({ status, updated_at: new Date().toISOString() })

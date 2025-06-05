@@ -18,10 +18,12 @@ export const useCategoriesQuery = ({
   const queryClient = useQueryClient();
   const user = useAuthStore(selectUser);
 
-  // Fetch categories
+  // Fetch categories with columns
   const { data: allCategories = [], isLoading, error, refetch } = useQuery({
     queryKey: ['categories', { filterByUserRole, includeInactive, userRole: user?.role }],
     queryFn: async (): Promise<CategoryWithColumns[]> => {
+      console.log('Fetching categories with role filtering:', { filterByUserRole, userRole: user?.role });
+      
       let query = supabase
         .from('categories')
         .select(`
@@ -37,35 +39,32 @@ export const useCategoriesQuery = ({
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        console.log('No categories found');
+        return [];
+      }
+
+      console.log(`Fetched ${data.length} categories from database`);
       return data as CategoryWithColumns[];
     },
   });
 
-  // Client-side filtering based on user role and assignment
+  // Client-side filtering artıq lazım deyil çünki RLS policy-lər database səviyyəsində filtrasiya edir
   const categories = useMemo(() => {
     if (!filterByUserRole || !user) {
       return allCategories;
     }
 
-    return allCategories.filter(category => {
-      // SuperAdmin və RegionAdmin bütün kateqoriyaları görə bilər
-      if (['superadmin', 'regionadmin'].includes(user.role)) {
-        return true;
-      }
-
-      // SectorAdmin həm 'all' həm də 'sectors' kateqoriyalarını görə bilər
-      if (user.role === 'sectoradmin') {
-        return !category.assignment || category.assignment === 'all' || category.assignment === 'sectors';
-      }
-
-      // SchoolAdmin yalnız 'all' kateqoriyalarını görə bilər
-      if (user.role === 'schooladmin') {
-        return !category.assignment || category.assignment === 'all';
-      }
-
-      return false;
-    });
+    // Database-də artıq RLS policy-lər var, ona görə əlavə filtrasiya lazım deyil
+    // Amma debug üçün log əlavə edək
+    console.log(`User role: ${user.role}, Categories count: ${allCategories.length}`);
+    
+    return allCategories;
   }, [allCategories, filterByUserRole, user]);
 
   // Create category mutation
