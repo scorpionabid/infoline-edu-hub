@@ -1,98 +1,115 @@
+
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
+import { useDataEntryState } from '@/hooks/business/dataEntry/useDataEntryState';
+import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
+import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
 
-/**
- * Sektor məlumatlarını daxil etmək üçün hook
- * @returns {Object} Sektor məlumatlarını daxil etmək üçün funksiyalar və vəziyyətlər
- */
-export const useSectorDataEntry = () => {
-  const user = useAuthStore(selectUser);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export interface UseSectorDataEntryProps {
+  categoryId: string;
+  sectorId?: string;
+}
 
-  const saveDataEntry = useCallback(async (
-    sectorId: string, 
-    categoryId: string, 
-    columnId: string, 
-    value: string
-  ) => {
-    if (!user) {
-      toast.error('Daxil olun');
-      return null;
-    }
+export interface UseSectorDataEntryResult {
+  // School management
+  schools: any[];
+  selectedSchoolId: string | null;
+  setSelectedSchoolId: (schoolId: string | null) => void;
+  
+  // Data entry for selected school
+  entries: DataEntry[];
+  isLoading: boolean;
+  isSaving: boolean;
+  updateEntryValue: (columnId: string, value: any) => void;
+  saveEntries: () => Promise<void>;
+  submitEntries: () => Promise<void>;
+  
+  // Progress tracking
+  completionPercentage: number;
+  hasRequiredData: boolean;
+}
 
-    setIsLoading(true);
-    setError(null);
-
+export function useSectorDataEntry({
+  categoryId,
+  sectorId
+}: UseSectorDataEntryProps): UseSectorDataEntryResult {
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
+  
+  // Load schools for the sector
+  const { schools, loading: schoolsLoading } = useSchoolsQuery();
+  
+  // Filter schools by sector if sectorId is provided
+  const filteredSchools = sectorId 
+    ? schools.filter(school => school.sector_id === sectorId)
+    : schools;
+  
+  // Load data entry state for selected school
+  const {
+    entries,
+    isLoading: entriesLoading,
+    isSaving,
+    updateEntryValue,
+    saveEntries: saveEntriesRaw,
+    updateStatus
+  } = useDataEntryState({
+    categoryId,
+    schoolId: selectedSchoolId || '',
+    enabled: !!selectedSchoolId && !!categoryId
+  });
+  
+  // Calculate completion percentage
+  const completionPercentage = entries.length > 0 
+    ? Math.round((entries.filter(e => e.value && e.value.trim()).length / entries.length) * 100)
+    : 0;
+  
+  // Check if all required data is present
+  const hasRequiredData = entries.length > 0 && entries.every(entry => 
+    entry.value && entry.value.trim()
+  );
+  
+  // Save entries wrapper
+  const saveEntries = useCallback(async () => {
+    if (!selectedSchoolId) return;
+    
     try {
-      const { data, error } = await supabase
-        .from('sector_data_entries')
-        .insert({
-          sector_id: sectorId,
-          category_id: categoryId,
-          column_id: columnId,
-          value,
-          created_by: user.id,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast.success('Məlumat yadda saxlanıldı');
-      return data;
-    } catch (err: any) {
-      setError(err.message);
-      toast.error('Xəta baş verdi');
-      return null;
-    } finally {
-      setIsLoading(false);
+      await saveEntriesRaw(entries);
+      console.log('Entries saved successfully');
+    } catch (error) {
+      console.error('Failed to save entries:', error);
+      throw error;
     }
-  }, [user]);
-
-  const fetchSectorDataEntries = useCallback(async (
-    sectorId: string, 
-    categoryId?: string
-  ) => {
-    if (!user) {
-      toast.error('Daxil olun');
-      return [];
-    }
-
-    setIsLoading(true);
-    setError(null);
-
+  }, [selectedSchoolId, entries, saveEntriesRaw]);
+  
+  // Submit entries for approval
+  const submitEntries = useCallback(async () => {
+    if (!selectedSchoolId || !hasRequiredData) return;
+    
     try {
-      let query = supabase
-        .from('sector_data_entries')
-        .select('*')
-        .eq('sector_id', sectorId);
-
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      return data || [];
-    } catch (err: any) {
-      setError(err.message);
-      toast.error('Məlumatlar yüklənə bilmədi');
-      return [];
-    } finally {
-      setIsLoading(false);
+      await updateStatus(entries, DataEntryStatus.PENDING);
+      console.log('Entries submitted for approval');
+    } catch (error) {
+      console.error('Failed to submit entries:', error);
+      throw error;
     }
-  }, [user]);
-
+  }, [selectedSchoolId, hasRequiredData, entries, updateStatus]);
+  
   return {
-    saveDataEntry,
-    fetchSectorDataEntries,
-    isLoading,
-    error
+    // School management
+    schools: filteredSchools,
+    selectedSchoolId,
+    setSelectedSchoolId,
+    
+    // Data entry
+    entries,
+    isLoading: schoolsLoading || entriesLoading,
+    isSaving,
+    updateEntryValue,
+    saveEntries,
+    submitEntries,
+    
+    // Progress
+    completionPercentage,
+    hasRequiredData
   };
-};
+}
+
+export default useSectorDataEntry;

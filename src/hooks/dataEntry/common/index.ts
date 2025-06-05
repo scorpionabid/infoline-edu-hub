@@ -1,35 +1,30 @@
-// Common/Shared Data Entry Hooks
-// This module contains hooks that are shared across different roles
 
-// Base functionality
-export { default as useBaseDataEntry } from './useBaseDataEntry';
-export { default as useFormManager } from './useFormManager';
-export { default as useDataLoader } from './useDataLoader';
-export { default as useSaveManager } from './useSaveManager';
-
-// Utility hooks
+// Common shared hooks across all data entry functionality
 export { default as useAutoSave } from './useAutoSave';
-export { default as useRealTimeValidation } from './useRealTimeValidation';
-export { default as useCategoryStatus } from './useCategoryStatus';
+export { default as useValidation } from './useValidation';
+export { default as useFormState } from './useFormState';
+export { default as useDataSync } from './useDataSync';
 export { default as useErrorRecovery } from './useErrorRecovery';
 
-// Management hooks
-export { default as useCacheManager } from './useCacheManager';
-export { default as useStatusManager } from './useStatusManager';
-
 // Real-time functionality
-export { default as useRealTimeDataEntry } from './useRealTimeDataEntry';
+export { default as useRealTimeSync } from './useRealTimeSync';
+export { default as useConflictResolution } from './useConflictResolution';
+export { default as useOfflineSupport } from './useOfflineSupport';
 
-// Common hooks provide:
-// - Base data entry functionality
-// - Form state management with validation
-// - Data loading with caching and retry logic
-// - Save operations with different statuses
-// - Auto-save functionality across components
-// - Real-time validation for all forms
-// - Category status management
-// - Error recovery mechanisms
-// - Cache management with TTL
-// - Status transitions and permissions
-// - Real-time collaboration features
-// - Common data structures and utility functions
+// Performance optimization
+export { default as useDataCache } from './useDataCache';
+export { default as useBatchUpdates } from './useBatchUpdates';
+export { default as useDebounce } from './useDebounce';
+
+// All shared hooks used across School Admin and Sector Admin data entry
+export * from './useAutoSave';
+export * from './useValidation';
+export * from './useFormState';
+export * from './useDataSync';
+export * from './useErrorRecovery';
+export * from './useRealTimeSync';
+export * from './useConflictResolution';
+export * from './useOfflineSupport';
+export * from './useDataCache';
+export * from './useBatchUpdates';
+export * from './useDebounce';
