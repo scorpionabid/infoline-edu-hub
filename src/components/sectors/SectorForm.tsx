@@ -1,159 +1,70 @@
 
 import React, { useState } from 'react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Sector, Region } from '@/types/supabase';
-import { useLanguageSafe } from '@/context/LanguageContext';
-
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Save, X } from 'lucide-react';
 
-interface SectorFormProps {
-  initialData?: Sector;
-  regions: Region[];
-  onSubmit: (data: Partial<Sector>) => Promise<void>;
-  isSubmitting?: boolean;
+interface SectorFormData {
+  name: string;
+  region_id: string;
 }
 
-const SectorForm: React.FC<SectorFormProps> = ({
-  initialData,
-  regions,
+interface SectorFormProps {
+  sector?: any;
+  onSubmit: (data: SectorFormData) => void;
+  onCancel: () => void;
+}
+
+export const SectorForm: React.FC<SectorFormProps> = ({
+  sector,
   onSubmit,
-  isSubmitting = false,
+  onCancel
 }) => {
-  const { t } = useLanguageSafe();
-  
-  const formSchema = z.object({
-    name: z.string().min(2, t('nameMinLength')),
-    description: z.string().optional(),
-    region_id: z.string().uuid(t('invalidRegionId')),
-    status: z.enum(['active', 'inactive']).default('active'),
+  const [formData, setFormData] = useState<SectorFormData>({
+    name: sector?.name || '',
+    region_id: sector?.region_id || ''
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: initialData?.name || '',
-      description: initialData?.description || '',
-      region_id: initialData?.region_id || '',
-      status: initialData?.status as 'active' | 'inactive' || 'active',
-    },
-  });
-
-  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    await onSubmit(values);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('sectorName')}</FormLabel>
-              <FormControl>
-                <Input placeholder={t('enterSectorName')} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="region_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('region')}</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectRegion')} />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {regions.map((region) => (
-                    <SelectItem key={region.id} value={region.id || `region-${region.name || Math.random().toString(36).substring(7)}`}>
-                      {region.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('description')}</FormLabel>
-              <FormControl>
-                <Textarea placeholder={t('enterDescription')} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="status"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('status')}</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectStatus')} />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="active">{t('active')}</SelectItem>
-                  <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('saving')}
-              </>
-            ) : (
-              t('save')
-            )}
-          </Button>
-        </div>
-      </form>
-    </Form>
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          {sector ? 'Sektoru Redaktə Et' : 'Yeni Sektor Əlavə Et'}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Sektor Adı</Label>
+            <Input
+              id="name"
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="flex gap-2 justify-end">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              <X className="h-4 w-4 mr-2" />
+              Ləğv Et
+            </Button>
+            <Button type="submit">
+              <Save className="h-4 w-4 mr-2" />
+              Yadda Saxla
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 
