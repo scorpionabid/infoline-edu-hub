@@ -16,15 +16,13 @@ export { default as useDataCache } from './useDataCache';
 export { default as useBatchUpdates } from './useBatchUpdates';
 export { default as useDebounce } from './useDebounce';
 
-// All shared hooks used across School Admin and Sector Admin data entry
-export * from './useAutoSave';
-export * from './useValidation';
-export * from './useFormState';
-export * from './useDataSync';
-export * from './useErrorRecovery';
-export * from './useRealTimeSync';
-export * from './useConflictResolution';
-export * from './useOfflineSupport';
-export * from './useDataCache';
-export * from './useBatchUpdates';
-export * from './useDebounce';
+// Export types as well
+export type { ValidationError, UseValidationResult } from './useValidation';
+export type { UseFormStateResult } from './useFormState';
+export type { SyncStatus, UseDataSyncResult } from './useDataSync';
+export type { ErrorRecoveryState, UseErrorRecoveryResult } from './useErrorRecovery';
+export type { RealTimeSyncState, UseRealTimeSyncResult } from './useRealTimeSync';
+export type { ConflictData, UseConflictResolutionResult } from './useConflictResolution';
+export type { OfflineState, UseOfflineSupportResult } from './useOfflineSupport';
+export type { CacheEntry, UseDataCacheResult } from './useDataCache';
+export type { BatchUpdate, UseBatchUpdatesResult } from './useBatchUpdates';

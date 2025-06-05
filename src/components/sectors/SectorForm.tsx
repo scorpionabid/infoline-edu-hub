@@ -1,70 +1,139 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Save, X } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { Sector, Region } from '@/types/supabase';
 
-interface SectorFormData {
-  name: string;
-  region_id: string;
+export interface SectorFormProps {
+  initialData?: Partial<Sector>;
+  regions?: Region[];
+  onSubmit: (data: Partial<Sector>) => Promise<void>;
+  onCancel?: () => void;
+  isSubmitting?: boolean;
 }
 
-interface SectorFormProps {
-  sector?: any;
-  onSubmit: (data: SectorFormData) => void;
-  onCancel: () => void;
-}
-
-export const SectorForm: React.FC<SectorFormProps> = ({
-  sector,
+const SectorForm: React.FC<SectorFormProps> = ({
+  initialData,
+  regions = [],
   onSubmit,
-  onCancel
+  onCancel,
+  isSubmitting = false
 }) => {
-  const [formData, setFormData] = useState<SectorFormData>({
-    name: sector?.name || '',
-    region_id: sector?.region_id || ''
+  const { t } = useLanguageSafe();
+  const [formData, setFormData] = useState<Partial<Sector>>({
+    name: initialData?.name || '',
+    description: initialData?.description || '',
+    region_id: initialData?.region_id || '',
+    status: initialData?.status || 'active',
+    ...initialData
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    if (!formData.name?.trim() || !formData.region_id) {
+      return;
+    }
+    
+    try {
+      await onSubmit(formData);
+    } catch (error) {
+      console.error('Error submitting sector form:', error);
+    }
+  };
+
+  const handleInputChange = (field: keyof Sector, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          {sector ? 'Sektoru Redaktə Et' : 'Yeni Sektor Əlavə Et'}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Sektor Adı</Label>
-            <Input
-              id="name"
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">{t('name')}</Label>
+        <Input
+          id="name"
+          value={formData.name || ''}
+          onChange={(e) => handleInputChange('name', e.target.value)}
+          placeholder={t('enterSectorName')}
+          required
+          disabled={isSubmitting}
+        />
+      </div>
 
-          <div className="flex gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              <X className="h-4 w-4 mr-2" />
-              Ləğv Et
-            </Button>
-            <Button type="submit">
-              <Save className="h-4 w-4 mr-2" />
-              Yadda Saxla
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      <div className="space-y-2">
+        <Label htmlFor="description">{t('description')}</Label>
+        <Textarea
+          id="description"
+          value={formData.description || ''}
+          onChange={(e) => handleInputChange('description', e.target.value)}
+          placeholder={t('enterSectorDescription')}
+          disabled={isSubmitting}
+          rows={3}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="region">{t('region')}</Label>
+        <Select
+          value={formData.region_id || ''}
+          onValueChange={(value) => handleInputChange('region_id', value)}
+          disabled={isSubmitting}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={t('selectRegion')} />
+          </SelectTrigger>
+          <SelectContent>
+            {regions.map((region) => (
+              <SelectItem key={region.id} value={region.id}>
+                {region.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="status">{t('status')}</Label>
+        <Select
+          value={formData.status || 'active'}
+          onValueChange={(value) => handleInputChange('status', value)}
+          disabled={isSubmitting}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">{t('active')}</SelectItem>
+            <SelectItem value="inactive">{t('inactive')}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex justify-end space-x-2 pt-4">
+        {onCancel && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            {t('cancel')}
+          </Button>
+        )}
+        <Button
+          type="submit"
+          disabled={!formData.name?.trim() || !formData.region_id || isSubmitting}
+        >
+          {isSubmitting ? t('saving') : t('save')}
+        </Button>
+      </div>
+    </form>
   );
 };
 
