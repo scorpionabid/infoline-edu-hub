@@ -1,4 +1,28 @@
-// DELETED - This was a simple wrapper that duplicated main DataEntryForm.tsx functionality
-// Date deleted: 2025-01-07
-// The main DataEntryForm.tsx provides all necessary functionality
-// This core version was redundant and caused confusion
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+interface DataEntryFormProps {
+  children: React.ReactNode;
+  title?: string;
+  className?: string;
+}
+
+const DataEntryForm: React.FC<DataEntryFormProps> = ({
+  children,
+  title = 'Data Entry Form',
+  className = ''
+}) => {
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {children}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default DataEntryForm;

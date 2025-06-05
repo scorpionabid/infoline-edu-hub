@@ -1,13 +1,11 @@
 
 import React from 'react';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
 import { Column } from '@/types/column';
 
-export interface ProgressTrackerProps {
+interface ProgressTrackerProps {
   columns: Column[];
   formData: Record<string, any>;
   completionPercentage: number;
@@ -16,9 +14,6 @@ export interface ProgressTrackerProps {
   className?: string;
 }
 
-/**
- * Progress Tracker komponenti - forma tamamlanma vəziyyətini göstərir
- */
 const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   columns,
   formData,
@@ -27,50 +22,36 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   isValid,
   className = ''
 }) => {
-  const { t } = useLanguage();
-  
-  // Statistikalar hesablanır
-  const totalFields = columns.length;
-  const requiredFields = columns.filter(col => col.is_required).length;
-  const completedFields = columns.filter(col => {
-    const value = formData[col.id];
+  const filledFields = columns.filter(column => {
+    const value = formData[column.id];
     return value && String(value).trim() !== '';
   }).length;
-  const completedRequiredFields = columns.filter(col => {
+
+  const requiredFields = columns.filter(col => col.is_required).length;
+  const filledRequiredFields = columns.filter(col => {
     if (!col.is_required) return false;
     const value = formData[col.id];
     return value && String(value).trim() !== '';
   }).length;
-  
-  // Status təyin edilir
+
   const getStatusIcon = () => {
     if (hasAllRequiredFields && isValid) {
       return <CheckCircle2 className="h-5 w-5 text-green-600" />;
-    } else if (completionPercentage > 50) {
-      return <Clock className="h-5 w-5 text-yellow-600" />;
-    } else {
-      return <AlertCircle className="h-5 w-5 text-red-600" />;
     }
+    if (completionPercentage > 0) {
+      return <Clock className="h-5 w-5 text-yellow-600" />;
+    }
+    return <AlertCircle className="h-5 w-5 text-gray-400" />;
   };
-  
+
   const getStatusText = () => {
     if (hasAllRequiredFields && isValid) {
-      return t('allFieldsCompleted');
-    } else if (completionPercentage > 50) {
-      return t('inProgress');
-    } else {
-      return t('notStarted');
+      return 'Ready for submission';
     }
-  };
-  
-  const getStatusColor = () => {
-    if (hasAllRequiredFields && isValid) {
-      return 'default';
-    } else if (completionPercentage > 50) {
-      return 'secondary';
-    } else {
-      return 'destructive';
+    if (completionPercentage > 0) {
+      return 'In progress';
     }
+    return 'Not started';
   };
 
   return (
@@ -78,57 +59,32 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           {getStatusIcon()}
-          {t('formProgress')}
-          <Badge variant={getStatusColor() as any} className="ml-auto">
-            {getStatusText()}
-          </Badge>
+          Form Progress
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Ümumi irəliləyiş */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>{t('overallProgress')}</span>
-            <span className="font-medium">{completionPercentage}%</span>
+        <div>
+          <div className="flex justify-between text-sm text-muted-foreground mb-1">
+            <span>Overall Progress</span>
+            <span>{completionPercentage}%</span>
           </div>
           <Progress value={completionPercentage} className="h-2" />
-          <p className="text-xs text-muted-foreground">
-            {t('completedFieldsCount', { completed: completedFields, total: totalFields })}
-          </p>
         </div>
         
-        {/* Tələb olunan sahələr */}
-        {requiredFields > 0 && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>{t('requiredFields')}</span>
-              <span className="font-medium">
-                {completedRequiredFields}/{requiredFields}
-              </span>
-            </div>
-            <Progress 
-              value={(completedRequiredFields / requiredFields) * 100} 
-              className="h-1" 
-            />
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <div className="text-muted-foreground">Filled Fields</div>
+            <div className="font-medium">{filledFields} / {columns.length}</div>
           </div>
-        )}
+          <div>
+            <div className="text-muted-foreground">Required Fields</div>
+            <div className="font-medium">{filledRequiredFields} / {requiredFields}</div>
+          </div>
+        </div>
         
-        {/* Validasiya statusu */}
-        <div className="flex items-center justify-between text-sm">
-          <span>{t('validationStatus')}</span>
-          <div className="flex items-center gap-1">
-            {isValid ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <span className="text-green-600">{t('valid')}</span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <span className="text-red-600">{t('hasErrors')}</span>
-              </>
-            )}
-          </div>
+        <div className="text-sm">
+          <div className="text-muted-foreground">Status</div>
+          <div className="font-medium">{getStatusText()}</div>
         </div>
       </CardContent>
     </Card>
