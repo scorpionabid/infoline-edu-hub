@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useSectorsQuery } from '@/hooks/api/sectors/useSectorsQuery';
 import { SectorsList } from './SectorsList';
-import { SectorForm } from './SectorForm';
+import SectorForm from './SectorForm'; // Changed from named import to default import
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
