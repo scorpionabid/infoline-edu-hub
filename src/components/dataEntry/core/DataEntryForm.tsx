@@ -12,13 +12,13 @@ interface DataEntryFormProps {
   title?: string;
   className?: string;
   
-  // Save and submit handlers
+  // Save and submit handlers - fix return types
   onSave?: () => Promise<void>;
   onSubmit?: () => Promise<void>;
   onExportTemplate?: () => Promise<void>;
   onUploadData?: (file: File) => Promise<void>;
   
-  // Status management
+  // Status management - fix return types
   onStatusChange?: (newStatus: DataEntryStatus, comment?: string) => Promise<void>;
   onApprove?: (comment?: string) => Promise<void>;
   onReject?: (reason: string) => Promise<void>;

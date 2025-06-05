@@ -27,6 +27,7 @@ export interface UseQuickWinsResult {
   categoryStats: {
     completed: number;
     total: number;
+    overallProgress: number; // Add this missing property
   };
 }
 
@@ -80,7 +81,8 @@ export function useDataEntryQuickWins(
     const completed = Math.floor(categories.length * (overallProgress / 100));
     return {
       completed,
-      total: categories.length
+      total: categories.length,
+      overallProgress // Include overallProgress in the stats
     };
   }, [categories.length, overallProgress]);
 

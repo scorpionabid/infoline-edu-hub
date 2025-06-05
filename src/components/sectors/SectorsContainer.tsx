@@ -30,7 +30,7 @@ export const SectorsContainer: React.FC = () => {
       <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
-          Error loading sectors: {error.message}
+          Error loading sectors: {error}
         </AlertDescription>
       </Alert>
     );
@@ -58,7 +58,7 @@ export const SectorsContainer: React.FC = () => {
       
       setShowForm(false);
       setEditingSector(null);
-      await refetch();
+      refetch();
     } catch (error) {
       console.error('Error submitting sector form:', error);
     }

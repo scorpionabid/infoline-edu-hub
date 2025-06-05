@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 export interface UseSectorsQueryResult {
   sectors: any[];
   loading: boolean;
+  isLoading: boolean;
+  isError: boolean;
   error: string | null;
   refetch: () => void;
 }
@@ -12,7 +14,8 @@ export interface UseSectorsQueryResult {
 export const useSectorsQuery = (): UseSectorsQueryResult => {
   const {
     data: sectors = [],
-    isLoading: loading,
+    isLoading,
+    isError,
     error,
     refetch
   } = useQuery({
@@ -30,7 +33,9 @@ export const useSectorsQuery = (): UseSectorsQueryResult => {
 
   return {
     sectors,
-    loading,
+    loading: isLoading,
+    isLoading,
+    isError,
     error: error?.message || null,
     refetch
   };
