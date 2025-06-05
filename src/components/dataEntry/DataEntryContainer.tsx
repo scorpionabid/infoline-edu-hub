@@ -3,6 +3,7 @@ import React from 'react';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
 import { SectorDataEntry } from './SectorDataEntry';
+import { SchoolDataEntryManager } from './SchoolDataEntryManager';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Lock } from 'lucide-react';
 
@@ -64,19 +65,26 @@ export const DataEntryContainer: React.FC = () => {
       return <SectorDataEntry />;
     
     case 'schooladmin':
-      // TODO: Implement SchoolDataEntry component
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle>Məktəb Məlumat Daxil Etmə</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Məktəb administratoru paneli hazırlanmaqdadır...
-            </p>
-          </CardContent>
-        </Card>
-      );
+      // Check if user has school_id
+      if (!user.school_id) {
+        return (
+          <Card className="border-orange-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-orange-800">
+                <AlertCircle className="h-5 w-5" />
+                Məktəb Təyin Edilməyib
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Məlumat daxil etmə üçün ilk öncə sizə məktəb təyin edilməlidir. Zəhmət olmasa sistem administratoru ilə əlaqə saxlayın.
+              </p>
+            </CardContent>
+          </Card>
+        );
+      }
+
+      return <SchoolDataEntryManager schoolId={user.school_id} />;
     
     default:
       return (

@@ -78,6 +78,10 @@ BEGIN
   
   -- Skip validation for system operations (when no user context)
   IF user_id IS NULL THEN
+    -- For system operations, ensure created_by is null instead of 'system'
+    IF NEW.created_by = 'system' THEN
+      NEW.created_by := NULL;
+    END IF;
     RETURN NEW;
   END IF;
   

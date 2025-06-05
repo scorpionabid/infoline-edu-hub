@@ -57,7 +57,7 @@ export const useSaveManager = ({
         column_id: column.id,
         value: formData[column.id] || '',
         status: 'draft' as const,
-        created_by: user.id,
+        created_by: user?.id || null, // Safe null handling
         updated_at: new Date().toISOString()
       })).filter(entry => entry.value !== '') || [];
       
@@ -158,7 +158,7 @@ export const useSaveManager = ({
         if (schoolData.sector_id === user.sector_id) {
           status = DataEntryStatus.APPROVED;
           approvalMetadata = {
-            approved_by: user.id,
+            approved_by: user?.id || null, // Safe null handling
             approved_at: new Date().toISOString(),
             auto_approved: true,
             approval_reason: comment || 'Automatic approval by sector admin'
@@ -173,7 +173,7 @@ export const useSaveManager = ({
         column_id: column.id,
         value: formData[column.id] || '',
         status,
-        created_by: user.id,
+        created_by: user?.id || null, // Safe null handling
         updated_at: new Date().toISOString(),
         ...approvalMetadata
       })) || [];
@@ -246,7 +246,7 @@ export const useSaveManager = ({
         column_id: column.id,
         value: formData[column.id] || '',
         status,
-        created_by: user.id,
+        created_by: user?.id || null, // Safe null handling
         updated_at: new Date().toISOString(),
         ...metadata
       })) || [];

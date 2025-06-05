@@ -16,7 +16,7 @@ import {
 import PageHeader from '@/components/layout/PageHeader';
 import DeleteColumnDialog from '@/components/columns/DeleteColumnDialog';
 import ColumnFormDialog from '@/components/columns/ColumnFormDialog';
-import { useColumns } from '@/hooks/columns';
+import { useColumnsQuery } from '@/hooks/columns';
 import ColumnList from '@/components/columns/ColumnList';
 import EmptyState from '@/components/common/EmptyState';
 import { useCategories } from '@/hooks/categories/useCategories';
@@ -35,7 +35,8 @@ const Columns: React.FC = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { columns, isLoading: columnsLoading, isError, error: columnsError, refetch: refetchColumns } = useColumns();
+  // Fetch all columns (no categoryId filter for this page)
+  const { columns, isLoading: columnsLoading, isError, error: columnsError, refetch: refetchColumns } = useColumnsQuery();
   
   const { 
     categories, 

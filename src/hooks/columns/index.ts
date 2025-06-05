@@ -2,8 +2,10 @@
 // Core column hooks - clean and modular implementations
 export { useColumnQuery } from './useColumnQuery';
 export { useColumnForm } from './useColumnForm';
+export { useColumnsQuery } from './useColumnsQuery';
 
-// Column mutations
+// Column mutations and legacy hooks
 export { useColumnMutations } from './useColumnMutations';
+export { useColumns } from './useColumns';
 
 // Note: useColumnsNew has been merged with useColumnMutations to avoid conflicts

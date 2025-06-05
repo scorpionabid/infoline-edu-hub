@@ -20,6 +20,12 @@ export const statusOptions = [
   { value: 'archived', label: 'Archived' }
 ];
 
+// Filter constants for preventing empty string values in Radix UI Select
+export const FILTER_VALUES = {
+  ALL_REGIONS: 'ALL_REGIONS',
+  ALL_SECTORS: 'ALL_SECTORS'
+};
+
 // Common date formats
 export const DATE_FORMATS = {
   default: 'yyyy-MM-dd',

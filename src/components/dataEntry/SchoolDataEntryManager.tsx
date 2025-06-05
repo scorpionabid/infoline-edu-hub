@@ -23,8 +23,11 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
 }) => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   
-  // Load categories
-  const { categories, loading: categoriesLoading } = useCategoriesQuery();
+  // Load categories with role-based filtering
+  const { categories, loading: categoriesLoading } = useCategoriesQuery({
+    filterByUserRole: true,
+    includeInactive: false
+  });
   
   // Load data entry for selected category
   const {

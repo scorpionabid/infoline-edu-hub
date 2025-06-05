@@ -3,6 +3,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
+import { FILTER_VALUES } from '@/lib/constants';
 
 interface SchoolFiltersProps {
   searchQuery: string;
@@ -29,6 +30,21 @@ export const SchoolFilters: React.FC<SchoolFiltersProps> = ({
   loadingRegions,
   loadingSectors
 }) => {
+  // Handle region change with proper empty value handling
+  const handleRegionChange = (value: string) => {
+    const actualValue = value === FILTER_VALUES.ALL_REGIONS ? '' : value;
+    setSelectedRegion(actualValue);
+  };
+
+  // Handle sector change with proper empty value handling  
+  const handleSectorChange = (value: string) => {
+    const actualValue = value === FILTER_VALUES.ALL_SECTORS ? '' : value;
+    setSelectedSector(actualValue);
+  };
+
+  // Ensure safe values for Select components
+  const safeSelectedRegion = selectedRegion || FILTER_VALUES.ALL_REGIONS;
+  const safeSelectedSector = selectedSector || FILTER_VALUES.ALL_SECTORS;
   return (
     <div className="flex flex-col sm:flex-row gap-4 mb-6">
       <div className="relative flex-1">
@@ -41,12 +57,12 @@ export const SchoolFilters: React.FC<SchoolFiltersProps> = ({
         />
       </div>
       
-      <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+      <Select value={safeSelectedRegion} onValueChange={handleRegionChange}>
         <SelectTrigger className="w-full sm:w-48">
           <SelectValue placeholder="Rayon seç" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Bütün rayonlar</SelectItem>
+          <SelectItem value={FILTER_VALUES.ALL_REGIONS}>Bütün rayonlar</SelectItem>
           {!loadingRegions && regions.map((region) => (
             <SelectItem key={region.id} value={region.id}>
               {region.name}
@@ -55,12 +71,12 @@ export const SchoolFilters: React.FC<SchoolFiltersProps> = ({
         </SelectContent>
       </Select>
 
-      <Select value={selectedSector} onValueChange={setSelectedSector}>
+      <Select value={safeSelectedSector} onValueChange={handleSectorChange}>
         <SelectTrigger className="w-full sm:w-48">
           <SelectValue placeholder="Sektor seç" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Bütün sektorlar</SelectItem>
+          <SelectItem value={FILTER_VALUES.ALL_SECTORS}>Bütün sektorlar</SelectItem>
           {!loadingSectors && sectors.map((sector) => (
             <SelectItem key={sector.id} value={sector.id}>
               {sector.name}

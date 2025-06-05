@@ -3,15 +3,26 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns, Category } from '@/types/category';
 import { toast } from 'sonner';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
+import { useMemo } from 'react';
 
-export const useCategoriesQuery = () => {
+export interface UseCategoriesQueryProps {
+  filterByUserRole?: boolean;
+  includeInactive?: boolean;
+}
+
+export const useCategoriesQuery = ({
+  filterByUserRole = false,
+  includeInactive = false
+}: UseCategoriesQueryProps = {}) => {
   const queryClient = useQueryClient();
+  const user = useAuthStore(selectUser);
 
   // Fetch categories
-  const { data: categories = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['categories'],
+  const { data: allCategories = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['categories', { filterByUserRole, includeInactive, userRole: user?.role }],
     queryFn: async (): Promise<CategoryWithColumns[]> => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('categories')
         .select(`
           *,
@@ -19,10 +30,43 @@ export const useCategoriesQuery = () => {
         `)
         .order('priority', { ascending: true });
 
+      // Add status filter if not including inactive
+      if (!includeInactive) {
+        query = query.neq('status', 'inactive');
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
       return data as CategoryWithColumns[];
     },
   });
+
+  // Client-side filtering based on user role and assignment
+  const categories = useMemo(() => {
+    if (!filterByUserRole || !user) {
+      return allCategories;
+    }
+
+    return allCategories.filter(category => {
+      // SuperAdmin və RegionAdmin bütün kateqoriyaları görə bilər
+      if (['superadmin', 'regionadmin'].includes(user.role)) {
+        return true;
+      }
+
+      // SectorAdmin həm 'all' həm də 'sectors' kateqoriyalarını görə bilər
+      if (user.role === 'sectoradmin') {
+        return !category.assignment || category.assignment === 'all' || category.assignment === 'sectors';
+      }
+
+      // SchoolAdmin yalnız 'all' kateqoriyalarını görə bilər
+      if (user.role === 'schooladmin') {
+        return !category.assignment || category.assignment === 'all';
+      }
+
+      return false;
+    });
+  }, [allCategories, filterByUserRole, user]);
 
   // Create category mutation
   const createCategoryMutation = useMutation({

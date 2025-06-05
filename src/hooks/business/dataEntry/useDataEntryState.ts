@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import { useDataEntriesQuery } from '@/hooks/api/dataEntry/useDataEntriesQuery';
 import { useIndexedData } from '@/hooks/core/useIndexedData';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
 
 /**
@@ -25,6 +26,8 @@ export function useDataEntryState({
   schoolId,
   enabled = true
 }: UseDataEntryStateProps) {
+  // Current user əldə edirik
+  const user = useAuthStore(selectUser);
   // Data entries sorğusu
   const {
     entries = [],
@@ -62,6 +65,7 @@ export function useDataEntryState({
           school_id: schoolId,
           value,
           status: DataEntryStatus.DRAFT,
+          // created_by sahəsini buradan kaldırırıq - API layer-də əlavə ediləcək
           updated_at: new Date().toISOString()
         };
     

@@ -5,6 +5,7 @@ import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
 import { dataEntryKeys } from '@/services/api/queryKeys';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
 /**
  * Məlumat daxil etmələrini əldə etmək üçün hook parametrləri
@@ -38,6 +39,7 @@ export function useDataEntriesQuery({
   const { t } = useLanguage();
   const { handleError } = useErrorHandler('DataEntries');
   const queryClient = useQueryClient();
+  const user = useAuthStore(selectUser); // İstifadəçi məlumatlarını əldə edirik
   
   // ID-lərin etibarlılığını yoxlayırıq
   const hasValidIds = !!categoryId && !!schoolId;
@@ -62,7 +64,7 @@ export function useDataEntriesQuery({
   
   // Məlumat daxil etmələrini saxlamaq üçün mutasiya
   const saveMutation = useMutation({
-    mutationFn: (entries: Partial<DataEntry>[]) => saveDataEntries(entries, categoryId, schoolId),
+    mutationFn: (entries: Partial<DataEntry>[]) => saveDataEntries(entries, categoryId, schoolId, user?.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
       toast.success(t('dataEntriesSaved'));
