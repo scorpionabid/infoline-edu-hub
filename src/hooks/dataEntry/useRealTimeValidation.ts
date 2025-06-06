@@ -1,6 +1,12 @@
 
-import { useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Column } from '@/types/column';
+
+export interface ValidationError {
+  field: string;
+  message: string;
+  type: 'error' | 'warning';
+}
 
 export interface UseRealTimeValidationOptions {
   columns: Column[];
@@ -8,65 +14,102 @@ export interface UseRealTimeValidationOptions {
   enabled?: boolean;
 }
 
-export interface ValidationError {
-  field: string;
-  message: string;
+export interface UseRealTimeValidationResult {
+  errors: ValidationError[];
+  warnings: ValidationError[];
+  isValid: boolean;
+  hasAllRequiredFields: boolean;
+  validateField: (fieldId: string, value: any) => ValidationError | null;
 }
 
-export interface ValidationWarning {
-  field: string;
-  message: string;
-}
-
-export function useRealTimeValidation({
+export const useRealTimeValidation = ({
   columns,
   formData,
   enabled = true
-}: UseRealTimeValidationOptions) {
-  const errors = useMemo(() => {
-    if (!enabled) return [];
-    
-    const validationErrors: ValidationError[] = [];
-    
+}: UseRealTimeValidationOptions): UseRealTimeValidationResult => {
+  const [errors, setErrors] = useState<ValidationError[]>([]);
+  const [warnings, setWarnings] = useState<ValidationError[]>([]);
+
+  const validateField = useCallback((fieldId: string, value: any): ValidationError | null => {
+    const column = columns.find(col => col.id === fieldId);
+    if (!column) return null;
+
+    // Required field validation
+    if (column.is_required && (!value || String(value).trim() === '')) {
+      return {
+        field: fieldId,
+        message: `${column.name} sahəsi tələb olunur`,
+        type: 'error'
+      };
+    }
+
+    // Type-specific validation
+    if (value && String(value).trim() !== '') {
+      switch (column.type) {
+        case 'number':
+          if (isNaN(Number(value))) {
+            return {
+              field: fieldId,
+              message: `${column.name} sahəsi yalnız rəqəm olmalıdır`,
+              type: 'error'
+            };
+          }
+          break;
+        case 'email':
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(String(value))) {
+            return {
+              field: fieldId,
+              message: `${column.name} sahəsi düzgün e-poçt formatında olmalıdır`,
+              type: 'error'
+            };
+          }
+          break;
+      }
+    }
+
+    return null;
+  }, [columns]);
+
+  // Real-time validation
+  useEffect(() => {
+    if (!enabled) return;
+
+    const newErrors: ValidationError[] = [];
+    const newWarnings: ValidationError[] = [];
+
     columns.forEach(column => {
-      if (column.is_required) {
-        const value = formData[column.id];
-        if (!value || String(value).trim() === '') {
-          validationErrors.push({
-            field: column.id,
-            message: `${column.name} is required`
-          });
+      const value = formData[column.id];
+      const validation = validateField(column.id, value);
+      
+      if (validation) {
+        if (validation.type === 'error') {
+          newErrors.push(validation);
+        } else {
+          newWarnings.push(validation);
         }
       }
     });
-    
-    return validationErrors;
-  }, [columns, formData, enabled]);
 
-  const warnings = useMemo(() => {
-    const validationWarnings: ValidationWarning[] = [];
-    // Add warning logic here if needed
-    return validationWarnings;
-  }, []);
+    setErrors(newErrors);
+    setWarnings(newWarnings);
+  }, [formData, columns, enabled, validateField]);
 
-  const isValid = useMemo(() => {
-    return errors.length === 0;
-  }, [errors]);
-
-  const hasAllRequiredFields = useMemo(() => {
-    const requiredColumns = columns.filter(col => col.is_required);
-    return requiredColumns.every(column => {
-      const value = formData[column.id];
+  const isValid = errors.length === 0;
+  const hasAllRequiredFields = columns
+    .filter(col => col.is_required)
+    .every(col => {
+      const value = formData[col.id];
       return value && String(value).trim() !== '';
     });
-  }, [columns, formData]);
 
   return {
     errors,
     warnings,
     isValid,
-    hasAllRequiredFields
+    hasAllRequiredFields,
+    validateField
   };
-}
+};
 
 export default useRealTimeValidation;

@@ -2,66 +2,63 @@
 import { useState, useCallback } from 'react';
 
 export interface SyncStatus {
-  isSyncing: boolean;
-  lastSyncTime: Date | null;
-  hasError: boolean;
-  errorMessage?: string;
+  isSync: boolean;
+  lastSync: Date | null;
+  pendingChanges: number;
 }
 
 export interface UseDataSyncResult {
   syncStatus: SyncStatus;
-  sync: (data: any) => Promise<void>;
-  clearError: () => void;
+  sync: () => Promise<void>;
+  markDirty: () => void;
+  markClean: () => void;
 }
 
 export const useDataSync = (): UseDataSyncResult => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
-    isSyncing: false,
-    lastSyncTime: null,
-    hasError: false
+    isSync: true,
+    lastSync: null,
+    pendingChanges: 0
   });
 
-  const sync = useCallback(async (data: any) => {
-    setSyncStatus(prev => ({
-      ...prev,
-      isSyncing: true,
-      hasError: false,
-      errorMessage: undefined
-    }));
-
+  const sync = useCallback(async () => {
     try {
-      // Mock sync operation - replace with actual implementation
+      // Mock sync implementation
+      console.log('Syncing data...');
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setSyncStatus(prev => ({
         ...prev,
-        isSyncing: false,
-        lastSyncTime: new Date(),
-        hasError: false
+        isSync: true,
+        lastSync: new Date(),
+        pendingChanges: 0
       }));
     } catch (error) {
-      setSyncStatus(prev => ({
-        ...prev,
-        isSyncing: false,
-        hasError: true,
-        errorMessage: error instanceof Error ? error.message : 'Sync error occurred'
-      }));
-      throw error;
+      console.error('Sync failed:', error);
     }
   }, []);
 
-  const clearError = useCallback(() => {
+  const markDirty = useCallback(() => {
     setSyncStatus(prev => ({
       ...prev,
-      hasError: false,
-      errorMessage: undefined
+      isSync: false,
+      pendingChanges: prev.pendingChanges + 1
+    }));
+  }, []);
+
+  const markClean = useCallback(() => {
+    setSyncStatus(prev => ({
+      ...prev,
+      isSync: true,
+      pendingChanges: 0
     }));
   }, []);
 
   return {
     syncStatus,
     sync,
-    clearError
+    markDirty,
+    markClean
   };
 };
 

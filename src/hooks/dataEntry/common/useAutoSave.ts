@@ -1,58 +1,66 @@
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
+import { useDebounce } from './useDebounce';
 
 export interface UseAutoSaveOptions {
-  delay?: number;
+  categoryId: string;
+  schoolId: string;
+  formData: Record<string, any>;
+  isDataModified: boolean;
   enabled?: boolean;
+  delay?: number;
 }
 
 export interface UseAutoSaveResult {
-  triggerAutoSave: () => void;
-  cancelAutoSave: () => void;
+  saveNow: () => Promise<void>;
+  getLastSaveTime: () => Date | null;
+  isSaving: boolean;
+  autoSaveEnabled: boolean;
 }
 
-export const useAutoSave = (
-  saveFunction: () => Promise<void>,
-  dependencies: any[],
-  options: UseAutoSaveOptions = {}
-): UseAutoSaveResult => {
-  const { delay = 2000, enabled = true } = options;
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const cancelAutoSave = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, []);
-
-  const triggerAutoSave = useCallback(() => {
-    if (!enabled) return;
+export const useAutoSave = ({
+  categoryId,
+  schoolId,
+  formData,
+  isDataModified,
+  enabled = true,
+  delay = 30000 // 30 seconds
+}: UseAutoSaveOptions): UseAutoSaveResult => {
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
+  
+  const debouncedFormData = useDebounce(formData, delay);
+  
+  const saveNow = useCallback(async () => {
+    if (!enabled || !isDataModified || isSaving) return;
     
-    cancelAutoSave();
-    timeoutRef.current = setTimeout(async () => {
-      try {
-        await saveFunction();
-      } catch (error) {
-        console.error('Auto-save failed:', error);
-      }
-    }, delay);
-  }, [saveFunction, delay, enabled, cancelAutoSave]);
-
-  useEffect(() => {
-    if (enabled && dependencies.some(dep => dep !== undefined)) {
-      triggerAutoSave();
+    try {
+      setIsSaving(true);
+      // Mock save implementation - replace with actual API call
+      console.log('Auto-saving data:', { categoryId, schoolId, formData });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLastSaveTime(new Date());
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    } finally {
+      setIsSaving(false);
     }
-    return cancelAutoSave;
-  }, [...dependencies, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
-
+  }, [enabled, isDataModified, isSaving, categoryId, schoolId, formData]);
+  
+  // Auto-save when data changes
   useEffect(() => {
-    return cancelAutoSave;
-  }, [cancelAutoSave]);
-
+    if (enabled && isDataModified && !isSaving) {
+      saveNow();
+    }
+  }, [debouncedFormData, enabled, isDataModified, isSaving, saveNow]);
+  
+  const getLastSaveTime = useCallback(() => lastSaveTime, [lastSaveTime]);
+  
   return {
-    triggerAutoSave,
-    cancelAutoSave
+    saveNow,
+    getLastSaveTime,
+    isSaving,
+    autoSaveEnabled: enabled
   };
 };
 

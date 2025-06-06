@@ -1,7 +1,8 @@
-// Core form state and data management (extracted from useDataEntryManager.ts)
+
 import { useState, useCallback, useRef } from 'react';
 import { CategoryWithColumns } from '@/types/category';
 import { DataEntry } from '@/types/dataEntry';
+import { Column } from '@/types/column';
 
 interface UseFormManagerOptions {
   categoryId: string;
@@ -23,124 +24,88 @@ export const useFormManager = ({ categoryId, schoolId, category }: UseFormManage
   const updateFormData = useCallback((newData: Record<string, any>) => {
     setFormData(newData);
     
-    // Check if data is modified by comparing with original
+    // Check if data is modified
     const isModified = JSON.stringify(newData) !== JSON.stringify(originalDataRef.current);
     setIsDataModified(isModified);
-    
-    // Clear validation errors when data changes
-    setValidationErrors({});
   }, []);
-  
-  // Handle individual field changes
-  const handleFieldChange = useCallback((columnId: string, value: any) => {
+
+  // Handle field change
+  const handleFieldChange = useCallback((fieldId: string, value: any) => {
     setFormData(prev => {
-      const newData = { ...prev, [columnId]: value };
+      const newData = { ...prev, [fieldId]: value };
       
-      // Check if modified
+      // Check if data is modified
       const isModified = JSON.stringify(newData) !== JSON.stringify(originalDataRef.current);
       setIsDataModified(isModified);
       
       return newData;
     });
-    
-    // Clear validation error for this field
-    if (validationErrors[columnId]) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[columnId];
-        return newErrors;
-      });
-    }
-  }, [validationErrors]);
-  
-  // Reset form to original state
-  const resetForm = useCallback(() => {
-    setFormData({ ...originalDataRef.current });
-    setIsDataModified(false);
-    setValidationErrors({});
   }, []);
-  
-  // Set initial data and mark as original
+
+  // Set initial data
   const setInitialData = useCallback((data: Record<string, any>) => {
-    const cleanData = { ...data };
-    setFormData(cleanData);
-    originalDataRef.current = cleanData;
+    setFormData(data);
+    originalDataRef.current = { ...data };
     setIsDataModified(false);
-    setValidationErrors({});
   }, []);
-  
-  // Validate form data
+
+  // Validate form
   const validateForm = useCallback(() => {
-    if (!category?.columns) return { isValid: false, errors: {} };
-    
     const errors: Record<string, string> = {};
+    const columns = category?.columns || [];
     
-    category.columns.forEach(column => {
-      if (column.is_required) {
-        const value = formData[column.id];
-        if (!value || String(value).trim() === '') {
-          errors[column.id] = `${column.name} is required`;
-        }
-      }
+    columns.forEach((column: Column) => {
+      const value = formData[column.id];
       
-      // Additional validation based on column type
-      if (column.type === 'number' && formData[column.id]) {
-        const numValue = Number(formData[column.id]);
-        if (isNaN(numValue)) {
-          errors[column.id] = `${column.name} must be a number`;
-        }
-      }
-      
-      if (column.type === 'email' && formData[column.id]) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData[column.id])) {
-          errors[column.id] = `${column.name} must be a valid email`;
-        }
+      if (column.is_required && (!value || String(value).trim() === '')) {
+        errors[column.id] = `${column.name} sahəsi tələb olunur`;
       }
     });
     
     setValidationErrors(errors);
+    
     return {
       isValid: Object.keys(errors).length === 0,
       errors
     };
-  }, [category, formData]);
-  
+  }, [formData, category]);
+
+  // Reset form
+  const resetForm = useCallback(() => {
+    setFormData(originalDataRef.current);
+    setIsDataModified(false);
+    setValidationErrors({});
+  }, []);
+
   // Get completion status
-  const getCompletionStatus = useCallback(() => {
-    if (!category?.columns) return { completed: 0, total: 0, percentage: 0 };
+  const completionStatus = useCallback(() => {
+    const columns = category?.columns || [];
+    if (columns.length === 0) return { completed: 0, total: 0, percentage: 0 };
     
-    const requiredColumns = category.columns.filter(col => col.is_required);
-    const completedFields = requiredColumns.filter(col => {
-      const value = formData[col.id];
+    const completed = columns.filter((column: Column) => {
+      const value = formData[column.id];
       return value && String(value).trim() !== '';
-    });
+    }).length;
     
     return {
-      completed: completedFields.length,
-      total: requiredColumns.length,
-      percentage: Math.round((completedFields.length / requiredColumns.length) * 100) || 0
+      completed,
+      total: columns.length,
+      percentage: Math.round((completed / columns.length) * 100)
     };
-  }, [category, formData]);
-  
+  }, [formData, category]);
+
   return {
-    // State
     formData,
     isDataModified,
     validationErrors,
     entries,
     setEntries,
-    
-    // Actions
     updateFormData,
     handleFieldChange,
-    resetForm,
     setInitialData,
     validateForm,
-    
-    // Status
-    completionStatus: getCompletionStatus(),
-    canSubmit: getCompletionStatus().percentage === 100 && Object.keys(validationErrors).length === 0
+    resetForm,
+    completionStatus
   };
 };
 

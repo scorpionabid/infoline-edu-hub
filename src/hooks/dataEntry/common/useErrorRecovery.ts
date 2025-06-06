@@ -3,86 +3,74 @@ import { useState, useCallback } from 'react';
 
 export interface ErrorRecoveryState {
   hasError: boolean;
-  errorMessage: string;
-  retryCount: number;
-  isRecovering: boolean;
+  errorMessage: string | null;
+  canRecover: boolean;
+  recoveryAttempts: number;
 }
 
 export interface UseErrorRecoveryResult {
   errorState: ErrorRecoveryState;
-  handleError: (error: Error) => void;
-  retry: () => void;
+  reportError: (error: Error | string) => void;
+  recover: () => Promise<boolean>;
   clearError: () => void;
-  canRetry: boolean;
 }
 
-const MAX_RETRY_COUNT = 3;
-
-export const useErrorRecovery = (
-  onRetry?: () => Promise<void>
-): UseErrorRecoveryResult => {
+export const useErrorRecovery = (): UseErrorRecoveryResult => {
   const [errorState, setErrorState] = useState<ErrorRecoveryState>({
     hasError: false,
-    errorMessage: '',
-    retryCount: 0,
-    isRecovering: false
+    errorMessage: null,
+    canRecover: false,
+    recoveryAttempts: 0
   });
 
-  const handleError = useCallback((error: Error) => {
-    console.error('Error occurred:', error);
-    setErrorState(prev => ({
-      ...prev,
+  const reportError = useCallback((error: Error | string) => {
+    const message = typeof error === 'string' ? error : error.message;
+    setErrorState({
       hasError: true,
-      errorMessage: error.message || 'Bilinməyən xəta baş verdi',
-      isRecovering: false
-    }));
+      errorMessage: message,
+      canRecover: true,
+      recoveryAttempts: 0
+    });
   }, []);
 
-  const retry = useCallback(async () => {
-    if (errorState.retryCount >= MAX_RETRY_COUNT) {
-      console.warn('Maximum retry count reached');
-      return;
-    }
-
-    setErrorState(prev => ({
-      ...prev,
-      isRecovering: true,
-      retryCount: prev.retryCount + 1
-    }));
-
+  const recover = useCallback(async (): Promise<boolean> => {
     try {
-      if (onRetry) {
-        await onRetry();
-      }
-      
       setErrorState(prev => ({
         ...prev,
-        hasError: false,
-        errorMessage: '',
-        isRecovering: false
+        recoveryAttempts: prev.recoveryAttempts + 1
       }));
+      
+      // Mock recovery implementation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setErrorState({
+        hasError: false,
+        errorMessage: null,
+        canRecover: false,
+        recoveryAttempts: 0
+      });
+      
+      return true;
     } catch (error) {
-      handleError(error as Error);
+      console.error('Recovery failed:', error);
+      return false;
     }
-  }, [errorState.retryCount, onRetry, handleError]);
+  }, []);
 
   const clearError = useCallback(() => {
     setErrorState({
       hasError: false,
-      errorMessage: '',
-      retryCount: 0,
-      isRecovering: false
+      errorMessage: null,
+      canRecover: false,
+      recoveryAttempts: 0
     });
   }, []);
 
-  const canRetry = errorState.retryCount < MAX_RETRY_COUNT && !errorState.isRecovering;
-
   return {
     errorState,
-    handleError,
-    retry,
-    clearError,
-    canRetry
+    reportError,
+    recover,
+    clearError
   };
 };
 

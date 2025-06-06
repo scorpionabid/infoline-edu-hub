@@ -6,6 +6,7 @@ export { default as useFormState } from './useFormState';
 export { default as useDataSync } from './useDataSync';
 export { default as useErrorRecovery } from './useErrorRecovery';
 export { default as useBaseDataEntry } from './useBaseDataEntry';
+export { default as useFormManager } from './useFormManager';
 
 // Real-time functionality
 export { default as useRealTimeSync } from './useRealTimeSync';
