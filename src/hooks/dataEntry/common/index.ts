@@ -18,6 +18,13 @@ export { default as useDataCache } from './useDataCache';
 export { default as useBatchUpdates } from './useBatchUpdates';
 export { default as useDebounce } from './useDebounce';
 
+// New hooks added
+export { default as useDataLoader } from './useDataLoader';
+export { default as useSaveManager } from './useSaveManager';
+export { default as useStatusManager } from './useStatusManager';
+export { default as useCacheManager } from './useCacheManager';
+export { default as useRealTimeDataEntry } from './useRealTimeDataEntry';
+
 // Export types as well
 export type { ValidationError, UseValidationResult } from './useValidation';
 export type { UseFormStateResult } from './useFormState';
@@ -29,3 +36,10 @@ export type { OfflineState, UseOfflineSupportResult } from './useOfflineSupport'
 export type { CacheEntry, UseDataCacheResult } from './useDataCache';
 export type { BatchUpdate, UseBatchUpdatesResult } from './useBatchUpdates';
 export type { UseBaseDataEntryOptions, UseBaseDataEntryResult } from './useBaseDataEntry';
+
+// New types
+export type { SaveResult, UseSaveManagerResult } from './useSaveManager';
+export type { UseDataLoaderResult } from './useDataLoader';
+export type { UseStatusManagerResult } from './useStatusManager';
+export type { UseCacheManagerResult } from './useCacheManager';
+export type { UseRealTimeDataEntryResult } from './useRealTimeDataEntry';
