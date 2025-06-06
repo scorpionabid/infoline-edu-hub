@@ -24,6 +24,9 @@ export interface UseSaveManagerResult {
   saveAsDraft: (formData: Record<string, any>) => Promise<SaveResult>;
   submitForApproval: (formData: Record<string, any>) => Promise<SaveResult>;
   handleExportTemplate?: () => Promise<void>;
+  // Wrapper functions for compatibility
+  handleSave: () => Promise<void>;
+  handleSubmit: () => Promise<void>;
 }
 
 export const useSaveManager = ({
@@ -35,9 +38,11 @@ export const useSaveManager = ({
 }: UseSaveManagerOptions): UseSaveManagerResult => {
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cachedFormData, setCachedFormData] = useState<Record<string, any>>({});
 
   const saveAsDraft = useCallback(async (formData: Record<string, any>): Promise<SaveResult> => {
     setIsSaving(true);
+    setCachedFormData(formData);
     
     try {
       // Mock save implementation
@@ -68,6 +73,7 @@ export const useSaveManager = ({
 
   const submitForApproval = useCallback(async (formData: Record<string, any>): Promise<SaveResult> => {
     setIsSubmitting(true);
+    setCachedFormData(formData);
     
     try {
       // Mock submit implementation
@@ -96,12 +102,29 @@ export const useSaveManager = ({
     console.log('Exporting template for:', { categoryId, schoolId });
   }, [categoryId, schoolId]);
 
+  // Wrapper functions for compatibility
+  const handleSave = useCallback(async (): Promise<void> => {
+    const result = await saveAsDraft(cachedFormData);
+    if (!result.success && result.error) {
+      throw new Error(result.error);
+    }
+  }, [saveAsDraft, cachedFormData]);
+
+  const handleSubmit = useCallback(async (): Promise<void> => {
+    const result = await submitForApproval(cachedFormData);
+    if (!result.success && result.error) {
+      throw new Error(result.error);
+    }
+  }, [submitForApproval, cachedFormData]);
+
   return {
     isSaving,
     isSubmitting,
     saveAsDraft,
     submitForApproval,
-    handleExportTemplate
+    handleExportTemplate,
+    handleSave,
+    handleSubmit
   };
 };
 

@@ -11,6 +11,7 @@ export interface UseDataLoaderResult {
   error: string | null;
   loadData: (schoolId?: string, categoryId?: string, forceRefresh?: boolean) => Promise<any>;
   refreshData: (schoolId: string, categoryId: string) => Promise<void>;
+  loadCategories: () => Promise<any>;
 }
 
 export const useDataLoader = ({
@@ -49,6 +50,25 @@ export const useDataLoader = ({
     }
   }, [categoryId, schoolId]);
 
+  const loadCategories = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      console.log('Loading categories for school:', schoolId);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      return {
+        categories: []
+      };
+    } catch (err: any) {
+      setError(err.message || 'Failed to load categories');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [schoolId]);
+
   const refreshData = useCallback(async (refreshSchoolId: string, refreshCategoryId: string) => {
     await loadData(refreshSchoolId, refreshCategoryId, true);
   }, [loadData]);
@@ -57,7 +77,8 @@ export const useDataLoader = ({
     isLoading,
     error,
     loadData,
-    refreshData
+    refreshData,
+    loadCategories
   };
 };
 

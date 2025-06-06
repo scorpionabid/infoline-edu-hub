@@ -13,6 +13,7 @@ export interface UseFormManagerResult {
   isDataModified: boolean;
   validationErrors: Record<string, string>;
   entries: any[];
+  canSubmit: boolean;
   handleFieldChange: (fieldId: string, value: any) => void;
   validateForm: () => { isValid: boolean; errors: Record<string, string> };
   resetForm: () => void;
@@ -97,11 +98,14 @@ export const useFormManager = ({
     };
   }, [formData, category]);
 
+  const canSubmit = Object.keys(validationErrors).length === 0 && isDataModified;
+
   return {
     formData,
     isDataModified,
     validationErrors,
     entries,
+    canSubmit,
     handleFieldChange,
     validateForm,
     resetForm,

@@ -6,7 +6,7 @@ export { default as useSectorValidation } from './useSectorValidation';
 export { default as useSchoolManagement } from './useSchoolManagement';
 
 // Export types
-export type { UseSectorDataEntryOptions, UseSectorDataEntryResult } from './useSectorDataEntry';
+export type { UseSectorDataEntryProps as UseSectorDataEntryOptions } from './useSectorDataEntry';
 export type { UseSectorPermissionsResult } from './useSectorPermissions';
 export type { UseSectorValidationResult } from './useSectorValidation';
 export type { UseSchoolManagementResult } from './useSchoolManagement';

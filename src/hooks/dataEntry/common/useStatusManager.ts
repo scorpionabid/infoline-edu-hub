@@ -1,7 +1,7 @@
-
 import { useState, useCallback } from 'react';
 import { DataEntryStatus } from '@/types/dataEntry';
 
+// Unified StatusPermissions interface that matches both systems
 export interface StatusPermissions {
   canEdit: boolean;
   canSubmit: boolean;
@@ -20,12 +20,13 @@ export interface StatusPermissions {
     restrictions: string[];
   };
   alerts: {
+    type: 'info' | 'warning' | 'error' | 'success';
+    message: string;
+    actionRequired: boolean;
     approval?: string;
     rejection?: string;
     warning?: string;
     info?: string;
-    message?: string;
-    type?: 'info' | 'warning' | 'error' | 'success';
   };
 }
 
@@ -85,12 +86,17 @@ export const useStatusManager = ({
       restrictions: getStatusRestrictions(entryStatus)
     },
     alerts: {
-      approval: entryStatus === DataEntryStatus.APPROVED ? 'Data has been approved' : undefined,
-      rejection: entryStatus === DataEntryStatus.REJECTED ? 'Data has been rejected' : undefined,
-      warning: entryStatus === DataEntryStatus.PENDING ? 'Data is pending approval' : undefined,
       type: entryStatus === DataEntryStatus.APPROVED ? 'success' : 
             entryStatus === DataEntryStatus.REJECTED ? 'error' : 
-            entryStatus === DataEntryStatus.PENDING ? 'warning' : 'info'
+            entryStatus === DataEntryStatus.PENDING ? 'warning' : 'info',
+      message: entryStatus === DataEntryStatus.APPROVED ? 'Data has been approved' : 
+               entryStatus === DataEntryStatus.REJECTED ? 'Data has been rejected' : 
+               entryStatus === DataEntryStatus.PENDING ? 'Data is pending approval' : 
+               'Data is in draft status',
+      actionRequired: entryStatus === DataEntryStatus.PENDING,
+      approval: entryStatus === DataEntryStatus.APPROVED ? 'Data has been approved' : undefined,
+      rejection: entryStatus === DataEntryStatus.REJECTED ? 'Data has been rejected' : undefined,
+      warning: entryStatus === DataEntryStatus.PENDING ? 'Data is pending approval' : undefined
     }
   };
 
