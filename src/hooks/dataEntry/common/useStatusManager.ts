@@ -14,7 +14,11 @@ export interface StatusPermissions {
   showSubmitButton: boolean;
   showApprovalControls: boolean;
   allowedActions: string[];
-  statusInfo: string;
+  statusInfo: {
+    current: DataEntryStatus;
+    canTransitionTo: DataEntryStatus[];
+    restrictions: string[];
+  };
   alerts: {
     approval?: string;
     rejection?: string;
@@ -39,53 +43,22 @@ export interface UseStatusManagerResult {
   canApprove: boolean;
   canReject: boolean;
   readOnly: boolean;
-  readOnlyReason: string | null;
+  readOnlyReason?: string;
   statusDisplay: string;
   updateStatus: (status: DataEntryStatus) => void;
-  executeTransition: (newStatus: DataEntryStatus, comment?: string) => Promise<void>;
-  approveDraft: (comment?: string) => Promise<void>;
+  executeTransition: (newStatus: DataEntryStatus) => Promise<void>;
+  approveDraft: () => Promise<void>;
   rejectEntry: (reason: string) => Promise<void>;
   resetToDraft: () => Promise<void>;
 }
 
-export const useStatusManager = ({ 
-  categoryId, 
-  schoolId, 
-  onStatusChange 
+export const useStatusManager = ({
+  categoryId,
+  schoolId,
+  onStatusChange
 }: UseStatusManagerOptions): UseStatusManagerResult => {
   const [entryStatus, setEntryStatus] = useState<DataEntryStatus>(DataEntryStatus.DRAFT);
-
-  const statusPermissions: StatusPermissions = {
-    canEdit: entryStatus === DataEntryStatus.DRAFT,
-    canSubmit: entryStatus === DataEntryStatus.DRAFT,
-    canApprove: entryStatus === DataEntryStatus.PENDING,
-    canReject: entryStatus === DataEntryStatus.PENDING,
-    canReset: entryStatus !== DataEntryStatus.DRAFT,
-    canView: true,
-    readOnly: entryStatus !== DataEntryStatus.DRAFT,
-    showEditControls: entryStatus === DataEntryStatus.DRAFT,
-    showSubmitButton: entryStatus === DataEntryStatus.DRAFT,
-    showApprovalControls: entryStatus === DataEntryStatus.PENDING,
-    allowedActions: entryStatus === DataEntryStatus.DRAFT ? ['save', 'submit'] : 
-                   entryStatus === DataEntryStatus.PENDING ? ['approve', 'reject'] : [],
-    statusInfo: entryStatus === DataEntryStatus.DRAFT ? 'This entry is in draft mode' :
-               entryStatus === DataEntryStatus.PENDING ? 'This entry is pending approval' :
-               entryStatus === DataEntryStatus.APPROVED ? 'This entry has been approved' :
-               'This entry has been rejected',
-    alerts: {
-      approval: entryStatus === DataEntryStatus.APPROVED ? 'This entry has been approved' : undefined,
-      rejection: entryStatus === DataEntryStatus.REJECTED ? 'This entry has been rejected' : undefined,
-      warning: entryStatus === DataEntryStatus.PENDING ? 'This entry is pending approval' : undefined,
-      info: entryStatus === DataEntryStatus.DRAFT ? 'This entry is in draft mode' : undefined,
-      message: entryStatus === DataEntryStatus.APPROVED ? 'This entry has been approved' :
-              entryStatus === DataEntryStatus.REJECTED ? 'This entry has been rejected' :
-              entryStatus === DataEntryStatus.PENDING ? 'This entry is pending approval' :
-              'This entry is in draft mode',
-      type: entryStatus === DataEntryStatus.APPROVED ? 'success' :
-           entryStatus === DataEntryStatus.REJECTED ? 'error' :
-           entryStatus === DataEntryStatus.PENDING ? 'warning' : 'info'
-    }
-  };
+  const [readOnlyReason, setReadOnlyReason] = useState<string>();
 
   const updateStatus = useCallback((status: DataEntryStatus) => {
     setEntryStatus(status);
@@ -94,38 +67,60 @@ export const useStatusManager = ({
     }
   }, [onStatusChange]);
 
-  const executeTransition = useCallback(async (
-    newStatus: DataEntryStatus, 
-    comment?: string
-  ) => {
-    try {
-      console.log('Status transition:', { from: entryStatus, to: newStatus, comment });
-      updateStatus(newStatus);
-    } catch (error: any) {
-      console.error('Status transition failed:', error);
+  const statusPermissions: StatusPermissions = {
+    canEdit: entryStatus === DataEntryStatus.DRAFT || entryStatus === DataEntryStatus.REJECTED,
+    canSubmit: entryStatus === DataEntryStatus.DRAFT || entryStatus === DataEntryStatus.REJECTED,
+    canApprove: entryStatus === DataEntryStatus.PENDING,
+    canReject: entryStatus === DataEntryStatus.PENDING,
+    canReset: entryStatus === DataEntryStatus.APPROVED || entryStatus === DataEntryStatus.REJECTED,
+    canView: true,
+    readOnly: entryStatus === DataEntryStatus.APPROVED || entryStatus === DataEntryStatus.PENDING,
+    showEditControls: entryStatus === DataEntryStatus.DRAFT || entryStatus === DataEntryStatus.REJECTED,
+    showSubmitButton: entryStatus === DataEntryStatus.DRAFT || entryStatus === DataEntryStatus.REJECTED,
+    showApprovalControls: entryStatus === DataEntryStatus.PENDING,
+    allowedActions: getValidTransitions(entryStatus),
+    statusInfo: {
+      current: entryStatus,
+      canTransitionTo: getValidTransitions(entryStatus) as DataEntryStatus[],
+      restrictions: getStatusRestrictions(entryStatus)
+    },
+    alerts: {
+      approval: entryStatus === DataEntryStatus.APPROVED ? 'Data has been approved' : undefined,
+      rejection: entryStatus === DataEntryStatus.REJECTED ? 'Data has been rejected' : undefined,
+      warning: entryStatus === DataEntryStatus.PENDING ? 'Data is pending approval' : undefined,
+      type: entryStatus === DataEntryStatus.APPROVED ? 'success' : 
+            entryStatus === DataEntryStatus.REJECTED ? 'error' : 
+            entryStatus === DataEntryStatus.PENDING ? 'warning' : 'info'
     }
+  };
+
+  const executeTransition = useCallback(async (newStatus: DataEntryStatus) => {
+    console.log('Executing status transition:', { from: entryStatus, to: newStatus });
+    updateStatus(newStatus);
   }, [entryStatus, updateStatus]);
 
-  const approveDraft = useCallback(async (comment?: string) => {
-    await executeTransition(DataEntryStatus.APPROVED, comment);
+  const approveDraft = useCallback(async () => {
+    await executeTransition(DataEntryStatus.APPROVED);
   }, [executeTransition]);
 
   const rejectEntry = useCallback(async (reason: string) => {
-    await executeTransition(DataEntryStatus.REJECTED, reason);
+    console.log('Rejecting entry with reason:', reason);
+    await executeTransition(DataEntryStatus.REJECTED);
   }, [executeTransition]);
 
   const resetToDraft = useCallback(async () => {
     await executeTransition(DataEntryStatus.DRAFT);
   }, [executeTransition]);
 
-  const readOnly = !statusPermissions.canEdit;
-  const readOnlyReason = entryStatus === DataEntryStatus.APPROVED ? 'approved' :
-                        entryStatus === DataEntryStatus.PENDING ? 'pending' : null;
-
-  const statusDisplay = entryStatus === DataEntryStatus.DRAFT ? 'Draft' :
-                       entryStatus === DataEntryStatus.PENDING ? 'Pending Approval' :
-                       entryStatus === DataEntryStatus.APPROVED ? 'Approved' :
-                       entryStatus === DataEntryStatus.REJECTED ? 'Rejected' : 'Unknown';
+  const getStatusDisplay = () => {
+    switch (entryStatus) {
+      case DataEntryStatus.DRAFT: return 'Draft';
+      case DataEntryStatus.PENDING: return 'Pending Approval';
+      case DataEntryStatus.APPROVED: return 'Approved';
+      case DataEntryStatus.REJECTED: return 'Rejected';
+      default: return 'Unknown';
+    }
+  };
 
   return {
     entryStatus,
@@ -134,9 +129,9 @@ export const useStatusManager = ({
     canSubmit: statusPermissions.canSubmit,
     canApprove: statusPermissions.canApprove,
     canReject: statusPermissions.canReject,
-    readOnly,
+    readOnly: statusPermissions.readOnly,
     readOnlyReason,
-    statusDisplay,
+    statusDisplay: getStatusDisplay(),
     updateStatus,
     executeTransition,
     approveDraft,
@@ -144,5 +139,33 @@ export const useStatusManager = ({
     resetToDraft
   };
 };
+
+function getValidTransitions(status: DataEntryStatus): string[] {
+  switch (status) {
+    case DataEntryStatus.DRAFT:
+      return ['submit'];
+    case DataEntryStatus.PENDING:
+      return ['approve', 'reject'];
+    case DataEntryStatus.APPROVED:
+      return ['reset'];
+    case DataEntryStatus.REJECTED:
+      return ['edit', 'submit'];
+    default:
+      return [];
+  }
+}
+
+function getStatusRestrictions(status: DataEntryStatus): string[] {
+  switch (status) {
+    case DataEntryStatus.APPROVED:
+      return ['Cannot edit approved data'];
+    case DataEntryStatus.PENDING:
+      return ['Cannot edit while pending approval'];
+    case DataEntryStatus.REJECTED:
+      return ['Must address rejection reasons'];
+    default:
+      return [];
+  }
+}
 
 export default useStatusManager;

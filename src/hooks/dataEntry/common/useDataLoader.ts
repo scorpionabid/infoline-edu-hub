@@ -9,7 +9,8 @@ export interface UseDataLoaderOptions {
 export interface UseDataLoaderResult {
   isLoading: boolean;
   error: string | null;
-  loadData: () => Promise<void>;
+  loadData: (schoolId?: string, categoryId?: string, forceRefresh?: boolean) => Promise<any>;
+  refreshData: (schoolId: string, categoryId: string) => Promise<void>;
 }
 
 export const useDataLoader = ({
@@ -19,25 +20,44 @@ export const useDataLoader = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (
+    loadSchoolId?: string, 
+    loadCategoryId?: string, 
+    forceRefresh?: boolean
+  ) => {
     setIsLoading(true);
     setError(null);
     
     try {
       // Mock data loading
-      console.log('Loading data for:', { categoryId, schoolId });
+      console.log('Loading data for:', { 
+        schoolId: loadSchoolId || schoolId, 
+        categoryId: loadCategoryId || categoryId,
+        forceRefresh 
+      });
       await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return {
+        data: {},
+        entries: []
+      };
     } catch (err: any) {
       setError(err.message || 'Failed to load data');
+      throw err;
     } finally {
       setIsLoading(false);
     }
   }, [categoryId, schoolId]);
 
+  const refreshData = useCallback(async (refreshSchoolId: string, refreshCategoryId: string) => {
+    await loadData(refreshSchoolId, refreshCategoryId, true);
+  }, [loadData]);
+
   return {
     isLoading,
     error,
-    loadData
+    loadData,
+    refreshData
   };
 };
 

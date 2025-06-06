@@ -12,10 +12,14 @@ export interface UseFormManagerResult {
   formData: Record<string, any>;
   isDataModified: boolean;
   validationErrors: Record<string, string>;
+  entries: any[];
   handleFieldChange: (fieldId: string, value: any) => void;
   validateForm: () => { isValid: boolean; errors: Record<string, string> };
   resetForm: () => void;
   completionStatus: () => { completed: number; total: number; percentage: number };
+  setInitialData: (data: Record<string, any>) => void;
+  setEntries: (entries: any[]) => void;
+  updateFormData: (data: Record<string, any>) => void;
 }
 
 export const useFormManager = ({
@@ -26,6 +30,17 @@ export const useFormManager = ({
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isDataModified, setIsDataModified] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [entries, setEntries] = useState<any[]>([]);
+
+  const setInitialData = useCallback((data: Record<string, any>) => {
+    setFormData(data);
+    setIsDataModified(false);
+  }, []);
+
+  const updateFormData = useCallback((data: Record<string, any>) => {
+    setFormData(data);
+    setIsDataModified(true);
+  }, []);
 
   const handleFieldChange = useCallback((fieldId: string, value: any) => {
     setFormData(prev => ({
@@ -86,10 +101,14 @@ export const useFormManager = ({
     formData,
     isDataModified,
     validationErrors,
+    entries,
     handleFieldChange,
     validateForm,
     resetForm,
-    completionStatus
+    completionStatus,
+    setInitialData,
+    setEntries,
+    updateFormData
   };
 };
 

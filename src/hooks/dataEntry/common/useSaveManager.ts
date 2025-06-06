@@ -21,8 +21,8 @@ export interface UseSaveManagerOptions {
 export interface UseSaveManagerResult {
   isSaving: boolean;
   isSubmitting: boolean;
-  saveAsDraft: (formData: Record<string, any>) => Promise<void>;
-  submitForApproval: (formData: Record<string, any>) => Promise<void>;
+  saveAsDraft: (formData: Record<string, any>) => Promise<SaveResult>;
+  submitForApproval: (formData: Record<string, any>) => Promise<SaveResult>;
   handleExportTemplate?: () => Promise<void>;
 }
 
@@ -36,7 +36,7 @@ export const useSaveManager = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const saveAsDraft = useCallback(async (formData: Record<string, any>): Promise<void> => {
+  const saveAsDraft = useCallback(async (formData: Record<string, any>): Promise<SaveResult> => {
     setIsSaving(true);
     
     try {
@@ -47,26 +47,46 @@ export const useSaveManager = ({
       if (onSaveSuccess) {
         onSaveSuccess();
       }
+
+      return {
+        success: true,
+        message: 'Data saved successfully',
+        status: DataEntryStatus.DRAFT
+      };
     } catch (error: any) {
       if (onSaveError) {
         onSaveError(error);
       }
+      return {
+        success: false,
+        error: error.message || 'Save failed'
+      };
     } finally {
       setIsSaving(false);
     }
   }, [categoryId, schoolId, onSaveSuccess, onSaveError]);
 
-  const submitForApproval = useCallback(async (formData: Record<string, any>): Promise<void> => {
+  const submitForApproval = useCallback(async (formData: Record<string, any>): Promise<SaveResult> => {
     setIsSubmitting(true);
     
     try {
       // Mock submit implementation
       console.log('Submitting for approval:', { categoryId, schoolId, formData });
       await new Promise(resolve => setTimeout(resolve, 1500));
+
+      return {
+        success: true,
+        message: 'Data submitted for approval',
+        status: DataEntryStatus.PENDING
+      };
     } catch (error: any) {
       if (onSaveError) {
         onSaveError(error);
       }
+      return {
+        success: false,
+        error: error.message || 'Submit failed'
+      };
     } finally {
       setIsSubmitting(false);
     }

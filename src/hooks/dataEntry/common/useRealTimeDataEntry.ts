@@ -1,12 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
-
-export interface RealTimeSyncState {
-  isConnected: boolean;
-  connectionStatus: 'connected' | 'disconnected' | 'connecting';
-  activeUsers: Array<{ id: string; name: string; }>;
-  activeUserCount: number;
-}
+import { useState, useCallback } from 'react';
 
 export interface UseRealTimeDataEntryOptions {
   categoryId: string;
@@ -16,8 +9,11 @@ export interface UseRealTimeDataEntryOptions {
   enabled?: boolean;
 }
 
-export interface UseRealTimeDataEntryResult extends RealTimeSyncState {
-  // Connection methods would be here
+export interface UseRealTimeDataEntryResult {
+  isConnected: boolean;
+  activeUsers: any[];
+  activeUserCount: number;
+  connectionStatus: 'connected' | 'disconnected' | 'connecting';
 }
 
 export const useRealTimeDataEntry = ({
@@ -27,34 +23,14 @@ export const useRealTimeDataEntry = ({
   onDataChange,
   enabled = true
 }: UseRealTimeDataEntryOptions): UseRealTimeDataEntryResult => {
-  const [state, setState] = useState<RealTimeSyncState>({
-    isConnected: false,
-    connectionStatus: 'disconnected',
-    activeUsers: [],
-    activeUserCount: 0
-  });
-
-  useEffect(() => {
-    if (!enabled) return;
-
-    // Mock connection
-    setState(prev => ({
-      ...prev,
-      isConnected: true,
-      connectionStatus: 'connected'
-    }));
-
-    return () => {
-      setState(prev => ({
-        ...prev,
-        isConnected: false,
-        connectionStatus: 'disconnected'
-      }));
-    };
-  }, [enabled, categoryId, schoolId]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [activeUsers, setActiveUsers] = useState<any[]>([]);
 
   return {
-    ...state
+    isConnected,
+    activeUsers,
+    activeUserCount: activeUsers.length,
+    connectionStatus: isConnected ? 'connected' : 'disconnected'
   };
 };
 

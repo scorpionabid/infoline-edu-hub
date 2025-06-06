@@ -1,11 +1,13 @@
-// School Admin Data Entry Hooks
-// This module contains hooks specifically for SchoolAdmin role
 
-export { default as useSchool } from './useSchool';
+// School-specific data entry hooks
 export { default as useSchoolDataEntry } from './useSchoolDataEntry';
+export { default as useSchoolDataEntrySimplified } from './useSchoolDataEntry-simplified';
+export { default as useSchoolPermissions } from './useSchoolPermissions';
+export { default as useSchoolValidation } from './useSchoolValidation';
+export { default as useSchoolCategories } from './useSchoolCategories';
 
-// School admin typically works with:
-// - Single school data (their own school)
-// - Form-based data entry
-// - Auto-save functionality
-// - Validation for school-specific data
+// Export types
+export type { UseSchoolDataEntryOptions, UseSchoolDataEntryResult } from './useSchoolDataEntry';
+export type { UseSchoolPermissionsResult } from './useSchoolPermissions';
+export type { UseSchoolValidationResult } from './useSchoolValidation';
+export type { UseSchoolCategoriesResult } from './useSchoolCategories';
