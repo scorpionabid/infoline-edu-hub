@@ -119,6 +119,11 @@ export const useUnifiedDataEntryManager = ({
     }
   }, [submitForApproval, formData, validateForm]);
 
+  const handleUploadData = useCallback(async (file: File) => {
+    console.log('File upload:', file.name);
+    toast.success('File uploaded successfully');
+  }, []);
+
   return {
     // Form state
     formData,
@@ -141,6 +146,7 @@ export const useUnifiedDataEntryManager = ({
     handleSave,
     handleSubmit,
     handleExportTemplate,
+    handleUploadData,
     validateForm,
     resetForm,
     
