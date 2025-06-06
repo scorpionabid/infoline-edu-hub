@@ -31,6 +31,25 @@ export type {
   DataEntrySaveBarProps
 };
 
+// Enhanced Status Permissions interface
+export interface StatusPermissions {
+  canEdit: boolean;
+  canSubmit: boolean;
+  canApprove: boolean;
+  canReject: boolean;
+  canReset: boolean;
+  canView: boolean;
+  readOnly: boolean;
+  showEditControls: boolean;
+  allowedActions: string[];
+  alerts: {
+    approval?: string;
+    rejection?: string;
+    warning?: string;
+    info?: string;
+  };
+}
+
 // Additional UI-specific types
 export interface TabDefinition {
   id: string;

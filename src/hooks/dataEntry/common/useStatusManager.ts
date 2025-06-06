@@ -7,6 +7,17 @@ export interface StatusPermissions {
   canSubmit: boolean;
   canApprove: boolean;
   canReject: boolean;
+  canReset: boolean;
+  canView: boolean;
+  readOnly: boolean;
+  showEditControls: boolean;
+  allowedActions: string[];
+  alerts: {
+    approval?: string;
+    rejection?: string;
+    warning?: string;
+    info?: string;
+  };
 }
 
 export interface UseStatusManagerOptions {
@@ -43,7 +54,19 @@ export const useStatusManager = ({
     canEdit: entryStatus === DataEntryStatus.DRAFT,
     canSubmit: entryStatus === DataEntryStatus.DRAFT,
     canApprove: entryStatus === DataEntryStatus.PENDING,
-    canReject: entryStatus === DataEntryStatus.PENDING
+    canReject: entryStatus === DataEntryStatus.PENDING,
+    canReset: entryStatus !== DataEntryStatus.DRAFT,
+    canView: true,
+    readOnly: entryStatus !== DataEntryStatus.DRAFT,
+    showEditControls: entryStatus === DataEntryStatus.DRAFT,
+    allowedActions: entryStatus === DataEntryStatus.DRAFT ? ['save', 'submit'] : 
+                   entryStatus === DataEntryStatus.PENDING ? ['approve', 'reject'] : [],
+    alerts: {
+      approval: entryStatus === DataEntryStatus.APPROVED ? 'This entry has been approved' : undefined,
+      rejection: entryStatus === DataEntryStatus.REJECTED ? 'This entry has been rejected' : undefined,
+      warning: entryStatus === DataEntryStatus.PENDING ? 'This entry is pending approval' : undefined,
+      info: entryStatus === DataEntryStatus.DRAFT ? 'This entry is in draft mode' : undefined
+    }
   };
 
   const updateStatus = useCallback((status: DataEntryStatus) => {
