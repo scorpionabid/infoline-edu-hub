@@ -14,12 +14,12 @@ export const useSectorValidation = (): UseSectorValidationResult => {
       return `${column.name} is required`;
     }
 
-    if (column.validation_rules?.min_value && Number(value) < column.validation_rules.min_value) {
-      return `Minimum value is ${column.validation_rules.min_value}`;
+    if (column.validation?.min_value && Number(value) < column.validation.min_value) {
+      return `Minimum value is ${column.validation.min_value}`;
     }
 
-    if (column.validation_rules?.max_value && Number(value) > column.validation_rules.max_value) {
-      return `Maximum value is ${column.validation_rules.max_value}`;
+    if (column.validation?.max_value && Number(value) > column.validation.max_value) {
+      return `Maximum value is ${column.validation.max_value}`;
     }
 
     return null;
@@ -36,7 +36,7 @@ export const useSectorValidation = (): UseSectorValidationResult => {
     });
 
     return errors;
-  }, [validateField]);
+  }, [validateForm]);
 
   const validateBulkData = useCallback((data: Record<string, any>[], columns: Column[]): Record<string, string>[] => {
     return data.map(row => validateForm(row, columns));

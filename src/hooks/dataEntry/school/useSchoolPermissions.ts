@@ -22,7 +22,7 @@ export const useSchoolPermissions = (schoolId: string): UseSchoolPermissionsResu
       };
     }
 
-    const { isSchoolAdmin, userSchoolId } = permissions;
+    const { isSchoolAdmin, schoolId: userSchoolId } = permissions;
     const isOwnSchool = isSchoolAdmin && userSchoolId === schoolId;
 
     return {

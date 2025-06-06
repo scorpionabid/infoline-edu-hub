@@ -102,7 +102,7 @@ export const useSaveManager = ({
     console.log('Exporting template for:', { categoryId, schoolId });
   }, [categoryId, schoolId]);
 
-  // Wrapper functions for compatibility
+  // Wrapper functions for compatibility that convert SaveResult to void
   const handleSave = useCallback(async (): Promise<void> => {
     const result = await saveAsDraft(cachedFormData);
     if (!result.success && result.error) {

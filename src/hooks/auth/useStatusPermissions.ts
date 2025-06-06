@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { DataEntryStatus } from '@/types/core/dataEntry';
 import { usePermissions } from './usePermissions';
@@ -86,7 +87,7 @@ export const useStatusPermissions = (
       isSectorAdmin, 
       isSchoolAdmin,
       canApproveData,
-      userSchoolId,
+      schoolId: userSchoolId,
       sectorId,
       regionId
     } = permissions;
@@ -259,9 +260,6 @@ export const useStatusPermissions = (
   }, [entryStatus, user, permissions, categoryId, schoolId]);
 };
 
-/**
- * Simplified version for quick permission checks
- */
 export const useCanEditEntry = (
   entryStatus: DataEntryStatus | undefined,
   schoolId: string
@@ -270,9 +268,6 @@ export const useCanEditEntry = (
   return statusPermissions.canEdit;
 };
 
-/**
- * Hook to get status-based UI configuration
- */
 export const useStatusUIConfig = (
   entryStatus: DataEntryStatus | undefined
 ) => {

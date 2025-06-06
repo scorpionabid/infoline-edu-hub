@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
@@ -8,7 +9,6 @@ import {
   SchoolAdminDashboardData, 
   CategoryItem,
   DeadlineItem,
-  FormItem,
   SchoolStat,
   PendingApproval,
   SectorStat
@@ -98,18 +98,18 @@ export const useRealDashboardData = () => {
       sectorCount: 75,
       schoolCount: 250,
       categories: [
-        { id: '1', name: 'General Statistics', status: 'active' },
-        { id: '2', name: 'Teacher Information', status: 'active' },
-        { id: '3', name: 'Infrastructure', status: 'active' },
-        { id: '4', name: 'Student Assessment', status: 'active' },
+        { id: '1', name: 'General Statistics', status: 'active', completionRate: 0.85 },
+        { id: '2', name: 'Teacher Information', status: 'active', completionRate: 0.78 },
+        { id: '3', name: 'Infrastructure', status: 'active', completionRate: 0.92 },
+        { id: '4', name: 'Student Assessment', status: 'active', completionRate: 0.67 },
       ],
       pendingApprovals: [
         { id: '1', schoolName: 'School A', regionName: 'Region A', categoryName: 'General Statistics', date: '2023-05-01' },
         { id: '2', schoolName: 'School B', regionName: 'Region B', categoryName: 'Teacher Information', date: '2023-05-02' },
       ],
       deadlines: [
-        { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'active' },
-        { id: '2', name: 'Teacher Information', dueDate: '2023-06-15', status: 'active' },
+        { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'upcoming', deadline: '2023-06-01', daysLeft: 5 },
+        { id: '2', name: 'Teacher Information', dueDate: '2023-06-15', status: 'upcoming', deadline: '2023-06-15', daysLeft: 19 },
       ],
       regionStats: [
         { id: '1', name: 'Region A', schoolCount: 50, completionRate: 0.78 },
@@ -124,14 +124,14 @@ export const useRealDashboardData = () => {
       sectorCount: 8,
       schoolCount: 75,
       categories: [
-        { id: '1', name: 'General Statistics', status: 'active' },
-        { id: '2', name: 'Teacher Information', status: 'active' },
+        { id: '1', name: 'General Statistics', status: 'active', completionRate: 0.85 },
+        { id: '2', name: 'Teacher Information', status: 'active', completionRate: 0.78 },
       ],
       pendingApprovals: [
         { id: '1', schoolName: 'School X', categoryName: 'General Statistics', date: '2023-05-01' },
       ],
       deadlines: [
-        { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'active' },
+        { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'upcoming', deadline: '2023-06-01', daysLeft: 5 },
       ],
       sectorStats: [
         { id: '1', name: 'Sector A', schoolCount: 15, completionRate: 0.75 },
@@ -144,13 +144,13 @@ export const useRealDashboardData = () => {
     return {
       schoolCount: 20,
       categories: [
-        { id: '1', name: 'General Statistics', status: 'active' },
+        { id: '1', name: 'General Statistics', status: 'active', completionRate: 0.85 },
       ],
       pendingApprovals: [
         { id: '1', schoolName: 'School 1', categoryName: 'General Statistics', date: '2023-05-01' },
       ],
       deadlines: [
-        { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'active' },
+        { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'upcoming', deadline: '2023-06-01', daysLeft: 5 },
       ],
       schoolStats: [
         { id: '1', name: 'School 1', completionRate: 0.92 },
@@ -185,26 +185,22 @@ export const useRealDashboardData = () => {
       const categories: CategoryItem[] = categoriesData.map((category: any) => ({
         id: category.id,
         name: category.name,
-        status: category.status || 'active'
+        status: category.status || 'active',
+        completionRate: 0.75 // Default value
       }));
       
       const deadlines: DeadlineItem[] = deadlinesData.map((deadline: any) => ({
         id: deadline.id,
         name: deadline.name,
         dueDate: deadline.deadline || new Date().toISOString(),
-        status: deadline.status
-      }));
-      
-      const forms: FormItem[] = categories.map((category) => ({
-        id: category.id,
-        name: category.name,
-        status: category.status
+        status: deadline.status === 'active' ? 'upcoming' : 'upcoming',
+        deadline: deadline.deadline || new Date().toISOString(),
+        daysLeft: 5
       }));
       
       return {
         categories,
-        deadlines,
-        forms
+        deadlines
       };
     } catch (error) {
       console.error('Error fetching school admin dashboard data:', error);
@@ -212,13 +208,10 @@ export const useRealDashboardData = () => {
       // Xəta halında demo data
       return {
         categories: [
-          { id: '1', name: 'General Statistics', status: 'approved' },
+          { id: '1', name: 'General Statistics', status: 'approved', completionRate: 0.85 },
         ],
         deadlines: [
-          { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'active' },
-        ],
-        forms: [
-          { id: '1', name: 'General Statistics', status: 'completed' },
+          { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'upcoming', deadline: '2023-06-01', daysLeft: 5 },
         ]
       };
     }
