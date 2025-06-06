@@ -21,8 +21,9 @@ export interface UseSaveManagerOptions {
 export interface UseSaveManagerResult {
   isSaving: boolean;
   isSubmitting: boolean;
-  saveAsDraft: (formData: Record<string, any>) => Promise<SaveResult>;
-  submitForApproval: (formData: Record<string, any>) => Promise<SaveResult>;
+  saveAsDraft: (formData: Record<string, any>) => Promise<void>;
+  submitForApproval: (formData: Record<string, any>) => Promise<void>;
+  handleExportTemplate?: () => Promise<void>;
 }
 
 export const useSaveManager = ({
@@ -35,7 +36,7 @@ export const useSaveManager = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const saveAsDraft = useCallback(async (formData: Record<string, any>): Promise<SaveResult> => {
+  const saveAsDraft = useCallback(async (formData: Record<string, any>): Promise<void> => {
     setIsSaving(true);
     
     try {
@@ -46,54 +47,41 @@ export const useSaveManager = ({
       if (onSaveSuccess) {
         onSaveSuccess();
       }
-      
-      return {
-        success: true,
-        message: 'Data saved successfully',
-        status: DataEntryStatus.DRAFT
-      };
     } catch (error: any) {
       if (onSaveError) {
         onSaveError(error);
       }
-      
-      return {
-        success: false,
-        error: error.message || 'Save failed'
-      };
     } finally {
       setIsSaving(false);
     }
   }, [categoryId, schoolId, onSaveSuccess, onSaveError]);
 
-  const submitForApproval = useCallback(async (formData: Record<string, any>): Promise<SaveResult> => {
+  const submitForApproval = useCallback(async (formData: Record<string, any>): Promise<void> => {
     setIsSubmitting(true);
     
     try {
       // Mock submit implementation
       console.log('Submitting for approval:', { categoryId, schoolId, formData });
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      return {
-        success: true,
-        message: 'Data submitted for approval',
-        status: DataEntryStatus.PENDING
-      };
     } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || 'Submit failed'
-      };
+      if (onSaveError) {
+        onSaveError(error);
+      }
     } finally {
       setIsSubmitting(false);
     }
+  }, [categoryId, schoolId, onSaveError]);
+
+  const handleExportTemplate = useCallback(async (): Promise<void> => {
+    console.log('Exporting template for:', { categoryId, schoolId });
   }, [categoryId, schoolId]);
 
   return {
     isSaving,
     isSubmitting,
     saveAsDraft,
-    submitForApproval
+    submitForApproval,
+    handleExportTemplate
   };
 };
 

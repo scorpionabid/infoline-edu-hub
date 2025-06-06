@@ -69,7 +69,13 @@ export const useUnifiedDataEntryManager = ({
   } = useFormManager({ categoryId, schoolId, category });
   
   // Save management
-  const { isSaving, isSubmitting, saveAsDraft, submitForApproval } = useSaveManager({
+  const { 
+    isSaving, 
+    isSubmitting, 
+    saveAsDraft, 
+    submitForApproval,
+    handleExportTemplate
+  } = useSaveManager({
     categoryId,
     schoolId,
     category,
@@ -90,12 +96,8 @@ export const useUnifiedDataEntryManager = ({
   // Save handler
   const handleSave = useCallback(async () => {
     try {
-      const result = await saveAsDraft(formData);
-      if (result.success) {
-        toast.success(result.message || 'Data saved successfully');
-      } else {
-        toast.error(result.error || 'Save failed');
-      }
+      await saveAsDraft(formData);
+      toast.success('Data saved successfully');
     } catch (error: any) {
       toast.error(error.message || 'Save failed');
     }
@@ -110,12 +112,8 @@ export const useUnifiedDataEntryManager = ({
     }
 
     try {
-      const result = await submitForApproval(formData);
-      if (result.success) {
-        toast.success(result.message || 'Data submitted for approval');
-      } else {
-        toast.error(result.error || 'Submit failed');
-      }
+      await submitForApproval(formData);
+      toast.success('Data submitted for approval');
     } catch (error: any) {
       toast.error(error.message || 'Submit failed');
     }
@@ -142,6 +140,7 @@ export const useUnifiedDataEntryManager = ({
     handleFieldChange,
     handleSave,
     handleSubmit,
+    handleExportTemplate,
     validateForm,
     resetForm,
     

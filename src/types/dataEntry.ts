@@ -41,12 +41,17 @@ export interface StatusPermissions {
   canView: boolean;
   readOnly: boolean;
   showEditControls: boolean;
+  showSubmitButton: boolean;
+  showApprovalControls: boolean;
   allowedActions: string[];
+  statusInfo: string;
   alerts: {
     approval?: string;
     rejection?: string;
     warning?: string;
     info?: string;
+    message?: string;
+    type?: 'info' | 'warning' | 'error' | 'success';
   };
 }
 
