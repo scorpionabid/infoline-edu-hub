@@ -1,58 +1,60 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
-interface UseAutoSaveProps {
-  categoryId: string;
-  schoolId: string;
-  formData: Record<string, any>;
-  isDataModified: boolean;
+interface UseAutoSaveOptions {
+  data: Record<string, any>;
+  saveFunction: () => Promise<void>;
+  delay?: number;
   enabled?: boolean;
 }
 
 export const useAutoSave = ({
-  categoryId,
-  schoolId,
-  formData,
-  isDataModified,
+  data,
+  saveFunction,
+  delay = 2000,
   enabled = true
-}: UseAutoSaveProps) => {
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
-  const [autoSaveEnabled] = useState(enabled);
-
-  const saveNow = useCallback(async () => {
-    if (!enabled || !isDataModified || isSaving) return;
-    
-    setIsSaving(true);
-    try {
-      // Auto-save logic here
-      console.log('Auto-saving data...', { categoryId, schoolId, formData });
-      setLastSaveTime(new Date());
-    } catch (error) {
-      console.error('Auto-save failed:', error);
-      toast.error('Auto-save failed');
-    } finally {
-      setIsSaving(false);
-    }
-  }, [categoryId, schoolId, formData, isDataModified, enabled, isSaving]);
-
-  const getLastSaveTime = useCallback(() => lastSaveTime, [lastSaveTime]);
+}: UseAutoSaveOptions) => {
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  const lastSavedData = useRef<string>('');
 
   useEffect(() => {
-    if (!autoSaveEnabled || !isDataModified) return;
+    if (!enabled) return;
 
-    const autoSaveTimer = setTimeout(() => {
-      saveNow();
-    }, 30000); // Auto-save after 30 seconds
+    const currentDataString = JSON.stringify(data);
+    
+    // If data hasn't changed, don't save
+    if (currentDataString === lastSavedData.current) return;
 
-    return () => clearTimeout(autoSaveTimer);
-  }, [isDataModified, autoSaveEnabled, saveNow]);
+    // Clear previous timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Set new timeout
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        await saveFunction();
+        lastSavedData.current = currentDataString;
+        toast.success('Məlumatlar avtomatik yadda saxlanıldı');
+      } catch (error) {
+        console.error('Auto-save error:', error);
+        toast.error('Avtomatik saxlama xətası');
+      }
+    }, delay);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [data, saveFunction, delay, enabled]);
 
   return {
-    saveNow,
-    isSaving,
-    autoSaveEnabled,
-    getLastSaveTime
+    cancel: () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    }
   };
 };

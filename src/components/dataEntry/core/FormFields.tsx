@@ -15,6 +15,8 @@ const FormFields: React.FC<FormFieldsProps> = ({ columns, readOnly = false }) =>
         <UnifiedFieldRenderer
           key={column.id}
           column={column}
+          value=""
+          onChange={() => {}}
           readOnly={readOnly}
         />
       ))}

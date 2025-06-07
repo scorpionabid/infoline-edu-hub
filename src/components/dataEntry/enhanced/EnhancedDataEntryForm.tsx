@@ -1,300 +1,237 @@
 
 import React, { useState, useEffect } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import FormFields from '@/components/dataEntry/core/FormFields';
-import ProgressTracker from '@/components/dataEntry/core/ProgressTracker';
-import AutoSaveIndicator from '@/components/dataEntry/core/AutoSaveIndicator';
-import ValidationSummary from '@/components/dataEntry/core/ValidationSummary';
-import { useAutoSave } from '@/hooks/dataEntry/useAutoSave';
-import { useRealTimeValidation } from '@/hooks/dataEntry/useRealTimeValidation';
-import { useLanguage } from '@/context/LanguageContext';
+import { Badge } from '@/components/ui/badge';
+import { Save, Send, AlertCircle, CheckCircle } from 'lucide-react';
 import { Column } from '@/types/column';
-import { Save, Send, FileText } from 'lucide-react';
+import { useRealTimeValidation } from '@/hooks/dataEntry/useRealTimeValidation';
+import { useAutoSave } from '@/hooks/dataEntry/useAutoSave';
+import FormFields from '../core/FormFields';
+import { toast } from 'sonner';
 
-export interface EnhancedDataEntryFormProps {
+interface ValidationError {
+  field: string;
+  message: string;
+}
+
+interface ValidationWarning {
+  field: string;
+  message: string;
+}
+
+interface EnhancedDataEntryFormProps {
   categoryId: string;
   schoolId: string;
   columns: Column[];
   initialData?: Record<string, any>;
-  readOnly?: boolean;
   onSave?: (data: Record<string, any>) => Promise<void>;
   onSubmit?: (data: Record<string, any>) => Promise<void>;
-  className?: string;
+  readOnly?: boolean;
+  autoSave?: boolean;
 }
 
-/**
- * Enhanced Data Entry Form - tam funksionallı məlumat daxil etmə forması
- * Auto-save, real-time validation və progress tracking ilə
- */
 const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
   categoryId,
   schoolId,
   columns,
   initialData = {},
-  readOnly = false,
   onSave,
   onSubmit,
-  className = ''
+  readOnly = false,
+  autoSave = true
 }) => {
-  const { t } = useLanguage();
+  const [formData, setFormData] = useState<Record<string, any>>(initialData);
+  const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDataModified, setIsDataModified] = useState(false);
-  
-  // Dinamik schema yaradırıq
-  const schema = React.useMemo(() => {
-    const schemaObject: Record<string, z.ZodTypeAny> = {};
-    
-    columns.forEach(column => {
-      let fieldSchema: z.ZodTypeAny = z.string().optional();
-      
-      // Tələb olunan sahələr
-      if (column.is_required) {
-        fieldSchema = z.string().min(1, t('fieldRequired', { field: column.name }));
-      }
-      
-      // Tip əsaslı validasiya
-      switch (column.type) {
-        case 'number':
-          fieldSchema = column.is_required 
-            ? z.number({ required_error: t('fieldRequired', { field: column.name }) })
-            : z.number().optional();
-          break;
-        case 'email':
-          fieldSchema = column.is_required
-            ? z.string().email(t('fieldInvalidEmail', { field: column.name })).min(1, t('fieldRequired', { field: column.name }))
-            : z.string().email(t('fieldInvalidEmail', { field: column.name })).optional().or(z.literal(''));
-          break;
-      }
-      
-      schemaObject[column.id] = fieldSchema;
-    });
-    
-    return z.object(schemaObject);
-  }, [columns, t]);
-  
-  // Form yaradırıq
-  const form = useForm({
-    resolver: zodResolver(schema),
-    defaultValues: initialData,
-    mode: 'onChange'
-  });
-  
-  // Form məlumatlarını izləyirik
-  const formData = form.watch();
-  
-  // Dəyişiklikləri izləyirik
-  useEffect(() => {
-    const subscription = form.watch((value, { name, type }) => {
-      if (type === 'change' && name) {
-        setIsDataModified(true);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form]);
-  
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   // Real-time validation
-  const {
-    errors,
-    warnings,
-    isValid,
-    hasAllRequiredFields
-  } = useRealTimeValidation({
+  const { errors, isValid } = useRealTimeValidation({
     columns,
-    formData,
-    enabled: !readOnly
+    data: formData
   });
-  
-  // Auto-save
-  const {
-    saveNow,
-    getLastSaveTime,
-    isSaving,
-    autoSaveEnabled
-  } = useAutoSave({
-    categoryId,
-    schoolId,
-    formData,
-    isDataModified,
-    enabled: !readOnly && !!onSave
+
+  // Auto-save functionality
+  useAutoSave({
+    data: formData,
+    saveFunction: async () => {
+      if (onSave && hasUnsavedChanges) {
+        await handleSave();
+      }
+    },
+    enabled: autoSave && !readOnly,
+    delay: 2000
   });
-  
-  // Completion percentage hesablanır
+
+  // Update form data when initial data changes
+  useEffect(() => {
+    setFormData(initialData);
+    setHasUnsavedChanges(false);
+  }, [initialData]);
+
+  const handleFieldChange = (columnId: string, value: any) => {
+    if (readOnly) return;
+
+    setFormData(prev => ({
+      ...prev,
+      [columnId]: value
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSave = async () => {
+    if (!onSave || isSaving) return;
+
+    try {
+      setIsSaving(true);
+      await onSave(formData);
+      setHasUnsavedChanges(false);
+      toast.success('Məlumatlar yadda saxlanıldı');
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Yadda saxlama xətası');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!onSubmit || isSubmitting) return;
+
+    if (!isValid) {
+      toast.error('Formu göndərməzdən əvvəl xətaları düzəldin');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await onSubmit(formData);
+      toast.success('Məlumatlar təsdiq üçün göndərildi');
+    } catch (error) {
+      console.error('Submit error:', error);
+      toast.error('Göndərmə xətası');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Calculate completion percentage
   const completionPercentage = React.useMemo(() => {
     if (columns.length === 0) return 0;
     
     const filledFields = columns.filter(column => {
       const value = formData[column.id];
-      return value && String(value).trim() !== '';
+      return value !== undefined && value !== null && value !== '';
     }).length;
     
     return Math.round((filledFields / columns.length) * 100);
   }, [columns, formData]);
-  
-  // Manual save handler
-  const handleSave = async () => {
-    if (onSave && !isSaving) {
-      try {
-        await onSave(formData);
-        setIsDataModified(false);
-      } catch (error) {
-        console.error('Save failed:', error);
-      }
-    }
-  };
-  
-  // Submit handler
-  const handleSubmit = async (data: Record<string, any>) => {
-    if (!onSubmit || readOnly) return;
-    
-    try {
-      setIsSubmitting(true);
-      await onSubmit(data);
-      setIsDataModified(false);
-    } catch (error) {
-      console.error('Submit failed:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  // Sütunları bölmələr üzrə qrupları
-  const sections = React.useMemo(() => {
-    const sectionMap: Record<string, Column[]> = { general: [] };
-    
-    columns.forEach(column => {
-      const section = column.section && column.section.trim() !== '' 
-        ? column.section.toLowerCase() 
-        : 'general';
-      
-      if (!sectionMap[section]) {
-        sectionMap[section] = [];
-      }
-      
-      sectionMap[section].push(column);
-    });
-    
-    return sectionMap;
-  }, [columns]);
-  
-  const sectionNames = Object.keys(sections);
+
+  // Get validation errors and warnings
+  const validationErrors: ValidationError[] = Object.entries(errors).map(([field, message]) => ({
+    field,
+    message
+  }));
+
+  const validationWarnings: ValidationWarning[] = []; // Placeholder for warnings
 
   return (
-    <FormProvider {...form}>
-      <div className={`space-y-6 ${className}`}>
-        {/* Header - Progress və Auto-save */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
-          <ProgressTracker
-            columns={columns}
-            formData={formData}
-            completionPercentage={completionPercentage}
-            hasAllRequiredFields={hasAllRequiredFields}
-            isValid={isValid}
-            className="flex-1"
-          />
-          
-          {!readOnly && (
-            <AutoSaveIndicator
-              isSaving={isSaving}
-              autoSaveEnabled={autoSaveEnabled}
-              lastSaveTime={getLastSaveTime()}
-              onManualSave={handleSave}
-            />
-          )}
-        </div>
-        
-        {/* Validation Summary */}
-        {(!isValid || warnings.length > 0) && (
-          <ValidationSummary
-            errors={errors}
-            warnings={warnings}
-            isValid={isValid}
-          />
-        )}
-        
-        {/* Form Content */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              {t('dataEntryForm')}
+    <div className="space-y-6">
+      {/* Status Bar */}
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">
+              Məlumat Daxil Etmə Forması
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant={completionPercentage === 100 ? "default" : "secondary"}>
+                {completionPercentage}% tamamlandı
+              </Badge>
+              {hasUnsavedChanges && (
+                <Badge variant="outline" className="text-orange-600">
+                  Yadda saxlanmamış dəyişikliklər
+                </Badge>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Validation Messages */}
+      {validationErrors.length > 0 && (
+        <Card className="border-red-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-4 w-4" />
+              Xətalar ({validationErrors.length})
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-              {sectionNames.length === 1 ? (
-                // Bir bölmə varsa, sadə layout
-                <FormFields 
-                  columns={sections[sectionNames[0]]} 
-                  readOnly={readOnly}
-                />
-              ) : (
-                // Çoxlu bölmə varsa, tabs layout
-                <Tabs defaultValue={sectionNames[0]}>
-                  <TabsList className="grid w-full grid-cols-auto gap-2">
-                    {sectionNames.map(section => (
-                      <TabsTrigger key={section} value={section}>
-                        {section.charAt(0).toUpperCase() + section.slice(1)}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                  
-                  {sectionNames.map(section => (
-                    <TabsContent key={section} value={section} className="mt-6">
-                      <FormFields 
-                        columns={sections[section]} 
-                        readOnly={readOnly}
-                      />
-                    </TabsContent>
-                  ))}
-                </Tabs>
-              )}
-              
-              {/* Action Buttons */}
-              {!readOnly && (
-                <>
-                  <Separator />
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm text-muted-foreground">
-                      {t('completionStatus')}: {completionPercentage}%
-                    </div>
-                    
-                    <div className="flex gap-3">
-                      {onSave && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleSave}
-                          disabled={isSaving || !isDataModified}
-                        >
-                          <Save className="h-4 w-4 mr-2" />
-                          {t('save')}
-                        </Button>
-                      )}
-                      
-                      {onSubmit && (
-                        <Button
-                          type="submit"
-                          disabled={isSubmitting || !hasAllRequiredFields || !isValid}
-                        >
-                          <Send className="h-4 w-4 mr-2" />
-                          {isSubmitting ? t('submitting') : t('submit')}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </form>
+          <CardContent className="pt-0">
+            <ul className="space-y-1">
+              {validationErrors.map((error, index) => (
+                <li key={index} className="text-sm text-red-600">
+                  • {error.message}
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
-      </div>
-    </FormProvider>
+      )}
+
+      {/* Form Fields */}
+      <Card>
+        <CardContent className="pt-6">
+          <FormFields
+            columns={columns}
+            readOnly={readOnly}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Action Buttons */}
+      {!readOnly && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isValid ? (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-sm">Form keçərlidir</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">{validationErrors.length} xəta</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleSave}
+                  disabled={isSaving || !hasUnsavedChanges}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSaving ? 'Saxlanılır...' : 'Saxla'}
+                </Button>
+
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || !isValid}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {isSubmitting ? 'Göndərilir...' : 'Təsdiq üçün göndər'}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 

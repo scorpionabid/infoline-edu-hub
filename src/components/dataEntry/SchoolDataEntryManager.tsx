@@ -2,257 +2,159 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useDataEntry } from '@/hooks/business/dataEntry/useDataEntry';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, FileText, Folder } from 'lucide-react';
 import { useCategoriesQuery } from '@/hooks/api/categories/useCategoriesQuery';
-import UnifiedFieldRenderer from './fields/UnifiedFieldRenderer';
-import { AlertCircle, Clock, CheckCircle2, Loader2, Save } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { toast } from 'sonner';
+import { useDataEntry } from '@/hooks/business/dataEntry/useDataEntry';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import EnhancedDataEntryForm from './enhanced/EnhancedDataEntryForm';
 
 interface SchoolDataEntryManagerProps {
   schoolId: string;
-  onComplete?: () => void;
-  onClose?: () => void;
+  onClose: () => void;
+  onComplete: () => void;
 }
 
 export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
   schoolId,
-  onComplete,
-  onClose
+  onClose,
+  onComplete
 }) => {
-  const { t } = useLanguage();
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   
-  // Load categories with role-based filtering
-  const { categories, loading: categoriesLoading, error: categoriesError } = useCategoriesQuery({
-    filterByUserRole: true,
-    includeInactive: false
+  // Get school categories only
+  const {
+    categories,
+    isLoading: categoriesLoading,
+    error: categoriesError
+  } = useCategoriesQuery({
+    assignment: 'schools'
   });
-  
-  // Load data entry for selected category
+
+  // Get data entry for selected category
   const {
     category,
     columns,
-    entries,
     isLoading: dataLoading,
-    isSubmitting,
     completionPercentage,
-    hasAllRequiredData,
-    updateEntryValue,
     saveAll,
     submitAll
   } = useDataEntry({
-    categoryId: selectedCategoryId,
+    categoryId: selectedCategoryId || '',
     schoolId,
     onComplete
   });
 
-  const loading = categoriesLoading || dataLoading;
-  const selectedCategory = categories.find(c => c.id === selectedCategoryId);
+  if (categoriesLoading) {
+    return <LoadingSpinner />;
+  }
 
-  // İlk kateqoriyanı avtomatik seç
-  React.useEffect(() => {
-    if (categories.length > 0 && !selectedCategoryId) {
-      setSelectedCategoryId(categories[0].id);
-    }
-  }, [categories, selectedCategoryId]);
-
-  // Xəta handling
   if (categoriesError) {
     return (
-      <Card className="border-red-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-800">
-            <AlertCircle className="h-5 w-5" />
-            Xəta Baş Verdi
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Kateqoriyalar yüklənərkən xəta baş verdi: {categoriesError}
-          </p>
+      <Card>
+        <CardContent className="py-8 text-center">
+          <p className="text-destructive">Xəta baş verdi: {categoriesError.message}</p>
         </CardContent>
       </Card>
     );
   }
 
-  // Kateqoriya yoxdursa
-  if (!categoriesLoading && categories.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            Kateqoriya Yoxdur
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Sizin rolunuz üçün heç bir kateqoriya tapılmadı.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const schoolCategories = categories.filter(cat => 
+    cat.assignment === 'schools' || cat.assignment === 'all'
+  );
+
+  const handleSave = async (data: Record<string, any>) => {
+    await saveAll();
+  };
+
+  const handleSubmit = async (data: Record<string, any>) => {
+    await submitAll();
+  };
 
   return (
-    <div className="h-full flex flex-col space-y-4">
-      {/* Category Selection */}
+    <div className="h-full flex flex-col space-y-6">
+      {/* Header */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            Kateqoriya Seçimi
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Folder className="h-5 w-5" />
+              Məktəb Məlumat Daxil Etmə
+            </CardTitle>
+            <Button variant="outline" onClick={onClose}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Geri
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent>
-          {categoriesLoading ? (
-            <div className="flex items-center justify-center h-12">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Kateqoriyalar yüklənir...</span>
-            </div>
-          ) : (
-            <Tabs value={selectedCategoryId} onValueChange={setSelectedCategoryId} className="w-full">
-              <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 gap-2">
-                {categories.map((category) => (
-                  <TabsTrigger 
-                    key={category.id} 
-                    value={category.id}
-                    className="flex items-center gap-2"
-                  >
-                    {category.name}
-                    <Badge variant="secondary" className="ml-auto">
-                      {category.columns?.length || 0}
-                    </Badge>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          )}
-        </CardContent>
       </Card>
 
-      {/* Data Entry Form */}
-      {selectedCategoryId && (
-        <Card className="flex-1">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                {loading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="h-5 w-5" />
-                )}
-                {selectedCategory?.name} - Məlumat Daxil Etmə
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Badge variant={hasAllRequiredData ? "default" : "secondary"}>
-                  {completionPercentage}% tamamlandı
-                </Badge>
-                <Badge variant="outline">
-                  {columns?.length || 0} sahə
-                </Badge>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {loading ? (
-              <div className="flex items-center justify-center h-32">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <span className="ml-2">Məlumatlar yüklənir...</span>
-              </div>
-            ) : columns && columns.length > 0 ? (
-              <div className="space-y-4">
-                {columns.map((column) => {
-                  const entry = entries.find(e => e.column_id === column.id);
-                  const value = entry?.value || '';
-                  
-                  return (
-                    <div key={column.id} className="space-y-2">
-                      <label className="text-sm font-medium">
-                        {column.name}
-                        {column.is_required && <span className="text-red-500 ml-1">*</span>}
-                      </label>
-                      <UnifiedFieldRenderer
-                        column={column}
-                        value={value}
-                        onChange={(e) => {
-                          console.log('Field value changed:', { columnId: column.id, value: e.target.value });
-                          updateEntryValue(column.id, e.target.value);
-                        }}
-                        onValueChange={(newValue) => {
-                          console.log('Field value changed (onValueChange):', { columnId: column.id, value: newValue });
-                          updateEntryValue(column.id, newValue);
-                        }}
+      {/* Categories and Data Entry */}
+      <div className="flex-1 overflow-hidden">
+        {schoolCategories.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <p className="text-muted-foreground">
+                Məktəb üçün kateqoriya tapılmadı
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Tabs value={selectedCategoryId || ''} onValueChange={setSelectedCategoryId}>
+            <TabsList className="grid w-full grid-cols-auto gap-2">
+              {schoolCategories.map(category => (
+                <TabsTrigger key={category.id} value={category.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{category.name}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {(category as any).column_count || 0} sütun
+                    </Badge>
+                  </div>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {schoolCategories.map(category => (
+              <TabsContent key={category.id} value={category.id} className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      {category.name}
+                      <Badge className="bg-green-100 text-green-800">
+                        {completionPercentage}% tamamlandı
+                      </Badge>
+                    </CardTitle>
+                    <p className="text-muted-foreground">{category.description}</p>
+                  </CardHeader>
+                  <CardContent>
+                    {dataLoading ? (
+                      <LoadingSpinner />
+                    ) : columns.length > 0 ? (
+                      <EnhancedDataEntryForm
+                        categoryId={category.id}
+                        schoolId={schoolId}
+                        columns={columns}
+                        initialData={{}}
+                        onSave={handleSave}
+                        onSubmit={handleSubmit}
+                        readOnly={false}
                       />
-                      {column.help_text && (
-                        <p className="text-xs text-muted-foreground">{column.help_text}</p>
-                      )}
-                    </div>
-                  );
-                })}
-                
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        console.log('Save button clicked');
-                        saveAll();
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      Yadda Saxla
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {onClose && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={onClose}
-                      >
-                        Bağla
-                      </Button>
+                    ) : (
+                      <div className="py-8 text-center">
+                        <p className="text-muted-foreground">
+                          Bu kateqoriya üçün hələ sütun təyin edilməyib
+                        </p>
+                      </div>
                     )}
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        console.log('Submit button clicked');
-                        submitAll();
-                      }}
-                      disabled={isSubmitting || !hasAllRequiredData}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Göndərilir...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Təsdiq üçün Göndər
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Bu kateqoriya üçün sahə tapılmadı</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            ))}
+          </Tabs>
+        )}
+      </div>
     </div>
   );
 };
