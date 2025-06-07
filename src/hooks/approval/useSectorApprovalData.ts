@@ -5,10 +5,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { SectorApprovalItem } from '@/types/sectorData';
 
-// Define SectorDataEntry interface locally
+// Define SectorDataEntry interface locally with proper types
 interface SectorDataEntry {
   id: string;
-  status: string;
+  status: 'draft' | 'pending' | 'approved' | 'rejected';
   category_id: string;
   sector_id: string;
   column_id: string;
@@ -135,7 +135,7 @@ export const useSectorApprovalData = () => {
             regionId: entry.sectors?.region_id,
             submittedAt: entry.created_at,
             submittedBy: entry.created_by || 'Unknown User',
-            status: entry.status as any,
+            status: entry.status as 'pending' | 'approved' | 'rejected',
             entries: [],
             completionRate: 0
           };

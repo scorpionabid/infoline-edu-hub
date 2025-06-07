@@ -1,3 +1,4 @@
+
 import { useContext } from 'react';
 import { NotificationContext } from '@/context/NotificationContext';
 import { AppNotification, NotificationType } from '@/types/notification';
@@ -17,7 +18,18 @@ export type NotificationContextType = {
 export const useNotifications = (): NotificationContextType => {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
+    // Return default implementation if context is not available
+    return {
+      notifications: [],
+      unreadCount: 0,
+      loading: false,
+      error: null,
+      markAsRead: async () => {},
+      markAllAsRead: async () => {},
+      clearAll: async () => {},
+      addNotification: async () => {},
+      refreshNotifications: async () => {}
+    };
   }
   return context;
 };

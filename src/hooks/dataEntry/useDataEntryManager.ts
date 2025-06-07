@@ -4,19 +4,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { DataEntry, DataEntryStatus, DataEntryForm } from '@/types/dataEntry';
 import { CategoryWithColumns } from '@/types/category';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useDataLoader } from './common/useDataLoader';
-import { useSaveManager } from './common/useSaveManager';
-import { useFormManager } from './common/useFormManager';
-import { useStatusManager } from './common/useStatusManager';
 
 interface UseDataEntryManagerOptions {
   categoryId?: string;
   schoolId?: string;
   category?: CategoryWithColumns | null;
   enableRealTime?: boolean;
-  enableCache?: boolean;
   autoSave?: boolean;
   debounceMs?: number;
 }
@@ -51,7 +46,6 @@ export const useDataEntryManager = ({
   schoolId,
   category: initialCategory,
   enableRealTime = true,
-  enableCache = true,
   autoSave = false,
   debounceMs = 1000
 }: UseDataEntryManagerOptions): UseDataEntryManagerReturn => {
@@ -61,47 +55,111 @@ export const useDataEntryManager = ({
   // Internal state
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [isDataModified, setIsDataModified] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Data loading
-  const {
-    data: loadedData,
-    isLoading: dataLoading,
-    loadData,
-    error: loadError
-  } = useDataLoader({
-    categoryId: categoryId || '',
-    schoolId: schoolId || '',
-    enableCache
+  // Load category data
+  const { data: categoryData, isLoading: categoryLoading } = useQuery({
+    queryKey: ['category', categoryId],
+    queryFn: async () => {
+      if (!categoryId) return null;
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*, columns(*)')
+        .eq('id', categoryId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!categoryId
   });
 
-  // Form management
-  const {
-    formData,
-    setFormData,
-    handleFieldChange,
-    resetForm,
-    isDataModified
-  } = useFormManager({
-    initialData: loadedData?.entries || [],
-    autoSave,
-    debounceMs
+  // Load entries data
+  const { data: entriesData, isLoading: entriesLoading } = useQuery({
+    queryKey: ['dataEntry', categoryId, schoolId],
+    queryFn: async () => {
+      if (!categoryId || !schoolId) return [];
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!categoryId && !!schoolId
   });
 
-  // Save management
-  const {
-    isSaving,
-    lastSaved,
-    handleSave: saveData
-  } = useSaveManager({
-    categoryId: categoryId || '',
-    schoolId: schoolId || '',
-    onSave: async (data) => {
+  // Derived data
+  const category = useMemo(() => {
+    return initialCategory || categoryData || null;
+  }, [initialCategory, categoryData]);
+
+  const columns = useMemo(() => {
+    return category?.columns || [];
+  }, [category]);
+
+  const entries = useMemo(() => {
+    return entriesData || [];
+  }, [entriesData]);
+
+  const entryStatus = useMemo(() => {
+    if (entries.length === 0) return 'draft' as DataEntryStatus;
+    const statuses = entries.map(e => e.status);
+    if (statuses.some(s => s === 'pending')) return 'pending' as DataEntryStatus;
+    if (statuses.some(s => s === 'approved')) return 'approved' as DataEntryStatus;
+    if (statuses.some(s => s === 'rejected')) return 'rejected' as DataEntryStatus;
+    return 'draft' as DataEntryStatus;
+  }, [entries]);
+
+  const isLoading = useMemo(() => {
+    return categoryLoading || entriesLoading;
+  }, [categoryLoading, entriesLoading]);
+
+  // Update form data when entries change
+  useEffect(() => {
+    if (entries.length > 0) {
+      const formDataFromEntries = entries.reduce((acc, entry) => {
+        acc[entry.column_id] = entry.value;
+        return acc;
+      }, {} as Record<string, any>);
+      
+      setFormData(formDataFromEntries);
+      setIsDataModified(false);
+    }
+  }, [entries]);
+
+  // Handle form data changes
+  const handleFormDataChange = useCallback((data: Record<string, any>) => {
+    setFormData(data);
+    setIsDataModified(true);
+  }, []);
+
+  // Handle field changes
+  const handleFieldChange = useCallback((fieldId: string, value: any) => {
+    setFormData(prev => {
+      const newFormData = { ...prev, [fieldId]: value };
+      setIsDataModified(true);
+      return newFormData;
+    });
+  }, []);
+
+  // Handle save
+  const handleSave = useCallback(async () => {
+    try {
+      setError(null);
+      setIsSaving(true);
+      
       if (!categoryId || !schoolId) {
         throw new Error('Missing required parameters');
       }
       
       // Prepare entries for save
-      const entries = Object.entries(data).map(([columnId, value]) => ({
+      const entries = Object.entries(formData).map(([columnId, value]) => ({
         school_id: schoolId,
         category_id: categoryId,
         column_id: columnId,
@@ -119,63 +177,14 @@ export const useDataEntryManager = ({
       if (error) {
         throw new Error(error.message);
       }
-    }
-  });
 
-  // Status management
-  const {
-    entryStatus,
-    statusPermissions
-  } = useStatusManager({
-    entries: loadedData?.entries || [],
-    userRole: user?.role || 'school_admin'
-  });
-
-  // Derived data
-  const category = useMemo(() => {
-    return initialCategory || loadedData?.category || null;
-  }, [initialCategory, loadedData?.category]);
-
-  const columns = useMemo(() => {
-    return category?.columns || [];
-  }, [category]);
-
-  const entries = useMemo(() => {
-    return loadedData?.entries || [];
-  }, [loadedData?.entries]);
-
-  const isLoading = useMemo(() => {
-    return dataLoading && !loadedData;
-  }, [dataLoading, loadedData]);
-
-  // Update form data when loaded data changes
-  useEffect(() => {
-    if (loadedData?.entries) {
-      const formDataFromEntries = loadedData.entries.reduce((acc, entry) => {
-        acc[entry.column_id] = entry.value;
-        return acc;
-      }, {} as Record<string, any>);
-      
-      setFormData(formDataFromEntries);
-    }
-  }, [loadedData?.entries, setFormData]);
-
-  // Handle form data changes
-  const handleFormDataChange = useCallback((data: Record<string, any>) => {
-    setFormData(data);
-  }, [setFormData]);
-
-  // Handle save
-  const handleSave = useCallback(async () => {
-    try {
-      setError(null);
-      await saveData(formData);
-      
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ 
         queryKey: ['dataEntry', categoryId, schoolId] 
       });
       
+      setIsDataModified(false);
+      setLastSaved(new Date());
       toast.success('Məlumatlar yadda saxlanıldı');
       return { success: true };
     } catch (error) {
@@ -183,8 +192,10 @@ export const useDataEntryManager = ({
       setError(errorMessage);
       toast.error(`Yadda saxlama xətası: ${errorMessage}`);
       return { success: false, error: errorMessage };
+    } finally {
+      setIsSaving(false);
     }
-  }, [saveData, formData, queryClient, categoryId, schoolId]);
+  }, [formData, categoryId, schoolId, queryClient]);
 
   // Handle submit
   const handleSubmit = useCallback(async () => {
@@ -234,12 +245,22 @@ export const useDataEntryManager = ({
     }
   }, [handleSave, categoryId, schoolId, user?.id, queryClient]);
 
-  // Handle errors
-  useEffect(() => {
-    if (loadError) {
-      setError(loadError);
-    }
-  }, [loadError]);
+  // Reset form
+  const resetForm = useCallback(() => {
+    const initialFormData = entries.reduce((acc, entry) => {
+      acc[entry.column_id] = entry.value || '';
+      return acc;
+    }, {} as Record<string, any>);
+    
+    setFormData(initialFormData);
+    setIsDataModified(false);
+  }, [entries]);
+
+  // Load data
+  const loadData = useCallback(async () => {
+    queryClient.invalidateQueries({ queryKey: ['category', categoryId] });
+    queryClient.invalidateQueries({ queryKey: ['dataEntry', categoryId, schoolId] });
+  }, [queryClient, categoryId, schoolId]);
 
   return {
     // Data

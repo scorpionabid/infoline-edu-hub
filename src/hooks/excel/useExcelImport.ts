@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -94,8 +93,9 @@ export const useExcelImport = ({
       };
     }
     
-    // Check file type
-    const isValidType = EXCEL_CONSTRAINTS.SUPPORTED_MIME_TYPES.includes(file.type) ||
+    // Check file type with proper type assertion
+    const validMimeTypes: string[] = EXCEL_CONSTRAINTS.SUPPORTED_MIME_TYPES as string[];
+    const isValidType = validMimeTypes.includes(file.type) ||
                        EXCEL_CONSTRAINTS.SUPPORTED_FORMATS.some(format => 
                          file.name.toLowerCase().endsWith(format)
                        );

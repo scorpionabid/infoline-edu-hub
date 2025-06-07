@@ -4,12 +4,14 @@ export * from './auth';
 export * from './categories';
 export * from './columns';
 export * from './common';
-export * from './dataEntry';
-export * from './business/dataEntry';
 export * from './approval';
 export * from './reports';
 export * from './schools';
 export * from './user';
+
+// Data entry hooks (avoid duplicates)
+export { useDataEntry } from './dataEntry/useDataEntry';
+export { useDataEntryManager } from './dataEntry/useDataEntryManager';
 
 // Individual hook exports - bunları müvafiq alt qovluqlardan ixrac edirik
 export { useUsers } from './user/useUsers';
@@ -26,4 +28,3 @@ export { useRouter } from './common/useRouter';
 
 // Legacy compatibility exports
 export { useCategories } from './categories';
-export { useDataEntry } from './dataEntry';
