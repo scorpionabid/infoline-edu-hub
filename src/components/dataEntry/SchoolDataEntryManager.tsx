@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -36,6 +36,9 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
   const {
     category,
     columns,
+    entries,
+    getValueForColumn,
+    updateEntryValue,
     isLoading: dataLoading,
     completionPercentage,
     saveAll,
@@ -45,6 +48,17 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
     schoolId,
     onComplete
   });
+
+  // Convert entries to form data format
+  const initialFormData = useMemo(() => {
+    if (!columns.length) return {};
+    
+    const formData: Record<string, any> = {};
+    columns.forEach(column => {
+      formData[column.id] = getValueForColumn(column);
+    });
+    return formData;
+  }, [columns, getValueForColumn]);
 
   if (categoriesLoading) {
     return <LoadingSpinner />;
@@ -136,9 +150,10 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
                         categoryId={category.id}
                         schoolId={schoolId}
                         columns={columns}
-                        initialData={{}}
+                        initialData={initialFormData}
                         onSave={handleSave}
                         onSubmit={handleSubmit}
+                        onFieldChange={updateEntryValue}
                         readOnly={false}
                       />
                     ) : (

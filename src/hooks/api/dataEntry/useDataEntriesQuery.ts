@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchDataEntries, saveDataEntries, updateDataEntriesStatus } from '@/services/api/dataEntry';
 import { useErrorHandler } from '@/hooks/core/useErrorHandler';
-import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
+import { DataEntry } from '@/types/dataEntry';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
 import { dataEntryKeys } from '@/services/api/queryKeys';
@@ -64,7 +64,22 @@ export function useDataEntriesQuery({
   
   // Məlumat daxil etmələrini saxlamaq üçün mutasiya
   const saveMutation = useMutation({
-    mutationFn: (entries: Partial<DataEntry>[]) => saveDataEntries(entries, categoryId, schoolId, user?.id),
+    mutationFn: (entries: Partial<DataEntry>[]) => {
+      console.log('useDataEntriesQuery - Full user object:', JSON.stringify(user, null, 2));
+      console.log('useDataEntriesQuery - User ID:', user?.id);
+      console.log('useDataEntriesQuery - User ID type:', typeof user?.id);
+      
+      // Debug auth state
+      const authState = useAuthStore.getState();
+      console.log('useDataEntriesQuery - Auth state user:', JSON.stringify(authState.user, null, 2));
+      console.log('useDataEntriesQuery - Auth state session:', authState.session?.user?.id);
+      
+      // Use session user id if available, otherwise user.id
+      const actualUserId = authState.session?.user?.id || user?.id;
+      console.log('useDataEntriesQuery - Actual user ID to be used:', actualUserId);
+      
+      return saveDataEntries(entries, categoryId, schoolId, actualUserId);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
       toast.success(t('dataEntriesSaved'));
@@ -76,7 +91,7 @@ export function useDataEntriesQuery({
   
   // Məlumat daxil etmələrinin statusunu yeniləmək üçün mutasiya
   const updateStatusMutation = useMutation({
-    mutationFn: ({ entries, status }: { entries: DataEntry[]; status: DataEntryStatus }) => 
+    mutationFn: ({ entries, status }: { entries: DataEntry[]; status: string }) => 
       updateDataEntriesStatus(entries, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });

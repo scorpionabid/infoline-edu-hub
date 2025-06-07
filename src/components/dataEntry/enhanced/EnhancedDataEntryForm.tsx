@@ -27,6 +27,7 @@ interface EnhancedDataEntryFormProps {
   initialData?: Record<string, any>;
   onSave?: (data: Record<string, any>) => Promise<void>;
   onSubmit?: (data: Record<string, any>) => Promise<void>;
+  onFieldChange?: (columnId: string, value: any) => void;
   readOnly?: boolean;
   autoSave?: boolean;
 }
@@ -38,6 +39,7 @@ const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
   initialData = {},
   onSave,
   onSubmit,
+  onFieldChange,
   readOnly = false,
   autoSave = true
 }) => {
@@ -73,11 +75,17 @@ const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
   const handleFieldChange = (columnId: string, value: any) => {
     if (readOnly) return;
 
+    // Update local form state
     setFormData(prev => ({
       ...prev,
       [columnId]: value
     }));
     setHasUnsavedChanges(true);
+
+    // Call parent onChange if provided (for database sync)
+    if (onFieldChange) {
+      onFieldChange(columnId, value);
+    }
   };
 
   const handleSave = async () => {
@@ -185,6 +193,8 @@ const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
         <CardContent className="pt-6">
           <FormFields
             columns={columns}
+            formData={formData}
+            onChange={handleFieldChange}
             readOnly={readOnly}
           />
         </CardContent>

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useCategoryQuery } from '@/hooks/api/categories/useCategoryQuery';
 import { useDataEntryState } from './useDataEntryState';
 import { Column } from '@/types/column';
-import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
+import { DataEntry } from '@/types/dataEntry';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
 
@@ -117,7 +117,10 @@ export function useDataEntry({ categoryId, schoolId, onComplete }: UseDataEntryP
               category_id: categoryId,
               school_id: schoolId,
               value: '',
-              status: DataEntryStatus.DRAFT
+              status: 'draft', // string kimi istifadə
+              created_by: undefined, // ✅ DÜZƏLDILDI: undefined olarak bırakıyoruz ki useDataEntryState içinde doldurulsun
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             };
       });
       
@@ -142,7 +145,7 @@ export function useDataEntry({ categoryId, schoolId, onComplete }: UseDataEntryP
       
       // Status yeniləməsi üçün entries hazırlayırıq
       const entriesToUpdate = entries.filter(entry => 
-        entry.status !== 'submitted' // DataEntryStatus.SUBMITTED, string olaraq istifadə edirik
+        entry.status !== 'pending' // DataEntryStatus.PENDING, string olaraq istifadə edirik
       );
       
       if (entriesToUpdate.length === 0) {
@@ -155,7 +158,7 @@ export function useDataEntry({ categoryId, schoolId, onComplete }: UseDataEntryP
       // Statusu yeniləyirik
       await updateStatus({
         entries: entriesToUpdate,
-        status: 'submitted' as DataEntryStatus // DataEntryStatus.SUBMITTED, string olaraq istifadə edirik
+        status: 'pending' // string olaraq istifadə edirik
       });
       
       toast.success(t('dataEntriesSubmitted'));

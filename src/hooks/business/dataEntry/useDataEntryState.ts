@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { useDataEntriesQuery } from '@/hooks/api/dataEntry/useDataEntriesQuery';
 import { useIndexedData } from '@/hooks/core/useIndexedData';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
+import { DataEntry } from '@/types/dataEntry';
 
 /**
  * Məlumat daxil etmə vəziyyətini idarə etmək üçün hook parametrləri
@@ -24,6 +24,7 @@ export function useDataEntryState({
 }: UseDataEntryStateProps) {
   // Current user əldə edirik
   const user = useAuthStore(selectUser);
+  const session = useAuthStore(state => state.session);
   
   // Data entries sorğusu
   const {
@@ -70,13 +71,16 @@ export function useDataEntryState({
           category_id: categoryId,
           school_id: schoolId,
           value,
-          status: DataEntryStatus.DRAFT,
+          status: 'draft', // string kimi istifadə
+          created_by: session?.user?.id || user?.id || null, // ✅ DÜZƏLDILDI: session user id istifadə et
+          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
     
-    console.log('Updating entry value:', { columnId, value, updatedEntry });
+    const actualUserId = session?.user?.id || user?.id;
+    console.log('Updating entry value:', { columnId, value, updatedEntry, userId: actualUserId, sessionUserId: session?.user?.id, storeUserId: user?.id });
     
-    // Yalnız bir entry yeniləyirik
+    // Yalnız bir entry yeniləyirik - user.id də göndəririk
     saveEntries([updatedEntry]);
   };
   
@@ -87,8 +91,16 @@ export function useDataEntryState({
       return;
     }
     
-    console.log('Updating all entries:', { count: updatedEntries.length });
-    saveEntries(updatedEntries);
+    // ✅ DÜZƏLDILDI: Hər entry-yə user.id əlavə edirik
+    const entriesWithUserId = updatedEntries.map(entry => ({
+      ...entry,
+      created_by: entry.created_by || session?.user?.id || user?.id || null,
+      updated_at: new Date().toISOString()
+    }));
+    
+    const actualUserId = session?.user?.id || user?.id;
+    console.log('Updating all entries:', { count: entriesWithUserId.length, userId: actualUserId, sessionUserId: session?.user?.id, storeUserId: user?.id });
+    saveEntries(entriesWithUserId);
   };
   
   // Hook nəticələrini qaytarırıq

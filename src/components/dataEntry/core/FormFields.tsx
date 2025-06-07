@@ -5,18 +5,31 @@ import UnifiedFieldRenderer from '@/components/dataEntry/fields/UnifiedFieldRend
 
 interface FormFieldsProps {
   columns: Column[];
+  formData?: Record<string, any>;
+  onChange?: (columnId: string, value: any) => void;
   readOnly?: boolean;
 }
 
-const FormFields: React.FC<FormFieldsProps> = ({ columns, readOnly = false }) => {
+const FormFields: React.FC<FormFieldsProps> = ({ 
+  columns, 
+  formData = {}, 
+  onChange, 
+  readOnly = false 
+}) => {
+  const handleFieldChange = (columnId: string, value: any) => {
+    if (onChange && !readOnly) {
+      onChange(columnId, value);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {columns.map((column) => (
         <UnifiedFieldRenderer
           key={column.id}
           column={column}
-          value=""
-          onChange={() => {}}
+          value={formData[column.id] || ''}
+          onChange={(value) => handleFieldChange(column.id, value)}
           readOnly={readOnly}
         />
       ))}
