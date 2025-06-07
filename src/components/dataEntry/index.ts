@@ -1,11 +1,19 @@
+
 // Main components
 import DataEntryTable from './DataEntryTable';
 import SchoolManagement from './SchoolManagement';
-import DataEntryForm from './DataEntryForm';
 
-// Core components
+// Core components (unified)
 export { default as DataEntryFormManager } from './core/DataEntryFormManager';
 export { default as DataEntryFormContent } from './core/DataEntryFormContent';
+export { default as FormFields } from './core/FormFields';
+
+// Unified components (NEW - primary interfaces)
+export { default as UnifiedDataEntryForm } from './unified/UnifiedDataEntryForm';
+export { default as UnifiedFieldRenderer } from './fields/UnifiedFieldRenderer';
+
+// Enhanced components
+export { default as EnhancedDataEntryForm } from './enhanced/EnhancedDataEntryForm';
 
 // Status components  
 export { default as StatusBadge } from './status/StatusBadge';
@@ -16,13 +24,13 @@ export { default as DataEntryFormError } from './shared/DataEntryFormError';
 
 // Main exports
 export { DataEntryTable };
-export { DataEntryForm };
 export { default as SchoolManagement } from './SchoolManagement';
 
-// Field components
-export { default as FormField } from './components/FormField';
+// Field components (active)
 export { default as Field } from './fields/Field';
-export { default as FieldRenderer } from './fields/FieldRenderer';
 
 // Utils
 export { default as formUtils } from './utils/formUtils';
+
+// Container
+export { DataEntryContainer } from './DataEntryContainer';

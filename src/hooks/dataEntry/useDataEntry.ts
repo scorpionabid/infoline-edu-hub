@@ -1,3 +1,4 @@
+
 // Legacy useDataEntry hook - Simplified for backward compatibility
 // For new development, use useDataEntryManager or specific hooks from common/
 import { useDataEntryManager } from './useDataEntryManager';
@@ -12,6 +13,7 @@ interface UseDataEntryProps {
 /**
  * @deprecated Use useDataEntryManager or specific hooks from common/ folder
  * This hook is maintained for backward compatibility only
+ * Updated to use UnifiedDataEntryForm and UnifiedFieldRenderer
  */
 export const useDataEntry = ({ 
   schoolId = '', 

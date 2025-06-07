@@ -5,7 +5,7 @@ import { vi, describe, it, expect } from 'vitest';
 import { FormProvider, useForm } from 'react-hook-form';
 import { FormFields } from '../components/dataEntry/core';
 import { FormField } from '../components/ui/form';
-import FieldRendererSimple from '../components/dataEntry/fields/FieldRendererSimple';
+import UnifiedFieldRenderer from '../components/dataEntry/fields/UnifiedFieldRenderer';
 import { Column, ColumnType } from '../types/column';
 
 // Test üçün Column mock data yaradırıq
@@ -108,24 +108,23 @@ describe('Form Fields Component Tests', () => {
   });
 });
 
-// Test FieldRendererSimple component directly
-describe('FieldRendererSimple Component Tests', () => {
+// Test UnifiedFieldRenderer component directly
+describe('UnifiedFieldRenderer Component Tests', () => {
   it('should respect disabled and readOnly props correctly', () => {
     const handleChange = vi.fn();
+    const mockColumn = createMockColumn({ id: 'test-field', type: 'text' });
     
-    // Test simple props without form context (should render test component)
     render(
-      <FieldRendererSimple
-        type="text"
+      <UnifiedFieldRenderer
+        column={mockColumn}
         value=""
         onChange={handleChange}
-        disabled={false}
+        isDisabled={false}
         readOnly={false}
-        id="test-field"
       />
     );
     
-    const inputField = screen.getByTestId('field-test-field') as HTMLInputElement;
+    const inputField = screen.getByRole('textbox') as HTMLInputElement;
     
     expect(inputField).not.toHaveAttribute('disabled');
     expect(inputField).not.toHaveAttribute('readonly');
@@ -133,59 +132,58 @@ describe('FieldRendererSimple Component Tests', () => {
   
   it('should handle readOnly prop correctly', () => {
     const handleChange = vi.fn();
+    const mockColumn = createMockColumn({ id: 'test-field', type: 'text' });
     
     render(
-      <FieldRendererSimple
-        type="text"
+      <UnifiedFieldRenderer
+        column={mockColumn}
         value=""
         onChange={handleChange}
-        disabled={false}
+        isDisabled={false}
         readOnly={true}
-        id="test-field"
       />
     );
     
-    const inputField = screen.getByTestId('field-test-field') as HTMLInputElement;
+    const inputField = screen.getByRole('textbox') as HTMLInputElement;
     expect(inputField).toHaveAttribute('readonly');
   });
   
   it('should handle disabled prop correctly', () => {
     const handleChange = vi.fn();
+    const mockColumn = createMockColumn({ id: 'test-field', type: 'text' });
     
     render(
-      <FieldRendererSimple
-        type="text"
+      <UnifiedFieldRenderer
+        column={mockColumn}
         value=""
         onChange={handleChange}
-        disabled={true}
+        isDisabled={true}
         readOnly={false}
-        id="test-field"
       />
     );
     
-    const inputField = screen.getByTestId('field-test-field') as HTMLInputElement;
+    const inputField = screen.getByRole('textbox') as HTMLInputElement;
     expect(inputField).toHaveAttribute('disabled');
   });
   
   it('should call onChange handler when value changes', () => {
     const handleChange = vi.fn();
+    const mockColumn = createMockColumn({ id: 'test-field2', type: 'text' });
     
     render(
-      <FieldRendererSimple
-        type="text"
+      <UnifiedFieldRenderer
+        column={mockColumn}
         value="initial"
         onChange={handleChange}
-        disabled={false}
+        isDisabled={false}
         readOnly={false}
-        id="test-field2"
       />
     );
     
-    const inputField = screen.getByTestId('field-test-field2') as HTMLInputElement;
+    const inputField = screen.getByRole('textbox') as HTMLInputElement;
     
     fireEvent.change(inputField, { target: { value: 'new value' } });
     
     expect(handleChange).toHaveBeenCalled();
   });
 });
-

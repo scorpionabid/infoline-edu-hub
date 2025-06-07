@@ -2,7 +2,7 @@
 import React from 'react';
 import { Column } from '@/types/column';
 import { FormAdapter } from './adapters/FormAdapter';
-import FieldRendererSimple from './FieldRendererSimple';
+import UnifiedFieldRenderer from './UnifiedFieldRenderer';
 
 export interface FieldProps {
   column: Column;
@@ -14,6 +14,7 @@ export interface FieldProps {
 
 /**
  * Field komponenti - sütun tipinə əsasən uyğun field render edir
+ * Updated to use UnifiedFieldRenderer instead of FieldRendererSimple
  */
 const Field: React.FC<FieldProps> = ({
   column,
@@ -30,17 +31,19 @@ const Field: React.FC<FieldProps> = ({
     adapter.setValue(column.id, e.target.value);
   };
 
+  const handleValueChange = (value: any) => {
+    adapter.setValue(column.id, value);
+  };
+
   return (
     <div className={className}>
-      <FieldRendererSimple
-        id={column.id}
-        type={column.type}
+      <UnifiedFieldRenderer
+        column={column}
         value={value}
         onChange={handleChange}
-        disabled={isDisabled}
+        onValueChange={handleValueChange}
+        isDisabled={isDisabled}
         readOnly={isReadOnly}
-        placeholder={column.placeholder}
-        required={column.is_required}
       />
     </div>
   );
