@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -66,6 +65,7 @@ export const useEnhancedNotifications = () => {
         isRead: notification.is_read,
         is_read: notification.is_read,
         createdAt: notification.created_at,
+        created_at: notification.created_at,
         timestamp: notification.created_at,
         relatedEntityId: notification.related_entity_id,
         relatedEntityType: notification.related_entity_type,

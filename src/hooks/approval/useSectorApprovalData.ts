@@ -141,10 +141,10 @@ export const useSectorApprovalData = () => {
           };
         }
         
-        // Convert entry to SectorDataEntry format
+        // Convert entry to SectorDataEntry format with proper type casting
         const sectorEntry: SectorDataEntry = {
           id: entry.id,
-          status: entry.status,
+          status: entry.status as 'approved' | 'pending' | 'rejected' | 'draft',
           category_id: entry.category_id,
           sector_id: entry.sector_id,
           column_id: entry.column_id || '',

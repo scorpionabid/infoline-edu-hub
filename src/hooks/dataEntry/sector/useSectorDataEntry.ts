@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
-import { Column, ColumnType } from '@/types/column';
+import { Column, ColumnType, ColumnOption } from '@/types/column';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useSectorValidation } from './useSectorValidation';
 import { toast } from 'sonner';
@@ -75,7 +75,13 @@ export const useSectorDataEntry = ({
     return rawColumns.map(col => ({
       ...col,
       type: col.type as ColumnType,
-      status: (col.status === 'active' || col.status === 'inactive') ? col.status : 'active' as 'active' | 'inactive'
+      status: (col.status === 'active' || col.status === 'inactive') ? col.status : 'active' as 'active' | 'inactive',
+      options: Array.isArray(col.options) ? col.options as ColumnOption[] : [],
+      validation: col.validation || {},
+      default_value: col.default_value || '',
+      help_text: col.help_text || '',
+      placeholder: col.placeholder || '',
+      is_required: col.is_required || false
     }));
   }, [rawColumns]);
 
@@ -98,9 +104,20 @@ export const useSectorDataEntry = ({
   // Transform entries to match DataEntry interface
   const entries: DataEntry[] = useMemo(() => {
     return rawEntries.map(entry => ({
-      ...entry,
+      id: entry.id,
       school_id: sectorId, // Use sector_id as school_id for compatibility
-      status: entry.status as DataEntryStatus
+      category_id: entry.category_id,
+      column_id: entry.column_id,
+      value: entry.value,
+      status: entry.status as DataEntryStatus,
+      created_at: entry.created_at,
+      updated_at: entry.updated_at,
+      created_by: entry.created_by,
+      approved_by: entry.approved_by,
+      approved_at: entry.approved_at,
+      rejected_by: entry.rejected_by,
+      rejected_at: entry.rejected_at,
+      rejection_reason: entry.rejection_reason
     }));
   }, [rawEntries, sectorId]);
 
@@ -142,6 +159,7 @@ export const useSectorDataEntry = ({
     mutationFn: async () => {
       // First save all entries
       const entriesToSubmit = Object.entries(formData).map(([columnId, value]) => ({
+        id: crypto.randomUUID(),
         sector_id: sectorId,
         category_id: categoryId,
         column_id: columnId,
@@ -161,7 +179,13 @@ export const useSectorDataEntry = ({
       
       if (saveError) throw saveError;
 
-      return entriesToSubmit;
+      // Convert to DataEntry format for callback
+      const convertedEntries: DataEntry[] = entriesToSubmit.map(entry => ({
+        ...entry,
+        school_id: sectorId
+      }));
+
+      return convertedEntries;
     },
     onSuccess: (submittedEntries) => {
       setHasUnsavedChanges(false);
@@ -170,12 +194,7 @@ export const useSectorDataEntry = ({
       });
       toast.success('Məlumatlar təsdiq üçün göndərildi');
       if (onSubmit) {
-        // Convert to DataEntry format
-        const convertedEntries = submittedEntries.map(entry => ({
-          ...entry,
-          school_id: sectorId
-        })) as DataEntry[];
-        onSubmit(convertedEntries);
+        onSubmit(submittedEntries);
       }
     },
     onError: (error: any) => {

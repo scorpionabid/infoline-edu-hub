@@ -8,5 +8,4 @@ export { useSchoolManagement } from './useSchoolManagement';
 // Export types
 export type { UseSectorDataEntryOptions } from './useSectorDataEntry';
 export type { UseSectorPermissionsResult } from './useSectorPermissions';
-export type { SectorValidationHook } from './useSectorValidation';
 export type { UseSchoolManagementResult } from './useSchoolManagement';

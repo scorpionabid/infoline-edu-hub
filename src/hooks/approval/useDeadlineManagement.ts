@@ -82,12 +82,18 @@ export const useDeadlineManagement = () => {
     }
   }, [toast, t]);
 
-  // Auto-approve entries on deadline
+  // Auto-approve entries on deadline - using direct query instead of RPC
   const autoApproveOnDeadline = useCallback(async (categoryId: string) => {
     try {
-      const { error } = await supabase.rpc('auto_approve_on_deadline', {
-        category_id_param: categoryId
-      });
+      const { error } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: null // or get current user ID
+        })
+        .eq('category_id', categoryId)
+        .eq('status', 'pending');
 
       if (error) throw error;
 

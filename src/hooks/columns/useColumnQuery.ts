@@ -33,10 +33,14 @@ export const useColumnQuery = (categoryId?: string) => {
   });
 
   const createColumnMutation = useMutation({
-    mutationFn: async (columnData: Partial<Column>) => {
+    mutationFn: async (columnData: Omit<Column, 'id'>) => {
       const { data, error } = await supabase
         .from('columns')
-        .insert([columnData])
+        .insert([{
+          ...columnData,
+          name: columnData.name,
+          type: columnData.type
+        }])
         .select()
         .single();
 

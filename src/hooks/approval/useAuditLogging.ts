@@ -75,11 +75,7 @@ export const useAuditLogging = () => {
           entity_id,
           old_value,
           new_value,
-          created_at,
-          profiles!user_id (
-            full_name,
-            email
-          )
+          created_at
         `)
         .order('created_at', { ascending: false });
 
@@ -113,6 +109,15 @@ export const useAuditLogging = () => {
 
       if (error) throw error;
 
+      // Get user profiles separately to avoid relation errors
+      const userIds = [...new Set(data?.map(log => log.user_id).filter(Boolean))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
       // Transform data to include user info
       const auditLogs: AuditLogEntry[] = data?.map(log => ({
         id: log.id,
@@ -123,8 +128,8 @@ export const useAuditLogging = () => {
         old_value: log.old_value,
         new_value: log.new_value,
         created_at: log.created_at,
-        user_name: log.profiles?.full_name || 'Unknown User',
-        user_email: log.profiles?.email || 'Unknown Email'
+        user_name: profileMap.get(log.user_id)?.full_name || 'Unknown User',
+        user_email: profileMap.get(log.user_id)?.email || 'Unknown Email'
       })) || [];
 
       return auditLogs;
