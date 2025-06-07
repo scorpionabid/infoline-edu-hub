@@ -1,8 +1,7 @@
 
 // Field components
 export { default as Field } from './Field';
-export { default as FieldRenderer } from './FieldRenderer';
-export { default as FieldRendererSimple } from './FieldRendererSimple';
+export { default as UnifiedFieldRenderer } from './UnifiedFieldRenderer';
 export { default as BaseField } from './BaseField';
 export { default as TextInputField } from './TextInputField';
 export { default as SelectField } from './SelectField';
@@ -18,3 +17,4 @@ export * from './adapters';
 
 // Types
 export type { FieldProps } from './Field';
+export type { UnifiedFieldRendererProps } from './UnifiedFieldRenderer';

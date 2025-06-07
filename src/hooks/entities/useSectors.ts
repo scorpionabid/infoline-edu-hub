@@ -1,111 +1,134 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Sector } from '@/types/sector';
-import { toast } from 'sonner';
 
-export interface UseSectorsResult {
-  sectors: Sector[];
-  loading: boolean;
-  error: Error | null;
-  fetchSectors: (filterRegionId?: string) => Promise<void>;
-  createSector: (sector: Omit<Sector, 'id'>) => Promise<void>;
-  updateSector: (sectorId: string, updates: Partial<Sector>) => Promise<void>;
-  deleteSector: (sectorId: string) => Promise<void>;
-  refetch: () => void;
+export interface Sector {
+  id: string;
+  name: string;
+  region_id: string;
+  admin_id?: string;
+  admin_email?: string;
+  status: 'active' | 'inactive';
+  description?: string;
+  completion_rate?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export const useSectors = (regionId?: string) => {
   const [sectors, setSectors] = useState<Sector[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchSectors = async (filterRegionId?: string) => {
-    try {
-      setLoading(true);
-      
-      let query = supabase
-        .from('sectors')
-        .select('*')
-        .order('name');
-      
-      if (filterRegionId || regionId) {
-        query = query.eq('region_id', filterRegionId || regionId);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setSectors(data || []);
-    } catch (error) {
-      console.error('Error fetching sectors:', error);
-      setError(error as Error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchSectors(regionId);
+    const fetchSectors = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        let query = supabase.from('sectors').select('*');
+        
+        if (regionId) {
+          query = query.eq('region_id', regionId);
+        }
+
+        const { data, error: fetchError } = await query.order('name');
+
+        if (fetchError) throw fetchError;
+
+        // Type assertion with proper status casting
+        const typedSectors = (data || []).map(sector => ({
+          ...sector,
+          status: (sector.status === 'active' || sector.status === 'inactive') 
+            ? sector.status 
+            : 'active' as 'active' | 'inactive'
+        })) as Sector[];
+
+        setSectors(typedSectors);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch sectors');
+        console.error('Error fetching sectors:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSectors();
   }, [regionId]);
 
-  const createSector = async (sector: Omit<Sector, 'id'>) => {
+  const createSector = async (sectorData: Omit<Sector, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
         .from('sectors')
-        .insert([sector])
+        .insert([{
+          ...sectorData,
+          status: sectorData.status || 'active'
+        }])
         .select()
         .single();
 
       if (error) throw error;
 
-      setSectors(prev => [...prev, data]);
-      toast.success('Sektor uğurla əlavə edildi');
-    } catch (error) {
-      console.error('Error creating sector:', error);
-      toast.error('Sektor əlavə edilərkən xəta baş verdi');
-      throw error;
+      if (data) {
+        const newSector = {
+          ...data,
+          status: (data.status === 'active' || data.status === 'inactive') 
+            ? data.status 
+            : 'active' as 'active' | 'inactive'
+        } as Sector;
+
+        setSectors(prev => [newSector, ...prev]);
+        return newSector;
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create sector');
+      throw err;
     }
   };
 
-  const updateSector = async (sectorId: string, updates: Partial<Sector>) => {
+  const updateSector = async (id: string, updates: Partial<Sector>) => {
     try {
       const { data, error } = await supabase
         .from('sectors')
         .update(updates)
-        .eq('id', sectorId)
+        .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
 
-      setSectors(prev =>
-        prev.map(sector => (sector.id === sectorId ? { ...sector, ...data } : sector))
-      );
-      toast.success('Sektor uğurla yeniləndi');
-    } catch (error) {
-      console.error('Error updating sector:', error);
-      toast.error('Sektor yenilənərkən xəta baş verdi');
-      throw error;
+      if (data) {
+        const updatedSector = {
+          ...data,
+          status: (data.status === 'active' || data.status === 'inactive') 
+            ? data.status 
+            : 'active' as 'active' | 'inactive'
+        } as Sector;
+
+        setSectors(prev => prev.map(sector => 
+          sector.id === id ? updatedSector : sector
+        ));
+        return updatedSector;
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update sector');
+      throw err;
     }
   };
 
-  const deleteSector = async (sectorId: string) => {
+  const deleteSector = async (id: string) => {
     try {
       const { error } = await supabase
         .from('sectors')
         .delete()
-        .eq('id', sectorId);
+        .eq('id', id);
 
       if (error) throw error;
 
-      setSectors(prev => prev.filter(sector => sector.id !== sectorId));
-      toast.success('Sektor uğurla silindi');
-    } catch (error) {
-      console.error('Error deleting sector:', error);
-      toast.error('Sektor silinərkən xəta baş verdi');
-      throw error;
+      setSectors(prev => prev.filter(sector => sector.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete sector');
+      throw err;
     }
   };
 
@@ -113,10 +136,11 @@ export const useSectors = (regionId?: string) => {
     sectors,
     loading,
     error,
-    fetchSectors,
     createSector,
     updateSector,
     deleteSector,
-    refetch: () => fetchSectors(regionId)
+    refreshSectors: () => {
+      setLoading(true);
+    }
   };
 };

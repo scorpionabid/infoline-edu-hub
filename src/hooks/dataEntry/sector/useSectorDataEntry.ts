@@ -1,115 +1,268 @@
 
-import { useState, useCallback } from 'react';
-import { useDataEntryState } from '@/hooks/business/dataEntry/useDataEntryState';
-import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
+import { Column } from '@/types/column';
+import { useAuth } from '@/hooks/auth/useAuth';
+import { useSectorValidation } from './useSectorValidation';
+import { toast } from 'sonner';
 
-export interface UseSectorDataEntryProps {
+interface UseSectorDataEntryOptions {
+  sectorId: string;
   categoryId: string;
-  sectorId?: string;
+  onSave?: (entries: DataEntry[]) => void;
+  onSubmit?: (entries: DataEntry[]) => void;
 }
 
-export interface UseSectorDataEntryResult {
-  // School management
-  schools: any[];
-  selectedSchoolId: string | null;
-  setSelectedSchoolId: (schoolId: string | null) => void;
-  
-  // Data entry for selected school
+interface UseSectorDataEntryReturn {
+  // Data
   entries: DataEntry[];
+  columns: Column[];
+  formData: Record<string, any>;
+  
+  // Status
   isLoading: boolean;
   isSaving: boolean;
-  updateEntryValue: (columnId: string, value: any) => void;
+  isSubmitting: boolean;
+  hasUnsavedChanges: boolean;
+  completionPercentage: number;
+  
+  // Validation
+  errors: Record<string, string>;
+  isValid: boolean;
+  
+  // Actions
+  updateEntry: (columnId: string, value: any) => void;
   saveEntries: () => Promise<void>;
   submitEntries: () => Promise<void>;
-  
-  // Progress tracking
-  completionPercentage: number;
-  hasRequiredData: boolean;
+  resetForm: () => void;
+  validateForm: () => boolean;
 }
 
-export function useSectorDataEntry({
+export const useSectorDataEntry = ({
+  sectorId,
   categoryId,
-  sectorId
-}: UseSectorDataEntryProps): UseSectorDataEntryResult {
-  const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
+  onSave,
+  onSubmit
+}: UseSectorDataEntryOptions): UseSectorDataEntryReturn => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   
-  // Load schools for the sector
-  const { schools, loading: schoolsLoading } = useSchoolsQuery();
-  
-  // Filter schools by sector if sectorId is provided
-  const filteredSchools = sectorId 
-    ? schools.filter(school => school.sector_id === sectorId)
-    : schools;
-  
-  // Load data entry state for selected school
-  const {
-    entries,
-    isLoading: entriesLoading,
-    isSaving,
-    updateEntryValue,
-    saveEntries: saveEntriesRaw,
-    updateStatus
-  } = useDataEntryState({
-    categoryId,
-    schoolId: selectedSchoolId || '',
-    enabled: !!selectedSchoolId && !!categoryId
+  // Local state
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Load columns for category
+  const { data: columns = [], isLoading: columnsLoading } = useQuery({
+    queryKey: ['columns', categoryId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('status', 'active')
+        .order('order_index');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!categoryId
   });
-  
-  // Calculate completion percentage
-  const completionPercentage = entries.length > 0 
-    ? Math.round((entries.filter(e => e.value && e.value.trim()).length / entries.length) * 100)
-    : 0;
-  
-  // Check if all required data is present
-  const hasRequiredData = entries.length > 0 && entries.every(entry => 
-    entry.value && entry.value.trim()
-  );
-  
-  // Save entries wrapper
-  const saveEntries = useCallback(async () => {
-    if (!selectedSchoolId) return;
-    
-    try {
-      await saveEntriesRaw(entries);
-      console.log('Entries saved successfully');
-    } catch (error) {
-      console.error('Failed to save entries:', error);
-      throw error;
-    }
-  }, [selectedSchoolId, entries, saveEntriesRaw]);
-  
-  // Submit entries for approval
-  const submitEntries = useCallback(async () => {
-    if (!selectedSchoolId || !hasRequiredData) return;
-    
-    try {
-      await updateStatus(entries, DataEntryStatus.PENDING);
-      console.log('Entries submitted for approval');
-    } catch (error) {
-      console.error('Failed to submit entries:', error);
-      throw error;
-    }
-  }, [selectedSchoolId, hasRequiredData, entries, updateStatus]);
-  
-  return {
-    // School management
-    schools: filteredSchools,
-    selectedSchoolId,
-    setSelectedSchoolId,
-    
-    // Data entry
+
+  // Load existing entries
+  const { data: entries = [], isLoading: entriesLoading } = useQuery({
+    queryKey: ['sectorDataEntries', sectorId, categoryId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sector_data_entries')
+        .select('*')
+        .eq('sector_id', sectorId)
+        .eq('category_id', categoryId);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!sectorId && !!categoryId
+  });
+
+  // Validation hook
+  const { validateForm, errors, isValid } = useSectorValidation({
+    columns,
     entries,
-    isLoading: schoolsLoading || entriesLoading,
-    isSaving,
-    updateEntryValue,
+    strictValidation: true
+  });
+
+  // Save mutation
+  const saveMutation = useMutation({
+    mutationFn: async (entriesToSave: DataEntry[]) => {
+      const { error } = await supabase
+        .from('sector_data_entries')
+        .upsert(entriesToSave, {
+          onConflict: 'sector_id,category_id,column_id'
+        });
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setHasUnsavedChanges(false);
+      queryClient.invalidateQueries({
+        queryKey: ['sectorDataEntries', sectorId, categoryId]
+      });
+      toast.success('Məlumatlar yadda saxlanıldı');
+      if (onSave) {
+        onSave(entries);
+      }
+    },
+    onError: (error) => {
+      toast.error(`Yadda saxlama xətası: ${error.message}`);
+    }
+  });
+
+  // Submit mutation  
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      // First save all entries
+      const entriesToSubmit = Object.entries(formData).map(([columnId, value]) => ({
+        sector_id: sectorId,
+        category_id: categoryId,
+        column_id: columnId,
+        value: value?.toString() || '',
+        status: 'pending' as DataEntryStatus,
+        created_by: user?.id || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+
+      // Save and then update status
+      const { error: saveError } = await supabase
+        .from('sector_data_entries')
+        .upsert(entriesToSubmit, {
+          onConflict: 'sector_id,category_id,column_id'
+        });
+      
+      if (saveError) throw saveError;
+
+      return entriesToSubmit;
+    },
+    onSuccess: (submittedEntries) => {
+      setHasUnsavedChanges(false);
+      queryClient.invalidateQueries({
+        queryKey: ['sectorDataEntries', sectorId, categoryId]
+      });
+      toast.success('Məlumatlar təsdiq üçün göndərildi');
+      if (onSubmit) {
+        onSubmit(submittedEntries);
+      }
+    },
+    onError: (error) => {
+      toast.error(`Göndərmə xətası: ${error.message}`);
+    }
+  });
+
+  // Initialize form data from entries
+  useEffect(() => {
+    if (entries.length > 0) {
+      const initialFormData = entries.reduce((acc, entry) => {
+        acc[entry.column_id] = entry.value || '';
+        return acc;
+      }, {} as Record<string, any>);
+      
+      setFormData(initialFormData);
+      setHasUnsavedChanges(false);
+    }
+  }, [entries]);
+
+  // Update entry value
+  const updateEntry = useCallback((columnId: string, value: any) => {
+    setFormData(prev => {
+      const newFormData = { ...prev, [columnId]: value };
+      setHasUnsavedChanges(true);
+      return newFormData;
+    });
+  }, []);
+
+  // Save entries
+  const saveEntries = useCallback(async () => {
+    const entriesToSave = Object.entries(formData).map(([columnId, value]) => ({
+      sector_id: sectorId,
+      category_id: categoryId,
+      column_id: columnId,
+      value: value?.toString() || '',
+      status: 'draft' as DataEntryStatus,
+      created_by: user?.id || '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+
+    await saveMutation.mutateAsync(entriesToSave);
+  }, [formData, sectorId, categoryId, user?.id, saveMutation]);
+
+  // Submit entries
+  const submitEntries = useCallback(async () => {
+    const validationResult = validateForm(formData);
+    if (!validationResult.valid) {
+      toast.error('Formu göndərməzdən əvvəl xətaları düzəldin');
+      return;
+    }
+    
+    await submitMutation.mutateAsync();
+  }, [formData, validateForm, submitMutation]);
+
+  // Reset form
+  const resetForm = useCallback(() => {
+    const initialFormData = entries.reduce((acc, entry) => {
+      acc[entry.column_id] = entry.value || '';
+      return acc;
+    }, {} as Record<string, any>);
+    
+    setFormData(initialFormData);
+    setHasUnsavedChanges(false);
+  }, [entries]);
+
+  // Validate form wrapper
+  const validateFormWrapper = useCallback(() => {
+    const result = validateForm(formData);
+    return result.valid;
+  }, [formData, validateForm]);
+
+  // Calculate completion percentage
+  const completionPercentage = useMemo(() => {
+    if (columns.length === 0) return 0;
+    
+    const filledFields = columns.filter(column => {
+      const value = formData[column.id];
+      return value !== undefined && value !== null && value !== '';
+    }).length;
+    
+    return Math.round((filledFields / columns.length) * 100);
+  }, [columns, formData]);
+
+  // Loading state
+  const isLoading = columnsLoading || entriesLoading;
+
+  return {
+    // Data
+    entries,
+    columns,
+    formData,
+    
+    // Status
+    isLoading,
+    isSaving: saveMutation.isPending,
+    isSubmitting: submitMutation.isPending,
+    hasUnsavedChanges,
+    completionPercentage,
+    
+    // Validation
+    errors,
+    isValid,
+    
+    // Actions
+    updateEntry,
     saveEntries,
     submitEntries,
-    
-    // Progress
-    completionPercentage,
-    hasRequiredData
+    resetForm,
+    validateForm: validateFormWrapper
   };
-}
-
-export default useSectorDataEntry;
+};

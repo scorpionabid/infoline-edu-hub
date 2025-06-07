@@ -9,7 +9,7 @@ import { SimpleSchoolSelector } from './SimpleSchoolSelector';
 import { CategoryNavigation } from './CategoryNavigation';
 import { ProgressHeader } from './ProgressHeader';
 import { FormActionBar } from './FormActionBar';
-import DataEntryFormComponent from './DataEntryForm';
+import { UnifiedDataEntryForm } from './unified';
 import { useDataEntryQuickWins } from '@/hooks/dataEntry/useQuickWins';
 
 interface DataEntryContentProps {
@@ -85,6 +85,11 @@ export const DataEntryContent: React.FC<DataEntryContentProps> = ({
     </Alert>
   );
 
+  // Get selected category
+  const selectedCategory = selectedCategoryId 
+    ? displayCategories.find(cat => cat.id === selectedCategoryId)
+    : null;
+
   // Main content area
   const mainContent = selectedSchoolId && displayCategories?.length > 0 && (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -101,13 +106,12 @@ export const DataEntryContent: React.FC<DataEntryContentProps> = ({
       <div className="lg:col-span-3 space-y-6">
         {selectedCategoryId ? (
           <div className="space-y-6">
-            {/* Render data entry form with selected category */}
-            <DataEntryFormComponent 
-              schoolId={selectedSchoolId}
-              categories={displayCategories}
-              initialCategoryId={selectedCategoryId}
-              isSectorAdmin={isSectorAdmin}
-              schoolName={selectedSchoolName}
+            {/* Render unified data entry form with selected category */}
+            <UnifiedDataEntryForm 
+              title={selectedCategory?.name || 'Data Entry'}
+              category={selectedCategory}
+              showActions={true}
+              readOnly={false}
             />
             
             {/* Enhanced Form Action Bar */}

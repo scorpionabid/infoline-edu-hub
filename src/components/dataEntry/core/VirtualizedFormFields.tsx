@@ -1,7 +1,7 @@
 
 import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
-import { FieldRenderer } from '@/components/dataEntry/fields/FieldRenderer';
+import UnifiedFieldRenderer from '@/components/dataEntry/fields/UnifiedFieldRenderer';
 import { Column } from '@/types/column';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -208,10 +208,11 @@ const VirtualizedFormFields: React.FC<VirtualizedFormFieldsProps> = ({
       <div style={style} className="px-2 py-1">
         <Card className="h-full">
           <CardContent className="p-4">
-            <FieldRenderer
+            <UnifiedFieldRenderer
               column={column}
               value={formData[column.id]}
-              onChange={(value) => handleFieldChange(column.id, value)}
+              onChange={(e) => handleFieldChange(column.id, e.target.value)}
+              onValueChange={(value) => handleFieldChange(column.id, value)}
               readOnly={readOnly}
             />
           </CardContent>
@@ -246,11 +247,12 @@ const VirtualizedFormFields: React.FC<VirtualizedFormFieldsProps> = ({
                 <CardContent className="p-4">
                   <div className="grid gap-4">
                     {group.fields.map(column => (
-                      <FieldRenderer
+                      <UnifiedFieldRenderer
                         key={column.id}
                         column={column}
                         value={formData[column.id]}
-                        onChange={(value) => handleFieldChange(column.id, value)}
+                        onChange={(e) => handleFieldChange(column.id, e.target.value)}
+                        onValueChange={(value) => handleFieldChange(column.id, value)}
                         readOnly={readOnly}
                       />
                     ))}
@@ -271,10 +273,11 @@ const VirtualizedFormFields: React.FC<VirtualizedFormFieldsProps> = ({
         {processedColumns.map(column => (
           <Card key={column.id}>
             <CardContent className="p-4">
-              <FieldRenderer
+              <UnifiedFieldRenderer
                 column={column}
                 value={formData[column.id]}
-                onChange={(value) => handleFieldChange(column.id, value)}
+                onChange={(e) => handleFieldChange(column.id, e.target.value)}
+                onValueChange={(value) => handleFieldChange(column.id, value)}
                 readOnly={readOnly}
               />
             </CardContent>

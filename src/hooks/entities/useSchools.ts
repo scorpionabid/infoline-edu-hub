@@ -1,73 +1,160 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
-interface School {
+export interface School {
   id: string;
   name: string;
   region_id: string;
   sector_id: string;
-  address: string;
-  phone: string;
-  email: string;
-  website?: string;
-  logo_url?: string;
+  student_count?: number;
+  teacher_count?: number;
+  completion_rate?: number;
+  admin_id?: string;
+  principal_name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
   status: 'active' | 'inactive';
+  type?: string;
+  language?: string;
+  logo?: string;
+  admin_email?: string;
   created_at: string;
   updated_at: string;
 }
 
-export const useSchools = () => {
+export const useSchools = (regionId?: string, sectorId?: string) => {
   const [schools, setSchools] = useState<School[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchSchools = async () => {
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        let query = supabase.from('schools').select('*');
+        
+        if (regionId) {
+          query = query.eq('region_id', regionId);
+        }
+        
+        if (sectorId) {
+          query = query.eq('sector_id', sectorId);
+        }
+
+        const { data, error: fetchError } = await query.order('name');
+
+        if (fetchError) throw fetchError;
+
+        // Type assertion with proper status casting
+        const typedSchools = (data || []).map(school => ({
+          ...school,
+          status: (school.status === 'active' || school.status === 'inactive') 
+            ? school.status 
+            : 'active' as 'active' | 'inactive'
+        })) as School[];
+
+        setSchools(typedSchools);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch schools');
+        console.error('Error fetching schools:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSchools();
+  }, [regionId, sectorId]);
+
+  const createSchool = async (schoolData: Omit<School, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('schools')
-        .select('*')
-        .order('name');
+        .insert([{
+          ...schoolData,
+          status: schoolData.status || 'active'
+        }])
+        .select()
+        .single();
+
       if (error) throw error;
-      setSchools(data || []);
-    } catch (error) {
-      console.error('Error fetching schools:', error);
-      toast.error('Məktəbləri yükləyərkən xəta baş verdi');
-    } finally {
-      setLoading(false);
+
+      if (data) {
+        const newSchool = {
+          ...data,
+          status: (data.status === 'active' || data.status === 'inactive') 
+            ? data.status 
+            : 'active' as 'active' | 'inactive'
+        } as School;
+
+        setSchools(prev => [newSchool, ...prev]);
+        return newSchool;
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create school');
+      throw err;
     }
   };
 
-  useEffect(() => {
-    fetchSchools();
-  }, []);
+  const updateSchool = async (id: string, updates: Partial<School>) => {
+    try {
+      const { data, error } = await supabase
+        .from('schools')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
 
-  const deleteSchool = async (schoolId: string) => {
+      if (error) throw error;
+
+      if (data) {
+        const updatedSchool = {
+          ...data,
+          status: (data.status === 'active' || data.status === 'inactive') 
+            ? data.status 
+            : 'active' as 'active' | 'inactive'
+        } as School;
+
+        setSchools(prev => prev.map(school => 
+          school.id === id ? updatedSchool : school
+        ));
+        return updatedSchool;
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update school');
+      throw err;
+    }
+  };
+
+  const deleteSchool = async (id: string) => {
     try {
       const { error } = await supabase
         .from('schools')
         .delete()
-        .eq('id', schoolId);
+        .eq('id', id);
 
       if (error) throw error;
 
-      setSchools(prev => prev.filter(school => school.id !== schoolId));
-      toast.success('Məktəb uğurla silindi');
-    } catch (error) {
-      console.error('Error deleting school:', error);
-      toast.error('Məktəb silinərkən xəta baş verdi');
-      throw error;
+      setSchools(prev => prev.filter(school => school.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete school');
+      throw err;
     }
   };
 
   return {
     schools,
     loading,
-    isLoading: loading,
-    isError: false,
-    error: null as any,
-    refetch: fetchSchools,
-    deleteSchool
+    error,
+    createSchool,
+    updateSchool,
+    deleteSchool,
+    refreshSchools: () => {
+      setLoading(true);
+      // Re-trigger the effect by updating a dependency
+    }
   };
 };

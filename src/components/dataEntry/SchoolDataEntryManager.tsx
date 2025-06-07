@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDataEntry } from '@/hooks/business/dataEntry/useDataEntry';
 import { useCategoriesQuery } from '@/hooks/api/categories/useCategoriesQuery';
-import { FieldRenderer } from './fields/FieldRenderer';
+import UnifiedFieldRenderer from './fields/UnifiedFieldRenderer';
 import { AlertCircle, Clock, CheckCircle2, Loader2, Save } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
@@ -175,7 +175,7 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
                         {column.name}
                         {column.is_required && <span className="text-red-500 ml-1">*</span>}
                       </label>
-                      <FieldRenderer
+                      <UnifiedFieldRenderer
                         column={column}
                         value={value}
                         onChange={(e) => {
