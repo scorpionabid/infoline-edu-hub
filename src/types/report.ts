@@ -78,6 +78,7 @@ export interface ReportHeaderProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onCreateReport?: () => void;
+  onCategorySelect?: (categoryId: string) => void;
 }
 
 export interface ReportPreviewDialogProps {
