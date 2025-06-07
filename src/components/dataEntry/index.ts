@@ -1,36 +1,40 @@
-
-// Main components
-import DataEntryTable from './DataEntryTable';
-import SchoolManagement from './SchoolManagement';
-
-// Core components (unified)
+// Core components (primary interfaces)
 export { default as DataEntryFormManager } from './core/DataEntryFormManager';
-export { default as DataEntryFormContent } from './core/DataEntryFormContent';
-export { default as FormFields } from './core/FormFields';
-
-// Unified components (NEW - primary interfaces)
-export { default as UnifiedDataEntryForm } from './unified/UnifiedDataEntryForm';
-export { default as UnifiedFieldRenderer } from './fields/UnifiedFieldRenderer';
-
-// Enhanced components
+export { default as UnifiedDataEntryForm } from './core/UnifiedDataEntryForm'; // Moved from unified/
 export { default as EnhancedDataEntryForm } from './enhanced/EnhancedDataEntryForm';
 
-// Status components  
+// Field components (unified)
+export { default as UnifiedFieldRenderer } from './fields/UnifiedFieldRenderer';
+export { default as FormField } from './fields/FormField'; // Moved from components/
+
+// Core form utilities
+export { default as FormFields } from './core/FormFields';
+export { default as DataEntryFormContent } from './core/DataEntryFormContent';
+
+// Status and loading (consolidated)
 export { default as StatusBadge } from './status/StatusBadge';
+export { default as DataEntryFormLoading } from './core/DataEntryFormLoading'; // Moved from shared/
+export { default as DataEntryFormError } from './core/DataEntryFormError'; // Moved from shared/
 
-// Shared components
-export { default as DataEntryFormLoading } from './shared/DataEntryFormLoading';
-export { default as DataEntryFormError } from './shared/DataEntryFormError';
+// Table component (active - NOT deleted)
+export { default as DataEntryTable } from './DataEntryTable';
 
-// Main exports
-export { DataEntryTable };
-export { default as SchoolManagement } from './SchoolManagement';
+// Page-level components
+export { default as SchoolDataEntryManager } from './SchoolDataEntryManager';
+export { default as SchoolManagement } from './SchoolManagement'; 
+export { default as SectorDataEntry } from './SectorDataEntry';
 
-// Field components (active)
-export { default as Field } from './fields/Field';
+// Container and actions
+export { DataEntryContainer } from './DataEntryContainer';
+export { default as ExcelActions } from './ExcelActions';
 
 // Utils
 export { default as formUtils } from './utils/formUtils';
 
-// Container
-export { DataEntryContainer } from './DataEntryContainer';
+// Note: The following have been refactored:
+// - unified/ folder merged into core/
+// - shared/ folder merged into core/  
+// - components/ folder merged into fields/
+// - inputs/ folder merged into fields/
+// - Deprecated field components removed (Field.tsx, BaseField.tsx, etc.)
+// - adapters/ folder removed (over-engineering)

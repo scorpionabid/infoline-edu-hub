@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SectorAdminDataEntry } from '@/components/dataEntry/SectorAdminDataEntry';
+import { default as SectorDataEntry } from '@/components/dataEntry/SectorDataEntry';
 import { ProgressTracking } from '@/components/progress/ProgressTracking';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -113,7 +113,7 @@ const EnhancedDataEntry: React.FC = () => {
         </TabsList>
 
         <TabsContent value="schools" className="space-y-4">
-          <SectorAdminDataEntry
+          <SectorDataEntry
             onDataEntry={handleDataEntry}
             onSendNotification={handleSendNotification}
             onBulkAction={handleBulkAction}
