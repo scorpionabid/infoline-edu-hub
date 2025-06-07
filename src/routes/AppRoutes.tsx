@@ -23,6 +23,7 @@ import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
+import SectorDataEntry from "@/pages/SectorDataEntry"; // ✅ YENİ: Sektor məlumat daxil etmə
 import Profile from "@/pages/Profile";
 import ApprovalPage from "@/pages/Approval";
 
@@ -161,9 +162,20 @@ const AppRoutes = () => (
       
       <Route path="/approvals" element={<ApprovalPage />} />
       
+      {/* ✅ YENİ: Ayrı məlumat daxil etmə route-ları */}
       <Route path="/data-entry" element={<DataEntry />} />
       
       <Route path="/data-entry/:categoryId" element={<DataEntry />} />
+      
+      {/* ✅ YENİ: Sektor məlumat daxil etmə - yalnız sektor adminləri üçün */}
+      <Route 
+        path="/sector-data-entry" 
+        element={
+          <ProtectedRoute allowedRoles={['sectoradmin']}>
+            <SectorDataEntry />
+          </ProtectedRoute>
+        } 
+      />
     </Route>
     
     {/* Default Routes */}

@@ -1,40 +1,36 @@
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns, Category } from '@/types/category';
-import { toast } from 'sonner';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { useMemo } from 'react';
+import { Category } from '@/types/category';
 
-export interface UseCategoriesQueryProps {
-  filterByUserRole?: boolean;
-  includeInactive?: boolean;
+interface UseCategoriesQueryOptions {
+  assignment?: 'all' | 'schools' | 'sectors';
+  enabled?: boolean;
 }
 
-export const useCategoriesQuery = ({
-  filterByUserRole = false,
-  includeInactive = false
-}: UseCategoriesQueryProps = {}) => {
-  const queryClient = useQueryClient();
-  const user = useAuthStore(selectUser);
-
-  // Fetch categories with columns
-  const { data: allCategories = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['categories', { filterByUserRole, includeInactive, userRole: user?.role }],
-    queryFn: async (): Promise<CategoryWithColumns[]> => {
-      console.log('Fetching categories with role filtering:', { filterByUserRole, userRole: user?.role });
+export const useCategoriesQuery = ({ 
+  assignment,
+  enabled = true 
+}: UseCategoriesQueryOptions = {}) => {
+  const {
+    data: categories = [],
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['categories', assignment],
+    queryFn: async (): Promise<Category[]> => {
+      console.log('Fetching categories with assignment filter:', assignment);
       
       let query = supabase
         .from('categories')
-        .select(`
-          *,
-          columns:columns(*)
-        `)
-        .order('priority', { ascending: true });
+        .select('*')
+        .eq('archived', false)
+        .order('name');
 
-      // Add status filter if not including inactive
-      if (!includeInactive) {
-        query = query.neq('status', 'inactive');
+      // ✅ YENİ: Assignment filtri əlavə edirik
+      if (assignment && assignment !== 'all') {
+        query = query.in('assignment', [assignment, 'all']);
       }
 
       const { data, error } = await query;
@@ -43,106 +39,17 @@ export const useCategoriesQuery = ({
         console.error('Error fetching categories:', error);
         throw error;
       }
-      
-      if (!data) {
-        console.log('No categories found');
-        return [];
-      }
 
-      console.log(`Fetched ${data.length} categories from database`);
-      return data as CategoryWithColumns[];
+      console.log(`Fetched ${data?.length || 0} categories`);
+      return data as Category[];
     },
-  });
-
-  // Client-side filtering artıq lazım deyil çünki RLS policy-lər database səviyyəsində filtrasiya edir
-  const categories = useMemo(() => {
-    if (!filterByUserRole || !user) {
-      return allCategories;
-    }
-
-    // Database-də artıq RLS policy-lər var, ona görə əlavə filtrasiya lazım deyil
-    // Amma debug üçün log əlavə edək
-    console.log(`User role: ${user.role}, Categories count: ${allCategories.length}`);
-    
-    return allCategories;
-  }, [allCategories, filterByUserRole, user]);
-
-  // Create category mutation
-  const createCategoryMutation = useMutation({
-    mutationFn: async (category: Omit<Category, 'id' | 'created_at' | 'updated_at'>): Promise<CategoryWithColumns> => {
-      const { data, error } = await supabase
-        .from('categories')
-        .insert(category)
-        .select(`
-          *,
-          columns:columns(*)
-        `)
-        .single();
-
-      if (error) throw error;
-      return data as CategoryWithColumns;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast.success('Category created successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to create category');
-    },
-  });
-
-  // Update category mutation
-  const updateCategoryMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Category> }): Promise<CategoryWithColumns> => {
-      const { data, error } = await supabase
-        .from('categories')
-        .update(updates)
-        .eq('id', id)
-        .select(`
-          *,
-          columns:columns(*)
-        `)
-        .single();
-
-      if (error) throw error;
-      return data as CategoryWithColumns;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast.success('Category updated successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to update category');
-    },
-  });
-
-  // Delete category mutation
-  const deleteCategoryMutation = useMutation({
-    mutationFn: async (id: string): Promise<void> => {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast.success('Category deleted successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to delete category');
-    },
+    enabled
   });
 
   return {
     categories,
-    loading: isLoading,
-    error: error?.message || null,
-    refetch,
-    createCategory: createCategoryMutation.mutateAsync,
-    updateCategory: (id: string, updates: Partial<Category>) => 
-      updateCategoryMutation.mutateAsync({ id, updates }),
-    deleteCategory: deleteCategoryMutation.mutateAsync,
+    isLoading,
+    error: error as Error | null,
+    refetch
   };
 };

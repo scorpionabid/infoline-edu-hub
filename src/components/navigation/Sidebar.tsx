@@ -12,7 +12,8 @@ import {
   ClipboardList,
   Columns,
   Building,
-  Building2
+  Building2,
+  Database // ✅ YENİ: Sektor məlumatları üçün ikon
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useTranslation';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -112,6 +113,14 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole: rawUserRole, isOpen, onTogg
       href: '/users', 
       icon: Users,
       visible: isAdmin
+    },
+    // ✅ YENİ: Sektor məlumatları - yalnız sektor adminləri üçün
+    { 
+      id: 'sector-data-entry',
+      label: 'Sektor Məlumatları', 
+      href: '/sector-data-entry', 
+      icon: Database,
+      visible: isSectorAdmin
     },
     { 
       id: 'data-entry',
