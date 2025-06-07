@@ -1,84 +1,93 @@
-import { useQuery } from '@tanstack/react-query';
+
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnOption, ColumnType } from '@/types/column';
-import { ensureJson } from '@/types/json';
+import { Column, ColumnType } from '@/types/column';
 
-interface UseColumnQueryOptions {
-  columnId?: string;
-  enabled?: boolean;
-}
+export const useColumnQuery = (categoryId?: string) => {
+  const queryClient = useQueryClient();
 
-export const useColumnQuery = ({ columnId, enabled = true }: UseColumnQueryOptions) => {
-  const fetchColumn = async (): Promise<Column | null> => {
-    if (!columnId) return null;
-
-    const { data, error } = await supabase
-      .from('columns')
-      .select('*')
-      .eq('id', columnId)
-      .single();
-
-    if (error) throw error;
-    
-    // Transform the data to match the Column interface
-    if (data) {
-      // Parse JSON fields if they're stored as strings
-      const options = data.options 
-        ? (typeof data.options === 'string' 
-            ? JSON.parse(data.options) 
-            : data.options)
-        : undefined;
+  const { data: columns = [], isLoading, error } = useQuery({
+    queryKey: ['columns', categoryId],
+    queryFn: async () => {
+      if (!categoryId) return [];
       
-      const validation = data.validation 
-        ? (typeof data.validation === 'string'
-            ? JSON.parse(data.validation)
-            : data.validation)
-        : undefined;
+      const { data, error } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('category_id', categoryId)
+        .order('order_index');
 
-      // Ensure options is properly formatted as ColumnOption[]
-      const formattedOptions = Array.isArray(options) 
-        ? options.map((opt: any): ColumnOption => ({
-            id: opt.id || String(Math.random()),
-            label: opt.label || '',
-            value: opt.value || ''
-          }))
-        : undefined;
+      if (error) throw error;
 
-      // Extract additional column field data (with fallbacks for missing DB fields)
-      const description = '';  // Database-də description field yoxdur
-      const section = '';      // Database-də section field yoxdur  
-      const color = '';        // Database-də color field yoxdur
-      
-      // Convert database column to our Column type
-      return {
-        id: data.id,
-        category_id: data.category_id,
-        name: data.name,
-        type: data.type as ColumnType,
-        is_required: data.is_required,
-        placeholder: data.placeholder || '',
-        help_text: data.help_text || '',
-        order_index: data.order_index,
-        status: data.status || 'active',
-        validation: validation,
-        default_value: data.default_value || '',
-        options: formattedOptions,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        description: description,
-        section: section,
-        color: color,
-      };
-    }
-    
-    return null;
-  };
-
-  return useQuery({
-    queryKey: ['column', columnId],
-    queryFn: fetchColumn,
-    enabled: Boolean(columnId) && enabled
+      // Transform data to match Column interface
+      return (data || []).map(col => ({
+        ...col,
+        type: col.type as ColumnType,
+        status: (col.status === 'active' || col.status === 'inactive') 
+          ? col.status as 'active' | 'inactive'
+          : 'active' as 'active' | 'inactive'
+      })) as Column[];
+    },
+    enabled: !!categoryId
   });
-};
 
-export default useColumnQuery;
+  const createColumnMutation = useMutation({
+    mutationFn: async (columnData: Partial<Column>) => {
+      const { data, error } = await supabase
+        .from('columns')
+        .insert([columnData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns', categoryId] });
+    }
+  });
+
+  const updateColumnMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Column> }) => {
+      const { data: result, error } = await supabase
+        .from('columns')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns', categoryId] });
+    }
+  });
+
+  const deleteColumnMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('columns')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns', categoryId] });
+    }
+  });
+
+  return {
+    columns,
+    isLoading,
+    error,
+    createColumn: createColumnMutation.mutate,
+    updateColumn: updateColumnMutation.mutate,
+    deleteColumn: deleteColumnMutation.mutate,
+    isCreating: createColumnMutation.isPending,
+    isUpdating: updateColumnMutation.isPending,
+    isDeleting: deleteColumnMutation.isPending
+  };
+};

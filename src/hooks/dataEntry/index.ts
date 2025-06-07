@@ -6,7 +6,7 @@
 // CORE HOOKS (remaining in root for main functionality)
 // ==============================================
 export { default as useDataEntry } from './useDataEntry';
-export { default as useDataEntryManager } from './useDataEntryManager';
+export { useDataEntryManager } from './useDataEntryManager';
 
 // ==============================================
 // COMMON SHARED HOOKS

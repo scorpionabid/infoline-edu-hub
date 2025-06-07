@@ -1,10 +1,22 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { SectorApprovalItem, SectorDataEntry } from '@/types/sectorData';
+import { SectorApprovalItem } from '@/types/sectorData';
+
+// Define SectorDataEntry interface locally
+interface SectorDataEntry {
+  id: string;
+  status: string;
+  category_id: string;
+  sector_id: string;
+  column_id: string;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  value: string;
+}
 
 export const useSectorApprovalData = () => {
   const { t } = useLanguage();
@@ -43,8 +55,10 @@ export const useSectorApprovalData = () => {
         status,
         category_id,
         sector_id,
+        column_id,
         created_at,
         created_by,
+        updated_at,
         value,
         categories (
           id,
@@ -127,7 +141,20 @@ export const useSectorApprovalData = () => {
           };
         }
         
-        groupedData[key].entries.push(entry as SectorDataEntry);
+        // Convert entry to SectorDataEntry format
+        const sectorEntry: SectorDataEntry = {
+          id: entry.id,
+          status: entry.status,
+          category_id: entry.category_id,
+          sector_id: entry.sector_id,
+          column_id: entry.column_id || '',
+          created_at: entry.created_at,
+          created_by: entry.created_by,
+          updated_at: entry.updated_at || entry.created_at,
+          value: entry.value
+        };
+        
+        groupedData[key].entries.push(sectorEntry);
       });
 
       // Calculate completion rates and separate by status

@@ -3,8 +3,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
-import { Column } from '@/types/column';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { Column, ColumnType } from '@/types/column';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useSectorValidation } from './useSectorValidation';
 import { toast } from 'sonner';
 
@@ -46,7 +46,7 @@ export const useSectorDataEntry = ({
   onSave,
   onSubmit
 }: UseSectorDataEntryOptions): UseSectorDataEntryReturn => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const queryClient = useQueryClient();
   
   // Local state
@@ -54,7 +54,7 @@ export const useSectorDataEntry = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Load columns for category
-  const { data: columns = [], isLoading: columnsLoading } = useQuery({
+  const { data: rawColumns = [], isLoading: columnsLoading } = useQuery({
     queryKey: ['columns', categoryId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -70,8 +70,17 @@ export const useSectorDataEntry = ({
     enabled: !!categoryId
   });
 
+  // Transform columns with proper type casting
+  const columns: Column[] = useMemo(() => {
+    return rawColumns.map(col => ({
+      ...col,
+      type: col.type as ColumnType,
+      status: (col.status === 'active' || col.status === 'inactive') ? col.status : 'active' as 'active' | 'inactive'
+    }));
+  }, [rawColumns]);
+
   // Load existing entries
-  const { data: entries = [], isLoading: entriesLoading } = useQuery({
+  const { data: rawEntries = [], isLoading: entriesLoading } = useQuery({
     queryKey: ['sectorDataEntries', sectorId, categoryId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -86,6 +95,15 @@ export const useSectorDataEntry = ({
     enabled: !!sectorId && !!categoryId
   });
 
+  // Transform entries to match DataEntry interface
+  const entries: DataEntry[] = useMemo(() => {
+    return rawEntries.map(entry => ({
+      ...entry,
+      school_id: sectorId, // Use sector_id as school_id for compatibility
+      status: entry.status as DataEntryStatus
+    }));
+  }, [rawEntries, sectorId]);
+
   // Validation hook
   const { validateForm, errors, isValid } = useSectorValidation({
     columns,
@@ -95,7 +113,7 @@ export const useSectorDataEntry = ({
 
   // Save mutation
   const saveMutation = useMutation({
-    mutationFn: async (entriesToSave: DataEntry[]) => {
+    mutationFn: async (entriesToSave: any[]) => {
       const { error } = await supabase
         .from('sector_data_entries')
         .upsert(entriesToSave, {
@@ -114,7 +132,7 @@ export const useSectorDataEntry = ({
         onSave(entries);
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(`Yadda saxlama xətası: ${error.message}`);
     }
   });
@@ -152,10 +170,15 @@ export const useSectorDataEntry = ({
       });
       toast.success('Məlumatlar təsdiq üçün göndərildi');
       if (onSubmit) {
-        onSubmit(submittedEntries);
+        // Convert to DataEntry format
+        const convertedEntries = submittedEntries.map(entry => ({
+          ...entry,
+          school_id: sectorId
+        })) as DataEntry[];
+        onSubmit(convertedEntries);
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(`Göndərmə xətası: ${error.message}`);
     }
   });
@@ -266,3 +289,5 @@ export const useSectorDataEntry = ({
     validateForm: validateFormWrapper
   };
 };
+
+export type { UseSectorDataEntryOptions };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
@@ -136,7 +135,7 @@ export const useApprovalData = () => {
         }, {} as Record<string, number>);
         
         const mostCommonStatus = Object.entries(statusCounts)
-          .sort(([,a], [,b]) => b - a)[0]?.[0] as DataEntryStatus;
+          .sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] as DataEntryStatus;
         
         item.status = mostCommonStatus || DataEntryStatus.PENDING;
 
