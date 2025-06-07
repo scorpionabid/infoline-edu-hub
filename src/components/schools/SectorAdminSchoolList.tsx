@@ -7,10 +7,20 @@ import { Input } from '@/components/ui/input';
 import { School, Search, Building2 } from 'lucide-react';
 import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { SchoolDataEntryManager } from '@/components/dataEntry/SchoolDataEntryManager';
 
-export const SectorAdminSchoolList: React.FC = () => {
+interface SectorAdminSchoolListProps {
+  onSchoolSelect?: (schoolId: string) => void;
+  onDataEntry?: (schoolId: string) => void;
+}
+
+export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
+  onSchoolSelect,
+  onDataEntry
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
+  const [showDataEntry, setShowDataEntry] = useState(false);
   
   const { schools, loading } = useSchoolsQuery();
 
@@ -19,8 +29,48 @@ export const SectorAdminSchoolList: React.FC = () => {
     school.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleSchoolSelect = (schoolId: string) => {
+    console.log('School selected:', schoolId);
+    setSelectedSchoolId(schoolId);
+    if (onSchoolSelect) {
+      onSchoolSelect(schoolId);
+    }
+  };
+
+  const handleDataEntryClick = (schoolId: string) => {
+    console.log('Data entry button clicked for school:', schoolId);
+    setSelectedSchoolId(schoolId);
+    setShowDataEntry(true);
+    
+    if (onDataEntry) {
+      onDataEntry(schoolId);
+    }
+  };
+
+  const handleCloseDataEntry = () => {
+    console.log('Closing data entry');
+    setShowDataEntry(false);
+    setSelectedSchoolId(null);
+  };
+
   if (loading) {
     return <LoadingSpinner />;
+  }
+
+  // Show data entry form if a school is selected for data entry
+  if (showDataEntry && selectedSchoolId) {
+    return (
+      <div className="h-full">
+        <SchoolDataEntryManager
+          schoolId={selectedSchoolId}
+          onClose={handleCloseDataEntry}
+          onComplete={() => {
+            console.log('Data entry completed');
+            handleCloseDataEntry();
+          }}
+        />
+      </div>
+    );
   }
 
   return (
@@ -55,7 +105,7 @@ export const SectorAdminSchoolList: React.FC = () => {
               className={`cursor-pointer transition-colors hover:bg-muted/50 ${
                 selectedSchoolId === school.id ? 'bg-primary/10 border-primary' : ''
               }`}
-              onClick={() => setSelectedSchoolId(school.id)}
+              onClick={() => handleSchoolSelect(school.id)}
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -71,7 +121,13 @@ export const SectorAdminSchoolList: React.FC = () => {
                       {school.completion_rate || 0}% tamamlandı
                     </Badge>
                     {selectedSchoolId === school.id && (
-                      <Button size="sm">
+                      <Button 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent card click event
+                          handleDataEntryClick(school.id);
+                        }}
+                      >
                         Məlumat Daxil Et
                       </Button>
                     )}

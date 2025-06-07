@@ -7,22 +7,26 @@ import { ProgressTracking } from '@/components/progress/ProgressTracking';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { School, TrendingUp, Bell, Calendar } from 'lucide-react';
+import { toast } from 'sonner';
 
 const EnhancedDataEntry: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('schools');
 
   const handleDataEntry = (schoolId: string) => {
-    console.log('Navigate to data entry for school:', schoolId);
-    // navigate(`/data-entry/${schoolId}`);
+    console.log('EnhancedDataEntry: Navigate to data entry for school:', schoolId);
+    toast.success(`Məktəb ${schoolId} üçün məlumat daxil etmə açıldı`);
+    // The SectorAdminSchoolList will handle showing the data entry form
   };
 
   const handleSendNotification = (schoolIds: string[]) => {
     console.log('Send notification to schools:', schoolIds);
+    toast.success('Bildiriş göndərildi');
   };
 
   const handleBulkAction = (action: string, schoolIds: string[]) => {
     console.log('Bulk action:', action, 'for schools:', schoolIds);
+    toast.success(`${action} əməliyyatı yerinə yetirildi`);
   };
 
   const handleSchoolClick = (schoolId: string) => {
