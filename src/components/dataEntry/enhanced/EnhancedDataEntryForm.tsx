@@ -56,14 +56,9 @@ const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
 
   // Auto-save functionality
   useAutoSave({
-    data: formData,
-    saveFunction: async () => {
-      if (onSave && hasUnsavedChanges) {
-        await handleSave();
-      }
-    },
-    enabled: autoSave && !readOnly,
-    delay: 2000
+    formData: formData,
+    isDataModified: hasUnsavedChanges,
+    enabled: autoSave && !readOnly
   });
 
   // Update form data when initial data changes

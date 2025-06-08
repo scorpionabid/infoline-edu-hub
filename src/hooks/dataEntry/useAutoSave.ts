@@ -7,7 +7,14 @@ export interface UseAutoSaveOptions {
   enabled: boolean;
 }
 
-export function useAutoSave(options: UseAutoSaveOptions) {
+export interface UseAutoSaveResult {
+  cancel: () => void;
+  saveNow?: () => void;
+  isSaving?: boolean;
+  autoSaveEnabled?: boolean;
+}
+
+export function useAutoSave(options: UseAutoSaveOptions): UseAutoSaveResult {
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
@@ -38,7 +45,12 @@ export function useAutoSave(options: UseAutoSaveOptions) {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-    }
+    },
+    saveNow: () => {
+      console.log('Manual save triggered');
+    },
+    isSaving: false,
+    autoSaveEnabled: options.enabled
   };
 }
 

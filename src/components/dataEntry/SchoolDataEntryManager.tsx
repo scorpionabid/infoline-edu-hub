@@ -10,7 +10,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import SchoolDataEntryForm from './school/SchoolDataEntryForm';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ColumnType } from '@/types/column';
+import { ColumnType, ColumnOption } from '@/types/column';
 
 interface SchoolDataEntryManagerProps {
   schoolId: string;
@@ -54,7 +54,16 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
         ...col,
         type: col.type as ColumnType,
         status: (col.status === 'active' || col.status === 'inactive') ? col.status : 'active' as 'active' | 'inactive',
-        options: Array.isArray(col.options) ? col.options : [],
+        options: Array.isArray(col.options) ? (col.options as any[]).map(opt => {
+          if (typeof opt === 'string') {
+            return { value: opt, label: opt };
+          }
+          return {
+            value: opt.value || '',
+            label: opt.label || opt.value || '',
+            ...opt
+          };
+        }) as ColumnOption[] : [],
         validation: col.validation || {},
         default_value: col.default_value || '',
         help_text: col.help_text || '',

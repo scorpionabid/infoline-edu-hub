@@ -11,6 +11,7 @@ export interface UnifiedFieldRendererProps {
   column: Column;
   value: any;
   onChange: (value: any) => void;
+  onValueChange?: (value: any) => void;
   readOnly?: boolean;
   isDisabled?: boolean;
 }
@@ -19,12 +20,16 @@ const UnifiedFieldRenderer: React.FC<UnifiedFieldRendererProps> = ({
   column,
   value,
   onChange,
+  onValueChange,
   readOnly = false,
   isDisabled = false
 }) => {
   const handleChange = (newValue: any) => {
     if (!readOnly && !isDisabled) {
       onChange(newValue);
+      if (onValueChange) {
+        onValueChange(newValue);
+      }
     }
   };
 
@@ -38,6 +43,7 @@ const UnifiedFieldRenderer: React.FC<UnifiedFieldRendererProps> = ({
           placeholder={column.placeholder}
           required={column.is_required}
           disabled={isDisabled}
+          readOnly={readOnly}
           error=""
         />
       );
@@ -106,6 +112,7 @@ const UnifiedFieldRenderer: React.FC<UnifiedFieldRendererProps> = ({
           placeholder={column.placeholder}
           required={column.is_required}
           disabled={isDisabled}
+          readOnly={readOnly}
           error=""
         />
       );

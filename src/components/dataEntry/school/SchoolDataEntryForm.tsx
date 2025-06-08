@@ -49,7 +49,7 @@ const SchoolDataEntryForm: React.FC<SchoolDataEntryFormProps> = ({
   }, [columns, getValueForColumn]);
 
   const handleFieldChange = (columnId: string, value: any) => {
-    updateEntryValue(columnId, value);
+    updateEntryValue({ columnId, value });
   };
 
   const handleSave = async () => {
