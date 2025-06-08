@@ -1,23 +1,23 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
 import { Column, ColumnType, ColumnOption } from '@/types/column';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
+import { useSectorDataEntriesQuery } from '@/hooks/api/sectorDataEntry/useSectorDataEntriesQuery';
 import { useSectorValidation } from './useSectorValidation';
-import { toast } from 'sonner';
+import { SectorDataEntry } from '@/services/api/sectorDataEntry';
 
 interface UseSectorDataEntryOptions {
   sectorId: string;
   categoryId: string;
-  onSave?: (entries: DataEntry[]) => void;
-  onSubmit?: (entries: DataEntry[]) => void;
+  onSave?: (entries: any[]) => void;
+  onSubmit?: (entries: any[]) => void;
 }
 
 interface UseSectorDataEntryReturn {
   // Data
-  entries: DataEntry[];
+  entries: SectorDataEntry[];
   columns: Column[];
   formData: Record<string, any>;
   
@@ -47,7 +47,6 @@ export const useSectorDataEntry = ({
   onSubmit
 }: UseSectorDataEntryOptions): UseSectorDataEntryReturn => {
   const user = useAuthStore(selectUser);
-  const queryClient = useQueryClient();
   
   // Local state
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -85,121 +84,25 @@ export const useSectorDataEntry = ({
     }));
   }, [rawColumns]);
 
-  // Load existing entries
-  const { data: rawEntries = [], isLoading: entriesLoading } = useQuery({
-    queryKey: ['sectorDataEntries', sectorId, categoryId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sector_data_entries')
-        .select('*')
-        .eq('sector_id', sectorId)
-        .eq('category_id', categoryId);
-      
-      if (error) throw error;
-      return data || [];
-    },
+  // Use sector data entries query
+  const {
+    entries,
+    isLoading: entriesLoading,
+    saveEntries: saveEntriesMutation,
+    updateStatus,
+    isSaving: isSavingMutation,
+    isUpdatingStatus
+  } = useSectorDataEntriesQuery({
+    categoryId,
+    sectorId,
     enabled: !!sectorId && !!categoryId
   });
-
-  // Transform entries to match DataEntry interface
-  const entries: DataEntry[] = useMemo(() => {
-    return rawEntries.map(entry => ({
-      id: entry.id,
-      school_id: sectorId, // Use sector_id as school_id for compatibility
-      category_id: entry.category_id,
-      column_id: entry.column_id,
-      value: entry.value,
-      status: entry.status as DataEntryStatus,
-      created_at: entry.created_at,
-      updated_at: entry.updated_at,
-      created_by: entry.created_by,
-      approved_by: entry.approved_by,
-      approved_at: entry.approved_at,
-      rejected_by: entry.rejected_by,
-      rejected_at: entry.rejected_at,
-      rejection_reason: entry.rejection_reason
-    }));
-  }, [rawEntries, sectorId]);
 
   // Validation hook
   const { validateForm, errors, isValid } = useSectorValidation({
     columns,
     entries,
     strictValidation: true
-  });
-
-  // Save mutation
-  const saveMutation = useMutation({
-    mutationFn: async (entriesToSave: any[]) => {
-      const { error } = await supabase
-        .from('sector_data_entries')
-        .upsert(entriesToSave, {
-          onConflict: 'sector_id,category_id,column_id'
-        });
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      setHasUnsavedChanges(false);
-      queryClient.invalidateQueries({
-        queryKey: ['sectorDataEntries', sectorId, categoryId]
-      });
-      toast.success('Məlumatlar yadda saxlanıldı');
-      if (onSave) {
-        onSave(entries);
-      }
-    },
-    onError: (error: any) => {
-      toast.error(`Yadda saxlama xətası: ${error.message}`);
-    }
-  });
-
-  // Submit mutation  
-  const submitMutation = useMutation({
-    mutationFn: async () => {
-      // First save all entries
-      const entriesToSubmit = Object.entries(formData).map(([columnId, value]) => ({
-        id: crypto.randomUUID(),
-        sector_id: sectorId,
-        category_id: categoryId,
-        column_id: columnId,
-        value: value?.toString() || '',
-        status: 'pending' as DataEntryStatus,
-        created_by: user?.id || '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
-
-      // Save and then update status
-      const { error: saveError } = await supabase
-        .from('sector_data_entries')
-        .upsert(entriesToSubmit, {
-          onConflict: 'sector_id,category_id,column_id'
-        });
-      
-      if (saveError) throw saveError;
-
-      // Convert to DataEntry format for callback
-      const convertedEntries: DataEntry[] = entriesToSubmit.map(entry => ({
-        ...entry,
-        school_id: sectorId
-      }));
-
-      return convertedEntries;
-    },
-    onSuccess: (submittedEntries) => {
-      setHasUnsavedChanges(false);
-      queryClient.invalidateQueries({
-        queryKey: ['sectorDataEntries', sectorId, categoryId]
-      });
-      toast.success('Məlumatlar təsdiq üçün göndərildi');
-      if (onSubmit) {
-        onSubmit(submittedEntries);
-      }
-    },
-    onError: (error: any) => {
-      toast.error(`Göndərmə xətası: ${error.message}`);
-    }
   });
 
   // Initialize form data from entries
@@ -231,25 +134,41 @@ export const useSectorDataEntry = ({
       category_id: categoryId,
       column_id: columnId,
       value: value?.toString() || '',
-      status: 'draft' as DataEntryStatus,
-      created_by: user?.id || '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      status: 'draft',
+      created_by: user?.id || ''
     }));
 
-    await saveMutation.mutateAsync(entriesToSave);
-  }, [formData, sectorId, categoryId, user?.id, saveMutation]);
+    saveEntriesMutation(entriesToSave);
+    setHasUnsavedChanges(false);
+    
+    if (onSave) {
+      onSave(entriesToSave);
+    }
+  }, [formData, sectorId, categoryId, user?.id, saveEntriesMutation, onSave]);
 
   // Submit entries
   const submitEntries = useCallback(async () => {
     const validationResult = validateForm(formData);
     if (!validationResult.valid) {
-      toast.error('Formu göndərməzdən əvvəl xətaları düzəldin');
       return;
     }
     
-    await submitMutation.mutateAsync();
-  }, [formData, validateForm, submitMutation]);
+    // First save, then update status
+    await saveEntries();
+    
+    const entriesToSubmit = entries.filter(entry => entry.status !== 'pending');
+    
+    if (entriesToSubmit.length > 0) {
+      updateStatus({
+        entries: entriesToSubmit,
+        status: 'pending'
+      });
+    }
+    
+    if (onSubmit) {
+      onSubmit(entriesToSubmit);
+    }
+  }, [formData, validateForm, saveEntries, entries, updateStatus, onSubmit]);
 
   // Reset form
   const resetForm = useCallback(() => {
@@ -291,8 +210,8 @@ export const useSectorDataEntry = ({
     
     // Status
     isLoading,
-    isSaving: saveMutation.isPending,
-    isSubmitting: submitMutation.isPending,
+    isSaving: isSavingMutation,
+    isSubmitting: isUpdatingStatus,
     hasUnsavedChanges,
     completionPercentage,
     

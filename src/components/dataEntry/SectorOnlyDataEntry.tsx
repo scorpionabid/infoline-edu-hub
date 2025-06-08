@@ -5,49 +5,41 @@ import { useCategoriesQuery } from '@/hooks/api/categories/useCategoriesQuery';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { useSectorDataEntry } from '@/hooks/dataEntry/sector/useSectorDataEntry';
-import EnhancedDataEntryForm from '@/components/dataEntry/enhanced/EnhancedDataEntryForm';
 import { Folder, FileText } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { toast } from 'sonner';
+import SectorDataEntryForm from './sector/SectorDataEntryForm';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export const SectorOnlyDataEntry: React.FC = () => {
   const user = useAuthStore(selectUser);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   
-  // Yalnız sektor kateqoriyalarını əldə edirik
+  // Load sector categories only
   const { categories, isLoading: categoriesLoading } = useCategoriesQuery({
-    assignment: 'sectors' // Yalnız sektor üçün olan kateqoriyalar
+    assignment: 'sectors' // Only sector categories
   });
 
-  // Sektor məlumat daxil etmə hook-u
-  const {
-    columns,
-    formData,
-    isLoading: dataLoading,
-    isSaving,
-    isSubmitting,
-    completionPercentage,
-    errors,
-    isValid,
-    updateEntry,
-    saveEntries,
-    submitEntries,
-    resetForm
-  } = useSectorDataEntry({
-    sectorId: user?.sector_id || '',
-    categoryId: selectedCategoryId || '',
-    onSave: (entries) => {
-      console.log('Sector data saved:', entries);
-      toast.success('Sektor məlumatları yadda saxlanıldı');
+  // Load columns for selected category
+  const { data: columns = [], isLoading: columnsLoading } = useQuery({
+    queryKey: ['columns', selectedCategoryId],
+    queryFn: async () => {
+      if (!selectedCategoryId) return [];
+      
+      const { data, error } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('category_id', selectedCategoryId)
+        .eq('status', 'active')
+        .order('order_index');
+      
+      if (error) throw error;
+      return data || [];
     },
-    onSubmit: (entries) => {
-      console.log('Sector data submitted:', entries);
-      toast.success('Sektor məlumatları təsdiq üçün göndərildi');
-    }
+    enabled: !!selectedCategoryId
   });
 
-  // Sektor kateqoriyalarını filtrləyirik
+  // Filter sector categories
   const sectorCategories = categories.filter(cat => 
     cat.assignment === 'sectors' || cat.assignment === 'all'
   );
@@ -66,17 +58,9 @@ export const SectorOnlyDataEntry: React.FC = () => {
     );
   }
 
-  const handleSave = async (data: Record<string, any>) => {
-    await saveEntries();
-  };
-
-  const handleSubmit = async (data: Record<string, any>) => {
-    await submitEntries();
-  };
-
   return (
     <div className="space-y-6">
-      {/* Kateqoriya Seçimi */}
+      {/* Category Selection */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -85,65 +69,61 @@ export const SectorOnlyDataEntry: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs value={selectedCategoryId || ''} onValueChange={setSelectedCategoryId}>
-            <TabsList className="grid w-full grid-cols-auto gap-2">
-              {sectorCategories.map(category => (
-                <TabsTrigger key={category.id} value={category.id}>
-                  <div className="flex items-center gap-2">
-                    <span>{category.name}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      Sektor
-                    </Badge>
-                  </div>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            {sectorCategories.map(category => (
-              <TabsContent key={category.id} value={category.id} className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      {category.name}
-                      <Badge className="bg-blue-100 text-blue-800">
-                        {completionPercentage}% tamamlandı
-                      </Badge>
-                    </CardTitle>
-                    <p className="text-muted-foreground">{category.description}</p>
-                  </CardHeader>
-                  <CardContent>
-                    {dataLoading ? (
-                      <LoadingSpinner />
-                    ) : columns.length > 0 ? (
-                      <EnhancedDataEntryForm
-                        categoryId={category.id}
-                        schoolId={user.sector_id || ''} // sectorId-ni schoolId kimi istifadə edirik
-                        columns={columns}
-                        initialData={formData}
-                        onSave={handleSave}
-                        onSubmit={handleSubmit}
-                        readOnly={false}
-                      />
-                    ) : (
-                      <div className="py-8 text-center">
-                        <p className="text-muted-foreground">
-                          Bu kateqoriya üçün hələ sütun təyin edilməyib
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            ))}
-          </Tabs>
-
-          {sectorCategories.length === 0 && (
+          {sectorCategories.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-muted-foreground">
                 Sektor üçün kateqoriya tapılmadı
               </p>
             </div>
+          ) : (
+            <Tabs value={selectedCategoryId || ''} onValueChange={setSelectedCategoryId}>
+              <TabsList className="grid w-full grid-cols-auto gap-2">
+                {sectorCategories.map(category => (
+                  <TabsTrigger key={category.id} value={category.id}>
+                    <div className="flex items-center gap-2">
+                      <span>{category.name}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        Sektor
+                      </Badge>
+                    </div>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {sectorCategories.map(category => (
+                <TabsContent key={category.id} value={category.id} className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        {category.name}
+                      </CardTitle>
+                      <p className="text-muted-foreground">{category.description}</p>
+                    </CardHeader>
+                    <CardContent>
+                      {columnsLoading ? (
+                        <LoadingSpinner />
+                      ) : columns.length > 0 ? (
+                        <SectorDataEntryForm
+                          categoryId={category.id}
+                          sectorId={user.sector_id || ''}
+                          columns={columns}
+                          onComplete={() => {
+                            console.log('Sector data entry completed for category:', category.id);
+                          }}
+                        />
+                      ) : (
+                        <div className="py-8 text-center">
+                          <p className="text-muted-foreground">
+                            Bu kateqoriya üçün hələ sütun təyin edilməyib
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              ))}
+            </Tabs>
           )}
         </CardContent>
       </Card>

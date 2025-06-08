@@ -1,14 +1,15 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, FileText, Folder } from 'lucide-react';
 import { useCategoriesQuery } from '@/hooks/api/categories/useCategoriesQuery';
-import { useDataEntry } from '@/hooks/business/dataEntry/useDataEntry';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import EnhancedDataEntryForm from './enhanced/EnhancedDataEntryForm';
+import SchoolDataEntryForm from './school/SchoolDataEntryForm';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SchoolDataEntryManagerProps {
   schoolId: string;
@@ -32,33 +33,24 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
     assignment: 'schools'
   });
 
-  // Get data entry for selected category
-  const {
-    category,
-    columns,
-    entries,
-    getValueForColumn,
-    updateEntryValue,
-    isLoading: dataLoading,
-    completionPercentage,
-    saveAll,
-    submitAll
-  } = useDataEntry({
-    categoryId: selectedCategoryId || '',
-    schoolId,
-    onComplete
+  // Load columns for selected category
+  const { data: columns = [], isLoading: columnsLoading } = useQuery({
+    queryKey: ['columns', selectedCategoryId],
+    queryFn: async () => {
+      if (!selectedCategoryId) return [];
+      
+      const { data, error } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('category_id', selectedCategoryId)
+        .eq('status', 'active')
+        .order('order_index');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCategoryId
   });
-
-  // Convert entries to form data format
-  const initialFormData = useMemo(() => {
-    if (!columns.length) return {};
-    
-    const formData: Record<string, any> = {};
-    columns.forEach(column => {
-      formData[column.id] = getValueForColumn(column);
-    });
-    return formData;
-  }, [columns, getValueForColumn]);
 
   if (categoriesLoading) {
     return <LoadingSpinner />;
@@ -77,14 +69,6 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
   const schoolCategories = categories.filter(cat => 
     cat.assignment === 'schools' || cat.assignment === 'all'
   );
-
-  const handleSave = async (data: Record<string, any>) => {
-    await saveAll();
-  };
-
-  const handleSubmit = async (data: Record<string, any>) => {
-    await submitAll();
-  };
 
   return (
     <div className="h-full flex flex-col space-y-6">
@@ -136,25 +120,18 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-5 w-5" />
                       {category.name}
-                      <Badge className="bg-green-100 text-green-800">
-                        {completionPercentage}% tamamlandı
-                      </Badge>
                     </CardTitle>
                     <p className="text-muted-foreground">{category.description}</p>
                   </CardHeader>
                   <CardContent>
-                    {dataLoading ? (
+                    {columnsLoading ? (
                       <LoadingSpinner />
                     ) : columns.length > 0 ? (
-                      <EnhancedDataEntryForm
+                      <SchoolDataEntryForm
                         categoryId={category.id}
                         schoolId={schoolId}
                         columns={columns}
-                        initialData={initialFormData}
-                        onSave={handleSave}
-                        onSubmit={handleSubmit}
-                        onFieldChange={updateEntryValue}
-                        readOnly={false}
+                        onComplete={onComplete}
                       />
                     ) : (
                       <div className="py-8 text-center">
