@@ -4,18 +4,18 @@ import { useMemo } from 'react';
 import { Category } from '@/types/category';
 
 export function useCategoriesEnhanced() {
-  const { data, isLoading, error, refetch } = useCategoriesQuery();
+  const { categories: rawCategories, isLoading, error, refetch } = useCategoriesQuery();
   
   const categories = useMemo(() => {
-    if (!data) return [];
+    if (!rawCategories) return [];
     
     // Normalize column counts and other fields
-    return data.map((category: Category) => ({
+    return rawCategories.map((category: Category) => ({
       ...category,
       columnCount: category.column_count,
       completionRate: category.completion_rate || category.completionRate || 0
     }));
-  }, [data]);
+  }, [rawCategories]);
   
   return {
     categories,

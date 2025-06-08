@@ -93,8 +93,8 @@ export const useExcelImport = ({
       };
     }
     
-    // Check file type with proper type assertion
-    const validMimeTypes: string[] = EXCEL_CONSTRAINTS.SUPPORTED_MIME_TYPES as string[];
+    // Check file type - fix readonly array conversion
+    const validMimeTypes: string[] = [...EXCEL_CONSTRAINTS.SUPPORTED_MIME_TYPES];
     const isValidType = validMimeTypes.includes(file.type) ||
                        EXCEL_CONSTRAINTS.SUPPORTED_FORMATS.some(format => 
                          file.name.toLowerCase().endsWith(format)

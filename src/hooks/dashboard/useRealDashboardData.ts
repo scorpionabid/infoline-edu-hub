@@ -90,10 +90,6 @@ export const useRealDashboardData = () => {
   const fetchSuperAdminData = async (): Promise<SuperAdminDashboardData> => {
     // Mock data for super admin
     return {
-      users: {
-        active: 200,
-        total: 250
-      },
       regionCount: 25,
       sectorCount: 75,
       schoolCount: 250,
@@ -121,8 +117,6 @@ export const useRealDashboardData = () => {
   const fetchRegionAdminData = async (regionId: string): Promise<RegionAdminDashboardData> => {
     // Mock data ilə regional admin data
     return {
-      sectorCount: 8,
-      schoolCount: 75,
       categories: [
         { id: '1', name: 'General Statistics', status: 'active', completionRate: 0.85 },
         { id: '2', name: 'Teacher Information', status: 'active', completionRate: 0.78 },
@@ -142,7 +136,6 @@ export const useRealDashboardData = () => {
   const fetchSectorAdminData = async (sectorId: string): Promise<SectorAdminDashboardData> => {
     // Mock data ilə sector admin data
     return {
-      schoolCount: 20,
       categories: [
         { id: '1', name: 'General Statistics', status: 'active', completionRate: 0.85 },
       ],
@@ -200,7 +193,13 @@ export const useRealDashboardData = () => {
       
       return {
         categories,
-        deadlines
+        deadlines,
+        stats: {
+          totalCategories: categories.length,
+          completedCategories: categories.filter(c => c.status === 'approved').length,
+          pendingCategories: categories.filter(c => c.status === 'pending').length,
+          overallCompletion: 0.75
+        }
       };
     } catch (error) {
       console.error('Error fetching school admin dashboard data:', error);
@@ -212,7 +211,13 @@ export const useRealDashboardData = () => {
         ],
         deadlines: [
           { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'upcoming', deadline: '2023-06-01', daysLeft: 5 },
-        ]
+        ],
+        stats: {
+          totalCategories: 1,
+          completedCategories: 1,
+          pendingCategories: 0,
+          overallCompletion: 0.85
+        }
       };
     }
   };

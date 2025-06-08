@@ -16,7 +16,7 @@ interface UseSectorDataEntryOptions {
 }
 
 interface UseSectorDataEntryReturn {
-  // Data
+  // Data - Use SectorDataEntry[] instead of DataEntry[]
   entries: SectorDataEntry[];
   columns: Column[];
   formData: Record<string, any>;
@@ -203,7 +203,7 @@ export const useSectorDataEntry = ({
   const isLoading = columnsLoading || entriesLoading;
 
   return {
-    // Data
+    // Data - Return SectorDataEntry[] instead of DataEntry[]
     entries,
     columns,
     formData,
