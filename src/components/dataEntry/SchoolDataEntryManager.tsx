@@ -8,9 +8,6 @@ import { ArrowLeft, FileText, Folder } from 'lucide-react';
 import { useCategoriesQuery } from '@/hooks/api/categories/useCategoriesQuery';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import SchoolDataEntryForm from './school/SchoolDataEntryForm';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { ColumnType, ColumnOption } from '@/types/column';
 
 interface SchoolDataEntryManagerProps {
   schoolId: string;
@@ -32,46 +29,6 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
     error: categoriesError
   } = useCategoriesQuery({
     assignment: 'schools'
-  });
-
-  // Load columns for selected category with proper type casting
-  const { data: columns = [], isLoading: columnsLoading } = useQuery({
-    queryKey: ['columns', selectedCategoryId],
-    queryFn: async () => {
-      if (!selectedCategoryId) return [];
-      
-      const { data, error } = await supabase
-        .from('columns')
-        .select('*')
-        .eq('category_id', selectedCategoryId)
-        .eq('status', 'active')
-        .order('order_index');
-      
-      if (error) throw error;
-      
-      // Transform database columns to proper Column type
-      return (data || []).map(col => ({
-        ...col,
-        type: col.type as ColumnType,
-        status: (col.status === 'active' || col.status === 'inactive') ? col.status : 'active' as 'active' | 'inactive',
-        options: Array.isArray(col.options) ? (col.options as any[]).map(opt => {
-          if (typeof opt === 'string') {
-            return { value: opt, label: opt };
-          }
-          return {
-            value: opt.value || '',
-            label: opt.label || opt.value || '',
-            ...opt
-          };
-        }) as ColumnOption[] : [],
-        validation: col.validation || {},
-        default_value: col.default_value || '',
-        help_text: col.help_text || '',
-        placeholder: col.placeholder || '',
-        is_required: col.is_required || false
-      }));
-    },
-    enabled: !!selectedCategoryId
   });
 
   if (categoriesLoading) {
@@ -146,22 +103,11 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
                     <p className="text-muted-foreground">{category.description}</p>
                   </CardHeader>
                   <CardContent>
-                    {columnsLoading ? (
-                      <LoadingSpinner />
-                    ) : columns.length > 0 ? (
-                      <SchoolDataEntryForm
-                        categoryId={category.id}
-                        schoolId={schoolId}
-                        columns={columns}
-                        onComplete={onComplete}
-                      />
-                    ) : (
-                      <div className="py-8 text-center">
-                        <p className="text-muted-foreground">
-                          Bu kateqoriya üçün hələ sütun təyin edilməyib
-                        </p>
-                      </div>
-                    )}
+                    <SchoolDataEntryForm
+                      categoryId={category.id}
+                      schoolId={schoolId}
+                      onComplete={onComplete}
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>

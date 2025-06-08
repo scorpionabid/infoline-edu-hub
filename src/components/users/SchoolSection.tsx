@@ -22,7 +22,7 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  if (hideSection || !(data.role === 'schooladmin' && (data.sectorId || data.sector_id))) {
+  if (hideSection || !(data.role === 'schooladmin' && (data.sector_id || data.sectorId))) {
     return null;
   }
 
@@ -34,15 +34,15 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
   return (
     <FormField
       control={form.control}
-      name="schoolId"
+      name="school_id"
       render={({ field }) => (
         <FormItem>
           <FormLabel>{t('school')}</FormLabel>
           <Select
-            value={data.schoolId || data.school_id || undefined}
+            value={data.school_id || data.schoolId || undefined}
             onValueChange={(value) => {
               field.onChange(value);
-              onFormChange('schoolId', value);
+              onFormChange('school_id', value);
             }}
             disabled={validSchools.length === 0}
           >

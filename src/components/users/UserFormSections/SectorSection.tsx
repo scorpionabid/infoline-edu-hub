@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useFormContext, Control } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useLanguageSafe } from "@/context/LanguageContext";
@@ -20,8 +20,8 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const regionId = watch("regionId");
-  const sectorId = watch("sectorId");
+  const regionId = watch("region_id");
+  const sectorId = watch("sector_id");
 
   // fetchSectorsByRegion funksiyasını burada təyin edirik
   const fetchSectorsByRegion = async (regionId: string) => {
@@ -55,7 +55,7 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
           
           // If current sectorId doesn't exist in the new sectors list, reset it
           if (sectorId && !sectorsData.find(s => s.id === sectorId)) {
-            setValue("sectorId", "");
+            setValue("sector_id", "");
           }
         } catch (err) {
           console.error("Error loading sectors:", err);
@@ -64,7 +64,7 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
         }
       } else {
         setSectors([]);
-        setValue("sectorId", "");
+        setValue("sector_id", "");
       }
     };
     
@@ -72,26 +72,26 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
   }, [regionId, setValue, sectorId]);
 
   const handleRegionChange = (value: string) => {
-    setValue("regionId", value);
-    setValue("sectorId", ""); // Clear sector when region changes
-    setValue("schoolId", ""); // Clear school when region changes
+    setValue("region_id", value);
+    setValue("sector_id", ""); // Clear sector when region changes
+    setValue("school_id", ""); // Clear school when region changes
   };
 
   const handleSectorChange = (value: string) => {
-    setValue("sectorId", value);
-    setValue("schoolId", ""); // Clear school when sector changes
+    setValue("sector_id", value);
+    setValue("school_id", ""); // Clear school when sector changes
   };
 
   return (
     <div className="grid gap-4 mb-4">
       <div className="space-y-2">
-        <Label htmlFor="regionId">{t("region")}</Label>
+        <Label htmlFor="region_id">{t("region")}</Label>
         <Select
-          value={getValues("regionId") || ""}
+          value={getValues("region_id") || ""}
           onValueChange={handleRegionChange}
           disabled={disabled}
         >
-          <SelectTrigger id="regionId">
+          <SelectTrigger id="region_id">
             <SelectValue placeholder={t("selectRegion")} />
           </SelectTrigger>
           <SelectContent>
@@ -105,13 +105,13 @@ const SectorSection: React.FC<SectorSectionProps> = ({ disabled = false }) => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="sectorId">{t("sector")}</Label>
+        <Label htmlFor="sector_id">{t("sector")}</Label>
         <Select
-          value={getValues("sectorId") || ""}
+          value={getValues("sector_id") || ""}
           onValueChange={handleSectorChange}
           disabled={disabled || loading || !regionId}
         >
-          <SelectTrigger id="sectorId">
+          <SelectTrigger id="sector_id">
             <SelectValue placeholder={loading ? t("loading") : t("selectSector")} />
           </SelectTrigger>
           <SelectContent>
