@@ -227,12 +227,12 @@ export const useUnifiedDataEntry = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dataEntries', tableName, categoryId, entityId] });
-      toast.success(t('dataEntriesSaved') || 'Data saved successfully');
+      toast.success('Məlumatlar uğurla saxlanıldı');
       setHasUnsavedChanges(false);
     },
     onError: (error) => {
       console.error('Save error:', error);
-      toast.error(t('errorSavingDataEntries') || 'Failed to save data');
+      toast.error('Məlumatları saxlamaq mümkün olmadı');
     }
   });
 
@@ -253,11 +253,11 @@ export const useUnifiedDataEntry = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dataEntries', tableName, categoryId, entityId] });
-      toast.success(t('statusUpdated') || 'Status updated');
+      toast.success('Status yeniləndi');
     },
     onError: (error) => {
       console.error('Status update error:', error);
-      toast.error(t('errorUpdatingStatus') || 'Failed to update status');
+      toast.error('Statusu yeniləmək mümkün olmadı');
     }
   });
 
