@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { UnifiedDataEntryForm } from '@/components/dataEntry';
+import { EnhancedDataEntryForm } from '@/components/dataEntry/EnhancedDataEntryForm';
 
 interface SchoolDataEntryFormProps {
   categoryId: string;
@@ -14,7 +14,7 @@ const SchoolDataEntryForm: React.FC<SchoolDataEntryFormProps> = ({
   onComplete
 }) => {
   return (
-    <UnifiedDataEntryForm
+    <EnhancedDataEntryForm
       categoryId={categoryId}
       entityId={schoolId}
       entityType="school"

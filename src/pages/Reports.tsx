@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import ReportHeader from '@/components/reports/ReportHeader';
-import ReportList from '@/components/reports/ReportList';
+import { ReportList } from '@/components/reports/ReportList';
 import SchoolColumnTable from '@/components/reports/SchoolColumnTable';
 import ReportDashboard from '@/components/reports/advanced/ReportDashboard';
 import { useLanguage } from '@/context/LanguageContext';

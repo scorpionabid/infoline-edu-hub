@@ -7,6 +7,8 @@ type ReportCategory = 'statistics' | 'completion' | 'comparison' | 'progress' | 
 
 export const useMockReports = () => {
   const [reports, setReports] = useState<Report[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Generate mock reports
@@ -78,7 +80,11 @@ export const useMockReports = () => {
       }
     ];
     
-    setReports(mockReports);
+    // Simulate loading time
+    setTimeout(() => {
+      setReports(mockReports);
+      setIsLoading(false);
+    }, 500);
   }, []);
 
   const getMockReportByType = (type: ReportTypeValues): Report | undefined => {
@@ -175,6 +181,8 @@ export const useMockReports = () => {
 
   return {
     reports,
+    isLoading,
+    error,
     getMockReportByType,
     getMockReportByCategory,
     generateMockDataForReport
