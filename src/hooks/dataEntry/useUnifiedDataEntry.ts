@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column } from '@/types/column';
+import { Column, ColumnOption } from '@/types/column';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
@@ -96,10 +96,15 @@ export const useUnifiedDataEntry = ({
   const columns: Column[] = useMemo(() => {
     return rawColumns.map(col => ({
       ...col,
-      type: col.type as any,
+      type: col.type as Column['type'],
       status: (col.status === 'active' || col.status === 'inactive') ? col.status : 'active' as 'active' | 'inactive',
-      options: Array.isArray(col.options) ? col.options : [],
-      validation: col.validation || {},
+      options: Array.isArray(col.options) ? col.options.map((opt: any) => {
+        if (typeof opt === 'string') {
+          return { id: opt, label: opt, value: opt };
+        }
+        return opt as ColumnOption;
+      }) : [],
+      validation: typeof col.validation === 'object' ? col.validation : {},
       default_value: col.default_value || '',
       help_text: col.help_text || '',
       placeholder: col.placeholder || '',
@@ -127,8 +132,11 @@ export const useUnifiedDataEntry = ({
   const entries: UnifiedDataEntry[] = useMemo(() => {
     return rawEntries.map(entry => ({
       ...entry,
-      school_id: entityType === 'school' ? entry.school_id : undefined,
-      sector_id: entityType === 'sector' ? entry.sector_id : undefined
+      status: ['draft', 'pending', 'approved', 'rejected'].includes(entry.status) 
+        ? entry.status as 'draft' | 'pending' | 'approved' | 'rejected'
+        : 'draft' as 'draft' | 'pending' | 'approved' | 'rejected',
+      school_id: entityType === 'school' ? (entry as any).school_id : undefined,
+      sector_id: entityType === 'sector' ? (entry as any).sector_id : undefined
     }));
   }, [rawEntries, entityType]);
 
@@ -162,12 +170,21 @@ export const useUnifiedDataEntry = ({
       for (const entry of entriesToSave) {
         const existingEntry = entries.find(e => e.column_id === entry.column_id);
         
+        const entryData = {
+          category_id: categoryId,
+          column_id: entry.column_id,
+          value: entry.value?.toString() || '',
+          status: 'draft' as const,
+          created_by: user?.id || null,
+          [entityFieldName]: entityId
+        };
+        
         if (existingEntry) {
           // Update existing
           const { data, error } = await supabase
             .from(tableName)
             .update({
-              value: entry.value,
+              value: entry.value?.toString() || '',
               updated_at: new Date().toISOString()
             })
             .eq('id', existingEntry.id)
@@ -180,14 +197,7 @@ export const useUnifiedDataEntry = ({
           // Create new
           const { data, error } = await supabase
             .from(tableName)
-            .insert({
-              category_id: categoryId,
-              [entityFieldName]: entityId,
-              column_id: entry.column_id,
-              value: entry.value,
-              status: 'draft',
-              created_by: user?.id || null
-            })
+            .insert(entryData)
             .select()
             .single();
 

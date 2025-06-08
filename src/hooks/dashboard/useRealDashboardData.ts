@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
@@ -121,9 +120,6 @@ export const useRealDashboardData = () => {
         { id: '1', name: 'General Statistics', status: 'active', completionRate: 0.85 },
         { id: '2', name: 'Teacher Information', status: 'active', completionRate: 0.78 },
       ],
-      pendingApprovals: [
-        { id: '1', schoolName: 'School X', categoryName: 'General Statistics', date: '2023-05-01' },
-      ],
       deadlines: [
         { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'upcoming', deadline: '2023-06-01', daysLeft: 5 },
       ],
@@ -138,9 +134,6 @@ export const useRealDashboardData = () => {
     return {
       categories: [
         { id: '1', name: 'General Statistics', status: 'active', completionRate: 0.85 },
-      ],
-      pendingApprovals: [
-        { id: '1', schoolName: 'School 1', categoryName: 'General Statistics', date: '2023-05-01' },
       ],
       deadlines: [
         { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'upcoming', deadline: '2023-06-01', daysLeft: 5 },

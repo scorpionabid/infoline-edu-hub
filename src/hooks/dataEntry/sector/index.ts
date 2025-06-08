@@ -1,11 +1,7 @@
 
-// Sector-specific data entry hooks
-export { useSectorDataEntry } from './useSectorDataEntry';
-export { useSectorPermissions } from './useSectorPermissions';
-export { useSectorValidation } from './useSectorValidation';
-export { useSchoolManagement } from './useSchoolManagement';
+// Unified sector data entry using the unified system
+export { default as useSectorDataEntryUnified } from '../useSectorDataEntryUnified';
+export type { UseSectorDataEntryOptions } from '../useSectorDataEntryUnified';
 
-// Export types
-export type { UseSectorDataEntryOptions } from './useSectorDataEntry';
-export type { UseSectorPermissionsResult } from './useSectorPermissions';
-export type { UseSchoolManagementResult } from './useSchoolManagement';
+// Legacy re-export for backward compatibility
+export { default as useSectorDataEntry } from '../useSectorDataEntryUnified';

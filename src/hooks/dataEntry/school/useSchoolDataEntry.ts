@@ -1,8 +1,16 @@
 
-import { useDataEntry } from '@/hooks/business/dataEntry/useDataEntry';
+import { useUnifiedDataEntry, UseUnifiedDataEntryOptions } from '../useUnifiedDataEntry';
 
-export const useSchoolDataEntry = (props: any) => {
-  return useDataEntry(props);
+export interface UseSchoolDataEntryOptions extends Omit<UseUnifiedDataEntryOptions, 'entityType'> {
+  schoolId: string;
+}
+
+export const useSchoolDataEntry = (options: UseSchoolDataEntryOptions) => {
+  return useUnifiedDataEntry({
+    ...options,
+    entityId: options.schoolId,
+    entityType: 'school'
+  });
 };
 
-export type UseSchoolDataEntryResult = ReturnType<typeof useSchoolDataEntry>;
+export default useSchoolDataEntry;

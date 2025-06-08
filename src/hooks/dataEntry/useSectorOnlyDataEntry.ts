@@ -1,8 +1,9 @@
 
-import { useSectorDataEntry } from './sector/useSectorDataEntry';
+import { useSectorDataEntryUnified, UseSectorDataEntryOptions } from './useSectorDataEntryUnified';
 
-export const useSectorOnlyDataEntry = (props: any) => {
-  return useSectorDataEntry(props);
+// Re-export with more descriptive name for sector-only data entry
+export const useSectorOnlyDataEntry = (options: UseSectorDataEntryOptions) => {
+  return useSectorDataEntryUnified(options);
 };
 
-export type UseSectorOnlyDataEntryResult = ReturnType<typeof useSectorOnlyDataEntry>;
+export default useSectorOnlyDataEntry;
