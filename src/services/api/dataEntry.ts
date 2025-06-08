@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { DataEntry } from '@/types/dataEntry';
 
@@ -41,7 +42,7 @@ export async function fetchDataEntries({ categoryId, schoolId }: FetchDataEntrie
     const safeEntries = data.map(entry => ({
       ...entry,
       value: entry.value !== undefined && entry.value !== null ? entry.value : '',
-      status: entry.status || 'draft' // string kimi istifadə
+      status: entry.status || 'draft'
     }));
 
     console.log(`Successfully fetched ${safeEntries.length} data entries`);
@@ -50,6 +51,34 @@ export async function fetchDataEntries({ categoryId, schoolId }: FetchDataEntrie
     console.error('Error in fetchDataEntries:', error);
     throw error;
   }
+}
+
+/**
+ * UUID validation helper function
+ */
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+/**
+ * Safe UUID processing - returns valid UUID or null
+ */
+function processSafeUUID(userId: string | null | undefined): string | null {
+  // Return null for invalid inputs
+  if (!userId || userId === 'system' || userId === 'null' || userId === 'undefined') {
+    console.warn('Invalid userId detected, setting to null:', userId);
+    return null;
+  }
+  
+  // Validate UUID format
+  if (typeof userId === 'string' && isValidUUID(userId)) {
+    console.log('Valid UUID detected:', userId);
+    return userId;
+  }
+  
+  console.warn('Invalid UUID format, setting to null:', userId);
+  return null;
 }
 
 /**
@@ -71,6 +100,10 @@ export async function saveDataEntries(
     }
 
     console.log('About to save data entries:', { categoryId, schoolId, entriesCount: entries.length, userId });
+    
+    // Process userId safely - no "system" strings allowed
+    const safeUserId = processSafeUUID(userId);
+    console.log('Processed safe userId:', safeUserId);
     
     // Əvvəlcə mövcud entries-ləri əldə edirik
     const { data: existingEntries, error: fetchError } = await supabase
@@ -101,41 +134,14 @@ export async function saveDataEntries(
         throw new Error('Sütun ID-si olmayan məlumat daxil etməsi');
       }
       
-      // UUID validation və safe handling - daha güclü yoxlama
-      let safeUserId: string | null = null;
-      
-      // Əgər userId mövcuddursa və etibarlıdırsa
-      if (userId) {
-        console.log('Validating userId:', userId, 'Type:', typeof userId);
-        
-        // "system" stringini rədd edirik
-        if (userId === 'system' || userId === 'null' || userId === 'undefined') {
-          console.warn('Invalid userId detected, setting to null:', userId);
-          safeUserId = null;
-        } else {
-          // UUID formatını yoxlayırıq
-          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          if (uuidRegex.test(userId.toString())) {
-            safeUserId = userId;
-            console.log('Valid UUID detected:', safeUserId);
-          } else {
-            console.warn('Invalid UUID format, setting to null:', userId);
-            safeUserId = null;
-          }
-        }
-      } else {
-        console.log('No userId provided, using null');
-        safeUserId = null;
-      }
-      
       const processedEntry = {
         column_id: entry.column_id,
         category_id: categoryId,
         school_id: schoolId,
         value: entry.value ?? '',
-        status: entry.status || 'draft', // string kimi istifadə
-        created_by: safeUserId, // Safe UUID handling
-        created_at: new Date().toISOString(), // ✅ ƏLAVƏ EDİLDİ
+        status: entry.status || 'draft',
+        created_by: safeUserId, // Always use safe UUID or null
+        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
@@ -152,14 +158,13 @@ export async function saveDataEntries(
 
     // INSERT əməliyyatları
     if (entriesToInsert.length > 0) {
-      console.log('Entries to insert:', JSON.stringify(entriesToInsert, null, 2));
-      console.log('User ID for insert operation:', userId);
+      console.log('Entries to insert:', entriesToInsert.length);
+      console.log('Sample entry for insert:', JSON.stringify(entriesToInsert[0], null, 2));
       
-      // .insert() metodunu düzgün istifadə et
       const { data: insertedData, error: insertError } = await supabase
         .from('data_entries')
-        .insert(entriesToInsert) // burada columns parametri olmamalıdır
-        .select(); // .select('*') əvəzinə sadəcə .select() istifadə et
+        .insert(entriesToInsert)
+        .select();
 
       if (insertError) {
         console.error('Error inserting data entries:', {
@@ -167,17 +172,13 @@ export async function saveDataEntries(
           code: insertError.code,
           message: insertError.message,
           details: insertError.details,
-          hint: insertError.hint,
-          entriesToInsert: entriesToInsert.map(entry => ({
-            ...entry,
-            created_by: entry.created_by || 'NULL' // NULL göstərmək üçün
-          }))
+          hint: insertError.hint
         });
         
-        // UUID xətaları üçün xüsusi mesaj
+        // Special handling for UUID errors
         if (insertError.code === '22P02' && insertError.message?.includes('uuid')) {
-          console.error('UUID format error detected. This usually means a non-UUID value was passed to a UUID column.');
-          console.error('Check the created_by field values:', entriesToInsert.map(e => e.created_by));
+          console.error('UUID format error detected. Check created_by field values.');
+          console.error('Sample created_by values:', entriesToInsert.map(e => e.created_by));
         }
         
         throw insertError;

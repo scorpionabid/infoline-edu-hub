@@ -19,6 +19,31 @@ export interface ServiceResponse {
   errors?: Record<string, string>;
 }
 
+/**
+ * UUID validation helper
+ */
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+/**
+ * Safe UUID processing - prevents "system" strings from being passed to UUID fields
+ */
+function getSafeUserId(userId?: string): string | null {
+  if (!userId || userId === 'system' || userId === 'null' || userId === 'undefined') {
+    console.warn('Invalid userId detected, using null:', userId);
+    return null;
+  }
+  
+  if (typeof userId === 'string' && isValidUUID(userId)) {
+    return userId;
+  }
+  
+  console.warn('Invalid UUID format, using null:', userId);
+  return null;
+}
+
 // Data entry formunu yadda saxla - Enhanced with status protection and auto-approval
 export const saveDataEntryForm = async (
   schoolId: string,
@@ -58,6 +83,10 @@ export const saveDataEntryForm = async (
       };
     }
 
+    // Process user ID safely
+    const safeUserId = getSafeUserId(userId || user.id);
+    console.log('Using safe user ID:', safeUserId);
+
     // ✅ YENİ: Get user role for validation
     const { data: userRoles } = await supabase
       .from('user_roles')
@@ -65,8 +94,8 @@ export const saveDataEntryForm = async (
       .eq('user_id', user.id)
       .limit(1);
     
-    const userRole = userRoles?.[0]?.role;
-    if (!userRole) {
+    const actualUserRole = userRoles?.[0]?.role || userRole;
+    if (!actualUserRole) {
       console.error('User role not found');
       console.groupEnd();
       return {
@@ -76,10 +105,10 @@ export const saveDataEntryForm = async (
       };
     }
 
-    console.log('User validation successful:', { userId: user.id, role: userRole });
+    console.log('User validation successful:', { userId: safeUserId, role: actualUserRole });
 
     // ✅ YENİ: Auto-approval logic
-    const isAutoApprove = userRole === 'sectoradmin';
+    const isAutoApprove = actualUserRole === 'sectoradmin';
     const defaultStatus = isAutoApprove ? 'approved' : 'draft';
     console.log('Auto-approval logic:', { isAutoApprove, defaultStatus });
 
@@ -95,7 +124,7 @@ export const saveDataEntryForm = async (
       throw deleteError;
     }
 
-    // Insert new entries with auto-approval
+    // Insert new entries with auto-approval and safe UUID handling
     const insertPromises = entries.map(entry => 
       supabase.from('data_entries').insert({
         school_id: schoolId,
@@ -103,9 +132,9 @@ export const saveDataEntryForm = async (
         column_id: entry.columnId,
         value: entry.value,
         status: entry.status || defaultStatus,
-        created_by: user.id,
+        created_by: safeUserId, // Safe UUID or null, never "system"
         // ✅ YENİ: Auto-approval metadata
-        approved_by: isAutoApprove ? (userId || user.id) : null,
+        approved_by: isAutoApprove ? safeUserId : null,
         approved_at: isAutoApprove ? new Date().toISOString() : null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -118,6 +147,12 @@ export const saveDataEntryForm = async (
     const insertErrors = results.filter(result => result.error);
     if (insertErrors.length > 0) {
       console.error('Insert errors:', insertErrors);
+      // Log UUID-specific errors
+      insertErrors.forEach(errorResult => {
+        if (errorResult.error?.code === '22P02' && errorResult.error?.message?.includes('uuid')) {
+          console.error('UUID validation error detected:', errorResult.error);
+        }
+      });
       throw new Error('Failed to save some entries');
     }
 
@@ -257,6 +292,9 @@ export const submitForApproval = async (
       };
     }
 
+    // Safe user ID processing
+    const safeUserId = getSafeUserId(user.id);
+
     // ✅ YENİ: Get current status and validate transition
     const currentStatus = await StatusTransitionService.getCurrentStatus(schoolId, categoryId);
     console.log('Current status:', currentStatus);
@@ -275,7 +313,7 @@ export const submitForApproval = async (
     const transitionContext: TransitionContext = {
       schoolId,
       categoryId,
-      userId: user.id,
+      userId: safeUserId || user.id,
       userRole,
       comment
     };

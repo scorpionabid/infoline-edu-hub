@@ -61,6 +61,10 @@ export function useDataEntryState({ categoryId, schoolId, enabled = true }: UseD
     mutationFn: async ({ columnId, value }: { columnId: string; value: any }) => {
       const existingEntry = entriesMap[columnId];
       
+      // Ensure we have a valid user ID or use null
+      const safeUserId = user?.id || null;
+      console.log('Using safe user ID for update:', safeUserId);
+      
       if (existingEntry) {
         // Update existing entry
         const { data, error } = await supabase
@@ -76,7 +80,7 @@ export function useDataEntryState({ categoryId, schoolId, enabled = true }: UseD
         if (error) throw error;
         return data;
       } else {
-        // Create new entry
+        // Create new entry with safe UUID handling
         const { data, error } = await supabase
           .from('data_entries')
           .insert({
@@ -85,12 +89,18 @@ export function useDataEntryState({ categoryId, schoolId, enabled = true }: UseD
             column_id: columnId,
             value: value?.toString() || '',
             status: 'draft',
-            created_by: user?.id
+            created_by: safeUserId // Use safe UUID or null, never "system"
           })
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error creating data entry:', error);
+          if (error.code === '22P02' && error.message?.includes('uuid')) {
+            console.error('UUID validation failed. User ID:', safeUserId);
+          }
+          throw error;
+        }
         return data;
       }
     },
@@ -110,6 +120,8 @@ export function useDataEntryState({ categoryId, schoolId, enabled = true }: UseD
   const updateAllEntriesMutation = useMutation({
     mutationFn: async (entriesToSave: Partial<DataEntry>[]) => {
       const results = [];
+      const safeUserId = user?.id || null;
+      console.log('Using safe user ID for batch update:', safeUserId);
       
       for (const entry of entriesToSave) {
         const existingEntry = entriesMap[entry.column_id!];
@@ -129,7 +141,7 @@ export function useDataEntryState({ categoryId, schoolId, enabled = true }: UseD
           if (error) throw error;
           results.push(data);
         } else {
-          // Create new
+          // Create new with safe UUID
           const { data, error } = await supabase
             .from('data_entries')
             .insert({
@@ -138,12 +150,18 @@ export function useDataEntryState({ categoryId, schoolId, enabled = true }: UseD
               column_id: entry.column_id!,
               value: entry.value || '',
               status: 'draft',
-              created_by: user?.id
+              created_by: safeUserId // Safe UUID or null
             })
             .select()
             .single();
 
-          if (error) throw error;
+          if (error) {
+            console.error('Error in batch create:', error);
+            if (error.code === '22P02' && error.message?.includes('uuid')) {
+              console.error('UUID validation failed in batch. User ID:', safeUserId);
+            }
+            throw error;
+          }
           results.push(data);
         }
       }
