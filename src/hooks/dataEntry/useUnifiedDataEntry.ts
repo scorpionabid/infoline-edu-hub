@@ -202,14 +202,24 @@ export const useUnifiedDataEntry = ({
           if (error) throw error;
           results.push(data);
         } else {
-          // Create new - properly structured insert data
+          // Create new - properly structured insert data with safe UUID
+          const safeUserId = user?.id && typeof user.id === 'string' && 
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id) 
+            ? user.id : null;
+          
           const insertData: any = {
             category_id: categoryId,
             column_id: entry.column_id,
             value: entry.value?.toString() || '',
             status: 'draft' as const,
-            created_by: user?.id || null
+            created_by: safeUserId
           };
+          
+          console.log('Insert data with safe UUID:', { 
+            created_by: safeUserId, 
+            user_id: user?.id, 
+            is_valid_uuid: safeUserId !== null 
+          });
           
           // Add the appropriate entity field
           insertData[entityFieldName] = entityId;

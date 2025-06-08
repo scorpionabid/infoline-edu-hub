@@ -1,0 +1,315 @@
+/* ========================================================
+ * Enhanced School Data Entry Styles
+ * ======================================================== */
+
+/* Category Card Improvements */
+.category-card {
+  @apply transition-all duration-200 hover:shadow-md;
+}
+
+.category-card.selected {
+  @apply ring-2 ring-primary bg-primary/5 border-primary;
+}
+
+.category-card:not(.selected):hover {
+  @apply border-primary/50;
+}
+
+/* Text Truncation Fixes */
+.truncate-text {
+  @apply truncate min-w-0;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Form Field Spacing */
+.form-field-container {
+  @apply space-y-2;
+}
+
+.form-field-container + .form-field-container {
+  @apply mt-6;
+}
+
+/* Progress Bar Enhancements */
+.progress-bar-container {
+  @apply space-y-2;
+}
+
+.progress-bar-text {
+  @apply flex items-center justify-between text-xs;
+}
+
+/* Button Group Spacing */
+.button-group {
+  @apply flex items-center gap-3;
+}
+
+.button-group .button-primary {
+  @apply min-w-[120px];
+}
+
+/* Mobile Responsive Fixes */
+@media (max-width: 768px) {
+  .mobile-stack {
+    @apply flex flex-col space-y-4;
+  }
+  
+  .mobile-full-width {
+    @apply w-full;
+  }
+  
+  .mobile-hide {
+    @apply hidden;
+  }
+  
+  .mobile-show {
+    @apply block;
+  }
+}
+
+/* Tablet Responsive */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .tablet-grid {
+    @apply grid-cols-1 lg:grid-cols-2;
+  }
+}
+
+/* Desktop Optimizations */
+@media (min-width: 1024px) {
+  .desktop-grid {
+    @apply grid-cols-3;
+  }
+  
+  .desktop-sidebar {
+    @apply sticky top-24;
+  }
+}
+
+/* Error State Styling */
+.field-error {
+  @apply border-red-500 focus:border-red-500 focus:ring-red-500/20;
+}
+
+.error-message {
+  @apply text-xs text-red-500 flex items-center gap-1;
+}
+
+/* Loading States */
+.loading-skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+.loading-text {
+  @apply h-4 bg-gray-200 rounded;
+}
+
+.loading-button {
+  @apply h-10 w-24 bg-gray-200 rounded;
+}
+
+/* Success States */
+.success-indicator {
+  @apply text-green-600 flex items-center gap-1;
+}
+
+.completion-badge {
+  @apply text-xs font-medium;
+}
+
+.completion-badge.complete {
+  @apply bg-green-100 text-green-800;
+}
+
+.completion-badge.incomplete {
+  @apply bg-amber-100 text-amber-800;
+}
+
+/* Focus States */
+.focus-outline {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary;
+}
+
+/* Accessibility Improvements */
+.sr-only {
+  @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 213 225) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgb(203 213 225);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(148 163 184);
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Hover Effects */
+.hover-lift {
+  @apply transition-transform duration-200;
+}
+
+.hover-lift:hover {
+  @apply transform -translate-y-0.5;
+}
+
+/* Status Indicators */
+.status-indicator {
+  @apply inline-flex items-center gap-1 text-xs font-medium;
+}
+
+.status-indicator.pending {
+  @apply text-amber-600;
+}
+
+.status-indicator.approved {
+  @apply text-green-600;
+}
+
+.status-indicator.rejected {
+  @apply text-red-600;
+}
+
+.status-indicator.draft {
+  @apply text-gray-600;
+}
+
+/* Form Field Types */
+.form-input {
+  @apply w-full px-3 py-2 border rounded-md transition-colors;
+  @apply focus:ring-2 focus:ring-primary/20 focus:border-primary;
+}
+
+.form-input.error {
+  @apply border-red-500 focus:border-red-500 focus:ring-red-500/20;
+}
+
+.form-textarea {
+  @apply resize-none;
+}
+
+.form-select {
+  @apply cursor-pointer;
+}
+
+/* Grid Layout Utilities */
+.auto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.auto-grid-small {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+/* Flex Utilities */
+.flex-between {
+  @apply flex items-center justify-between;
+}
+
+.flex-center {
+  @apply flex items-center justify-center;
+}
+
+.flex-start {
+  @apply flex items-center justify-start;
+}
+
+.flex-end {
+  @apply flex items-center justify-end;
+}
+
+/* Spacing Utilities */
+.space-y-tight > * + * {
+  margin-top: 0.5rem;
+}
+
+.space-y-loose > * + * {
+  margin-top: 2rem;
+}
+
+/* Border Utilities */
+.border-subtle {
+  @apply border border-gray-200;
+}
+
+.border-accent {
+  @apply border border-primary/20;
+}
+
+/* Shadow Utilities */
+.shadow-soft {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+}
+
+.shadow-medium {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-break {
+    page-break-before: always;
+  }
+  
+  .print-avoid-break {
+    page-break-inside: avoid;
+  }
+}
