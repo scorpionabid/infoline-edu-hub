@@ -5,11 +5,13 @@ import FormFields from './FormFields';
 
 interface DataEntryFormContentProps {
   columns: Column[];
+  category?: any;
   readOnly?: boolean;
 }
 
 const DataEntryFormContent: React.FC<DataEntryFormContentProps> = ({
   columns,
+  category,
   readOnly = false
 }) => {
   return (

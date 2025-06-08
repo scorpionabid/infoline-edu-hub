@@ -10,6 +10,7 @@ interface TextInputProps {
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
   error?: string;
 }
 
@@ -20,6 +21,7 @@ const TextInput: React.FC<TextInputProps> = ({
   placeholder,
   required = false,
   disabled = false,
+  readOnly = false,
   error
 }) => {
   return (
@@ -32,6 +34,7 @@ const TextInput: React.FC<TextInputProps> = ({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
+        readOnly={readOnly}
         className={error ? 'border-red-500' : ''}
       />
       {error && <p className="text-sm text-red-500">{error}</p>}

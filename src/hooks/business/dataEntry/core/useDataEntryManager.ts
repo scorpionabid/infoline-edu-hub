@@ -89,8 +89,6 @@ export function useDataEntryManager({
     isSaving: isAutoSaving,
     autoSaveEnabled: autoSaveActive
   } = useAutoSave({
-    categoryId,
-    schoolId,
     formData,
     isDataModified: isDirty,
     enabled: autoSaveEnabled && !isLoading
@@ -103,7 +101,7 @@ export function useDataEntryManager({
     
     // Update entry in backend
     try {
-      await updateEntryValue(fieldId, value);
+      await updateEntryValue({ columnId: fieldId, value });
     } catch (error) {
       console.error('Failed to update entry:', error);
       toast.error(t('failedToUpdateEntry') || 'Failed to update entry');

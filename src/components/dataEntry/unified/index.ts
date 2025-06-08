@@ -1,3 +1,3 @@
 
-// Unified data entry components - deprecated, moved to core
-export { default as UnifiedDataEntryForm } from '../core/UnifiedDataEntryForm';
+export { default as UnifiedDataEntryForm } from './UnifiedDataEntryForm';
+export type { UnifiedDataEntryFormProps } from './UnifiedDataEntryForm';

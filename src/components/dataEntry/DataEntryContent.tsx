@@ -108,7 +108,6 @@ export const DataEntryContent: React.FC<DataEntryContentProps> = ({
           <div className="space-y-6">
             {/* Render unified data entry form with selected category */}
             <UnifiedDataEntryForm 
-              title={selectedCategory?.name || 'Data Entry'}
               category={selectedCategory}
               showActions={true}
               readOnly={false}
