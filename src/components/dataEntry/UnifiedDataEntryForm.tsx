@@ -1,143 +1,84 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Save, Send, AlertCircle, CheckCircle } from 'lucide-react';
-import { Column } from '@/types/column';
-import { useRealTimeValidation } from '@/hooks/dataEntry/useRealTimeValidation';
-import { useAutoSave } from '@/hooks/dataEntry/useAutoSave';
-import FormFields from '../core/FormFields';
-import { toast } from 'sonner';
+import { useUnifiedDataEntry, UseUnifiedDataEntryOptions } from '@/hooks/dataEntry/useUnifiedDataEntry';
+import FormFields from './core/FormFields';
 
-interface ValidationError {
-  field: string;
-  message: string;
-}
-
-interface ValidationWarning {
-  field: string;
-  message: string;
-}
-
-interface EnhancedDataEntryFormProps {
-  categoryId: string;
-  schoolId: string;
-  columns: Column[];
-  initialData?: Record<string, any>;
-  onSave?: (data: Record<string, any>) => Promise<void>;
-  onSubmit?: (data: Record<string, any>) => Promise<void>;
-  onFieldChange?: (columnId: string, value: any) => void;
+export interface UnifiedDataEntryFormProps extends UseUnifiedDataEntryOptions {
+  title?: string;
+  description?: string;
   readOnly?: boolean;
-  autoSave?: boolean;
+  showActions?: boolean;
 }
 
-const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
+const UnifiedDataEntryForm: React.FC<UnifiedDataEntryFormProps> = ({
   categoryId,
-  schoolId,
-  columns,
-  initialData = {},
+  entityId,
+  entityType,
   onSave,
   onSubmit,
-  onFieldChange,
+  title = 'Məlumat Daxil Etmə Forması',
+  description,
   readOnly = false,
-  autoSave = true
+  showActions = true
 }) => {
-  const [formData, setFormData] = useState<Record<string, any>>(initialData);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-  // Real-time validation
-  const { errors, isValid } = useRealTimeValidation({
+  const {
     columns,
-    data: formData
+    formData,
+    isLoading,
+    isSaving,
+    isSubmitting,
+    hasUnsavedChanges,
+    completionPercentage,
+    errors,
+    isValid,
+    updateEntry,
+    saveEntries,
+    submitEntries
+  } = useUnifiedDataEntry({
+    categoryId,
+    entityId,
+    entityType,
+    onSave,
+    onSubmit
   });
-
-  // Auto-save functionality
-  useAutoSave({
-    formData: formData,
-    isDataModified: hasUnsavedChanges,
-    enabled: autoSave && !readOnly
-  });
-
-  // Update form data when initial data changes
-  useEffect(() => {
-    setFormData(initialData);
-    setHasUnsavedChanges(false);
-  }, [initialData]);
 
   const handleFieldChange = (columnId: string, value: any) => {
-    if (readOnly) return;
-
-    // Update local form state
-    setFormData(prev => ({
-      ...prev,
-      [columnId]: value
-    }));
-    setHasUnsavedChanges(true);
-
-    // Call parent onChange if provided (for database sync)
-    if (onFieldChange) {
-      onFieldChange(columnId, value);
+    if (!readOnly) {
+      updateEntry(columnId, value);
     }
   };
 
   const handleSave = async () => {
-    if (!onSave || isSaving) return;
-
-    try {
-      setIsSaving(true);
-      await onSave(formData);
-      setHasUnsavedChanges(false);
-      toast.success('Məlumatlar yadda saxlanıldı');
-    } catch (error) {
-      console.error('Save error:', error);
-      toast.error('Yadda saxlama xətası');
-    } finally {
-      setIsSaving(false);
+    if (!readOnly && !isSaving) {
+      await saveEntries();
     }
   };
 
   const handleSubmit = async () => {
-    if (!onSubmit || isSubmitting) return;
-
-    if (!isValid) {
-      toast.error('Formu göndərməzdən əvvəl xətaları düzəldin');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      await onSubmit(formData);
-      toast.success('Məlumatlar təsdiq üçün göndərildi');
-    } catch (error) {
-      console.error('Submit error:', error);
-      toast.error('Göndərmə xətası');
-    } finally {
-      setIsSubmitting(false);
+    if (!readOnly && !isSubmitting && isValid) {
+      await submitEntries();
     }
   };
 
-  // Calculate completion percentage
-  const completionPercentage = React.useMemo(() => {
-    if (columns.length === 0) return 0;
-    
-    const filledFields = columns.filter(column => {
-      const value = formData[column.id];
-      return value !== undefined && value !== null && value !== '';
-    }).length;
-    
-    return Math.round((filledFields / columns.length) * 100);
-  }, [columns, formData]);
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">Yüklənir...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  // Get validation errors and warnings
-  const validationErrors: ValidationError[] = Object.entries(errors).map(([field, message]) => ({
+  // Get validation errors
+  const validationErrors = Object.entries(errors).map(([field, message]) => ({
     field,
     message
   }));
-
-  const validationWarnings: ValidationWarning[] = []; // Placeholder for warnings
 
   return (
     <div className="space-y-6">
@@ -145,9 +86,12 @@ const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">
-              Məlumat Daxil Etmə Forması
-            </CardTitle>
+            <div>
+              <CardTitle className="text-lg">{title}</CardTitle>
+              {description && (
+                <p className="text-sm text-muted-foreground mt-1">{description}</p>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <Badge variant={completionPercentage === 100 ? "default" : "secondary"}>
                 {completionPercentage}% tamamlandı
@@ -196,7 +140,7 @@ const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
       </Card>
 
       {/* Action Buttons */}
-      {!readOnly && (
+      {!readOnly && showActions && (
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -240,4 +184,4 @@ const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
   );
 };
 
-export default EnhancedDataEntryForm;
+export default UnifiedDataEntryForm;
