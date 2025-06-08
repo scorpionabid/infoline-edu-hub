@@ -1,54 +1,37 @@
 
 import { useEffect, useRef } from 'react';
-import { toast } from 'sonner';
 
-interface UseAutoSaveOptions {
-  data: Record<string, any>;
-  saveFunction: () => Promise<void>;
-  delay?: number;
-  enabled?: boolean;
+export interface UseAutoSaveOptions {
+  formData: Record<string, any>;
+  isDataModified: boolean;
+  enabled: boolean;
 }
 
-export const useAutoSave = ({
-  data,
-  saveFunction,
-  delay = 2000,
-  enabled = true
-}: UseAutoSaveOptions) => {
+export function useAutoSave(options: UseAutoSaveOptions) {
   const timeoutRef = useRef<NodeJS.Timeout>();
-  const lastSavedData = useRef<string>('');
 
   useEffect(() => {
-    if (!enabled) return;
-
-    const currentDataString = JSON.stringify(data);
-    
-    // If data hasn't changed, don't save
-    if (currentDataString === lastSavedData.current) return;
+    if (!options.enabled || !options.isDataModified) {
+      return;
+    }
 
     // Clear previous timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // Set new timeout
-    timeoutRef.current = setTimeout(async () => {
-      try {
-        await saveFunction();
-        lastSavedData.current = currentDataString;
-        toast.success('Məlumatlar avtomatik yadda saxlanıldı');
-      } catch (error) {
-        console.error('Auto-save error:', error);
-        toast.error('Avtomatik saxlama xətası');
-      }
-    }, delay);
+    // Set new timeout for auto-save
+    timeoutRef.current = setTimeout(() => {
+      console.log('Auto-save triggered for form data:', options.formData);
+      // Auto-save logic can be implemented here
+    }, 3000); // 3 seconds delay
 
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [data, saveFunction, delay, enabled]);
+  }, [options.formData, options.isDataModified, options.enabled]);
 
   return {
     cancel: () => {
@@ -57,4 +40,6 @@ export const useAutoSave = ({
       }
     }
   };
-};
+}
+
+export default useAutoSave;

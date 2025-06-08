@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import SchoolDataEntryForm from './school/SchoolDataEntryForm';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { ColumnType } from '@/types/column';
 
 interface SchoolDataEntryManagerProps {
   schoolId: string;
@@ -33,7 +34,7 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
     assignment: 'schools'
   });
 
-  // Load columns for selected category
+  // Load columns for selected category with proper type casting
   const { data: columns = [], isLoading: columnsLoading } = useQuery({
     queryKey: ['columns', selectedCategoryId],
     queryFn: async () => {
@@ -47,7 +48,19 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
         .order('order_index');
       
       if (error) throw error;
-      return data || [];
+      
+      // Transform database columns to proper Column type
+      return (data || []).map(col => ({
+        ...col,
+        type: col.type as ColumnType,
+        status: (col.status === 'active' || col.status === 'inactive') ? col.status : 'active' as 'active' | 'inactive',
+        options: Array.isArray(col.options) ? col.options : [],
+        validation: col.validation || {},
+        default_value: col.default_value || '',
+        help_text: col.help_text || '',
+        placeholder: col.placeholder || '',
+        is_required: col.is_required || false
+      }));
     },
     enabled: !!selectedCategoryId
   });

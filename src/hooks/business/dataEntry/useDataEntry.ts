@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from 'react';
 import { useCategoryQuery } from '@/hooks/api/categories/useCategoryQuery';
 import { useDataEntryState } from './useDataEntryState';
@@ -17,16 +18,6 @@ export interface UseDataEntryProps {
 
 /**
  * Məlumat daxil etmə formasını idarə etmək üçün əsas hook
- * 
- * Bu hook aşağıdakı funksionallığı təmin edir:
- * - Kateqoriya və sütun məlumatlarını əldə etmək
- * - Məlumat daxil etmələrini əldə etmək və idarə etmək
- * - Tamamlanma faizini hesablamaq
- * - Bütün məlumatların doldurulduğunu yoxlamaq
- * - Məlumatları yadda saxlamaq və statusunu yeniləmək
- * 
- * @param props Hook parametrləri
- * @returns Məlumat daxil etmə forması vəziyyəti və əlaqədar funksiyalar
  */
 export function useDataEntry({ categoryId, schoolId, onComplete }: UseDataEntryProps) {
   const { t } = useLanguage();
@@ -117,17 +108,18 @@ export function useDataEntry({ categoryId, schoolId, onComplete }: UseDataEntryP
               category_id: categoryId,
               school_id: schoolId,
               value: '',
-              status: 'draft', // string kimi istifadə
-              created_by: undefined, // ✅ DÜZƏLDILDI: undefined olarak bırakıyoruz ki useDataEntryState içinde doldurulsun
+              status: 'draft',
+              created_by: undefined,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             };
       });
       
       await updateAllEntries(entriesToSave);
-      toast.success(t('dataEntriesSaved'));
+      toast.success(t('dataEntriesSaved') || 'Məlumatlar saxlanıldı');
     } catch (error) {
       console.error('Error saving all entries:', error);
+      toast.error(t('errorSavingData') || 'Məlumatlar saxlanılarkən xəta baş verdi');
     }
   };
   
@@ -136,7 +128,7 @@ export function useDataEntry({ categoryId, schoolId, onComplete }: UseDataEntryP
     if (isSubmitting || isUpdatingStatus) return;
     
     if (!hasAllRequiredData) {
-      toast.error(t('fillAllRequiredFields'));
+      toast.error(t('fillAllRequiredFields') || 'Bütün tələb olunan sahələri doldurun');
       return;
     }
     
@@ -145,11 +137,11 @@ export function useDataEntry({ categoryId, schoolId, onComplete }: UseDataEntryP
       
       // Status yeniləməsi üçün entries hazırlayırıq
       const entriesToUpdate = entries.filter(entry => 
-        entry.status !== 'pending' // DataEntryStatus.PENDING, string olaraq istifadə edirik
+        entry.status !== 'pending'
       );
       
       if (entriesToUpdate.length === 0) {
-        toast.info(t('allDataAlreadySubmitted'));
+        toast.info(t('allDataAlreadySubmitted') || 'Bütün məlumatlar artıq göndərilmişdir');
         setIsSubmitted(true);
         if (onComplete) onComplete();
         return;
@@ -158,16 +150,16 @@ export function useDataEntry({ categoryId, schoolId, onComplete }: UseDataEntryP
       // Statusu yeniləyirik
       await updateStatus({
         entries: entriesToUpdate,
-        status: 'pending' // string olaraq istifadə edirik
+        status: 'pending'
       });
       
-      toast.success(t('dataEntriesSubmitted'));
+      toast.success(t('dataEntriesSubmitted') || 'Məlumatlar təsdiq üçün göndərildi');
       setIsSubmitted(true);
       
       if (onComplete) onComplete();
     } catch (error) {
       console.error('Error submitting entries:', error);
-      toast.error(t('errorSubmittingEntries'));
+      toast.error(t('errorSubmittingEntries') || 'Məlumatlar göndərilirkən xəta baş verdi');
     } finally {
       setIsSubmitting(false);
     }

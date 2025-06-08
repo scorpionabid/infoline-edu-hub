@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import SectorDataEntryForm from './sector/SectorDataEntryForm';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { ColumnType } from '@/types/column';
 
 export const SectorOnlyDataEntry: React.FC = () => {
   const user = useAuthStore(selectUser);
@@ -17,10 +18,10 @@ export const SectorOnlyDataEntry: React.FC = () => {
   
   // Load sector categories only
   const { categories, isLoading: categoriesLoading } = useCategoriesQuery({
-    assignment: 'sectors' // Only sector categories
+    assignment: 'sectors'
   });
 
-  // Load columns for selected category
+  // Load columns for selected category with proper type casting
   const { data: columns = [], isLoading: columnsLoading } = useQuery({
     queryKey: ['columns', selectedCategoryId],
     queryFn: async () => {
@@ -34,7 +35,19 @@ export const SectorOnlyDataEntry: React.FC = () => {
         .order('order_index');
       
       if (error) throw error;
-      return data || [];
+      
+      // Transform database columns to proper Column type
+      return (data || []).map(col => ({
+        ...col,
+        type: col.type as ColumnType,
+        status: (col.status === 'active' || col.status === 'inactive') ? col.status : 'active' as 'active' | 'inactive',
+        options: Array.isArray(col.options) ? col.options : [],
+        validation: col.validation || {},
+        default_value: col.default_value || '',
+        help_text: col.help_text || '',
+        placeholder: col.placeholder || '',
+        is_required: col.is_required || false
+      }));
     },
     enabled: !!selectedCategoryId
   });

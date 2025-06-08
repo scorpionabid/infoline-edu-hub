@@ -30,7 +30,6 @@ const UnifiedFieldRenderer: React.FC<UnifiedFieldRendererProps> = ({
 
   switch (column.type) {
     case 'text':
-    case 'string':
       return (
         <TextInput
           label={column.name}
@@ -44,7 +43,6 @@ const UnifiedFieldRenderer: React.FC<UnifiedFieldRendererProps> = ({
       );
 
     case 'number':
-    case 'integer':
       return (
         <NumberInput
           label={column.name}

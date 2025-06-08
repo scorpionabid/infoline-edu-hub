@@ -1,132 +1,194 @@
 
-import { useMemo } from 'react';
-import { useDataEntriesQuery } from '@/hooks/api/dataEntry/useDataEntriesQuery';
-import { useIndexedData } from '@/hooks/core/useIndexedData';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { DataEntry } from '@/types/dataEntry';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
-/**
- * Məlumat daxil etmə vəziyyətini idarə etmək üçün hook parametrləri
- */
-export interface UseDataEntryStateProps {
+interface UseDataEntryStateProps {
   categoryId: string;
   schoolId: string;
   enabled?: boolean;
 }
 
-/**
- * Məlumat daxil etmə vəziyyətini idarə etmək üçün yüksək səviyyəli hook
- */
-export function useDataEntryState({
-  categoryId,
-  schoolId,
-  enabled = true
-}: UseDataEntryStateProps) {
-  // Current user əldə edirik
+export function useDataEntryState({ categoryId, schoolId, enabled = true }: UseDataEntryStateProps) {
   const user = useAuthStore(selectUser);
-  const session = useAuthStore(state => state.session);
-  
-  // Data entries sorğusu
+  const queryClient = useQueryClient();
+  const [entriesMap, setEntriesMap] = useState<Record<string, DataEntry>>({});
+
+  // Fetch data entries
   const {
-    entries = [],
+    data: entries = [],
     isLoading,
     isError,
     error,
-    saveEntries,
-    updateStatus,
-    isSaving,
-    isUpdatingStatus,
     refetch
-  } = useDataEntriesQuery({ 
-    categoryId, 
-    schoolId,
+  } = useQuery({
+    queryKey: ['dataEntries', categoryId, schoolId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId);
+
+      if (error) throw error;
+      return data || [];
+    },
     enabled: enabled && !!categoryId && !!schoolId
   });
-  
-  // UUID ilə indekslənmiş entries map
-  const { 
-    map: entriesMap, 
-    getItem: getEntryByColumnId,
-    hasItem: hasEntryForColumn
-  } = useIndexedData(entries, 'column_id');
-  
-  // Mövcud entries-ləri kopyalayıb yeniləyən funksiya
-  const updateEntryValue = (columnId: string, value: any) => {
-    if (!columnId) {
-      console.warn('Column ID is required for updating entry value');
-      return;
-    }
 
-    const existingEntry = getEntryByColumnId(columnId);
-    
-    // Mövcud və ya yeni entry hazırlayırıq
-    const updatedEntry = existingEntry 
-      ? { 
-          ...existingEntry, 
-          value, 
-          updated_at: new Date().toISOString() 
-        }
-      : {
-          column_id: columnId,
-          category_id: categoryId,
-          school_id: schoolId,
-          value,
-          status: 'draft', // string kimi istifadə
-          created_by: session?.user?.id || user?.id || null, // ✅ DÜZƏLDILDI: session user id istifadə et
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-    
-    const actualUserId = session?.user?.id || user?.id;
-    console.log('Updating entry value:', { columnId, value, updatedEntry, userId: actualUserId, sessionUserId: session?.user?.id, storeUserId: user?.id });
-    
-    // Yalnız bir entry yeniləyirik - user.id də göndəririk
-    saveEntries([updatedEntry]);
-  };
-  
-  // Bütün entries-ləri birdən yeniləyən funksiya
-  const updateAllEntries = (updatedEntries: Partial<DataEntry>[]) => {
-    if (!Array.isArray(updatedEntries) || updatedEntries.length === 0) {
-      console.warn('No entries to update');
-      return;
+  // Update entries map when entries change
+  useEffect(() => {
+    const newEntriesMap = entries.reduce((acc, entry) => {
+      acc[entry.column_id] = entry;
+      return acc;
+    }, {} as Record<string, DataEntry>);
+    setEntriesMap(newEntriesMap);
+  }, [entries]);
+
+  // Helper functions
+  const getEntryByColumnId = useCallback((columnId: string) => {
+    return entriesMap[columnId] || null;
+  }, [entriesMap]);
+
+  const hasEntryForColumn = useCallback((columnId: string) => {
+    return !!entriesMap[columnId];
+  }, [entriesMap]);
+
+  // Update single entry value
+  const updateEntryValueMutation = useMutation({
+    mutationFn: async ({ columnId, value }: { columnId: string; value: any }) => {
+      const existingEntry = entriesMap[columnId];
+      
+      if (existingEntry) {
+        // Update existing entry
+        const { data, error } = await supabase
+          .from('data_entries')
+          .update({
+            value: value?.toString() || '',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingEntry.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      } else {
+        // Create new entry
+        const { data, error } = await supabase
+          .from('data_entries')
+          .insert({
+            category_id: categoryId,
+            school_id: schoolId,
+            column_id: columnId,
+            value: value?.toString() || '',
+            status: 'draft',
+            created_by: user?.id
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: (data) => {
+      // Update local state
+      setEntriesMap(prev => ({
+        ...prev,
+        [data.column_id]: data
+      }));
+      
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['dataEntries', categoryId, schoolId] });
     }
-    
-    // ✅ DÜZƏLDILDI: Hər entry-yə user.id əlavə edirik
-    const entriesWithUserId = updatedEntries.map(entry => ({
-      ...entry,
-      created_by: entry.created_by || session?.user?.id || user?.id || null,
-      updated_at: new Date().toISOString()
-    }));
-    
-    const actualUserId = session?.user?.id || user?.id;
-    console.log('Updating all entries:', { count: entriesWithUserId.length, userId: actualUserId, sessionUserId: session?.user?.id, storeUserId: user?.id });
-    saveEntries(entriesWithUserId);
-  };
-  
-  // Hook nəticələrini qaytarırıq
+  });
+
+  // Update all entries
+  const updateAllEntriesMutation = useMutation({
+    mutationFn: async (entriesToSave: Partial<DataEntry>[]) => {
+      const results = [];
+      
+      for (const entry of entriesToSave) {
+        const existingEntry = entriesMap[entry.column_id!];
+        
+        if (existingEntry) {
+          // Update existing
+          const { data, error } = await supabase
+            .from('data_entries')
+            .update({
+              value: entry.value || '',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingEntry.id)
+            .select()
+            .single();
+
+          if (error) throw error;
+          results.push(data);
+        } else {
+          // Create new
+          const { data, error } = await supabase
+            .from('data_entries')
+            .insert({
+              category_id: categoryId,
+              school_id: schoolId,
+              column_id: entry.column_id!,
+              value: entry.value || '',
+              status: 'draft',
+              created_by: user?.id
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+          results.push(data);
+        }
+      }
+      
+      return results;
+    },
+    onSuccess: () => {
+      refetch();
+    }
+  });
+
+  // Update status
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ entries: entriesToUpdate, status }: { entries: DataEntry[]; status: string }) => {
+      const entryIds = entriesToUpdate.map(entry => entry.id);
+      
+      const { error } = await supabase
+        .from('data_entries')
+        .update({
+          status,
+          updated_at: new Date().toISOString()
+        })
+        .in('id', entryIds);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetch();
+    }
+  });
+
   return {
-    // Data və status
     entries,
     entriesMap,
-    getEntryByColumnId,
-    hasEntryForColumn,
     isLoading,
     isError,
     error,
-    isSaving,
-    isUpdatingStatus,
-    
-    // Funksiyalar
-    updateEntryValue,
-    updateAllEntries,
-    updateStatus,
     refetch,
-    
-    // Xam sorğu funksiyaları
-    saveEntries,
-    
-    // User məlumatları
-    user
+    getEntryByColumnId,
+    hasEntryForColumn,
+    updateEntryValue: updateEntryValueMutation.mutate,
+    updateAllEntries: updateAllEntriesMutation.mutate,
+    updateStatus: updateStatusMutation.mutate,
+    isSaving: updateEntryValueMutation.isPending || updateAllEntriesMutation.isPending,
+    isUpdatingStatus: updateStatusMutation.isPending
   };
 }
 
