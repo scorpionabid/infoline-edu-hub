@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
@@ -7,10 +8,7 @@ import {
   SectorAdminDashboardData, 
   SchoolAdminDashboardData, 
   CategoryItem,
-  DeadlineItem,
-  SchoolStat,
-  PendingApproval,
-  SectorStat
+  DeadlineItem
 } from '@/types/dashboard';
 import { UserRole } from '@/types/supabase';
 
@@ -87,11 +85,11 @@ export const useRealDashboardData = () => {
   }, [user]);
 
   const fetchSuperAdminData = async (): Promise<SuperAdminDashboardData> => {
-    // Mock data for super admin
+    // Mock data for super admin with correct property names
     return {
-      regionCount: 25,
-      sectorCount: 75,
-      schoolCount: 250,
+      totalRegions: 25,
+      totalSectors: 75,
+      totalSchools: 250,
       categories: [
         { id: '1', name: 'General Statistics', status: 'active', completionRate: 0.85 },
         { id: '2', name: 'Teacher Information', status: 'active', completionRate: 0.78 },
@@ -114,7 +112,7 @@ export const useRealDashboardData = () => {
   };
 
   const fetchRegionAdminData = async (regionId: string): Promise<RegionAdminDashboardData> => {
-    // Mock data ilə regional admin data
+    // Mock data with correct property names
     return {
       categories: [
         { id: '1', name: 'General Statistics', status: 'active', completionRate: 0.85 },
@@ -123,14 +121,14 @@ export const useRealDashboardData = () => {
       deadlines: [
         { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'upcoming', deadline: '2023-06-01', daysLeft: 5 },
       ],
-      sectorStats: [
+      sectors: [
         { id: '1', name: 'Sector A', schoolCount: 15, completionRate: 0.75 },
       ]
     };
   };
 
   const fetchSectorAdminData = async (sectorId: string): Promise<SectorAdminDashboardData> => {
-    // Mock data ilə sector admin data
+    // Mock data with correct property names
     return {
       categories: [
         { id: '1', name: 'General Statistics', status: 'active', completionRate: 0.85 },
@@ -138,7 +136,7 @@ export const useRealDashboardData = () => {
       deadlines: [
         { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'upcoming', deadline: '2023-06-01', daysLeft: 5 },
       ],
-      schoolStats: [
+      schools: [
         { id: '1', name: 'School 1', completionRate: 0.92 },
       ]
     };
@@ -167,7 +165,7 @@ export const useRealDashboardData = () => {
       
       if (deadlinesError) throw deadlinesError;
       
-      // Verilənləri formatlaşdır
+      // Format data with correct property names
       const categories: CategoryItem[] = categoriesData.map((category: any) => ({
         id: category.id,
         name: category.name,
@@ -188,16 +186,15 @@ export const useRealDashboardData = () => {
         categories,
         deadlines,
         stats: {
-          totalCategories: categories.length,
-          completedCategories: categories.filter(c => c.status === 'approved').length,
-          pendingCategories: categories.filter(c => c.status === 'pending').length,
+          completed: categories.filter(c => c.status === 'approved').length,
+          pending: categories.filter(c => c.status === 'pending').length,
           overallCompletion: 0.75
         }
       };
     } catch (error) {
       console.error('Error fetching school admin dashboard data:', error);
       
-      // Xəta halında demo data
+      // Error state with demo data and correct property names
       return {
         categories: [
           { id: '1', name: 'General Statistics', status: 'approved', completionRate: 0.85 },
@@ -206,9 +203,8 @@ export const useRealDashboardData = () => {
           { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'upcoming', deadline: '2023-06-01', daysLeft: 5 },
         ],
         stats: {
-          totalCategories: 1,
-          completedCategories: 1,
-          pendingCategories: 0,
+          completed: 1,
+          pending: 0,
           overallCompletion: 0.85
         }
       };

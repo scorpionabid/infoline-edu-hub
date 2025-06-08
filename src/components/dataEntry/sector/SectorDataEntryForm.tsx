@@ -1,17 +1,17 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSectorDataEntryUnified } from '@/hooks/dataEntry/useSectorDataEntryUnified';
 import { UnifiedDataEntryForm } from '@/components/dataEntry';
 
 interface SectorDataEntryFormProps {
   categoryId: string;
   sectorId: string;
+  onComplete?: () => void;
 }
 
 const SectorDataEntryForm: React.FC<SectorDataEntryFormProps> = ({
   categoryId,
-  sectorId
+  sectorId,
+  onComplete
 }) => {
   return (
     <UnifiedDataEntryForm
@@ -20,6 +20,7 @@ const SectorDataEntryForm: React.FC<SectorDataEntryFormProps> = ({
       entityType="sector"
       title="Sektor Məlumatları"
       description="Sektor kateqoriyası üçün məlumatları daxil edin"
+      onSubmit={onComplete}
     />
   );
 };

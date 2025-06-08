@@ -11,9 +11,6 @@ export type {
 export { default as useSchoolDataEntry } from './useSchoolDataEntry';
 export { default as useSectorDataEntryUnified } from './useSectorDataEntryUnified';
 
-// Legacy re-exports for backward compatibility (will be deprecated)
-export { default as useDataEntry } from './useDataEntry';
-
 // Common hooks
 export * from './common';
 

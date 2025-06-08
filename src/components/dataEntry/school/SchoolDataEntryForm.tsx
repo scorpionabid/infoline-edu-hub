@@ -1,17 +1,17 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSchoolDataEntry } from '@/hooks/dataEntry/useSchoolDataEntry';
 import { UnifiedDataEntryForm } from '@/components/dataEntry';
 
 interface SchoolDataEntryFormProps {
   categoryId: string;
   schoolId: string;
+  onComplete?: () => void;
 }
 
 const SchoolDataEntryForm: React.FC<SchoolDataEntryFormProps> = ({
   categoryId,
-  schoolId
+  schoolId,
+  onComplete
 }) => {
   return (
     <UnifiedDataEntryForm
@@ -20,6 +20,7 @@ const SchoolDataEntryForm: React.FC<SchoolDataEntryFormProps> = ({
       entityType="school"
       title="Məktəb Məlumatları"
       description="Məktəb kateqoriyası üçün məlumatları daxil edin"
+      onSubmit={onComplete}
     />
   );
 };

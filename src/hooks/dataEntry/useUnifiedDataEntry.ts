@@ -140,6 +140,23 @@ export const useUnifiedDataEntry = ({
     }));
   }, [rawEntries, entityType]);
 
+  // Validate form function - declare before usage
+  const validateForm = useCallback(() => {
+    const newErrors: Record<string, string> = {};
+    
+    columns.forEach(column => {
+      if (column.is_required) {
+        const value = formData[column.id];
+        if (!value || value.toString().trim() === '') {
+          newErrors[column.id] = `${column.name} is required`;
+        }
+      }
+    });
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [columns, formData]);
+
   // Initialize form data from entries
   useEffect(() => {
     if (entries.length > 0) {
@@ -293,23 +310,6 @@ export const useUnifiedDataEntry = ({
     setHasUnsavedChanges(false);
     setErrors({});
   }, [entries]);
-
-  // Validate form
-  const validateForm = useCallback(() => {
-    const newErrors: Record<string, string> = {};
-    
-    columns.forEach(column => {
-      if (column.is_required) {
-        const value = formData[column.id];
-        if (!value || value.toString().trim() === '') {
-          newErrors[column.id] = `${column.name} is required`;
-        }
-      }
-    });
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [columns, formData]);
 
   // Calculate completion percentage
   const completionPercentage = useMemo(() => {
