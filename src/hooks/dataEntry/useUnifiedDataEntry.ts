@@ -97,7 +97,7 @@ export const useUnifiedDataEntry = ({
     return rawColumns.map(col => ({
       ...col,
       type: col.type as Column['type'],
-      status: (col.status === 'active' || col.status === 'inactive') ? col.status : 'active' as 'active' | 'inactive',
+      status: (col.status === 'active' || col.status === 'inactive') ? col.status : 'active' as const,
       options: Array.isArray(col.options) ? col.options.map((opt: any) => {
         if (typeof opt === 'string') {
           return { id: opt, label: opt, value: opt };
@@ -134,7 +134,7 @@ export const useUnifiedDataEntry = ({
       ...entry,
       status: ['draft', 'pending', 'approved', 'rejected'].includes(entry.status) 
         ? entry.status as 'draft' | 'pending' | 'approved' | 'rejected'
-        : 'draft' as 'draft' | 'pending' | 'approved' | 'rejected',
+        : 'draft' as const,
       school_id: entityType === 'school' ? (entry as any).school_id : undefined,
       sector_id: entityType === 'sector' ? (entry as any).sector_id : undefined
     }));
@@ -187,15 +187,6 @@ export const useUnifiedDataEntry = ({
       for (const entry of entriesToSave) {
         const existingEntry = entries.find(e => e.column_id === entry.column_id);
         
-        const entryData = {
-          category_id: categoryId,
-          column_id: entry.column_id,
-          value: entry.value?.toString() || '',
-          status: 'draft' as const,
-          created_by: user?.id || null,
-          [entityFieldName]: entityId
-        };
-        
         if (existingEntry) {
           // Update existing
           const { data, error } = await supabase
@@ -211,10 +202,19 @@ export const useUnifiedDataEntry = ({
           if (error) throw error;
           results.push(data);
         } else {
-          // Create new
+          // Create new - properly structured insert data
+          const insertData = {
+            category_id: categoryId,
+            column_id: entry.column_id,
+            value: entry.value?.toString() || '',
+            status: 'draft' as const,
+            created_by: user?.id || null,
+            [entityFieldName]: entityId // This will be either school_id or sector_id
+          };
+          
           const { data, error } = await supabase
             .from(tableName)
-            .insert(entryData)
+            .insert(insertData)
             .select()
             .single();
 

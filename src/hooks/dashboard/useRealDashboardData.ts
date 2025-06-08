@@ -8,7 +8,10 @@ import {
   SectorAdminDashboardData, 
   SchoolAdminDashboardData, 
   CategoryItem,
-  DeadlineItem
+  DeadlineItem,
+  RegionStat,
+  SectorStat,
+  SchoolStat
 } from '@/types/dashboard';
 import { UserRole } from '@/types/supabase';
 
@@ -122,7 +125,14 @@ export const useRealDashboardData = () => {
         { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'upcoming', deadline: '2023-06-01', daysLeft: 5 },
       ],
       sectors: [
-        { id: '1', name: 'Sector A', schoolCount: 15, completionRate: 0.75 },
+        { 
+          id: '1', 
+          name: 'Sector A', 
+          totalSchools: 15,
+          activeSchools: 15, 
+          completionRate: 0.75,
+          status: 'active'
+        },
       ]
     };
   };
@@ -137,7 +147,16 @@ export const useRealDashboardData = () => {
         { id: '1', name: 'General Statistics', dueDate: '2023-06-01', status: 'upcoming', deadline: '2023-06-01', daysLeft: 5 },
       ],
       schools: [
-        { id: '1', name: 'School 1', completionRate: 0.92 },
+        { 
+          id: '1', 
+          name: 'School 1', 
+          completionRate: 0.92,
+          totalForms: 10,
+          completedForms: 9,
+          pendingForms: 1,
+          status: 'active',
+          lastUpdated: new Date().toISOString()
+        },
       ]
     };
   };
@@ -187,8 +206,7 @@ export const useRealDashboardData = () => {
         deadlines,
         stats: {
           completed: categories.filter(c => c.status === 'approved').length,
-          pending: categories.filter(c => c.status === 'pending').length,
-          overallCompletion: 0.75
+          pending: categories.filter(c => c.status === 'pending').length
         }
       };
     } catch (error) {
@@ -204,8 +222,7 @@ export const useRealDashboardData = () => {
         ],
         stats: {
           completed: 1,
-          pending: 0,
-          overallCompletion: 0.85
+          pending: 0
         }
       };
     }

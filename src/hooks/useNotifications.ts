@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/common/useToast';
+import { toast } from 'sonner';
 
 export interface Notification {
   id: string;
@@ -19,7 +19,6 @@ export interface Notification {
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
-  const { error } = useToast();
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -34,7 +33,7 @@ export const useNotifications = () => {
       setNotifications(data || []);
     } catch (err) {
       console.error('Error fetching notifications:', err);
-      error('Bildirişlər yüklənərkən xəta baş verdi');
+      toast.error('Bildirişlər yüklənərkən xəta baş verdi');
     } finally {
       setLoading(false);
     }

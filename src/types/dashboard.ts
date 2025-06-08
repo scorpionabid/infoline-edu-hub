@@ -1,65 +1,36 @@
 
 import { BaseEntity } from './core';
 
-// Form item status types  
-export type FormItemStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'not_started' | 'in_progress' | 'overdue' | 'draft';
+// Status types
+export type DashboardStatus = 'active' | 'pending' | 'completed' | 'draft';
 
-// Category status types
-export type CategoryStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'not_started' | 'in_progress' | 'overdue' | 'active' | 'inactive';
-
-// Deadline status types
-export type DeadlineStatus = 'completed' | 'overdue' | 'upcoming' | 'on_track';
-
-// School/Sector status types
-export type EntityStatus = 'active' | 'inactive' | 'on_track' | 'needs_attention';
-
-export interface FormItem extends BaseEntity {
-  name: string;
-  title?: string;
-  category?: string;
-  categoryId?: string;
-  categoryName?: string;
-  status: FormItemStatus;
-  lastModified: string;
-  completionRate: number;
-  progress?: number;
-  dueDate?: string;
-}
-
+// Common interfaces
 export interface CategoryItem extends BaseEntity {
   name: string;
-  description?: string;
-  status: CategoryStatus;
+  status: string;
   completionRate: number;
-  completion?: number;
-  deadline?: string;
-  totalFields?: number;
-  completedFields?: number;
-  lastUpdated?: string;
 }
 
 export interface DeadlineItem extends BaseEntity {
   name: string;
-  title?: string;
-  deadline: string;
   dueDate: string;
-  status: DeadlineStatus;
+  status: string;
+  deadline: string;
   daysLeft: number;
-  priority?: 'high' | 'medium' | 'low';
-  category?: string;
-  categoryId?: string;
-  categoryName?: string;
 }
 
-export interface PendingApproval extends BaseEntity {
-  schoolName: string;
-  categoryName: string;
-  date: string;
-  submittedAt?: string;
-  submittedBy?: string;
-  status: 'pending';
-  title?: string;
-  count?: number;
+export interface RegionStat extends BaseEntity {
+  name: string;
+  schoolCount: number;
+  completionRate: number;
+}
+
+export interface SectorStat extends BaseEntity {
+  name: string;
+  totalSchools: number;
+  activeSchools: number;
+  completionRate: number;
+  status: string;
 }
 
 export interface SchoolStat extends BaseEntity {
@@ -68,117 +39,86 @@ export interface SchoolStat extends BaseEntity {
   totalForms: number;
   completedForms: number;
   pendingForms: number;
-  status: EntityStatus;
+  status: string;
   lastUpdated: string;
-  totalEntries?: number;
-  total_entries?: number;
-  pendingEntries?: number;
-  pending_entries?: number;
-  pendingCount?: number;
-  completion?: number;
-  formsCompleted?: number;
-  principalName?: string;
-  address?: string;
-  phone?: string;
-  email?: string;
 }
 
-export interface SectorStat extends BaseEntity {
-  name: string;
-  schoolCount: number;
-  totalSchools: number;
-  activeSchools: number;
-  completionRate: number;
-  status: EntityStatus;
-  completion?: number;
-  completion_rate?: number;
-  total_schools?: number;
+export interface PendingApprovalItem extends BaseEntity {
+  schoolName: string;
+  regionName: string;
+  categoryName: string;
+  date: string;
 }
 
 export interface DashboardFormStats {
-  completedForms: number;
-  pendingForms: number;
-  approvalRate: number;
+  completed: number;
+  pending: number;
   total?: number;
-  approved?: number;
-  pending?: number;
-  rejected?: number;
-  draft?: number;
-  dueSoon?: number;
-  overdue?: number;
-  completed?: number;
-  percentage?: number;
-  completion_rate?: number;
-  completionRate?: number;
 }
 
+// Role-specific dashboard data interfaces
 export interface SuperAdminDashboardData {
-  stats: DashboardFormStats;
+  totalRegions: number;
+  totalSectors: number;
+  totalSchools: number;
   categories: CategoryItem[];
+  pendingApprovals: PendingApprovalItem[];
   deadlines: DeadlineItem[];
-  schools: {
-    totalSchools: number;
-    activeSchools: number;
-    inactiveSchools: number;
-  };
-  sectors: {
-    totalSectors: number;
-    activeSectors: number;
-    inactiveSectors: number;
-  };
-  regions: {
-    totalRegions: number;
-    activeRegions: number;
-    inactiveRegions: number;
-  };
+  regionStats: RegionStat[];
 }
 
 export interface RegionAdminDashboardData {
-  stats: DashboardFormStats;
   categories: CategoryItem[];
   deadlines: DeadlineItem[];
   sectors: SectorStat[];
 }
 
 export interface SectorAdminDashboardData {
-  stats: DashboardFormStats;
   categories: CategoryItem[];
   deadlines: DeadlineItem[];
   schools: SchoolStat[];
 }
 
 export interface SchoolAdminDashboardData {
-  stats: DashboardFormStats;
   categories: CategoryItem[];
   deadlines: DeadlineItem[];
-  notifications?: any[];
-  status?: any;
-  formStats?: any;
-  completion?: any;
-  completionRate?: number;
-  upcoming?: DeadlineItem[];
-  pendingForms?: FormItem[];
-}
-
-// Additional interfaces for component props
-export interface StatsGridItem {
-  title: string;
-  value: string | number;
-  color?: string;
-  description?: string;
-}
-
-export interface DashboardChartProps {
   stats: DashboardFormStats;
-  showLegend?: boolean;
-  height?: number;
 }
 
-export interface FormTabsProps {
-  categories?: CategoryItem[];
-  upcoming?: DeadlineItem[];
-  pendingForms?: FormItem[];
-  navigateToDataEntry?: () => void;
-  handleFormClick?: (formId: string) => void;
-  onCategoryChange?: (categoryId: string) => void;
+// Dashboard component props
+export interface DashboardProps {
+  userRole: string;
+  data: SuperAdminDashboardData | RegionAdminDashboardData | SectorAdminDashboardData | SchoolAdminDashboardData;
+}
+
+// Chart data interfaces
+export interface ChartData {
+  name: string;
+  value: number;
+  percentage?: number;
+}
+
+export interface CompletionChartData {
+  category: string;
+  completed: number;
+  total: number;
+  percentage: number;
+}
+
+// Notification interfaces
+export interface NotificationItem extends BaseEntity {
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  isRead: boolean;
+  createdAt: string;
+}
+
+// Activity log interfaces
+export interface ActivityLogItem extends BaseEntity {
+  action: string;
+  entityType: string;
+  entityName: string;
+  userEmail: string;
+  timestamp: string;
 }
