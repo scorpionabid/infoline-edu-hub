@@ -140,7 +140,7 @@ export const useUnifiedDataEntry = ({
     }));
   }, [rawEntries, entityType]);
 
-  // Validate form function - declare before usage
+  // Validate form function
   const validateForm = useCallback(() => {
     const newErrors: Record<string, string> = {};
     
@@ -203,14 +203,16 @@ export const useUnifiedDataEntry = ({
           results.push(data);
         } else {
           // Create new - properly structured insert data
-          const insertData = {
+          const insertData: any = {
             category_id: categoryId,
             column_id: entry.column_id,
             value: entry.value?.toString() || '',
             status: 'draft' as const,
-            created_by: user?.id || null,
-            [entityFieldName]: entityId // This will be either school_id or sector_id
+            created_by: user?.id || null
           };
+          
+          // Add the appropriate entity field
+          insertData[entityFieldName] = entityId;
           
           const { data, error } = await supabase
             .from(tableName)

@@ -15,7 +15,7 @@ interface FormFieldComponentProps {
   readOnly?: boolean;
 }
 
-const FormFieldComponent: React.FC<FormFieldComponentProps> = ({
+export const FormFieldComponent: React.FC<FormFieldComponentProps> = ({
   column,
   value,
   onChange,

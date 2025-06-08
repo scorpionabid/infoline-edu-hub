@@ -44,10 +44,15 @@ describe('Form Fields Component Tests', () => {
       })
     ];
     
+    const mockFormData = { col1: '' };
+    const mockOnChange = vi.fn();
+    
     render(
       <FormWrapper>
         <FormFields 
           columns={testColumns} 
+          formData={mockFormData}
+          onChange={mockOnChange}
           readOnly={true}
         />
       </FormWrapper>
@@ -67,10 +72,15 @@ describe('Form Fields Component Tests', () => {
       })
     ];
     
+    const mockFormData = { col3: '' };
+    const mockOnChange = vi.fn();
+    
     render(
       <FormWrapper>
         <FormFields 
           columns={testColumns} 
+          formData={mockFormData}
+          onChange={mockOnChange}
           readOnly={false}
         />
       </FormWrapper>

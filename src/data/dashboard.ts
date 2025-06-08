@@ -67,9 +67,9 @@ export const generateMockPendingApprovals = (count: number = 6): PendingApproval
   return Array.from({ length: count }, (_, i) => ({
     id: `pending-${i + 1}`,
     schoolName: `School ${i + 1}`,
+    regionName: `Region ${i + 1}`,
     categoryName: `Category ${i + 1}`,
     date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'pending' as const,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }));
@@ -111,65 +111,63 @@ export const generateMockSectorStats = (count: number = 6): SectorStat[] => {
 // Dashboard data generators
 export const generateSuperAdminDashboard = (): SuperAdminDashboardData => {
   return {
+    totalRegions: 3,
+    totalSectors: 12,
+    totalSchools: 150,
+    categories: generateMockCategories(8),
+    pendingApprovals: generateMockPendingApprovals(6),
+    deadlines: generateMockDeadlines(5),
+    regionStats: [],
     stats: {
+      completed: Math.floor(Math.random() * 50),
+      pending: Math.floor(Math.random() * 30),
       completedForms: Math.floor(Math.random() * 50),
       pendingForms: Math.floor(Math.random() * 30),
       approvalRate: Math.floor(Math.random() * 100)
-    },
-    categories: generateMockCategories(8),
-    deadlines: generateMockDeadlines(5),
-    schools: {
-      totalSchools: 150,
-      activeSchools: 142,
-      inactiveSchools: 8
-    },
-    sectors: {
-      totalSectors: 12,
-      activeSectors: 11,
-      inactiveSectors: 1
-    },
-    regions: {
-      totalRegions: 3,
-      activeRegions: 3,
-      inactiveRegions: 0
     }
   };
 };
 
 export const generateRegionAdminDashboard = (): RegionAdminDashboardData => {
   return {
+    categories: generateMockCategories(6),
+    deadlines: generateMockDeadlines(4),
+    sectors: generateMockSectorStats(6),
     stats: {
+      completed: Math.floor(Math.random() * 40),
+      pending: Math.floor(Math.random() * 25),
       completedForms: Math.floor(Math.random() * 40),
       pendingForms: Math.floor(Math.random() * 25),
       approvalRate: Math.floor(Math.random() * 100)
-    },
-    categories: generateMockCategories(6),
-    deadlines: generateMockDeadlines(4),
-    sectors: generateMockSectorStats(6)
+    }
   };
 };
 
 export const generateSectorAdminDashboard = (): SectorAdminDashboardData => {
   return {
+    categories: generateMockCategories(5),
+    deadlines: generateMockDeadlines(3),
+    schools: generateMockSchoolStats(12),
     stats: {
+      completed: Math.floor(Math.random() * 30),
+      pending: Math.floor(Math.random() * 20),
       completedForms: Math.floor(Math.random() * 30),
       pendingForms: Math.floor(Math.random() * 20),
       approvalRate: Math.floor(Math.random() * 100)
-    },
-    categories: generateMockCategories(5),
-    deadlines: generateMockDeadlines(3),
-    schools: generateMockSchoolStats(12)
+    }
   };
 };
 
 export const generateSchoolAdminDashboard = (): SchoolAdminDashboardData => {
   return {
+    categories: generateMockCategories(4),
+    deadlines: generateMockDeadlines(2),
     stats: {
+      completed: Math.floor(Math.random() * 20),
+      pending: Math.floor(Math.random() * 15),
       completedForms: Math.floor(Math.random() * 20),
       pendingForms: Math.floor(Math.random() * 15),
       approvalRate: Math.floor(Math.random() * 100)
-    },
-    categories: generateMockCategories(4),
-    deadlines: generateMockDeadlines(2)
+    }
   };
 };

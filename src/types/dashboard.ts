@@ -3,6 +3,10 @@ import { BaseEntity } from './core';
 
 // Status types
 export type DashboardStatus = 'active' | 'pending' | 'completed' | 'draft';
+export type FormItemStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'not_started' | 'in_progress' | 'overdue';
+export type CategoryStatus = 'active' | 'inactive' | 'pending' | 'completed';
+export type DeadlineStatus = 'upcoming' | 'overdue' | 'completed';
+export type EntityStatus = 'active' | 'inactive' | 'on_track' | 'needs_attention';
 
 // Common interfaces
 export interface CategoryItem extends BaseEntity {
@@ -144,18 +148,21 @@ export interface SuperAdminDashboardData {
   pendingApprovals: PendingApprovalItem[];
   deadlines: DeadlineItem[];
   regionStats: RegionStat[];
+  stats?: DashboardFormStats;
 }
 
 export interface RegionAdminDashboardData {
   categories: CategoryItem[];
   deadlines: DeadlineItem[];
   sectors: SectorStat[];
+  stats?: DashboardFormStats;
 }
 
 export interface SectorAdminDashboardData {
   categories: CategoryItem[];
   deadlines: DeadlineItem[];
   schools: SchoolStat[];
+  stats?: DashboardFormStats;
 }
 
 export interface SchoolAdminDashboardData {

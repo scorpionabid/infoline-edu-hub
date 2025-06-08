@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Column } from '@/types/column';
-import { FormFieldComponent } from '../fields/FormFieldComponent';
+import FormFieldComponent from '../fields/FormFieldComponent';
 
 interface FormFieldsProps {
   columns: Column[];
