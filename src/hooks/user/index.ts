@@ -1,13 +1,9 @@
 
-export * from './useUserData';
-export * from './useUserFilters';
-export * from './useUserFetch';
-export * from './useUserOperations';
-export * from './useUserPagination';
-export * from './useUser';
-export * from './useUserList';
-export * from './useUsers';
-export * from './useAvailableUsers';
-export * from './useCreateUser';
-export * from './useUserForm';
-export { default as useSuperUsers } from './useSuperUsers';
+// Re-export all user hooks
+export { default as useCreateUser } from './useCreateUser';
+export { default as useUser } from './useUser';
+export { default as useUserList } from './useUserList';
+export { default as useUserPermissions } from './useUserPermissions';
+
+// Export types with aliases to avoid conflicts
+export type { UserFilter as UserListFilter } from './useUserList';

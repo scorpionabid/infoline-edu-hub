@@ -104,7 +104,7 @@ export const useSchoolsQuery = (options: SchoolsQueryOptions = {}) => {
     queryFn: fetchSchools,
     enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    keepPreviousData: true, // Keep previous data while loading next page
+    placeholderData: (previousData) => previousData, // Use placeholderData instead of keepPreviousData
   });
 
   const { schools, totalCount, pageCount } = data;

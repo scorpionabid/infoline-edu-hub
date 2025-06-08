@@ -79,7 +79,7 @@ const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors, showAction
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="text-center">{sector.schoolCount || sector.total_schools}</TableCell>
+                <TableCell className="text-center">{sector.schoolCount || sector.totalSchools}</TableCell>
                 {showActions && (
                   <TableCell className="text-right">
                     <Button

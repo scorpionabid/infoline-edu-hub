@@ -1,8 +1,9 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { useToast } from '@/hooks/common/useToast';
 import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
 
 export interface SectorSchool {
   id: string;
@@ -38,7 +39,6 @@ export interface SectorAdminDashboardData {
 export const useSectorAdminDashboard = () => {
   const user = useAuthStore(selectUser);
   const { t } = useLanguage();
-  const { toast } = useToast();
   
   const [dashboardData, setDashboardData] = useState<SectorAdminDashboardData>({
     schools: [],
@@ -63,7 +63,7 @@ export const useSectorAdminDashboard = () => {
         .from('user_roles')
         .select('sector_id')
         .eq('user_id', user.id)
-        .eq('role', 'sector_admin')
+        .eq('role', 'sectoradmin')
         .single();
       
       if (userRolesError) throw userRolesError;
@@ -143,13 +143,9 @@ export const useSectorAdminDashboard = () => {
         isLoading: false,
         error: err.message || t('Failed to load dashboard data')
       }));
-      toast({
-        title: t('Error'),
-        description: err.message || t('Failed to load dashboard data'),
-        variant: 'destructive'
-      });
+      toast.error(err.message || t('Failed to load dashboard data'));
     }
-  }, [user, t, toast]);
+  }, [user, t]);
   
   // Məktəbin statusunu tamamlanma dərəcəsinə görə təyin et
   const getSchoolStatus = (completionRate: number): string => {
@@ -173,20 +169,12 @@ export const useSectorAdminDashboard = () => {
         pendingApprovals: prev.pendingApprovals.filter(a => a.id !== formId)
       }));
       
-      toast({
-        title: t('Form Approved'),
-        description: t('The form has been successfully approved'),
-        variant: 'success'
-      });
+      toast.success(t('Form Approved'));
     } catch (err: any) {
       console.error('Error approving form:', err);
-      toast({
-        title: t('Error'),
-        description: err.message || t('Failed to approve form'),
-        variant: 'destructive'
-      });
+      toast.error(err.message || t('Failed to approve form'));
     }
-  }, [toast, t]);
+  }, [t]);
   
   // Formu rədd et
   const rejectForm = useCallback(async (formId: string, reason: string) => {
@@ -206,20 +194,12 @@ export const useSectorAdminDashboard = () => {
         pendingApprovals: prev.pendingApprovals.filter(a => a.id !== formId)
       }));
       
-      toast({
-        title: t('Form Rejected'),
-        description: t('The form has been rejected'),
-        variant: 'success'
-      });
+      toast.success(t('Form Rejected'));
     } catch (err: any) {
       console.error('Error rejecting form:', err);
-      toast({
-        title: t('Error'),
-        description: err.message || t('Failed to reject form'),
-        variant: 'destructive'
-      });
+      toast.error(err.message || t('Failed to reject form'));
     }
-  }, [toast, t]);
+  }, [t]);
   
   // Məlumatları yenilə
   const refreshData = useCallback(() => {

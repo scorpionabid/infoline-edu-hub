@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -11,7 +12,7 @@ export const useCreateUser = () => {
   const user = useAuthStore(selectUser);
 
   const createUser = useCallback(async (userData: UserFormData) => {
-    if (!userData.full_name || !userData.email || !userData.password) {
+    if (!userData.fullName || !userData.email || !userData.password) {
       toast.error(t('requiredFieldsMissing') || 'Zəhmət olmasa bütün vacib sahələri doldurun');
       return { success: false, error: 'Məlumatlar natamamdır' };
     }
@@ -21,7 +22,7 @@ export const useCreateUser = () => {
     try {
       console.log('İstifadəçi yaratma başladı:', {
         email: userData.email,
-        full_name: userData.full_name,
+        fullName: userData.fullName,
         role: userData.role,
         hasPassword: !!userData.password
       });
@@ -32,7 +33,7 @@ export const useCreateUser = () => {
           email: userData.email,
           password: userData.password,
           userData: {
-            full_name: userData.full_name,
+            full_name: userData.fullName,
             role: userData.role,
             region_id: userData.region_id || null,
             sector_id: userData.sector_id || null,

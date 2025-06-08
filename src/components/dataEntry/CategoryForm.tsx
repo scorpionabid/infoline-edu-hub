@@ -1,126 +1,86 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CategoryWithColumns } from '@/types/category';
-import { Column } from '@/types/column';
-import { FormFields } from './core';
-import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { TabDefinition } from '@/types/category';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Save, Plus, Trash2 } from 'lucide-react';
+import { FormFields } from '@/components/dataEntry/core';
+import { Column } from '@/types/column';
 
 interface CategoryFormProps {
-  category: CategoryWithColumns;
-  onSubmit: (data: Record<string, any>) => void;
-  initialData?: Record<string, any>;
-  isSubmitting?: boolean;
-  errors?: Record<string, string>;
+  categoryId: string;
+  onSave?: (data: any) => void;
 }
 
-const CategoryForm: React.FC<CategoryFormProps> = ({
-  category,
-  onSubmit,
-  initialData = {},
-  isSubmitting = false,
-  errors = {}
-}) => {
-  const { t } = useLanguage();
-  const [formData, setFormData] = useState<Record<string, any>>(initialData);
+const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId, onSave }) => {
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [columns] = useState<Column[]>([]);
 
-  // Group columns by section if any
-  const groupColumnsBySection = (columns: Column[]) => {
-    const sections = new Map<string, Column[]>();
-    
-    columns.forEach(column => {
-      const section = column.section || t('defaultSection');
-      if (!sections.has(section)) {
-        sections.set(section, []);
-      }
-      sections.get(section)?.push(column);
-    });
-    
-    return sections;
-  };
-
-  const sections = groupColumnsBySection(category.columns || []);
-  
-  // Create tab definitions
-  const tabs: TabDefinition[] = [];
-  
-  if (sections.size > 0) {
-    sections.forEach((columns, sectionName) => {
-      tabs.push({
-        id: sectionName,
-        title: sectionName,
-        label: sectionName,
-        columns: columns
-      });
-    });
-  } else {
-    // If no sections defined, create a default tab
-    tabs.push({
-      id: 'default',
-      title: t('generalInfo'),
-      label: t('generalInfo'),
-      columns: category.columns || []
-    });
-  }
-  
   const handleFieldChange = (columnId: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [columnId]: value
-    }));
+    setFormData(prev => ({ ...prev, [columnId]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
+  const handleSave = () => {
+    if (onSave) {
+      onSave(formData);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card>
-        <CardHeader>
-          <CardTitle>{category.name}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {tabs.length > 1 ? (
-            <Tabs defaultValue={tabs[0].id}>
-              <TabsList className="mb-4">
-                {tabs.map(tab => (
-                  <TabsTrigger key={tab.id} value={tab.id}>
-                    {tab.title}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              
-              {tabs.map(tab => (
-                <TabsContent key={tab.id} value={tab.id}>
-                  <div className="space-y-4">
-                    {tab.columns && <FormFields
-                      columns={tab.columns}
-                    />}
-                  </div>
-                </TabsContent>
-              ))}
-            </Tabs>
-          ) : (
-            <div className="space-y-4">
-              {tabs[0].columns && <FormFields
-                columns={tabs[0].columns}
-              />}
-            </div>
-          )}
-          
-          <div className="mt-6 flex justify-end">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? t('submitting') : t('submit')}
-            </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle>Kateqoriya Forması</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Basic category info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium">Kateqoriya Adı</label>
+            <Input placeholder="Kateqoriya adını daxil edin" />
           </div>
-        </CardContent>
-      </Card>
-    </form>
+          <div>
+            <label className="text-sm font-medium">Status</label>
+            <Select>
+              <SelectTrigger>
+                <SelectValue placeholder="Status seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Aktiv</SelectItem>
+                <SelectItem value="inactive">Qeyri-aktiv</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium">Təsvir</label>
+          <Textarea placeholder="Kateqoriya təsvirini daxil edin" />
+        </div>
+
+        {/* Dynamic fields */}
+        {columns.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Dinamik Sahələr</h3>
+            <FormFields
+              columns={columns}
+              formData={formData}
+              onChange={handleFieldChange}
+            />
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex justify-end gap-2">
+          <Button onClick={handleSave}>
+            <Save className="h-4 w-4 mr-2" />
+            Saxla
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
