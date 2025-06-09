@@ -33,7 +33,10 @@ export const useSchoolsStore = () => {
   const prevFiltersRef = useRef({
     region: '',
     sector: '',
-    status: ''
+    status: '',
+    userRole: '',
+    regionId: '',
+    sectorId: ''
   });
   
   // Regionları və sektorları əldə etmək üçün hookları istifadə edirik
@@ -42,20 +45,21 @@ export const useSchoolsStore = () => {
 
   // Məktəbləri yükləmək metodu
   const fetchSchools = useCallback(async (forceRefresh = false) => {
-    // Prevent concurrent fetches
-    if (!forceRefresh && isFetchingRef.current) {
-      console.log("Məktəblər hələ yüklənir, yeni sorğu edilmədi");
-      return;
-    }
-    
     const currentFilters = {
       region: selectedRegion,
       sector: selectedSector,
-      status: selectedStatus
+      status: selectedStatus,
+      userRole: userRole || '',
+      regionId: regionId || '',
+      sectorId: sectorId || ''
     };
     
-    if (!forceRefresh && JSON.stringify(currentFilters) === JSON.stringify(prevFiltersRef.current)) {
-      console.log("Filtrlər dəyişməyib, yeni sorğu edilmədi");
+    // Prevent concurrent fetches və unnecessary fetches
+    if (!forceRefresh && (
+      isFetchingRef.current || 
+      JSON.stringify(currentFilters) === JSON.stringify(prevFiltersRef.current)
+    )) {
+      console.log("Məktəblər hələ yüklənir və ya filtrlər dəyişməyib");
       return;
     }
     
@@ -130,8 +134,7 @@ export const useSchoolsStore = () => {
       ? (school.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
         (school.principal_name?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false) ||
         (school.address?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false) ||
-        (school.email?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false) ||
-        (school.phone?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false)
+        (school.email?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false)
       : true;
     
     return searchMatch;
@@ -178,19 +181,12 @@ export const useSchoolsStore = () => {
     }
   }, [userRole, regionId, sectorId, sectors]);
 
-  // Initial fetch and refetch on dependency changes
+  // Initial fetch
   useEffect(() => {
-    if (user) {
+    if (user && !isFetchingRef.current) {
       fetchSchools(true);
     }
-  }, [user, userRole, regionId, sectorId, fetchSchools]);
-
-  // Refetch on filter changes
-  useEffect(() => {
-    if (user) {
-      fetchSchools();
-    }
-  }, [selectedRegion, selectedSector, selectedStatus, fetchSchools, user]);
+  }, [user, userRole, regionId, sectorId]);
 
   // Event handlers
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

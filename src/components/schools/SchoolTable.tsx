@@ -2,7 +2,6 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { 
   Edit, 
   Trash2, 
@@ -44,8 +43,8 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
   regionNames,
   sectorNames
 }) => {
-  // Admin məlumatlarını yükləyirik
-  const schoolIds = schools.map(school => school.id);
+  // Admin məlumatlarını yükləyirik - loop-u önləmək üçün sadəcə school id-ləri ötürürük
+  const schoolIds = React.useMemo(() => schools.map(school => school.id), [schools]);
   const { adminMap, isLoading: adminsLoading } = useSchoolAdmins(schoolIds);
 
   if (isLoading) {
@@ -74,8 +73,6 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
             <TableHead>Region</TableHead>
             <TableHead>Sektor</TableHead>
             <TableHead>Admin</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Telefon</TableHead>
             <TableHead>Email</TableHead>
             <TableHead className="text-right">Əməliyyatlar</TableHead>
           </TableRow>
@@ -84,8 +81,12 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
           {schools.map((school) => (
             <TableRow key={school.id}>
               <TableCell className="font-medium">{school.name}</TableCell>
-              <TableCell>{regionNames[school.region_id] || school.region_id}</TableCell>
-              <TableCell>{sectorNames[school.sector_id] || school.sector_id}</TableCell>
+              <TableCell>
+                {regionNames[school.region_id] || 'Naməlum region'}
+              </TableCell>
+              <TableCell>
+                {sectorNames[school.sector_id] || 'Naməlum sektor'}
+              </TableCell>
               <TableCell>
                 {adminsLoading ? (
                   <div className="flex items-center">
@@ -98,12 +99,6 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
                   </span>
                 )}
               </TableCell>
-              <TableCell>
-                <Badge variant={school.status === 'active' ? 'default' : 'secondary'}>
-                  {school.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-                </Badge>
-              </TableCell>
-              <TableCell>{school.phone || '-'}</TableCell>
               <TableCell>{school.email || '-'}</TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end space-x-2">

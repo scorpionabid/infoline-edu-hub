@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -14,19 +14,30 @@ export function useSchoolAdmins(schoolIds: string[]) {
   const [adminMap, setAdminMap] = useState<{[key: string]: string}>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  
+  // Loop-u önləmək üçün ref istifadə edirik
+  const prevSchoolIdsRef = useRef<string>('');
+  const isFetchingRef = useRef(false);
 
   useEffect(() => {
-    if (!schoolIds.length) {
-      console.log('SchoolIds siyahısı boşdur!');
+    const schoolIdsString = schoolIds.sort().join(',');
+    
+    // Əgər schoolIds dəyişməyibsə, yenidən sorğu etməyək
+    if (prevSchoolIdsRef.current === schoolIdsString || !schoolIds.length || isFetchingRef.current) {
       return;
     }
     
+    prevSchoolIdsRef.current = schoolIdsString;
     console.log('📋 Adminləri əldə etməyə başlayırıq...', schoolIds);
     
     async function fetchSchoolAdmins() {
+      if (isFetchingRef.current) return;
+      
+      isFetchingRef.current = true;
       setIsLoading(true);
+      
       try {
-        // 1. Əvvəlcə user_roles cədvəlindən məktəb adminlərini əldə edirik
+        // 1. user_roles cədvəlindən məktəb adminlərini əldə edirik
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select(`
@@ -48,15 +59,12 @@ export function useSchoolAdmins(schoolIds: string[]) {
         const admins: {[key: string]: string} = {};
         
         if (roleData && roleData.length > 0) {
-          // user_roles cədvəlindən admin məlumatlarını map edirik
           roleData.forEach(role => {
             const profile = role.profiles as any;
-            let adminName = '';
+            let adminName = 'Təyin edilməyib';
             
             if (profile && (profile.email || profile.full_name)) {
               adminName = profile.full_name || profile.email;
-            } else {
-              adminName = `User ID: ${role.user_id}`;
             }
             
             admins[role.school_id] = adminName;
@@ -64,7 +72,7 @@ export function useSchoolAdmins(schoolIds: string[]) {
         } else {
           console.log('🔍 user_roles-da admin tapılmadı, schools cədvəlindən yoxlayırıq...');
           
-          // 2. Əgər user_roles cədvəlində admin tapılmadısa, schools cədvəlindən admin məlumatlarını əldə etməyə çalışırıq
+          // 2. schools cədvəlindən admin məlumatlarını əldə etməyə çalışırıq
           const { data: schoolData, error: schoolError } = await supabase
             .from('schools')
             .select(`
@@ -82,18 +90,15 @@ export function useSchoolAdmins(schoolIds: string[]) {
             throw schoolError;
           }
           
-          // Schools cədvəlindən admin məlumatlarını map edirik
           if (schoolData && schoolData.length > 0) {
             schoolData.forEach(school => {
               const adminProfile = school.profiles as any;
-              let adminName = '';
+              let adminName = 'Təyin edilməyib';
               
               if (adminProfile && (adminProfile.email || adminProfile.full_name)) {
                 adminName = adminProfile.full_name || adminProfile.email;
               } else if (school.admin_email) {
                 adminName = school.admin_email;
-              } else {
-                adminName = 'Təyin edilməyib';
               }
               
               admins[school.id] = adminName;
@@ -116,6 +121,9 @@ export function useSchoolAdmins(schoolIds: string[]) {
         toast.error('Admin məlumatları yüklənərkən xəta: ' + (err as Error).message);
       } finally {
         setIsLoading(false);
+        setTimeout(() => {
+          isFetchingRef.current = false;
+        }, 500);
       }
     }
     
