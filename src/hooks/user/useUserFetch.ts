@@ -47,7 +47,11 @@ export const useUserFetch = () => {
       // Apply filters - handle both string and array types safely
       if (filters.role) {
         const roleValue = Array.isArray(filters.role) ? filters.role[0] : filters.role;
-        query = query.eq('user_roles.role', roleValue);
+        // Type-safe role validation
+        const validRoles = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'] as const;
+        if (validRoles.includes(roleValue as any)) {
+          query = query.eq('user_roles.role', roleValue);
+        }
       }
       if (filters.region_id) {
         query = query.eq('user_roles.region_id', filters.region_id);

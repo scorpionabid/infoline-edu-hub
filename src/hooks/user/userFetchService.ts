@@ -1,6 +1,8 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserFilter, UserRole } from '@/types/user';
+import { FullUserData, UserFilter } from '@/types/user';
+
+type ValidUserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
 interface EntityDisplay {
   region?: string;
@@ -47,22 +49,24 @@ export const buildUserQuery = (filters: UserFilter, userRole: string, regionId?:
     query = query.eq('user_roles.sector_id', sectorId);
   }
 
-  // Apply filters - handle both string and array types
+  // Apply filters - handle both string and array types with proper validation
   if (filters.role) {
+    const validRoles: ValidUserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
+    
     if (Array.isArray(filters.role)) {
       if (filters.role.length > 0) {
         // Filter valid roles and cast to proper type
-        const validRoles = filters.role.filter((role): role is UserRole => 
-          ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(role)
+        const validFilterRoles = filters.role.filter((role): role is ValidUserRole => 
+          validRoles.includes(role as ValidUserRole)
         );
-        if (validRoles.length > 0) {
-          query = query.in('user_roles.role', validRoles);
+        if (validFilterRoles.length > 0) {
+          query = query.in('user_roles.role', validFilterRoles);
         }
       }
     } else if (filters.role) {
       // Ensure role is valid UserRole type
-      const roleValue = filters.role as UserRole;
-      if (['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(roleValue)) {
+      const roleValue = filters.role as ValidUserRole;
+      if (validRoles.includes(roleValue)) {
         query = query.eq('user_roles.role', roleValue);
       }
     }

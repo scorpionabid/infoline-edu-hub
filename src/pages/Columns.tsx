@@ -34,6 +34,9 @@ import { useColumnMutations } from '@/hooks/columns/useColumnMutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { Column } from '@/types/column';
 import PageHeader from '@/components/layout/PageHeader';
+import { Helmet } from 'react-helmet';
+import ColumnsContainer from '@/components/columns/ColumnsContainer';
+import CreateColumnDialog from '@/components/columns/CreateColumnDialog';
 
 const Columns: React.FC = () => {
   const { t } = useLanguage();
@@ -43,6 +46,8 @@ const Columns: React.FC = () => {
   const [selectedColumn, setSelectedColumn] = useState<Column | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editColumn, setEditColumn] = useState<Column | null>(null);
   
   // Fetch all columns (no categoryId filter for this page)
   const { columns, isLoading: columnsLoading, isError, error: columnsError, refetch: refetchColumns } = useColumnsQuery();
@@ -317,185 +322,68 @@ const Columns: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Sütunlar</h1>
-          <p className="text-muted-foreground">Sistem sütunlarını idarə edin</p>
-        </div>
-        {canManageColumns && activeTab === 'active' && (
-          <div className="flex gap-2">
-            <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Kateqoriya seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories?.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={handleOpenAddColumnDialog} disabled={!selectedCategoryId}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('addColumn') || 'Sütun əlavə et'}
-            </Button>
+    <>
+      <Helmet>
+        <title>{t('columns')} | InfoLine</title>
+      </Helmet>
+
+      <div className="container mx-auto py-6">
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center h-64">
+            <p className="text-destructive text-lg">{t('errorOccurred')}</p>
+            <p className="text-muted-foreground">{t('couldNotLoadColumns')}</p>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div>
+                <h1 className="text-3xl font-bold">{t('columns')}</h1>
+                <p className="text-muted-foreground">{t('manageDataColumns')}</p>
+              </div>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t('createColumn')}
+              </Button>
+            </div>
+
+            <ColumnsContainer
+              columns={columns}
+              categories={categories}
+              isLoading={loading}
+              onRefresh={refetch}
+              onCreate={handleCreateColumn}
+              onEdit={handleEditColumn}
+              onDelete={handleDeleteColumn}
+            />
+          </>
         )}
-      </div>
 
-      {/* Tabs */}
-      <ColumnTabs
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        activeCount={activeColumns.length}
-        archivedCount={archivedColumns.length}
-      />
-
-      {/* Search bar */}
-      <div className="mb-6">
-        <div className="relative max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Sütunlarda axtar..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {filteredColumns.length === 0 && !columnsLoading ? (
-        <EmptyState
-          icon={<Database className="h-12 w-12" />}
-          title={activeTab === 'active' ? 'Aktiv sütun tapılmadı' : 'Arxivdə sütun tapılmadı'}
-          description={
-            activeTab === 'active'
-              ? searchQuery 
-                ? 'Axtarış kriteriyalarına uyğun aktiv sütun tapılmadı'
-                : 'Hələ heç bir aktiv sütun yoxdur'
-              : searchQuery
-                ? 'Axtarış kriteriyalarına uyğun arxiv sütunu tapılmadı'
-                : 'Hələ heç bir sütun arxivləşdirilməyib'
-          }
-          action={canManageColumns && selectedCategoryId && activeTab === 'active' ? {
-            label: 'Sütun əlavə et',
-            onClick: handleOpenAddColumnDialog
-          } : undefined}
-        />
-      ) : activeTab === 'active' ? (
-        <ColumnList
-          columns={filteredColumns}
-          categories={categories || []}
-          isLoading={columnsLoading || categoriesLoading}
-          isError={!!columnsError || !!categoriesError}
-          onEditColumn={handleEditColumn}
-          onDeleteColumn={(id, name) => handleOpenDeleteDialog(
-            id, 
-            name, 
-            Array.isArray(columns) 
-              ? columns.find(c => c.id === id)?.category_id || ''
-              : ''
-          )}
-          onUpdateStatus={(id, status) => console.log('Update status:', id, status)}
-          canManageColumns={canManageColumns}
-        />
-      ) : (
-        <ArchivedColumnList
-          columns={filteredColumns}
-          categories={categories || []}
-          isLoading={columnsLoading || categoriesLoading}
-          isError={!!columnsError || !!categoriesError}
-          onRestoreColumn={(id, name) => {
-            setRestoreDialog({
-              isOpen: true,
-              columnId: id,
-              columnName: name
-            });
-          }}
-          onPermanentDelete={(id, name) => {
-            setPermanentDeleteDialog({
-              isOpen: true,
-              column: {
-                id,
-                name,
-                dataEntriesCount: 0 // TODO: Calculate actual count
-              }
-            });
-          }}
-          canManageColumns={canManageColumns}
-        />
-      )}
-
-      <ColumnFormDialog
-        isOpen={columnFormDialogOpen}
-        onClose={() => {
-          console.log('Closing column dialog');
-          setColumnFormDialogOpen(false);
-          setSelectedColumn(null);
-        }}
-        onSaveColumn={selectedColumn ? handleUpdateColumn : handleAddColumn}
-        categories={categories || []}
-        editColumn={selectedColumn}
-        columns={columns as any[]}
-        isSubmitting={isSubmitting}
-      />
-
-      {/* <EnhancedDeleteColumnDialog
-        isOpen={enhancedDeleteDialog.isOpen}
-        onClose={() => setEnhancedDeleteDialog({ ...enhancedDeleteDialog, isOpen: false })}
-        onConfirm={handleEnhancedDeleteColumn}
-        column={enhancedDeleteDialog.column}
-        isSubmitting={isEnhancedDeleting}
-      /> */}
-
-      {deleteDialog.isOpen && (
-        <DeleteColumnDialog
-          isOpen={deleteDialog.isOpen}
-          onClose={() => setDeleteDialog({ ...deleteDialog, isOpen: false })}
-          onConfirm={handleDeleteColumn}
-          column={deleteDialog.column}
-          columnName={deleteDialog.columnName}
+        <CreateColumnDialog
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          onSaveColumn={handleCreateColumn}
+          categories={categories}
+          columns={columns}
           isSubmitting={isSubmitting}
         />
-      )}
 
-      {/* Restore Column Dialog */}
-      <RestoreColumnDialog
-        isOpen={restoreDialog.isOpen}
-        onClose={() => setRestoreDialog({ ...restoreDialog, isOpen: false })}
-        onConfirm={async () => {
-          try {
-            await restoreColumn(restoreDialog.columnId);
-            setRestoreDialog({ ...restoreDialog, isOpen: false });
-            refetchColumns();
-          } catch (error) {
-            console.error('Error restoring column:', error);
-          }
-        }}
-        columnName={restoreDialog.columnName}
-        isSubmitting={isRestoring}
-      />
-
-      {/* Permanent Delete Dialog */}
-      <PermanentDeleteDialog
-        isOpen={permanentDeleteDialog.isOpen}
-        onClose={() => setPermanentDeleteDialog({ ...permanentDeleteDialog, isOpen: false })}
-        onConfirm={async () => {
-          try {
-            await permanentDeleteColumn(permanentDeleteDialog.column.id);
-            setPermanentDeleteDialog({ ...permanentDeleteDialog, isOpen: false });
-            refetchColumns();
-          } catch (error) {
-            console.error('Error permanently deleting column:', error);
-          }
-        }}
-        column={permanentDeleteDialog.column}
-        isSubmitting={isPermanentDeleting}
-      />
-    </div>
+        {editColumn && (
+          <ColumnFormDialog
+            open={!!editColumn}
+            onClose={() => setEditColumn(null)}
+            onSaveColumn={handleEditColumn}
+            categories={categories}
+            editColumn={editColumn}
+            columns={columns}
+            isSubmitting={isSubmitting}
+          />
+        )}
+      </div>
+    </>
   );
 };
 

@@ -212,3 +212,36 @@ export async function deleteCategory(id: string): Promise<void> {
     throw error;
   }
 }
+
+export const bulkUpdateCategories = async (categories: Partial<Category>[]): Promise<Category[]> => {
+  if (!categories.length) return [];
+  
+  try {
+    // Ensure all categories have required fields
+    const validCategories = categories.filter(cat => cat.name && cat.id);
+    
+    if (validCategories.length === 0) {
+      throw new Error('No valid categories to update');
+    }
+
+    const { data, error } = await supabase
+      .from('categories')
+      .upsert(validCategories.map(cat => ({
+        id: cat.id,
+        name: cat.name!,
+        description: cat.description,
+        status: cat.status || 'active',
+        assignment: cat.assignment || 'all',
+        priority: cat.priority || 1,
+        deadline: cat.deadline,
+        updated_at: new Date().toISOString()
+      })))
+      .select();
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error in bulk update categories:', error);
+    throw error;
+  }
+};

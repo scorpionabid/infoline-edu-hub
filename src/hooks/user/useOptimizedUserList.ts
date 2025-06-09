@@ -78,7 +78,11 @@ export const useOptimizedUserList = (): UseOptimizedUserListResult => {
       // Handle role filter - ensure string compatibility
       if (effectiveFilters.role) {
         const roleValue = Array.isArray(effectiveFilters.role) ? effectiveFilters.role[0] : effectiveFilters.role;
-        query = query.eq('user_roles.role', roleValue);
+        // Type-safe role validation
+        const validRoles = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'] as const;
+        if (validRoles.includes(roleValue as any)) {
+          query = query.eq('user_roles.role', roleValue);
+        }
       }
 
       // Handle status filter - ensure string compatibility  

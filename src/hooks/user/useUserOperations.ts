@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserRole } from '@/types/user';
 import { toast } from 'sonner';
 
+type ValidUserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+
 export const useUserOperations = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -14,36 +16,38 @@ export const useUserOperations = () => {
     
     try {
       // Validate role
-      const validRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
-      const userRole = userData.role as UserRole;
+      const validRoles: ValidUserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
+      const userRole = userData.role as ValidUserRole;
       
       if (!validRoles.includes(userRole)) {
         throw new Error('Invalid user role');
       }
 
-      // Create user profile
+      // Create user profile - remove id from insert
+      const profileData = {
+        full_name: userData.full_name || userData.fullName || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        position: userData.position || '',
+        language: userData.language || 'az',
+        status: userData.status || 'active'
+      };
+
       const { data, error } = await supabase
         .from('profiles')
-        .insert({
-          full_name: userData.full_name || userData.fullName,
-          email: userData.email,
-          phone: userData.phone,
-          position: userData.position,
-          language: userData.language || 'az',
-          status: userData.status || 'active'
-        })
+        .insert(profileData)
         .select()
         .single();
 
       if (error) throw error;
 
-      // Create user role
+      // Create user role with proper type casting
       const roleData = {
         user_id: data.id,
-        role: userRole,
-        region_id: userData.region_id || userData.regionId,
-        sector_id: userData.sector_id || userData.sectorId,
-        school_id: userData.school_id || userData.schoolId
+        role: userRole as ValidUserRole,
+        region_id: userData.region_id || userData.regionId || null,
+        sector_id: userData.sector_id || userData.sectorId || null,
+        school_id: userData.school_id || userData.schoolId || null
       };
 
       const { error: roleError } = await supabase
@@ -86,8 +90,8 @@ export const useUserOperations = () => {
 
       // Update role if provided
       if (userData.role) {
-        const validRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
-        const userRole = userData.role as UserRole;
+        const validRoles: ValidUserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
+        const userRole = userData.role as ValidUserRole;
         
         if (validRoles.includes(userRole)) {
           const { error: roleError } = await supabase

@@ -1,32 +1,35 @@
 
-import { useState, useEffect } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { useSectorsStore } from '@/hooks/useSectorsStore';
-import SectorDialog from '@/components/sectors/SectorDialog';
-import { SectorAdminDialog } from '@/components/sectors/SectorAdminDialog';
-import SectorHeader from '@/components/sectors/SectorHeader';
+import React from 'react';
+import { Helmet } from 'react-helmet';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { useSectorsStore } from '@/hooks/sectors/useSectorsStore';
 import SectorsContainer from '@/components/sectors/SectorsContainer';
+import { Loader2 } from 'lucide-react';
 
 const Sectors = () => {
-  const { t } = useLanguage();
-  const { fetchSectors } = useSectorsStore();
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadSectors = async () => {
-      setIsLoading(true);
-      await fetchSectors();
-      setIsLoading(false);
-    };
-
-    loadSectors();
-  }, [fetchSectors]);
+  const { t } = useLanguageSafe();
+  const { sectors, loading, refetch } = useSectorsStore();
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <SectorHeader />
-      <SectorsContainer isLoading={isLoading} />
-    </div>
+    <>
+      <Helmet>
+        <title>{t('sectors')} | InfoLine</title>
+      </Helmet>
+
+      <div className="container mx-auto py-6">
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <SectorsContainer
+            sectors={sectors}
+            isLoading={loading}
+            onRefresh={refetch}
+          />
+        )}
+      </div>
+    </>
   );
 };
 

@@ -1,6 +1,24 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { UnifiedDataEntry } from '@/hooks/dataEntry/useUnifiedDataEntry';
+
+export interface UnifiedDataEntry {
+  id: string;
+  category_id: string;
+  column_id: string;
+  value: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'draft';
+  school_id?: string;
+  sector_id?: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  rejected_by?: string | null;
+  rejected_at?: string | null;
+  rejection_reason?: string | null;
+  deleted_at?: string | null;
+}
 
 export interface FetchUnifiedDataEntriesOptions {
   categoryId: string;
