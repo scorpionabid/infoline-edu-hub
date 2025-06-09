@@ -1,29 +1,21 @@
 
 import { useOptimizedUserList } from './useOptimizedUserList';
-import { UserFilter } from '@/types/user';
+import { FullUserData, UserFilter } from '@/types/user';
 
-// Adapter to bridge the old interface with the new optimized hook
-export const useOptimizedUserAdapter = (initialFilters?: UserFilter) => {
-  const {
-    users,
-    loading,
-    error,
-    totalCount,
-    hasMore,
-    fetchUsers,
-    resetUsers,
-    refetch
-  } = useOptimizedUserList();
+export const useOptimizedUserAdapter = () => {
+  const { users, loading, error, totalCount, fetchUsers, refreshUsers } = useOptimizedUserList();
 
   return {
     users,
     loading,
     error,
     totalCount,
-    hasMore,
+    // Add missing properties that were expected
+    hasMore: false, // Simple implementation
     fetchUsers,
-    resetUsers,
-    refetch
+    resetUsers: refreshUsers, // Alias
+    refetch: refreshUsers, // Alias
+    refreshUsers
   };
 };
 

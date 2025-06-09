@@ -46,12 +46,24 @@ export async function fetchUnifiedDataEntries({
 
     // Transform and ensure proper typing
     return (data || []).map((entry: any) => ({
-      ...entry,
+      id: entry.id,
+      category_id: entry.category_id,
+      column_id: entry.column_id,
+      value: entry.value,
       status: (['pending', 'approved', 'rejected', 'draft'].includes(entry.status)) 
         ? entry.status 
         : 'draft',
       school_id: entityType === 'school' ? entry.school_id : undefined,
-      sector_id: entityType === 'sector' ? entry.sector_id : undefined
+      sector_id: entityType === 'sector' ? entry.sector_id : undefined,
+      created_by: entry.created_by,
+      created_at: entry.created_at,
+      updated_at: entry.updated_at,
+      approved_by: entry.approved_by,
+      approved_at: entry.approved_at,
+      rejected_by: entry.rejected_by,
+      rejected_at: entry.rejected_at,
+      rejection_reason: entry.rejection_reason,
+      deleted_at: entry.deleted_at
     })) as UnifiedDataEntry[];
   } catch (error) {
     console.error('Error fetching unified data entries:', error);
@@ -70,13 +82,30 @@ export async function saveUnifiedDataEntries(
     const tableName = entityType === 'school' ? 'data_entries' : 'sector_data_entries';
     const entityFieldName = entityType === 'school' ? 'school_id' : 'sector_id';
 
-    const processedEntries = entries.map(entry => ({
-      ...entry,
-      category_id: categoryId,
-      [entityFieldName]: entityId,
-      created_by: userId || null,
-      status: entry.status || 'draft'
-    }));
+    // Process entries to match database schema exactly
+    const processedEntries = entries.map(entry => {
+      const baseEntry: Record<string, any> = {
+        category_id: categoryId,
+        [entityFieldName]: entityId,
+        created_by: userId || null,
+        status: entry.status || 'draft'
+      };
+
+      // Only add fields that exist and have values
+      if (entry.id) baseEntry.id = entry.id;
+      if (entry.column_id) baseEntry.column_id = entry.column_id;
+      if (entry.value !== undefined) baseEntry.value = entry.value;
+      if (entry.created_at) baseEntry.created_at = entry.created_at;
+      if (entry.updated_at) baseEntry.updated_at = entry.updated_at;
+      if (entry.approved_by) baseEntry.approved_by = entry.approved_by;
+      if (entry.approved_at) baseEntry.approved_at = entry.approved_at;
+      if (entry.rejected_by) baseEntry.rejected_by = entry.rejected_by;
+      if (entry.rejected_at) baseEntry.rejected_at = entry.rejected_at;
+      if (entry.rejection_reason) baseEntry.rejection_reason = entry.rejection_reason;
+      if (entry.deleted_at) baseEntry.deleted_at = entry.deleted_at;
+
+      return baseEntry;
+    });
 
     const { data, error } = await supabase
       .from(tableName)
@@ -85,7 +114,25 @@ export async function saveUnifiedDataEntries(
 
     if (error) throw error;
 
-    return data as UnifiedDataEntry[];
+    // Transform response data to match our interface
+    return (data || []).map((entry: any) => ({
+      id: entry.id,
+      category_id: entry.category_id,
+      column_id: entry.column_id,
+      value: entry.value,
+      status: entry.status,
+      school_id: entityType === 'school' ? entry.school_id : undefined,
+      sector_id: entityType === 'sector' ? entry.sector_id : undefined,
+      created_by: entry.created_by,
+      created_at: entry.created_at,
+      updated_at: entry.updated_at,
+      approved_by: entry.approved_by,
+      approved_at: entry.approved_at,
+      rejected_by: entry.rejected_by,
+      rejected_at: entry.rejected_at,
+      rejection_reason: entry.rejection_reason,
+      deleted_at: entry.deleted_at
+    })) as UnifiedDataEntry[];
   } catch (error) {
     console.error('Error saving unified data entries:', error);
     throw error;

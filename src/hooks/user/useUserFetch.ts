@@ -5,6 +5,8 @@ import { FullUserData, UserFilter, NotificationSettings } from '@/types/user';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
+type ValidUserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+
 export const useUserFetch = () => {
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,14 +46,26 @@ export const useUserFetch = () => {
         query = query.eq('user_roles.role', 'schooladmin'); // Sector admins can only see school admins
       }
 
-      // Apply filters - handle both string and array types safely
+      // Apply filters - handle both string and array types safely with proper casting
       if (filters.role) {
         if (Array.isArray(filters.role)) {
           if (filters.role.length > 0) {
-            query = query.in('user_roles.role', filters.role);
+            // Cast array elements to ValidUserRole
+            const validRoles = filters.role.filter((role): role is ValidUserRole => 
+              ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(role as ValidUserRole)
+            );
+            if (validRoles.length > 0) {
+              query = query.in('user_roles.role', validRoles);
+            }
           }
         } else {
-          query = query.eq('user_roles.role', filters.role);
+          // Cast single role to ValidUserRole
+          const validRole = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(filters.role as ValidUserRole) 
+            ? filters.role as ValidUserRole 
+            : null;
+          if (validRole) {
+            query = query.eq('user_roles.role', validRole);
+          }
         }
       }
       if (filters.region_id) {

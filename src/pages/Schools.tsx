@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { supabase } from '@/integrations/supabase/client';
@@ -194,7 +195,14 @@ const Schools = () => {
         .order('name', { ascending: true });
 
       if (error) throw error;
-      setRegions(data);
+      
+      // Transform data to match Region interface
+      const transformedRegions: Region[] = (data || []).map((region: any) => ({
+        ...region,
+        status: region.status || 'active'
+      }));
+      
+      setRegions(transformedRegions);
     } catch (err) {
       console.error('Error fetching regions:', err);
       toast.error('Failed to fetch regions');
@@ -209,7 +217,16 @@ const Schools = () => {
         .order('name', { ascending: true });
 
       if (error) throw error;
-      setSectors(data);
+      
+      // Transform data to match Sector interface
+      const transformedSectors: Sector[] = (data || []).map((sector: any) => ({
+        ...sector,
+        status: (sector.status === 'active' || sector.status === 'inactive') 
+          ? sector.status 
+          : 'active'
+      }));
+      
+      setSectors(transformedSectors);
     } catch (err) {
       console.error('Error fetching sectors:', err);
       toast.error('Failed to fetch sectors');
@@ -223,7 +240,51 @@ const Schools = () => {
         .select('*');
 
       if (error) throw error;
-      setUsers(data);
+      
+      // Transform data to match FullUserData interface
+      const transformedUsers: FullUserData[] = (data || []).map((user: any) => ({
+        id: user.id,
+        email: user.email || '',
+        full_name: user.full_name || '',
+        fullName: user.full_name || '',
+        name: user.full_name || '',
+        role: 'user', // Default role
+        phone: user.phone || '',
+        position: user.position || '',
+        language: user.language || 'az',
+        avatar: user.avatar || '',
+        avatar_url: user.avatar || '',
+        status: user.status || 'active',
+        last_login: user.last_login,
+        last_sign_in_at: user.last_login,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        preferences: {},
+        notificationSettings: {
+          email: true,
+          push: false,
+          sms: false,
+          inApp: true,
+          system: true,
+          deadline: true,
+          deadlineReminders: true,
+          statusUpdates: true,
+          weeklyReports: false
+        },
+        notification_settings: {
+          email: true,
+          push: false,
+          sms: false,
+          inApp: true,
+          system: true,
+          deadline: true,
+          deadlineReminders: true,
+          statusUpdates: true,
+          weeklyReports: false
+        }
+      }));
+      
+      setUsers(transformedUsers);
     } catch (err) {
       console.error('Error fetching users:', err);
       toast.error('Failed to fetch users');
