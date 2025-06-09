@@ -1,39 +1,53 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Column, ColumnFormValues, ColumnType, ColumnOption } from '@/types/column';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { transformRawColumnData } from '@/utils/columnOptionsParser';
 
-export const useColumnsQuery = (categoryId: string) => {
-  return useQuery({
+// Helper function to convert database column to typed Column
+const convertDbColumnToColumn = (dbColumn: any): Column => {
+  return {
+    ...dbColumn,
+    type: dbColumn.type as ColumnType,
+    options: dbColumn.options ? (typeof dbColumn.options === 'string' ? JSON.parse(dbColumn.options) : dbColumn.options) : [],
+    validation: dbColumn.validation ? (typeof dbColumn.validation === 'string' ? JSON.parse(dbColumn.validation) : dbColumn.validation) : {},
+    status: dbColumn.status as 'active' | 'inactive',
+    created_at: dbColumn.created_at,
+    updated_at: dbColumn.updated_at
+  };
+};
+
+export const useColumnsQuery = ({ categoryId, enabled = true }: { categoryId?: string; enabled?: boolean } = {}) => {
+  const query = useQuery({
     queryKey: ['columns', categoryId],
     queryFn: async (): Promise<Column[]> => {
-      const { data, error } = await supabase
+      console.log('📊 useColumnsQuery - Fetching columns for categoryId:', categoryId);
+      
+      let queryBuilder = supabase
         .from('columns')
         .select('*')
-        .eq('category_id', categoryId)
         .order('order_index');
 
-      if (error) throw error;
+      // Only filter by category if categoryId is provided
+      if (categoryId) {
+        queryBuilder = queryBuilder.eq('category_id', categoryId);
+      }
+
+      const { data, error } = await queryBuilder;
+
+      if (error) {
+        console.error('❌ Error fetching columns:', error);
+        throw error;
+      }
       
-      // Transform data using standardized parser
       console.log('📊 useColumnsQuery - Raw data from Supabase:', data);
       
+      // Convert database columns to typed Columns
       const transformedColumns = (data || []).map(item => {
+        const baseColumn = convertDbColumnToColumn(item);
         const transformed = {
-          id: item.id,
-          name: item.name,
-          type: item.type as ColumnType,
-          category_id: item.category_id,
-          placeholder: item.placeholder,
-          help_text: item.help_text,
-          is_required: item.is_required,
-          default_value: item.default_value,
-          order_index: item.order_index,
-          status: item.status as 'active' | 'inactive',
-          created_at: item.created_at,
-          updated_at: item.updated_at,
+          ...baseColumn,
           ...transformRawColumnData(item)
         };
         
@@ -50,8 +64,29 @@ export const useColumnsQuery = (categoryId: string) => {
       console.log('✅ useColumnsQuery - Final transformed columns:', transformedColumns);
       return transformedColumns;
     },
-    enabled: !!categoryId
+    enabled: enabled
   });
+
+  return {
+    ...query,
+    columns: query.data || [],
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch
+  };
+};
+
+// Separate function for fetching columns by category (backward compatibility)
+export const fetchColumnsByCategory = async (categoryId: string): Promise<Column[]> => {
+  const { data, error } = await supabase
+    .from('columns')
+    .select('*')
+    .eq('category_id', categoryId)
+    .order('order_index');
+
+  if (error) throw error;
+  return (data || []).map(convertDbColumnToColumn);
 };
 
 export const useColumnMutation = () => {

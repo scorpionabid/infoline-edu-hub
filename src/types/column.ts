@@ -59,7 +59,7 @@ export interface Column {
   options?: ColumnOption[];
   validation?: ValidationRules | any;
   order_index: number;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'deleted';
   created_at: string;
   updated_at: string;
 }
@@ -78,7 +78,7 @@ export interface ColumnFormData {
   options?: ColumnOption[];
   validation?: ValidationRules | any;
   order_index?: number;
-  status?: 'active' | 'inactive';
+  status?: 'active' | 'inactive' | 'deleted';
 }
 
 export interface ColumnFormValues {
@@ -95,7 +95,7 @@ export interface ColumnFormValues {
   options?: ColumnOption[];
   validation?: ValidationRules | any;
   order_index?: number;
-  status?: 'active' | 'inactive';
+  status?: 'active' | 'inactive' | 'deleted';
 }
 
 export interface UseColumnFormProps {
@@ -140,6 +140,19 @@ export const columnTypes: { value: ColumnType; label: string; description?: stri
   { value: 'boolean', label: 'Boolean', description: 'True/false value' },
   { value: 'json', label: 'JSON', description: 'JSON data input' }
 ];
+
+export interface CategoryWithColumns {
+  id: string;
+  name: string;
+  description?: string;
+  assignment: string;
+  status: string;
+  deadline?: string;
+  columns: Column[];
+  created_at?: string;
+  updated_at?: string;
+  completionRate?: number;
+}
 
 export function ensureJson<T>(value: T): any {
   return JSON.parse(JSON.stringify(value));

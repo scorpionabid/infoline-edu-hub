@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import PageHeader from '@/components/layout/PageHeader';
 import DeleteColumnDialog from '@/components/columns/DeleteColumnDialog';
+// import EnhancedDeleteColumnDialog from '@/components/columns/EnhancedDeleteColumnDialog';
 import ColumnFormDialog from '@/components/columns/ColumnFormDialog';
 import { useColumnsQuery } from '@/hooks/api/columns/useColumnsQuery';
 import ColumnList from '@/components/columns/ColumnList';
@@ -23,6 +24,7 @@ import { useCategories } from '@/hooks/categories/useCategories';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useColumnMutations } from '@/hooks/columns/useColumnMutations';
+// import { useEnhancedColumnMutations } from '@/hooks/columns/useEnhancedColumnMutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { Column } from '@/types/column';
 
@@ -47,6 +49,7 @@ const Columns: React.FC = () => {
   
   const { userRole } = usePermissions();
   const { createColumn, updateColumn, deleteColumn } = useColumnMutations();
+  // const { enhancedDeleteColumn, restoreColumn, isEnhancedDeleting } = useEnhancedColumnMutations();
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,6 +66,16 @@ const Columns: React.FC = () => {
     columnName: '',
     categoryId: ''
   });
+
+  // const [enhancedDeleteDialog, setEnhancedDeleteDialog] = useState({
+  //   isOpen: false,
+  //   column: {
+  //     id: '',
+  //     name: '',
+  //     type: '',
+  //     category_name: ''
+  //   }
+  // });
 
   console.log('Columns page rendered, canManageColumns:', canManageColumns);
 
@@ -185,6 +198,7 @@ const Columns: React.FC = () => {
       return;
     }
     
+    // Use basic delete dialog for now (Enhanced delete has server issues)
     setDeleteDialog({
       isOpen: true,
       column: columnId,
@@ -214,6 +228,34 @@ const Columns: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  // const handleEnhancedDeleteColumn = async (options: { hardDelete: boolean; exportData: boolean }) => {
+  //   try {
+  //     console.log('Enhanced deleting column:', enhancedDeleteDialog.column.id, options);
+  //     
+  //     await enhancedDeleteColumn(enhancedDeleteDialog.column.id, {
+  //       ...options,
+  //       confirmation: `DELETE ${enhancedDeleteDialog.column.name}`
+  //     });
+  //     
+  //     setEnhancedDeleteDialog({ ...enhancedDeleteDialog, isOpen: false });
+  //     refetchColumns();
+  //   } catch (error) {
+  //     console.error('Error in enhanced delete:', error);
+  //     // Error handling is done in the hook
+  //   }
+  // };
+
+  // const handleRestoreColumn = async (columnId: string) => {
+  //   try {
+  //     console.log('Restoring column:', columnId);
+  //     await restoreColumn(columnId);
+  //     refetchColumns();
+  //   } catch (error) {
+  //     console.error('Error restoring column:', error);
+  //     // Error handling is done in the hook
+  //   }
+  // };
 
   // Show error message if retries failed
   if (categoriesError || columnsError) {
@@ -382,6 +424,14 @@ const Columns: React.FC = () => {
         columns={columns as any[]}
         isSubmitting={isSubmitting}
       />
+
+      {/* <EnhancedDeleteColumnDialog
+        isOpen={enhancedDeleteDialog.isOpen}
+        onClose={() => setEnhancedDeleteDialog({ ...enhancedDeleteDialog, isOpen: false })}
+        onConfirm={handleEnhancedDeleteColumn}
+        column={enhancedDeleteDialog.column}
+        isSubmitting={isEnhancedDeleting}
+      /> */}
 
       {deleteDialog.isOpen && (
         <DeleteColumnDialog
