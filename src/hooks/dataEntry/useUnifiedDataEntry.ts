@@ -6,6 +6,7 @@ import { Column, ColumnOption } from '@/types/column';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
+import { transformRawColumnData } from '@/utils/columnOptionsParser';
 
 // Unified Data Entry interface that works for both schools and sectors
 export interface UnifiedDataEntry {
@@ -77,8 +78,10 @@ export const useUnifiedDataEntry = ({
 
   // Load columns for category
   const { data: rawColumns = [], isLoading: columnsLoading } = useQuery({
-    queryKey: ['columns', categoryId],
+    queryKey: ['unified-columns', categoryId],
     queryFn: async () => {
+      console.log('🔍 useUnifiedDataEntry - Fetching columns for category:', categoryId);
+      
       const { data, error } = await supabase
         .from('columns')
         .select('*')
@@ -87,29 +90,38 @@ export const useUnifiedDataEntry = ({
         .order('order_index');
       
       if (error) throw error;
+      
+      console.log('📊 useUnifiedDataEntry - Raw columns from DB:', data);
       return data || [];
     },
     enabled: !!categoryId
   });
 
-  // Transform columns with proper type casting
+  // Transform columns using standardized parser
   const columns: Column[] = useMemo(() => {
-    return rawColumns.map(col => ({
-      ...col,
-      type: col.type as Column['type'],
-      status: (col.status === 'active' || col.status === 'inactive') ? col.status : 'active' as const,
-      options: Array.isArray(col.options) ? col.options.map((opt: any) => {
-        if (typeof opt === 'string') {
-          return { id: opt, label: opt, value: opt };
-        }
-        return opt as ColumnOption;
-      }) : [],
-      validation: typeof col.validation === 'object' ? col.validation : {},
-      default_value: col.default_value || '',
-      help_text: col.help_text || '',
-      placeholder: col.placeholder || '',
-      is_required: col.is_required || false
-    }));
+    console.log('🔄 useUnifiedDataEntry - Transforming raw columns:', rawColumns.length);
+    
+    const transformedColumns = rawColumns.map(col => {
+      const transformed = {
+        ...col,
+        type: col.type as Column['type'],
+        status: (col.status === 'active' || col.status === 'inactive') ? col.status : 'active' as const,
+        ...transformRawColumnData(col)
+      };
+      
+      if (col.type === 'select') {
+        console.log(`🎯 useUnifiedDataEntry - Select column "${col.name}":`, {
+          rawOptions: col.options,
+          transformedOptions: transformed.options,
+          optionsCount: transformed.options?.length || 0
+        });
+      }
+      
+      return transformed;
+    });
+    
+    console.log('✅ useUnifiedDataEntry - Final columns:', transformedColumns);
+    return transformedColumns;
   }, [rawColumns]);
 
   // Load data entries

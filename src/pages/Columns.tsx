@@ -16,7 +16,7 @@ import {
 import PageHeader from '@/components/layout/PageHeader';
 import DeleteColumnDialog from '@/components/columns/DeleteColumnDialog';
 import ColumnFormDialog from '@/components/columns/ColumnFormDialog';
-import { useColumnsQuery } from '@/hooks/columns';
+import { useColumnsQuery } from '@/hooks/api/columns/useColumnsQuery';
 import ColumnList from '@/components/columns/ColumnList';
 import EmptyState from '@/components/common/EmptyState';
 import { useCategories } from '@/hooks/categories/useCategories';

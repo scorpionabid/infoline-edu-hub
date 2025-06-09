@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Column, ColumnFormValues, ColumnType, ColumnOption } from '@/types/column';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { transformRawColumnData } from '@/utils/columnOptionsParser';
 
 export const useColumnsQuery = (categoryId: string) => {
   return useQuery({
@@ -16,23 +17,38 @@ export const useColumnsQuery = (categoryId: string) => {
 
       if (error) throw error;
       
-      // Transform data to match Column interface
-      return (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        type: item.type as ColumnType,
-        category_id: item.category_id,
-        placeholder: item.placeholder,
-        help_text: item.help_text,
-        is_required: item.is_required,
-        default_value: item.default_value,
-        options: typeof item.options === 'string' ? JSON.parse(item.options) : (item.options as ColumnOption[] || []),
-        validation: item.validation,
-        order_index: item.order_index,
-        status: item.status as 'active' | 'inactive',
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
+      // Transform data using standardized parser
+      console.log('📊 useColumnsQuery - Raw data from Supabase:', data);
+      
+      const transformedColumns = (data || []).map(item => {
+        const transformed = {
+          id: item.id,
+          name: item.name,
+          type: item.type as ColumnType,
+          category_id: item.category_id,
+          placeholder: item.placeholder,
+          help_text: item.help_text,
+          is_required: item.is_required,
+          default_value: item.default_value,
+          order_index: item.order_index,
+          status: item.status as 'active' | 'inactive',
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          ...transformRawColumnData(item)
+        };
+        
+        console.log(`📝 Transformed column "${item.name}":`, {
+          type: item.type,
+          rawOptions: item.options,
+          parsedOptions: transformed.options,
+          optionsCount: transformed.options?.length || 0
+        });
+        
+        return transformed;
+      });
+      
+      console.log('✅ useColumnsQuery - Final transformed columns:', transformedColumns);
+      return transformedColumns;
     },
     enabled: !!categoryId
   });

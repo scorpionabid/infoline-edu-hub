@@ -1,5 +1,5 @@
 // ========================================================
-// School Data Entry Manager - İyileşdirilmiş UI
+// School Data Entry Manager - Köklü Həll İmplementasiyası
 // ========================================================
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,12 +9,13 @@ import { Progress } from '@/components/ui/progress';
 import { 
   ArrowLeft, FileText, Folder, HelpCircle, CheckCircle, 
   Clock, AlertCircle, Save, Send, ChevronRight,
-  LayoutGrid, List, Filter
+  LayoutGrid, List
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCategoriesQuery } from '@/hooks/api/categories/useCategoriesQuery';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useUnifiedDataEntry } from '@/hooks/dataEntry/useUnifiedDataEntry';
+import { EnhancedFormFieldComponent } from './fields/EnhancedFormFieldComponent';
 
 // ========================================================
 // Enhanced Category Card Component
@@ -106,145 +107,6 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
 };
 
 // ========================================================
-// Enhanced Form Field Component
-// ========================================================
-interface EnhancedFormFieldProps {
-  column: any;
-  value: any;
-  onChange: (value: any) => void;
-  error?: string;
-  disabled?: boolean;
-}
-
-const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
-  column,
-  value,
-  onChange,
-  error,
-  disabled
-}) => {
-  const renderInput = () => {
-    const baseClasses = "w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors";
-    
-    switch (column.type) {
-      case 'text':
-        return (
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={column.placeholder || `${column.name} daxil edin...`}
-            disabled={disabled}
-            className={cn(
-              baseClasses,
-              error && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-            )}
-          />
-        );
-        
-      case 'number':
-        return (
-          <input
-            type="number"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={column.placeholder || `${column.name} daxil edin...`}
-            disabled={disabled}
-            className={cn(
-              baseClasses,
-              error && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-            )}
-          />
-        );
-        
-      case 'select':
-        return (
-          <select
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            disabled={disabled}
-            className={cn(
-              baseClasses,
-              error && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-            )}
-          >
-            <option value="">Seçin...</option>
-            {column.options?.map((option: any) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        );
-        
-      case 'textarea':
-        return (
-          <textarea
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={column.placeholder || `${column.name} daxil edin...`}
-            disabled={disabled}
-            rows={3}
-            className={cn(
-              baseClasses,
-              "resize-none",
-              error && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-            )}
-          />
-        );
-        
-      default:
-        return (
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={column.placeholder || `${column.name} daxil edin...`}
-            disabled={disabled}
-            className={cn(
-              baseClasses,
-              error && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-            )}
-          />
-        );
-    }
-  };
-
-  return (
-    <div className="space-y-2">
-      {/* Field Label */}
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-medium leading-tight">
-          {column.name}
-          {column.is_required && (
-            <span className="text-red-500 ml-1">*</span>
-          )}
-        </label>
-        {column.help_text && (
-          <div className="group relative">
-            <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-              {column.help_text}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Input Field */}
-      {renderInput()}
-
-      {/* Error Message */}
-      {error && (
-        <p className="text-xs text-red-500 flex items-center gap-1">
-          <AlertCircle className="h-3 w-3" />
-          {error}
-        </p>
-      )}
-    </div>
-  );
-};
-
-// ========================================================
 // Main School Data Entry Manager Props
 // ========================================================
 interface SchoolDataEntryManagerProps {
@@ -266,6 +128,8 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
   const [showHelp, setShowHelp] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  console.log('🏫 SchoolDataEntryManager - Initialized with schoolId:', schoolId);
+
   // Get school categories only
   const {
     categories,
@@ -283,6 +147,28 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
     onSave: () => {},
     onSubmit: onComplete
   });
+
+  // Debug selected category and columns
+  React.useEffect(() => {
+    if (selectedCategoryId && dataEntryHook.columns.length > 0) {
+      console.group('🎯 Selected Category Debug');
+      console.log('Category ID:', selectedCategoryId);
+      console.log('Columns count:', dataEntryHook.columns.length);
+      
+      const selectColumns = dataEntryHook.columns.filter(col => col.type === 'select');
+      console.log('Select columns:', selectColumns.length);
+      
+      selectColumns.forEach(col => {
+        console.log(`📊 Select Column "${col.name}":`, {
+          id: col.id,
+          type: col.type,
+          options: col.options,
+          optionsCount: col.options?.length || 0
+        });
+      });
+      console.groupEnd();
+    }
+  }, [selectedCategoryId, dataEntryHook.columns]);
 
   if (categoriesLoading) {
     return <LoadingSpinner />;
@@ -326,14 +212,17 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
   const selectedCategory = schoolCategories.find(cat => cat.id === selectedCategoryId);
 
   const handleFieldChange = (columnId: string, value: any) => {
+    console.log('🔄 Field change:', { columnId, value });
     dataEntryHook.updateEntry(columnId, value);
   };
 
   const handleSave = async () => {
+    console.log('💾 Saving entries...');
     await dataEntryHook.saveEntries();
   };
 
   const handleSubmit = async () => {
+    console.log('📤 Submitting entries...');
     const isValid = dataEntryHook.validateForm();
     if (isValid) {
       await dataEntryHook.submitEntries();
@@ -513,7 +402,7 @@ export const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
                   <CardContent className="pt-6">
                     <div className="space-y-6">
                       {dataEntryHook.columns.map(column => (
-                        <EnhancedFormField
+                        <EnhancedFormFieldComponent
                           key={column.id}
                           column={column}
                           value={dataEntryHook.formData[column.id]}
