@@ -1,5 +1,5 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user' | string;
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user' | 'teacher' | string;
 
 export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | string;
 
@@ -81,12 +81,17 @@ export interface UserFormData {
 }
 
 export interface UserFilter {
-  role?: string;
+  role?: string | string[];
   search?: string;
-  status?: UserStatus;
+  status?: UserStatus | UserStatus[];
   region_id?: string;
+  regionId?: string;
   sector_id?: string;
+  sectorId?: string;
   school_id?: string;
+  schoolId?: string;
+  page?: number;
+  limit?: number;
 }
 
 export type { UserRole as Role };

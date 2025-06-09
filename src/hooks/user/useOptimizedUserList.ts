@@ -13,6 +13,7 @@ interface UseOptimizedUserListResult {
   hasMore: boolean;
   fetchUsers: (filters?: UserFilter, page?: number) => Promise<void>;
   resetUsers: () => void;
+  refetch: () => Promise<void>;
 }
 
 export const useOptimizedUserList = (): UseOptimizedUserListResult => {
@@ -39,19 +40,6 @@ export const useOptimizedUserList = (): UseOptimizedUserListResult => {
         effectiveFilters.region_id = regionId;
       } else if (userRole === 'sectoradmin' && sectorId) {
         effectiveFilters.sector_id = sectorId;
-      }
-
-      // Apply manual filters if not role-restricted
-      if (userRole !== 'regionadmin' && userRole !== 'sectoradmin') {
-        if (filters.region_id) {
-          effectiveFilters.region_id = filters.region_id;
-        }
-        if (filters.sector_id) {
-          effectiveFilters.sector_id = filters.sector_id;
-        }
-        if (filters.school_id) {
-          effectiveFilters.school_id = filters.school_id;
-        }
       }
 
       console.log('Fetching users with filters:', effectiveFilters);
@@ -154,6 +142,10 @@ export const useOptimizedUserList = (): UseOptimizedUserListResult => {
     setError(null);
   }, []);
 
+  const refetch = useCallback(async () => {
+    await fetchUsers();
+  }, [fetchUsers]);
+
   useEffect(() => {
     if (user) {
       fetchUsers();
@@ -167,7 +159,8 @@ export const useOptimizedUserList = (): UseOptimizedUserListResult => {
     totalCount,
     hasMore,
     fetchUsers,
-    resetUsers
+    resetUsers,
+    refetch
   };
 };
 

@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { UserFilter } from '@/hooks/useUserList';
+import { UserFilter } from '@/types/user';
 
 export const useUserFilters = (initialFilter: UserFilter = {}) => {
   // Initialize with empty strings instead of undefined
@@ -11,6 +11,9 @@ export const useUserFilters = (initialFilter: UserFilter = {}) => {
     regionId: '',
     sectorId: '',
     schoolId: '',
+    region_id: '',
+    sector_id: '',
+    school_id: '',
     ...initialFilter
   };
 

@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserFilter } from '@/types/user';
+import { FullUserData, UserFilter, NotificationSettings } from '@/types/user';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
@@ -73,15 +73,28 @@ export const useUserFetch = () => {
 
       if (error) throw error;
 
+      // Default notification settings
+      const defaultNotificationSettings: NotificationSettings = {
+        email: true,
+        push: false,
+        sms: false,
+        inApp: true,
+        system: true,
+        deadline: true,
+        deadlineReminders: true,
+        statusUpdates: true,
+        weeklyReports: false
+      };
+
       // Transform data to match FullUserData interface
       const transformedUsers: FullUserData[] = (data || []).map((item: any) => {
         const userRole = item.user_roles;
         
-        // Mock data for backward compatibility
-        const mockUserData = {
+        return {
           id: item.id,
           email: item.email,
           full_name: item.full_name || '',
+          fullName: item.full_name || '',
           name: item.full_name || '',
           role: userRole?.role || 'user',
           region_id: userRole?.region_id,
@@ -94,45 +107,17 @@ export const useUserFetch = () => {
           position: item.position || '',
           language: item.language || 'az',
           avatar: item.avatar || '',
+          avatar_url: item.avatar || '',
           status: item.status || 'active',
           last_login: item.last_login,
           last_sign_in_at: item.last_login,
           created_at: item.created_at,
           updated_at: item.updated_at,
-          fullName: item.full_name || '',
           preferences: {},
-          notificationSettings: {
-            email: true,
-            inApp: true,
-            sms: false,
-            deadlineReminders: false
-          },
-          twoFactorEnabled: false,
+          notificationSettings: defaultNotificationSettings,
+          notification_settings: defaultNotificationSettings,
           entityName: undefined
         };
-
-        // Handle different data structures
-        if (typeof item === 'object' && item.full_name && item.email) {
-          return {
-            ...mockUserData,
-            id: item.id,
-            email: item.email,
-            fullName: item.full_name,
-            full_name: item.full_name,
-            role: userRole?.role || 'user',
-            status: item.status || 'active',
-            language: item.language || 'az',
-            notificationSettings: {
-              email: true,
-              inApp: true,
-              sms: false,
-              deadlineReminders: false
-            },
-            twoFactorEnabled: false
-          };
-        }
-
-        return mockUserData;
       });
 
       setUsers(transformedUsers);

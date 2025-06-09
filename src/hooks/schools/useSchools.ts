@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { School } from '@/types/school';
+import { School, SchoolStatus } from '@/types/school';
 
 export const useSchools = (regionId?: string, sectorId?: string) => {
   const [schools, setSchools] = useState<School[]>([]);
@@ -28,13 +28,13 @@ export const useSchools = (regionId?: string, sectorId?: string) => {
 
         if (error) throw error;
 
-        // Transform to ensure all required fields exist
+        // Transform to ensure all required fields exist with proper types
         const transformedSchools: School[] = (data || []).map(school => ({
           id: school.id,
           name: school.name,
           region_id: school.region_id,
           sector_id: school.sector_id,
-          status: school.status || 'active',
+          status: (school.status as SchoolStatus) || 'active',
           created_at: school.created_at || new Date().toISOString(),
           updated_at: school.updated_at || new Date().toISOString(),
           // Optional fields

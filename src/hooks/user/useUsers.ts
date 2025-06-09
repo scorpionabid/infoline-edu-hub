@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, UserFilter, UserRole } from '@/types/user';
@@ -48,16 +49,16 @@ export const useUsers = (initialFilter: UserFilter = {}) => {
         }
       }
       
-      if (currentFilter.regionId) {
-        query = query.eq('region_id', currentFilter.regionId);
+      if (currentFilter.region_id) {
+        query = query.eq('region_id', currentFilter.region_id);
       }
       
-      if (currentFilter.sectorId) {
-        query = query.eq('sector_id', currentFilter.sectorId);
+      if (currentFilter.sector_id) {
+        query = query.eq('sector_id', currentFilter.sector_id);
       }
       
-      if (currentFilter.schoolId) {
-        query = query.eq('school_id', currentFilter.schoolId);
+      if (currentFilter.school_id) {
+        query = query.eq('school_id', currentFilter.school_id);
       }
       
       if (currentFilter.search) {
@@ -105,6 +106,7 @@ export const useUsers = (initialFilter: UserFilter = {}) => {
           id: item.user_id,
           email: profile.email || '',
           full_name: profile.full_name || '',
+          fullName: profile.full_name || '',
           name: profile.full_name || '',
           role: item.role as UserRole,
           region_id: item.region_id || '',

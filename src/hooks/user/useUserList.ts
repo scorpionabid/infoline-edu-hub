@@ -1,6 +1,7 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { FullUserData } from '@/types/supabase';
-import { supabase } from '@/lib/supabase';
+import { FullUserData, UserFilter } from '@/types/user';
+import { supabase } from '@/integrations/supabase/client';
 
 // Səhifə əsaslı keş mexanizmi
 interface PageCache {
@@ -16,15 +17,6 @@ const userCache = {
 
 // Aktiv sorğu kontrolu
 let isUserListRequestInProgress = false;
-
-export interface UserFilter {
-  search?: string;
-  role?: string;
-  status?: string;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-}
 
 export function useUserList(initialFilters?: UserFilter) {
   const [users, setUsers] = useState<FullUserData[]>([]);
@@ -109,66 +101,32 @@ export function useUserList(initialFilters?: UserFilter) {
       lastQueryTimeRef.current = Date.now();
       lastQueryFiltersRef.current = currentFilterKey;
 
-      // Actual API sorgu kodunu ayrı funksiyaya çıxaraq
-      const executeDatabaseQuery = async () => {
-        try {
-          // Tip xatası yaranmaması üçün
-          type ProfileQuery = ReturnType<typeof supabase.from>;
-          const profilesTable = supabase.from('profiles') as ProfileQuery;
-          let query = profilesTable.select('*', { count: 'exact' });
-          
-          // Filtrləri tətbiq et
-          if (effectiveFilters.search?.trim()) {
-            query = query.ilike('full_name', `%${effectiveFilters.search.trim()}%`);
-          }
-          
-          if (effectiveFilters.role?.trim()) {
-            query = query.eq('role', effectiveFilters.role.trim());
-          }
-          
-          if (effectiveFilters.status?.trim()) {
-            query = query.eq('status', effectiveFilters.status.trim());
-          }
-          
-          if (effectiveFilters.regionId?.trim()) {
-            query = query.eq('region_id', effectiveFilters.regionId.trim());
-          }
-          
-          if (effectiveFilters.sectorId?.trim()) {
-            query = query.eq('sector_id', effectiveFilters.sectorId.trim());
-          }
-          
-          if (effectiveFilters.schoolId?.trim()) {
-            query = query.eq('school_id', effectiveFilters.schoolId.trim());
-          }
-          
-          // Sıralama 
-          query = query.order('created_at', { ascending: false });
-          
-          // Səhifələmə
-          if (currentPageToFetch > 0) {
-            const from = (currentPageToFetch - 1) * 10;
-            const to = from + 9;
-            query = query.range(from, to);
-          }
-          
-          console.log('Executing Supabase query for profiles');
-          return await query;
-        } catch (error) {
-          console.error('Error in executeDatabaseQuery:', error);
-          throw error;
-        }
-      };
-      
-      // Əsas sorğunu icra et
-      const { data, error, count } = await executeDatabaseQuery();
+      // Use profiles table correctly
+      const { data, error, count } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((currentPageToFetch - 1) * 10, currentPageToFetch * 10 - 1);
       
       if (error) {
         throw error;
       }
       
       // Uğurlu nəticələri emal et
-      const fetchedUsers = data || [];
+      const fetchedUsers = (data || []).map((item: any) => ({
+        id: item.id,
+        email: item.email || '',
+        fullName: item.full_name || '',
+        full_name: item.full_name || '',
+        role: 'user',
+        status: item.status || 'active',
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        phone: item.phone,
+        language: item.language,
+        position: item.position
+      })) as FullUserData[];
+      
       console.log(`Query successful: ${fetchedUsers.length} users, total: ${count}`);
       
       // Keşi yenilə
@@ -187,32 +145,13 @@ export function useUserList(initialFilters?: UserFilter) {
       return fetchedUsers;
     } catch (err: any) {
       console.error('Error in fetchUsers:', err);
-      
-      // Xəta halları üçün sadə sorğu cəhdi
-      try {
-        if (!isUserListRequestInProgress) {
-          // Əgər xəta halda ikinci sorğu icra etmək istəyiriksə, əvvəlki sorğu bitməlidir
-          console.log('Trying simplified query as fallback');
-          const { data: basicData } = await supabase.from('profiles').select('*');
-          const fallbackUsers = basicData || [];
-          
-          setUsers(fallbackUsers);
-          setTotalCount(fallbackUsers.length);
-          setTotalPages(Math.ceil(fallbackUsers.length / 10));
-          
-          return fallbackUsers;
-        }
-      } catch (fallbackErr) {
-        console.error('Fallback query also failed:', fallbackErr);
-      }
-      
       setError(err.message || 'Failed to fetch users');
       return [];
     } finally {
       setLoading(false);
       isUserListRequestInProgress = false; // Həmişə sorgu bitdikdə bayraq sıfırlanmalıdır
     }
-  }, []); // BOŞ asılılıq massivi - bu, fetch içində istifadə olunan bütün dəyişənlərin closure vasitəsilə əldə edilməsi deməkdir
+  }, []); // BOŞ asılılıq massivi
 
   // Filterləri yeniləyir
   const updateFilter = useCallback((newFilter: UserFilter) => {
@@ -284,9 +223,6 @@ export function useUserList(initialFilters?: UserFilter) {
     };
     
     fetchData();
-    
-    // Asılılıqlarda fetchUsers OLMAMALIDIR - yoxsa loop yaranır!
-    // Asılılıqlarda yalnız shouldFetchRef.current-i dəyişən dəyişənlər olmalıdır
   }, [currentPage]);
   
   // Səhifə dəyişdikdə shouldFetchRef-i yenilə - stabil versiya
