@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { FullUserData, UserFilter } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
@@ -274,4 +273,6 @@ export function useUserList(initialFilters?: UserFilter) {
   };
 }
 
+// Export UserFilter for backwards compatibility
+export type { UserFilter };
 export default useUserList;
