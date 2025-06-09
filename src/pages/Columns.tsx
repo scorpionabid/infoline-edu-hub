@@ -1,3 +1,4 @@
+
 // Development server restart helper
 // Last updated: Columns improvement implementation
 // Fixed: Corrected file format and escape sequences
@@ -21,7 +22,6 @@ import ArchivedColumnList from '@/components/columns/ArchivedColumnList';
 import RestoreColumnDialog from '@/components/columns/RestoreColumnDialog';
 import PermanentDeleteDialog from '@/components/columns/PermanentDeleteDialog';
 import DeleteColumnDialog from '@/components/columns/DeleteColumnDialog';
-// import EnhancedDeleteColumnDialog from '@/components/columns/EnhancedDeleteColumnDialog';
 import ColumnFormDialog from '@/components/columns/ColumnFormDialog';
 import { useColumnsQuery } from '@/hooks/api/columns/useColumnsQuery';
 import ColumnList from '@/components/columns/ColumnList';
@@ -30,7 +30,6 @@ import { useCategories } from '@/hooks/categories/useCategories';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useColumnMutations } from '@/hooks/columns/useColumnMutations';
-// import { useEnhancedColumnMutations } from '@/hooks/columns/useEnhancedColumnMutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { Column } from '@/types/column';
 import PageHeader from '@/components/layout/PageHeader';
@@ -61,7 +60,6 @@ const Columns: React.FC = () => {
   
   const { userRole } = usePermissions();
   const { createColumn, updateColumn, deleteColumn, restoreColumn, permanentDeleteColumn, isRestoring, isPermanentDeleting } = useColumnMutations();
-  // const { enhancedDeleteColumn, restoreColumn, isEnhancedDeleting } = useEnhancedColumnMutations();
   
   // Tab state
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
@@ -95,16 +93,6 @@ const Columns: React.FC = () => {
       dataEntriesCount: 0
     }
   });
-
-  // const [enhancedDeleteDialog, setEnhancedDeleteDialog] = useState({
-  //   isOpen: false,
-  //   column: {
-  //     id: '',
-  //     name: '',
-  //     type: '',
-  //     category_name: ''
-  //   }
-  // });
 
   console.log('Columns page rendered, canManageColumns:', canManageColumns);
 
@@ -140,27 +128,7 @@ const Columns: React.FC = () => {
     }
   }, [categories, selectedCategoryId]);
 
-  const handleOpenAddColumnDialog = () => {
-    console.log('Add column button clicked, canManageColumns:', canManageColumns);
-    console.log('Selected category ID:', selectedCategoryId);
-    
-    if (!canManageColumns) {
-      toast.error(t('noPermission'), {
-        description: t('adminPermissionRequired')
-      });
-      return;
-    }
-
-    if (!selectedCategoryId && categories && categories.length > 0) {
-      setSelectedCategoryId(categories[0].id);
-    }
-    
-    setSelectedColumn(null);
-    console.log('Opening add column dialog...');
-    setColumnFormDialogOpen(true);
-  };
-
-  const handleAddColumn = async (newColumn: Omit<Column, "id"> & { id?: string }): Promise<boolean> => {
+  const handleCreateColumn = async (newColumn: Omit<Column, "id">): Promise<boolean> => {
     try {
       setIsSubmitting(true);
       console.log('Creating new column:', newColumn);
@@ -174,7 +142,6 @@ const Columns: React.FC = () => {
       
       if (result.success) {
         toast.success(t('columnAdded') || 'Column added successfully');
-        setColumnFormDialogOpen(false);
         refetchColumns();
         return true;
       } else {
@@ -192,21 +159,19 @@ const Columns: React.FC = () => {
 
   const handleEditColumn = (column: Column) => {
     console.log('Editing column:', column);
-    setSelectedColumn(column);
-    setSelectedCategoryId(column.category_id);
-    setColumnFormDialogOpen(true);
+    setEditColumn(column);
   };
 
-  const handleUpdateColumn = async (updatedColumn: Omit<Column, "id"> & { id?: string }): Promise<boolean> => {
+  const handleUpdateColumn = async (updatedColumn: Column): Promise<boolean> => {
     try {
       setIsSubmitting(true);
       console.log('Updating column:', updatedColumn);
       
-      const result = await updateColumn(updatedColumn as Column);
+      const result = await updateColumn(updatedColumn);
       
       if (result.success) {
         toast.success(t('columnUpdated') || 'Column updated successfully');
-        setColumnFormDialogOpen(false);
+        setEditColumn(null);
         refetchColumns();
         return true;
       } else {
@@ -222,7 +187,7 @@ const Columns: React.FC = () => {
     }
   };
 
-  const handleOpenDeleteDialog = (columnId: string, columnName: string, categoryId: string) => {
+  const handleDeleteColumn = async (columnId: string, columnName: string) => {
     if (!canManageColumns) {
       toast.error(t('noPermission'), {
         description: t('adminPermissionRequired')
@@ -230,25 +195,14 @@ const Columns: React.FC = () => {
       return;
     }
     
-    // Use basic delete dialog for now (Enhanced delete has server issues)
-    setDeleteDialog({
-      isOpen: true,
-      column: columnId,
-      columnName,
-      categoryId
-    });
-  };
-
-  const handleDeleteColumn = async () => {
     try {
       setIsSubmitting(true);
-      console.log('Deleting column:', deleteDialog.column);
+      console.log('Deleting column:', columnId);
       
-      const result = await deleteColumn(deleteDialog.column);
+      const result = await deleteColumn(columnId);
       
       if (result.success) {
         toast.success(t('columnDeleted') || 'Column deleted successfully');
-        setDeleteDialog({ ...deleteDialog, isOpen: false });
         refetchColumns();
       } else {
         toast.error(t('columnDeleteFailed') || 'Failed to delete column');
@@ -260,34 +214,6 @@ const Columns: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-
-  // const handleEnhancedDeleteColumn = async (options: { hardDelete: boolean; exportData: boolean }) => {
-  //   try {
-  //     console.log('Enhanced deleting column:', enhancedDeleteDialog.column.id, options);
-  //     
-  //     await enhancedDeleteColumn(enhancedDeleteDialog.column.id, {
-  //       ...options,
-  //       confirmation: `DELETE ${enhancedDeleteDialog.column.name}`
-  //     });
-  //     
-  //     setEnhancedDeleteDialog({ ...enhancedDeleteDialog, isOpen: false });
-  //     refetchColumns();
-  //   } catch (error) {
-  //     console.error('Error in enhanced delete:', error);
-  //     // Error handling is done in the hook
-  //   }
-  // };
-
-  // const handleRestoreColumn = async (columnId: string) => {
-  //   try {
-  //     console.log('Restoring column:', columnId);
-  //     await restoreColumn(columnId);
-  //     refetchColumns();
-  //   } catch (error) {
-  //     console.error('Error restoring column:', error);
-  //     // Error handling is done in the hook
-  //   }
-  // };
 
   // Show error message if retries failed
   if (categoriesError || columnsError) {
@@ -328,39 +254,15 @@ const Columns: React.FC = () => {
       </Helmet>
 
       <div className="container mx-auto py-6">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center h-64">
-            <p className="text-destructive text-lg">{t('errorOccurred')}</p>
-            <p className="text-muted-foreground">{t('couldNotLoadColumns')}</p>
-          </div>
-        ) : (
-          <>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <div>
-                <h1 className="text-3xl font-bold">{t('columns')}</h1>
-                <p className="text-muted-foreground">{t('manageDataColumns')}</p>
-              </div>
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t('createColumn')}
-              </Button>
-            </div>
-
-            <ColumnsContainer
-              columns={columns}
-              categories={categories}
-              isLoading={loading}
-              onRefresh={refetch}
-              onCreate={handleCreateColumn}
-              onEdit={handleEditColumn}
-              onDelete={handleDeleteColumn}
-            />
-          </>
-        )}
+        <ColumnsContainer
+          columns={columns}
+          categories={categories}
+          isLoading={columnsLoading || categoriesLoading}
+          onRefresh={refetchColumns}
+          onCreate={handleCreateColumn}
+          onEdit={handleEditColumn}
+          onDelete={handleDeleteColumn}
+        />
 
         <CreateColumnDialog
           open={isCreateDialogOpen}
@@ -374,12 +276,10 @@ const Columns: React.FC = () => {
         {editColumn && (
           <ColumnFormDialog
             open={!!editColumn}
-            onClose={() => setEditColumn(null)}
-            onSaveColumn={handleEditColumn}
-            categories={categories}
-            editColumn={editColumn}
-            columns={columns}
-            isSubmitting={isSubmitting}
+            onOpenChange={(open) => !open && setEditColumn(null)}
+            column={editColumn}
+            categoryId={editColumn.category_id}
+            onSave={handleUpdateColumn}
           />
         )}
       </div>
