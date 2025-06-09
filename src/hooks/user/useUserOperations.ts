@@ -1,162 +1,159 @@
-import { useState, useCallback } from 'react';
+
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData } from '@/types/supabase';
+import { FullUserData, UserRole } from '@/types/user';
 import { toast } from 'sonner';
-import { useLanguageSafe } from '@/context/LanguageContext';
 
-export const useUserOperations = (onComplete: () => void) => {
-  const { t } = useLanguageSafe();
-  const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+export const useUserOperations = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  const handleEditUser = useCallback((user: FullUserData) => {
-    setSelectedUser(user);
-    setIsEditDialogOpen(true);
-  }, []);
-
-  const handleDeleteUser = useCallback((user: FullUserData) => {
-    setSelectedUser(user);
-    setIsDeleteDialogOpen(true);
-  }, []);
-
-  const handleViewDetails = useCallback((user: FullUserData) => {
-    setSelectedUser(user);
-    setIsDetailsDialogOpen(true);
-  }, []);
-
-  const handleUpdateUserConfirm = useCallback(async (updatedUser: FullUserData) => {
-    try {
-      console.log('Updating user:', updatedUser);
-      
-      // Profile məlumatlarını yeniləyirik
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: updatedUser.full_name,
-          phone: updatedUser.phone,
-          position: updatedUser.position,
-          language: updatedUser.language,
-          status: updatedUser.status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', updatedUser.id);
-      
-      if (profileError) throw profileError;
-      
-      // Rol məlumatlarını yeniləyirik
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({
-          role: updatedUser.role,
-          region_id: updatedUser.region_id,
-          sector_id: updatedUser.sector_id,
-          school_id: updatedUser.school_id,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', updatedUser.id);
-      
-      if (roleError) throw roleError;
-      
-      toast.success(t('userUpdated'));
-      setIsEditDialogOpen(false);
-      onComplete();
-    } catch (error: any) {
-      console.error('Error updating user:', error);
-      toast.error(t('errorUpdatingUser'), {
-        description: error.message
-      });
-    }
-  }, [t, onComplete]);
-
-  const handleDeleteUserConfirm = useCallback(async () => {
-    if (!selectedUser) return;
+  const createUser = async (userData: Partial<FullUserData>) => {
+    setLoading(true);
+    setError(null);
     
     try {
-      console.log('Deleting user:', selectedUser.id);
-      let isPartiallyDeleted = false;
+      // Validate role
+      const validRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
+      const userRole = userData.role as UserRole;
       
-      // İlk olaraq user_roles cədvəlindən silirik
+      if (!validRoles.includes(userRole)) {
+        throw new Error('Invalid user role');
+      }
+
+      // Create user profile
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          full_name: userData.full_name || userData.fullName,
+          email: userData.email,
+          phone: userData.phone,
+          position: userData.position,
+          language: userData.language || 'az',
+          status: userData.status || 'active'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Create user role
+      const roleData = {
+        user_id: data.id,
+        role: userRole,
+        region_id: userData.region_id || userData.regionId,
+        sector_id: userData.sector_id || userData.sectorId,
+        school_id: userData.school_id || userData.schoolId
+      };
+
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert(roleData);
+
+      if (roleError) throw roleError;
+
+      toast.success('User created successfully');
+      return data;
+    } catch (err) {
+      console.error('Error creating user:', err);
+      setError(err as Error);
+      toast.error('Failed to create user');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUser = async (userId: string, userData: Partial<FullUserData>) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Update profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: userData.full_name || userData.fullName,
+          email: userData.email,
+          phone: userData.phone,
+          position: userData.position,
+          language: userData.language,
+          status: userData.status
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Update role if provided
+      if (userData.role) {
+        const validRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
+        const userRole = userData.role as UserRole;
+        
+        if (validRoles.includes(userRole)) {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .update({
+              role: userRole,
+              region_id: userData.region_id || userData.regionId,
+              sector_id: userData.sector_id || userData.sectorId,
+              school_id: userData.school_id || userData.schoolId
+            })
+            .eq('user_id', userId);
+
+          if (roleError) throw roleError;
+        }
+      }
+
+      toast.success('User updated successfully');
+    } catch (err) {
+      console.error('Error updating user:', err);
+      setError(err as Error);
+      toast.error('Failed to update user');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteUser = async (userId: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Delete user role first
       const { error: roleError } = await supabase
         .from('user_roles')
         .delete()
-        .eq('user_id', selectedUser.id);
-      
-      if (roleError) {
-        console.error('Error deleting from user_roles:', roleError);
-        // Xəta olsa da davam edirik, çünki istifadəçi cədvəldə olmaya bilər
-      } else {
-        console.log('Successfully deleted from user_roles');
-        isPartiallyDeleted = true;
-      }
-      
-      // Sonra profiles cədvəlindən silirik
-      const { error: profileError } = await supabase
+        .eq('user_id', userId);
+
+      if (roleError) throw roleError;
+
+      // Delete profile
+      const { error } = await supabase
         .from('profiles')
         .delete()
-        .eq('id', selectedUser.id);
-      
-      if (profileError) {
-        console.error('Error deleting from profiles:', profileError);
-        // Xəta olsa da davam edirik, çünki istifadəçi cədvəldə olmaya bilər
-      } else {
-        console.log('Successfully deleted from profiles');
-        isPartiallyDeleted = true;
-      }
-      
-      // Edge Function vasitəsilə Supabase Auth-dan istifadəçini silirik
-      let authDeleteSuccess = false;
-      try {
-        console.log('Attempting to delete user from auth via Edge Function...');
-        const { data, error: authError } = await supabase.functions.invoke('delete-user', {
-          body: { user_id: selectedUser.id }
-        });
-        
-        if (authError) {
-          console.error('Error deleting from auth via Edge Function:', authError);
-        } else {
-          console.log('Successfully deleted from auth via Edge Function');
-          authDeleteSuccess = true;
-        }
-      } catch (authErr) {
-        console.error('Exception during auth deletion via Edge Function:', authErr);
-        // Edge Function xətası olsa da davam edirik
-      }
-      
-      if (isPartiallyDeleted) {
-        if (authDeleteSuccess) {
-          toast.success(t('userDeletedCompletely'));
-        } else {
-          toast.success(t('userDeletedPartially'), {
-            description: t('userDeletedPartiallyDesc')
-          });
-        }
-        setIsDeleteDialogOpen(false);
-        onComplete();
-      } else {
-        toast.error(t('errorDeletingUser'));
-      }
-    } catch (error: any) {
-      console.error('Error deleting user:', error);
-      toast.error(t('errorDeletingUser'), {
-        description: error.message
-      });
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast.success('User deleted successfully');
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      setError(err as Error);
+      toast.error('Failed to delete user');
+      throw err;
+    } finally {
+      setLoading(false);
     }
-  }, [selectedUser, t, onComplete, supabase, setIsDeleteDialogOpen]);
+  };
 
   return {
-    selectedUser,
-    isEditDialogOpen,
-    isDeleteDialogOpen,
-    isDetailsDialogOpen,
-    setIsEditDialogOpen,
-    setIsDeleteDialogOpen,
-    setIsDetailsDialogOpen,
-    handleEditUser,
-    handleDeleteUser,
-    handleViewDetails,
-    handleUpdateUserConfirm,
-    handleDeleteUserConfirm
+    loading,
+    error,
+    createUser,
+    updateUser,
+    deleteUser
   };
 };
+
+export default useUserOperations;

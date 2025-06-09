@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserFilter } from '@/types/user';
+import { FullUserData, UserFilter, UserRole } from '@/types/user';
 
 interface EntityDisplay {
   region?: string;
@@ -51,10 +51,20 @@ export const buildUserQuery = (filters: UserFilter, userRole: string, regionId?:
   if (filters.role) {
     if (Array.isArray(filters.role)) {
       if (filters.role.length > 0) {
-        query = query.in('user_roles.role', filters.role);
+        // Filter valid roles and cast to proper type
+        const validRoles = filters.role.filter((role): role is UserRole => 
+          ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(role)
+        );
+        if (validRoles.length > 0) {
+          query = query.in('user_roles.role', validRoles);
+        }
       }
     } else if (filters.role) {
-      query = query.eq('user_roles.role', filters.role);
+      // Ensure role is valid UserRole type
+      const roleValue = filters.role as UserRole;
+      if (['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(roleValue)) {
+        query = query.eq('user_roles.role', roleValue);
+      }
     }
   }
 

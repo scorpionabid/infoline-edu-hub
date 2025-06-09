@@ -28,9 +28,11 @@ export async function fetchUnifiedDataEntries({
 
     return (data || []).map(entry => ({
       ...entry,
+      // Ensure status is properly typed
+      status: (entry.status as 'pending' | 'approved' | 'rejected' | 'draft') || 'draft',
       school_id: entityType === 'school' ? entry.school_id : undefined,
       sector_id: entityType === 'sector' ? entry.sector_id : undefined
-    }));
+    })) as UnifiedDataEntry[];
   } catch (error) {
     console.error('Error fetching unified data entries:', error);
     throw error;

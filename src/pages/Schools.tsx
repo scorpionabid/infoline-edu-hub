@@ -8,6 +8,7 @@ import SchoolsContainer from '@/components/schools/SchoolsContainer';
 import { Loader2 } from 'lucide-react';
 import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { toast } from 'sonner';
+import { School } from '@/types/school';
 
 const Schools = () => {
   const { t } = useLanguageSafe();
@@ -60,11 +61,27 @@ const Schools = () => {
   }, [sectors]);
 
   // Məktəb əməliyyatları
-  const handleCreateSchool = async (schoolData: Omit<any, 'id'>) => {
+  const handleCreateSchool = async (schoolData: Partial<School>) => {
     try {
+      // Ensure required fields are present
+      const schoolToCreate = {
+        name: schoolData.name || '',
+        region_id: schoolData.region_id || '',
+        sector_id: schoolData.sector_id || '',
+        status: schoolData.status || 'active',
+        address: schoolData.address,
+        phone: schoolData.phone,
+        email: schoolData.email,
+        principal_name: schoolData.principal_name,
+        student_count: schoolData.student_count,
+        teacher_count: schoolData.teacher_count,
+        type: schoolData.type,
+        language: schoolData.language
+      };
+
       const { data, error } = await supabase
         .from('schools')
-        .insert(schoolData)
+        .insert(schoolToCreate)
         .select('*')
         .single();
         

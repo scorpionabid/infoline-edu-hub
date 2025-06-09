@@ -18,12 +18,14 @@ export const useExistingUserForm = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Mock users data
+      // Mock users data with proper User interface properties
       const mockUsers: User[] = [
         {
           id: '1',
           email: 'user1@example.com',
           full_name: 'İstifadəçi 1',
+          fullName: 'İstifadəçi 1', // Add required fullName property
+          role: 'user', // Add required role property
           phone: '+994501234567',
           status: 'active',
           created_at: new Date().toISOString(),

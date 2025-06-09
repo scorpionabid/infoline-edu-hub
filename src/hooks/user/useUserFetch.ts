@@ -44,9 +44,10 @@ export const useUserFetch = () => {
         query = query.eq('user_roles.role', 'schooladmin'); // Sector admins can only see school admins
       }
 
-      // Apply filters
+      // Apply filters - handle both string and array types safely
       if (filters.role) {
-        query = query.eq('user_roles.role', filters.role);
+        const roleValue = Array.isArray(filters.role) ? filters.role[0] : filters.role;
+        query = query.eq('user_roles.role', roleValue);
       }
       if (filters.region_id) {
         query = query.eq('user_roles.region_id', filters.region_id);
@@ -58,7 +59,8 @@ export const useUserFetch = () => {
         query = query.eq('user_roles.school_id', filters.school_id);
       }
       if (filters.status) {
-        query = query.eq('status', filters.status);
+        const statusValue = Array.isArray(filters.status) ? filters.status[0] : filters.status;
+        query = query.eq('status', statusValue);
       }
       if (filters.search) {
         query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);

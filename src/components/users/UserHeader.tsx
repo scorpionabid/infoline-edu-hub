@@ -32,7 +32,6 @@ interface UserHeaderProps {
   title?: string;
   filterProps?: any;
   onRefresh?: () => void;
-  // Users səhifəsindən ötürülən əlavə proplar
   entityTypes?: Array<'region' | 'sector' | 'school'>;
   onUserAddedOrEdited?: () => void;
 }
@@ -59,12 +58,22 @@ const UserHeader: React.FC<UserHeaderProps> = ({
     }
   }, [filterProps, updateFilter]);
 
-  // Aktiv filterləri izləyək
+  // Aktiv filterləri izləyək - handle both string and array types safely
   useEffect(() => {
     const newActiveFilters: string[] = [];
     
-    if (filter.role) newActiveFilters.push(`${t('role')}: ${t(filter.role)}`);
-    if (filter.status) newActiveFilters.push(`${t('status')}: ${t(filter.status)}`);
+    // Safe handling of role filter (can be string or array)
+    if (filter.role) {
+      const roleValue = Array.isArray(filter.role) ? filter.role.join(', ') : filter.role;
+      newActiveFilters.push(`${t('role')}: ${t(roleValue)}`);
+    }
+    
+    // Safe handling of status filter (can be string or array)
+    if (filter.status) {
+      const statusValue = Array.isArray(filter.status) ? filter.status.join(', ') : filter.status;
+      newActiveFilters.push(`${t('status')}: ${t(statusValue)}`);
+    }
+    
     if (filter.regionId) newActiveFilters.push(`${t('region')}: ${filter.regionId}`);
     if (filter.sectorId) newActiveFilters.push(`${t('sector')}: ${filter.sectorId}`);
     if (filter.schoolId) newActiveFilters.push(`${t('school')}: ${filter.schoolId}`);
@@ -139,7 +148,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
     updateFilter({ ...filter, search: '' });
   };
 
-  // Filter funksiyaları
+  // Filter funksiyaları - handle array types properly
   const handleFilterChange = (key: keyof UserFilter, value: string) => {
     if (key === "role") {
       updateFilter({ ...filter, role: value });

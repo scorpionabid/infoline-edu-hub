@@ -75,12 +75,16 @@ export const useOptimizedUserList = (): UseOptimizedUserListResult => {
         }
       }
 
+      // Handle role filter - ensure string compatibility
       if (effectiveFilters.role) {
-        query = query.eq('user_roles.role', effectiveFilters.role);
+        const roleValue = Array.isArray(effectiveFilters.role) ? effectiveFilters.role[0] : effectiveFilters.role;
+        query = query.eq('user_roles.role', roleValue);
       }
 
+      // Handle status filter - ensure string compatibility  
       if (effectiveFilters.status) {
-        query = query.eq('status', effectiveFilters.status);
+        const statusValue = Array.isArray(effectiveFilters.status) ? effectiveFilters.status[0] : effectiveFilters.status;
+        query = query.eq('status', statusValue);
       }
 
       if (effectiveFilters.search) {
