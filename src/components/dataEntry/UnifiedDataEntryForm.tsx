@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Save, Send, AlertCircle, CheckCircle } from 'lucide-react';
-import { useUnifiedDataEntry, UseUnifiedDataEntryOptions } from '@/hooks/dataEntry/useUnifiedDataEntry';
-import FormFields from './core/FormFields';
+import { useUnifiedDataEntry, type UseUnifiedDataEntryOptions } from '@/hooks/dataEntry/useUnifiedDataEntry';
 
 export interface UnifiedDataEntryFormProps extends UseUnifiedDataEntryOptions {
   title?: string;
@@ -18,6 +17,7 @@ const UnifiedDataEntryForm: React.FC<UnifiedDataEntryFormProps> = ({
   categoryId,
   entityId,
   entityType,
+  userId,
   onSave,
   onSubmit,
   title = 'Məlumat Daxil Etmə Forması',
@@ -42,6 +42,7 @@ const UnifiedDataEntryForm: React.FC<UnifiedDataEntryFormProps> = ({
     categoryId,
     entityId,
     entityType,
+    userId,
     onSave,
     onSubmit
   });
@@ -130,12 +131,27 @@ const UnifiedDataEntryForm: React.FC<UnifiedDataEntryFormProps> = ({
       {/* Form Fields */}
       <Card>
         <CardContent className="pt-6">
-          <FormFields
-            columns={columns}
-            formData={formData}
-            onChange={handleFieldChange}
-            readOnly={readOnly}
-          />
+          <div className="space-y-4">
+            {columns.map((column) => (
+              <div key={column.id} className="space-y-2">
+                <label className="text-sm font-medium">
+                  {column.name}
+                  {column.is_required && <span className="text-red-500 ml-1">*</span>}
+                </label>
+                <input
+                  type="text"
+                  value={formData[column.id] || ''}
+                  onChange={(e) => handleFieldChange(column.id, e.target.value)}
+                  placeholder={column.placeholder || `${column.name} daxil edin`}
+                  disabled={readOnly}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                {column.help_text && (
+                  <p className="text-xs text-muted-foreground">{column.help_text}</p>
+                )}
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

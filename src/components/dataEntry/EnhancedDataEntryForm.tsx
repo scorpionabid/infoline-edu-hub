@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,8 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Save, Send, AlertCircle, CheckCircle, FileText, Clock, HelpCircle, Lightbulb } from 'lucide-react';
-import { useUnifiedDataEntry, UseUnifiedDataEntryOptions } from '@/hooks/dataEntry/useUnifiedDataEntry';
-import FormFields from './core/EnhancedFormFields';
+import { useUnifiedDataEntry, type UseUnifiedDataEntryOptions } from '@/hooks/dataEntry/useUnifiedDataEntry';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -21,6 +21,7 @@ export const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
   categoryId,
   entityId,
   entityType,
+  userId,
   onSave,
   onSubmit,
   title = 'Məlumat Daxil Etmə Forması',
@@ -49,6 +50,7 @@ export const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
     categoryId,
     entityId,
     entityType,
+    userId,
     onSave,
     onSubmit
   });
@@ -209,63 +211,62 @@ export const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
           </Alert>
         )}
 
-        {/* Organized Form Sections */}
+        {/* Simple Form Fields Display */}
         <Card>
           <CardContent className="pt-6">
-            <Accordion 
-              type="multiple" 
-              value={expandedSections}
-              onValueChange={setExpandedSections}
-              className="space-y-4"
-            >
+            <div className="space-y-6">
               {/* Required Fields Section */}
               {groupedColumns.required.length > 0 && (
-                <AccordionItem value="required" className="border rounded-lg">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-muted/50">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-red-500" />
-                      <span className="font-medium">Məcburi sahələr</span>
-                      <Badge variant="outline">{groupedColumns.required.length}</Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="space-y-4">
-                      <FormFields
-                        columns={groupedColumns.required}
-                        formData={formData}
-                        onChange={handleFieldChange}
-                        readOnly={readOnly}
-                        showValidation={true}
-                      />
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <span className="font-medium">Məcburi sahələr</span>
+                    <Badge variant="outline">{groupedColumns.required.length}</Badge>
+                  </div>
+                  <div className="grid gap-4">
+                    {groupedColumns.required.map((column) => (
+                      <div key={column.id} className="space-y-2">
+                        <label className="text-sm font-medium">{column.name}</label>
+                        <input
+                          type="text"
+                          value={formData[column.id] || ''}
+                          onChange={(e) => handleFieldChange(column.id, e.target.value)}
+                          placeholder={column.placeholder || `${column.name} daxil edin`}
+                          disabled={readOnly}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
 
               {/* Optional Fields Section */}
               {groupedColumns.optional.length > 0 && (
-                <AccordionItem value="optional" className="border rounded-lg">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-muted/50">
-                    <div className="flex items-center gap-2">
-                      <HelpCircle className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium">Əlavə sahələr</span>
-                      <Badge variant="outline">{groupedColumns.optional.length}</Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="space-y-4">
-                      <FormFields
-                        columns={groupedColumns.optional}
-                        formData={formData}
-                        onChange={handleFieldChange}
-                        readOnly={readOnly}
-                        showValidation={true}
-                      />
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <HelpCircle className="h-4 w-4 text-blue-500" />
+                    <span className="font-medium">Əlavə sahələr</span>
+                    <Badge variant="outline">{groupedColumns.optional.length}</Badge>
+                  </div>
+                  <div className="grid gap-4">
+                    {groupedColumns.optional.map((column) => (
+                      <div key={column.id} className="space-y-2">
+                        <label className="text-sm font-medium">{column.name}</label>
+                        <input
+                          type="text"
+                          value={formData[column.id] || ''}
+                          onChange={(e) => handleFieldChange(column.id, e.target.value)}
+                          placeholder={column.placeholder || `${column.name} daxil edin`}
+                          disabled={readOnly}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
-            </Accordion>
+            </div>
           </CardContent>
         </Card>
 
