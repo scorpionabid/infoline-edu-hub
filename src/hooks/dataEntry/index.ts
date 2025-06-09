@@ -1,14 +1,13 @@
 
 // Unified Data Entry Hook (PRIMARY)
-export { default as useUnifiedDataEntry } from './useUnifiedDataEntry';
+export { useUnifiedDataEntry } from './useUnifiedDataEntry';
 export type { 
   UseUnifiedDataEntryOptions, 
-  UseUnifiedDataEntryReturn,
   UnifiedDataEntry 
 } from './useUnifiedDataEntry';
 
 // Specialized hooks that use the unified implementation
-export { default as useSchoolDataEntry } from './useSchoolDataEntry';
+export { default as useSchoolDataEntry } from './school/useSchoolDataEntry';
 export { default as useSectorDataEntryUnified } from './useSectorDataEntryUnified';
 
 // Common hooks

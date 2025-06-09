@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserRole } from '@/types/user';
+import { FullUserData } from '@/types/user';
 import { toast } from 'sonner';
 
 type ValidUserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
@@ -23,8 +23,27 @@ export const useUserOperations = () => {
         throw new Error('Invalid user role');
       }
 
-      // Create user profile - remove id from insert
+      // Create auth user first via auth.admin
+      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+        email: userData.email || '',
+        password: Math.random().toString(36).slice(-8), // Generate random password
+        email_confirm: true,
+        user_metadata: {
+          full_name: userData.full_name || userData.fullName || '',
+          role: userRole,
+          region_id: userData.region_id || userData.regionId || null,
+          sector_id: userData.sector_id || userData.sectorId || null,
+          school_id: userData.school_id || userData.schoolId || null
+        }
+      });
+
+      if (authError) throw authError;
+      if (!authUser.user) throw new Error('Failed to create auth user');
+
+      // The trigger should automatically create the profile and user_role
+      // Let's verify and update if needed
       const profileData = {
+        id: authUser.user.id,
         full_name: userData.full_name || userData.fullName || '',
         email: userData.email || '',
         phone: userData.phone || '',
@@ -33,31 +52,15 @@ export const useUserOperations = () => {
         status: userData.status || 'active'
       };
 
-      const { data, error } = await supabase
+      // Upsert the profile to ensure it exists with correct data
+      const { error: profileError } = await supabase
         .from('profiles')
-        .insert(profileData)
-        .select()
-        .single();
+        .upsert(profileData);
 
-      if (error) throw error;
-
-      // Create user role with proper type casting
-      const roleData = {
-        user_id: data.id,
-        role: userRole as ValidUserRole,
-        region_id: userData.region_id || userData.regionId || null,
-        sector_id: userData.sector_id || userData.sectorId || null,
-        school_id: userData.school_id || userData.schoolId || null
-      };
-
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert(roleData);
-
-      if (roleError) throw roleError;
+      if (profileError) throw profileError;
 
       toast.success('User created successfully');
-      return data;
+      return authUser.user;
     } catch (err) {
       console.error('Error creating user:', err);
       setError(err as Error);

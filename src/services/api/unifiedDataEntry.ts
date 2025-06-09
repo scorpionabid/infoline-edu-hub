@@ -44,10 +44,12 @@ export async function fetchUnifiedDataEntries({
 
     if (error) throw error;
 
-    return (data || []).map(entry => ({
+    // Transform and ensure proper typing
+    return (data || []).map((entry: any) => ({
       ...entry,
-      // Ensure status is properly typed
-      status: (entry.status as 'pending' | 'approved' | 'rejected' | 'draft') || 'draft',
+      status: (['pending', 'approved', 'rejected', 'draft'].includes(entry.status)) 
+        ? entry.status 
+        : 'draft',
       school_id: entityType === 'school' ? entry.school_id : undefined,
       sector_id: entityType === 'sector' ? entry.sector_id : undefined
     })) as UnifiedDataEntry[];

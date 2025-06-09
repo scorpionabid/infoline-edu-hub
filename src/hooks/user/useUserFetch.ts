@@ -46,11 +46,12 @@ export const useUserFetch = () => {
 
       // Apply filters - handle both string and array types safely
       if (filters.role) {
-        const roleValue = Array.isArray(filters.role) ? filters.role[0] : filters.role;
-        // Type-safe role validation
-        const validRoles = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'] as const;
-        if (validRoles.includes(roleValue as any)) {
-          query = query.eq('user_roles.role', roleValue);
+        if (Array.isArray(filters.role)) {
+          if (filters.role.length > 0) {
+            query = query.in('user_roles.role', filters.role);
+          }
+        } else {
+          query = query.eq('user_roles.role', filters.role);
         }
       }
       if (filters.region_id) {
@@ -63,8 +64,13 @@ export const useUserFetch = () => {
         query = query.eq('user_roles.school_id', filters.school_id);
       }
       if (filters.status) {
-        const statusValue = Array.isArray(filters.status) ? filters.status[0] : filters.status;
-        query = query.eq('status', statusValue);
+        if (Array.isArray(filters.status)) {
+          if (filters.status.length > 0) {
+            query = query.in('status', filters.status);
+          }
+        } else {
+          query = query.eq('status', filters.status);
+        }
       }
       if (filters.search) {
         query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
