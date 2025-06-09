@@ -1,3 +1,6 @@
+// Development server restart helper
+// Last updated: Columns improvement implementation
+// Fixed: Corrected file format and escape sequences
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -13,7 +16,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import PageHeader from '@/components/layout/PageHeader';
+import ColumnTabs from '@/components/columns/ColumnTabs';
+import ArchivedColumnList from '@/components/columns/ArchivedColumnList';
+import RestoreColumnDialog from '@/components/columns/RestoreColumnDialog';
+import PermanentDeleteDialog from '@/components/columns/PermanentDeleteDialog';
 import DeleteColumnDialog from '@/components/columns/DeleteColumnDialog';
 // import EnhancedDeleteColumnDialog from '@/components/columns/EnhancedDeleteColumnDialog';
 import ColumnFormDialog from '@/components/columns/ColumnFormDialog';
@@ -27,6 +33,7 @@ import { useColumnMutations } from '@/hooks/columns/useColumnMutations';
 // import { useEnhancedColumnMutations } from '@/hooks/columns/useEnhancedColumnMutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { Column } from '@/types/column';
+import PageHeader from '@/components/layout/PageHeader';
 
 const Columns: React.FC = () => {
   const { t } = useLanguage();
@@ -48,14 +55,14 @@ const Columns: React.FC = () => {
   } = useCategories();
   
   const { userRole } = usePermissions();
-  const { createColumn, updateColumn, deleteColumn } = useColumnMutations();
+  const { createColumn, updateColumn, deleteColumn, restoreColumn, permanentDeleteColumn, isRestoring, isPermanentDeleting } = useColumnMutations();
   // const { enhancedDeleteColumn, restoreColumn, isEnhancedDeleting } = useEnhancedColumnMutations();
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
   
   // SuperAdmin və region admini sütun əlavə və redaktə edə bilər
   const canManageColumns = userRole === 'superadmin' || userRole === 'regionadmin';
@@ -65,6 +72,23 @@ const Columns: React.FC = () => {
     column: '',
     columnName: '',
     categoryId: ''
+  });
+
+  // Restore column dialog state
+  const [restoreDialog, setRestoreDialog] = useState({
+    isOpen: false,
+    columnId: '',
+    columnName: ''
+  });
+
+  // Permanent delete column dialog state
+  const [permanentDeleteDialog, setPermanentDeleteDialog] = useState({
+    isOpen: false,
+    column: {
+      id: '',
+      name: '',
+      dataEntriesCount: 0
+    }
   });
 
   // const [enhancedDeleteDialog, setEnhancedDeleteDialog] = useState({
@@ -79,26 +103,29 @@ const Columns: React.FC = () => {
 
   console.log('Columns page rendered, canManageColumns:', canManageColumns);
 
-  // Filter columns
+  // Separate active and archived columns
+  const activeColumns = React.useMemo(() => {
+    return columns?.filter(column => column.status === 'active') || [];
+  }, [columns]);
+  
+  const archivedColumns = React.useMemo(() => {
+    return columns?.filter(column => column.status === 'deleted') || [];
+  }, [columns]);
+  
+  // Get current columns based on active tab
+  const currentColumns = activeTab === 'active' ? activeColumns : archivedColumns;
+  
+  // Filter columns (only search)
   const filteredColumns = React.useMemo(() => {
-    if (!columns || !Array.isArray(columns)) return [];
+    if (!currentColumns || !Array.isArray(currentColumns)) return [];
     
-    return columns.filter(column => {
+    return currentColumns.filter(column => {
       const matchesSearch = searchQuery === '' || 
         column.name.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesCategory = categoryFilter === 'all' || 
-        column.category_id === categoryFilter;
-      
-      const matchesType = typeFilter === 'all' || 
-        column.type === typeFilter;
-      
-      const matchesStatus = statusFilter === 'all' || 
-        column.status === statusFilter;
-      
-      return matchesSearch && matchesCategory && matchesType && matchesStatus;
-    }) || [];
-  }, [columns, searchQuery, categoryFilter, typeFilter, statusFilter]);
+      return matchesSearch;
+    });
+  }, [currentColumns, searchQuery]);
 
   // Get the first available category for new columns
   useEffect(() => {
@@ -261,11 +288,6 @@ const Columns: React.FC = () => {
   if (categoriesError || columnsError) {
     return (
       <div className="container mx-auto py-6 space-y-6">
-        <PageHeader
-          title={t('columnsPageTitle') || 'Columns'}
-          description={t('columnsPageDescription') || 'Manage columns'}
-          backButtonUrl="/categories"
-        />
         <Alert variant="destructive" className="mb-4">
           <AlertTriangle className="h-4 w-4 mr-2" />
           <AlertDescription>
@@ -286,11 +308,6 @@ const Columns: React.FC = () => {
   if ((columnsLoading || categoriesLoading) && !columnsError && !categoriesError) {
     return (
       <div className="container mx-auto py-6 space-y-6">
-        <PageHeader
-          title={t('columnsPageTitle') || 'Columns'}
-          description={t('columnsPageDescription') || 'Manage columns'}
-          backButtonUrl="/categories"
-        />
         <div className="flex flex-col items-center justify-center h-64">
           <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
           <p>{t('loadingColumns') || 'Loading columns...'}</p>
@@ -301,16 +318,16 @@ const Columns: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <PageHeader
-        title={t('columnsPageTitle') || 'Columns'}
-        description={t('columnsPageDescription') || 'Manage columns'}
-        backButtonUrl="/categories"
-      >
-        {canManageColumns && (
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Sütunlar</h1>
+          <p className="text-muted-foreground">Sistem sütunlarını idarə edin</p>
+        </div>
+        {canManageColumns && activeTab === 'active' && (
           <div className="flex gap-2">
             <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder="Kateqoriya seçin" />
               </SelectTrigger>
               <SelectContent>
                 {categories?.map((category) => (
@@ -322,77 +339,53 @@ const Columns: React.FC = () => {
             </Select>
             <Button onClick={handleOpenAddColumnDialog} disabled={!selectedCategoryId}>
               <Plus className="mr-2 h-4 w-4" />
-              {t('addColumn') || 'Add Column'}
+              {t('addColumn') || 'Sütun əlavə et'}
             </Button>
           </div>
         )}
-      </PageHeader>
+      </div>
 
-      {/* Filter bar */}
-      <div className="mb-6 space-y-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={t("searchColumns") || "Search columns..."}
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex flex-col md:flex-row gap-2">
-            <Select 
-              value={categoryFilter || 'all'} 
-              onValueChange={setCategoryFilter}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t("categoryFilter") || "Category filter"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("allCategories") || "All categories"}</SelectItem>
-                {categories?.map((category) => (
-                  <SelectItem key={category.id} value={category.id || `category-${Math.random()}`}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select 
-              value={typeFilter || 'all'} 
-              onValueChange={setTypeFilter}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t("typeFilter") || "Type filter"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("allTypes") || "All types"}</SelectItem>
-                <SelectItem value="text">{t("text") || "Text"}</SelectItem>
-                <SelectItem value="number">{t("number") || "Number"}</SelectItem>
-                <SelectItem value="date">{t("date") || "Date"}</SelectItem>
-                <SelectItem value="select">{t("select") || "Select"}</SelectItem>
-                <SelectItem value="checkbox">{t("checkbox") || "Checkbox"}</SelectItem>
-                <SelectItem value="radio">{t("radio") || "Radio"}</SelectItem>
-                <SelectItem value="file">{t("file") || "File"}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Tabs */}
+      <ColumnTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        activeCount={activeColumns.length}
+        archivedCount={archivedColumns.length}
+      />
+
+      {/* Search bar */}
+      <div className="mb-6">
+        <div className="relative max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Sütunlarda axtar..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
       </div>
 
       {filteredColumns.length === 0 && !columnsLoading ? (
         <EmptyState
           icon={<Database className="h-12 w-12" />}
-          title={t('noColumnsFound') || 'No columns found'}
-          description={t('noColumnsFoundDescription') || 'No columns found for the selected filters'}
-          action={canManageColumns && selectedCategoryId ? {
-            label: t('addColumn') || 'Add Column',
+          title={activeTab === 'active' ? 'Aktiv sütun tapılmadı' : 'Arxivdə sütun tapılmadı'}
+          description={
+            activeTab === 'active'
+              ? searchQuery 
+                ? 'Axtarış kriteriyalarına uyğun aktiv sütun tapılmadı'
+                : 'Hələ heç bir aktiv sütun yoxdur'
+              : searchQuery
+                ? 'Axtarış kriteriyalarına uyğun arxiv sütunu tapılmadı'
+                : 'Hələ heç bir sütun arxivləşdirilməyib'
+          }
+          action={canManageColumns && selectedCategoryId && activeTab === 'active' ? {
+            label: 'Sütun əlavə et',
             onClick: handleOpenAddColumnDialog
           } : undefined}
         />
-      ) : (
+      ) : activeTab === 'active' ? (
         <ColumnList
           columns={filteredColumns}
           categories={categories || []}
@@ -407,6 +400,31 @@ const Columns: React.FC = () => {
               : ''
           )}
           onUpdateStatus={(id, status) => console.log('Update status:', id, status)}
+          canManageColumns={canManageColumns}
+        />
+      ) : (
+        <ArchivedColumnList
+          columns={filteredColumns}
+          categories={categories || []}
+          isLoading={columnsLoading || categoriesLoading}
+          isError={!!columnsError || !!categoriesError}
+          onRestoreColumn={(id, name) => {
+            setRestoreDialog({
+              isOpen: true,
+              columnId: id,
+              columnName: name
+            });
+          }}
+          onPermanentDelete={(id, name) => {
+            setPermanentDeleteDialog({
+              isOpen: true,
+              column: {
+                id,
+                name,
+                dataEntriesCount: 0 // TODO: Calculate actual count
+              }
+            });
+          }}
           canManageColumns={canManageColumns}
         />
       )}
@@ -443,6 +461,40 @@ const Columns: React.FC = () => {
           isSubmitting={isSubmitting}
         />
       )}
+
+      {/* Restore Column Dialog */}
+      <RestoreColumnDialog
+        isOpen={restoreDialog.isOpen}
+        onClose={() => setRestoreDialog({ ...restoreDialog, isOpen: false })}
+        onConfirm={async () => {
+          try {
+            await restoreColumn(restoreDialog.columnId);
+            setRestoreDialog({ ...restoreDialog, isOpen: false });
+            refetchColumns();
+          } catch (error) {
+            console.error('Error restoring column:', error);
+          }
+        }}
+        columnName={restoreDialog.columnName}
+        isSubmitting={isRestoring}
+      />
+
+      {/* Permanent Delete Dialog */}
+      <PermanentDeleteDialog
+        isOpen={permanentDeleteDialog.isOpen}
+        onClose={() => setPermanentDeleteDialog({ ...permanentDeleteDialog, isOpen: false })}
+        onConfirm={async () => {
+          try {
+            await permanentDeleteColumn(permanentDeleteDialog.column.id);
+            setPermanentDeleteDialog({ ...permanentDeleteDialog, isOpen: false });
+            refetchColumns();
+          } catch (error) {
+            console.error('Error permanently deleting column:', error);
+          }
+        }}
+        column={permanentDeleteDialog.column}
+        isSubmitting={isPermanentDeleting}
+      />
     </div>
   );
 };

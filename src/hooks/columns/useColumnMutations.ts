@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Column, ColumnFormData } from '@/types/column';
@@ -121,6 +120,87 @@ export const useColumnMutations = () => {
     }
   });
 
+  // Restore column mutation
+  const restoreColumn = useMutation({
+    mutationFn: async (columnId: string) => {
+      console.log('🔄 Restoring column with ID:', columnId);
+      
+      const { data, error } = await supabase
+        .from('columns')
+        .update({ status: 'active' })
+        .eq('id', columnId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Database error restoring column:', error);
+        throw new Error(error.message);
+      }
+
+      console.log('✅ Column restored successfully:', data);
+      return { success: true, data };
+    },
+    onSuccess: (result, columnId) => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success('Sütun uğurla bərpa edildi');
+    },
+    onError: (error: Error) => {
+      console.error('❌ Error restoring column:', error);
+      toast.error('Sütun bərpa edilərkən xəta baş verdi: ' + error.message);
+    }
+  });
+
+  // Permanent delete column mutation
+  const permanentDeleteColumn = useMutation({
+    mutationFn: async (columnId: string) => {
+      console.log('🗑️ Permanently deleting column with ID:', columnId);
+      
+      // First, delete related data entries
+      const { error: dataEntriesError } = await supabase
+        .from('data_entries')
+        .delete()
+        .eq('column_id', columnId);
+
+      if (dataEntriesError) {
+        console.error('❌ Error deleting data entries:', dataEntriesError);
+        throw new Error('Failed to delete related data entries: ' + dataEntriesError.message);
+      }
+
+      // Delete related sector data entries
+      const { error: sectorEntriesError } = await supabase
+        .from('sector_data_entries')
+        .delete()
+        .eq('column_id', columnId);
+
+      if (sectorEntriesError) {
+        console.error('❌ Error deleting sector entries:', sectorEntriesError);
+        throw new Error('Failed to delete related sector entries: ' + sectorEntriesError.message);
+      }
+
+      // Finally, delete the column
+      const { error: columnError } = await supabase
+        .from('columns')
+        .delete()
+        .eq('id', columnId);
+
+      if (columnError) {
+        console.error('❌ Database error deleting column:', columnError);
+        throw new Error(columnError.message);
+      }
+
+      console.log('✅ Column permanently deleted successfully');
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success('Sütun tamamilə silindi');
+    },
+    onError: (error: Error) => {
+      console.error('❌ Error permanently deleting column:', error);
+      toast.error('Sütun silinərkən xəta baş verdi: ' + error.message);
+    }
+  });
+
   return {
     createColumn: (data: Omit<Column, 'id'> & { id?: string }) => {
       console.log('CreateColumn function called with:', data);
@@ -134,8 +214,18 @@ export const useColumnMutations = () => {
       console.log('DeleteColumn function called with ID:', id);
       return deleteColumn.mutateAsync(id);
     },
+    restoreColumn: (id: string) => {
+      console.log('RestoreColumn function called with ID:', id);
+      return restoreColumn.mutateAsync(id);
+    },
+    permanentDeleteColumn: (id: string) => {
+      console.log('PermanentDeleteColumn function called with ID:', id);
+      return permanentDeleteColumn.mutateAsync(id);
+    },
     isCreating: createColumn.isPending,
     isUpdating: updateColumn.isPending,
-    isDeleting: deleteColumn.isPending
+    isDeleting: deleteColumn.isPending,
+    isRestoring: restoreColumn.isPending,
+    isPermanentDeleting: permanentDeleteColumn.isPending
   };
 };
