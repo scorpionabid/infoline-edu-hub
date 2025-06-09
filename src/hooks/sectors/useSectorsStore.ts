@@ -1,239 +1,293 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Sector } from '@/types/supabase';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { useLanguage } from '@/context/LanguageContext';
+import { useRegions } from '@/hooks/regions/useRegions';
 import { toast } from 'sonner';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
-export interface EnhancedSector extends Sector {
-  regionName?: string;
-  schoolCount?: number;
+export interface SortConfig {
+  key: string | null;
+  direction: 'asc' | 'desc' | null;
 }
 
 export const useSectorsStore = () => {
-  const [sectors, setSectors] = useState<EnhancedSector[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [sectors, setSectors] = useState<Sector[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const { t } = useLanguage();
-  const user = useAuthStore(selectUser);
-  
   const itemsPerPage = 10;
+  const { t } = useLanguageSafe();
+  const user = useAuthStore(selectUser);
+  const { userRole, regionId } = usePermissions();
+  
+  const isFetchingRef = useRef(false);
+  const prevFiltersRef = useRef({
+    region: '',
+    status: '',
+    userRole: '',
+    regionId: ''
+  });
+  
+  const { regions = [], loading: regionsLoading } = useRegions() || {};
 
-  // İstifadəçinin regionuna əsasən filtrləmək
-  useEffect(() => {
-    if (user && user.role === 'regionadmin' && user.regionId) {
-      setSelectedRegion(user.regionId);
+  const fetchSectors = useCallback(async (forceRefresh = false) => {
+    const currentFilters = {
+      region: selectedRegion,
+      status: selectedStatus,
+      userRole: userRole || '',
+      regionId: regionId || ''
+    };
+    
+    if (!forceRefresh && (
+      isFetchingRef.current || 
+      JSON.stringify(currentFilters) === JSON.stringify(prevFiltersRef.current)
+    )) {
+      console.log("Sektorlar hələ yüklənir və ya filtrlər dəyişməyib");
+      return;
     }
-  }, [user]);
-
-  const fetchSectors = useCallback(async () => {
+    
+    prevFiltersRef.current = { ...currentFilters };
+    isFetchingRef.current = true;
+    
     setLoading(true);
+    setError(null);
+    
     try {
+      console.log("🏢 Sektorlar yüklənir...");
+      console.log("👤 İstifadəçi rolu:", userRole);
+      console.log("🌍 Region ID:", regionId);
+      
       let query = supabase.from('sectors').select('*');
       
-      // İstifadəçinin roluna görə filtrləmək
-      if (user && user.role === 'regionadmin' && user.regionId) {
-        query = query.eq('region_id', user.regionId);
-      } else if (selectedRegion) {
-        query = query.eq('region_id', selectedRegion);
+      if (userRole === 'regionadmin' && regionId) {
+        console.log("🔒 Region admin filtri tətbiq olunur:", regionId);
+        query = query.eq('region_id', regionId);
+      } else {
+        if (selectedRegion) {
+          console.log("🔍 Region filtri tətbiq olunur:", selectedRegion);
+          query = query.eq('region_id', selectedRegion);
+        }
       }
       
       if (selectedStatus) {
+        console.log("🔍 Status filtri tətbiq olunur:", selectedStatus);
         query = query.eq('status', selectedStatus);
       }
       
-      // Sıralama
-      query = query.order('name', { ascending: true });
-      
-      // Məlumatları əldə etmək
-      const { data: sectorsData, error } = await query;
+      const { data, error } = await query.order('name');
       
       if (error) {
+        console.error("❌ Supabase sorğu xətası:", error);
         throw error;
       }
       
-      // Region adlarını və məktəblərin sayını əldə etmək
-      const enhancedSectors = await Promise.all((sectorsData || []).map(async (sector) => {
-        // Region adını əldə etmək
-        let regionName = '';
-        if (sector.region_id) {
-          const { data: regionData } = await supabase
-            .from('regions')
-            .select('name')
-            .eq('id', sector.region_id)
-            .single();
-            
-          if (regionData) {
-            regionName = regionData.name;
-          }
-        }
-        
-        // Məktəblərin sayını əldə etmək
-        let schoolCount = 0;
-        const { count } = await supabase
-          .from('schools')
-          .select('id', { count: 'exact' })
-          .eq('sector_id', sector.id);
-          
-        if (count !== null) {
-          schoolCount = count;
-        }
-        
-        // Giriş və yeniləmə tarixlərini formatlamaq
-        return {
-          ...sector,
-          regionName,
-          schoolCount
-        };
-      }));
-      
-      // Axtarış etmək
-      const filteredSectors = enhancedSectors.filter(sector => {
-        const matchesSearch = !searchTerm || 
-          sector.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (sector.description && sector.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (sector.regionName && sector.regionName.toLowerCase().includes(searchTerm.toLowerCase()));
-          
-        return matchesSearch;
+      console.log("✅ Sektorlar yükləndi:", data?.length || 0);
+      setSectors(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      console.error('❌ Error fetching sectors:', err);
+      setError(err);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotLoadSectors')
       });
-      
-      // Səhifələnmə
-      const totalItems = filteredSectors.length;
-      const calculatedTotalPages = Math.ceil(totalItems / itemsPerPage);
-      setTotalPages(calculatedTotalPages || 1);
-      
-      // Cari səhifə üçün sektorları əldə etmək
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      const endIndex = startIndex + itemsPerPage;
-      const paginatedSectors = filteredSectors.slice(startIndex, endIndex);
-      
-      setSectors(paginatedSectors);
-    } catch (error: any) {
-      console.error('Sektorları yükləyərkən xəta:', error);
-      toast.error(t('errorLoadingSectors'));
+      setSectors([]);
     } finally {
       setLoading(false);
+      setTimeout(() => {
+        isFetchingRef.current = false;
+      }, 300);
     }
-  }, [currentPage, searchTerm, selectedRegion, selectedStatus, t, user]);
-  
-  // Filtr dəyişdikdə sektorları yenidən yükləmək
-  useEffect(() => {
-    fetchSectors();
-  }, [fetchSectors]);
-  
-  const handleSearch = useCallback((term: string) => {
-    setSearchTerm(term);
-    setCurrentPage(1);
-  }, []);
-  
-  const handleRegionFilter = useCallback((regionId: string) => {
-    setSelectedRegion(regionId);
-    setCurrentPage(1);
-  }, []);
-  
-  const handleStatusFilter = useCallback((status: string | null) => {
-    setSelectedStatus(status);
-    setCurrentPage(1);
-  }, []);
-  
-  const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
-  }, []);
-  
-  const resetFilters = useCallback(() => {
-    setSearchTerm('');
-    if (!(user && user.role === 'regionadmin' && user.regionId)) {
-      setSelectedRegion('');
-    }
-    setSelectedStatus(null);
-    setCurrentPage(1);
-  }, [user]);
-  
-  // Sektor əlavə etmək
-  const addSector = useCallback(async (sectorData: Partial<Sector>) => {
+  }, [selectedRegion, selectedStatus, t, userRole, regionId]);
+
+  const createSector = useCallback(async (sectorData: Omit<Sector, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      const newSectorData = {
+        name: sectorData.name,
+        region_id: sectorData.region_id,
+        description: sectorData.description || null,
+        status: sectorData.status || 'active'
+      };
+
       const { data, error } = await supabase
         .from('sectors')
-        .insert([sectorData])
+        .insert([newSectorData])
         .select()
         .single();
-        
+
       if (error) throw error;
-      
-      toast.success(t('sectorAddedSuccessfully'));
-      fetchSectors();
+
+      toast.success(t('sectorCreated'));
+      fetchSectors(true);
       return data;
-    } catch (error: any) {
-      console.error('Sektor əlavə edilərkən xəta:', error);
-      toast.error(t('errorAddingSector'));
-      return null;
+    } catch (err: any) {
+      console.error('Error creating sector:', err);
+      toast.error(t('sectorCreationFailed'));
+      throw err;
     }
   }, [fetchSectors, t]);
-  
-  // Sektoru yeniləmək
+
   const updateSector = useCallback(async (id: string, sectorData: Partial<Sector>) => {
     try {
       const { data, error } = await supabase
         .from('sectors')
-        .update(sectorData)
+        .update({
+          ...sectorData,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .select()
         .single();
-        
+
       if (error) throw error;
-      
-      toast.success(t('sectorUpdatedSuccessfully'));
-      fetchSectors();
+
+      toast.success(t('sectorUpdated'));
+      fetchSectors(true);
       return data;
-    } catch (error: any) {
-      console.error('Sektor yenilənilərkən xəta:', error);
-      toast.error(t('errorUpdatingSector'));
-      return null;
+    } catch (err: any) {
+      console.error('Error updating sector:', err);
+      toast.error(t('sectorUpdateFailed'));
+      throw err;
     }
   }, [fetchSectors, t]);
-  
-  // Sektoru silmək
+
   const deleteSector = useCallback(async (id: string) => {
     try {
       const { error } = await supabase
         .from('sectors')
         .delete()
         .eq('id', id);
-        
+
       if (error) throw error;
-      
-      toast.success(t('sectorDeletedSuccessfully'));
-      fetchSectors();
-      return true;
-    } catch (error: any) {
-      console.error('Sektor silinərkən xəta:', error);
-      toast.error(t('errorDeletingSector'));
-      return false;
+
+      toast.success(t('sectorDeleted'));
+      fetchSectors(true);
+    } catch (err: any) {
+      console.error('Error deleting sector:', err);
+      toast.error(t('sectorDeletionFailed'));
+      throw err;
     }
   }, [fetchSectors, t]);
-  
+
+  const filteredSectors = sectors.filter(sector => {
+    if (!sector) return false;
+    
+    const searchMatch = searchTerm
+      ? (sector.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (sector.description?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false)
+      : true;
+    
+    return searchMatch;
+  });
+
+  const sortedSectors = [...filteredSectors].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    const key = sortConfig.key as keyof Sector;
+    const aValue = a[key] as any;
+    const bValue = b[key] as any;
+    
+    if (!aValue && !bValue) return 0;
+    if (!aValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    if (!bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    
+    if (aValue < bValue) {
+      return sortConfig.direction === 'asc' ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === 'asc' ? 1 : -1;
+    }
+    return 0;
+  });
+
+  const totalPages = Math.ceil(sortedSectors.length / itemsPerPage);
+  const adjustedCurrentPage = Math.min(currentPage, Math.max(1, totalPages > 0 ? totalPages : 1));
+  const indexOfLastItem = adjustedCurrentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedSectors.slice(indexOfFirstItem, indexOfLastItem);
+
+  useEffect(() => {
+    if (userRole === 'regionadmin' && regionId) {
+      setSelectedRegion(regionId);
+    }
+  }, [userRole, regionId]);
+
+  useEffect(() => {
+    if (user && !isFetchingRef.current) {
+      fetchSectors(true);
+    }
+  }, [user, userRole, regionId]);
+
+  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleRegionFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedRegion(e.target.value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleStatusFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(e.target.value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleSort = useCallback((key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  }, [sortConfig]);
+
+  const handlePageChange = useCallback((page: number) => {
+    if (page > 0 && page <= (totalPages > 0 ? totalPages : 1)) {
+      setCurrentPage(page);
+    }
+  }, [totalPages]);
+
+  const resetFilters = useCallback(() => {
+    setSearchTerm('');
+    
+    if (userRole !== 'regionadmin') {
+      setSelectedRegion('');
+    }
+    
+    setSelectedStatus('');
+    setCurrentPage(1);
+  }, [userRole]);
+
   return {
     sectors,
-    loading,
+    loading: loading || regionsLoading,
+    error,
     searchTerm,
     selectedRegion,
     selectedStatus,
-    currentPage,
-    totalPages,
+    sortConfig,
+    currentPage: currentPage,
+    itemsPerPage,
+    filteredSectors,
+    sortedSectors,
+    currentItems,
+    totalPages: totalPages > 0 ? totalPages : 1,
+    regions,
     handleSearch,
     handleRegionFilter,
     handleStatusFilter,
+    handleSort,
     handlePageChange,
     resetFilters,
     fetchSectors,
-    addSector,
+    createSector,
     updateSector,
-    deleteSector
+    deleteSector,
+    setSectors,
+    userRole
   };
 };
-
-export default useSectorsStore;

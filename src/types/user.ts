@@ -18,19 +18,19 @@ export interface NotificationSettings {
 export interface User {
   id: string;
   fullName: string;
-  full_name?: string; // backward compatibility
-  name?: string; // backward compatibility
+  full_name?: string;
+  name?: string;
   email: string;
   role: UserRole;
   status: UserStatus;
   created_at: string;
   updated_at: string;
   region_id?: string;
-  regionId?: string; // backward compatibility
+  regionId?: string;
   sector_id?: string;
-  sectorId?: string; // backward compatibility
+  sectorId?: string;
   school_id?: string;
-  schoolId?: string; // backward compatibility
+  schoolId?: string;
   phone?: string;
   position?: string;
   language?: string;
@@ -89,6 +89,5 @@ export interface UserFilter {
   school_id?: string;
 }
 
-// Export aliases for backward compatibility
 export type { UserRole as Role };
 export type { FullUserData as UserData };

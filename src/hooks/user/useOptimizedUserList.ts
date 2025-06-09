@@ -1,157 +1,173 @@
-// Fix only the problematic parts - update references to UserFilter properties
-import { useState, useCallback } from 'react';
-import { User, UserFilter } from '@/types/user';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
-interface PaginationResult<T> {
-  data: T[];
-  total: number;
+import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User, UserFilter } from '@/types/user';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
+import { usePermissions } from '@/hooks/auth/usePermissions';
+
+interface UseOptimizedUserListResult {
+  users: User[];
+  loading: boolean;
+  error: Error | null;
+  totalCount: number;
+  hasMore: boolean;
+  fetchUsers: (filters?: UserFilter, page?: number) => Promise<void>;
+  resetUsers: () => void;
 }
 
-export const useOptimizedUserList = (initialFilters?: UserFilter) => {
+export const useOptimizedUserList = (): UseOptimizedUserListResult => {
   const [users, setUsers] = useState<User[]>([]);
-  const [totalUsers, setTotalUsers] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
-  const [filters, setFilters] = useState<UserFilter>(initialFilters || {});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  
+  const user = useAuthStore(selectUser);
+  const { userRole, regionId, sectorId } = usePermissions();
 
-  const itemsPerPage = 10;
-
-  const buildFilterQuery = useCallback((query: any, filters: UserFilter) => {
-    let builtQuery = query;
-
-    // Apply filters
-    if (filters.role && filters.role.length > 0) {
-      builtQuery = builtQuery.in('role', filters.role);
-    }
-
-    if (filters.status && filters.status.length > 0) {
-      builtQuery = builtQuery.in('status', filters.status);
-    }
-
-    if (filters.regionId) {
-      builtQuery = builtQuery.eq('region_id', filters.regionId);
-    }
-
-    if (filters.sectorId) {
-      builtQuery = builtQuery.eq('sector_id', filters.sectorId);
-    }
-
-    if (filters.schoolId) {
-      builtQuery = builtQuery.eq('school_id', filters.schoolId);
-    }
-
-    if (filters.search && filters.search.trim() !== '') {
-      builtQuery = builtQuery.or(
-        `full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
-      );
-    }
-
-    return builtQuery;
-  }, []);
-
-  const fetchUsers = useCallback(async (page = 1, newFilters?: UserFilter) => {
+  const fetchUsers = useCallback(async (filters: UserFilter = {}, page: number = 1) => {
+    if (!user) return;
+    
     setLoading(true);
     setError(null);
-
+    
     try {
-      const activeFilters = newFilters || filters;
-
-      // Build RLS filters
-      const rlsFilters: any = {};
-      if (activeFilters.role && activeFilters.role.length > 0) {
-        rlsFilters.role = activeFilters.role;
-      }
-      if (activeFilters.regionId) {
-        rlsFilters.region_id = activeFilters.regionId;
-      }
-      if (activeFilters.sectorId) {
-        rlsFilters.sector_id = activeFilters.sectorId;
-      }
-      if (activeFilters.schoolId) {
-        rlsFilters.school_id = activeFilters.schoolId;
+      // Role-based filtering
+      let effectiveFilters = { ...filters };
+      
+      if (userRole === 'regionadmin' && regionId) {
+        effectiveFilters.region_id = regionId;
+      } else if (userRole === 'sectoradmin' && sectorId) {
+        effectiveFilters.sector_id = sectorId;
       }
 
-      // Fetch total count
-      let countQuery = supabase
-        .from('profiles')
-        .select('*', { count: 'exact' });
-
-      countQuery = buildFilterQuery(countQuery, activeFilters);
-      const { count, error: countError } = await countQuery;
-
-      if (countError) {
-        throw countError;
+      // Apply manual filters if not role-restricted
+      if (userRole !== 'regionadmin' && userRole !== 'sectoradmin') {
+        if (filters.region_id) {
+          effectiveFilters.region_id = filters.region_id;
+        }
+        if (filters.sector_id) {
+          effectiveFilters.sector_id = filters.sector_id;
+        }
+        if (filters.school_id) {
+          effectiveFilters.school_id = filters.school_id;
+        }
       }
 
-      const total = count || 0;
-      setTotalUsers(total);
+      console.log('Fetching users with filters:', effectiveFilters);
 
-      // Calculate total pages
-      const totalPageCount = Math.ceil(total / itemsPerPage);
-      setTotalPages(totalPageCount);
-
-      // Fetch paginated data
+      // Build query
       let query = supabase
         .from('profiles')
-        .select('*')
-        .range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
+        .select(`
+          *,
+          user_roles!inner(
+            role,
+            region_id,
+            sector_id,
+            school_id
+          )
+        `);
 
-      query = buildFilterQuery(query, activeFilters);
-      const { data, error } = await query;
-
-      if (error) {
-        throw error;
+      // Apply role-based filters on join
+      if (userRole === 'regionadmin' && regionId) {
+        query = query.eq('user_roles.region_id', regionId);
+      } else if (userRole === 'sectoradmin' && sectorId) {
+        query = query.eq('user_roles.sector_id', sectorId);
+      } else {
+        // Manual filters for other roles
+        if (effectiveFilters.region_id) {
+          query = query.eq('user_roles.region_id', effectiveFilters.region_id);
+        }
+        if (effectiveFilters.sector_id) {
+          query = query.eq('user_roles.sector_id', effectiveFilters.sector_id);
+        }
+        if (effectiveFilters.school_id) {
+          query = query.eq('user_roles.school_id', effectiveFilters.school_id);
+        }
       }
 
-      setUsers(data || []);
-      setPage(page);
-    } catch (err: any) {
-      setError(err.message);
-      toast.error(err.message);
+      if (effectiveFilters.role) {
+        query = query.eq('user_roles.role', effectiveFilters.role);
+      }
+
+      if (effectiveFilters.status) {
+        query = query.eq('status', effectiveFilters.status);
+      }
+
+      if (effectiveFilters.search) {
+        query = query.or(`full_name.ilike.%${effectiveFilters.search}%,email.ilike.%${effectiveFilters.search}%`);
+      }
+
+      const limit = 20;
+      const offset = (page - 1) * limit;
+      
+      const { data, error, count } = await query
+        .range(offset, offset + limit - 1)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Transform data to match User interface
+      const transformedUsers: User[] = (data || []).map((item: any) => ({
+        id: item.id,
+        fullName: item.full_name || '',
+        full_name: item.full_name,
+        email: item.email,
+        role: item.user_roles?.role || 'user',
+        status: item.status || 'active',
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        phone: item.phone,
+        position: item.position,
+        language: item.language,
+        avatar: item.avatar,
+        avatar_url: item.avatar,
+        last_login: item.last_login,
+        region_id: item.user_roles?.region_id,
+        sector_id: item.user_roles?.sector_id,
+        school_id: item.user_roles?.school_id,
+        notification_settings: item.notification_settings
+      }));
+
+      if (page === 1) {
+        setUsers(transformedUsers);
+      } else {
+        setUsers(prev => [...prev, ...transformedUsers]);
+      }
+      
+      setTotalCount(count || 0);
+      setHasMore(transformedUsers.length === limit);
+      
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError(err as Error);
     } finally {
       setLoading(false);
     }
-  }, [buildFilterQuery, filters]);
+  }, [user, userRole, regionId, sectorId]);
 
-  const nextPage = useCallback(() => {
-    if (page < totalPages) {
-      fetchUsers(page + 1);
+  const resetUsers = useCallback(() => {
+    setUsers([]);
+    setTotalCount(0);
+    setHasMore(true);
+    setError(null);
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchUsers();
     }
-  }, [page, totalPages, fetchUsers]);
-
-  const prevPage = useCallback(() => {
-    if (page > 1) {
-      fetchUsers(page - 1);
-    }
-  }, [page, fetchUsers]);
-
-  const applyFilters = useCallback(
-    (newFilters: UserFilter) => {
-      setFilters(newFilters);
-      setPage(1); // Reset to first page when filters change
-      fetchUsers(1, newFilters); // Apply filters on the first page
-    },
-    [fetchUsers]
-  );
+  }, [user, fetchUsers]);
 
   return {
     users,
-    totalUsers,
     loading,
     error,
-    page,
-    totalPages,
+    totalCount,
+    hasMore,
     fetchUsers,
-    refetch: () => fetchUsers(page),
-    nextPage,
-    prevPage,
-    filters,
-    setFilters,
-    applyFilters
+    resetUsers
   };
 };
 

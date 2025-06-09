@@ -1,254 +1,163 @@
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData } from '@/types/supabase';
-import { toast } from 'sonner';
-import { useAuthStore, selectSession } from '@/hooks/auth/useAuthStore';
-import { UserFilter } from '@/hooks/useUserList';
+import { FullUserData, UserFilter } from '@/types/user';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
-export const useUserFetch = (
-  filter: UserFilter = {}, 
-  currentPage: number = 1,
-  pageSize: number = 10
-) => {
+export const useUserFetch = () => {
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [totalCount, setTotalCount] = useState(0);
-  const session = useAuthStore(selectSession);
-  
-  // Add these refs to prevent fetch loops
-  const isMounted = useRef(true);
-  const prevFilterRef = useRef<string>('');
-  const fetchInProgressRef = useRef(false);
-  const lastPageRef = useRef(currentPage);
-  
-  // Track the last requested page number for external consumers
-  const [actualPage, setActualPage] = useState(currentPage);
-  
-  const fetchUsers = useCallback(async () => {
-    // Skip if a fetch is already in progress
-    if (fetchInProgressRef.current) {
-      console.log("useUserFetch: Skipping fetch because another one is in progress");
-      return;
-    }
-    
-    // Convert filter and pagination to string for comparison
-    const filterString = JSON.stringify({ filter, page: currentPage, pageSize });
-    
-    // Skip if filter and pagination haven't changed
-    if (filterString === prevFilterRef.current) {
-      console.log("useUserFetch: Skipping fetch because filter and page haven't changed");
-      return;
-    }
-    
-    // Remember if only page changed without filter changing
-    const previousFilter = prevFilterRef.current ? JSON.parse(prevFilterRef.current) : null;
-    const onlyPageChanged = previousFilter && 
-      JSON.stringify(filter) === JSON.stringify(previousFilter.filter) && 
-      pageSize === previousFilter.pageSize;
-    
-    // Update the previous filter
-    prevFilterRef.current = filterString;
-    
+
+  const user = useAuthStore(selectUser);
+  const { userRole, regionId, sectorId } = usePermissions();
+
+  const fetchUsers = useCallback(async (filters: UserFilter = {}, page: number = 1, limit: number = 20) => {
+    if (!user) return;
+
+    setLoading(true);
+    setError(null);
+
     try {
-      // Set fetch in progress flag
-      fetchInProgressRef.current = true;
-      
-      // Only show loading state for full data reloads, not just page changes
-      if (!onlyPageChanged) {
-        setLoading(true);
+      console.log('Fetching users with role:', userRole, 'regionId:', regionId, 'sectorId:', sectorId);
+
+      // Build base query
+      let query = supabase
+        .from('profiles')
+        .select(`
+          *,
+          user_roles!inner(
+            role,
+            region_id,
+            sector_id,
+            school_id
+          )
+        `, { count: 'exact' });
+
+      // Apply role-based restrictions
+      if (userRole === 'regionadmin' && regionId) {
+        query = query.eq('user_roles.region_id', regionId);
+      } else if (userRole === 'sectoradmin' && sectorId) {
+        query = query.eq('user_roles.sector_id', sectorId);
+        query = query.eq('user_roles.role', 'schooladmin'); // Sector admins can only see school admins
       }
-      
-      setError(null);
-      lastPageRef.current = currentPage;
-      setActualPage(currentPage);
-      
-      console.log('useUserFetch: Fetching users with filter:', filter, 'page:', currentPage);
-      
-      // Ensure filter is not undefined
-      const safeFilter = filter || {};
-      
-      // Filter parametrlərini hazırlayırıq
-      const filterParams: Record<string, any> = {
-        p_page: currentPage || 1,
-        p_limit: pageSize || 10
-      };
-      
-      // Null olmayan filter parametrlərini əlavə edirik
-      if (safeFilter.role) {
-        filterParams.p_role = [safeFilter.role];
-      } else {
-        filterParams.p_role = null;
+
+      // Apply filters
+      if (filters.role) {
+        query = query.eq('user_roles.role', filters.role);
       }
-      
-      filterParams.p_region_id = safeFilter.regionId || null;
-      filterParams.p_sector_id = safeFilter.sectorId || null;
-      filterParams.p_school_id = safeFilter.schoolId || null;
-      
-      if (safeFilter.status) {
-        filterParams.p_status = [safeFilter.status];
-      } else {
-        filterParams.p_status = null;
+      if (filters.region_id) {
+        query = query.eq('user_roles.region_id', filters.region_id);
       }
-      
-      filterParams.p_search = safeFilter.search || null;
-      
-      console.log('useUserFetch: Sending filter params to DB:', filterParams);
-      
-      // Database funksiyası ilə istifadəçiləri əldə edirik
-      const { data: userData, error: fetchError } = await supabase.rpc(
-        'get_filtered_users',
-        filterParams
-      );
-      
-      if (fetchError) {
-        console.error('Error fetching users:', fetchError);
-        throw new Error(`İstifadəçilər əldə edilərkən xəta: ${fetchError.message}`);
+      if (filters.sector_id) {
+        query = query.eq('user_roles.sector_id', filters.sector_id);
       }
-      
-      console.log('useUserFetch: Users fetched:', userData?.length || 0, userData);
-      
-      // Count-u da əldə edirik
-      const { data: countData, error: countError } = await supabase.rpc(
-        'get_filtered_users_count',
-        {
-          p_role: filterParams.p_role,
-          p_region_id: filterParams.p_region_id,
-          p_sector_id: filterParams.p_sector_id, 
-          p_school_id: filterParams.p_school_id,
-          p_status: filterParams.p_status,
-          p_search: filterParams.p_search
-        }
-      );
-      
-      if (countError) {
-        console.error('Error getting user count:', countError);
-      } else {
-        setTotalCount(countData || 0);
-        console.log('useUserFetch: Total user count:', countData);
+      if (filters.school_id) {
+        query = query.eq('user_roles.school_id', filters.school_id);
       }
-      
-      // Don't update state if component unmounted
-      if (!isMounted.current) return;
-      
-      // Verilənləri FullUserData formatına çeviririk
-      const formattedUsers: FullUserData[] = (userData || []).map((item: any) => {
-        try {
-          let user;
-          // JSON.parse bəzən xəta verə bilər, bunu try-catch ilə idarə edirik
-          if (typeof item.user_json === 'string') {
-            user = JSON.parse(item.user_json);
-          } else if (typeof item.user_json === 'object') {
-            user = item.user_json;
-          } else {
-            console.error('Unexpected user_json type:', typeof item.user_json);
-            user = {}; // Default boş obyekt 
-          }
-          
-          // Ensure ID is present
-          if (!user.id && item.id) {
-            user.id = item.id;
-          }
-          
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+      if (filters.search) {
+        query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+      }
+
+      // Pagination
+      const offset = (page - 1) * limit;
+      query = query.range(offset, offset + limit - 1);
+      query = query.order('created_at', { ascending: false });
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      // Transform data to match FullUserData interface
+      const transformedUsers: FullUserData[] = (data || []).map((item: any) => {
+        const userRole = item.user_roles;
+        
+        // Mock data for backward compatibility
+        const mockUserData = {
+          id: item.id,
+          email: item.email,
+          full_name: item.full_name || '',
+          name: item.full_name || '',
+          role: userRole?.role || 'user',
+          region_id: userRole?.region_id,
+          sector_id: userRole?.sector_id,
+          school_id: userRole?.school_id,
+          regionId: userRole?.region_id,
+          sectorId: userRole?.sector_id,
+          schoolId: userRole?.school_id,
+          phone: item.phone || '',
+          position: item.position || '',
+          language: item.language || 'az',
+          avatar: item.avatar || '',
+          status: item.status || 'active',
+          last_login: item.last_login,
+          last_sign_in_at: item.last_login,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          fullName: item.full_name || '',
+          preferences: {},
+          notificationSettings: {
+            email: true,
+            inApp: true,
+            sms: false,
+            deadlineReminders: false
+          },
+          twoFactorEnabled: false,
+          entityName: undefined
+        };
+
+        // Handle different data structures
+        if (typeof item === 'object' && item.full_name && item.email) {
           return {
-            id: user.id || '',
-            email: user.email || '',
-            full_name: user.full_name || '',
-            name: user.full_name || '',
-            role: user.role || '',
-            region_id: user.region_id || '',
-            sector_id: user.sector_id || '',
-            school_id: user.school_id || '',
-            regionId: user.region_id || '',
-            sectorId: user.sector_id || '',
-            schoolId: user.school_id || '',
-            phone: user.phone || '',
-            position: user.position || '',
-            language: user.language || 'az',
-            avatar: user.avatar || '',
-            status: user.status || 'active',
-            last_login: user.last_login || '',
-            lastLogin: user.last_login || '',
-            created_at: user.created_at || '',
-            createdAt: user.created_at || '',
-            updated_at: user.updated_at || '',
-            updatedAt: user.updated_at || '',
-            entityName: user.entity_name || '',
-            notificationSettings: user.notification_settings || {
-              email: true,
-              inApp: true,
-              sms: false,
-              deadlineReminders: true
-            },
-            twoFactorEnabled: false
-          };
-        } catch (parseError) {
-          console.error('Error parsing user data:', parseError, item);
-          return {
-            id: item.id || '',
-            email: item.email || '',
-            full_name: 'Error loading user',
-            name: 'Error loading user',
-            role: '',
-            status: 'active',
-            language: 'az',
+            ...mockUserData,
+            id: item.id,
+            email: item.email,
+            fullName: item.full_name,
+            full_name: item.full_name,
+            role: userRole?.role || 'user',
+            status: item.status || 'active',
+            language: item.language || 'az',
             notificationSettings: {
               email: true,
               inApp: true,
               sms: false,
-              deadlineReminders: true
+              deadlineReminders: false
             },
             twoFactorEnabled: false
           };
         }
+
+        return mockUserData;
       });
-      
-      if (isMounted.current) {
-        setUsers(formattedUsers);
-      }
-      
+
+      setUsers(transformedUsers);
+      setTotalCount(count || 0);
+
     } catch (err) {
-      console.error('Error in useUserFetch:', err);
-      if (isMounted.current) {
-        setError(err instanceof Error ? err : new Error('İstifadəçilər əldə edilərkən xəta baş verdi'));
-        toast.error('İstifadəçilər əldə edilərkən xəta baş verdi');
-      }
+      console.error('Error fetching users:', err);
+      setError(err as Error);
     } finally {
-      if (isMounted.current) {
-        setLoading(false);
-      }
-      // Add a small delay before resetting fetchInProgress to prevent immediate re-fetches
-      setTimeout(() => {
-        fetchInProgressRef.current = false;
-      }, 100);
+      setLoading(false);
     }
-  }, [filter, currentPage, pageSize, session]);
-  
-  // Effect to handle cleanup and initial fetch
-  useEffect(() => {
-    isMounted.current = true;
-    
-    fetchUsers();
-    
-    return () => {
-      isMounted.current = false;
-    };
-  }, [fetchUsers]);
-  
-  // Manually trigger refetch function that forces a new fetch
-  const refetch = useCallback(() => {
-    // Clear the previous filter to force refetch
-    prevFilterRef.current = '';
+  }, [user, userRole, regionId, sectorId]);
+
+  const refreshUsers = useCallback(() => {
     return fetchUsers();
   }, [fetchUsers]);
-  
+
   return {
     users,
     loading,
     error,
     totalCount,
-    refetch,
-    currentPage: actualPage
+    fetchUsers,
+    refreshUsers
   };
 };
+
+export default useUserFetch;

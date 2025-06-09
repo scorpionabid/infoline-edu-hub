@@ -1,72 +1,70 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { FullUserData, User, UserRole } from '@/types/user';
-import { toast } from 'sonner';
+import { FullUserData } from '@/types/user';
 
-export const useUserData = () => {
-  const user = useAuthStore(selectUser);
-  const { userRole } = usePermissions();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export const useUserData = (userId?: string) => {
   const [userData, setUserData] = useState<FullUserData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    if (!userId) return;
+
     const fetchUserData = async () => {
-      if (!user?.id) return;
+      setLoading(true);
+      setError(null);
 
       try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch user profile
-        const { data: profileData, error: profileError } = await supabase
+        // Use proper table aliases to avoid ambiguous joins
+        const { data, error } = await supabase
           .from('profiles')
-          .select('*')
-          .eq('id', user.id)
+          .select(`
+            *,
+            user_roles!inner(
+              role,
+              region_id,
+              sector_id,
+              school_id,
+              regions:region_id(name),
+              sectors:sector_id(name),
+              schools:school_id(name)
+            )
+          `)
+          .eq('id', userId)
           .single();
 
-        if (profileError) throw profileError;
+        if (error) throw error;
 
-        // Fetch user role
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('*, regions(name), sectors(name), schools(name)')
-          .eq('user_id', user.id)
-          .single();
+        if (data) {
+          const userRole = data.user_roles as any;
+          
+          const fullUserData: FullUserData = {
+            id: data.id,
+            fullName: data.full_name || '',
+            full_name: data.full_name,
+            email: data.email,
+            role: userRole?.role || 'user',
+            status: data.status || 'active',
+            phone: data.phone,
+            language: data.language,
+            position: data.position,
+            avatar: data.avatar,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+            last_login: data.last_login,
+            region_id: userRole?.region_id,
+            sector_id: userRole?.sector_id,
+            school_id: userRole?.school_id,
+            entityName: {
+              region: userRole?.regions?.name || '',
+              sector: userRole?.sectors?.name || '',
+              school: userRole?.schools?.name || ''
+            }
+          };
 
-        if (roleError) throw roleError;
-
-        // Combine data
-        const fullUserData: FullUserData = {
-          id: user.id,
-          email: user.email || '',
-          full_name: profileData?.full_name || '',
-          role: roleData?.role as UserRole,
-          status: profileData?.status || 'active',
-          phone: profileData?.phone || '',
-          language: profileData?.language || 'az',
-          position: profileData?.position || '',
-          avatar: profileData?.avatar || '',
-          created_at: profileData?.created_at,
-          updated_at: profileData?.updated_at,
-          last_login: profileData?.last_login,
-          region_id: roleData?.region_id || '',
-          sector_id: roleData?.sector_id || '',
-          school_id: roleData?.school_id || '',
-          region_name: roleData?.regions?.name || '',
-          sector_name: roleData?.sectors?.name || '',
-          school_name: roleData?.schools?.name || '',
-          entityName: {
-            region: roleData?.regions?.name || '',
-            sector: roleData?.sectors?.name || '',
-            school: roleData?.schools?.name || ''
-          }
-        };
-
-        setUserData(fullUserData);
+          setUserData(fullUserData);
+        }
       } catch (err) {
         console.error('Error fetching user data:', err);
         setError(err as Error);
@@ -76,94 +74,96 @@ export const useUserData = () => {
     };
 
     fetchUserData();
-  }, [user?.id]);
+  }, [userId]);
 
-  return { userData, loading, error };
-};
+  const updateUserData = async (updates: Partial<FullUserData>) => {
+    if (!userId) return;
 
-// Exported function to fetch admin entity data
-export const fetchAdminEntityData = async (id: string, role: UserRole) => {
-  try {
-    if (role === 'regionadmin') {
-      const { data, error } = await supabase
-        .from('regions')
-        .select('*')
-        .eq('admin_id', id)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    }
-    
-    if (role === 'sectoradmin') {
-      const { data, error } = await supabase
-        .from('sectors')
-        .select('*, regions(name)')
-        .eq('admin_id', id)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    }
-    
-    if (role === 'schooladmin') {
-      const { data, error } = await supabase
-        .from('schools')
-        .select('*, regions(name), sectors(name)')
-        .eq('admin_id', id)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    }
-    
-    return null;
-  } catch (err) {
-    console.error('Error fetching admin entity data:', err);
-    return null;
-  }
-};
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: updates.fullName || updates.full_name,
+          email: updates.email,
+          phone: updates.phone,
+          position: updates.position,
+          language: updates.language,
+          status: updates.status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
 
-// Exported function to format user data
-export const formatUserData = (user: any, entityData: any = null): FullUserData => {
-  const formattedUser: FullUserData = {
-    id: user.id || '',
-    email: user.email || '',
-    full_name: user.full_name || user.name || '',
-    role: user.role || 'user',
-    status: user.status || 'active',
-    phone: user.phone || '',
-    language: user.language || 'az',
-    position: user.position || '',
-    created_at: user.created_at || '',
-    updated_at: user.updated_at || ''
+      if (error) throw error;
+
+      // Update local state
+      setUserData(prev => prev ? { ...prev, ...updates } : null);
+    } catch (err) {
+      console.error('Error updating user data:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  // Add entity information if available
-  if (entityData) {
-    if (user.role === 'regionadmin') {
-      formattedUser.region_id = entityData.id;
-      formattedUser.region_name = entityData.name;
-    }
+
+  const refreshUserData = async () => {
+    if (!userId) return;
     
-    if (user.role === 'sectoradmin') {
-      formattedUser.sector_id = entityData.id;
-      formattedUser.sector_name = entityData.name;
-      formattedUser.region_id = entityData.region_id;
-      formattedUser.region_name = entityData.regions?.name;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          user_roles!inner(
+            role,
+            region_id,
+            sector_id,
+            school_id
+          )
+        `)
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const userRole = data.user_roles as any;
+        
+        const refreshedData: FullUserData = {
+          id: data.id,
+          fullName: data.full_name || '',
+          full_name: data.full_name,
+          email: data.email,
+          role: userRole?.role || 'user',
+          status: data.status,
+          phone: data.phone,
+          language: data.language,
+          position: data.position,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          region_id: userRole?.region_id,
+          sector_id: userRole?.sector_id,
+          school_id: userRole?.school_id
+        };
+
+        setUserData(refreshedData);
+      }
+    } catch (err) {
+      console.error('Error refreshing user data:', err);
+      setError(err as Error);
+    } finally {
+      setLoading(false);
     }
-    
-    if (user.role === 'schooladmin') {
-      formattedUser.school_id = entityData.id;
-      formattedUser.school_name = entityData.name;
-      formattedUser.sector_id = entityData.sector_id;
-      formattedUser.sector_name = entityData.sectors?.name;
-      formattedUser.region_id = entityData.region_id;
-      formattedUser.region_name = entityData.regions?.name;
-    }
-  }
-  
-  return formattedUser;
+  };
+
+  return {
+    userData,
+    loading,
+    error,
+    updateUserData,
+    refreshUserData
+  };
 };
 
 export default useUserData;

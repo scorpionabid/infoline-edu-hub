@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import { School } from '@/types/school';
 
 interface DeleteSchoolDialogProps {
@@ -18,13 +18,15 @@ interface DeleteSchoolDialogProps {
   onClose: () => void;
   school: School;
   onConfirm: () => void;
+  isSubmitting?: boolean;
 }
 
 export const DeleteSchoolDialog: React.FC<DeleteSchoolDialogProps> = ({
   isOpen,
   onClose,
   school,
-  onConfirm
+  onConfirm,
+  isSubmitting = false
 }) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
@@ -43,14 +45,22 @@ export const DeleteSchoolDialog: React.FC<DeleteSchoolDialogProps> = ({
         </AlertDialogHeader>
         
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>
+          <AlertDialogCancel onClick={onClose} disabled={isSubmitting}>
             Ləğv et
           </AlertDialogCancel>
           <AlertDialogAction 
             onClick={onConfirm}
+            disabled={isSubmitting}
             className="bg-destructive hover:bg-destructive/90"
           >
-            Sil
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Silinir...
+              </>
+            ) : (
+              'Sil'
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
