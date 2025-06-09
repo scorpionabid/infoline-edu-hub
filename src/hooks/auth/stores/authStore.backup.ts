@@ -1,20 +1,15 @@
 // ============================================================================
-// İnfoLine Unified Auth Store - FIXED VERSION
+// İnfoLine Unified Auth Store - Zustand State Management
 // ============================================================================
-// Bu fayl logout problemini həll edir:
-// 1. Event listener duplicasyon problema
-// 2. State race condition problemi
-// 3. Proper cleanup mechanism
+// Bu fayl bütün auth state management-ı vahidləşdirir
+// Əvvəlki useAuthStore.ts faylının yenilənmiş versiyası
 
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole, UserStatus, FullUserData, AuthState } from '@/types/auth';
 
-// Global subscription reference to prevent duplicates
-let globalAuthSubscription: any = null;
-
 // ============================================================================
-// Zustand Auth Store - Main State Management (FIXED)
+// Zustand Auth Store - Main State Management
 // ============================================================================
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -63,43 +58,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
       }
       
-      // FIXED: Auth state change listener - yalnız bir dəfə qur və global saxla
-      if (!globalAuthSubscription && !state.initializationAttempted) {
-        console.log('[AuthStore] Setting up auth state listener...');
-        
+      // Auth state change listener - sadə dəfə qur
+      if (!state.initializationAttempted) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
           console.log('[AuthStore] Auth state change:', event);
           
+          set({ session: currentSession });
+          
           if (event === 'SIGNED_IN' && currentSession) {
-            set({ session: currentSession });
             await get().fetchUser();
           } else if (event === 'SIGNED_OUT') {
-            console.log('[AuthStore] SIGNED_OUT event received - clearing state');
             set({ 
               user: null, 
               isAuthenticated: false, 
               session: null,
-              error: null,
-              isLoading: false
+              error: null
             });
           } else if (event === 'TOKEN_REFRESHED' && currentSession) {
-            set({ session: currentSession });
             await get().fetchUser();
           }
         });
         
-        globalAuthSubscription = subscription;
-        
-        // FIXED: Proper cleanup on window unload
-        const cleanup = () => {
-          if (globalAuthSubscription) {
-            globalAuthSubscription.unsubscribe();
-            globalAuthSubscription = null;
-          }
-        };
-        
-        window.addEventListener('beforeunload', cleanup);
-        window.addEventListener('unload', cleanup);
+        // Cleanup on window unload
+        window.addEventListener('beforeunload', () => {
+          subscription.unsubscribe();
+        });
       }
       
       set({ 
@@ -146,85 +129,80 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOut: async () => {
     console.log('[AuthStore] Starting sign out...');
     
+    // İlk olaraq UI state-ini təmizlə ki, loader göstərilsin
+    set({ 
+      isLoading: true, 
+      error: null 
+    });
+    
     try {
-      // CRITICAL FIX: State-i İLK öncə təmizlə ki, ProtectedRoute dərhal cavab versin
-      console.log('[AuthStore] Clearing local state FIRST...');
+      // State-i dərhal təmizlə - UI-da dəyişiklik görünsün
       set({ 
         user: null, 
         isAuthenticated: false, 
         session: null,
         error: null,
-        isLoading: false,
-        // Re-initialization üçün flag-ları sıfırla
-        initialized: false,
-        initializationAttempted: false
+        isLoading: false // Loading-i false et ki, UI dərhal update olsun
       });
       
-      // CRITICAL FIX: Cache və localStorage-ı dərhal təmizlə
+      console.log('[AuthStore] Local state cleared, calling Supabase signOut...');
+      
+      // Supabase session-ı təmizlə (background-da)
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.warn('[AuthStore] Supabase signOut error (non-critical):', error);
+        // Supabase xətası kritik deyil, çünki lokal state artıq təmizlənib
+      }
+      
+      // Cache və localStorage təmizlə
       try {
         // Supabase auth key-ləri təmizlə
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (
-            key.includes('supabase') || 
-            key.startsWith('app-cache-') || 
-            key.startsWith('infoline-') ||
-            key.includes('auth')
-          )) {
-            keysToRemove.push(key);
-          }
-        }
+        const supabaseKeys = Object.keys(localStorage).filter(key => 
+          key.includes('supabase') || 
+          key.startsWith('app-cache-') || 
+          key.startsWith('infoline-')
+        );
         
-        keysToRemove.forEach(key => {
+        supabaseKeys.forEach(key => {
           localStorage.removeItem(key);
         });
         
         // Session storage da təmizlə
         sessionStorage.clear();
         
-        console.log('[AuthStore] Storage cleared successfully');
+        console.log('[AuthStore] Cache cleared successfully');
       } catch (e) {
         console.warn('[AuthStore] Error clearing storage (non-critical):', e);
       }
       
-      // CRITICAL FIX: İndi Supabase signOut-u çağır (background-da)
-      console.log('[AuthStore] Calling Supabase signOut...');
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.warn('[AuthStore] Supabase signOut error (non-critical since state already cleared):', error);
-        // State artıq təmizlənib, Supabase xətası kritik deyil
-      }
-      
       console.log('[AuthStore] Sign out completed successfully');
       
-      // CRITICAL FIX: Dərhal redirect et
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        console.log('[AuthStore] Redirecting to login...');
-        window.location.replace('/login');
-      }
+      // React Router istifadə et, window.location.replace əvəzinə
+      setTimeout(() => {
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }, 100);
       
     } catch (error: any) {
       console.error('[AuthStore] Sign out error:', error);
       
-      // CRITICAL FIX: Xəta halında da state təmizlənsin (əgər hələ təmizlənməyibsə)
+      // Xəta olsa belə, state təmizlənsin və login-ə yönləndirilsin
       set({ 
         user: null, 
         isAuthenticated: false, 
         session: null,
         error: null,
-        isLoading: false,
-        initialized: false,
-        initializationAttempted: false
+        isLoading: false
       });
       
-      // CRITICAL FIX: Xəta halında da login səhifəsinə yönləndir
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.replace('/login');
-      }
-      
-      throw error; // Xətanı rethrow et ki, UI-da handle edilsin
+      // Xəta halında da login səhifəsinə yönləndir
+      setTimeout(() => {
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }, 100);
     }
   },
 
@@ -401,16 +379,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await get().signOut();
   }
 }));
-
-// ============================================================================
-// Cleanup function for global subscription
-// ============================================================================
-export const cleanupAuthSubscription = () => {
-  if (globalAuthSubscription) {
-    globalAuthSubscription.unsubscribe();
-    globalAuthSubscription = null;
-  }
-};
 
 // ============================================================================
 // Selector Functions for Optimized Access

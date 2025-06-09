@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,54 +21,34 @@ const UserProfile: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSignOut = useCallback(async () => {
-    if (isSigningOut) {
-      console.log('[UserProfile] Sign out already in progress, ignoring...');
-      return; // Duplicate calls protection
-    }
+    if (isSigningOut) return; // Duplicate calls protection
     
     try {
       setIsSigningOut(true);
       console.log('[UserProfile] Starting logout process...');
       
-      // FIXED: Await signOut tam bitsin
       await signOut();
       
-      console.log('[UserProfile] Logout completed successfully');
-      
-      // FIXED: No need for manual navigation, authStore handles it
-      // signOut funksiyası artıq redirect edir, əlavə navigate lazım deyil
+      console.log('[UserProfile] Logout completed, navigating to login...');
+      // React Router navigation as backup
+      navigate('/login', { replace: true });
       
     } catch (error) {
       console.error('[UserProfile] Logout error:', error);
-      
-      // FIXED: Xəta halında manual redirect
-      try {
-        navigate('/login', { replace: true });
-      } catch (navError) {
-        console.error('[UserProfile] Navigation error:', navError);
-        // Force navigation as last resort
-        window.location.replace('/login');
-      }
+      // Force navigation even on error
+      navigate('/login', { replace: true });
     } finally {
-      // FIXED: Reset state yalnız component mount olduqda
-      // setTimeout istifadə et ki, component unmount olmazdan əvvəl
-      setTimeout(() => {
-        setIsSigningOut(false);
-      }, 100);
+      setIsSigningOut(false);
     }
   }, [signOut, navigate, isSigningOut]);
 
   const handleSettingsClick = useCallback(() => {
-    if (!isSigningOut) {
-      navigate('/settings');
-    }
-  }, [navigate, isSigningOut]);
+    navigate('/settings');
+  }, [navigate]);
 
   const handleProfileClick = useCallback(() => {
-    if (!isSigningOut) {
-      navigate('/profile');
-    }
-  }, [navigate, isSigningOut]);
+    navigate('/profile');
+  }, [navigate]);
 
   if (!user) return null;
 
