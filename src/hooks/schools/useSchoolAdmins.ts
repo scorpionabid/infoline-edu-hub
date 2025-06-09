@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,13 +21,11 @@ export function useSchoolAdmins(schoolIds: string[]) {
       return;
     }
     
-    console.log('Adminləri əldə etməyə başlayırıq...');
+    console.log('📋 Adminləri əldə etməyə başlayırıq...', schoolIds);
     
     async function fetchSchoolAdmins() {
       setIsLoading(true);
       try {
-        console.log('Məktəb IDs:', schoolIds);
-        
         // 1. Əvvəlcə user_roles cədvəlindən məktəb adminlərini əldə edirik
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
@@ -39,15 +38,31 @@ export function useSchoolAdmins(schoolIds: string[]) {
           .eq('role', 'schooladmin')
           .in('school_id', schoolIds);
         
-        console.log('Məktəb admin məlumatları (user_roles):', roleData);
+        console.log('👤 Məktəb admin məlumatları (user_roles):', roleData);
         
         if (roleError) {
-          console.error('user_roles sorgu xətası:', roleError);
+          console.error('❌ user_roles sorgu xətası:', roleError);
           throw roleError;
         }
         
-        if (!roleData || roleData.length === 0) {
-          console.log('Məktəb adminləri tapılmadı, schools cədvəlindən birbaşa yüləməyə çalışırıq...');
+        const admins: {[key: string]: string} = {};
+        
+        if (roleData && roleData.length > 0) {
+          // user_roles cədvəlindən admin məlumatlarını map edirik
+          roleData.forEach(role => {
+            const profile = role.profiles as any;
+            let adminName = '';
+            
+            if (profile && (profile.email || profile.full_name)) {
+              adminName = profile.full_name || profile.email;
+            } else {
+              adminName = `User ID: ${role.user_id}`;
+            }
+            
+            admins[role.school_id] = adminName;
+          });
+        } else {
+          console.log('🔍 user_roles-da admin tapılmadı, schools cədvəlindən yoxlayırıq...');
           
           // 2. Əgər user_roles cədvəlində admin tapılmadısa, schools cədvəlindən admin məlumatlarını əldə etməyə çalışırıq
           const { data: schoolData, error: schoolError } = await supabase
@@ -56,60 +71,47 @@ export function useSchoolAdmins(schoolIds: string[]) {
               id, 
               admin_id,
               admin_email,
-              adminProfile:admin_id(email, full_name)
+              profiles:admin_id(email, full_name)
             `)
             .in('id', schoolIds);
           
-          console.log('Məktəb admin məlumatları (schools):', schoolData);
+          console.log('🏫 Məktəb admin məlumatları (schools):', schoolData);
           
           if (schoolError) {
-            console.error('schools sorgu xətası:', schoolError);
+            console.error('❌ schools sorgu xətası:', schoolError);
             throw schoolError;
           }
           
           // Schools cədvəlindən admin məlumatlarını map edirik
-          const admins: {[key: string]: string} = {};
-          
           if (schoolData && schoolData.length > 0) {
             schoolData.forEach(school => {
-              const adminProfile = school.adminProfile as any;
+              const adminProfile = school.profiles as any;
               let adminName = '';
               
               if (adminProfile && (adminProfile.email || adminProfile.full_name)) {
-                adminName = adminProfile.email || adminProfile.full_name;
+                adminName = adminProfile.full_name || adminProfile.email;
               } else if (school.admin_email) {
                 adminName = school.admin_email;
               } else {
-                adminName = `Admin ID: ${school.admin_id || '-'}`;
+                adminName = 'Təyin edilməyib';
               }
               
               admins[school.id] = adminName;
             });
           }
-          
-          setAdminMap(admins);
-        } else {
-          // 3. user_roles cədvəlindən admin məlumatlarını map edirik
-          const admins: {[key: string]: string} = {};
-          
-          roleData.forEach(role => {
-            const profile = role.profiles as any;
-            let adminName = '';
-            
-            if (profile && (profile.email || profile.full_name)) {
-              // Login üçün email-i göstəririk, çünki user login üçün email istifadə edir
-              adminName = profile.email || profile.full_name;
-            } else {
-              adminName = `User ID: ${role.user_id || '-'}`;
-            }
-            
-            admins[role.school_id] = adminName;
-          });
-          
-          setAdminMap(admins);
         }
+        
+        // Tapılmayan məktəblər üçün default value
+        schoolIds.forEach(schoolId => {
+          if (!admins[schoolId]) {
+            admins[schoolId] = 'Təyin edilməyib';
+          }
+        });
+        
+        console.log('✅ Final admin map:', admins);
+        setAdminMap(admins);
       } catch (err) {
-        console.error('Məktəb adminləri əldə edilərkən xəta:', err);
+        console.error('❌ Məktəb adminləri əldə edilərkən xəta:', err);
         setError(err as Error);
         toast.error('Admin məlumatları yüklənərkən xəta: ' + (err as Error).message);
       } finally {
@@ -126,7 +128,5 @@ export function useSchoolAdmins(schoolIds: string[]) {
     error 
   };
 }
-        
-
 
 export default useSchoolAdmins;

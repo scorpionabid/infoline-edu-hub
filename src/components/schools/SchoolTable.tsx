@@ -9,7 +9,8 @@ import {
   FileText, 
   Link,
   UserPlus,
-  MoreHorizontal
+  MoreHorizontal,
+  Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -17,9 +18,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { SchoolLinksDialog } from './SchoolLinksDialog';
-import { SchoolFilesDialog } from './SchoolFilesDialog';
-import { School, Region, Sector } from '@/types/school';
+import { School } from '@/types/school';
+import { useSchoolAdmins } from '@/hooks/schools/useSchoolAdmins';
 
 interface SchoolTableProps {
   schools: School[];
@@ -44,22 +44,9 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
   regionNames,
   sectorNames
 }) => {
-  const [isLinksDialogOpen, setIsLinksDialogOpen] = React.useState(false);
-  const [selectedSchoolForLinks, setSelectedSchoolForLinks] = React.useState<School | null>(null);
-  const [isFilesDialogOpen, setIsFilesDialogOpen] = React.useState(false);
-  const [selectedSchoolForFiles, setSelectedSchoolForFiles] = React.useState<School | null>(null);
-
-  const handleViewLinks = (school: School) => {
-    setSelectedSchoolForLinks(school);
-    setIsLinksDialogOpen(true);
-    onViewLinks(school);
-  };
-
-  const handleViewFiles = (school: School) => {
-    setSelectedSchoolForFiles(school);
-    setIsFilesDialogOpen(true);
-    onViewFiles(school);
-  };
+  // Admin məlumatlarını yükləyirik
+  const schoolIds = schools.map(school => school.id);
+  const { adminMap, isLoading: adminsLoading } = useSchoolAdmins(schoolIds);
 
   if (isLoading) {
     return (
@@ -79,89 +66,87 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
   }
 
   return (
-    <>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Ad</TableHead>
-              <TableHead>Region</TableHead>
-              <TableHead>Sektor</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Telefon</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead className="text-right">Əməliyyatlar</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {schools.map((school) => (
-              <TableRow key={school.id}>
-                <TableCell className="font-medium">{school.name}</TableCell>
-                <TableCell>{regionNames[school.region_id] || school.region_id}</TableCell>
-                <TableCell>{sectorNames[school.sector_id] || school.sector_id}</TableCell>
-                <TableCell>
-                  <Badge variant={school.status === 'active' ? 'default' : 'secondary'}>
-                    {school.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-                  </Badge>
-                </TableCell>
-                <TableCell>{school.phone || '-'}</TableCell>
-                <TableCell>{school.email || '-'}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onEdit(school)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleViewFiles(school)}>
-                          <FileText className="h-4 w-4 mr-2" />
-                          Fayllar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleViewLinks(school)}>
-                          <Link className="h-4 w-4 mr-2" />
-                          Linklər
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onAssignAdmin(school)}>
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Admin təyin et
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete(school)} className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Sil
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Məktəb Adı</TableHead>
+            <TableHead>Region</TableHead>
+            <TableHead>Sektor</TableHead>
+            <TableHead>Admin</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Telefon</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead className="text-right">Əməliyyatlar</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {schools.map((school) => (
+            <TableRow key={school.id}>
+              <TableCell className="font-medium">{school.name}</TableCell>
+              <TableCell>{regionNames[school.region_id] || school.region_id}</TableCell>
+              <TableCell>{sectorNames[school.sector_id] || school.sector_id}</TableCell>
+              <TableCell>
+                {adminsLoading ? (
+                  <div className="flex items-center">
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    <span className="text-xs">Yüklənir...</span>
                   </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                ) : (
+                  <span className="text-sm">
+                    {adminMap[school.id] || 'Təyin edilməyib'}
+                  </span>
+                )}
+              </TableCell>
+              <TableCell>
+                <Badge variant={school.status === 'active' ? 'default' : 'secondary'}>
+                  {school.status === 'active' ? 'Aktiv' : 'Deaktiv'}
+                </Badge>
+              </TableCell>
+              <TableCell>{school.phone || '-'}</TableCell>
+              <TableCell>{school.email || '-'}</TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEdit(school)}
+                    title="Redaktə et"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
 
-      {/* Links Dialog */}
-      <SchoolLinksDialog
-        open={isLinksDialogOpen}
-        onOpenChange={setIsLinksDialogOpen}
-        schoolId={selectedSchoolForLinks?.id || ''}
-      />
-
-      {/* Files Dialog */}
-      <SchoolFilesDialog
-        open={isFilesDialogOpen}
-        onOpenChange={setIsFilesDialogOpen}
-        schoolId={selectedSchoolForFiles?.id || ''}
-      />
-    </>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" title="Əlavə əməliyyatlar">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onViewFiles(school)}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Fayllar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onViewLinks(school)}>
+                        <Link className="h-4 w-4 mr-2" />
+                        Linklər
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onAssignAdmin(school)}>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Admin təyin et
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onDelete(school)} className="text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Sil
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };

@@ -27,7 +27,6 @@ export const useSchoolsStore = () => {
   const { t } = useLanguageSafe();
   const user = useAuthStore(selectUser);
   const { userRole, sectorId, regionId } = usePermissions();
-  const [isOperationComplete, setIsOperationComplete] = useState(false);
   
   // Add refs to prevent fetch loops
   const isFetchingRef = useRef(false);
@@ -43,13 +42,12 @@ export const useSchoolsStore = () => {
 
   // Məktəbləri yükləmək metodu
   const fetchSchools = useCallback(async (forceRefresh = false) => {
-    // Əgər forceRefresh true deyilsə və artıq yüklənirsə, skip et
+    // Prevent concurrent fetches
     if (!forceRefresh && isFetchingRef.current) {
       console.log("Məktəblər hələ yüklənir, yeni sorğu edilmədi");
       return;
     }
     
-    // Əgər forceRefresh true deyilsə və filtrlər dəyişməyibsə, skip et
     const currentFilters = {
       region: selectedRegion,
       sector: selectedSector,
@@ -61,128 +59,63 @@ export const useSchoolsStore = () => {
       return;
     }
     
-    // Update previous filters
     prevFiltersRef.current = { ...currentFilters };
-    
-    // Set fetching flag
     isFetchingRef.current = true;
     
     setLoading(true);
     setError(null);
     
     try {
-      console.log("Məktəblər yüklənir...");
-      console.log("İstifadəçi rolu:", userRole);
-      console.log("Region ID:", regionId);
-      console.log("Sektor ID:", sectorId);
+      console.log("🏫 Məktəblər yüklənir...");
+      console.log("👤 İstifadəçi rolu:", userRole);
+      console.log("🌍 Region ID:", regionId);
+      console.log("🏢 Sektor ID:", sectorId);
       
       let query = supabase.from('schools').select('*');
       
-      // Sektoradmin olaraq yalnız öz sektoruna aid məktəbləri görmək
-      if (userRole === 'sectoradmin' && sectorId) {
-        console.log("Sektor admin filtri tətbiq olunur:", sectorId);
-        query = query.eq('sector_id', sectorId);
-      } else if (userRole === 'regionadmin' && regionId) {
-        // RegionAdmin üçün filter
-        console.log("Region admin filtri tətbiq olunur:", regionId);
+      // Role-based filtering
+      if (userRole === 'regionadmin' && regionId) {
+        console.log("🔒 Region admin filtri tətbiq olunur:", regionId);
         query = query.eq('region_id', regionId);
+      } else if (userRole === 'sectoradmin' && sectorId) {
+        console.log("🔒 Sektor admin filtri tətbiq olunur:", sectorId);
+        query = query.eq('sector_id', sectorId);
       } else {
-        // Digər rollar üçün filter funksionalığı
+        // Manual filters for other roles
         if (selectedRegion) {
-          console.log("Region filtri tətbiq olunur:", selectedRegion);
+          console.log("🔍 Region filtri tətbiq olunur:", selectedRegion);
           query = query.eq('region_id', selectedRegion);
         }
         
         if (selectedSector) {
-          console.log("Sektor filtri tətbiq olunur:", selectedSector);
+          console.log("🔍 Sektor filtri tətbiq olunur:", selectedSector);
           query = query.eq('sector_id', selectedSector);
         }
       }
       
       if (selectedStatus) {
-        console.log("Status filtri tətbiq olunur:", selectedStatus);
+        console.log("🔍 Status filtri tətbiq olunur:", selectedStatus);
         query = query.eq('status', selectedStatus);
       }
       
-      const { data, error } = await query;
+      const { data, error } = await query.order('name');
       
       if (error) {
-        console.error("Supabase sorğu xətası:", error);
+        console.error("❌ Supabase sorğu xətası:", error);
         throw error;
       }
       
-      console.log("Məktəblər yükləndi:", data?.length || 0);
-      
-      // Əgər data yoxdursa və ya boşdursa və regionadmin roluna sahibdirsə, test məlumatları göstər
-      if ((!data || data.length === 0) && userRole === 'regionadmin' && regionId) {
-        console.log("Məktəb tapılmadı, test məlumatları göstərilir");
-        // Test məlumatları
-        const currentDate = new Date().toISOString();
-        const testSchools = [
-          {
-            id: 'test-1',
-            name: 'Test Məktəb 1',
-            status: 'active',
-            region_id: regionId,
-            sector_id: null,
-            principal_name: 'Test Müdir',
-            address: 'Test Ünvan',
-            phone: '123456789',
-            email: 'test@example.com',
-            created_at: currentDate,
-            updated_at: currentDate
-          },
-          {
-            id: 'test-2',
-            name: 'Test Məktəb 2',
-            status: 'active',
-            region_id: regionId,
-            sector_id: null,
-            principal_name: 'Test Müdir 2',
-            address: 'Test Ünvan 2',
-            phone: '987654321',
-            email: 'test2@example.com',
-            created_at: currentDate,
-            updated_at: currentDate
-          }
-        ] as School[];
-        setSchools(testSchools);
-      } else {
-        setSchools(Array.isArray(data) ? data : []);
-      }
+      console.log("✅ Məktəblər yükləndi:", data?.length || 0);
+      setSchools(Array.isArray(data) ? data : []);
     } catch (err: any) {
-      console.error('Error fetching schools:', err);
+      console.error('❌ Error fetching schools:', err);
       setError(err);
       toast.error(t('errorOccurred'), {
         description: t('couldNotLoadSchools')
       });
-      
-      // Xəta halında, regionadmin üçün test məlumatları göstər
-      if (userRole === 'regionadmin' && regionId) {
-        console.log("Xəta baş verdi, test məlumatları göstərilir");
-        const currentDate = new Date().toISOString();
-        const testSchools = [
-          {
-            id: 'test-1',
-            name: 'Test Məktəb 1',
-            status: 'active',
-            region_id: regionId,
-            sector_id: null,
-            principal_name: 'Test Müdir',
-            address: 'Test Ünvan',
-            phone: '123456789',
-            email: 'test@example.com',
-            created_at: currentDate,
-            updated_at: currentDate
-          }
-        ] as School[];
-        setSchools(testSchools);
-      } else {
-        setSchools([]);
-      }
+      setSchools([]);
     } finally {
       setLoading(false);
-      // Reset fetching flag after a small delay to prevent rapid re-fetches
       setTimeout(() => {
         isFetchingRef.current = false;
       }, 300);
@@ -232,36 +165,27 @@ export const useSchoolsStore = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
 
-  // Sektoradmin roluna əsasən region və sektor filtrini avtomatik təyin etmək
+  // Role-based automatic filters
   useEffect(() => {
-    // Prevent this effect from triggering fetchSchools directly
-    const shouldFetch = userRole === 'sectoradmin' && sectorId && !isFetchingRef.current;
-    
-    if (userRole === 'sectoradmin' && sectorId) {
-      // Sektoradmin üçün sektor ID filtrini təyin edirik
+    if (userRole === 'regionadmin' && regionId) {
+      setSelectedRegion(regionId);
+    } else if (userRole === 'sectoradmin' && sectorId) {
       setSelectedSector(sectorId);
-      
-      // Sektorun aid olduğu regionu tapmaq
       const sector = sectors.find(s => s?.id === sectorId);
       if (sector && sector.region_id) {
         setSelectedRegion(sector.region_id);
       }
-    } else if (userRole === 'regionadmin' && regionId) {
-      // RegionAdmin üçün region filtri avtomatik təyin edilir
-      setSelectedRegion(regionId);
     }
-    
-  }, [userRole, sectorId, sectors, regionId]);
+  }, [userRole, regionId, sectorId, sectors]);
 
-  // Initial fetch - Komponent yüklənəndə və user/region/sector məlumatı dəyişəndə
+  // Initial fetch and refetch on dependency changes
   useEffect(() => {
-    if (user && (userRole === 'regionadmin' || userRole === 'sectoradmin' || userRole === 'superadmin')) {
-      console.log("İstifadəçi məlumatları dəyişdi, məktəblər yenilənir");
-      fetchSchools(true); // force refresh
+    if (user) {
+      fetchSchools(true);
     }
   }, [user, userRole, regionId, sectorId, fetchSchools]);
 
-  // Filtrlərin dəyişməsi zamanı yeniləmə
+  // Refetch on filter changes
   useEffect(() => {
     if (user) {
       fetchSchools();
@@ -307,8 +231,8 @@ export const useSchoolsStore = () => {
   const resetFilters = useCallback(() => {
     setSearchTerm('');
     
-    // Sektoradmin üçün sektorId və regionId qalır
-    if (userRole !== 'sectoradmin') {
+    // Keep role-based filters
+    if (userRole !== 'regionadmin' && userRole !== 'sectoradmin') {
       setSelectedRegion('');
       setSelectedSector('');
     }
@@ -316,23 +240,6 @@ export const useSchoolsStore = () => {
     setSelectedStatus('');
     setCurrentPage(1);
   }, [userRole]);
-
-  // Məlumatların ilkin yüklənməsi - komponent qurulduqda
-  useEffect(() => {
-    console.log("İlkin yükləmə - fetchSchools çağırılır");
-    fetchSchools(true); // force initial refresh
-    
-    // Xəta halında 2 saniyə sonra yenidən yükləmə cəhdi et
-    const retryTimeout = setTimeout(() => {
-      if (schools.length === 0 && !loading) {
-        console.log("İlkin yüklənmə boş gəldi, yenidən cəhd edilir");
-        fetchSchools(true);
-      }
-    }, 2000);
-    
-    return () => clearTimeout(retryTimeout);
-  }, []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
 
   return {
     schools,
@@ -359,10 +266,8 @@ export const useSchoolsStore = () => {
     handleSort,
     handlePageChange,
     resetFilters,
-    fetchSchools, // məlumatları yenidən yükləmək üçün
-    setSchools, // məktəb əlavə və ya silmək üçün
-    userRole, // istifadəçi rolunu qaytarırıq
-    isOperationComplete,
-    setIsOperationComplete
+    fetchSchools,
+    setSchools,
+    userRole
   };
 };

@@ -1,51 +1,59 @@
 
 import React from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { AlertTriangle } from 'lucide-react';
 import { School } from '@/types/school';
 
 interface DeleteSchoolDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
   school: School;
-  isSubmitting: boolean;
+  onConfirm: () => void;
 }
 
 export const DeleteSchoolDialog: React.FC<DeleteSchoolDialogProps> = ({
   isOpen,
   onClose,
-  onConfirm,
   school,
-  isSubmitting
+  onConfirm
 }) => {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Məktəbi sil</DialogTitle>
-          <DialogDescription>
-            "{school.name}" məktəbini silmək istədiyinizə əminsiniz? Bu əməliyyat geri qaytarıla bilməz.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            Məktəbi sil
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            <strong>"{school.name}"</strong> məktəbini silmək istədiyinizə əminsiniz?
+            <div className="mt-2 text-sm">
+              Bu əməliyyat geri qaytarıla bilməz və bütün məktəblə əlaqəli məlumatlar silinəcək.
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onClose}>
             Ləğv et
-          </Button>
-          <Button variant="destructive" onClick={onConfirm} disabled={isSubmitting}>
-            {isSubmitting ? 'Silinir...' : 'Sil'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={onConfirm}
+            className="bg-destructive hover:bg-destructive/90"
+          >
+            Sil
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
-
-export default DeleteSchoolDialog;
