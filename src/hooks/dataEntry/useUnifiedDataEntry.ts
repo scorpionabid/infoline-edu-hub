@@ -1,7 +1,10 @@
+
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { fetchUnifiedDataEntries, saveUnifiedDataEntries } from '@/services/api/unifiedDataEntry';
 import { UnifiedDataEntry as UnifiedDataEntryType } from '@/services/api/unifiedDataEntry';
 import { useDebounce } from '@/hooks/common/useDebounce';
+import { useColumnsQuery } from '@/hooks/api/columns/useColumnsQuery';
+import { Column } from '@/types/column';
 
 export interface UseUnifiedDataEntryOptions {
   categoryId: string;
@@ -32,6 +35,13 @@ export const useUnifiedDataEntry = (options: UseUnifiedDataEntryOptions) => {
   const [isDirty, setIsDirty] = useState(false);
   const [autoSave, setAutoSave] = useState(true);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Fetch columns for the category
+  const { columns = [] } = useColumnsQuery({ categoryId });
   
   const debounceSave = useDebounce(saveData, autoSaveInterval);
   const lastEntries = useRef<UnifiedDataEntry[]>(entries);
@@ -45,6 +55,17 @@ export const useUnifiedDataEntry = (options: UseUnifiedDataEntryOptions) => {
       debounceSave();
     }
   }, [autoSave, isDirty, debounceSave]);
+
+  // Convert entries to formData format
+  useEffect(() => {
+    const newFormData: Record<string, any> = {};
+    entries.forEach(entry => {
+      if (entry.column_id) {
+        newFormData[entry.column_id] = entry.value;
+      }
+    });
+    setFormData(newFormData);
+  }, [entries]);
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -64,7 +85,7 @@ export const useUnifiedDataEntry = (options: UseUnifiedDataEntryOptions) => {
   const saveData = useCallback(async () => {
     if (!isDirty) return;
 
-    setLoading(true);
+    setIsSaving(true);
     setError(null);
 
     try {
@@ -83,14 +104,14 @@ export const useUnifiedDataEntry = (options: UseUnifiedDataEntryOptions) => {
     } catch (err) {
       setError(err as Error);
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   }, [categoryId, entityId, entityType, userId, isDirty]);
 
   const submitEntries = useCallback(async () => {
     if (!isDirty) return;
 
-    setLoading(true);
+    setIsSubmitting(true);
     setError(null);
 
     try {
@@ -108,7 +129,7 @@ export const useUnifiedDataEntry = (options: UseUnifiedDataEntryOptions) => {
     } catch (err) {
       setError(err as Error);
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   }, [categoryId, entityId, entityType, userId, entries, isDirty]);
 
@@ -155,48 +176,77 @@ export const useUnifiedDataEntry = (options: UseUnifiedDataEntryOptions) => {
       return { isValid: false, errors: ['No entries to validate'] };
     }
 
-    const errors: string[] = [];
+    const newErrors: Record<string, string> = {};
     let isValid = true;
 
     entries.forEach((entry, index) => {
       if (!entry.column_id) {
-        errors.push(`Entry ${index + 1}: Column ID is required`);
+        newErrors[`entry_${index}_column`] = `Entry ${index + 1}: Column ID is required`;
         isValid = false;
       }
       
       if (!entry.category_id) {
-        errors.push(`Entry ${index + 1}: Category ID is required`);
+        newErrors[`entry_${index}_category`] = `Entry ${index + 1}: Category ID is required`;
         isValid = false;
       }
 
-      // Add more validation rules as needed
       if (entry.value && typeof entry.value === 'string' && entry.value.trim() === '') {
-        errors.push(`Entry ${index + 1}: Value cannot be empty`);
+        newErrors[`entry_${index}_value`] = `Entry ${index + 1}: Value cannot be empty`;
         isValid = false;
       }
     });
 
-    return { isValid, errors };
+    setErrors(newErrors);
+    return { isValid, errors: Object.values(newErrors) };
   }, [entries]);
 
+  // Calculate completion percentage
+  const completionPercentage = useCallback(() => {
+    if (!columns || columns.length === 0) return 0;
+    const requiredColumns = columns.filter(col => col.is_required);
+    if (requiredColumns.length === 0) return 100;
+    
+    const completedRequired = requiredColumns.filter(col => {
+      const value = formData[col.id];
+      return value !== undefined && value !== null && value !== '';
+    });
+    
+    return Math.round((completedRequired.length / requiredColumns.length) * 100);
+  }, [columns, formData]);
+
+  const isValid = Object.keys(errors).length === 0 && completionPercentage() === 100;
+
   return {
+    // Core data
     entries,
+    columns,
+    formData,
+    
+    // State flags
     loading,
+    isLoading: loading,
+    isSaving,
+    isSubmitting,
     error,
+    errors,
+    isDirty,
+    isValid,
+    autoSave,
+    lastSaved,
+    hasUnsavedChanges: isDirty,
+    completionPercentage: completionPercentage(),
+    
+    // Actions
     fetchEntries,
-    saveEntries,
+    saveEntries: saveData,
+    submitEntries,
     clearEntries,
     addEntry,
     updateEntry,
     removeEntry,
     setEntries: setEntriesWithTempIds,
-    isDirty,
-    autoSave,
-    setAutoSave,
-    lastSaved,
-    hasUnsavedChanges: isDirty,
     validateForm,
-    submitEntries
+    setAutoSave
   };
 };
 
