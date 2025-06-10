@@ -26,6 +26,10 @@ import DataEntry from "@/pages/DataEntry";
 import SectorDataEntry from "@/pages/SectorDataEntry"; // ✅ YENİ: Sektor məlumat daxil etmə
 import Profile from "@/pages/Profile";
 import ApprovalPage from "@/pages/Approval";
+import Statistics from "@/pages/Statistics";
+import ProgressTracking from "@/pages/ProgressTracking";
+import Performance from "@/pages/Performance";
+import UserManagement from "@/pages/UserManagement";
 
 import { UserRole } from "@/types/supabase";
 
@@ -173,6 +177,46 @@ const AppRoutes = () => (
         element={
           <ProtectedRoute allowedRoles={['sectoradmin']}>
             <SectorDataEntry />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* ✅ YENİ: Statistics - Region və Sektor adminləri üçün */}
+      <Route 
+        path="/statistics" 
+        element={
+          <ProtectedRoute allowedRoles={['regionadmin', 'sectoradmin']}>
+            <Statistics />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* ✅ YENİ: Progress Tracking - Region və Sektor adminləri üçün */}
+      <Route 
+        path="/progress" 
+        element={
+          <ProtectedRoute allowedRoles={['regionadmin', 'sectoradmin']}>
+            <ProgressTracking />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* ✅ YENİ: Performance - SuperAdmin üçün */}
+      <Route 
+        path="/performance" 
+        element={
+          <ProtectedRoute allowedRoles={['superadmin']}>
+            <Performance />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* ✅ YENİ: Advanced User Management - SuperAdmin üçün */}
+      <Route 
+        path="/user-management" 
+        element={
+          <ProtectedRoute allowedRoles={['superadmin']}>
+            <UserManagement />
           </ProtectedRoute>
         } 
       />

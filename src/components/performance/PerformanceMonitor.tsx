@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -74,7 +73,7 @@ const PerformanceMonitor: React.FC = () => {
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Monitor className="h-5 w-5" />
-            {t('performanceMonitor')}
+            Performans Monitoru
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -85,18 +84,18 @@ const PerformanceMonitor: React.FC = () => {
               {isMonitoring ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                  {t('monitoring')}
+                  İzlənir
                 </>
               ) : (
                 <>
                   <Zap className="h-4 w-4 mr-1" />
-                  {t('startMonitoring')}
+                  İzləməni Başlat
                 </>
               )}
             </Button>
             <Button variant="outline" size="sm" onClick={collectMetrics}>
               <RefreshCw className="h-4 w-4 mr-1" />
-              {t('refresh')}
+              Yenilə
             </Button>
           </div>
         </CardTitle>
@@ -106,7 +105,7 @@ const PerformanceMonitor: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{t('memoryUsage')}</span>
+                <span className="text-sm font-medium">Yaddaş İstifadəsi</span>
                 <Badge className={getStatusColor(getPerformanceStatus('memoryUsage', metrics.memoryUsage))}>
                   {metrics.memoryUsage} MB
                 </Badge>
@@ -115,7 +114,7 @@ const PerformanceMonitor: React.FC = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{t('renderTime')}</span>
+                <span className="text-sm font-medium">Render Vaxtı</span>
                 <Badge className={getStatusColor(getPerformanceStatus('renderTime', metrics.renderTime))}>
                   {metrics.renderTime} ms
                 </Badge>
@@ -124,7 +123,7 @@ const PerformanceMonitor: React.FC = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{t('loadTime')}</span>
+                <span className="text-sm font-medium">Yükləmə Vaxtı</span>
                 <Badge className={getStatusColor(getPerformanceStatus('loadTime', metrics.loadTime))}>
                   {(metrics.loadTime / 1000).toFixed(2)} s
                 </Badge>
@@ -133,7 +132,7 @@ const PerformanceMonitor: React.FC = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{t('bundleSize')}</span>
+                <span className="text-sm font-medium">Bundle Ölçüsü</span>
                 <Badge className={getStatusColor(getPerformanceStatus('bundleSize', metrics.bundleSize))}>
                   {metrics.bundleSize} KB
                 </Badge>
@@ -142,7 +141,7 @@ const PerformanceMonitor: React.FC = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{t('componentsCount')}</span>
+                <span className="text-sm font-medium">Komponent Sayı</span>
                 <Badge className="bg-blue-100 text-blue-800">
                   {metrics.componentsCount}
                 </Badge>
@@ -151,7 +150,7 @@ const PerformanceMonitor: React.FC = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{t('overallScore')}</span>
+                <span className="text-sm font-medium">Ümumi Nəticə</span>
                 <Badge className="bg-green-100 text-green-800">
                   <TrendingUp className="h-3 w-3 mr-1" />
                   85/100
@@ -161,25 +160,25 @@ const PerformanceMonitor: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
-            {t('clickToCollectMetrics')}
+            Metrikleri toplamaq üçün klikləyin
           </div>
         )}
 
         {metrics && (
           <div className="mt-6 p-4 bg-muted rounded-lg">
-            <h4 className="font-medium mb-2">{t('recommendations')}</h4>
+            <h4 className="font-medium mb-2">Tövsiyələr</h4>
             <ul className="text-sm space-y-1 text-muted-foreground">
               {metrics.memoryUsage > 100 && (
-                <li>• {t('optimizeMemoryUsage')}</li>
+                <li>• Yaddaş istifadəsini optimallaşdırın</li>
               )}
               {metrics.renderTime > 100 && (
-                <li>• {t('optimizeRenderPerformance')}</li>
+                <li>• Render performansını optimallaşdırın</li>
               )}
               {metrics.loadTime > 3000 && (
-                <li>• {t('optimizeLoadTime')}</li>
+                <li>• Yükləmə vaxtını optimallaşdırın</li>
               )}
               {metrics.bundleSize > 1500 && (
-                <li>• {t('reduceBundleSize')}</li>
+                <li>• Bundle ölçüsünü azaldın</li>
               )}
             </ul>
           </div>

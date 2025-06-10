@@ -1,6 +1,5 @@
 
 import React, { useRef, useCallback } from 'react';
-import { FixedSizeList as List } from 'react-window';
 
 interface VirtualTableProps<T> {
   items: T[];
@@ -11,6 +10,10 @@ interface VirtualTableProps<T> {
   className?: string;
 }
 
+/**
+ * Sadə Virtual Table komponenti
+ * react-window əvəzinə native scroll istifadə edir
+ */
 function VirtualTable<T>({
   items,
   itemHeight,
@@ -19,16 +22,7 @@ function VirtualTable<T>({
   renderItem,
   className = '',
 }: VirtualTableProps<T>) {
-  const listRef = useRef<List>(null);
-
-  const Row = useCallback(({ index, style }: any) => {
-    const item = items[index];
-    return (
-      <div style={style} className="border-b">
-        {renderItem(item, index)}
-      </div>
-    );
-  }, [items, renderItem]);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   if (items.length === 0) {
     return (
@@ -39,16 +33,23 @@ function VirtualTable<T>({
   }
 
   return (
-    <List
-      ref={listRef}
-      height={height}
-      width={width}
-      itemCount={items.length}
-      itemSize={itemHeight}
-      className={className}
+    <div 
+      ref={containerRef}
+      className={`overflow-auto border rounded ${className}`}
+      style={{ height, width }}
     >
-      {Row}
-    </List>
+      <div className="space-y-0">
+        {items.map((item, index) => (
+          <div 
+            key={index}
+            className="border-b last:border-b-0"
+            style={{ minHeight: itemHeight }}
+          >
+            {renderItem(item, index)}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

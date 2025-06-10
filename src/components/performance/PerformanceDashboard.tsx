@@ -25,8 +25,8 @@ const PerformanceDashboard: React.FC = () => {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">{t('performanceOptimization')}</h1>
-          <p className="text-muted-foreground">{t('performanceOptimizationDescription')}</p>
+          <h1 className="text-3xl font-bold">Performans Optimallaşdırması</h1>
+          <p className="text-muted-foreground">Sistem performansını izləyin və optimallaşdırın</p>
         </div>
       </div>
 
@@ -34,19 +34,19 @@ const PerformanceDashboard: React.FC = () => {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="monitor">
             <Monitor className="h-4 w-4 mr-1" />
-            {t('monitoring')}
+            Monitorinq
           </TabsTrigger>
           <TabsTrigger value="optimization">
             <Zap className="h-4 w-4 mr-1" />
-            {t('optimization')}
+            Optimallaşdırma
           </TabsTrigger>
           <TabsTrigger value="virtualization">
             <Database className="h-4 w-4 mr-1" />
-            {t('virtualization')}
+            Virtuallaşdırma
           </TabsTrigger>
           <TabsTrigger value="lazy-loading">
             <Image className="h-4 w-4 mr-1" />
-            {t('lazyLoading')}
+            Lazy Loading
           </TabsTrigger>
         </TabsList>
 
@@ -58,26 +58,26 @@ const PerformanceDashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>{t('codeOptimization')}</CardTitle>
+                <CardTitle>Kod Optimallaşdırması</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <h4 className="font-medium">{t('bundleAnalysis')}</h4>
+                  <h4 className="font-medium">Bundle Analizi</h4>
                   <p className="text-sm text-muted-foreground">
-                    {t('bundleAnalysisDescription')}
+                    JavaScript bundle ölçülərini analiz edin
                   </p>
                   <Button variant="outline" size="sm">
-                    {t('analyzeBundles')}
+                    Bundle-ları Analiz Et
                   </Button>
                 </div>
                 
                 <div className="space-y-2">
-                  <h4 className="font-medium">{t('codesplitting')}</h4>
+                  <h4 className="font-medium">Code Splitting</h4>
                   <p className="text-sm text-muted-foreground">
-                    {t('codeSplittingDescription')}
+                    Kodları kiçik hissələrə bölərək yükləmə performansını artırın
                   </p>
                   <Button variant="outline" size="sm">
-                    {t('optimizeCodeSplitting')}
+                    Code Splitting Optimallaşdır
                   </Button>
                 </div>
               </CardContent>
@@ -85,26 +85,26 @@ const PerformanceDashboard: React.FC = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>{t('memoryOptimization')}</CardTitle>
+                <CardTitle>Yaddaş Optimallaşdırması</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <h4 className="font-medium">{t('memoryLeaks')}</h4>
+                  <h4 className="font-medium">Yaddaş Sızıntıları</h4>
                   <p className="text-sm text-muted-foreground">
-                    {t('memoryLeaksDescription')}
+                    Potensial yaddaş sızıntılarını aşkar edin
                   </p>
                   <Button variant="outline" size="sm">
-                    {t('detectMemoryLeaks')}
+                    Yaddaş Sızıntılarını Tap
                   </Button>
                 </div>
                 
                 <div className="space-y-2">
-                  <h4 className="font-medium">{t('garbageCollection')}</h4>
+                  <h4 className="font-medium">Garbage Collection</h4>
                   <p className="text-sm text-muted-foreground">
-                    {t('garbageCollectionDescription')}
+                    İstifadə olunmayan obyektləri təmizləyin
                   </p>
                   <Button variant="outline" size="sm">
-                    {t('forceGarbageCollection')}
+                    Garbage Collection Başlat
                   </Button>
                 </div>
               </CardContent>
@@ -115,12 +115,12 @@ const PerformanceDashboard: React.FC = () => {
         <TabsContent value="virtualization" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>{t('virtualScrollingDemo')}</CardTitle>
+              <CardTitle>Virtual Scrolling Demo</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  {t('virtualScrollingDescription', { count: sampleData.length })}
+                  {sampleData.length} məlumat ilə virtual scrolling nümayişi
                 </p>
                 
                 <VirtualTable
@@ -154,12 +154,12 @@ const PerformanceDashboard: React.FC = () => {
         <TabsContent value="lazy-loading" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>{t('lazyLoadingDemo')}</CardTitle>
+              <CardTitle>Lazy Loading Demo</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  {t('lazyLoadingDescription')}
+                  Komponentlərin tənbəl yüklənmə nümayişi
                 </p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

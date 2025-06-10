@@ -13,7 +13,10 @@ import {
   Columns,
   Building,
   Building2,
-  Database // ✅ YENİ: Sektor məlumatları üçün ikon
+  Database, // ✅ YENİ: Sektor məlumatları üçün ikon
+  TrendingUp, // ✅ YENİ: Statistika üçün ikon
+  Activity, // ✅ YENİ: Proqres izləmə və performans üçün ikon
+  BarChart3 // ✅ YENİ: Əlavə statistika ikonu
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useTranslation';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -121,6 +124,38 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole: rawUserRole, isOpen, onTogg
       href: '/sector-data-entry', 
       icon: Database,
       visible: isSectorAdmin
+    },
+    // ✅ YENİ: Statistika - Region və Sektor adminləri üçün
+    { 
+      id: 'statistics',
+      label: 'Statistika', 
+      href: '/statistics', 
+      icon: TrendingUp,
+      visible: isRegionAdmin || isSectorAdmin
+    },
+    // ✅ YENİ: Proqres İzləmə - Region və Sektor adminləri üçün
+    { 
+      id: 'progress',
+      label: 'Proqres İzləmə', 
+      href: '/progress', 
+      icon: Activity,
+      visible: isRegionAdmin || isSectorAdmin
+    },
+    // ✅ YENİ: Performans - SuperAdmin üçün
+    { 
+      id: 'performance',
+      label: 'Performans', 
+      href: '/performance', 
+      icon: BarChart3,
+      visible: isSuperAdmin
+    },
+    // ✅ YENİ: Genişləndirilmiş İstifadəçi İdarəetməsi - SuperAdmin üçün
+    { 
+      id: 'user-management',
+      label: 'İstifadəçi İdarəetməsi', 
+      href: '/user-management', 
+      icon: Users,
+      visible: isSuperAdmin
     },
     { 
       id: 'data-entry',

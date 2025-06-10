@@ -1,26 +1,9 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  Area,
-  AreaChart
-} from 'recharts';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -125,31 +108,6 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
       completionPercentage: Math.round((completed / totalSchools) * 100)
     };
   }, [progressData]);
-
-  // Chart data preparations
-  const chartData = progressData.map(d => ({
-    name: d.schoolName.substring(0, 20) + (d.schoolName.length > 20 ? '...' : ''),
-    completion: d.completionRate,
-    completed: d.completedFields,
-    total: d.totalFields,
-    status: d.status
-  }));
-
-  const pieData = [
-    { name: 'Tamamlanmış', value: stats.completed, color: '#22c55e' },
-    { name: 'Davam edir', value: stats.inProgress, color: '#3b82f6' },
-    { name: 'Gecikmiş', value: stats.overdue, color: '#ef4444' },
-    { name: 'Başlanmamış', value: stats.totalSchools - stats.completed - stats.inProgress - stats.overdue, color: '#6b7280' }
-  ];
-
-  const trendData = [
-    { date: '1 Yan', completion: 15 },
-    { date: '5 Yan', completion: 25 },
-    { date: '10 Yan', completion: 40 },
-    { date: '15 Yan', completion: 55 },
-    { date: '20 Yan', completion: 68 },
-    { date: 'Bu gün', completion: stats.avgCompletion }
-  ];
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -257,47 +215,53 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
       <Tabs value={viewMode} onValueChange={(value: string) => setViewMode(value as any)}>
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Progress Chart */}
+            {/* Progress Summary */}
             <Card>
               <CardHeader>
-                <CardTitle>Məktəblərin Tamamlama Nisbəti</CardTitle>
+                <CardTitle>Ümumi Baxış</CardTitle>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" fontSize={12} />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="completion" fill="#3b82f6" />
-                  </BarChart>
-                </ResponsiveContainer>
+              <CardContent className="space-y-4">
+                {progressData.slice(0, 3).map((school) => (
+                  <div key={school.schoolId} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">{school.schoolName}</span>
+                      <span className="text-sm">{school.completionRate}%</span>
+                    </div>
+                    <Progress value={school.completionRate} className="h-2" />
+                  </div>
+                ))}
               </CardContent>
             </Card>
 
             {/* Status Distribution */}
             <Card>
               <CardHeader>
-                <CardTitle>Vəziyyətə görə Bölgü</CardTitle>
+                <CardTitle>Vəziyyətə görə Paylanma</CardTitle>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      dataKey="value"
-                      label={(entry) => `${entry.name}: ${entry.value}`}
-                    >
-                      {pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-2">
+                      <Award className="h-4 w-4 text-green-600" />
+                      Tamamlanıb
+                    </span>
+                    <span className="font-medium">{stats.completed}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-blue-600" />
+                      Davam edir
+                    </span>
+                    <span className="font-medium">{stats.inProgress}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      Gecikmiş
+                    </span>
+                    <span className="font-medium">{stats.overdue}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -336,7 +300,7 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
-                        <span>Son yeniləmə: {new Date(school.lastUpdated).toLocaleDateString('az')}</span>
+                        <span>Son yenilənmə: {new Date(school.lastUpdated).toLocaleDateString('az')}</span>
                         {school.deadline && (
                           <span>Son tarix: {new Date(school.deadline).toLocaleDateString('az')}</span>
                         )}
@@ -358,21 +322,13 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <AreaChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Area 
-                    type="monotone" 
-                    dataKey="completion" 
-                    stroke="#3b82f6" 
-                    fill="#3b82f6" 
-                    fillOpacity={0.3}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="space-y-4">
+                <div className="text-center py-8 text-muted-foreground">
+                  <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tendensiya analizi hazırlanır...</p>
+                  <p className="text-sm mt-2">Tezliklə qrafiklər və analitik məlumatlar əlavə ediləcək.</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
