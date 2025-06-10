@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useRegions } from '@/hooks/regions';
-import { useSectors } from '@/hooks/sectors';
+import { useSectorsStore } from '@/hooks/useSectorsStore';
 import { useSchools } from '@/hooks/schools';
 import { Region } from '@/types/school';
 import { Sector } from '@/types/school';
@@ -51,7 +51,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { regions } = useRegions();
-  const { sectors } = useSectors();
+  const { sectors } = useSectorsStore();
   const { schools } = useSchools();
 
   const initialRole: UserRole = entityTypes.includes('school') 

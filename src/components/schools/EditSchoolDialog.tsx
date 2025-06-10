@@ -24,7 +24,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { School } from '@/types/school';
 import { useRegions } from '@/hooks/regions/useRegions';
-import { useSectors } from '@/hooks/sectors/useSectors';
+import { useSectorsStore } from '@/hooks/useSectorsStore';
 
 interface EditSchoolDialogProps {
   isOpen: boolean;
@@ -56,7 +56,7 @@ export const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { regions = [] } = useRegions() || {};
-  const { sectors = [] } = useSectors(formData.region_id) || {};
+  const { sectors = [] } = useSectorsStore() || {};
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

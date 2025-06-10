@@ -2,7 +2,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { useSectorsStore } from '@/hooks/sectors/useSectorsStore';
+import { useSectorsStore } from '@/hooks/useSectorsStore';
 import SectorsContainer from '@/components/sectors/SectorsContainer';
 import { Loader2 } from 'lucide-react';
 

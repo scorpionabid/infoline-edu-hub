@@ -34,7 +34,8 @@ export interface Region {
   description?: string;
 }
 
-export interface Sector {
+// This interface is deprecated - use Sector from @/types/sector.ts instead
+export interface SchoolSector {
   id: string;
   name: string;
   region_id: string;
