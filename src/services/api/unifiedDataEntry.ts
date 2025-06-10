@@ -41,7 +41,13 @@ export const fetchUnifiedDataEntries = async ({
     
     if (error) throw error;
     
-    return data || [];
+    // Transform data to ensure proper typing
+    const transformedData: UnifiedDataEntry[] = (data || []).map((entry: any) => ({
+      ...entry,
+      status: entry.status as 'draft' | 'pending' | 'approved' | 'rejected'
+    }));
+    
+    return transformedData;
   } catch (error) {
     console.error('Error fetching unified data entries:', error);
     throw error;
@@ -56,13 +62,28 @@ export const saveUnifiedDataEntries = async (
   userId?: string | null
 ): Promise<UnifiedDataEntry[]> => {
   try {
-    const dataToSave = entries.map(entry => ({
-      ...entry,
-      category_id: categoryId,
-      [entityType === 'school' ? 'school_id' : 'sector_id']: entityId,
-      created_by: userId || undefined,
-      updated_at: new Date().toISOString()
-    }));
+    const dataToSave = entries.map(entry => {
+      const baseData: any = {
+        category_id: categoryId,
+        column_id: entry.column_id || '',
+        value: entry.value,
+        status: entry.status || 'draft',
+        created_by: userId || undefined,
+        updated_at: new Date().toISOString()
+      };
+
+      if (entityType === 'school') {
+        baseData.school_id = entityId;
+      } else {
+        baseData.sector_id = entityId;
+      }
+
+      if (entry.id) {
+        baseData.id = entry.id;
+      }
+
+      return baseData;
+    });
 
     const { data, error } = await supabase
       .from('data_entries')
@@ -71,7 +92,13 @@ export const saveUnifiedDataEntries = async (
 
     if (error) throw error;
 
-    return data || [];
+    // Transform data to ensure proper typing
+    const transformedData: UnifiedDataEntry[] = (data || []).map((entry: any) => ({
+      ...entry,
+      status: entry.status as 'draft' | 'pending' | 'approved' | 'rejected'
+    }));
+
+    return transformedData;
   } catch (error) {
     console.error('Error saving unified data entries:', error);
     throw error;

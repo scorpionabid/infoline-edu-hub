@@ -1,99 +1,71 @@
 
-import React, { useState } from 'react';
-import { useSectorsQuery } from '@/hooks/api/sectors/useSectorsQuery';
-import { SectorsList } from './SectorsList';
-import SectorForm from './SectorForm';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Plus, AlertTriangle } from 'lucide-react';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Sector } from '@/types/sector';
 
-export const SectorsContainer: React.FC = () => {
-  const [showForm, setShowForm] = useState(false);
-  const [editingSector, setEditingSector] = useState<any>(null);
+export interface SectorsContainerProps {
+  sectors: Sector[];
+  isLoading: boolean;
+  onRefresh: () => Promise<void>;
+}
 
-  const {
-    sectors,
-    loading,
-    isLoading,
-    isError,
-    error,
-    refetch
-  } = useSectorsQuery();
-
-  if (loading || isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  if (isError && error) {
+const SectorsContainer: React.FC<SectorsContainerProps> = ({
+  sectors,
+  isLoading,
+  onRefresh
+}) => {
+  if (isLoading) {
     return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
-          Error loading sectors: {error}
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  const handleEdit = (sector: any) => {
-    setEditingSector(sector);
-    setShowForm(true);
-  };
-
-  const handleDelete = async (sectorId: string) => {
-    console.log('Delete sector called for:', sectorId);
-    // This should be implemented when the mutation is added to the hook
-  };
-
-  const handleFormSubmit = async (sectorData: any) => {
-    try {
-      if (editingSector) {
-        // Update sector
-        console.log('Update sector:', editingSector.id, sectorData);
-      } else {
-        // Create sector  
-        console.log('Create sector:', sectorData);
-      }
-      
-      setShowForm(false);
-      setEditingSector(null);
-      refetch();
-    } catch (error) {
-      console.error('Error submitting sector form:', error);
-    }
-  };
-
-  const handleFormCancel = () => {
-    setShowForm(false);
-    setEditingSector(null);
-  };
-
-  if (showForm) {
-    return (
-      <SectorForm
-        initialData={editingSector}
-        onSubmit={handleFormSubmit}
-        onCancel={handleFormCancel}
-      />
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Sectors</h2>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Sector
-        </Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Sektorlar</h1>
+        <button
+          onClick={onRefresh}
+          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+        >
+          Yenilə
+        </button>
       </div>
-      
-      <SectorsList 
-        sectors={sectors}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {sectors.map((sector) => (
+          <Card key={sector.id}>
+            <CardHeader>
+              <CardTitle className="text-lg">{sector.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {sector.description && (
+                  <p className="text-sm text-muted-foreground">{sector.description}</p>
+                )}
+                <div className="flex items-center justify-between text-sm">
+                  <span>Status:</span>
+                  <span className={`px-2 py-1 rounded text-xs ${
+                    sector.status === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {sector.status === 'active' ? 'Aktiv' : 'Qeyri-aktiv'}
+                  </span>
+                </div>
+                {sector.completion_rate !== undefined && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Tamamlanma:</span>
+                    <span>{sector.completion_rate}%</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
