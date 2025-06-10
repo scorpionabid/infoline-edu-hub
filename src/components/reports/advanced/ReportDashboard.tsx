@@ -8,6 +8,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useAdvancedReports } from '@/hooks/reports/useAdvancedReports';
 import AdvancedReportBuilder from './AdvancedReportBuilder';
 import ReportViewer from './ReportViewer';
+import ExportButtons from '@/components/reports/ExportButtons';
 import { BarChart3, FileText, TrendingUp, Users, School, Building } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -51,6 +52,16 @@ const ReportDashboard: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold">{t('advancedReporting')}</h1>
           <p className="text-muted-foreground">{t('advancedReportingDescription')}</p>
+        </div>
+        <div className="flex gap-2">
+          <ExportButtons 
+            reportType="school-performance"
+            className=""
+          />
+          <ExportButtons 
+            reportType="regional-comparison"
+            className=""
+          />
         </div>
       </div>
 

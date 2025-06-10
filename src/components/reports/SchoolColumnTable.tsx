@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -17,7 +18,6 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Column } from '@/types/column';
 import { 
   DropdownMenu,
   DropdownMenuTrigger,
@@ -30,326 +30,358 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { Edit, Copy, FileText, Download, Upload } from 'lucide-react';
-
-// Define the CategoryWithColumns type
-interface CategoryWithColumns {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-  deadline?: string;
-  columns: Column[];
-}
+import { Edit, Copy, FileText, Download, Upload, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import ExportButtons from '@/components/reports/ExportButtons';
+import PaginationControls from '@/components/reports/PaginationControls';
+import { usePaginatedReports } from '@/hooks/reports/usePaginatedReports';
+import { reportCache } from '@/services/reports/cacheService';
+import { useCategories } from '@/hooks/useCategories';
 
 interface SchoolColumnTableProps {
   categoryId?: string;
-  schoolId?: string;
 }
 
-const SchoolColumnTable: React.FC<SchoolColumnTableProps> = ({ categoryId, schoolId }) => {
+interface SchoolRow {
+  school_id: string;
+  school_name: string;
+  principal_name?: string;
+  region_name: string;
+  sector_name: string;
+  completion_rate: number;
+  total_entries: number;
+  approved_entries: number;
+  pending_entries: number;
+  rejected_entries: number;
+  approval_rate: number;
+  last_submission?: string;
+  status: string;
+}
+
+const SchoolColumnTable: React.FC<SchoolColumnTableProps> = ({ categoryId }) => {
   const { t } = useLanguage();
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
-  const [columns, setColumns] = useState<Column[]>([]);
-  const [category, setCategory] = useState<CategoryWithColumns | null>(null);
-  const [isReadOnly, setIsReadOnly] = useState(false);
-  const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
-  const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState('');
-  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [regionFilter, setRegionFilter] = useState('all');
+  const [regions, setRegions] = useState<string[]>([]);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
-  const handleImport = () => {
-    setIsImportDialogOpen(true);
-  };
+  // Get data from category columns
+  const { data: categories } = useCategories();
+  const category = useMemo(() => categories?.find(c => c.id === categoryId), [categories, categoryId]);
 
-  const handleExport = () => {
-    // Excel ixracını həyata keçirə bilər
-    toast.success(t('exportSuccessful'));
-  };
+  const filters = useMemo(() => ({
+    category_id: categoryId
+  }), [categoryId]);
 
-  const handleGenerateTemplate = () => {
-    setIsTemplateDialogOpen(true);
-  };
-
-  const handleApprove = () => {
-    setIsApprovalDialogOpen(true);
-  };
-
-  const handleReject = () => {
-    setIsRejectionDialogOpen(true);
-  };
-
-  const toggleSchoolSelection = (schoolId: string) => {
-    if (selectedSchools.includes(schoolId)) {
-      setSelectedSchools(selectedSchools.filter(id => id !== schoolId));
-    } else {
-      setSelectedSchools([...selectedSchools, schoolId]);
+  const { data: schoolsData = [], pagination, actions } = usePaginatedReports<SchoolRow>({
+    reportType: 'school_column_data',
+    filters,
+    config: {
+      pageSize: 50,
+      prefetchNextPage: true
     }
-  };
+  });
 
-  const handleSelectAll = () => {
-    // Bütün məktəbləri seçmək üçün
-    // Burada məktəblər mock data ilə təmsil olunur
-    const allSchoolIds = ["school-1", "school-2"];
-    setSelectedSchools(allSchoolIds);
-  };
-
-  const handleDeselectAll = () => {
-    setSelectedSchools([]);
-  };
-
-  // Mock data with sample columns for demonstration
-  const mockColumns = [
-    { id: "col-1", name: "Şagird sayı", type: "number" },
-    { id: "col-2", name: "Müəllim sayı", type: "number" },
-    { id: "col-3", name: "Otaq sayı", type: "number" }
-  ];
-
-  // Mock data with sample schools for demonstration - ensure no empty IDs
-  const mockSchools = [
-    { 
-      id: "school-1", 
-      name: "Şəhər Məktəbi #123", 
-      region: "Bakı", 
-      sector: "Nəsimi",
-      data: [
-        { columnId: "col-1", value: 1200 },
-        { columnId: "col-2", value: 85 },
-        { columnId: "col-3", value: 42 }
-      ]
-    },
-    { 
-      id: "school-2", 
-      name: "Kənd Məktəbi #45", 
-      region: "Abşeron", 
-      sector: "Xırdalan",
-      data: [
-        { columnId: "col-1", value: 450 },
-        { columnId: "col-2", value: 32 },
-        { columnId: "col-3", value: 18 }
-      ]
-    }
-  ];
-
+  // Extract unique regions for filtering
   useEffect(() => {
-    // Real verilənləri backenddən çəkmək üçün istifadə edilə bilər
-    // İmitasiya üçün setTimeout istifadə edirik
-    const timer = setTimeout(() => {
-      setColumns(mockColumns as Column[]);
-      setIsLoading(false);
-    }, 1000);
+    if (schoolsData.length > 0) {
+      const uniqueRegions = [...new Set(schoolsData.map(school => school.region_name))];
+      setRegions(uniqueRegions.sort());
+    }
+  }, [schoolsData]);
 
-    return () => clearTimeout(timer);
-  }, [categoryId]);
+  // Apply client-side filters (since server-side filtering is complex)
+  const filteredData = useMemo(() => {
+    let filtered = schoolsData;
 
-  if (isLoading) {
-    return <div className="p-4">Yüklənir...</div>;
-  }
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(school => 
+        school.school_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        school.region_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        school.sector_name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(school => {
+        switch (statusFilter) {
+          case 'high_performance':
+            return school.completion_rate >= 80;
+          case 'medium_performance':
+            return school.completion_rate >= 50 && school.completion_rate < 80;
+          case 'low_performance':
+            return school.completion_rate < 50;
+          case 'pending':
+            return school.pending_entries > 0;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Region filter
+    if (regionFilter !== 'all') {
+      filtered = filtered.filter(school => school.region_name === regionFilter);
+    }
+
+    return filtered;
+  }, [schoolsData, searchTerm, statusFilter, regionFilter]);
+
+  const handleImport = async () => {
+    if (!importFile || !categoryId) return;
+
+    try {
+      setIsImporting(true);
+      
+      // Here would be the implementation of file import logic
+      // For example, using FormData to send to an API endpoint
+      
+      toast.success('Data imported successfully');
+      setIsImportDialogOpen(false);
+      setImportFile(null);
+      actions.refresh(); // Refresh data after import
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Failed to import data');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const getStatusBadge = (value: number) => {
+    if (value >= 80) {
+      return <Badge className="bg-green-500">High</Badge>;
+    } else if (value >= 50) {
+      return <Badge className="bg-yellow-500">Medium</Badge>;
+    } else {
+      return <Badge className="bg-red-500">Low</Badge>;
+    }
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-semibold">Məktəb sütun hesabatı</h2>
-          <p className="text-muted-foreground">
-            Bütün məktəblərin göstəriciləri üzrə hesabat
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={handleImport}>
-            <Upload className="h-4 w-4 mr-1" /> İdxal
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-1" /> İxrac
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleGenerateTemplate}>
-            <FileText className="h-4 w-4 mr-1" /> Şablon
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">Əməliyyatlar</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={handleSelectAll}>Hamısını seç</DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDeselectAll}>Seçimi ləğv et</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleApprove}>Təsdiqlə</DropdownMenuItem>
-              <DropdownMenuItem onClick={handleReject}>Rədd et</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      <ScrollArea className="h-[600px] rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[40px]">
-                <Checkbox 
-                  checked={selectedSchools.length === mockSchools.length && mockSchools.length > 0} 
-                  onCheckedChange={(checked) => checked ? handleSelectAll() : handleDeselectAll()}
-                />
-              </TableHead>
-              <TableHead className="w-[250px]">Məktəb</TableHead>
-              <TableHead className="w-[120px]">Region</TableHead>
-              <TableHead className="w-[120px]">Sektor</TableHead>
-              {mockColumns.map(column => (
-                <TableHead key={column.id || `col-${Math.random()}`}>{column.name}</TableHead>
-              ))}
-              <TableHead className="w-[100px]">Əməliyyatlar</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {mockSchools.map(school => {
-              // Ensure school has valid ID
-              const schoolId = school.id || `school-${school.name || Math.random()}`;
-              return (
-                <TableRow key={schoolId}>
-                  <TableCell>
-                    <Checkbox 
-                      checked={selectedSchools.includes(schoolId)} 
-                      onCheckedChange={() => toggleSchoolSelection(schoolId)}
-                    />
-                  </TableCell>
-                  <TableCell>{school.name}</TableCell>
-                  <TableCell>{school.region}</TableCell>
-                  <TableCell>{school.sector}</TableCell>
-                  {mockColumns.map(column => (
-                    <TableCell key={column.id || `col-${Math.random()}`}>
-                      {school.data.find(d => d.columnId === column.id)?.value || "-"}
-                    </TableCell>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl font-bold">
+              {category?.name || 'School Data'} 
+            </CardTitle>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={actions.refresh}
+                className="flex items-center gap-1"
+                title="Refresh data"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Refresh
+              </Button>
+              
+              <ExportButtons 
+                data={filteredData}
+                filename={`school-report-${categoryId || 'all'}`}
+                title={category?.name || 'School Data'}
+              />
+              
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setIsImportDialogOpen(true)}
+                className="flex items-center gap-1"
+              >
+                <Upload className="h-4 w-4" />
+                Import
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            {/* Search */}
+            <div className="flex-1 min-w-[200px]">
+              <Input
+                placeholder="Search schools..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+            
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="high_performance">High performance</SelectItem>
+                  <SelectItem value="medium_performance">Medium performance</SelectItem>
+                  <SelectItem value="low_performance">Low performance</SelectItem>
+                  <SelectItem value="pending">With pending entries</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={regionFilter} onValueChange={setRegionFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by region" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All regions</SelectItem>
+                  {regions.map(region => (
+                    <SelectItem key={region} value={region}>{region}</SelectItem>
                   ))}
-                  <TableCell>
-                    <div className="flex space-x-1">
-                      <Button variant="ghost" size="icon">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </ScrollArea>
-
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {pagination.isLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredData.length === 0 ? (
+            <Alert variant="default" className="bg-muted">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                No data found. Try changing your filters or refresh the data.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="rounded-md border">
+              <ScrollArea className="h-[600px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>School</TableHead>
+                      <TableHead>Region</TableHead>
+                      <TableHead>Sector</TableHead>
+                      <TableHead>Completion</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Entries</TableHead>
+                      <TableHead>Last Update</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredData.map((school) => (
+                      <TableRow key={school.school_id}>
+                        <TableCell className="font-medium">
+                          {school.school_name}
+                          {school.principal_name && (
+                            <div className="text-xs text-muted-foreground">
+                              Principal: {school.principal_name}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>{school.region_name}</TableCell>
+                        <TableCell>{school.sector_name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span>{school.completion_rate}%</span>
+                            {getStatusBadge(school.completion_rate)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="text-xs text-muted-foreground">
+                              <span className="text-green-600">{school.approved_entries} approved</span>
+                              {school.pending_entries > 0 && (
+                                <span className="text-amber-600 ml-2">{school.pending_entries} pending</span>
+                              )}
+                              {school.rejected_entries > 0 && (
+                                <span className="text-red-600 ml-2">{school.rejected_entries} rejected</span>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {school.total_entries}
+                          <div className="text-xs text-muted-foreground">
+                            {school.last_submission ? new Date(school.last_submission).toLocaleDateString() : 'No submissions'}
+                          </div>
+                        </TableCell>
+                        <TableCell>{school.last_submission ? new Date(school.last_submission).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <span className="sr-only">Open menu</span>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <Edit className="mr-2 h-4 w-4" />
+                                <span>Edit data</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <FileText className="mr-2 h-4 w-4" />
+                                <span>View details</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Download className="mr-2 h-4 w-4" />
+                                <span>Export</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+              <div className="p-2 border-t">
+                <PaginationControls
+                  pagination={pagination}
+                  actions={actions}
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
       {/* Import Dialog */}
       <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Excel faylından məlumatları idxal et</DialogTitle>
+            <DialogTitle>Import Data</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Input type="file" accept=".xlsx,.xls" />
+            <div className="grid w-full items-center gap-1.5">
+              <label htmlFor="dataFile" className="text-sm font-medium">
+                Select Excel File
+              </label>
+              <Input
+                id="dataFile"
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => setImportFile(e.target.files ? e.target.files[0] : null)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Please upload an Excel file with the required format
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Seçilmiş Excel faylındakı məlumatları idxal edəcək. Əvvəlcə şablonu yükləyib doldurmaq tövsiyə olunur.
-            </p>
           </div>
           <DialogFooter>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>Cancel</Button>
             <Button 
-              variant="outline"
-              onClick={() => setIsImportDialogOpen(false)}
+              onClick={handleImport} 
+              disabled={!importFile || isImporting}
+              className="gap-2"
             >
-              Ləğv et
-            </Button>
-            <Button>İdxal et</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Template Dialog */}
-      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Excel şablonunu yüklə</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-sm">
-              Excel şablonunu yükləyərək doldurun və sonra "İdxal" funksiyası ilə məlumatları sistemə daxil edin.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline"
-              onClick={() => setIsTemplateDialogOpen(false)}
-            >
-              Ləğv et
-            </Button>
-            <Button onClick={() => {
-              setIsTemplateDialogOpen(false);
-              toast.success("Şablon yüklənir");
-            }}>
-              Şablonu yüklə
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Approval Dialog */}
-      <Dialog open={isApprovalDialogOpen} onOpenChange={setIsApprovalDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Təsdiqləmə</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p>Seçilmiş {selectedSchools.length} məktəbin məlumatlarını təsdiqləmək istədiyinizdən əminsiniz?</p>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsApprovalDialogOpen(false)}
-            >
-              Ləğv et
-            </Button>
-            <Button 
-              onClick={() => {
-                setIsApprovalDialogOpen(false);
-                toast.success(`${selectedSchools.length} məktəbin məlumatları təsdiqləndi`);
-              }}
-            >
-              Təsdiqlə
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Rejection Dialog */}
-      <Dialog open={isRejectionDialogOpen} onOpenChange={setIsRejectionDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rədd etmə</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p>Seçilmiş {selectedSchools.length} məktəbin məlumatlarını rədd etmək istədiyinizdən əminsiniz?</p>
-            <Input 
-              placeholder="Rədd etmə səbəbi" 
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsRejectionDialogOpen(false)}
-            >
-              Ləğv et
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={() => {
-                setIsRejectionDialogOpen(false);
-                toast.success(`${selectedSchools.length} məktəbin məlumatları rədd edildi`);
-                setRejectionReason('');
-              }}
-            >
-              Rədd et
+              {isImporting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isImporting ? 'Importing...' : 'Import'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { CacheHelpers } from '@/services/reports/cacheService';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,6 +21,14 @@ function App() {
 
   useEffect(() => {
     initializeAuth();
+    
+    // Initialize cache system
+    CacheHelpers.setupAutoCleanup(60000); // Cleanup every minute
+    
+    // Preload common data after a short delay
+    setTimeout(() => {
+      CacheHelpers.preloadCommonData().catch(console.error);
+    }, 2000);
   }, [initializeAuth]);
 
   return (

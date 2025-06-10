@@ -7,6 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import ReportCard from './ReportCard';
 import ReportEmptyState from './reportList/ReportEmptyState';
 import ReportLoading from './reportList/ReportLoading';
+import ExportButtons from './ExportButtons';
 import { useMockReports } from '@/hooks/reports/useMockReports';
 import CreateReportDialog from './CreateReportDialog';
 
@@ -67,6 +68,10 @@ export const ReportList: React.FC = () => {
                 <Plus className="h-4 w-4 mr-2" />
                 {t('createReport')}
               </Button>
+              <ExportButtons 
+                reportType="school-performance"
+                className=""
+              />
             </div>
           </div>
         </CardHeader>

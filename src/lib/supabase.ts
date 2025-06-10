@@ -1,57 +1,13 @@
 
-import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/integrations/supabase/types';
+/**
+ * Re-export supabase client from the main integration file
+ * This avoids creating multiple SupabaseClient instances in the browser which causes warnings
+ */
 
-const supabaseUrl = "https://olbfnauhzpdskqnxtwav.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4";
+import { supabase } from '@/integrations/supabase/client';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Supabase URL or Anon Key is missing');
-  throw new Error('Supabase configuration is incomplete');
-}
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    storage: {
-      getItem: (key: string) => {
-        if (typeof window !== 'undefined') {
-          try {
-            return localStorage.getItem(key);
-          } catch {
-            return null;
-          }
-        }
-        return null;
-      },
-      setItem: (key: string, value: string) => {
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem(key, value);
-          } catch {
-            // Ignore storage errors
-          }
-        }
-      },
-      removeItem: (key: string) => {
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.removeItem(key);
-          } catch {
-            // Ignore storage errors
-          }
-        }
-      },
-    },
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'infoline-client'
-    }
-  }
-});
+// Re-export for backward compatibility
+export { supabase };
 
 export default supabase;
 
