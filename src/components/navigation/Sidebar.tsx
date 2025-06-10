@@ -16,7 +16,8 @@ import {
   Database, // ✅ YENİ: Sektor məlumatları üçün ikon
   TrendingUp, // ✅ YENİ: Statistika üçün ikon
   Activity, // ✅ YENİ: Proqres izləmə və performans üçün ikon
-  BarChart3 // ✅ YENİ: Əlavə statistika ikonu
+  BarChart3, // ✅ YENİ: Əlavə statistika ikonu
+  FileBarChart // ✅ YENİ: Reports üçün ikon
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useTranslation';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -169,6 +170,14 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole: rawUserRole, isOpen, onTogg
       label: t('approvals') || 'Təsdiqlər', 
       href: '/approvals', 
       icon: CheckSquare,
+      visible: isAdmin
+    },
+    // ✅ YENİ: Reports mənyusu - adminlər üçün
+    { 
+      id: 'reports',
+      label: t('reports') || 'Hesabatlar', 
+      href: '/reports', 
+      icon: FileBarChart,
       visible: isAdmin
     },
     { 
