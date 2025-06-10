@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { supabase } from '@/integrations/supabase/client';
@@ -196,13 +195,7 @@ const Schools = () => {
 
       if (error) throw error;
       
-      // Transform data to match Region interface
-      const transformedRegions: Region[] = (data || []).map((region: any) => ({
-        ...region,
-        status: region.status || 'active'
-      }));
-      
-      setRegions(transformedRegions);
+      setRegions(data || []);
     } catch (err) {
       console.error('Error fetching regions:', err);
       toast.error('Failed to fetch regions');
@@ -218,15 +211,7 @@ const Schools = () => {
 
       if (error) throw error;
       
-      // Transform data to match Sector interface
-      const transformedSectors: Sector[] = (data || []).map((sector: any) => ({
-        ...sector,
-        status: (sector.status === 'active' || sector.status === 'inactive') 
-          ? sector.status 
-          : 'active'
-      }));
-      
-      setSectors(transformedSectors);
+      setSectors(data || []);
     } catch (err) {
       console.error('Error fetching sectors:', err);
       toast.error('Failed to fetch sectors');

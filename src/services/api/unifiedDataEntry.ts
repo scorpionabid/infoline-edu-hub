@@ -41,13 +41,21 @@ export const fetchUnifiedDataEntries = async ({
     
     if (error) throw error;
     
-    // Transform data to ensure proper typing
-    const transformedData: UnifiedDataEntry[] = (data || []).map((entry: any) => ({
-      ...entry,
-      status: entry.status as 'draft' | 'pending' | 'approved' | 'rejected'
+    return (data || []).map((entry: any) => ({
+      id: entry.id,
+      category_id: entry.category_id,
+      column_id: entry.column_id,
+      school_id: entry.school_id,
+      sector_id: entry.sector_id,
+      value: entry.value,
+      status: (entry.status === 'draft' || entry.status === 'pending' || 
+               entry.status === 'approved' || entry.status === 'rejected') 
+               ? entry.status as 'draft' | 'pending' | 'approved' | 'rejected'
+               : 'draft',
+      created_by: entry.created_by,
+      created_at: entry.created_at,
+      updated_at: entry.updated_at
     }));
-    
-    return transformedData;
   } catch (error) {
     console.error('Error fetching unified data entries:', error);
     throw error;
@@ -68,7 +76,7 @@ export const saveUnifiedDataEntries = async (
         column_id: entry.column_id || '',
         value: entry.value,
         status: entry.status || 'draft',
-        created_by: userId || undefined,
+        created_by: userId || null,
         updated_at: new Date().toISOString()
       };
 
@@ -92,13 +100,21 @@ export const saveUnifiedDataEntries = async (
 
     if (error) throw error;
 
-    // Transform data to ensure proper typing
-    const transformedData: UnifiedDataEntry[] = (data || []).map((entry: any) => ({
-      ...entry,
-      status: entry.status as 'draft' | 'pending' | 'approved' | 'rejected'
+    return (data || []).map((entry: any) => ({
+      id: entry.id,
+      category_id: entry.category_id,
+      column_id: entry.column_id,
+      school_id: entry.school_id,
+      sector_id: entry.sector_id,
+      value: entry.value,
+      status: (entry.status === 'draft' || entry.status === 'pending' || 
+               entry.status === 'approved' || entry.status === 'rejected') 
+               ? entry.status as 'draft' | 'pending' | 'approved' | 'rejected'
+               : 'draft',
+      created_by: entry.created_by,
+      created_at: entry.created_at,
+      updated_at: entry.updated_at
     }));
-
-    return transformedData;
   } catch (error) {
     console.error('Error saving unified data entries:', error);
     throw error;

@@ -22,7 +22,7 @@ const FormFieldComponent: React.FC<FormFieldComponentProps> = ({
     
     // Type conversion based on column type
     if (column.type === 'number') {
-      newValue = newValue ? parseFloat(newValue) : '';
+      newValue = newValue ? parseFloat(newValue) : null;
     }
     
     onChange(newValue);
