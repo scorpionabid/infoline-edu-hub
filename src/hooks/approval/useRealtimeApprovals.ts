@@ -2,7 +2,6 @@
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/context/LanguageContext';
 
 interface UseRealtimeApprovalsOptions {
   onDataChange?: () => void;
@@ -11,7 +10,6 @@ interface UseRealtimeApprovalsOptions {
 
 export const useRealtimeApprovals = (options: UseRealtimeApprovalsOptions = {}) => {
   const { toast } = useToast();
-  const { t } = useLanguage();
 
   const handleRealtimeUpdate = useCallback((payload: any) => {
     console.log('Real-time approval update:', payload);
@@ -24,19 +22,19 @@ export const useRealtimeApprovals = (options: UseRealtimeApprovalsOptions = {}) 
         let message = '';
         switch (newRecord.status) {
           case 'approved':
-            message = t('dataApproved');
+            message = 'Məlumatlar təsdiqləndi';
             break;
           case 'rejected':
-            message = t('dataRejected');
+            message = 'Məlumatlar rədd edildi';
             break;
           case 'pending':
-            message = t('dataReturned');
+            message = 'Məlumatlar yenidən gözləmədə';
             break;
         }
         
         if (message) {
           toast({
-            title: t('statusUpdate'),
+            title: 'Status Yeniləmə',
             description: message,
           });
         }
@@ -45,7 +43,7 @@ export const useRealtimeApprovals = (options: UseRealtimeApprovalsOptions = {}) 
     
     // Trigger data refresh
     options.onDataChange?.();
-  }, [options.onDataChange, toast, t]);
+  }, [options.onDataChange, toast]);
 
   useEffect(() => {
     // Subscribe to data_entries changes

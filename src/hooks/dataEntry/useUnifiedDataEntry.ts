@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   fetchUnifiedDataEntries, 
@@ -35,6 +35,7 @@ export interface UseUnifiedDataEntryResult {
   // Validation
   errors: Record<string, string>;
   isValid: boolean;
+  validateForm: () => boolean;
   
   // Actions
   updateEntry: (entryId: string, data: Partial<UnifiedDataEntry>) => void;
@@ -79,6 +80,7 @@ export const useUnifiedDataEntry = ({
       is_required: true,
       category_id: categoryId,
       order_index: 1,
+      status: 'active',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     },
@@ -89,6 +91,7 @@ export const useUnifiedDataEntry = ({
       is_required: false,
       category_id: categoryId,
       order_index: 2,
+      status: 'active',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
@@ -178,7 +181,7 @@ export const useUnifiedDataEntry = ({
   }, [entries]);
 
   // Calculate completion percentage
-  const completionPercentage = React.useMemo(() => {
+  const completionPercentage = useMemo(() => {
     const requiredColumns = columns.filter(col => col.is_required);
     if (requiredColumns.length === 0) return 100;
     
@@ -191,7 +194,24 @@ export const useUnifiedDataEntry = ({
   }, [columns, formData]);
 
   // Validate form
-  const isValid = React.useMemo(() => {
+  const validateForm = useCallback(() => {
+    const newErrors: Record<string, string> = {};
+    
+    columns.forEach(column => {
+      if (column.is_required) {
+        const value = formData[column.id];
+        if (!value || value.toString().trim() === '') {
+          newErrors[column.id] = `${column.name} sahəsi məcburidir`;
+        }
+      }
+    });
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [columns, formData]);
+
+  // Check if form is valid
+  const isValid = useMemo(() => {
     const newErrors: Record<string, string> = {};
     
     columns.forEach(column => {
@@ -232,7 +252,7 @@ export const useUnifiedDataEntry = ({
 
   // Submit entries
   const submitEntries = useCallback(async () => {
-    if (!isValid) return;
+    if (!validateForm()) return;
     
     const entriesToSubmit = Object.entries(formData).map(([columnId, value]) => ({
       column_id: columnId,
@@ -242,7 +262,7 @@ export const useUnifiedDataEntry = ({
     }));
     
     await submitMutation.mutateAsync(entriesToSubmit);
-  }, [formData, categoryId, isValid, submitMutation]);
+  }, [formData, categoryId, validateForm, submitMutation]);
 
   // Refresh data
   const refreshData = useCallback(() => {
@@ -268,6 +288,7 @@ export const useUnifiedDataEntry = ({
     // Validation
     errors,
     isValid,
+    validateForm,
     
     // Actions
     updateEntry,

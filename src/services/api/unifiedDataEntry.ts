@@ -5,160 +5,75 @@ export interface UnifiedDataEntry {
   id: string;
   category_id: string;
   column_id: string;
-  value: string | null;
-  status: 'pending' | 'approved' | 'rejected' | 'draft';
   school_id?: string;
   sector_id?: string;
-  created_by: string | null;
+  value: any;
+  status: 'draft' | 'pending' | 'approved' | 'rejected';
+  created_by?: string;
   created_at: string;
   updated_at: string;
-  approved_by?: string | null;
-  approved_at?: string | null;
-  rejected_by?: string | null;
-  rejected_at?: string | null;
-  rejection_reason?: string | null;
-  deleted_at?: string | null;
 }
 
-export interface FetchUnifiedDataEntriesOptions {
+export interface FetchUnifiedDataEntriesParams {
   categoryId: string;
   entityId: string;
   entityType: 'school' | 'sector';
 }
 
-export async function fetchUnifiedDataEntries({
+export const fetchUnifiedDataEntries = async ({
   categoryId,
   entityId,
   entityType
-}: FetchUnifiedDataEntriesOptions): Promise<UnifiedDataEntry[]> {
+}: FetchUnifiedDataEntriesParams): Promise<UnifiedDataEntry[]> => {
   try {
-    const tableName = entityType === 'school' ? 'data_entries' : 'sector_data_entries';
-    const entityFieldName = entityType === 'school' ? 'school_id' : 'sector_id';
-
-    const { data, error } = await supabase
-      .from(tableName)
+    let query = supabase
+      .from('data_entries')
       .select('*')
-      .eq('category_id', categoryId)
-      .eq(entityFieldName, entityId)
-      .is('deleted_at', null);
+      .eq('category_id', categoryId);
 
+    if (entityType === 'school') {
+      query = query.eq('school_id', entityId);
+    } else if (entityType === 'sector') {
+      query = query.eq('sector_id', entityId);
+    }
+
+    const { data, error } = await query;
+    
     if (error) throw error;
-
-    // Transform and ensure proper typing
-    return (data || []).map((entry: any) => ({
-      id: entry.id,
-      category_id: entry.category_id,
-      column_id: entry.column_id,
-      value: entry.value,
-      status: (['pending', 'approved', 'rejected', 'draft'].includes(entry.status)) 
-        ? entry.status 
-        : 'draft',
-      school_id: entityType === 'school' ? entry.school_id : undefined,
-      sector_id: entityType === 'sector' ? entry.sector_id : undefined,
-      created_by: entry.created_by,
-      created_at: entry.created_at,
-      updated_at: entry.updated_at,
-      approved_by: entry.approved_by,
-      approved_at: entry.approved_at,
-      rejected_by: entry.rejected_by,
-      rejected_at: entry.rejected_at,
-      rejection_reason: entry.rejection_reason,
-      deleted_at: entry.deleted_at
-    })) as UnifiedDataEntry[];
+    
+    return data || [];
   } catch (error) {
     console.error('Error fetching unified data entries:', error);
     throw error;
   }
-}
+};
 
-export async function saveUnifiedDataEntries(
+export const saveUnifiedDataEntries = async (
   entries: Partial<UnifiedDataEntry>[],
   categoryId: string,
   entityId: string,
   entityType: 'school' | 'sector',
   userId?: string | null
-): Promise<UnifiedDataEntry[]> {
+): Promise<UnifiedDataEntry[]> => {
   try {
-    const tableName = entityType === 'school' ? 'data_entries' : 'sector_data_entries';
-    const entityFieldName = entityType === 'school' ? 'school_id' : 'sector_id';
-
-    // Process entries to match database schema exactly
-    const processedEntries = entries.map(entry => {
-      const baseEntry: any = {
-        category_id: categoryId,
-        [entityFieldName]: entityId,
-        created_by: userId || null,
-        status: entry.status || 'draft'
-      };
-
-      // Only add fields that exist and have values
-      if (entry.id) baseEntry.id = entry.id;
-      if (entry.column_id) baseEntry.column_id = entry.column_id;
-      if (entry.value !== undefined) baseEntry.value = entry.value;
-      if (entry.created_at) baseEntry.created_at = entry.created_at;
-      if (entry.updated_at) baseEntry.updated_at = entry.updated_at;
-      if (entry.approved_by) baseEntry.approved_by = entry.approved_by;
-      if (entry.approved_at) baseEntry.approved_at = entry.approved_at;
-      if (entry.rejected_by) baseEntry.rejected_by = entry.rejected_by;
-      if (entry.rejected_at) baseEntry.rejected_at = entry.rejected_at;
-      if (entry.rejection_reason) baseEntry.rejection_reason = entry.rejection_reason;
-      if (entry.deleted_at) baseEntry.deleted_at = entry.deleted_at;
-
-      return baseEntry;
-    });
+    const dataToSave = entries.map(entry => ({
+      ...entry,
+      category_id: categoryId,
+      [entityType === 'school' ? 'school_id' : 'sector_id']: entityId,
+      created_by: userId || undefined,
+      updated_at: new Date().toISOString()
+    }));
 
     const { data, error } = await supabase
-      .from(tableName)
-      .upsert(processedEntries)
+      .from('data_entries')
+      .upsert(dataToSave)
       .select();
 
     if (error) throw error;
 
-    // Transform response data to match our interface
-    return (data || []).map((entry: any) => ({
-      id: entry.id,
-      category_id: entry.category_id,
-      column_id: entry.column_id,
-      value: entry.value,
-      status: entry.status,
-      school_id: entityType === 'school' ? entry.school_id : undefined,
-      sector_id: entityType === 'sector' ? entry.sector_id : undefined,
-      created_by: entry.created_by,
-      created_at: entry.created_at,
-      updated_at: entry.updated_at,
-      approved_by: entry.approved_by,
-      approved_at: entry.approved_at,
-      rejected_by: entry.rejected_by,
-      rejected_at: entry.rejected_at,
-      rejection_reason: entry.rejection_reason,
-      deleted_at: entry.deleted_at
-    })) as UnifiedDataEntry[];
+    return data || [];
   } catch (error) {
     console.error('Error saving unified data entries:', error);
     throw error;
   }
-}
-
-export async function updateUnifiedDataEntriesStatus(
-  entries: UnifiedDataEntry[],
-  status: string,
-  entityType: 'school' | 'sector'
-): Promise<void> {
-  try {
-    const tableName = entityType === 'school' ? 'data_entries' : 'sector_data_entries';
-    const entryIds = entries.map(entry => entry.id);
-
-    const { error } = await supabase
-      .from(tableName)
-      .update({ 
-        status, 
-        updated_at: new Date().toISOString() 
-      })
-      .in('id', entryIds);
-
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error updating unified data entries status:', error);
-    throw error;
-  }
-}
+};

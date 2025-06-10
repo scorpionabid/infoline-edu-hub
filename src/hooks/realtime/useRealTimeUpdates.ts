@@ -87,20 +87,6 @@ export const useRealTimeUpdates = ({
         .subscribe((status) => {
           console.log(`Real-time subscription status for ${tableName}:`, status);
           setConnectionStatus(status);
-          
-          // Handle reconnection if needed
-          if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-            // Attempt reconnect with exponential backoff
-            const backoffDelay = Math.min(1000 * Math.pow(2, Math.floor((now - lastReconnectAttempt) / 3000)), 30000);
-            
-            console.log(`WebSocket connection ${status}, will retry in ${backoffDelay}ms`);
-            
-            const reconnectTimer = setTimeout(() => {
-              setupChannel();
-            }, backoffDelay);
-            
-            return () => clearTimeout(reconnectTimer);
-          }
         });
         
       channelRef.current = channel;
@@ -130,25 +116,13 @@ export const useRealTimeUpdates = ({
 
 // Specific hook for data entries with debouncing
 export const useDataEntryRealTime = (schoolId: string, onUpdate: (data: any) => void) => {
-  // Debounce the update callback to prevent excessive renders
-  const debouncedCallback = useCallback(
-    ((data: any) => {
-      // Create debounce mechanism using refs to avoid recreating the function
-      let timeoutId: number | null = null;
-      
-      return (payload: any) => {
-        if (timeoutId !== null) {
-          clearTimeout(timeoutId);
-        }
-        
-        timeoutId = window.setTimeout(() => {
-          onUpdate(payload);
-          timeoutId = null;
-        }, 500); // 500ms debounce
-      };
-    })({}),
-    [onUpdate]
-  );
+  const debouncedCallback = useCallback((payload: any) => {
+    const timeoutId = setTimeout(() => {
+      onUpdate(payload);
+    }, 500); // 500ms debounce
+    
+    return () => clearTimeout(timeoutId);
+  }, [onUpdate]);
   
   // Only create a new subscription if schoolId is valid
   if (!schoolId) {
@@ -170,12 +144,10 @@ export const useDataEntryRealTime = (schoolId: string, onUpdate: (data: any) => 
 
 // Specific hook for approval updates with improved behavior
 export const useApprovalRealTime = (onUpdate: (data: any) => void) => {
-  // Create a stable filter callback that only triggers on status changes
   const statusChangeFilter = useCallback(
     (payload: any) => {
       // Only trigger on status changes to avoid unnecessary updates
       if (payload.new?.status !== payload.old?.status) {
-        // Debounce status updates
         setTimeout(() => {
           onUpdate(payload);
         }, 300);

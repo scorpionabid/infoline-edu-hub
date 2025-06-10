@@ -1,18 +1,12 @@
 
-// Unified Data Entry Hook (PRIMARY)
+// Data Entry Hooks
 export { useUnifiedDataEntry } from './useUnifiedDataEntry';
-export type { 
-  UseUnifiedDataEntryOptions, 
-  UnifiedDataEntry 
-} from './useUnifiedDataEntry';
+export type { UseUnifiedDataEntryOptions, UseUnifiedDataEntryResult } from './useUnifiedDataEntry';
 
-// Specialized hooks that use the unified implementation
-export { default as useSchoolDataEntry } from './school/useSchoolDataEntry';
-export { default as useSectorDataEntryUnified } from './useSectorDataEntryUnified';
+// School-specific hooks
+export { useSchoolDataEntry } from './school/useSchoolDataEntry';
+export type { UseSchoolDataEntryOptions } from './school/useSchoolDataEntry';
 
 // Common hooks
-export * from './common';
-
-// Auto-save and validation hooks
-export { useAutoSave } from './useAutoSave';
-export { useRealTimeValidation } from './useRealTimeValidation';
+export { useRealTimeDataEntry } from './common/useRealTimeDataEntry';
+export { useRealTimeSync } from './common/useRealTimeSync';
