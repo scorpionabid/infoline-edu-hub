@@ -40,15 +40,25 @@ export class ApprovalService {
         `)
         .eq('status', 'pending');
 
-      // Filter based on user role
+      // Filter based on user role  
       if (userRole === 'regionadmin' && entityId) {
-        query = query.in('school_id', 
-          supabase.from('schools').select('id').eq('region_id', entityId)
-        );
+        const { data: schoolIds } = await supabase
+          .from('schools')
+          .select('id')
+          .eq('region_id', entityId);
+        
+        if (schoolIds && schoolIds.length > 0) {
+          query = query.in('school_id', schoolIds.map(s => s.id));
+        }
       } else if (userRole === 'sectoradmin' && entityId) {
-        query = query.in('school_id',
-          supabase.from('schools').select('id').eq('sector_id', entityId)
-        );
+        const { data: schoolIds } = await supabase
+          .from('schools')
+          .select('id')
+          .eq('sector_id', entityId);
+          
+        if (schoolIds && schoolIds.length > 0) {
+          query = query.in('school_id', schoolIds.map(s => s.id));
+        }
       }
 
       const { data, error } = await query;
@@ -143,13 +153,23 @@ export class ApprovalService {
 
       // Apply role-based filtering
       if (userRole === 'regionadmin' && entityId) {
-        query = query.in('school_id',
-          supabase.from('schools').select('id').eq('region_id', entityId)
-        );
+        const { data: schoolIds } = await supabase
+          .from('schools')
+          .select('id')
+          .eq('region_id', entityId);
+          
+        if (schoolIds && schoolIds.length > 0) {
+          query = query.in('school_id', schoolIds.map(s => s.id));
+        }
       } else if (userRole === 'sectoradmin' && entityId) {
-        query = query.in('school_id',
-          supabase.from('schools').select('id').eq('sector_id', entityId)
-        );
+        const { data: schoolIds } = await supabase
+          .from('schools')
+          .select('id')
+          .eq('sector_id', entityId);
+          
+        if (schoolIds && schoolIds.length > 0) {
+          query = query.in('school_id', schoolIds.map(s => s.id));
+        }
       }
 
       const { data, error, count } = await query;

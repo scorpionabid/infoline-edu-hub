@@ -1,118 +1,172 @@
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { fetchUnifiedDataEntries, saveUnifiedDataEntries } from '@/services/api/unifiedDataEntry';
-import { UnifiedDataEntry as UnifiedDataEntryType } from '@/services/api/unifiedDataEntry';
-import { useDebounce } from '@/hooks/common/useDebounce';
-import { useColumnsQuery } from '@/hooks/api/columns/useColumnsQuery';
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { 
+  fetchUnifiedDataEntries, 
+  saveUnifiedDataEntries, 
+  UnifiedDataEntry 
+} from '@/services/api/unifiedDataEntry';
+import { useToast } from '@/hooks/use-toast';
 import { Column } from '@/types/column';
 
 export interface UseUnifiedDataEntryOptions {
   categoryId: string;
   entityId: string;
   entityType: 'school' | 'sector';
-  initialEntries?: Partial<UnifiedDataEntryType>[];
-  autoSaveInterval?: number;
   userId?: string | null;
-  onSave?: () => void;
-  onSubmit?: () => void;
+  onSave?: (entries: UnifiedDataEntry[]) => void;
+  onSubmit?: (entries: UnifiedDataEntry[]) => void;
 }
 
-export interface UnifiedDataEntry {
-  id: string;
-  tempId?: string;
-  category_id: string;
-  column_id: string;
-  value: string | null;
-  status: 'pending' | 'approved' | 'rejected' | 'draft';
-  school_id?: string;
-  sector_id?: string;
-  created_by: string | null;
-  created_at: string;
-  updated_at: string;
-  approved_by?: string | null;
-  approved_at?: string | null;
-  rejected_by?: string | null;
-  rejected_at?: string | null;
-  rejection_reason?: string | null;
-  deleted_at?: string | null;
-}
-
-export const useUnifiedDataEntry = (options: UseUnifiedDataEntryOptions) => {
-  const { 
-    categoryId, 
-    entityId, 
-    entityType, 
-    initialEntries = [], 
-    autoSaveInterval = 3000,
-    userId,
-    onSave,
-    onSubmit
-  } = options;
+export interface UseUnifiedDataEntryResult {
+  // Data
+  entries: UnifiedDataEntry[];
+  columns: Column[];
+  formData: Record<string, any>;
   
-  const [entries, setEntries] = useState<UnifiedDataEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [isDirty, setIsDirty] = useState(false);
-  const [autoSave, setAutoSave] = useState(true);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // State
+  loading: boolean;
+  isSaving: boolean;
+  isSubmitting: boolean;
+  hasUnsavedChanges: boolean;
+  completionPercentage: number;
+  lastSaved: Date | null;
+  
+  // Validation
+  errors: Record<string, string>;
+  isValid: boolean;
+  
+  // Actions
+  updateEntry: (entryId: string, data: Partial<UnifiedDataEntry>) => void;
+  saveEntries: () => Promise<void>;
+  submitEntries: () => Promise<void>;
+  refreshData: () => void;
+}
+
+export const useUnifiedDataEntry = ({
+  categoryId,
+  entityId,
+  entityType,
+  userId,
+  onSave,
+  onSubmit
+}: UseUnifiedDataEntryOptions): UseUnifiedDataEntryResult => {
+  
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  // Fetch columns for the category
-  const { columns = [] } = useColumnsQuery({ categoryId });
-  
-  const lastEntries = useRef<UnifiedDataEntry[]>(entries);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const saveData = useCallback(async () => {
-    if (!isDirty) return;
+  // Fetch data entries
+  const { 
+    data: entries = [], 
+    isLoading: loading 
+  } = useQuery({
+    queryKey: ['unified-data-entries', categoryId, entityId, entityType],
+    queryFn: () => fetchUnifiedDataEntries({ categoryId, entityId, entityType }),
+    enabled: !!categoryId && !!entityId
+  });
 
-    setIsSaving(true);
-    setError(null);
+  // Mock columns - In real implementation, this would fetch from API
+  const columns: Column[] = [
+    {
+      id: '1',
+      name: 'Sahə 1',
+      type: 'text',
+      is_required: true,
+      category_id: categoryId,
+      order_index: 1,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: '2', 
+      name: 'Sahə 2',
+      type: 'number',
+      is_required: false,
+      category_id: categoryId,
+      order_index: 2,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+  ];
 
-    try {
-      const entriesToSave = lastEntries.current.filter(entry => entry.column_id && entry.category_id);
+  // Save mutation
+  const saveMutation = useMutation({
+    mutationFn: (data: Partial<UnifiedDataEntry>[]) => 
+      saveUnifiedDataEntries(data, categoryId, entityId, entityType, userId),
+    onSuccess: (savedEntries) => {
+      setHasUnsavedChanges(false);
+      setLastSaved(new Date());
+      queryClient.invalidateQueries({ 
+        queryKey: ['unified-data-entries', categoryId, entityId, entityType] 
+      });
+      onSave?.(savedEntries);
+      toast({
+        title: 'Uğurlu',
+        description: 'Məlumatlar saxlanıldı'
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Xəta',
+        description: 'Saxlama zamanı xəta baş verdi',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Submit mutation
+  const submitMutation = useMutation({
+    mutationFn: async (data: Partial<UnifiedDataEntry>[]) => {
+      // First save, then update status
       const savedEntries = await saveUnifiedDataEntries(
-        entriesToSave,
+        data, 
+        categoryId, 
+        entityId, 
+        entityType, 
+        userId
+      );
+      
+      // Update status to pending
+      const pendingEntries = savedEntries.map(entry => ({
+        ...entry,
+        status: 'pending' as const
+      }));
+      
+      return saveUnifiedDataEntries(
+        pendingEntries,
         categoryId,
         entityId,
         entityType,
         userId
       );
-
-      const processedEntries = savedEntries.map(entry => ({
-        ...entry,
-        tempId: entry.id || generateTempId()
-      }));
-
-      setEntries(processedEntries);
-      setIsDirty(false);
+    },
+    onSuccess: (submittedEntries) => {
+      setHasUnsavedChanges(false);
       setLastSaved(new Date());
-      
-      if (onSave) {
-        onSave();
-      }
-    } catch (err) {
-      setError(err as Error);
-    } finally {
-      setIsSaving(false);
+      queryClient.invalidateQueries({ 
+        queryKey: ['unified-data-entries', categoryId, entityId, entityType] 
+      });
+      onSubmit?.(submittedEntries);
+      toast({
+        title: 'Uğurlu',
+        description: 'Məlumatlar təsdiq üçün göndərildi'
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Xəta', 
+        description: 'Göndərmə zamanı xəta baş verdi',
+        variant: 'destructive'
+      });
     }
-  }, [categoryId, entityId, entityType, userId, isDirty, onSave]);
+  });
 
-  const debounceSave = useDebounce(saveData, autoSaveInterval);
-
-  useEffect(() => {
-    lastEntries.current = entries;
-  }, [entries]);
-
-  useEffect(() => {
-    if (autoSave && isDirty) {
-      debounceSave();
-    }
-  }, [autoSave, isDirty, debounceSave]);
-
-  // Convert entries to formData format
+  // Update form data when entries change
   useEffect(() => {
     const newFormData: Record<string, any> = {};
     entries.forEach(entry => {
@@ -123,145 +177,8 @@ export const useUnifiedDataEntry = (options: UseUnifiedDataEntryOptions) => {
     setFormData(newFormData);
   }, [entries]);
 
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const fetchedEntries = await fetchUnifiedDataEntries({ categoryId, entityId, entityType });
-      const processedEntries = fetchedEntries.map(entry => ({
-        ...entry,
-        tempId: entry.id || generateTempId()
-      }));
-      setEntries(processedEntries);
-      setIsDirty(false);
-      setLastSaved(new Date());
-    } catch (err) {
-      setError(err as Error);
-    } finally {
-      setLoading(false);
-    }
-  }, [categoryId, entityId, entityType]);
-
-  const submitEntries = useCallback(async () => {
-    if (!isDirty) return;
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      const entriesToSave = entries.filter(entry => entry.column_id && entry.category_id);
-      await saveUnifiedDataEntries(
-        entriesToSave,
-        categoryId,
-        entityId,
-        entityType,
-        userId
-      );
-
-      setIsDirty(false);
-      setLastSaved(new Date());
-      
-      if (onSubmit) {
-        onSubmit();
-      }
-    } catch (err) {
-      setError(err as Error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [categoryId, entityId, entityType, userId, entries, isDirty, onSubmit]);
-
-  const clearEntries = useCallback(() => {
-    setEntries([]);
-    setIsDirty(true);
-  }, []);
-
-  const addEntry = useCallback(() => {
-    const newEntry: UnifiedDataEntry = {
-      id: generateTempId(),
-      tempId: generateTempId(),
-      category_id: categoryId,
-      column_id: '',
-      value: null,
-      status: 'draft',
-      created_by: userId,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    setEntries(prevEntries => [...prevEntries, newEntry]);
-    setIsDirty(true);
-  }, [categoryId, userId]);
-
-  const updateEntry = useCallback((tempId: string, newData: Partial<Omit<UnifiedDataEntry, 'tempId'>>) => {
-    setEntries(prevEntries =>
-      prevEntries.map(entry =>
-        entry.tempId === tempId ? { ...entry, ...newData, updated_at: new Date().toISOString() } : entry
-      )
-    );
-    setIsDirty(true);
-  }, []);
-
-  const removeEntry = useCallback((tempId: string) => {
-    setEntries(prevEntries => prevEntries.filter(entry => entry.tempId !== tempId));
-    setIsDirty(true);
-  }, []);
-
-  const setEntriesWithTempIds = useCallback((newEntries: Partial<UnifiedDataEntryType>[]) => {
-    const processedEntries = newEntries.map(entry => ({
-      id: entry.id || generateTempId(),
-      tempId: entry.id || generateTempId(),
-      category_id: entry.category_id || categoryId,
-      column_id: entry.column_id || '',
-      value: entry.value || null,
-      status: entry.status || 'draft',
-      created_by: entry.created_by || userId,
-      created_at: entry.created_at || new Date().toISOString(),
-      updated_at: entry.updated_at || new Date().toISOString(),
-      school_id: entry.school_id,
-      sector_id: entry.sector_id,
-      approved_by: entry.approved_by,
-      approved_at: entry.approved_at,
-      rejected_by: entry.rejected_by,
-      rejected_at: entry.rejected_at,
-      rejection_reason: entry.rejection_reason,
-      deleted_at: entry.deleted_at
-    }));
-    setEntries(processedEntries);
-    setIsDirty(true);
-  }, [categoryId, userId]);
-
-  const validateForm = useCallback(() => {
-    if (!entries || entries.length === 0) {
-      return { isValid: false, errors: ['No entries to validate'] };
-    }
-
-    const newErrors: Record<string, string> = {};
-    let isValid = true;
-
-    entries.forEach((entry, index) => {
-      if (!entry.column_id) {
-        newErrors[`entry_${index}_column`] = `Entry ${index + 1}: Column ID is required`;
-        isValid = false;
-      }
-      
-      if (!entry.category_id) {
-        newErrors[`entry_${index}_category`] = `Entry ${index + 1}: Category ID is required`;
-        isValid = false;
-      }
-
-      if (entry.value && typeof entry.value === 'string' && entry.value.trim() === '') {
-        newErrors[`entry_${index}_value`] = `Entry ${index + 1}: Value cannot be empty`;
-        isValid = false;
-      }
-    });
-
-    setErrors(newErrors);
-    return { isValid, errors: Object.values(newErrors) };
-  }, [entries]);
-
   // Calculate completion percentage
-  const completionPercentage = useCallback(() => {
-    if (!columns || columns.length === 0) return 0;
+  const completionPercentage = React.useMemo(() => {
     const requiredColumns = columns.filter(col => col.is_required);
     if (requiredColumns.length === 0) return 100;
     
@@ -273,43 +190,91 @@ export const useUnifiedDataEntry = (options: UseUnifiedDataEntryOptions) => {
     return Math.round((completedRequired.length / requiredColumns.length) * 100);
   }, [columns, formData]);
 
-  const isValid = Object.keys(errors).length === 0 && completionPercentage() === 100;
+  // Validate form
+  const isValid = React.useMemo(() => {
+    const newErrors: Record<string, string> = {};
+    
+    columns.forEach(column => {
+      if (column.is_required) {
+        const value = formData[column.id];
+        if (!value || value.toString().trim() === '') {
+          newErrors[column.id] = `${column.name} sahəsi məcburidir`;
+        }
+      }
+    });
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [columns, formData]);
+
+  // Update entry
+  const updateEntry = useCallback((entryId: string, data: Partial<UnifiedDataEntry>) => {
+    if (data.value !== undefined && data.column_id) {
+      setFormData(prev => ({
+        ...prev,
+        [data.column_id!]: data.value
+      }));
+      setHasUnsavedChanges(true);
+    }
+  }, []);
+
+  // Save entries
+  const saveEntries = useCallback(async () => {
+    const entriesToSave = Object.entries(formData).map(([columnId, value]) => ({
+      column_id: columnId,
+      category_id: categoryId,
+      value: value,
+      status: 'draft' as const
+    }));
+    
+    await saveMutation.mutateAsync(entriesToSave);
+  }, [formData, categoryId, saveMutation]);
+
+  // Submit entries
+  const submitEntries = useCallback(async () => {
+    if (!isValid) return;
+    
+    const entriesToSubmit = Object.entries(formData).map(([columnId, value]) => ({
+      column_id: columnId,
+      category_id: categoryId,
+      value: value,
+      status: 'draft' as const
+    }));
+    
+    await submitMutation.mutateAsync(entriesToSubmit);
+  }, [formData, categoryId, isValid, submitMutation]);
+
+  // Refresh data
+  const refreshData = useCallback(() => {
+    queryClient.invalidateQueries({ 
+      queryKey: ['unified-data-entries', categoryId, entityId, entityType] 
+    });
+  }, [queryClient, categoryId, entityId, entityType]);
 
   return {
-    // Core data
+    // Data
     entries,
     columns,
     formData,
     
-    // State flags
+    // State
     loading,
-    isLoading: loading,
-    isSaving,
-    isSubmitting,
-    error,
-    errors,
-    isDirty,
-    isValid,
-    autoSave,
+    isSaving: saveMutation.isPending,
+    isSubmitting: submitMutation.isPending,
+    hasUnsavedChanges,
+    completionPercentage,
     lastSaved,
-    hasUnsavedChanges: isDirty,
-    completionPercentage: completionPercentage(),
+    
+    // Validation
+    errors,
+    isValid,
     
     // Actions
-    fetchEntries,
-    saveEntries: saveData,
-    submitEntries,
-    clearEntries,
-    addEntry,
     updateEntry,
-    removeEntry,
-    setEntries: setEntriesWithTempIds,
-    validateForm,
-    setAutoSave
+    saveEntries,
+    submitEntries,
+    refreshData
   };
 };
 
-// Helper function to generate a unique temporary ID
-function generateTempId(): string {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-}
+export default useUnifiedDataEntry;

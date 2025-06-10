@@ -4,8 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Upload, FileDown, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { CategoryWithColumns } from '@/types/category';
-import { ImportResult } from '@/types/excel';
+import { ImportResult, ImportError } from '@/types/excel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ExcelService } from '@/services/excelService';
+import { useToast } from '@/hooks/use-toast';
 
 interface ExcelImportDialogProps {
   isOpen: boolean;
@@ -29,6 +31,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
   const [importing, setImporting] = useState(false);
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [importMessage, setImportMessage] = useState('');
+  const { toast } = useToast();
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -63,6 +66,22 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
     }
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      await ExcelService.downloadTemplate(category, schoolId);
+      toast({
+        title: 'Uğurlu',
+        description: 'Template uğurla yükləndi'
+      });
+    } catch (error) {
+      toast({
+        title: 'Xəta',
+        description: 'Template yüklənməsində xəta baş verdi',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const handleImport = async () => {
     if (!selectedFile) return;
 
@@ -70,16 +89,12 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
     setImportStatus('idle');
 
     try {
-      // Simulate import process - this would be replaced with actual import logic
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const result: ImportResult = {
-        success: true,
-        totalRows: 25,
-        successfulRows: 23,
-        failedRows: 2,
-        errors: ['Row 5: Missing required field', 'Row 12: Invalid data format']
-      };
+      const result = await ExcelService.importExcelFile(
+        selectedFile,
+        category.id,
+        schoolId,
+        userId
+      );
 
       setImportStatus('success');
       setImportMessage(`${result.successfulRows} sətir uğurla import edildi`);
@@ -132,7 +147,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
                   Düzgün formatda template yükləyin
                 </p>
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
                 <FileDown className="h-4 w-4 mr-2" />
                 Yüklə
               </Button>
