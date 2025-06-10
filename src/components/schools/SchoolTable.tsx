@@ -82,10 +82,10 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
             <TableRow key={school.id}>
               <TableCell className="font-medium">{school.name}</TableCell>
               <TableCell>
-                {regionNames[school.region_id] || 'Naməlum region'}
+                {(regionNames && school.region_id && regionNames[school.region_id]) || 'Naməlum region'}
               </TableCell>
               <TableCell>
-                {sectorNames[school.sector_id] || 'Naməlum sektor'}
+                {(sectorNames && school.sector_id && sectorNames[school.sector_id]) || 'Naməlum sektor'}
               </TableCell>
               <TableCell>
                 {adminsLoading ? (

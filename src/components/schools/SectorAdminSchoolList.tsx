@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { School, Search, Building2 } from 'lucide-react';
 import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { SchoolDataEntryManager } from '@/components/dataEntry/SchoolDataEntryManager';
+import SchoolDataEntryManager from '@/components/dataEntry/SchoolDataEntryManager';
 
 interface SectorAdminSchoolListProps {
   onSchoolSelect?: (schoolId: string) => void;
@@ -21,6 +21,8 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
   const [showDataEntry, setShowDataEntry] = useState(false);
+  // Default data entry categoryId for schools (məktəb məlumatları kateqoriyası)
+  const [dataEntryCategoryId, setDataEntryCategoryId] = useState<string>('school-info');
   
   const { schools, loading } = useSchoolsQuery();
 
@@ -63,6 +65,7 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
       <div className="h-full">
         <SchoolDataEntryManager
           schoolId={selectedSchoolId}
+          categoryId={dataEntryCategoryId}
           onClose={handleCloseDataEntry}
           onComplete={() => {
             console.log('Data entry completed');

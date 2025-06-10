@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { SectorDataEntry } from './SectorDataEntry';
-import { SchoolDataEntryManager } from './SchoolDataEntryManager';
+import SchoolDataEntryManager from './SchoolDataEntryManager';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -15,6 +15,9 @@ export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
 }) => {
   const user = useAuthStore(selectUser);
   const { userRole } = usePermissions();
+
+  // Default data entry categoryId for schools (məktəb məlumatları kateqoriyası)
+  const defaultCategoryId = 'school-info';
 
   console.log('DataEntryContainer - User role:', userRole, 'Assignment:', assignment);
 
@@ -29,6 +32,7 @@ export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
       return (
         <SchoolDataEntryManager 
           schoolId={user?.school_id || ''} 
+          categoryId={defaultCategoryId}
           onClose={() => {}}
           onComplete={() => {}}
         />

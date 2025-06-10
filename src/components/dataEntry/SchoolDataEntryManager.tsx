@@ -9,6 +9,8 @@ interface SchoolDataEntryManagerProps {
   schoolId: string;
   categoryId: string;
   userId?: string;
+  onClose?: () => void;
+  onComplete?: () => void;
 }
 
 const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
