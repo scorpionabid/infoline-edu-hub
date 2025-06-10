@@ -149,44 +149,52 @@ export const useAdvancedReports = () => {
       const roleBasedTemplates = getAvailableTemplates();
       
       // Try to fetch from database if available
-      const { data: dbTemplates, error: dbError } = await supabase
-        .from('report_templates')
-        .select('*')
-        .eq('is_public', true)
-        .order('created_at', { ascending: false });
+      try {
+        const { data: dbTemplates, error: dbError } = await supabase
+          .from('report_templates')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (dbError) {
-        console.warn('Could not fetch templates from database:', dbError);
-      }
+        if (dbError) {
+          console.warn('Could not fetch templates from database:', dbError);
+          // Use only role-based templates if database query fails
+          setTemplates(roleBasedTemplates);
+          return;
+        }
 
-      // Filter database templates based on user role
-      let availableTemplates = roleBasedTemplates;
-      
-      if (dbTemplates && dbTemplates.length > 0) {
-        const dbTemplatesMapped = dbTemplates
-          .filter(template => {
-            // Filter based on user role
-            const allowedRoles = template.config?.allowedRoles || ['superadmin'];
-            return userRole && allowedRoles.includes(userRole.role);
-          })
-          .map(template => ({
-            id: template.id,
-            name: template.name,
-            description: template.description || '',
-            type: template.type,
-            config: template.config || {},
-            isPublic: true,
-            createdBy: template.created_by,
-            createdAt: template.created_at
-          }));
+        // Filter database templates based on user role
+        let availableTemplates = roleBasedTemplates;
         
-        // Merge with role-based templates
-        availableTemplates = [...dbTemplatesMapped, ...roleBasedTemplates];
+        if (dbTemplates && dbTemplates.length > 0) {
+          const dbTemplatesMapped = dbTemplates
+            .filter(template => {
+              // Filter based on user role
+              const allowedRoles = template.config?.allowedRoles || ['superadmin'];
+              return userRole && allowedRoles.includes(userRole.role);
+            })
+            .map(template => ({
+              id: template.id,
+              name: template.name,
+              description: template.description || '',
+              type: template.type,
+              config: template.config || {},
+              isPublic: true, // Default to public since we're filtering by role
+              createdBy: template.created_by,
+              createdAt: template.created_at
+            }));
+          
+          // Merge with role-based templates
+          availableTemplates = [...dbTemplatesMapped, ...roleBasedTemplates];
+        }
+        
+        setTemplates(availableTemplates);
+      } catch (dbErr: any) {
+        console.warn('Database template fetch error:', dbErr);
+        // Fallback to role-based templates only
+        setTemplates(roleBasedTemplates);
       }
-      
-      setTemplates(availableTemplates);
     } catch (err: any) {
-      console.warn('Error fetching templates, using role-based defaults:', err);
+      console.warn('Error in fetchTemplates, using role-based defaults:', err);
       setTemplates(getAvailableTemplates());
     } finally {
       setLoading(false);

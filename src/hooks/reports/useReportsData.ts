@@ -207,6 +207,11 @@ export const useReportsData = () => {
 
       if (error) {
         console.error('Error fetching regional comparison report:', error);
+        // Check if function doesn't exist
+        if (error.code === 'PGRST202') {
+          console.warn('Regional comparison function not found, returning empty data');
+          return [];
+        }
         throw new Error(error.message);
       }
 
@@ -222,7 +227,11 @@ export const useReportsData = () => {
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to fetch regional comparison report';
       setError(errorMessage);
-      toast.error(errorMessage);
+      console.warn('Regional comparison report error:', errorMessage);
+      // Suppress toast for missing functions
+      if (!err.message?.includes('PGRST202') && !err.message?.includes('function')) {
+        toast.error(errorMessage);
+      }
       return [];
     } finally {
       setLoading(false);
@@ -304,6 +313,20 @@ export const useReportsData = () => {
 
       if (error) {
         console.error('Error fetching dashboard statistics:', error);
+        // Check if function doesn't exist
+        if (error.code === 'PGRST202') {
+          console.warn('Dashboard statistics function not found, returning mock data');
+          // Return basic mock data structure
+          return {
+            total_schools: 0,
+            active_schools: 0,
+            total_students: 0,
+            total_teachers: 0,
+            total_submissions: 0,
+            approved_submissions: 0,
+            pending_submissions: 0,
+          };
+        }
         throw new Error(error.message);
       }
 
@@ -311,6 +334,19 @@ export const useReportsData = () => {
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to fetch dashboard statistics';
       setError(errorMessage);
+      console.warn('Dashboard statistics error:', errorMessage);
+      // Suppress toast for missing functions and return mock data
+      if (err.message?.includes('PGRST202') || err.message?.includes('function')) {
+        return {
+          total_schools: 0,
+          active_schools: 0,
+          total_students: 0,
+          total_teachers: 0,
+          total_submissions: 0,
+          approved_submissions: 0,
+          pending_submissions: 0,
+        };
+      }
       toast.error(errorMessage);
       return null;
     } finally {
@@ -332,6 +368,11 @@ export const useReportsData = () => {
 
       if (error) {
         console.error('Database connection test failed:', error);
+        if (error.code === 'PGRST202') {
+          console.warn('Database functions not installed');
+          toast.error('Database functions not installed. Please install database functions in Supabase.');
+          return false;
+        }
         throw new Error(error.message);
       }
 
@@ -340,7 +381,11 @@ export const useReportsData = () => {
     } catch (err: any) {
       const errorMessage = err.message || 'Database connection test failed';
       setError(errorMessage);
-      toast.error(errorMessage);
+      console.warn('Database test error:', errorMessage);
+      // Only show toast for non-function errors
+      if (!err.message?.includes('PGRST202') && !err.message?.includes('function')) {
+        toast.error(errorMessage);
+      }
       return false;
     } finally {
       setLoading(false);

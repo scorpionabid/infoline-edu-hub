@@ -1,9 +1,14 @@
 
 export interface AdvancedReportFilter {
   dateRange?: {
-    start: string;
-    end: string;
+    from?: string;
+    to?: string;
+    start?: string; // legacy support
+    end?: string;   // legacy support
   };
+  regionId?: string;
+  sectorId?: string;
+  categoryId?: string;
   regions?: string[];
   sectors?: string[];
   schools?: string[];

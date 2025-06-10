@@ -8,21 +8,53 @@ import ReportCard from './ReportCard';
 import ReportEmptyState from './reportList/ReportEmptyState';
 import ReportLoading from './reportList/ReportLoading';
 import ExportButtons from './ExportButtons';
-import { useMockReports } from '@/hooks/reports/useMockReports';
+import { useAdvancedReports } from '@/hooks/reports/useAdvancedReports';
 import CreateReportDialog from './CreateReportDialog';
+import { Report } from '@/types/report';
+import { AdvancedReportData } from '@/types/advanced-report';
 
 export const ReportList: React.FC = () => {
   const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
-  // Mock data hook kullanaq
-  const { reports, isLoading, error } = useMockReports();
+  // Real data hook kullanaq
+  const { reports: advancedReports, loading: isLoading, error } = useAdvancedReports();
+
+  // Convert AdvancedReportData to Report format for compatibility
+  const reports: Report[] = advancedReports.map((advReport): Report => ({
+    id: advReport.id,
+    title: advReport.title,
+    description: advReport.description,
+    type: convertAdvancedTypeToReportType(advReport.type),
+    status: 'published', // Default status for generated reports
+    created_at: advReport.generatedAt,
+    updated_at: advReport.generatedAt,
+    created_by: advReport.generatedBy,
+    content: {
+      data: advReport.data,
+      filters: advReport.filters,
+      metadata: advReport.metadata
+    },
+    insights: advReport.insights,
+    recommendations: advReport.recommendations
+  }));
 
   const filteredReports = reports.filter(report =>
     report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     report.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Helper function to convert advanced report type to legacy report type
+  function convertAdvancedTypeToReportType(advType: string): any {
+    switch (advType) {
+      case 'performance': return 'metrics';
+      case 'completion': return 'bar';
+      case 'comparison': return 'pie';
+      case 'trend': return 'line';
+      default: return 'table';
+    }
+  }
 
   const handleViewReport = (reportId: string) => {
     console.log('Viewing report:', reportId);
