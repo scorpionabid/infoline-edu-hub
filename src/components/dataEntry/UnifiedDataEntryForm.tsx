@@ -28,7 +28,7 @@ const UnifiedDataEntryForm: React.FC<UnifiedDataEntryFormProps> = ({
   const {
     columns,
     formData,
-    isLoading,
+    loading,
     isSaving,
     isSubmitting,
     hasUnsavedChanges,
@@ -37,7 +37,8 @@ const UnifiedDataEntryForm: React.FC<UnifiedDataEntryFormProps> = ({
     isValid,
     updateEntry,
     saveEntries,
-    submitEntries
+    submitEntries,
+    lastSaved
   } = useUnifiedDataEntry({
     categoryId,
     entityId,
@@ -49,7 +50,19 @@ const UnifiedDataEntryForm: React.FC<UnifiedDataEntryFormProps> = ({
 
   const handleFieldChange = (columnId: string, value: any) => {
     if (!readOnly) {
-      updateEntry(columnId, value);
+      // Find or create entry for this column
+      const existingEntry = Object.keys(formData).find(key => key === columnId);
+      if (existingEntry) {
+        updateEntry(existingEntry, { value });
+      } else {
+        // Create new entry
+        updateEntry(generateTempId(), {
+          column_id: columnId,
+          category_id: categoryId,
+          value,
+          status: 'draft'
+        });
+      }
     }
   };
 
@@ -65,7 +78,7 @@ const UnifiedDataEntryForm: React.FC<UnifiedDataEntryFormProps> = ({
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -199,5 +212,10 @@ const UnifiedDataEntryForm: React.FC<UnifiedDataEntryFormProps> = ({
     </div>
   );
 };
+
+// Helper function
+function generateTempId(): string {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
 
 export default UnifiedDataEntryForm;

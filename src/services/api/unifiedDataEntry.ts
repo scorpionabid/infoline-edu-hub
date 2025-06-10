@@ -84,7 +84,7 @@ export async function saveUnifiedDataEntries(
 
     // Process entries to match database schema exactly
     const processedEntries = entries.map(entry => {
-      const baseEntry: Record<string, any> = {
+      const baseEntry: any = {
         category_id: categoryId,
         [entityFieldName]: entityId,
         created_by: userId || null,
