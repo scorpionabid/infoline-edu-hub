@@ -6,6 +6,7 @@ import { DataEntry, DataEntryStatus, DataEntryForm } from '@/types/dataEntry';
 import { CategoryWithColumns } from '@/types/category';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { DataEntryService } from '@/services/dataEntry';
 
 interface UseDataEntryManagerOptions {
   categoryId?: string;
@@ -158,24 +159,16 @@ export const useDataEntryManager = ({
         throw new Error('Missing required parameters');
       }
       
-      // Prepare entries for save
-      const entries = Object.entries(formData).map(([columnId, value]) => ({
-        school_id: schoolId,
-        category_id: categoryId,
-        column_id: columnId,
-        value: value?.toString() || '',
-        status: 'draft' as DataEntryStatus
-      }));
+      // Mərkəzləşdirilmiş service istifadə et
+      const result = await DataEntryService.saveFormData(formData, {
+        categoryId,
+        schoolId,
+        userId: user?.id,
+        status: 'draft'
+      });
 
-      // Save to database
-      const { error } = await supabase
-        .from('data_entries')
-        .upsert(entries, {
-          onConflict: 'school_id,category_id,column_id'
-        });
-
-      if (error) {
-        throw new Error(error.message);
+      if (!result.success) {
+        throw new Error(result.error || 'Save failed');
       }
 
       // Invalidate queries to refresh data
@@ -185,7 +178,7 @@ export const useDataEntryManager = ({
       
       setIsDataModified(false);
       setLastSaved(new Date());
-      toast.success('Məlumatlar yadda saxlanıldı');
+      toast.success(`Məlumatlar yadda saxlanıldı (${result.savedCount} sahə)`);
       return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Save failed';
@@ -195,7 +188,7 @@ export const useDataEntryManager = ({
     } finally {
       setIsSaving(false);
     }
-  }, [formData, categoryId, schoolId, queryClient]);
+  }, [formData, categoryId, schoolId, queryClient, user?.id]);
 
   // Handle submit
   const handleSubmit = useCallback(async () => {
@@ -209,22 +202,19 @@ export const useDataEntryManager = ({
         return saveResult;
       }
 
-      // Then submit for approval
+      // Then submit for approval using service
       if (!categoryId || !schoolId) {
         throw new Error('Missing required parameters for submission');
       }
 
-      const { error: submitError } = await supabase
-        .from('data_entries')
-        .update({ 
-          status: 'pending',
-          created_by: user?.id 
-        })
-        .eq('school_id', schoolId)
-        .eq('category_id', categoryId);
+      const submitResult = await DataEntryService.submitForApproval(
+        categoryId,
+        schoolId,
+        user?.id
+      );
 
-      if (submitError) {
-        throw new Error(submitError.message);
+      if (!submitResult.success) {
+        throw new Error(submitResult.error || 'Submit failed');
       }
 
       // Invalidate queries
@@ -232,7 +222,7 @@ export const useDataEntryManager = ({
         queryKey: ['dataEntry', categoryId, schoolId] 
       });
       
-      toast.success('Məlumatlar təsdiq üçün göndərildi');
+      toast.success(`Məlumatlar təsdiq üçün göndərildi (${submitResult.submittedCount} sahə)`);
       return { success: true };
 
     } catch (error) {

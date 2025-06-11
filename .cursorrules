@@ -1,0 +1,31 @@
+# İnfoLine Project Rules for AI
+
+## Directory Rules
+- Tests: Use `src/__tests__/` NOT `src/tests/`
+- Services: Use existing `src/services/` structure
+- Components: Follow `src/components/` patterns
+- Hooks: Use `src/hooks/` structure
+
+## Before Creating Files
+1. Read PROJECT_AI_CONTEXT.md
+2. Check existing directory structure
+3. Search for similar existing files
+4. Extend existing files instead of duplicating
+
+## Naming Conventions
+- Tests: `*.test.ts` or `*.spec.ts`
+- Components: `PascalCase.tsx`
+- Hooks: `useCamelCase.ts`
+- Services: `camelCaseService.ts`
+
+## Forbidden Actions
+- Creating `src/tests/` directory
+- Duplicating existing services
+- Creating parallel directory structures
+- Ignoring existing patterns
+
+## Required Actions
+- Always use directory_tree() before creating
+- Always use search_files() to check existing
+- Follow established conventions
+- Ask before creating new top-level directories
