@@ -66,6 +66,7 @@ const ReportFilter: React.FC<ReportFilterProps> = ({ filter, onFilterChange }) =
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all-statuses">All statuses</SelectItem>
               <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="published">Published</SelectItem>
               <SelectItem value="archived">Archived</SelectItem>
@@ -80,6 +81,7 @@ const ReportFilter: React.FC<ReportFilterProps> = ({ filter, onFilterChange }) =
               <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all-types">All types</SelectItem>
               <SelectItem value="bar">Bar Chart</SelectItem>
               <SelectItem value="line">Line Chart</SelectItem>
               <SelectItem value="pie">Pie Chart</SelectItem>

@@ -1,61 +1,47 @@
 
-export interface AdvancedReportFilter {
-  dateRange?: {
-    from?: string;
-    to?: string;
-    start?: string; // legacy support
-    end?: string;   // legacy support
-  };
-  regionId?: string;
-  sectorId?: string;
-  categoryId?: string;
-  regions?: string[];
-  sectors?: string[];
-  schools?: string[];
-  categories?: string[];
-  status?: string[];
-  priority?: string[];
-}
-
 export interface AdvancedReportData {
   id: string;
   title: string;
-  description?: string;
-  type: 'performance' | 'completion' | 'comparison' | 'trend' | 'custom';
+  description: string;
+  type: 'custom' | 'performance' | 'completion' | 'comparison' | 'trend';
   data: any[];
-  filters: AdvancedReportFilter;
-  generatedAt: string;
-  generatedBy: string;
-  insights?: string[];
-  recommendations?: string[];
-  metadata?: {
+  filters: Record<string, any>;
+  metadata: {
     totalRecords: number;
     dataSource: string;
     lastUpdated: string;
   };
+  generatedAt: string;
+  generatedBy: string;
+  insights: string[];
+  recommendations: string[];
 }
 
 export interface ReportTemplate {
   id: string;
   name: string;
   description: string;
-  type: 'performance' | 'completion' | 'comparison' | 'trend' | 'custom';
-  config: {
-    defaultFilters: AdvancedReportFilter;
-    chartType: 'bar' | 'line' | 'pie' | 'table' | 'metrics';
-    groupBy: string[];
-    metrics: string[];
-  };
-  isPublic: boolean;
-  createdBy: string;
-  createdAt: string;
+  type: string;
+  config: any;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  is_public: boolean;
 }
 
-export interface ReportExportOptions {
-  format: 'pdf' | 'excel' | 'csv' | 'png' | 'json';
-  includeCharts: boolean;
-  includeData: boolean;
-  includeInsights: boolean;
-  customTitle?: string;
-  customDescription?: string;
+export interface ReportFilters {
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  category_id?: string;
+  date_from?: string;
+  date_to?: string;
+}
+
+export interface ChartConfiguration {
+  type: 'bar' | 'line' | 'pie' | 'scatter';
+  xAxis: string;
+  yAxis: string;
+  title: string;
+  colors: string[];
 }

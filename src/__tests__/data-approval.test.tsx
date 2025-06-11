@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ApprovalManager from '../components/approval/ApprovalManager';
+import { DataEntryStatus } from '@/types/dataEntry';
 
 // Mock approval data with correct types
 const mockApprovalManagerProps = {
@@ -52,7 +53,7 @@ describe('Data Approval Tests', () => {
         schoolName: 'Test School',
         submittedAt: new Date().toISOString(),
         submittedBy: 'user1',
-        status: 'pending' as const,
+        status: 'pending' as DataEntryStatus,
         entries: [],
         completionRate: 75
       }
@@ -92,7 +93,7 @@ describe('Data Approval Tests', () => {
         schoolName: 'Test School',
         submittedAt: new Date().toISOString(),
         submittedBy: 'user1',
-        status: 'pending' as const,
+        status: 'pending' as DataEntryStatus,
         entries: [],
         completionRate: 75
       }
@@ -119,7 +120,7 @@ describe('Data Approval Tests', () => {
         schoolName: 'Approved School',
         submittedAt: new Date().toISOString(),
         submittedBy: 'user2',
-        status: 'approved' as const,
+        status: 'approved' as DataEntryStatus,
         entries: [],
         completionRate: 100
       }

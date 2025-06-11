@@ -34,17 +34,17 @@ export function UserSelect({ value, onChange, placeholder, disabled, label, desc
     selectedUser
   } = useUserSelectData(value);
   
-  // Təhlükəsiz istifadə üçün users massivini əlavə yoxlama
-  const safeUsers = users && Array.isArray(users) ? users.map((user, index) => {
-    // Ensure user.id is never empty
-    if (!user.id || user.id === '') {
+  // Filter and validate users to ensure no empty values
+  const safeUsers = users && Array.isArray(users) ? users
+    .filter(user => user && user.id && String(user.id).trim() !== '')
+    .map((user, index) => {
+      // Ensure user.id is never empty
+      const userId = user.id && String(user.id).trim() !== '' ? user.id : `user-${index}-${Math.random().toString(36).slice(2)}`;
       return {
         ...user,
-        id: `user-${index}-${Math.random().toString(36).slice(2)}`
+        id: userId
       };
-    }
-    return user;
-  }) : [];
+    }) : [];
   
   const displayText = selectedUser
     ? (selectedUser.full_name || selectedUser.email || 'İsimsiz İstifadəçi')

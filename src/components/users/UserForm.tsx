@@ -260,20 +260,21 @@ const UserForm: React.FC<UserFormProps> = ({
             {t('region')} {isFieldRequired('regionId') && <span className="text-red-500">*</span>}
           </Label>
           <Select
-            value={formData.regionId || 'NONE'}
-            onValueChange={(value) => handleChange('regionId', value === 'NONE' ? null : value)}
+            value={formData.regionId || undefined}
+            onValueChange={(value) => handleChange('regionId', value === 'select-region' ? null : value)}
             disabled={isFieldDisabled('regionId') || !isSuperAdmin || loading.regions}
           >
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectRegion')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="NONE">{t('selectRegion')}</SelectItem>
+              <SelectItem value="select-region">{t('selectRegion')}</SelectItem>
               {regions.map((region) => {
                 // Ensure region has valid ID
                 const regionId = region.id || `region-${region.name || Math.random()}`;
+                const safeRegionId = String(regionId).trim() || `fallback-region-${Math.random()}`;
                 return (
-                  <SelectItem key={regionId} value={regionId}>
+                  <SelectItem key={regionId} value={safeRegionId}>
                     {region.name || 'Unknown Region'}
                   </SelectItem>
                 );
@@ -290,20 +291,21 @@ const UserForm: React.FC<UserFormProps> = ({
             {t('sector')} {isFieldRequired('sectorId') && <span className="text-red-500">*</span>}
           </Label>
           <Select
-            value={formData.sectorId || 'NONE'}
-            onValueChange={(value) => handleChange('sectorId', value === 'NONE' ? null : value)}
+            value={formData.sectorId || undefined}
+            onValueChange={(value) => handleChange('sectorId', value === 'select-sector' ? null : value)}
             disabled={isFieldDisabled('sectorId') || !formData.regionId || loading.sectors}
           >
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectSector')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="NONE">{t('selectSector')}</SelectItem>
+              <SelectItem value="select-sector">{t('selectSector')}</SelectItem>
               {sectors.map((sector) => {
                 // Ensure sector has valid ID
                 const sectorId = sector.id || `sector-${sector.name || Math.random()}`;
+                const safeSectorId = String(sectorId).trim() || `fallback-sector-${Math.random()}`;
                 return (
-                  <SelectItem key={sectorId} value={sectorId}>
+                  <SelectItem key={sectorId} value={safeSectorId}>
                     {sector.name || 'Unknown Sector'}
                   </SelectItem>
                 );
@@ -320,20 +322,21 @@ const UserForm: React.FC<UserFormProps> = ({
             {t('school')} {isFieldRequired('schoolId') && <span className="text-red-500">*</span>}
           </Label>
           <Select
-            value={formData.schoolId || 'NONE'}
-            onValueChange={(value) => handleChange('schoolId', value === 'NONE' ? null : value)}
+            value={formData.schoolId || undefined}
+            onValueChange={(value) => handleChange('schoolId', value === 'select-school' ? null : value)}
             disabled={isFieldDisabled('schoolId') || !formData.sectorId || loading.schools}
           >
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectSchool')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="NONE">{t('selectSchool')}</SelectItem>
+              <SelectItem value="select-school">{t('selectSchool')}</SelectItem>
               {schools.map((school) => {
                 // Ensure school has valid ID
                 const schoolId = school.id || `school-${school.name || Math.random()}`;
+                const safeSchoolId = String(schoolId).trim() || `fallback-school-${Math.random()}`;
                 return (
-                  <SelectItem key={schoolId} value={schoolId}>
+                  <SelectItem key={schoolId} value={safeSchoolId}>
                     {school.name || 'Unknown School'}
                   </SelectItem>
                 );
@@ -369,3 +372,5 @@ const UserForm: React.FC<UserFormProps> = ({
 };
 
 export default UserForm;
+
+</edits_to_apply>

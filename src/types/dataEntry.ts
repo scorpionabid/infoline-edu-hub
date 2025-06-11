@@ -1,81 +1,31 @@
 
-import {
-  DataEntry,
-  DataEntryRecord,
-  DataEntryStatus,
-  DataEntrySaveStatus,
-  DataEntryForm,
-  EntryValue,
-  DataEntryTableData,
-  ValidationResult,
-  FormFieldsProps,
-  FormFieldProps,
-  DataEntrySaveBarProps
-} from './core/dataEntry';
+export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'requires_revision';
 
-// Re-export core types
-export {
-  DataEntryStatus,
-  DataEntrySaveStatus
-};
-
-export type {
-  DataEntry,
-  DataEntryRecord,
-  DataEntryForm,
-  EntryValue,
-  DataEntryTableData,
-  ValidationResult,
-  FormFieldsProps,
-  FormFieldProps,
-  DataEntrySaveBarProps
-};
-
-// Enhanced Status Permissions interface
-export interface StatusPermissions {
-  canEdit: boolean;
-  canSubmit: boolean;
-  canApprove: boolean;
-  canReject: boolean;
-  canReset: boolean;
-  canView: boolean;
-  readOnly: boolean;
-  showEditControls: boolean;
-  showSubmitButton: boolean;
-  showApprovalControls: boolean;
-  allowedActions: string[];
-  statusInfo: string;
-  alerts: {
-    approval?: string;
-    rejection?: string;
-    warning?: string;
-    info?: string;
-    message?: string;
-    type?: 'info' | 'warning' | 'error' | 'success';
-  };
+export interface ApprovalItem {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  schoolId: string;
+  schoolName: string;
+  submittedAt: string;
+  submittedBy: string;
+  status: DataEntryStatus;
+  entries: any[];
+  completionRate: number;
 }
 
-// Additional UI-specific types
-export interface TabDefinition {
-  id: string;
-  title: string;
-  label?: string;
-  columns?: any[];
-  value?: string;
-  count?: number;
+export interface DataEntryFormData {
+  [key: string]: any;
 }
 
-export interface FormField {
-  id: string;
-  name: string;
-  type: string;
-  value: any;
-  required: boolean;
-  placeholder?: string;
-  helpText?: string;
-  options?: Array<{ id: string; label: string; value: string }>;
-  validation?: Record<string, any>;
-  onChange: (value: any) => void;
-  onBlur?: () => void;
-  error?: string;
+export interface ValidationRule {
+  required?: boolean;
+  min?: number;
+  max?: number;
+  pattern?: RegExp;
+  custom?: (value: any) => boolean | string;
+}
+
+export interface FieldValidation {
+  [fieldId: string]: ValidationRule;
 }
