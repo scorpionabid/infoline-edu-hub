@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ApprovalManager from '../components/approval/ApprovalManager';
 
-// Mock the hook with proper type
+// Mock approval data with correct types
 const mockApprovalManagerProps = {
   pendingApprovals: [],
   approvedItems: [],

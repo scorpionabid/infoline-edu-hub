@@ -29,6 +29,15 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 }) => {
   const { t } = useLanguage();
   
+  // Filter users to ensure valid IDs with additional safety checks
+  const validUsers = users.filter(user => 
+    user && 
+    user.id && 
+    String(user.id).trim() !== '' && 
+    user.id !== null && 
+    user.id !== undefined
+  );
+  
   return (
     <div className="space-y-2">
       <Label htmlFor="user-select">{t('selectUser') || 'İstifadəçi seçin'}</Label>
@@ -44,7 +53,7 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
         </div>
       ) : (
         <Select 
-          value={selectedUserId || "none"} 
+          value={selectedUserId || undefined} 
           onValueChange={(value) => onUserChange(value === "none" ? "" : value)}
         >
           <SelectTrigger id="user-select" className="w-full">
@@ -52,11 +61,11 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">{t('selectUser') || 'İstifadəçi seçin'}</SelectItem>
-            {users.length > 0 ? (
-              users.map((user, index) => (
+            {validUsers.length > 0 ? (
+              validUsers.map((user, index) => (
                 <SelectItem 
                   key={user.id || `user-${index}`} 
-                  value={user.id || `user-${index}-${Math.random().toString(36).slice(2)}`}
+                  value={String(user.id)}
                 >
                   {user.full_name || user.email} 
                   {user.email && ` (${user.email})`}

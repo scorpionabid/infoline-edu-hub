@@ -98,29 +98,44 @@ const FormField: React.FC<FormFieldProps> = ({
 
       case 'select':
         const selectOptions = column?.options || options;
-        // Filter out any options with empty or invalid values
-        const validOptions = selectOptions.filter((option: any) => {
-          const optionValue = option?.value || option;
-          return optionValue && optionValue !== '' && optionValue !== null && optionValue !== undefined;
-        });
+        // Filter and validate options to ensure no empty values
+        const validOptions = selectOptions
+          .filter((option: any) => {
+            const optionValue = option?.value !== undefined ? option.value : option;
+            return optionValue !== null && optionValue !== undefined && String(optionValue).trim() !== '';
+          })
+          .map((option: any, index: number) => {
+            const optionValue = option?.value !== undefined ? option.value : option;
+            const optionLabel = option?.label !== undefined ? option.label : option;
+            
+            // Ensure value is never empty string
+            const safeValue = String(optionValue).trim() || `option-${index}`;
+            
+            return {
+              value: safeValue,
+              label: optionLabel || safeValue
+            };
+          });
         
         return (
-          <Select value={value || ''} onValueChange={handleChange} disabled={readOnly}>
+          <Select 
+            value={value || undefined} 
+            onValueChange={handleChange} 
+            disabled={readOnly}
+          >
             <SelectTrigger>
               <SelectValue placeholder={fieldPlaceholder || 'Seçin...'} />
             </SelectTrigger>
             <SelectContent>
               {validOptions.length > 0 ? (
-                validOptions.map((option: any, index: number) => {
-                  const optionValue = option.value || option;
-                  const optionLabel = option.label || option;
-                  
-                  return (
-                    <SelectItem key={`${optionValue}-${index}`} value={String(optionValue)}>
-                      {optionLabel}
-                    </SelectItem>
-                  );
-                })
+                validOptions.map((option: any, index: number) => (
+                  <SelectItem 
+                    key={`${option.value}-${index}`} 
+                    value={option.value}
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))
               ) : (
                 <SelectItem value="no-options-available" disabled>
                   Seçim yoxdur

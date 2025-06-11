@@ -66,8 +66,14 @@ const ExistingUserSectorAdminDialog = ({ isOpen, onClose, sectorId, sectorName, 
     }
   };
 
-  // Filter users to ensure valid IDs
-  const validUsers = users.filter(user => user && user.id && user.id.trim() !== '');
+  // Filter users to ensure valid IDs with additional safety checks
+  const validUsers = users.filter(user => 
+    user && 
+    user.id && 
+    String(user.id).trim() !== '' && 
+    user.id !== null && 
+    user.id !== undefined
+  );
 
   return (
     <div>
@@ -76,13 +82,16 @@ const ExistingUserSectorAdminDialog = ({ isOpen, onClose, sectorId, sectorName, 
           <Label htmlFor="userId" className="text-right">
             {t('selectUser') || 'İstifadəçi seçin'}
           </Label>
-          <Select onValueChange={setUserId} value={userId}>
+          <Select onValueChange={setUserId} value={userId || undefined}>
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectUser')} />
             </SelectTrigger>
             <SelectContent>
               {validUsers.length > 0 ? validUsers.map((user) => (
-                <SelectItem key={user.id} value={user.id}>
+                <SelectItem 
+                  key={user.id} 
+                  value={String(user.id)}
+                >
                   {user.full_name} ({user.email})
                 </SelectItem>
               )) : (

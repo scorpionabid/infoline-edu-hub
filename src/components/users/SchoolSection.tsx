@@ -26,9 +26,14 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
     return null;
   }
 
-  // Filter out schools with empty or invalid IDs
+  // Filter out schools with empty or invalid IDs with additional safety checks
   const validSchools = filteredSchools.filter(school => 
-    school && school.id && String(school.id).trim() !== '' && school.name
+    school && 
+    school.id && 
+    String(school.id).trim() !== '' && 
+    school.id !== null && 
+    school.id !== undefined && 
+    school.name
   );
 
   return (
@@ -54,7 +59,10 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
             <SelectContent>
               {validSchools.length > 0 ? (
                 validSchools.map((school) => (
-                  <SelectItem key={school.id} value={school.id}>
+                  <SelectItem 
+                    key={school.id} 
+                    value={String(school.id)}
+                  >
                     {school.name}
                   </SelectItem>
                 ))

@@ -28,8 +28,14 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
     return null;
   }
 
-  // Filter schools to ensure valid IDs
-  const validSchools = filteredSchools.filter(school => school && school.id && school.id.trim() !== '');
+  // Filter schools to ensure valid IDs with additional safety checks
+  const validSchools = filteredSchools.filter(school => 
+    school && 
+    school.id && 
+    String(school.id).trim() !== '' && 
+    school.id !== null && 
+    school.id !== undefined
+  );
 
   return (
     <FormField
@@ -39,7 +45,7 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
         <FormItem>
           <FormLabel>{t('school')}</FormLabel>
           <Select
-            value={data.school_id || data.schoolId || ''}
+            value={data.school_id || data.schoolId || undefined}
             onValueChange={(value) => {
               const schoolValue = value === 'NONE' ? null : value;
               field.onChange(schoolValue);
@@ -55,7 +61,10 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
             <SelectContent>
               <SelectItem value="NONE">{t('selectSchool')}</SelectItem>
               {validSchools.map((school) => (
-                <SelectItem key={school.id} value={school.id}>
+                <SelectItem 
+                  key={school.id} 
+                  value={String(school.id)}
+                >
                   {school.name || 'Unknown School'}
                 </SelectItem>
               ))}

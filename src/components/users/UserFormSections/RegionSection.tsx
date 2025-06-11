@@ -21,8 +21,14 @@ function RegionSection<TFieldValues extends FieldValues>({
 }: RegionSectionProps<TFieldValues>) {
   const { t } = useLanguage();
 
-  // Filter regions to ensure valid IDs
-  const validRegions = regions.filter(region => region && region.id && region.id.trim() !== '');
+  // Filter regions to ensure valid IDs with additional safety checks
+  const validRegions = regions.filter(region => 
+    region && 
+    region.id && 
+    String(region.id).trim() !== '' && 
+    region.id !== null && 
+    region.id !== undefined
+  );
 
   return (
     <FormField
@@ -33,7 +39,7 @@ function RegionSection<TFieldValues extends FieldValues>({
           <FormLabel>{t('region')}</FormLabel>
           <FormControl>
             <Select
-              value={field.value || ''}
+              value={field.value || undefined}
               onValueChange={(value) => field.onChange(value === 'NONE' ? null : value)}
               disabled={disabled}
             >
@@ -43,7 +49,10 @@ function RegionSection<TFieldValues extends FieldValues>({
               <SelectContent>
                 <SelectItem value="NONE">{t('selectRegion')}</SelectItem>
                 {validRegions.map((region) => (
-                  <SelectItem key={region.id} value={region.id}>
+                  <SelectItem 
+                    key={region.id} 
+                    value={String(region.id)}
+                  >
                     {region.name || 'Unknown Region'}
                   </SelectItem>
                 ))}
