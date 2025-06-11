@@ -2,9 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { DataEntry, DataEntryStatus, DataEntryForm } from '@/types/dataEntry';
-import { CategoryWithColumns } from '@/types/category';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntryService } from '@/services/dataEntry';
 

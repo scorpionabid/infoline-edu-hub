@@ -210,8 +210,8 @@ export const useUnifiedDataEntry = ({
     return Object.keys(newErrors).length === 0;
   }, [columns, formData]);
 
-  // Check if form is valid
-  const isValid = useMemo(() => {
+  // Update errors when formData changes
+  useEffect(() => {
     const newErrors: Record<string, string> = {};
     
     columns.forEach(column => {
@@ -224,8 +224,12 @@ export const useUnifiedDataEntry = ({
     });
     
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   }, [columns, formData]);
+
+  // Check if form is valid
+  const isValid = useMemo(() => {
+    return Object.keys(errors).length === 0;
+  }, [errors]);
 
   // Update entry
   const updateEntry = useCallback((entryId: string, data: Partial<UnifiedDataEntry>) => {

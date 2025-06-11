@@ -1,12 +1,13 @@
-
 import React from 'react';
-import { useUnifiedDataEntry } from '@/hooks/dataEntry/useUnifiedDataEntry';
+import { useDataEntryManager } from '@/hooks/dataEntry/useDataEntryManager';
 import { useAutoSave } from '@/hooks/dataEntry/useAutoSave';
 import AutoSaveIndicator from './core/AutoSaveIndicator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SchoolDataEntryManagerProps {
   schoolId: string;
@@ -23,36 +24,54 @@ const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
 }) => {
   const { toast } = useToast();
   
-  const {
-    entries,
-    columns,
-    formData,
-    loading,
-    isSaving,
-    isSubmitting,
-    hasUnsavedChanges,
-    completionPercentage,
-    lastSaved,
-    errors,
-    isValid,
-    validateForm,
-    updateEntry,
-    saveEntries,
-    submitEntries,
-    refreshData
-  } = useUnifiedDataEntry({
-    categoryId,
-    entityId: schoolId,
-    entityType: 'school',
-    userId
+  // Get real category data
+  const { data: category, isLoading: categoryLoading } = useQuery({
+    queryKey: ['category', categoryId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*, columns(*)')
+        .eq('id', categoryId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!categoryId
   });
+  
+  const {
+    formData,
+    isLoading,
+    isSubmitting,
+    isSaving,
+    isDataModified,
+    entryStatus,
+    error,
+    lastSaved,
+    handleFormDataChange,
+    handleFieldChange,
+    handleSubmit,
+    handleSave,
+    resetForm,
+    loadData
+  } = useDataEntryManager({
+    categoryId,
+    schoolId,
+    category,
+    enableRealTime: true,
+    autoSave: false
+  });
+  
+  // Get columns from category
+  const columns = category?.columns || [];
   
   // Auto-save functionality
   const autoSave = useAutoSave({
     categoryId,
     schoolId,
     formData,
-    isDataModified: hasUnsavedChanges,
+    isDataModified,
     enabled: true,
     onSaveSuccess: (savedAt) => {
       console.log('Auto-save successful at:', savedAt);
@@ -63,7 +82,7 @@ const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
   });
 
   const handleManualSave = async () => {
-    const result = await autoSave.saveNow();
+    const result = await handleSave();
     if (result.success) {
       toast({
         title: 'Uğurlu',
@@ -72,35 +91,56 @@ const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
     }
   };
   
-  const handleSubmit = async () => {
-    if (!isValid) {
-      toast({
-        title: 'Xəta',
-        description: 'Zəhmət olmasa bütün məcburi sahələri doldurun',
-        variant: 'destructive'
-      });
-      return;
-    }
-    
-    try {
-      await submitEntries();
+  const handleFormSubmit = async () => {
+    const result = await handleSubmit();
+    if (result.success) {
       toast({
         title: 'Uğurlu',
         description: 'Məlumatlar təsdiq üçün göndərildi'
       });
-    } catch (error) {
+    } else {
       toast({
         title: 'Xəta',
-        description: 'Göndərmə zamanı xəta baş verdi',
+        description: result.error || 'Göndərmə zamanı xəta baş verdi',
         variant: 'destructive'
       });
     }
   };
   
-  if (loading) {
+  // Calculate completion percentage
+  const completionPercentage = React.useMemo(() => {
+    const requiredColumns = columns.filter(col => col.is_required);
+    if (requiredColumns.length === 0) return 100;
+    
+    const completedRequired = requiredColumns.filter(col => {
+      const value = formData[col.id];
+      return value !== undefined && value !== null && value !== '';
+    });
+    
+    return Math.round((completedRequired.length / requiredColumns.length) * 100);
+  }, [columns, formData]);
+  
+  if (isLoading || categoryLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Yüklənir...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <p className="text-red-600">Xəta: {error}</p>
+      </div>
+    );
+  }
+
+  if (!category) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <p className="text-muted-foreground">Kateqoriya tapılmadı</p>
       </div>
     );
   }
@@ -123,46 +163,57 @@ const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
       {/* Main form */}
       <Card>
         <CardHeader>
-          <CardTitle>Məktəb Məlumat Daxiletməsi</CardTitle>
+          <CardTitle>{category.name} Məlumat Daxiletməsi</CardTitle>
           <div className="text-sm text-muted-foreground">
             Tamamlanma: {completionPercentage}%
             {lastSaved && ` • Son saxlanma: ${new Date(lastSaved).toLocaleString()}`}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {columns.map((column) => (
-            <div key={column.id} className="space-y-2">
-              <label className="text-sm font-medium">
-                {column.name}
-                {column.is_required && <span className="text-red-500 ml-1">*</span>}
-              </label>
-              <input
-                type="text"
-                value={formData[column.id] || ''}
-                onChange={(e) => updateEntry(column.id, { 
-                  column_id: column.id, 
-                  value: e.target.value 
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder={`${column.name} daxil edin`}
-              />
-              {errors[column.id] && (
-                <p className="text-xs text-red-500">{errors[column.id]}</p>
-              )}
+          {columns.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Bu kateqoriya üçün sahə tapılmadı</p>
             </div>
-          ))}
+          ) : (
+            columns.map((column) => (
+              <div key={column.id} className="space-y-2">
+                <label className="text-sm font-medium">
+                  {column.name}
+                  {column.is_required && <span className="text-red-500 ml-1">*</span>}
+                </label>
+                <input
+                  type={column.type === 'number' ? 'number' : column.type === 'date' ? 'date' : 'text'}
+                  value={formData[column.id] || ''}
+                  onChange={(e) => handleFieldChange(column.id, e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder={column.placeholder || `${column.name} daxil edin`}
+                  required={column.is_required}
+                />
+                {column.help_text && (
+                  <p className="text-xs text-muted-foreground">{column.help_text}</p>
+                )}
+              </div>
+            ))
+          )}
           
           <div className="flex gap-2 pt-4">
             <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !isValid || autoSave.isSaving}
+              onClick={handleFormSubmit}
+              disabled={isSubmitting || autoSave.isSaving}
               className="flex items-center gap-2"
             >
               <Send className="h-4 w-4" />
               {isSubmitting ? 'Göndərilir...' : 'Təsdiq üçün göndər'}
             </Button>
             <Button
-              onClick={refreshData}
+              onClick={handleManualSave}
+              variant="outline"
+              disabled={isSaving || autoSave.isSaving}
+            >
+              {isSaving ? 'Saxlanılır...' : 'İndi saxla'}
+            </Button>
+            <Button
+              onClick={loadData}
               variant="ghost"
             >
               Yenilə

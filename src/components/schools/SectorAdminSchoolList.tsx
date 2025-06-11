@@ -4,10 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { School, Search, Building2 } from 'lucide-react';
 import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import SchoolDataEntryManager from '@/components/dataEntry/SchoolDataEntryManager';
+import { SectorAdminProxyDataEntry } from '@/components/dataEntry/SectorAdminProxyDataEntry';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SectorAdminSchoolListProps {
   onSchoolSelect?: (schoolId: string) => void;
@@ -21,10 +25,24 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
   const [showDataEntry, setShowDataEntry] = useState(false);
-  // Default data entry categoryId for schools (məktəb məlumatları kateqoriyası)
-  const [dataEntryCategoryId, setDataEntryCategoryId] = useState<string>('school-info');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   
   const { schools, loading } = useSchoolsQuery();
+
+  // Fetch real categories
+  const { data: categories, isLoading: categoriesLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
   // Filter schools based on search
   const filteredSchools = schools.filter(school => 
@@ -41,6 +59,12 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
 
   const handleDataEntryClick = (schoolId: string) => {
     console.log('Data entry button clicked for school:', schoolId);
+    
+    if (!selectedCategoryId) {
+      alert('Zəhmət olmasa kateqoriya seçin');
+      return;
+    }
+    
     setSelectedSchoolId(schoolId);
     setShowDataEntry(true);
     
@@ -55,20 +79,20 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
     setSelectedSchoolId(null);
   };
 
-  if (loading) {
+  if (loading || categoriesLoading) {
     return <LoadingSpinner />;
   }
 
   // Show data entry form if a school is selected for data entry
-  if (showDataEntry && selectedSchoolId) {
+  if (showDataEntry && selectedSchoolId && selectedCategoryId) {
     return (
       <div className="h-full">
-        <SchoolDataEntryManager
+        <SectorAdminProxyDataEntry
           schoolId={selectedSchoolId}
-          categoryId={dataEntryCategoryId}
+          categoryId={selectedCategoryId}
           onClose={handleCloseDataEntry}
           onComplete={() => {
-            console.log('Data entry completed');
+            console.log('Proxy data entry completed');
             handleCloseDataEntry();
           }}
         />
@@ -86,7 +110,7 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
             Məktəb Seçimi
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
@@ -95,6 +119,28 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
             />
+          </div>
+          
+          {/* Category Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Kateqoriya seçin:</label>
+            <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Kateqoriya seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories?.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!selectedCategoryId && (
+              <p className="text-xs text-amber-600">
+                ⚠️ Məlumat daxil etmək üçün kateqoriya seçin
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -130,6 +176,8 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
                           e.stopPropagation(); // Prevent card click event
                           handleDataEntryClick(school.id);
                         }}
+                        disabled={!selectedCategoryId}
+                        variant={!selectedCategoryId ? 'secondary' : 'default'}
                       >
                         Məlumat Daxil Et
                       </Button>
