@@ -65,7 +65,6 @@ Məktəb Admini məlumatların ilkin daxil edilməsini həyata keçirir:
 - Son tarix konfiqurasiyası
 
 ### 3.4. Məlumat Daxil etmə və idarəetmə
-- Microsoft Forms üslubunda interfeys (məktəb adminləri üçün)
 - Excel şablonlarının yaradılması və istifadəsi
 - Toplu məlumat idxalı və ixracı
 - Məlumatların validasiyası
@@ -129,7 +128,7 @@ Məktəb Admini məlumatların ilkin daxil edilməsini həyata keçirir:
 ### 4.5. Məktəb Admini Dashboard
 - Doldurulması tələb olunan məlumatlar siyahısı
 - Son tarixlər və vaxt göstəriciləri
-- Microsoft Forms üslubunda məlumat daxil etmə interfeysi
+-  məlumat daxil etmə interfeysi
 - Təsdiq statuslarının izlənməsi
 - Bildirişlər paneli
 
