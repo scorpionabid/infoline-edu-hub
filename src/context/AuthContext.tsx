@@ -1,67 +1,19 @@
+// ============================================================================
+// İnfoLine Auth Context - DEPRECATED VERSION
+// ============================================================================
+// Bu fayl artıq istifadə olunmur.
+// Zustand Auth Store istifadə edilir: /hooks/auth/stores/authStore.ts
+// 
+// DEPRECATED: Do not use this file anymore
+// USE: useAuthStore from @/hooks/auth/useAuthStore instead
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
+console.warn('WARNING: AuthContext is deprecated. Use useAuthStore instead.');
 
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw error;
-  };
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  };
-
-  const value = {
-    user,
-    loading,
-    signIn,
-    signOut,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+// Empty implementation to prevent breaking changes
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>;
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  throw new Error('useAuth from AuthContext is deprecated. Use useAuthStore instead.');
 };
