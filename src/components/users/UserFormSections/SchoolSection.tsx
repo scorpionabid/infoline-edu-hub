@@ -28,6 +28,9 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
     return null;
   }
 
+  // Filter schools to ensure valid IDs
+  const validSchools = filteredSchools.filter(school => school && school.id && school.id.trim() !== '');
+
   return (
     <FormField
       control={form.control}
@@ -42,7 +45,7 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
               field.onChange(schoolValue);
               onFormChange('school_id', schoolValue);
             }}
-            disabled={!isFiltering || filteredSchools.length === 0}
+            disabled={!isFiltering || validSchools.length === 0}
           >
             <FormControl>
               <SelectTrigger>
@@ -51,17 +54,12 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
             </FormControl>
             <SelectContent>
               <SelectItem value="NONE">{t('selectSchool')}</SelectItem>
-              {filteredSchools.map((school) => {
-                // Ensure school ID is never empty
-                const schoolId = school.id && school.id.trim() ? school.id : `school-${school.name || 'unknown'}-${Math.random().toString(36).slice(2)}`;
-                
-                return (
-                  <SelectItem key={schoolId} value={schoolId}>
-                    {school.name || 'Unknown School'}
-                  </SelectItem>
-                );
-              })}
-              {filteredSchools.length === 0 && (
+              {validSchools.map((school) => (
+                <SelectItem key={school.id} value={school.id}>
+                  {school.name || 'Unknown School'}
+                </SelectItem>
+              ))}
+              {validSchools.length === 0 && (
                 <div className="p-2 text-center text-sm text-muted-foreground">
                   {t('noSchoolsFound') || 'Məktəb tapılmadı'}
                 </div>

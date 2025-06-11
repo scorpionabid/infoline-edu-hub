@@ -66,6 +66,9 @@ const ExistingUserSectorAdminDialog = ({ isOpen, onClose, sectorId, sectorName, 
     }
   };
 
+  // Filter users to ensure valid IDs
+  const validUsers = users.filter(user => user && user.id && user.id.trim() !== '');
+
   return (
     <div>
       <div className="grid gap-4 py-4">
@@ -78,19 +81,11 @@ const ExistingUserSectorAdminDialog = ({ isOpen, onClose, sectorId, sectorName, 
               <SelectValue placeholder={t('selectUser')} />
             </SelectTrigger>
             <SelectContent>
-              {users.length > 0 ? users.map((user) => {
-                // Ensure user ID is never empty
-                const safeUserId = user.id && user.id.trim() ? user.id : `user-${Math.random().toString(36).slice(2)}`;
-                
-                return (
-                  <SelectItem 
-                    key={safeUserId} 
-                    value={safeUserId}
-                  >
-                    {user.full_name} ({user.email})
-                  </SelectItem>
-                );
-              }) : (
+              {validUsers.length > 0 ? validUsers.map((user) => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.full_name} ({user.email})
+                </SelectItem>
+              )) : (
                 <SelectItem value="no-users-found" disabled>
                   {t('noUsersFound') || 'İstifadəçi tapılmadı'}
                 </SelectItem>

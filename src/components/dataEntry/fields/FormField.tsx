@@ -98,30 +98,31 @@ const FormField: React.FC<FormFieldProps> = ({
 
       case 'select':
         const selectOptions = column?.options || options;
+        // Filter out any options with empty or invalid values
+        const validOptions = selectOptions.filter((option: any) => {
+          const optionValue = option?.value || option;
+          return optionValue && optionValue !== '' && optionValue !== null && optionValue !== undefined;
+        });
+        
         return (
           <Select value={value || ''} onValueChange={handleChange} disabled={readOnly}>
             <SelectTrigger>
               <SelectValue placeholder={fieldPlaceholder || 'Seçin...'} />
             </SelectTrigger>
             <SelectContent>
-              {selectOptions.map((option: any, index: number) => {
-                // Ensure we never have empty string values
-                const optionValue = option.value || option;
-                const optionLabel = option.label || option;
-                
-                // Skip empty values to prevent the Select error
-                if (!optionValue || optionValue === '') {
-                  return null;
-                }
-                
-                return (
-                  <SelectItem key={`${optionValue}-${index}`} value={String(optionValue)}>
-                    {optionLabel}
-                  </SelectItem>
-                );
-              })}
-              {selectOptions.length === 0 && (
-                <SelectItem value="no-options" disabled>
+              {validOptions.length > 0 ? (
+                validOptions.map((option: any, index: number) => {
+                  const optionValue = option.value || option;
+                  const optionLabel = option.label || option;
+                  
+                  return (
+                    <SelectItem key={`${optionValue}-${index}`} value={String(optionValue)}>
+                      {optionLabel}
+                    </SelectItem>
+                  );
+                })
+              ) : (
+                <SelectItem value="no-options-available" disabled>
                   Seçim yoxdur
                 </SelectItem>
               )}

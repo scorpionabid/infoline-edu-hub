@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { UserRole } from '@/types/supabase';
 
 interface ReportsFilters {
@@ -61,6 +61,22 @@ export const useRoleBasedReports = () => {
     };
   }, []);
 
+  const canAccessReportType = useCallback((reportType: string): boolean => {
+    return true;
+  }, []);
+
+  const getRegionalComparisonReport = useCallback(async () => {
+    return [];
+  }, []);
+
+  const getCategoryCompletionReport = useCallback(async () => {
+    return [];
+  }, []);
+
+  const getAvailableTemplates = useCallback(async () => {
+    return [];
+  }, []);
+
   return {
     userRole,
     loading,
@@ -68,6 +84,10 @@ export const useRoleBasedReports = () => {
     getSchoolPerformanceReport,
     getPermissionsSummary,
     getFilterOptions,
+    canAccessReportType,
+    getRegionalComparisonReport,
+    getCategoryCompletionReport,
+    getAvailableTemplates,
     // Mock additional methods
     generateReport: async () => ({}),
     exportReport: async () => ({}),
@@ -76,7 +96,6 @@ export const useRoleBasedReports = () => {
     deleteReport: async () => ({}),
     shareReport: async () => ({}),
     duplicateReport: async () => ({}),
-    getReportTemplates: async () => ([]),
     saveReportTemplate: async () => ({}),
     baseReportsData: {}
   };

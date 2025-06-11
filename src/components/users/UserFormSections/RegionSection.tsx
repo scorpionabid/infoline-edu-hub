@@ -21,6 +21,9 @@ function RegionSection<TFieldValues extends FieldValues>({
 }: RegionSectionProps<TFieldValues>) {
   const { t } = useLanguage();
 
+  // Filter regions to ensure valid IDs
+  const validRegions = regions.filter(region => region && region.id && region.id.trim() !== '');
+
   return (
     <FormField
       control={control}
@@ -39,16 +42,11 @@ function RegionSection<TFieldValues extends FieldValues>({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="NONE">{t('selectRegion')}</SelectItem>
-                {regions.map((region) => {
-                  // Ensure region ID is never empty
-                  const regionId = region.id && region.id.trim() ? region.id : `region-${region.name || 'unknown'}-${Math.random().toString(36).slice(2)}`;
-                  
-                  return (
-                    <SelectItem key={regionId} value={regionId}>
-                      {region.name || 'Unknown Region'}
-                    </SelectItem>
-                  );
-                })}
+                {validRegions.map((region) => (
+                  <SelectItem key={region.id} value={region.id}>
+                    {region.name || 'Unknown Region'}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </FormControl>
