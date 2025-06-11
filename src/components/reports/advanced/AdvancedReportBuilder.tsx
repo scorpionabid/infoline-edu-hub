@@ -6,12 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAdvancedReports } from '@/hooks/reports/useAdvancedReports';
 import { AdvancedReportFilter } from '@/types/advanced-report';
-import { CalendarIcon, FileText, Download, Settings } from 'lucide-react';
+import { FileText, Download, Settings } from 'lucide-react';
 
 interface AdvancedReportBuilderProps {
   onReportGenerated?: (reportId: string) => void;
@@ -68,6 +67,7 @@ const AdvancedReportBuilder: React.FC<AdvancedReportBuilderProps> = ({
                   <SelectValue placeholder={t('chooseTemplate')} />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">{t('chooseTemplate')}</SelectItem>
                   {templates.map(template => (
                     <SelectItem key={template.id} value={template.id}>
                       {template.name}
@@ -101,14 +101,14 @@ const AdvancedReportBuilder: React.FC<AdvancedReportBuilderProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>{t('startDate')}</Label>
-              <DatePicker
-                selected={filters.dateRange?.start ? new Date(filters.dateRange.start) : undefined}
-                onSelect={(date) => {
+              <Input
+                type="date"
+                value={filters.dateRange?.start || ''}
+                onChange={(e) => {
                   setFilters(prev => ({
                     ...prev,
                     dateRange: {
-                      ...prev.dateRange,
-                      start: date?.toISOString() || '',
+                      start: e.target.value,
                       end: prev.dateRange?.end || ''
                     }
                   }));
@@ -118,14 +118,15 @@ const AdvancedReportBuilder: React.FC<AdvancedReportBuilderProps> = ({
 
             <div className="space-y-2">
               <Label>{t('endDate')}</Label>
-              <DatePicker
-                selected={filters.dateRange?.end ? new Date(filters.dateRange.end) : undefined}
-                onSelect={(date) => {
+              <Input
+                type="date"
+                value={filters.dateRange?.end || ''}
+                onChange={(e) => {
                   setFilters(prev => ({
                     ...prev,
                     dateRange: {
                       start: prev.dateRange?.start || '',
-                      end: date?.toISOString() || ''
+                      end: e.target.value
                     }
                   }));
                 }}

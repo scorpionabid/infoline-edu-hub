@@ -33,3 +33,23 @@ export interface SchoolPerformanceData {
   completion_rate: number;
   [key: string]: any;
 }
+
+export interface ReportFilters {
+  schools: {
+    search: string;
+    region_id?: string;
+    sector_id?: string;
+    status: string;
+  };
+  columns: {
+    category_id?: string;
+    selected_column_ids: string[];
+  };
+}
+
+export interface SchoolColumnReportData {
+  schools: EnhancedSchoolData[];
+  columns: ColumnDefinition[];
+  total_schools: number;
+  filters_applied: ReportFilters;
+}

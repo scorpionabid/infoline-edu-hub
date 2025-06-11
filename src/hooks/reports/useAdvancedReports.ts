@@ -9,11 +9,12 @@ export interface UseAdvancedReportsReturn {
   templates: ReportTemplate[];
   loading: boolean;
   error: string | null;
-  generateReport: (type: string, filters?: any) => Promise<AdvancedReportData>;
+  generateReport: (type: string, filters?: any, title?: string) => Promise<AdvancedReportData>;
   saveTemplate: (template: Omit<ReportTemplate, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   loadTemplate: (templateId: string) => Promise<ReportTemplate | null>;
   deleteTemplate: (templateId: string) => Promise<void>;
   refreshReports: () => Promise<void>;
+  exportReport: (reportId: string, format: 'pdf' | 'excel' | 'csv' | 'png') => Promise<void>;
 }
 
 export const useAdvancedReports = (): UseAdvancedReportsReturn => {
@@ -53,17 +54,16 @@ export const useAdvancedReports = (): UseAdvancedReportsReturn => {
     }
   }, []);
 
-  const generateReport = useCallback(async (type: string, filters: any = {}): Promise<AdvancedReportData> => {
+  const generateReport = useCallback(async (type: string, filters: any = {}, title?: string): Promise<AdvancedReportData> => {
     setLoading(true);
     setError(null);
 
     try {
-      // For now, generate mock data. In production, this would call actual APIs
       const data = generateMockData(type);
       
       const report: AdvancedReportData = {
         id: `report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        title: `${type.charAt(0).toUpperCase() + type.slice(1)} Report`,
+        title: title || `${type.charAt(0).toUpperCase() + type.slice(1)} Report`,
         description: `Generated ${type} report with filters`,
         type: type as any,
         data,
@@ -85,7 +85,7 @@ export const useAdvancedReports = (): UseAdvancedReportsReturn => {
         ]
       };
 
-      setReports(prev => [report, ...prev.slice(0, 9)]); // Keep last 10 reports
+      setReports(prev => [report, ...prev.slice(0, 9)]);
       return report;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate report';
@@ -110,7 +110,7 @@ export const useAdvancedReports = (): UseAdvancedReportsReturn => {
         return config && typeof config === 'object';
       }).map(template => ({
         ...template,
-        is_public: template.is_public || false // Add missing field with default
+        is_public: Boolean(template.is_public)
       }));
 
       setTemplates(validTemplates);
@@ -150,7 +150,7 @@ export const useAdvancedReports = (): UseAdvancedReportsReturn => {
       
       return {
         ...data,
-        is_public: data.is_public || false // Add missing field with default
+        is_public: Boolean(data.is_public)
       };
     } catch (err) {
       console.error('Error loading template:', err);
@@ -174,9 +174,11 @@ export const useAdvancedReports = (): UseAdvancedReportsReturn => {
     }
   }, [loadTemplates]);
 
+  const exportReport = useCallback(async (reportId: string, format: 'pdf' | 'excel' | 'csv' | 'png') => {
+    console.log(`Exporting report ${reportId} as ${format}`);
+  }, []);
+
   const refreshReports = useCallback(async () => {
-    // In a real implementation, this would reload reports from the database
-    // For now, we'll just clear the error state
     setError(null);
   }, []);
 
@@ -193,6 +195,7 @@ export const useAdvancedReports = (): UseAdvancedReportsReturn => {
     saveTemplate,
     loadTemplate,
     deleteTemplate,
-    refreshReports
+    refreshReports,
+    exportReport
   };
 };

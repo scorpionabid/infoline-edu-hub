@@ -52,4 +52,8 @@ export interface AdvancedReportFilter {
   date_from?: string;
   date_to?: string;
   created_by?: string[];
+  dateRange?: {
+    start: string;
+    end: string;
+  };
 }

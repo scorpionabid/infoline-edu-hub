@@ -1,104 +1,78 @@
 
-import { useState, useCallback } from 'react';
-import { UserRole } from '@/types/supabase';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
-interface ReportsFilters {
-  region_id?: string;
-  sector_id?: string;
-  search?: string;
-  status?: string;
-}
-
-interface SchoolPerformanceData {
-  id: string;
-  name: string;
-  region_name: string;
-  sector_name: string;
-  completion_rate: number;
-  [key: string]: any;
-}
-
-interface FilterOptions {
-  regions: { id: string; name: string; }[];
-  sectors: { id: string; name: string; }[];
-  schools: { id: string; name: string; }[];
-  canSelectRegion: boolean;
-  canSelectSector: boolean;
-  canSelectSchool: boolean;
-}
-
-interface PermissionsSummary {
+export interface PermissionsSummary {
+  role: string;
   restrictions: {
     region_id?: string;
     sector_id?: string;
+    school_id?: string;
   };
 }
 
 export const useRoleBasedReports = () => {
-  const [userRole] = useState<UserRole>('superadmin');
-  const [loading] = useState(false);
-  const [error] = useState('');
+  const { user } = useAuth();
+  const [userRole, setUserRole] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const getSchoolPerformanceReport = useCallback(async (filters?: ReportsFilters): Promise<SchoolPerformanceData[]> => {
-    // Mock implementation
-    return [];
-  }, []);
-
-  const getPermissionsSummary = useCallback((): PermissionsSummary => {
+  const getPermissionsSummary = useCallback((): PermissionsSummary | null => {
+    if (!userRole) return null;
+    
     return {
+      role: userRole,
       restrictions: {}
     };
-  }, []);
-
-  const getFilterOptions = useCallback((): FilterOptions => {
-    return {
-      regions: [],
-      sectors: [],
-      schools: [],
-      canSelectRegion: true,
-      canSelectSector: true,
-      canSelectSchool: true
-    };
-  }, []);
+  }, [userRole]);
 
   const canAccessReportType = useCallback((reportType: string): boolean => {
-    return true;
+    return true; // For now, allow all report types
   }, []);
 
-  const getRegionalComparisonReport = useCallback(async () => {
-    return [];
+  const getSchoolPerformanceReport = useCallback(async (filters: any = {}) => {
+    try {
+      // Mock data for now
+      return [
+        {
+          school_id: '1',
+          school_name: 'Test School',
+          region_name: 'Test Region',
+          sector_name: 'Test Sector',
+          completion_rate: 85
+        }
+      ];
+    } catch (err) {
+      console.error('Error fetching school performance report:', err);
+      return [];
+    }
   }, []);
 
-  const getCategoryCompletionReport = useCallback(async () => {
-    return [];
-  }, []);
+  useEffect(() => {
+    const loadUserRole = async () => {
+      try {
+        setLoading(true);
+        if (user?.id) {
+          // Mock role loading
+          setUserRole('superadmin');
+        }
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const getAvailableTemplates = useCallback(async () => {
-    return [];
-  }, []);
+    loadUserRole();
+  }, [user?.id]);
 
   return {
     userRole,
     loading,
     error,
-    getSchoolPerformanceReport,
-    getPermissionsSummary,
-    getFilterOptions,
     canAccessReportType,
-    getRegionalComparisonReport,
-    getCategoryCompletionReport,
-    getAvailableTemplates,
-    // Mock additional methods
-    generateReport: async () => ({}),
-    exportReport: async () => ({}),
-    scheduleReport: async () => ({}),
-    getReportHistory: async () => ([]),
-    deleteReport: async () => ({}),
-    shareReport: async () => ({}),
-    duplicateReport: async () => ({}),
-    saveReportTemplate: async () => ({}),
-    baseReportsData: {}
+    getPermissionsSummary,
+    getSchoolPerformanceReport
   };
 };
-
-export default useRoleBasedReports;

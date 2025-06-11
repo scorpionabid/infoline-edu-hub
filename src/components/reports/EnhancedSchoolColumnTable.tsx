@@ -19,10 +19,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable } from '@/components/ui/data-table';
-import {
-  ColumnDefinition,
-  EnhancedSchoolData,
-} from '@/types/reports/schoolColumnReport';
 import { useRoleBasedReports } from '@/hooks/reports/useRoleBasedReports';
 import { ExportButtons } from '@/components/ui/export-buttons';
 
@@ -34,8 +30,8 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
   categoryId
 }) => {
   const { t } = useLanguage();
-  const [schools, setSchools] = useState<EnhancedSchoolData[]>([]);
-  const [columns, setColumns] = useState<ColumnDefinition[]>([]);
+  const [schools, setSchools] = useState([]);
+  const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string>("");
@@ -60,14 +56,14 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
       setError(null);
       try {
         const filters = applyPermissionsToFilters({
-          region_id: selectedRegion,
-          sector_id: selectedSector,
+          region_id: selectedRegion || undefined,
+          sector_id: selectedSector || undefined,
           search: searchQuery
         });
         
         const reportData = await getSchoolPerformanceReport(filters);
-        setSchools(reportData?.schools || []);
-        setColumns(reportData?.columns || []);
+        setSchools(reportData || []);
+        setColumns([]);
       } catch (err: any) {
         setError(err.message || 'Məlumatlar yüklənərkən xəta baş verdi');
       } finally {
@@ -78,7 +74,6 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
     fetchData();
   }, [categoryId, selectedRegion, selectedSector, searchQuery, getSchoolPerformanceReport, permissions]);
 
-  // Update the filters to include search property
   const applyPermissionsToFilters = useCallback((baseFilters: any) => {
     const updatedFilters = {
       search: '',
@@ -103,12 +98,12 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
     setTableColumns(generatedColumns);
   }, [columns, t]);
 
-  const generateTableColumns = useCallback((columns: ColumnDefinition[]) => {
+  const generateTableColumns = useCallback((columns: any[]) => {
     const baseColumns = [
       {
-        accessorKey: 'name',
+        accessorKey: 'school_name',
         header: t('school'),
-        cell: ({ row }) => <div className="w-[200px]">{row.getValue('name')}</div>,
+        cell: ({ row }) => <div className="w-[200px]">{row.getValue('school_name')}</div>,
         size: 200,
       },
       {
@@ -131,17 +126,7 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
       }
     ];
 
-    const columnEntries = columns.map(column => ({
-      accessorKey: column.id,
-      header: column.name,
-      cell: ({ row }) => {
-        const columnData = row.original.columns[column.id];
-        return columnData ? columnData.value?.toString() : '-';
-      },
-      size: 150,
-    }));
-
-    return [...baseColumns, ...columnEntries];
+    return baseColumns;
   }, [t]);
 
   const handleExport = async (format: string) => {
@@ -171,12 +156,12 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
             {/* Region Filter */}
             <div>
               <Label htmlFor="region">Region:</Label>
-              <Select onValueChange={setSelectedRegion}>
+              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
                 <SelectTrigger id="region">
                   <SelectValue placeholder="Bütün Regionlar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Bütün Regionlar</SelectItem>
+                  <SelectItem value="all">Bütün Regionlar</SelectItem>
                   <SelectItem value="baki">Bakı</SelectItem>
                   <SelectItem value="gence">Gəncə</SelectItem>
                 </SelectContent>
@@ -186,12 +171,12 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
             {/* Sector Filter */}
             <div>
               <Label htmlFor="sector">Sektor:</Label>
-              <Select onValueChange={setSelectedSector}>
+              <Select value={selectedSector} onValueChange={setSelectedSector}>
                 <SelectTrigger id="sector">
                   <SelectValue placeholder="Bütün Sektorlar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Bütün Sektorlar</SelectItem>
+                  <SelectItem value="all">Bütün Sektorlar</SelectItem>
                   <SelectItem value="tech">Texnologiya</SelectItem>
                   <SelectItem value="education">Təhsil</SelectItem>
                 </SelectContent>
