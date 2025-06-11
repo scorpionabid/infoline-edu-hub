@@ -22,9 +22,9 @@ import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
 
 interface FormFieldProps {
-  id: string;
-  name: string;
-  type: string;
+  id?: string;
+  name?: string;
+  type?: string;
   value: any;
   onChange: (value: any) => void;
   placeholder?: string;
@@ -33,6 +33,10 @@ interface FormFieldProps {
   validation?: any;
   isRequired?: boolean;
   error?: string;
+  column?: Column;
+  disabled?: boolean;
+  readOnly?: boolean;
+  label?: string;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
@@ -47,8 +51,20 @@ const FormField: React.FC<FormFieldProps> = ({
   validation,
   isRequired = false,
   error,
+  column,
+  disabled = false,
+  readOnly = false,
+  label
 }) => {
   const { t } = useLanguage();
+  
+  // Use column data if provided
+  const fieldId = id || column?.id || '';
+  const fieldName = name || label || column?.name || '';
+  const fieldType = type || column?.type || 'text';
+  const fieldRequired = isRequired || column?.is_required || false;
+  const fieldPlaceholder = placeholder || column?.placeholder || '';
+  const fieldHelpText = helpText || column?.help_text || '';
   
   // Seçim növləri üçün seçim variantlarını standardlaşdırmaq
   // options dəyişəninin array olub-olmadığını yoxlayırıq
@@ -73,37 +89,40 @@ const FormField: React.FC<FormFieldProps> = ({
 
   // Müxtəlif sütun tipləri üçün inputları render etmək
   const renderInput = () => {
-    switch (type) {
+    switch (fieldType) {
       case 'text':
         return (
           <Input
-            id={id}
-            placeholder={placeholder}
+            id={fieldId}
+            placeholder={fieldPlaceholder}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
+            disabled={disabled || readOnly}
           />
         );
       
       case 'number':
         return (
           <Input
-            id={id}
+            id={fieldId}
             type="number"
-            placeholder={placeholder}
+            placeholder={fieldPlaceholder}
             value={value ?? ''}
             onChange={(e) => onChange(parseFloat(e.target.value))}
             min={validation?.minValue}
             max={validation?.maxValue}
+            disabled={disabled || readOnly}
           />
         );
       
       case 'textarea':
         return (
           <Textarea
-            id={id}
-            placeholder={placeholder}
+            id={fieldId}
+            placeholder={fieldPlaceholder}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
+            disabled={disabled || readOnly}
           />
         );
       
@@ -116,9 +135,10 @@ const FormField: React.FC<FormFieldProps> = ({
               // Seçim dəyişdikdə bildiriş göstərmək
               toast.success(t('optionSaved') || 'Seçim yadda saxlanıldı');
             }}
+            disabled={disabled || readOnly}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder={placeholder || t('selectOption') || 'Seçim edin'} />
+              <SelectValue placeholder={fieldPlaceholder || t('selectOption') || 'Seçim edin'} />
             </SelectTrigger>
             <SelectContent>
               {Array.isArray(normalizedOptions) && normalizedOptions.length === 0 ? (
@@ -128,7 +148,7 @@ const FormField: React.FC<FormFieldProps> = ({
               ) : (
                 Array.isArray(normalizedOptions) && normalizedOptions.map((option, index) => (
                   <SelectItem 
-                    key={`${id}-${index}`} 
+                    key={`${fieldId}-${index}`} 
                     value={option.value}
                   >
                     {option.label || option.value}
@@ -157,7 +177,7 @@ const FormField: React.FC<FormFieldProps> = ({
                 return (
                   <div key={option.value} className="flex items-center space-x-2 py-1 hover:bg-muted/50 px-1 rounded-sm">
                     <Checkbox
-                      id={`${id}-${option.value}`}
+                      id={`${fieldId}-${option.value}`}
                       checked={isChecked}
                       onCheckedChange={(checked) => {
                         let newValue;
@@ -177,7 +197,7 @@ const FormField: React.FC<FormFieldProps> = ({
                       }}
                     />
                     <label
-                      htmlFor={`${id}-${option.value}`}
+                      htmlFor={`${fieldId}-${option.value}`}
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full"
                     >
                       {option.label}
@@ -210,9 +230,9 @@ const FormField: React.FC<FormFieldProps> = ({
       case 'email':
         return (
           <Input
-            id={id}
+            id={fieldId}
             type="email"
-            placeholder={placeholder || 'example@domain.com'}
+            placeholder={fieldPlaceholder || 'example@domain.com'}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
           />
@@ -221,9 +241,9 @@ const FormField: React.FC<FormFieldProps> = ({
       case 'phone':
         return (
           <Input
-            id={id}
+            id={fieldId}
             type="tel"
-            placeholder={placeholder || '+994 XX XXX XX XX'}
+            placeholder={fieldPlaceholder || '+994 XX XXX XX XX'}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
           />
@@ -233,7 +253,7 @@ const FormField: React.FC<FormFieldProps> = ({
         return (
           <div className="space-y-2">
             <Input
-              id={id}
+              id={fieldId}
               type="file"
               onChange={(e) => {
                 const file = e.target.files?.[0];
@@ -254,7 +274,7 @@ const FormField: React.FC<FormFieldProps> = ({
         return (
           <div className="space-y-2">
             <Input
-              id={id}
+              id={fieldId}
               type="file"
               accept="image/*"
               onChange={(e) => {
@@ -283,18 +303,18 @@ const FormField: React.FC<FormFieldProps> = ({
             onValueChange={(val) => onChange(val === 'true')}
           >
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="true" id={`${id}-true`} />
+              <RadioGroupItem value="true" id={`${fieldId}-true`} />
               <label
-                htmlFor={`${id}-true`}
+                htmlFor={`${fieldId}-true`}
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('yes')}
               </label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="false" id={`${id}-false`} />
+              <RadioGroupItem value="false" id={`${fieldId}-false`} />
               <label
-                htmlFor={`${id}-false`}
+                htmlFor={`${fieldId}-false`}
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('no')}
@@ -339,7 +359,7 @@ const FormField: React.FC<FormFieldProps> = ({
               return (
                 <div key={option.value || `option-${index}`} className="flex items-center space-x-2">
                   <Checkbox
-                    id={`${id}-${option.value || index}`}
+                    id={`${fieldId}-${option.value || index}`}
                     checked={isChecked}
                     onCheckedChange={(checked) => {
                       if (checked) {
@@ -354,7 +374,7 @@ const FormField: React.FC<FormFieldProps> = ({
                     }}
                   />
                   <label
-                    htmlFor={`${id}-${option.value || index}`}
+                    htmlFor={`${fieldId}-${option.value || index}`}
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     {option.label}
@@ -373,9 +393,9 @@ const FormField: React.FC<FormFieldProps> = ({
           >
             {Array.isArray(normalizedOptions) && normalizedOptions.map((option, index) => (
               <div key={option.value || `option-${index}`} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.value} id={`${id}-${option.value || index}`} />
+                <RadioGroupItem value={option.value} id={`${fieldId}-${option.value || index}`} />
                 <label
-                  htmlFor={`${id}-${option.value || index}`}
+                  htmlFor={`${fieldId}-${option.value || index}`}
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   {option.label}
@@ -397,14 +417,14 @@ const FormField: React.FC<FormFieldProps> = ({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label htmlFor={id} className="text-sm font-medium">
-          {name}
-          {isRequired && <span className="text-destructive ml-1">*</span>}
+        <label htmlFor={fieldId} className="text-sm font-medium">
+          {fieldName}
+          {fieldRequired && <span className="text-destructive ml-1">*</span>}
         </label>
         {error && <div className="text-xs text-destructive">{error}</div>}
       </div>
       {renderInput()}
-      {helpText && <div className="text-xs text-muted-foreground">{helpText}</div>}
+      {fieldHelpText && <div className="text-xs text-muted-foreground">{fieldHelpText}</div>}
     </div>
   );
 };

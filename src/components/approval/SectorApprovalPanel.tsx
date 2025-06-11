@@ -1,265 +1,238 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { AlertTriangle, CheckCircle, Clock, Eye } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Building2, Calendar, User, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useSectorApprovalData } from '@/hooks/approval/useSectorApprovalData';
 import { SectorApprovalItem } from '@/types/sectorData';
-import ApprovalDetailDialog from './ApprovalDetailDialog';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
 
 const SectorApprovalPanel: React.FC = () => {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const {
     pendingApprovals,
     approvedItems,
     rejectedItems,
     isLoading,
-    approveSectorItem,
-    rejectSectorItem
+    approveItem,
+    rejectItem,
+    viewItem
   } = useSectorApprovalData();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedItem, setSelectedItem] = useState<SectorApprovalItem | null>(null);
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
 
-  const allItems = [...pendingApprovals, ...approvedItems, ...rejectedItems];
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'rejected':
-        return <XCircle className="h-4 w-4 text-red-600" />;
-      case 'pending':
-        return <Clock className="h-4 w-4 text-yellow-600" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-600" />;
+  const handleApprove = async (item: SectorApprovalItem) => {
+    try {
+      await approveItem(item.id);
+      toast({
+        title: t('success') || 'Müvəffəqiyyət',
+        description: t('itemApproved') || 'Element təsdiqləndi'
+      });
+    } catch (error) {
+      toast({
+        title: t('error') || 'Xəta',
+        description: t('approveError') || 'Təsdiqləmə zamanı xəta baş verdi',
+        variant: 'destructive'
+      });
     }
+  };
+
+  const handleReject = async () => {
+    if (!selectedItem || !rejectionReason.trim()) return;
+    
+    try {
+      await rejectItem(selectedItem.id, rejectionReason);
+      setIsRejectDialogOpen(false);
+      setRejectionReason('');
+      setSelectedItem(null);
+      toast({
+        title: t('success') || 'Müvəffəqiyyət',
+        description: t('itemRejected') || 'Element rədd edildi'
+      });
+    } catch (error) {
+      toast({
+        title: t('error') || 'Xəta',
+        description: t('rejectError') || 'Rədd etmə zamanı xəta baş verdi',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const openRejectDialog = (item: SectorApprovalItem) => {
+    setSelectedItem(item);
+    setIsRejectDialogOpen(true);
   };
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      approved: 'default',
-      rejected: 'destructive',
-      pending: 'secondary'
-    };
-    
-    return (
-      <Badge variant={variants[status] || 'secondary'} className="flex items-center gap-1">
-        {getStatusIcon(status)}
-        {t(status)}
-      </Badge>
-    );
-  };
-
-  const filteredItems = allItems.filter(item => {
-    const matchesSearch = item.sectorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.categoryName?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus;
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleApprove = async (itemId: string) => {
-    try {
-      await approveSectorItem(itemId);
-    } catch (error) {
-      console.error('Error approving sector item:', error);
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="text-yellow-600"><Clock className="w-3 h-3 mr-1" />Gözləyir</Badge>;
+      case 'approved':
+        return <Badge variant="outline" className="text-green-600"><CheckCircle className="w-3 h-3 mr-1" />Təsdiqləndi</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="text-red-600"><AlertTriangle className="w-3 h-3 mr-1" />Rədd edildi</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const handleReject = async (itemId: string, reason: string) => {
-    try {
-      await rejectSectorItem(itemId, reason);
-    } catch (error) {
-      console.error('Error rejecting sector item:', error);
-    }
-  };
-
-  const handleViewDetails = (item: SectorApprovalItem) => {
-    setSelectedItem(item);
-    setIsDetailDialogOpen(true);
-  };
+  const renderApprovalTable = (items: SectorApprovalItem[], title: string, showActions = false) => (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          {title}
+          <Badge variant="secondary">{items.length}</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {items.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Heç bir element tapılmadı</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Sektor</TableHead>
+                <TableHead>Kateqoriya</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Göndərilmə tarixi</TableHead>
+                <TableHead>Tamamlanma</TableHead>
+                {showActions && <TableHead>Əməliyyatlar</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.sectorName}</TableCell>
+                  <TableCell>{item.categoryName}</TableCell>
+                  <TableCell>{getStatusBadge(item.status)}</TableCell>
+                  <TableCell>{new Date(item.submittedAt).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{ width: `${item.completionRate}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-muted-foreground">{item.completionRate}%</span>
+                    </div>
+                  </TableCell>
+                  {showActions && (
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => viewItem(item)}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Bax
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleApprove(item)}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Təsdiqlə
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openRejectDialog(item)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <AlertTriangle className="w-4 h-4 mr-1" />
+                          Rədd et
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">{t('loading')}...</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-8">
+        <Clock className="w-8 h-8 animate-spin mr-2" />
+        Yüklənir...
+      </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            {t('sectorDataApprovals')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4">
-            {/* Filters */}
-            <div className="flex items-center space-x-4">
-              <Input
-                type="text"
-                placeholder={t('searchBySectorOrCategory')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
+    <div className="space-y-6">
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          Sektor məlumatlarının təsdiqlənməsi sektor administratorları tərəfindən həyata keçirilir.
+        </AlertDescription>
+      </Alert>
+
+      {renderApprovalTable(pendingApprovals, 'Təsdiq Gözləyən Məlumatlar', true)}
+      {renderApprovalTable(approvedItems, 'Təsdiqlənmiş Məlumatlar')}
+      {renderApprovalTable(rejectedItems, 'Rədd Edilmiş Məlumatlar')}
+
+      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Məlumatları Rədd Et</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="rejection-reason">Rədd Etmə Səbəbi</Label>
+              <Textarea
+                id="rejection-reason"
+                placeholder="Rədd etmə səbəbini yazın..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                rows={4}
               />
-              <Select onValueChange={setSelectedStatus} defaultValue={selectedStatus}>
-                <SelectTrigger className="max-w-xs">
-                  <SelectValue placeholder={t('filterByStatus')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('allStatuses')}</SelectItem>
-                  <SelectItem value="pending">{t('pending')}</SelectItem>
-                  <SelectItem value="approved">{t('approved')}</SelectItem>
-                  <SelectItem value="rejected">{t('rejected')}</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
-
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="text-center py-4">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    {t('totalPending')}
-                  </div>
-                  <div className="text-2xl font-bold text-yellow-600">{pendingApprovals.length}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="text-center py-4">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    {t('totalApproved')}
-                  </div>
-                  <div className="text-2xl font-bold text-green-600">{approvedItems.length}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="text-center py-4">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    {t('totalRejected')}
-                  </div>
-                  <div className="text-2xl font-bold text-red-600">{rejectedItems.length}</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Items List */}
-            <div className="space-y-4">
-              {filteredItems.length === 0 ? (
-                <Card>
-                  <CardContent className="text-center py-8">
-                    <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">{t('noSectorApprovalsFound')}</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                filteredItems.map((item) => (
-                  <Card key={item.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <h3 className="font-semibold">{item.sectorName}</h3>
-                            {getStatusBadge(item.status)}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {t('category')}: {item.categoryName}
-                          </p>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(item.submittedAt).toLocaleDateString()}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              {item.submittedBy}
-                            </div>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {t('completionRate')}: {Math.round(item.completionRate)}%
-                          </div>
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewDetails(item)}
-                          >
-                            {t('viewDetails')}
-                          </Button>
-                          {item.status === 'pending' && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleReject(item.id, 'Məlumatlar tələblərə uyğun deyil')}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                {t('reject')}
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => handleApprove(item.id)}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                {t('approve')}
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsRejectDialogOpen(false)}
+              >
+                Ləğv et
+              </Button>
+              <Button
+                onClick={handleReject}
+                disabled={!rejectionReason.trim()}
+                variant="destructive"
+              >
+                Rədd et
+              </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Detail Dialog */}
-      {selectedItem && (
-        <ApprovalDetailDialog
-          isOpen={isDetailDialogOpen}
-          onClose={() => {
-            setIsDetailDialogOpen(false);
-            setSelectedItem(null);
-          }}
-          approval={selectedItem}
-          onApprove={() => handleApprove(selectedItem.id)}
-          onReject={(reason) => handleReject(selectedItem.id, reason)}
-        />
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

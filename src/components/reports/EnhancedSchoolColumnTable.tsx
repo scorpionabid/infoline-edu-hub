@@ -24,7 +24,7 @@ import {
   EnhancedSchoolData,
 } from '@/types/reports/schoolColumnReport';
 import { useRoleBasedReports } from '@/hooks/reports/useRoleBasedReports';
-import ExportButtons from '@/components/reports/ExportButtons';
+import { ExportButtons } from '@/components/ui/export-buttons';
 
 interface EnhancedSchoolColumnTableProps {
   categoryId?: string;
@@ -66,7 +66,18 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
         });
         
         const reportData = await getSchoolPerformanceReport(filters);
-        setSchools(reportData || []);
+        
+        // Transform data to match expected format
+        const transformedSchools: EnhancedSchoolData[] = (reportData || []).map((school: any) => ({
+          id: school.id || '',
+          name: school.name || '',
+          region_name: school.region_name || '',
+          sector_name: school.sector_name || '',
+          completion_rate: school.completion_rate || 0,
+          columns: school.columns || {}
+        }));
+        
+        setSchools(transformedSchools);
         setColumns([]);
       } catch (err: any) {
         setError(err.message || 'Məlumatlar yüklənərkən xəta baş verdi');
@@ -199,13 +210,10 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
       
       <div className="flex justify-end">
         <ExportButtons 
-          reportType="school-column-data"
-          filters={{
-            region_id: selectedRegion,
-            sector_id: selectedSector,
-            search: searchQuery
-          }}
-          categoryId={categoryId}
+          onExportExcel={() => console.log('Excel export')}
+          onExportPDF={() => console.log('PDF export')}
+          onExportCSV={() => console.log('CSV export')}
+          isLoading={false}
         />
       </div>
 

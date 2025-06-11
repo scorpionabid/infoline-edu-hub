@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -113,7 +114,8 @@ const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
           {Object.entries(categoryData.data).map(([field, value]) => (
             <FormField
               key={field}
-              label={field}
+              id={field}
+              name={field}
               value={value}
               onChange={(newValue) => handleChange(field, newValue)}
             />
@@ -157,7 +159,7 @@ const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
         </div>
 
         {isSaved && (
-          <Alert variant="success">
+          <Alert>
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
               Məlumatlar uğurla yadda saxlanıldı!
@@ -166,7 +168,7 @@ const EnhancedDataEntryForm: React.FC<EnhancedDataEntryFormProps> = ({
         )}
 
         {isSubmitted && (
-          <Alert variant="success">
+          <Alert>
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
               Məlumatlar uğurla göndərildi!
