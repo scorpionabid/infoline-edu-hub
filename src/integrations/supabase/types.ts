@@ -993,6 +993,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_category_completion_report: {
+        Args: {
+          p_region_id?: string
+          p_sector_id?: string
+          p_category_id?: string
+        }
+        Returns: Json
+      }
       get_current_user_profile: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1000,6 +1008,10 @@ export type Database = {
       get_current_user_region_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_dashboard_statistics: {
+        Args: { p_region_id?: string; p_sector_id?: string }
+        Returns: Json
       }
       get_filtered_users: {
         Args: {
@@ -1068,6 +1080,10 @@ export type Database = {
           completion_rate: number
         }[]
       }
+      get_regional_comparison_report: {
+        Args: { p_date_from?: string; p_date_to?: string }
+        Returns: Json
+      }
       get_regions_with_admin_emails: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1080,6 +1096,10 @@ export type Database = {
           admin_email: string
         }[]
       }
+      get_school_column_export_data: {
+        Args: { p_school_id?: string; p_category_id?: string }
+        Returns: Json
+      }
       get_school_completion_stats: {
         Args: { p_school_id: string }
         Returns: {
@@ -1090,6 +1110,20 @@ export type Database = {
           completion_percentage: number
           status: string
         }[]
+      }
+      get_school_data_by_category: {
+        Args: { p_school_id: string; p_category_id: string }
+        Returns: Json
+      }
+      get_school_performance_report: {
+        Args: {
+          p_region_id?: string
+          p_sector_id?: string
+          p_date_from?: string
+          p_date_to?: string
+          p_category_id?: string
+        }
+        Returns: Json
       }
       get_sector_admin_email: {
         Args: { sector_id_param: string }
