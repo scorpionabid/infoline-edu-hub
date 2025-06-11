@@ -1,5 +1,4 @@
 
-export { default as FormFieldComponent } from './FormFieldComponent';
 export { default as UnifiedFieldRenderer } from './UnifiedFieldRenderer';
 export { default as TextInput } from './TextInput';
 export { default as NumberInput } from './NumberInput';

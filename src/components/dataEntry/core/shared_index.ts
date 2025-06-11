@@ -1,2 +1,3 @@
-export { default as DataEntryFormLoading } from './DataEntryFormLoading';
-export { default as DataEntryFormError } from './DataEntryFormError';
+
+// Core shared components - cleaned up
+export { default as FormFields } from './FormFields';
