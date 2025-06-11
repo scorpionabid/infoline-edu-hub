@@ -1,430 +1,151 @@
+
 import React from 'react';
-import { 
-  FormControl, 
-  FormDescription, 
-  FormField as UIFormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { useLanguage } from '@/context/LanguageContext';
-import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
+
+interface Column {
+  id: string;
+  name: string;
+  type: string;
+  placeholder?: string;
+  help_text?: string;
+  options?: any[];
+  is_required?: boolean;
+}
 
 interface FormFieldProps {
-  id?: string;
-  name?: string;
-  type?: string;
-  value: any;
+  id: string;
+  name: string;
+  value?: any;
   onChange: (value: any) => void;
-  placeholder?: string;
-  helpText?: string;
-  options?: { label: string; value: string }[];
-  validation?: any;
-  isRequired?: boolean;
-  error?: string;
   column?: Column;
-  disabled?: boolean;
-  readOnly?: boolean;
-  label?: string;
+  type?: string;
+  placeholder?: string;
+  required?: boolean;
+  options?: any[];
 }
 
 const FormField: React.FC<FormFieldProps> = ({
   id,
   name,
-  type,
   value,
   onChange,
-  placeholder,
-  helpText,
-  options = [],
-  validation,
-  isRequired = false,
-  error,
   column,
-  disabled = false,
-  readOnly = false,
-  label
+  type = 'text',
+  placeholder,
+  required = false,
+  options = []
 }) => {
-  const { t } = useLanguage();
-  
-  // Use column data if provided
-  const fieldId = id || column?.id || '';
-  const fieldName = name || label || column?.name || '';
-  const fieldType = type || column?.type || 'text';
-  const fieldRequired = isRequired || column?.is_required || false;
-  const fieldPlaceholder = placeholder || column?.placeholder || '';
-  const fieldHelpText = helpText || column?.help_text || '';
-  
-  // Seçim növləri üçün seçim variantlarını standardlaşdırmaq
-  // options dəyişəninin array olub-olmadığını yoxlayırıq
-  const normalizedOptions = Array.isArray(options) 
-    ? options.map((option, index) => {
-        if (typeof option === 'string') {
-          return { 
-            label: option, 
-            value: option || `option-${index}-${Math.random().toString(36).substring(7)}` 
-          };
-        }
-        // Ensure there's always a non-empty value
-        if (!option.value || option.value === '') {
-          return {
-            ...option,
-            value: `option-${option.label || index}-${Math.random().toString(36).substring(7)}`
-          };
-        }
-        return option;
-      }) 
-    : [];
+  const fieldType = column?.type || type;
+  const fieldPlaceholder = column?.placeholder || placeholder;
+  const fieldRequired = column?.is_required || required;
 
-  // Müxtəlif sütun tipləri üçün inputları render etmək
-  const renderInput = () => {
+  const handleChange = (newValue: any) => {
+    onChange(newValue);
+  };
+
+  const renderField = () => {
     switch (fieldType) {
       case 'text':
+      case 'email':
+      case 'url':
         return (
           <Input
-            id={fieldId}
-            placeholder={fieldPlaceholder}
+            id={id}
+            name={name}
+            type={fieldType}
             value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            disabled={disabled || readOnly}
+            onChange={(e) => handleChange(e.target.value)}
+            placeholder={fieldPlaceholder}
+            required={fieldRequired}
           />
         );
-      
+
       case 'number':
         return (
           <Input
-            id={fieldId}
+            id={id}
+            name={name}
             type="number"
+            value={value || ''}
+            onChange={(e) => handleChange(e.target.value)}
             placeholder={fieldPlaceholder}
-            value={value ?? ''}
-            onChange={(e) => onChange(parseFloat(e.target.value))}
-            min={validation?.minValue}
-            max={validation?.maxValue}
-            disabled={disabled || readOnly}
+            required={fieldRequired}
           />
         );
-      
+
       case 'textarea':
         return (
           <Textarea
-            id={fieldId}
-            placeholder={fieldPlaceholder}
+            id={id}
+            name={name}
             value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            disabled={disabled || readOnly}
+            onChange={(e) => handleChange(e.target.value)}
+            placeholder={fieldPlaceholder}
+            required={fieldRequired}
           />
         );
-      
+
       case 'select':
+        const selectOptions = column?.options || options;
         return (
-          <Select
-            value={value || ''}
-            onValueChange={(newValue) => {
-              onChange(newValue);
-              // Seçim dəyişdikdə bildiriş göstərmək
-              toast.success(t('optionSaved') || 'Seçim yadda saxlanıldı');
-            }}
-            disabled={disabled || readOnly}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={fieldPlaceholder || t('selectOption') || 'Seçim edin'} />
+          <Select value={value} onValueChange={handleChange}>
+            <SelectTrigger>
+              <SelectValue placeholder={fieldPlaceholder || 'Seçin...'} />
             </SelectTrigger>
             <SelectContent>
-              {Array.isArray(normalizedOptions) && normalizedOptions.length === 0 ? (
-                <SelectItem value="no-options-available">
-                  {t('noOptionsAvailable') || 'Seçim variantları mövcud deyil'}
+              {selectOptions.map((option: any, index: number) => (
+                <SelectItem key={index} value={option.value || option}>
+                  {option.label || option}
                 </SelectItem>
-              ) : (
-                Array.isArray(normalizedOptions) && normalizedOptions.map((option, index) => (
-                  <SelectItem 
-                    key={`${fieldId}-${index}`} 
-                    value={option.value}
-                  >
-                    {option.label || option.value}
-                  </SelectItem>
-                ))
-              )}
+              ))}
             </SelectContent>
           </Select>
         );
-      
-      case 'multiselect':
-        return (
-          <div className="space-y-2 border rounded-md p-3">
-            <div className="text-sm font-medium mb-2 text-muted-foreground">
-              {t('selectMultipleOptions') || 'Bir neçə variant seçin'}
-            </div>
-            
-            {Array.isArray(normalizedOptions) && normalizedOptions.length === 0 ? (
-              <div className="p-2 text-center text-muted-foreground">
-                {t('noOptionsAvailable') || 'Seçim variantları mövcud deyil'}
-              </div>
-            ) : (
-              Array.isArray(normalizedOptions) && normalizedOptions.map((option) => {
-                const isChecked = Array.isArray(value) ? value.includes(option.value) : false;
-                
-                return (
-                  <div key={option.value} className="flex items-center space-x-2 py-1 hover:bg-muted/50 px-1 rounded-sm">
-                    <Checkbox
-                      id={`${fieldId}-${option.value}`}
-                      checked={isChecked}
-                      onCheckedChange={(checked) => {
-                        let newValue;
-                        
-                        if (checked) {
-                          newValue = Array.isArray(value) ? [...value, option.value] : [option.value];
-                        } else {
-                          newValue = Array.isArray(value) 
-                            ? value.filter(v => v !== option.value) 
-                            : [];
-                        }
-                        
-                        onChange(newValue);
-                        
-                        // Seçim dəyişdikdə bildiriş göstərmək
-                        toast.success(t('optionSaved') || 'Seçim yadda saxlanıldı');
-                      }}
-                    />
-                    <label
-                      htmlFor={`${fieldId}-${option.value}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full"
-                    >
-                      {option.label}
-                    </label>
-                  </div>
-                );
-              })
-            )}
-            
-            {Array.isArray(value) && value.length > 0 && (
-              <div className="mt-2 flex justify-between items-center">
-                <div className="text-sm text-muted-foreground">
-                  {t('selectedOptions') || 'Seçilmiş variantlar'}: {value.length}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    onChange([]);
-                    toast.success(t('optionsCleared') || 'Bütün seçimlər silindi');
-                  }}
-                >
-                  {t('clearAll') || 'Hamısını sil'}
-                </Button>
-              </div>
-            )}
-          </div>
-        );
-      
-      case 'email':
-        return (
-          <Input
-            id={fieldId}
-            type="email"
-            placeholder={fieldPlaceholder || 'example@domain.com'}
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-          />
-        );
-      
-      case 'phone':
-        return (
-          <Input
-            id={fieldId}
-            type="tel"
-            placeholder={fieldPlaceholder || '+994 XX XXX XX XX'}
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-          />
-        );
-      
-      case 'file':
-        return (
-          <div className="space-y-2">
-            <Input
-              id={fieldId}
-              type="file"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  onChange(file);
-                }
-              }}
-            />
-            {value && typeof value === 'object' && (
-              <div className="text-sm text-muted-foreground">
-                {value.name} ({Math.round(value.size / 1024)} KB)
-              </div>
-            )}
-          </div>
-        );
-      
-      case 'image':
-        return (
-          <div className="space-y-2">
-            <Input
-              id={fieldId}
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  onChange(file);
-                }
-              }}
-            />
-            {value && typeof value === 'object' && (
-              <div className="mt-2">
-                <img 
-                  src={typeof value === 'string' ? value : URL.createObjectURL(value)} 
-                  alt={name}
-                  className="max-w-full h-auto max-h-32 rounded-md"
-                />
-              </div>
-            )}
-          </div>
-        );
-      
-      case 'boolean':
-        return (
-          <RadioGroup
-            value={value?.toString() || ''}
-            onValueChange={(val) => onChange(val === 'true')}
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="true" id={`${fieldId}-true`} />
-              <label
-                htmlFor={`${fieldId}-true`}
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                {t('yes')}
-              </label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="false" id={`${fieldId}-false`} />
-              <label
-                htmlFor={`${fieldId}-false`}
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                {t('no')}
-              </label>
-            </div>
-          </RadioGroup>
-        );
-      
-      case 'date':
-        return (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !value && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {value ? format(new Date(value), "PPP") : <span>{placeholder || t('selectDate')}</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={value ? new Date(value) : undefined}
-                onSelect={(date) => onChange(date ? date.toISOString() : null)}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-        );
-      
+
       case 'checkbox':
         return (
-          <div className="space-y-2">
-            {Array.isArray(normalizedOptions) && normalizedOptions.map((option, index) => {
-              const isChecked = Array.isArray(value) ? value.includes(option.value) : false;
-              
-              return (
-                <div key={option.value || `option-${index}`} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`${fieldId}-${option.value || index}`}
-                    checked={isChecked}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        const newValue = Array.isArray(value) ? [...value, option.value] : [option.value];
-                        onChange(newValue);
-                      } else {
-                        const newValue = Array.isArray(value) 
-                          ? value.filter(v => v !== option.value) 
-                          : [];
-                        onChange(newValue);
-                      }
-                    }}
-                  />
-                  <label
-                    htmlFor={`${fieldId}-${option.value || index}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {option.label}
-                  </label>
-                </div>
-              );
-            })}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id={id}
+              checked={value || false}
+              onCheckedChange={handleChange}
+            />
+            <Label htmlFor={id}>{name}</Label>
           </div>
         );
-      
-      case 'radio':
-        return (
-          <RadioGroup
-            value={value || ''}
-            onValueChange={onChange}
-          >
-            {Array.isArray(normalizedOptions) && normalizedOptions.map((option, index) => (
-              <div key={option.value || `option-${index}`} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.value} id={`${fieldId}-${option.value || index}`} />
-                <label
-                  htmlFor={`${fieldId}-${option.value || index}`}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {option.label}
-                </label>
-              </div>
-            ))}
-          </RadioGroup>
-        );
-      
+
       default:
         return (
-          <div className="text-sm text-muted-foreground">
-            {t('unsupportedFieldType')}: {type}
-          </div>
+          <Input
+            id={id}
+            name={name}
+            value={value || ''}
+            onChange={(e) => handleChange(e.target.value)}
+            placeholder={fieldPlaceholder}
+            required={fieldRequired}
+          />
         );
     }
   };
 
+  if (fieldType === 'checkbox') {
+    return renderField();
+  }
+
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label htmlFor={fieldId} className="text-sm font-medium">
-          {fieldName}
-          {fieldRequired && <span className="text-destructive ml-1">*</span>}
-        </label>
-        {error && <div className="text-xs text-destructive">{error}</div>}
-      </div>
-      {renderInput()}
-      {fieldHelpText && <div className="text-xs text-muted-foreground">{fieldHelpText}</div>}
+      <Label htmlFor={id}>
+        {name}
+        {fieldRequired && <span className="text-red-500 ml-1">*</span>}
+      </Label>
+      {renderField()}
+      {column?.help_text && (
+        <p className="text-sm text-muted-foreground">{column.help_text}</p>
+      )}
     </div>
   );
 };

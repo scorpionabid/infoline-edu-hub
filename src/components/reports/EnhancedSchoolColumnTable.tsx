@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   Card,
@@ -66,19 +66,8 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
         });
         
         const reportData = await getSchoolPerformanceReport(filters);
-        
-        // Transform data to match expected format
-        const transformedSchools: EnhancedSchoolData[] = (reportData || []).map((school: any) => ({
-          id: school.id || '',
-          name: school.name || '',
-          region_name: school.region_name || '',
-          sector_name: school.sector_name || '',
-          completion_rate: school.completion_rate || 0,
-          columns: school.columns || {}
-        }));
-        
-        setSchools(transformedSchools);
-        setColumns([]);
+        setSchools(reportData?.schools || []);
+        setColumns(reportData?.columns || []);
       } catch (err: any) {
         setError(err.message || 'Məlumatlar yüklənərkən xəta baş verdi');
       } finally {
@@ -155,6 +144,10 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
     return [...baseColumns, ...columnEntries];
   }, [t]);
 
+  const handleExport = async (format: string) => {
+    console.log(`Exporting as ${format}`);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -210,9 +203,9 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
       
       <div className="flex justify-end">
         <ExportButtons 
-          onExportExcel={() => console.log('Excel export')}
-          onExportPDF={() => console.log('PDF export')}
-          onExportCSV={() => console.log('CSV export')}
+          onExportExcel={() => handleExport('excel')}
+          onExportPDF={() => handleExport('pdf')}
+          onExportCSV={() => handleExport('csv')}
           isLoading={false}
         />
       </div>

@@ -1,17 +1,7 @@
 
-// Approval hooks - updated
-import { useApprovalData } from './useApprovalData';
-import { useApprovalProcess } from './useApprovalProcess';
-import { useSectorApprovalData } from './useSectorApprovalData';
-
-export {
-  useApprovalData,
-  useApprovalProcess,
-  useSectorApprovalData
-};
+// Approval hooks - cleaned up final version
+export { useApprovalData } from './useApprovalData';
 
 export default {
-  useApprovalData,
-  useApprovalProcess,
-  useSectorApprovalData
+  useApprovalData
 };

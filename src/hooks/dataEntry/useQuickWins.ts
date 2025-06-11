@@ -1,5 +1,4 @@
 
-// Mock hook for test compatibility
 import { useState } from 'react';
 
 export const useQuickWins = () => {
@@ -13,5 +12,7 @@ export const useQuickWins = () => {
     fetchQuickWins: () => Promise.resolve([])
   };
 };
+
+export const useDataEntryQuickWins = useQuickWins;
 
 export default useQuickWins;
