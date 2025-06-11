@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Column } from '@/types/column';
-import FormFieldComponent from '../fields/FormFieldComponent';
+import FormField from '../fields/FormField';
 
 interface FormFieldsProps {
   columns: Column[];
@@ -29,7 +29,7 @@ const FormFields: React.FC<FormFieldsProps> = ({
   return (
     <div className="space-y-6">
       {columns.map((column) => (
-        <FormFieldComponent
+        <FormField
           key={column.id}
           column={column}
           value={formData[column.id] || ''}

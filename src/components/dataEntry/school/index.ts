@@ -1,2 +1,3 @@
 
-export { default as SchoolDataEntryForm } from './SchoolDataEntryForm';
+// School data entry components - simplified
+export { UnifiedDataEntryForm } from '../UnifiedDataEntryForm';
