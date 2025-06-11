@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -11,8 +11,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/context/LanguageContext';
 import { Plus, Filter, User, Shield, Building, School } from 'lucide-react';
+import { useCategories } from '@/hooks/useCategories';
 import CreateReportDialog from './CreateReportDialog';
-import { ReportHeaderProps } from '@/types/report';
 import { useRoleBasedFilters } from '@/hooks/reports/useRoleBasedReports';
 
 interface FilterState {
@@ -39,6 +39,10 @@ export const ReportHeader: React.FC<ReportHeaderEnhancedProps> = ({
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [hasAutoSelectedCategory, setHasAutoSelectedCategory] = useState(false);
+
+  // Load categories
+  const { categories } = useCategories();
 
   const {
     userRole,
@@ -48,6 +52,18 @@ export const ReportHeader: React.FC<ReportHeaderEnhancedProps> = ({
     availableSchools,
     filterOptions
   } = useRoleBasedFilters();
+
+  // Auto-select first category when categories are loaded
+  useEffect(() => {
+    if (!hasAutoSelectedCategory && categories.length > 0 && !filters.category_id) {
+      const firstCategory = categories[0];
+      const newFilters = { ...filters, category_id: firstCategory.id };
+      setFilters(newFilters);
+      setHasAutoSelectedCategory(true);
+      onCategorySelect?.(firstCategory.id);
+      onFiltersChange?.(newFilters);
+    }
+  }, [categories, hasAutoSelectedCategory, filters.category_id]); // Remove callback dependencies to avoid loops
 
   const handleFilterChange = (key: keyof FilterState, value: string) => {
     const newFilters = { ...filters, [key]: value === 'all' ? undefined : value };
@@ -248,7 +264,11 @@ export const ReportHeader: React.FC<ReportHeaderEnhancedProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Bütün kateqoriyalar</SelectItem>
-                    {/* TODO: Load categories from useCategories hook */}
+                    {categories.map(category => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

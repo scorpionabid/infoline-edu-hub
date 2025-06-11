@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReportHeader from '@/components/reports/ReportHeader';
 import { ReportList } from '@/components/reports/ReportList';
-import SchoolColumnTable from '@/components/reports/SchoolColumnTable';
+import EnhancedSchoolColumnTable from '@/components/reports/EnhancedSchoolColumnTable';
 import ReportDashboard from '@/components/reports/advanced/ReportDashboard';
 import { useLanguage } from '@/context/LanguageContext';
 import { Helmet } from 'react-helmet';
@@ -19,7 +19,7 @@ interface FilterState {
 
 const Reports: React.FC = () => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState("advanced");
+  const [activeTab, setActiveTab] = useState("schools-columns");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [filters, setFilters] = useState<FilterState>({});
   
@@ -73,18 +73,18 @@ const Reports: React.FC = () => {
   const getAvailableTabs = () => {
     const tabs = [];
     
+    // School column reports - available for all roles (PRIMARY TAB)
+    tabs.push({
+      id: 'schools-columns',
+      label: t("schoolColumnReportTitle"),
+      component: <EnhancedSchoolColumnTable categoryId={selectedCategoryId} />
+    });
+
     // Advanced reporting - available for all roles
     tabs.push({
       id: 'advanced',
       label: t("advancedReporting"),
       component: <ReportDashboard />
-    });
-
-    // School column reports - available for all roles
-    tabs.push({
-      id: 'schools-columns',
-      label: t("schoolColumnReportTitle"),
-      component: <SchoolColumnTable categoryId={selectedCategoryId} />
     });
 
     // All reports/templates - available for all roles

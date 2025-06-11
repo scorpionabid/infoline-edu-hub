@@ -3,6 +3,9 @@
 export default {
   reports: 'Hesabatlar',
   report: 'Hesabat',
+  schoolColumnReportTitle: 'Məktəb-Sütun Məlumatları',
+  advancedReporting: 'Təkmil Hesabatlar',
+  allReports: 'Bütün Hesabatlar',
   createReport: 'Hesabat yarat',
   editReport: 'Hesabatı redaktə et',
   deleteReport: 'Hesabatı sil',

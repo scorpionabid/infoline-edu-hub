@@ -7,7 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import PerformanceMonitor from './PerformanceMonitor';
 import LazyLoadingWrapper from './LazyLoadingWrapper';
 import VirtualTable from './VirtualTable';
-import { Monitor, Zap, Database, Image } from 'lucide-react';
+import { Monitor, Zap, Database, Loader2 } from 'lucide-react';
 
 const PerformanceDashboard: React.FC = () => {
   const { t } = useLanguage();
@@ -45,7 +45,7 @@ const PerformanceDashboard: React.FC = () => {
             Virtuallaşdırma
           </TabsTrigger>
           <TabsTrigger value="lazy-loading">
-            <Image className="h-4 w-4 mr-1" />
+            <Loader2 className="h-4 w-4 mr-1" />
             Lazy Loading
           </TabsTrigger>
         </TabsList>
