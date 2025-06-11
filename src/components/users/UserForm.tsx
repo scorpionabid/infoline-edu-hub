@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Input } from '@/components/ui/input';
@@ -270,9 +271,12 @@ const UserForm: React.FC<UserFormProps> = ({
             <SelectContent>
               <SelectItem value="select-region">{t('selectRegion')}</SelectItem>
               {regions.map((region) => {
-                // Ensure region has valid ID
+                // Ensure region has valid ID and is not empty
                 const regionId = region.id || `region-${region.name || Math.random()}`;
-                const safeRegionId = String(regionId).trim() || `fallback-region-${Math.random()}`;
+                const safeRegionId = String(regionId).trim();
+                if (!safeRegionId || safeRegionId === '') {
+                  return null; // Skip empty values
+                }
                 return (
                   <SelectItem key={regionId} value={safeRegionId}>
                     {region.name || 'Unknown Region'}
@@ -301,9 +305,12 @@ const UserForm: React.FC<UserFormProps> = ({
             <SelectContent>
               <SelectItem value="select-sector">{t('selectSector')}</SelectItem>
               {sectors.map((sector) => {
-                // Ensure sector has valid ID
+                // Ensure sector has valid ID and is not empty
                 const sectorId = sector.id || `sector-${sector.name || Math.random()}`;
-                const safeSectorId = String(sectorId).trim() || `fallback-sector-${Math.random()}`;
+                const safeSectorId = String(sectorId).trim();
+                if (!safeSectorId || safeSectorId === '') {
+                  return null; // Skip empty values
+                }
                 return (
                   <SelectItem key={sectorId} value={safeSectorId}>
                     {sector.name || 'Unknown Sector'}
@@ -332,9 +339,12 @@ const UserForm: React.FC<UserFormProps> = ({
             <SelectContent>
               <SelectItem value="select-school">{t('selectSchool')}</SelectItem>
               {schools.map((school) => {
-                // Ensure school has valid ID
+                // Ensure school has valid ID and is not empty
                 const schoolId = school.id || `school-${school.name || Math.random()}`;
-                const safeSchoolId = String(schoolId).trim() || `fallback-school-${Math.random()}`;
+                const safeSchoolId = String(schoolId).trim();
+                if (!safeSchoolId || safeSchoolId === '') {
+                  return null; // Skip empty values
+                }
                 return (
                   <SelectItem key={schoolId} value={safeSchoolId}>
                     {school.name || 'Unknown School'}
@@ -372,5 +382,3 @@ const UserForm: React.FC<UserFormProps> = ({
 };
 
 export default UserForm;
-
-</edits_to_apply>
