@@ -45,3 +45,11 @@ export interface ChartConfiguration {
   title: string;
   colors: string[];
 }
+
+export interface AdvancedReportFilter {
+  status?: string[];
+  type?: string[];
+  date_from?: string;
+  date_to?: string;
+  created_by?: string[];
+}

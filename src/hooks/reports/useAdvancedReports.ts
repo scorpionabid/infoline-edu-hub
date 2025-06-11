@@ -108,7 +108,10 @@ export const useAdvancedReports = (): UseAdvancedReportsReturn => {
       const validTemplates = (data || []).filter(template => {
         const config = template.config as any;
         return config && typeof config === 'object';
-      });
+      }).map(template => ({
+        ...template,
+        is_public: template.is_public || false // Add missing field with default
+      }));
 
       setTemplates(validTemplates);
     } catch (err) {
@@ -144,7 +147,11 @@ export const useAdvancedReports = (): UseAdvancedReportsReturn => {
         .single();
 
       if (loadError) throw loadError;
-      return data;
+      
+      return {
+        ...data,
+        is_public: data.is_public || false // Add missing field with default
+      };
     } catch (err) {
       console.error('Error loading template:', err);
       return null;
