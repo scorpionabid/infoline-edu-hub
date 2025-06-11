@@ -1,86 +1,71 @@
 
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { NotificationService, Notification } from '@/services/api/notificationService';
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
-import { useToast } from '@/hooks/use-toast';
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  isRead: boolean;
+  createdAt: string;
+}
 
 export interface UseNotificationsResult {
   notifications: Notification[];
   unreadCount: number;
-  isLoading: boolean;
-  markAsRead: (notificationIds: string[]) => Promise<void>;
-  markAllAsRead: () => Promise<void>;
-  refreshNotifications: () => void;
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'isRead' | 'createdAt'>) => void;
+  removeNotification: (id: string) => void;
+  loading: boolean;
+  error: string | null;
 }
 
 export const useNotifications = (): UseNotificationsResult => {
-  const { user } = useAuthStore();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch notifications
-  const { 
-    data: notifications = [], 
-    isLoading 
-  } = useQuery({
-    queryKey: ['notifications', user?.id],
-    queryFn: () => NotificationService.getUserNotifications(user?.id || ''),
-    enabled: !!user?.id,
-    refetchInterval: 30000 // Refetch every 30 seconds
-  });
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  // Get unread count
-  const { data: unreadCount = 0 } = useQuery({
-    queryKey: ['notifications-unread-count', user?.id],
-    queryFn: () => NotificationService.getUnreadCount(user?.id || ''),
-    enabled: !!user?.id,
-    refetchInterval: 30000
-  });
-
-  // Mark as read mutation
-  const markAsReadMutation = useMutation({
-    mutationFn: NotificationService.markAsRead,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
-    },
-    onError: () => {
-      toast({
-        title: 'Xəta',
-        description: 'Bildirişlər yenilənmədi',
-        variant: 'destructive'
-      });
-    }
-  });
-
-  const markAsRead = async (notificationIds: string[]) => {
-    await markAsReadMutation.mutateAsync(notificationIds);
+  const markAsRead = (id: string) => {
+    setNotifications(prev => 
+      prev.map(notification => 
+        notification.id === id 
+          ? { ...notification, isRead: true }
+          : notification
+      )
+    );
   };
 
-  const markAllAsRead = async () => {
-    const unreadIds = notifications
-      .filter(notification => !notification.isRead)
-      .map(notification => notification.id);
-    
-    if (unreadIds.length > 0) {
-      await markAsReadMutation.mutateAsync(unreadIds);
-    }
+  const markAllAsRead = () => {
+    setNotifications(prev => 
+      prev.map(notification => ({ ...notification, isRead: true }))
+    );
   };
 
-  const refreshNotifications = () => {
-    queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+  const addNotification = (newNotification: Omit<Notification, 'id' | 'isRead' | 'createdAt'>) => {
+    const notification: Notification = {
+      ...newNotification,
+      id: Date.now().toString(),
+      isRead: false,
+      createdAt: new Date().toISOString()
+    };
+    setNotifications(prev => [notification, ...prev]);
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
   return {
     notifications,
     unreadCount,
-    isLoading,
     markAsRead,
     markAllAsRead,
-    refreshNotifications
+    addNotification,
+    removeNotification,
+    loading,
+    error
   };
 };
-
-export default useNotifications;
