@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import {
@@ -23,7 +24,7 @@ import {
   EnhancedSchoolData,
 } from '@/types/reports/schoolColumnReport';
 import { useRoleBasedReports } from '@/hooks/reports/useRoleBasedReports';
-import { ExportButtons } from '@/components/ui/export-buttons';
+import ExportButtons from '@/components/reports/ExportButtons';
 
 interface EnhancedSchoolColumnTableProps {
   categoryId?: string;
@@ -65,8 +66,8 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
         });
         
         const reportData = await getSchoolPerformanceReport(filters);
-        setSchools(reportData?.schools || []);
-        setColumns(reportData?.columns || []);
+        setSchools(reportData || []);
+        setColumns([]);
       } catch (err: any) {
         setError(err.message || 'Məlumatlar yüklənərkən xəta baş verdi');
       } finally {
@@ -143,19 +144,6 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
     return [...baseColumns, ...columnEntries];
   }, [t]);
 
-  const handleExport = async (format: 'excel' | 'pdf' | 'csv') => {
-    // Basic export function (can be expanded)
-    console.log(`Exporting as ${format}`);
-  };
-
-  // Fix the export buttons props
-  const exportProps = {
-    onExportExcel: () => handleExport('excel'),
-    onExportPDF: () => handleExport('pdf'),
-    onExportCSV: () => handleExport('csv'),
-    isLoading: false
-  };
-
   return (
     <div className="space-y-6">
       <Card>
@@ -210,7 +198,15 @@ const EnhancedSchoolColumnTable: React.FC<EnhancedSchoolColumnTableProps> = ({
       </Card>
       
       <div className="flex justify-end">
-        <ExportButtons {...exportProps} />
+        <ExportButtons 
+          reportType="school-column-data"
+          filters={{
+            region_id: selectedRegion,
+            sector_id: selectedSector,
+            search: searchQuery
+          }}
+          categoryId={categoryId}
+        />
       </div>
 
       <ScrollArea>
