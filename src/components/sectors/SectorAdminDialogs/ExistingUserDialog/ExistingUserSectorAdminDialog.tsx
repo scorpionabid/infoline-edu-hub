@@ -39,7 +39,7 @@ const ExistingUserSectorAdminDialog = ({ isOpen, onClose, sectorId, sectorName, 
   }, [isOpen, t]);
 
   const handleSubmit = async () => {
-    if (!userId) {
+    if (!userId || userId === 'no-users-found') {
       setError(t('selectUser') || 'Zəhmət olmasa istifadəçi seçin');
       return;
     }
@@ -73,19 +73,24 @@ const ExistingUserSectorAdminDialog = ({ isOpen, onClose, sectorId, sectorName, 
           <Label htmlFor="userId" className="text-right">
             {t('selectUser') || 'İstifadəçi seçin'}
           </Label>
-          <Select onValueChange={setUserId} defaultValue={userId}>
+          <Select onValueChange={setUserId} value={userId}>
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectUser')} />
             </SelectTrigger>
             <SelectContent>
-              {users.length > 0 ? users.map((user) => (
-                <SelectItem 
-                  key={user.id || `user-${Math.random().toString(36).slice(2)}`} 
-                  value={user.id || `user-${user.email || Math.random().toString(36).slice(2)}`}
-                >
-                  {user.full_name} ({user.email})
-                </SelectItem>
-              )) : (
+              {users.length > 0 ? users.map((user) => {
+                // Ensure user ID is never empty
+                const safeUserId = user.id && user.id.trim() ? user.id : `user-${Math.random().toString(36).slice(2)}`;
+                
+                return (
+                  <SelectItem 
+                    key={safeUserId} 
+                    value={safeUserId}
+                  >
+                    {user.full_name} ({user.email})
+                  </SelectItem>
+                );
+              }) : (
                 <SelectItem value="no-users-found" disabled>
                   {t('noUsersFound') || 'İstifadəçi tapılmadı'}
                 </SelectItem>

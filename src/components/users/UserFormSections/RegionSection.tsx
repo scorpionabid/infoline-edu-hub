@@ -30,7 +30,7 @@ function RegionSection<TFieldValues extends FieldValues>({
           <FormLabel>{t('region')}</FormLabel>
           <FormControl>
             <Select
-              value={field.value || 'NONE'}
+              value={field.value || ''}
               onValueChange={(value) => field.onChange(value === 'NONE' ? null : value)}
               disabled={disabled}
             >
@@ -41,7 +41,7 @@ function RegionSection<TFieldValues extends FieldValues>({
                 <SelectItem value="NONE">{t('selectRegion')}</SelectItem>
                 {regions.map((region) => {
                   // Ensure region ID is never empty
-                  const regionId = region.id && region.id.trim() ? region.id : `region-${region.name || 'unknown'}`;
+                  const regionId = region.id && region.id.trim() ? region.id : `region-${region.name || 'unknown'}-${Math.random().toString(36).slice(2)}`;
                   
                   return (
                     <SelectItem key={regionId} value={regionId}>

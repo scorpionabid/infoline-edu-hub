@@ -36,9 +36,9 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
         <FormItem>
           <FormLabel>{t('school')}</FormLabel>
           <Select
-            value={data.school_id || data.schoolId || "NONE"}
+            value={data.school_id || data.schoolId || ''}
             onValueChange={(value) => {
-              const schoolValue = value === "NONE" ? null : value;
+              const schoolValue = value === 'NONE' ? null : value;
               field.onChange(schoolValue);
               onFormChange('school_id', schoolValue);
             }}
@@ -53,7 +53,7 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
               <SelectItem value="NONE">{t('selectSchool')}</SelectItem>
               {filteredSchools.map((school) => {
                 // Ensure school ID is never empty
-                const schoolId = school.id && school.id.trim() ? school.id : `school-${school.name || 'unknown'}`;
+                const schoolId = school.id && school.id.trim() ? school.id : `school-${school.name || 'unknown'}-${Math.random().toString(36).slice(2)}`;
                 
                 return (
                   <SelectItem key={schoolId} value={schoolId}>

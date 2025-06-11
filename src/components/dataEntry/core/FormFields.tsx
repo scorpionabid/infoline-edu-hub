@@ -8,15 +8,13 @@ interface FormFieldsProps {
   formData: Record<string, any>;
   onChange: (columnId: string, value: any) => void;
   readOnly?: boolean;
-  disabled?: boolean;
 }
 
 const FormFields: React.FC<FormFieldsProps> = ({
   columns,
   formData,
   onChange,
-  readOnly = false,
-  disabled = false
+  readOnly = false
 }) => {
   if (!columns || columns.length === 0) {
     return (
@@ -31,10 +29,11 @@ const FormFields: React.FC<FormFieldsProps> = ({
       {columns.map((column) => (
         <FormField
           key={column.id}
+          id={column.id}
+          name={column.name}
           column={column}
           value={formData[column.id] || ''}
           onChange={(value) => onChange(column.id, value)}
-          disabled={disabled || readOnly}
           readOnly={readOnly}
         />
       ))}

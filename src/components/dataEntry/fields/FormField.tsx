@@ -26,6 +26,7 @@ interface FormFieldProps {
   placeholder?: string;
   required?: boolean;
   options?: any[];
+  readOnly?: boolean;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
@@ -37,14 +38,17 @@ const FormField: React.FC<FormFieldProps> = ({
   type = 'text',
   placeholder,
   required = false,
-  options = []
+  options = [],
+  readOnly = false
 }) => {
   const fieldType = column?.type || type;
   const fieldPlaceholder = column?.placeholder || placeholder;
   const fieldRequired = column?.is_required || required;
 
   const handleChange = (newValue: any) => {
-    onChange(newValue);
+    if (!readOnly) {
+      onChange(newValue);
+    }
   };
 
   const renderField = () => {
@@ -61,6 +65,7 @@ const FormField: React.FC<FormFieldProps> = ({
             onChange={(e) => handleChange(e.target.value)}
             placeholder={fieldPlaceholder}
             required={fieldRequired}
+            readOnly={readOnly}
           />
         );
 
@@ -74,6 +79,7 @@ const FormField: React.FC<FormFieldProps> = ({
             onChange={(e) => handleChange(e.target.value)}
             placeholder={fieldPlaceholder}
             required={fieldRequired}
+            readOnly={readOnly}
           />
         );
 
@@ -86,22 +92,39 @@ const FormField: React.FC<FormFieldProps> = ({
             onChange={(e) => handleChange(e.target.value)}
             placeholder={fieldPlaceholder}
             required={fieldRequired}
+            readOnly={readOnly}
           />
         );
 
       case 'select':
         const selectOptions = column?.options || options;
         return (
-          <Select value={value} onValueChange={handleChange}>
+          <Select value={value || ''} onValueChange={handleChange} disabled={readOnly}>
             <SelectTrigger>
               <SelectValue placeholder={fieldPlaceholder || 'Seçin...'} />
             </SelectTrigger>
             <SelectContent>
-              {selectOptions.map((option: any, index: number) => (
-                <SelectItem key={index} value={option.value || option}>
-                  {option.label || option}
+              {selectOptions.map((option: any, index: number) => {
+                // Ensure we never have empty string values
+                const optionValue = option.value || option;
+                const optionLabel = option.label || option;
+                
+                // Skip empty values to prevent the Select error
+                if (!optionValue || optionValue === '') {
+                  return null;
+                }
+                
+                return (
+                  <SelectItem key={`${optionValue}-${index}`} value={String(optionValue)}>
+                    {optionLabel}
+                  </SelectItem>
+                );
+              })}
+              {selectOptions.length === 0 && (
+                <SelectItem value="no-options" disabled>
+                  Seçim yoxdur
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         );
@@ -113,6 +136,7 @@ const FormField: React.FC<FormFieldProps> = ({
               id={id}
               checked={value || false}
               onCheckedChange={handleChange}
+              disabled={readOnly}
             />
             <Label htmlFor={id}>{name}</Label>
           </div>
@@ -127,6 +151,7 @@ const FormField: React.FC<FormFieldProps> = ({
             onChange={(e) => handleChange(e.target.value)}
             placeholder={fieldPlaceholder}
             required={fieldRequired}
+            readOnly={readOnly}
           />
         );
     }
