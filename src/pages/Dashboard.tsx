@@ -7,7 +7,33 @@ import DashboardContent from '@/components/dashboard/DashboardContent';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
 import { toast } from 'sonner';
 import LoadingScreen from '@/components/auth/LoadingScreen';
-import { UserRole, normalizeRole } from '@/types/role';
+import { UserRole } from '@/types/auth';
+
+// Normalize role function (moved from deleted role.ts)
+const normalizeRole = (role?: string | null): UserRole => {
+  if (!role) return 'schooladmin';
+  
+  switch (role.toLowerCase()) {
+    case 'superadmin':
+    case 'super_admin':
+    case 'super-admin':
+      return 'superadmin';
+    case 'regionadmin':
+    case 'region_admin':
+    case 'region-admin':
+      return 'regionadmin';
+    case 'sectoradmin':
+    case 'sector_admin':
+    case 'sector-admin':
+      return 'sectoradmin';
+    case 'schooladmin':
+    case 'school_admin':
+    case 'school-admin':
+      return 'schooladmin';
+    default:
+      return 'schooladmin';
+  }
+};
 
 const Dashboard: React.FC = () => {
   const isAuthenticated = useAuthStore(selectIsAuthenticated);

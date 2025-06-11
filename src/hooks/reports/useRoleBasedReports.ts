@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PermissionsSummary {
@@ -13,7 +13,7 @@ export interface PermissionsSummary {
 }
 
 export const useRoleBasedReports = () => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const [userRole, setUserRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

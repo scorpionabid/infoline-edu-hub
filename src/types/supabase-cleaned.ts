@@ -1,3 +1,11 @@
+// ============================================================================
+// Supabase Types - CLEANED UP VERSION
+// ============================================================================
+// Bu fayl artıq yalnız Supabase-specific types saxlayır
+// UserRole və FullUserData /src/types/auth.ts-dən import olunur
+
+import { UserRole, FullUserData } from './auth';
+
 // Define the EnhancedSector type
 export interface EnhancedSector extends Sector {
   region_name?: string;
@@ -70,11 +78,6 @@ export interface SchoolStat {
   email?: string;
 }
 
-// ============================================================================
-// Re-export auth types from main auth.ts file to avoid duplication
-// ============================================================================
-import { UserRole, FullUserData } from './auth';
-
 // Define NotificationSettings type (Supabase-specific version)
 export interface NotificationSettings {
   email: boolean;
@@ -84,5 +87,8 @@ export interface NotificationSettings {
   deadline: boolean;
 }
 
-// Re-export for backward compatibility
+// ============================================================================
+// Re-export auth types for backward compatibility
+// ============================================================================
+
 export type { UserRole, FullUserData };

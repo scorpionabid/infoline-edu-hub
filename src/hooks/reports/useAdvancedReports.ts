@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { AdvancedReportData, ReportTemplate } from '@/types/advanced-report';
 
 export interface UseAdvancedReportsReturn {
@@ -18,7 +18,7 @@ export interface UseAdvancedReportsReturn {
 }
 
 export const useAdvancedReports = (): UseAdvancedReportsReturn => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const [reports, setReports] = useState<AdvancedReportData[]>([]);
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [loading, setLoading] = useState(false);
