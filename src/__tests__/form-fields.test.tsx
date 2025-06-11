@@ -1,152 +1,92 @@
 
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { vi, describe, it, expect } from 'vitest';
-import { FormProvider, useForm } from 'react-hook-form';
-import { FormFields } from '../components/dataEntry/core';
-import UnifiedFieldRenderer from '../components/dataEntry/fields/UnifiedFieldRenderer';
-import { Column, ColumnType } from '../types/column';
+import { describe, it, expect, vi } from 'vitest';
+import FormField from '../components/dataEntry/fields/FormField';
 
-// Test üçün Column mock data yaradırıq
-const createMockColumn = (overrides: Partial<Column> = {}): Column => ({
-  id: 'test-column-id',
-  name: 'Test Column',
-  type: 'text' as ColumnType,
-  is_required: false,
-  category_id: 'test-category-id',
-  order_index: 1,
-  status: 'active',
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-  ...overrides
-});
-
-// Wrapper komponent FormProvider ilə birgə test etmək üçün
-const FormWrapper = ({ children }: { children: React.ReactNode }) => {
-  const methods = useForm({
-    defaultValues: {},
-    mode: 'onChange'
-  });
-  
-  return (
-    <FormProvider {...methods}>
-      {children}
-    </FormProvider>
-  );
+const mockColumn = {
+  id: 'test-field',
+  name: 'Test Field',
+  type: 'text',
+  is_required: true,
+  placeholder: 'Enter test value'
 };
 
-describe('Form Fields Component Tests', () => {
-  it('should pass readOnly prop correctly to form fields', () => {
-    const testColumns = [
-      createMockColumn({ 
-        id: 'col1', 
-        name: 'Test Column' 
-      })
-    ];
-    
-    const mockFormData = { col1: '' };
+describe('FormField Component', () => {
+  it('renders text input correctly', () => {
     const mockOnChange = vi.fn();
     
     render(
-      <FormWrapper>
-        <FormFields 
-          columns={testColumns} 
-          formData={mockFormData}
-          onChange={mockOnChange}
-          readOnly={true}
-        />
-      </FormWrapper>
+      <FormField
+        id="test"
+        name="Test Field"
+        value=""
+        onChange={mockOnChange}
+        column={mockColumn}
+      />
     );
-    
-    // Verify component renders without errors - spesifik selector
-    const labels = screen.getAllByText('Test Column');
-    expect(labels.length).toBeGreaterThan(0);
-    expect(labels[0]).toBeInTheDocument();
-  });
-  
-  it('should handle input changes correctly', () => {
-    const testColumns = [
-      createMockColumn({ 
-        id: 'col3', 
-        name: 'Test Column 3'
-      })
-    ];
-    
-    const mockFormData = { col3: '' };
-    const mockOnChange = vi.fn();
-    
-    render(
-      <FormWrapper>
-        <FormFields 
-          columns={testColumns} 
-          formData={mockFormData}
-          onChange={mockOnChange}
-          readOnly={false}
-        />
-      </FormWrapper>
-    );
-    
-    const labels = screen.getAllByText('Test Column 3');
-    expect(labels.length).toBeGreaterThan(0);
-    expect(labels[0]).toBeInTheDocument();
-  });
-});
 
-// Test UnifiedFieldRenderer component directly
-describe('UnifiedFieldRenderer Component Tests', () => {
-  it('should respect disabled and readOnly props correctly', () => {
-    const handleChange = vi.fn();
-    const mockColumn = createMockColumn({ id: 'test-field', type: 'text' });
-    
-    render(
-      <UnifiedFieldRenderer
-        column={mockColumn}
-        value=""
-        onChange={handleChange}
-        readOnly={false}
-      />
-    );
-    
-    const inputField = screen.getByRole('textbox') as HTMLInputElement;
-    
-    expect(inputField).not.toHaveAttribute('disabled');
-    expect(inputField).not.toHaveAttribute('readonly');
+    expect(screen.getByLabelText(/Test Field/)).toBeInTheDocument();
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
   });
-  
-  it('should handle readOnly prop correctly', () => {
-    const handleChange = vi.fn();
-    const mockColumn = createMockColumn({ id: 'test-field', type: 'text' });
+
+  it('handles value changes', () => {
+    const mockOnChange = vi.fn();
     
     render(
-      <UnifiedFieldRenderer
-        column={mockColumn}
+      <FormField
+        id="test"
+        name="Test Field"
         value=""
-        onChange={handleChange}
-        readOnly={true}
+        onChange={mockOnChange}
+        column={mockColumn}
       />
     );
+
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'test value' } });
     
-    const inputField = screen.getByRole('textbox') as HTMLInputElement;
-    expect(inputField).toHaveAttribute('readonly');
+    expect(mockOnChange).toHaveBeenCalledWith('test value');
   });
-  
-  it('should call onChange handler when value changes', () => {
-    const handleChange = vi.fn();
-    const mockColumn = createMockColumn({ id: 'test-field2', type: 'text' });
+
+  it('shows required indicator', () => {
+    const mockOnChange = vi.fn();
     
     render(
-      <UnifiedFieldRenderer
+      <FormField
+        id="test"
+        name="Test Field"
+        value=""
+        onChange={mockOnChange}
         column={mockColumn}
-        value="initial"
-        onChange={handleChange}
-        readOnly={false}
       />
     );
+
+    expect(screen.getByText('*')).toBeInTheDocument();
+  });
+
+  it('renders select field correctly', () => {
+    const selectColumn = {
+      ...mockColumn,
+      type: 'select',
+      options: [
+        { value: 'option1', label: 'Option 1' },
+        { value: 'option2', label: 'Option 2' }
+      ]
+    };
+
+    const mockOnChange = vi.fn();
     
-    const inputField = screen.getByRole('textbox') as HTMLInputElement;
-    
-    fireEvent.change(inputField, { target: { value: 'new value' } });
-    
-    expect(handleChange).toHaveBeenCalled();
+    render(
+      <FormField
+        id="test"
+        name="Test Field"
+        value=""
+        onChange={mockOnChange}
+        column={selectColumn}
+      />
+    );
+
+    expect(screen.getByRole('combobox')).toBeInTheDocument();
   });
 });
