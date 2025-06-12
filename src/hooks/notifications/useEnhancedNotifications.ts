@@ -1,8 +1,13 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+export interface ConnectionHealth {
+  isConnected: boolean;
+  lastPing?: Date;
+  reconnectAttempts: number;
+}
 
 interface NotificationData {
   id: string;
@@ -22,6 +27,10 @@ export const useEnhancedNotifications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [connectionHealth, setConnectionHealth] = useState<ConnectionHealth>({
+    isConnected: true,
+    reconnectAttempts: 0
+  });
 
   const fetchNotifications = useCallback(async () => {
     if (!user?.id) return;
@@ -156,10 +165,10 @@ export const useEnhancedNotifications = () => {
     loading,
     error,
     unreadCount,
+    connectionHealth,
     fetchNotifications,
     markAsRead,
     markAllAsRead,
     deleteNotification
   };
 };
-

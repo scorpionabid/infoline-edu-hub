@@ -1,90 +1,16 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
+import { Region } from '@/types/region';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
-interface Region {
-  id: string;
-  name: string;
-}
-
-interface Sector {
-  id: string;
-  name: string;
-  region_id: string;
-  status: 'active' | 'inactive';
-}
-
-interface RegionsContextType {
+interface RegionsContextProps {
   regions: Region[];
-  sectors: Sector[];
-  isLoading: boolean;
-  error: any;
+  loading: boolean;
+  error: string | null;
+  refetch: () => void;
 }
 
-const RegionsContext = createContext<RegionsContextType | undefined>(undefined);
-
-export const RegionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [sectors, setSectors] = useState<Sector[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
-
-  useEffect(() => {
-    const fetchRegionsAndSectors = async () => {
-      setIsLoading(true);
-      try {
-        const { data: regionsData, error: regionsError } = await supabase
-          .from('regions')
-          .select('*')
-          .order('name', { ascending: true });
-
-        if (regionsError) {
-          throw new Error(`Error fetching regions: ${regionsError.message}`);
-        }
-
-        const { data: sectorsData, error: sectorsError } = await supabase
-          .from('sectors')
-          .select('*')
-          .order('name', { ascending: true });
-
-        if (sectorsError) {
-          throw new Error(`Error fetching sectors: ${sectorsError.message}`);
-        }
-
-        setRegions(regionsData || []);
-        setSectors((sectorsData || []).map(sector => ({
-          ...sector,
-          status: (sector.status === 'active' || sector.status === 'inactive') 
-            ? sector.status 
-            : 'active' as const
-        })));
-        setError(null);
-      } catch (err: any) {
-        setError(err.message || 'An unexpected error occurred.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRegionsAndSectors();
-  }, [user]);
-
-  const value: RegionsContextType = {
-    regions,
-    sectors,
-    isLoading,
-    error,
-  };
-
-  return (
-    <RegionsContext.Provider value={value}>
-      {children}
-    </RegionsContext.Provider>
-  );
-};
+const RegionsContext = createContext<RegionsContextProps | undefined>(undefined);
 
 export const useRegions = () => {
   const context = useContext(RegionsContext);
@@ -94,5 +20,64 @@ export const useRegions = () => {
   return context;
 };
 
-// Export for backwards compatibility
-export const useRegionsContext = useRegions;
+export const RegionsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const user = useAuthStore(state => state.user);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRegions = async () => {
+    setLoading(true);
+    try {
+      if (!user) {
+        setError('User not authenticated');
+        return;
+      }
+
+      let query = supabase
+        .from('regions')
+        .select('*')
+        .eq('status', 'active')
+        .order('name', { ascending: true });
+
+      if (user.role === 'regionadmin' && user.region_id) {
+        query = query.eq('id', user.region_id);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setRegions(data || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRegions();
+  }, [user]);
+
+  const refetch = () => {
+    fetchRegions();
+  };
+
+  const value: RegionsContextProps = {
+    regions,
+    loading,
+    error,
+    refetch,
+  };
+
+  return (
+    <RegionsContext.Provider value={value}>
+      {children}
+    </RegionsContext.Provider>
+  );
+};
+
+export default RegionsProvider;
