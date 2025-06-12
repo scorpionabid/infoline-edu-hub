@@ -72,7 +72,7 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
     failed: { schoolId: string; error: string }[];
   } | null>(null);
 
-  // Get category with columns
+  // Get category with ONLY ACTIVE columns
   const { data: category, isLoading: categoryLoading } = useQuery({
     queryKey: ['category-with-columns', categoryId],
     queryFn: async () => {
@@ -80,9 +80,22 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
         .from('categories')
         .select(`
           *,
-          columns(*)
+          columns!inner(
+            id,
+            name,
+            type,
+            is_required,
+            placeholder,
+            help_text,
+            order_index,
+            default_value,
+            options,
+            validation,
+            status
+          )
         `)
         .eq('id', categoryId)
+        .eq('columns.status', 'active') // FILTER: Only active columns
         .single();
       
       if (error) throw error;

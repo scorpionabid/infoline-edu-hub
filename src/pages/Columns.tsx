@@ -18,6 +18,8 @@ import { usePermissions } from '@/hooks/auth/usePermissions';
 import { Column } from '@/types/column';
 import PageHeader from '@/components/layout/PageHeader';
 import { Helmet } from 'react-helmet';
+import { supabase } from '@/integrations/supabase/client';
+import { columnService } from '@/services/columns/columnService';
 
 // NEW UNIFIED API
 import { useColumnsQuery, useColumnMutations } from '@/hooks/columns';
@@ -32,15 +34,16 @@ const Columns: React.FC = () => {
   const [columnDialogMode, setColumnDialogMode] = useState<'create' | 'edit'>('create');
   const [editColumn, setEditColumn] = useState<Column | null>(null);
   
-  // NEW UNIFIED HOOKS - Fetch ALL columns (including deleted ones for archive tab)
+  // NEW UNIFIED HOOKS - Fetch ALL columns (including deleted/inactive for admin management)
   const { 
     data: columns = [], 
     isLoading: columnsLoading, 
     error: columnsError, 
     refetch: refetchColumns 
   } = useColumnsQuery({ 
-    // Include deleted columns so ColumnsContainer can show them in Archive tab
-    includeDeleted: true
+    // Include deleted and inactive columns for admin management
+    includeDeleted: true,
+    includeInactive: true
   });
   
   const {
@@ -67,20 +70,20 @@ const Columns: React.FC = () => {
   
   // Dialog states
   const [deleteDialog, setDeleteDialog] = useState({
-    isOpen: false,
-    column: '',
+    open: false,
+    columnId: '',
     columnName: '',
     categoryId: ''
   });
 
   const [restoreDialog, setRestoreDialog] = useState({
-    isOpen: false,
+    open: false,
     columnId: '',
     columnName: ''
   });
 
   const [permanentDeleteDialog, setPermanentDeleteDialog] = useState({
-    isOpen: false,
+    open: false,
     column: {
       id: '',
       name: '',
@@ -160,8 +163,8 @@ const Columns: React.FC = () => {
     
     // Show delete confirmation dialog instead of deleting directly
     setDeleteDialog({
-      isOpen: true,
-      column: columnId,
+      open: true,
+      columnId: columnId,
       columnName: columnName,
       categoryId: editColumn?.category_id || ''
     });
@@ -169,12 +172,12 @@ const Columns: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     try {
-      console.log('Deleting column with NEW API:', deleteDialog.column);
+      console.log('Deleting column with NEW API:', deleteDialog.columnId);
       
-      await deleteColumn({ columnId: deleteDialog.column });
+      await deleteColumn({ columnId: deleteDialog.columnId });
       
       toast.success(t('columnDeleted') || 'Column deleted successfully');
-      setDeleteDialog({ isOpen: false, column: '', columnName: '', categoryId: '' });
+      setDeleteDialog({ open: false, columnId: '', columnName: '', categoryId: '' });
       refetchColumns();
       
     } catch (error) {
@@ -195,6 +198,60 @@ const Columns: React.FC = () => {
     } catch (error) {
       console.error('Error restoring column:', error);
       toast.error(t('columnRestoreFailed') || 'Failed to restore column');
+    }
+  };
+
+  // NEW: Handle permanent delete with dependency validation
+  const handlePermanentDelete = async (columnId: string) => {
+    try {
+      console.log('Permanently deleting column with NEW API:', columnId);
+      
+      // First validate dependencies
+      const validation = await columnService.validateColumnDependencies(columnId);
+      
+      // Get column details for confirmation dialog
+      const column = columns.find(col => col.id === columnId);
+      if (!column) {
+        toast.error('Column not found');
+        return;
+      }
+
+      // Get data entries count for warning
+      const { data: dataEntries } = await supabase
+        .from('data_entries')
+        .select('id')
+        .eq('column_id', columnId);
+
+      setPermanentDeleteDialog({
+        open: true,
+        column: {
+          id: columnId,
+          name: column.name,
+          dataEntriesCount: dataEntries?.length || 0
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error preparing permanent delete:', error);
+      toast.error('Error preparing delete operation');
+    }
+  };
+
+  // NEW: Confirm permanent delete
+  const handleConfirmPermanentDelete = async (columnId: string) => {
+    try {
+      await deleteColumn({ columnId, permanent: true });
+      
+      toast.success('Column permanently deleted');
+      setPermanentDeleteDialog({
+        open: false,
+        column: { id: '', name: '', dataEntriesCount: 0 }
+      });
+      refetchColumns();
+      
+    } catch (error) {
+      console.error('Error permanently deleting column:', error);
+      toast.error('Failed to permanently delete column');
     }
   };
 
@@ -259,6 +316,7 @@ const Columns: React.FC = () => {
           onEdit={handleEditColumn}
           onDelete={handleDeleteColumn}
           onRestore={handleRestoreColumnFromList} // NEW: Restore handler
+          onPermanentDelete={handlePermanentDelete} // NEW: Permanent delete handler
         />
 
         {/* UNIFIED COLUMN DIALOG */}
@@ -274,31 +332,31 @@ const Columns: React.FC = () => {
 
         {/* Restore Dialog */}
         <RestoreColumnDialog
-          open={restoreDialog.isOpen}
-          onOpenChange={(open) => setRestoreDialog(prev => ({ ...prev, isOpen: open }))}
+          open={restoreDialog.open}
+          onOpenChange={(open) => setRestoreDialog(prev => ({ ...prev, open }))}
           columnId={restoreDialog.columnId}
           columnName={restoreDialog.columnName}
           onConfirm={() => handleRestoreColumnFromList(restoreDialog.columnId, restoreDialog.columnName)}
+          isSubmitting={isLoading}
         />
 
         {/* Delete Dialog */}
         <DeleteColumnDialog
-          open={deleteDialog.isOpen}
-          onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, isOpen: open }))}
-          columnId={deleteDialog.column}
+          open={deleteDialog.open}
+          onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}
+          columnId={deleteDialog.columnId}
           columnName={deleteDialog.columnName}
           onConfirm={handleConfirmDelete}
+          isSubmitting={isLoading}
         />
 
         {/* Permanent Delete Dialog */}
         <PermanentDeleteDialog
-          open={permanentDeleteDialog.isOpen}
-          onOpenChange={(open) => setPermanentDeleteDialog(prev => ({ ...prev, isOpen: open }))}
+          open={permanentDeleteDialog.open}
+          onOpenChange={(open) => setPermanentDeleteDialog(prev => ({ ...prev, open }))}
           column={permanentDeleteDialog.column}
-          onConfirm={(columnId) => {
-            // Implement permanent delete with NEW API if needed
-            console.log('Permanent delete:', columnId);
-          }}
+          onConfirm={handleConfirmPermanentDelete}
+          isSubmitting={isLoading}
         />
       </div>
     </>

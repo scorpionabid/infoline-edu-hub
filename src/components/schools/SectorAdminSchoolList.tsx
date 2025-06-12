@@ -341,7 +341,7 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
               <Checkbox
                 checked={isAllCurrentPageSelected}
                 onCheckedChange={toggleAllCurrentPage}
-                indeterminate={isSomeCurrentPageSelected && !isAllCurrentPageSelected}
+                {...(isSomeCurrentPageSelected && !isAllCurrentPageSelected ? { indeterminate: true } : {})}
               />
               <span className="text-sm text-muted-foreground">
                 Bu səhifədəki hamısını seç

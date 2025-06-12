@@ -59,15 +59,31 @@ export const useDataEntryManager = ({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load category data
+  // Load category data with ONLY ACTIVE columns
   const { data: categoryData, isLoading: categoryLoading } = useQuery({
     queryKey: ['category', categoryId],
     queryFn: async () => {
       if (!categoryId) return null;
       const { data, error } = await supabase
         .from('categories')
-        .select('*, columns(*)')
+        .select(`
+          *,
+          columns!inner(
+            id,
+            name,
+            type,
+            is_required,
+            placeholder,
+            help_text,
+            order_index,
+            default_value,
+            options,
+            validation,
+            status
+          )
+        `)
         .eq('id', categoryId)
+        .eq('columns.status', 'active') // FILTER: Only active columns
         .single();
       
       if (error) throw error;

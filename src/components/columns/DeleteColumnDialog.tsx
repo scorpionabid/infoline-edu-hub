@@ -14,26 +14,28 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Loader2 } from 'lucide-react';
 
 interface DeleteColumnDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  column: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  columnId: string;
   columnName: string;
+  onConfirm: () => void;
   isSubmitting?: boolean;
 }
 
 const DeleteColumnDialog: React.FC<DeleteColumnDialogProps> = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  column, 
+  open, 
+  onOpenChange, 
+  columnId, 
   columnName,
+  onConfirm,
   isSubmitting = false
 }) => {
   const { t } = useLanguage();
 
+  const handleClose = () => onOpenChange(false);
+
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t("deleteColumn")}</AlertDialogTitle>
@@ -43,7 +45,9 @@ const DeleteColumnDialog: React.FC<DeleteColumnDialogProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+          <AlertDialogCancel onClick={handleClose} disabled={isSubmitting}>
+            {t("cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction 
             onClick={onConfirm} 
             className="bg-destructive hover:bg-destructive/90"

@@ -12,22 +12,24 @@ import {
 import { RotateCcw, Loader2 } from 'lucide-react';
 
 interface RestoreColumnDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  columnId: string;
   columnName: string;
-  isSubmitting: boolean;
+  onConfirm: () => void;
+  isSubmitting?: boolean;
 }
 
 const RestoreColumnDialog: React.FC<RestoreColumnDialogProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
+  open,
+  onOpenChange,
+  columnId,
   columnName,
-  isSubmitting
+  onConfirm,
+  isSubmitting = false
 }) => {
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
@@ -43,7 +45,7 @@ const RestoreColumnDialog: React.FC<RestoreColumnDialogProps> = ({
         </AlertDialogHeader>
         
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose} disabled={isSubmitting}>
+          <AlertDialogCancel onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Ləğv et
           </AlertDialogCancel>
           <AlertDialogAction 

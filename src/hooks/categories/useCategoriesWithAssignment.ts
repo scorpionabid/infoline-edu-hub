@@ -63,7 +63,10 @@ export const useCategoriesWithAssignment = (options: UseCategoriesWithAssignment
       // Process and transform column data
       const processedData = (data || []).map((category: any) => ({
         ...category,
-        columns: category.columns?.map((column: any) => transformRawColumnData(column)) || []
+        // Filter only active columns for data entry (exclude deleted/inactive)
+        columns: category.columns
+          ?.filter((column: any) => column.status === 'active')
+          ?.map((column: any) => transformRawColumnData(column)) || []
       }));
 
       console.log(`Categories fetched for assignment '${assignment}':`, processedData?.length || 0);

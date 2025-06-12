@@ -58,7 +58,7 @@ export const SectorDataEntryForm: React.FC = () => {
     enabled: !!user?.sector_id
   });
 
-  // Get selected category with columns
+  // Get selected category with ONLY ACTIVE columns
   const { data: selectedCategory, isLoading: categoryLoading } = useQuery({
     queryKey: ['category-with-columns', selectedCategoryId],
     queryFn: async () => {
@@ -66,9 +66,22 @@ export const SectorDataEntryForm: React.FC = () => {
         .from('categories')
         .select(`
           *,
-          columns(*)
+          columns!inner(
+            id,
+            name,
+            type,
+            is_required,
+            placeholder,
+            help_text,
+            order_index,
+            default_value,
+            options,
+            validation,
+            status
+          )
         `)
         .eq('id', selectedCategoryId)
+        .eq('columns.status', 'active') // FILTER: Only active columns
         .single();
       
       if (error) throw error;

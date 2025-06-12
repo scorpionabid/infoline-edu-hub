@@ -15,23 +15,23 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Trash2, Loader2, AlertTriangle } from 'lucide-react';
 
 interface PermanentDeleteDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   column: {
     id: string;
     name: string;
     dataEntriesCount?: number;
   };
-  isSubmitting: boolean;
+  onConfirm: (columnId: string) => void;
+  isSubmitting?: boolean;
 }
 
 const PermanentDeleteDialog: React.FC<PermanentDeleteDialogProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
+  open,
+  onOpenChange,
   column,
-  isSubmitting
+  onConfirm,
+  isSubmitting = false
 }) => {
   const [confirmationText, setConfirmationText] = useState('');
   
@@ -40,17 +40,17 @@ const PermanentDeleteDialog: React.FC<PermanentDeleteDialogProps> = ({
 
   const handleConfirm = () => {
     if (isConfirmationValid) {
-      onConfirm();
+      onConfirm(column.id);
     }
   };
 
   const handleClose = () => {
     setConfirmationText('');
-    onClose();
+    onOpenChange(false);
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={handleClose}>
+    <AlertDialog open={open} onOpenChange={handleClose}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">

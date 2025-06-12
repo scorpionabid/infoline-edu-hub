@@ -1,8 +1,8 @@
 // =============================================================================
 // INFOLINE COLUMN HOOKS - UNIFIED API
 // =============================================================================
-// This file exports the new unified column management API.
-// Legacy hooks are being phased out in favor of this consolidated approach.
+// This file exports the unified column management API.
+// All legacy hooks have been cleaned up and consolidated.
 
 // Core Query Hooks
 export { 
@@ -18,53 +18,55 @@ export {
   useColumnMutations 
 } from './mutations/useColumnMutations';
 
-// Legacy Hooks (DEPRECATED - will be removed in next version)
-// These are kept for backward compatibility during migration period
+// Enhanced Management Hook
+export { useColumnManagement } from './useColumnManagement';
+
+// Utility Hooks
 export { useColumnActions } from './useColumnActions';
 export { useColumnAdapters } from './useColumnAdapters';
-export { updateCategoryColumnCount } from './useColumnCounter'; // function, not hook
+export { updateCategoryColumnCount } from './useColumnCounter';
 export { useColumnFilters } from './useColumnFilters';
 export { useColumnForm } from './useColumnForm';
 
 // =============================================================================
-// MIGRATION GUIDE
+// API USAGE GUIDE
 // =============================================================================
 /*
 
-OLD API (DEPRECATED):
-```typescript
-import { useColumnsQuery } from '@/hooks/columns/useColumnsQuery';
-import { useColumnsNew } from '@/hooks/columns/useColumnsNew';
-import { useColumns } from '@/hooks/columns/useColumns';
-import { useColumnMutations } from '@/hooks/columns/useColumnMutations';
-
-// Multiple different APIs with inconsistent interfaces
-const { columns, loading } = useColumnsQuery({ categoryId });
-const { createColumn } = useColumns();
-const { updateColumn } = useColumnMutations();
-```
-
-NEW API (RECOMMENDED):
+UNIFIED API STRUCTURE:
 ```typescript
 import { useColumnsQuery, useColumnMutations } from '@/hooks/columns';
 
-// Single, consistent API
-const { data: columns, isLoading } = useColumnsQuery({ categoryId });
-const { createColumn, updateColumn, deleteColumn } = useColumnMutations();
+// Query columns with various options
+const { data: columns, isLoading, error, refetch } = useColumnsQuery({ 
+  categoryId,
+  status: 'active',
+  includeDeleted: false
+});
+
+// Perform mutations
+const { 
+  createColumn, 
+  updateColumn, 
+  deleteColumn, 
+  restoreColumn,
+  isCreating,
+  isUpdating,
+  isDeleting
+} = useColumnMutations();
 
 // Specialized queries
 const { data: activeColumns } = useActiveColumnsQuery(categoryId);
 const { data: archivedColumns } = useArchivedColumnsQuery(categoryId);
 ```
 
-BENEFITS:
+KEY FEATURES:
 - ✅ Unified API across all column operations
-- ✅ Better TypeScript support
-- ✅ Consistent loading states
-- ✅ Proper error handling
-- ✅ Optimistic updates
+- ✅ TypeScript support with proper type inference
+- ✅ Consistent loading and error states
 - ✅ Automatic cache invalidation
-- ✅ Better performance
+- ✅ Optimistic updates for better UX
+- ✅ Built-in soft delete and restore functionality
 
 */
 

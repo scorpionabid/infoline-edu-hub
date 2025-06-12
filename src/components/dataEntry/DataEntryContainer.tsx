@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import SchoolDataEntryManager from './SchoolDataEntryManager';
+import { SchoolAdminDataEntry } from './SchoolAdminDataEntry';
 import { SectorAdminSchoolList } from '@/components/schools/SectorAdminSchoolList';
 import { SectorDataEntryForm } from './SectorDataEntryForm';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -69,16 +70,10 @@ export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
         );
       }
 
+      // SchoolAdmin üçün kateqoriya seçimi ilə data entry
       return (
-        <SchoolDataEntryManager 
-          schoolId={user.school_id} 
-          categoryId="" // Category will be selected in the component
-          onClose={() => {
-            console.log('SchoolAdmin data entry closed');
-          }}
-          onComplete={() => {
-            console.log('SchoolAdmin data entry completed');
-          }}
+        <SchoolAdminDataEntry 
+          schoolId={user.school_id}
         />
       );
     } else if (userRole === 'regionadmin') {

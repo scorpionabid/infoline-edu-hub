@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { ColumnFormValues, Column, UseColumnFormProps } from '@/types/column';
-import { useColumnMutation } from '@/hooks/api/columns/useColumnsQuery';
+import { useColumnMutations } from './mutations/useColumnMutations';
 
 const columnFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -21,7 +21,7 @@ const columnFormSchema = z.object({
 });
 
 export const useColumnForm = ({ column, categoryId, onSuccess }: UseColumnFormProps) => {
-  const { createMutation, updateMutation } = useColumnMutation();
+  const { createColumnAsync, updateColumnAsync, isCreating, isUpdating } = useColumnMutations();
   
   const form = useForm<ColumnFormValues>({
     resolver: zodResolver(columnFormSchema),
@@ -40,19 +40,20 @@ export const useColumnForm = ({ column, categoryId, onSuccess }: UseColumnFormPr
     },
   });
 
-  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isLoading = isCreating || isUpdating;
 
   const onSubmit = async (data: ColumnFormValues) => {
     try {
       if (column) {
-        await updateMutation.mutateAsync({ ...column, ...data });
+        await updateColumnAsync({ columnId: column.id, data });
         toast.success('Column updated successfully');
       } else {
-        await createMutation.mutateAsync(data);
+        await createColumnAsync({ categoryId, data });
         toast.success('Column created successfully');
       }
       onSuccess();
     } catch (error) {
+      console.error('Form submission error:', error);
       toast.error('Failed to save column');
     }
   };

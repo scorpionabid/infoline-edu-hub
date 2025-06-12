@@ -94,6 +94,42 @@ export const useColumnMutations = () => {
     },
   });
 
+  // Duplicate column mutation
+  const duplicateColumn = useMutation({
+    mutationFn: ({ columnId, newName }: { columnId: string; newName?: string }) =>
+      columnService.duplicateColumn(columnId, newName),
+    onSuccess: (result) => {
+      invalidateColumnQueries(result.category_id);
+    },
+    onError: (error) => {
+      console.error('Duplicate column mutation error:', error);
+    },
+  });
+
+  // Bulk toggle status mutation
+  const bulkToggleStatus = useMutation({
+    mutationFn: ({ columnIds, status }: { columnIds: string[]; status: 'active' | 'inactive' }) =>
+      columnService.bulkToggleStatus(columnIds, status),
+    onSuccess: () => {
+      invalidateColumnQueries();
+    },
+    onError: (error) => {
+      console.error('Bulk toggle status mutation error:', error);
+    },
+  });
+
+  // Move columns to category mutation
+  const moveColumnsToCategory = useMutation({
+    mutationFn: ({ columnIds, targetCategoryId }: { columnIds: string[]; targetCategoryId: string }) =>
+      columnService.moveColumnsToCategory(columnIds, targetCategoryId),
+    onSuccess: () => {
+      invalidateColumnQueries();
+    },
+    onError: (error) => {
+      console.error('Move columns to category mutation error:', error);
+    },
+  });
+
   return {
     // Mutation functions
     createColumn: createColumn.mutate,
@@ -102,6 +138,9 @@ export const useColumnMutations = () => {
     restoreColumn: restoreColumn.mutate,
     bulkDelete: bulkDelete.mutate,
     reorderColumns: reorderColumns.mutate,
+    duplicateColumn: duplicateColumn.mutate,
+    bulkToggleStatus: bulkToggleStatus.mutate,
+    moveColumnsToCategory: moveColumnsToCategory.mutate,
 
     // Async versions
     createColumnAsync: createColumn.mutateAsync,
@@ -110,22 +149,31 @@ export const useColumnMutations = () => {
     restoreColumnAsync: restoreColumn.mutateAsync,
     bulkDeleteAsync: bulkDelete.mutateAsync,
     reorderColumnsAsync: reorderColumns.mutateAsync,
+    duplicateColumnAsync: duplicateColumn.mutateAsync,
+    bulkToggleStatusAsync: bulkToggleStatus.mutateAsync,
+    moveColumnsToCategoryAsync: moveColumnsToCategory.mutateAsync,
 
     // Loading states
-    isCreating: createColumn.isLoading,
-    isUpdating: updateColumn.isLoading,
-    isDeleting: deleteColumn.isLoading,
-    isRestoring: restoreColumn.isLoading,
-    isBulkDeleting: bulkDelete.isLoading,
-    isReordering: reorderColumns.isLoading,
+    isCreating: createColumn.isPending,
+    isUpdating: updateColumn.isPending,
+    isDeleting: deleteColumn.isPending,
+    isRestoring: restoreColumn.isPending,
+    isBulkDeleting: bulkDelete.isPending,
+    isReordering: reorderColumns.isPending,
+    isDuplicating: duplicateColumn.isPending,
+    isBulkToggling: bulkToggleStatus.isPending,
+    isMovingCategory: moveColumnsToCategory.isPending,
 
     // General loading state
-    isLoading: createColumn.isLoading || 
-               updateColumn.isLoading || 
-               deleteColumn.isLoading || 
-               restoreColumn.isLoading || 
-               bulkDelete.isLoading || 
-               reorderColumns.isLoading,
+    isLoading: createColumn.isPending || 
+               updateColumn.isPending || 
+               deleteColumn.isPending || 
+               restoreColumn.isPending || 
+               bulkDelete.isPending || 
+               reorderColumns.isPending ||
+               duplicateColumn.isPending ||
+               bulkToggleStatus.isPending ||
+               moveColumnsToCategory.isPending,
 
     // Error states
     createError: createColumn.error,
@@ -134,6 +182,9 @@ export const useColumnMutations = () => {
     restoreError: restoreColumn.error,
     bulkDeleteError: bulkDelete.error,
     reorderError: reorderColumns.error,
+    duplicateError: duplicateColumn.error,
+    bulkToggleError: bulkToggleStatus.error,
+    moveCategoryError: moveColumnsToCategory.error,
 
     // Reset functions
     resetCreateError: createColumn.reset,
@@ -142,6 +193,9 @@ export const useColumnMutations = () => {
     resetRestoreError: restoreColumn.reset,
     resetBulkDeleteError: bulkDelete.reset,
     resetReorderError: reorderColumns.reset,
+    resetDuplicateError: duplicateColumn.reset,
+    resetBulkToggleError: bulkToggleStatus.reset,
+    resetMoveCategoryError: moveColumnsToCategory.reset,
   };
 };
 

@@ -23,6 +23,29 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  css: {
+    postcss: {
+      plugins: [
+        require('tailwindcss'),
+        require('autoprefixer'),
+      ],
+    },
+    // Suppress deprecation warnings
+    devSourcemap: mode === 'development',
+  },
+  build: {
+    // Suppress build warnings
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress specific warnings
+        if (warning.code === 'UNRESOLVED_IMPORT') return;
+        if (warning.message.includes('-ms-high-contrast')) return;
+        warn(warning);
+      },
+    },
+    // Optimize chunk splitting
+    chunkSizeWarningLimit: 1000,
+  },
   test: {
     globals: true,
     environment: 'jsdom',

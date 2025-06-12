@@ -60,14 +60,30 @@ export const SectorAdminProxyDataEntry: React.FC<SectorAdminProxyDataEntryProps>
     enabled: !!schoolId
   });
 
-  // Fetch category data
+  // Fetch category data with ONLY ACTIVE columns
   const { data: category, isLoading: categoryLoading } = useQuery({
     queryKey: ['category', categoryId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categories')
-        .select('*, columns(*)')
+        .select(`
+          *,
+          columns!inner(
+            id,
+            name,
+            type,
+            is_required,
+            placeholder,
+            help_text,
+            order_index,
+            default_value,
+            options,
+            validation,
+            status
+          )
+        `)
         .eq('id', categoryId)
+        .eq('columns.status', 'active') // FILTER: Only active columns
         .single();
       
       if (error) throw error;

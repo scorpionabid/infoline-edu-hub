@@ -17,6 +17,7 @@ export class ColumnService {
     orderBy?: string;
     limit?: number;
     includeDeleted?: boolean; // NEW: Override exclude deleted behavior
+    includeInactive?: boolean; // NEW: Include inactive columns
   } = {}): Promise<Column[]> {
     try {
       let query = supabase.from('columns').select('*');
@@ -27,9 +28,20 @@ export class ColumnService {
       
       if (options.status) {
         query = query.eq('status', options.status);
-      } else if (!options.includeDeleted) {
-        // By default, exclude deleted columns UNLESS includeDeleted=true
-        query = query.neq('status', 'deleted');
+      } else {
+        // By default, exclude deleted and inactive columns for data entry
+        const excludeStatuses = ['deleted'];
+        if (!options.includeInactive) {
+          excludeStatuses.push('inactive');
+        }
+        
+        if (!options.includeDeleted) {
+          // Use proper PostgreSQL 'not in' syntax
+          query = query.not('status', 'in', `(${excludeStatuses.map(s => `'${s}'`).join(',')})`);
+        } else if (!options.includeInactive) {
+          // Include deleted but not inactive
+          query = query.neq('status', 'inactive');
+        }
       }
       
       const orderBy = options.orderBy || 'order_index';
@@ -150,7 +162,18 @@ export class ColumnService {
   async deleteColumn(columnId: string, permanent: boolean = false): Promise<boolean> {
     try {
       if (permanent) {
-        // Permanent delete
+        // First delete related data entries to avoid foreign key constraint
+        const { error: dataDeleteError } = await supabase
+          .from('data_entries')
+          .delete()
+          .eq('column_id', columnId);
+
+        if (dataDeleteError) {
+          console.warn('Warning deleting data entries:', dataDeleteError);
+          // Continue with column deletion even if data entries deletion fails
+        }
+
+        // Then delete the column
         const { error } = await supabase
           .from('columns')
           .delete()
@@ -210,6 +233,18 @@ export class ColumnService {
   async bulkDelete(columnIds: string[], permanent: boolean = false): Promise<boolean> {
     try {
       if (permanent) {
+        // First delete related data entries to avoid foreign key constraints
+        const { error: dataDeleteError } = await supabase
+          .from('data_entries')
+          .delete()
+          .in('column_id', columnIds);
+
+        if (dataDeleteError) {
+          console.warn('Warning deleting data entries:', dataDeleteError);
+          // Continue with column deletion even if data entries deletion fails
+        }
+
+        // Then delete the columns
         const { error } = await supabase
           .from('columns')
           .delete()
@@ -251,7 +286,7 @@ export class ColumnService {
 
       await Promise.all(updatePromises);
       
-      toast.success('Columns reordered successfully');
+      toast.success('Sütun sırası yeniləndi');
       return true;
       
     } catch (error: any) {
@@ -259,6 +294,122 @@ export class ColumnService {
       const message = error.message || 'Error reordering columns';
       toast.error(message);
       throw error;
+    }
+  }
+
+  /**
+   * Duplicate a column
+   */
+  async duplicateColumn(columnId: string, newName?: string): Promise<Column> {
+    try {
+      // Get the original column
+      const { data: originalColumn, error: fetchError } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('id', columnId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Prepare duplicated data
+      const { id, created_at, updated_at, ...columnData } = originalColumn;
+      const duplicatedData = {
+        ...columnData,
+        name: newName || `${originalColumn.name} (Kopya)`,
+        status: 'active',
+        // Ensure proper serialization
+        options: originalColumn.options || [],
+        validation: originalColumn.validation || {},
+      };
+
+      return await this.createColumn(originalColumn.category_id, duplicatedData);
+      
+    } catch (error: any) {
+      console.error('ColumnService.duplicateColumn error:', error);
+      const message = error.message || 'Error duplicating column';
+      toast.error(message);
+      throw error;
+    }
+  }
+
+  /**
+   * Bulk toggle status
+   */
+  async bulkToggleStatus(columnIds: string[], status: 'active' | 'inactive'): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('columns')
+        .update({ status })
+        .in('id', columnIds);
+
+      if (error) throw error;
+
+      const statusText = status === 'active' ? 'aktivləşdirildi' : 'deaktivləşdirildi';
+      toast.success(`${columnIds.length} sütun ${statusText}`);
+      return true;
+      
+    } catch (error: any) {
+      console.error('ColumnService.bulkToggleStatus error:', error);
+      const message = error.message || 'Error in bulk status toggle';
+      toast.error(message);
+      throw error;
+    }
+  }
+
+  /**
+   * Move columns to different category
+   */
+  async moveColumnsToCategory(columnIds: string[], targetCategoryId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('columns')
+        .update({ category_id: targetCategoryId })
+        .in('id', columnIds);
+
+      if (error) throw error;
+
+      toast.success(`${columnIds.length} sütun yeni kateqoriyaya köçürüldü`);
+      return true;
+      
+    } catch (error: any) {
+      console.error('ColumnService.moveColumnsToCategory error:', error);
+      const message = error.message || 'Error moving columns to category';
+      toast.error(message);
+      throw error;
+    }
+  }
+
+  /**
+   * Validate column dependencies
+   */
+  async validateColumnDependencies(columnId: string): Promise<{ isValid: boolean; issues: string[] }> {
+    try {
+      // Check if column has dependent data entries
+      const { data: dataEntries, error: dataError } = await supabase
+        .from('data_entries')
+        .select('id')
+        .eq('column_id', columnId)
+        .limit(1);
+
+      if (dataError) throw dataError;
+
+      const issues: string[] = [];
+      
+      if (dataEntries && dataEntries.length > 0) {
+        issues.push('Bu sütunda məlumat girişləri mövcuddur');
+      }
+
+      return {
+        isValid: issues.length === 0,
+        issues
+      };
+      
+    } catch (error: any) {
+      console.error('ColumnService.validateColumnDependencies error:', error);
+      return {
+        isValid: false,
+        issues: ['Asılılıq yoxlanışında xəta baş verdi']
+      };
     }
   }
 }
