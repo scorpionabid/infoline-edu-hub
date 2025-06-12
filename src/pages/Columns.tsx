@@ -1,55 +1,60 @@
-
 // Development server restart helper
-// Last updated: Columns improvement implementation
-// Fixed: Corrected file format and escape sequences
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+// Last updated: Columns improvement implementation - REFACTORED TO NEW API
+// Fixed: Migration to unified hooks API
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Plus, Database, Search, Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import ColumnTabs from '@/components/columns/ColumnTabs';
-import ArchivedColumnList from '@/components/columns/ArchivedColumnList';
 import RestoreColumnDialog from '@/components/columns/RestoreColumnDialog';
 import PermanentDeleteDialog from '@/components/columns/PermanentDeleteDialog';
 import DeleteColumnDialog from '@/components/columns/DeleteColumnDialog';
-import ColumnFormDialog from '@/components/columns/ColumnFormDialog';
-import { useColumnsQuery } from '@/hooks/api/columns/useColumnsQuery';
-import ColumnList from '@/components/columns/ColumnList';
-import EmptyState from '@/components/common/EmptyState';
+import ColumnsContainer from '@/components/columns/ColumnsContainer';
+// NEW UNIFIED COMPONENT
+import ColumnDialog from '@/components/columns/unified/ColumnDialog';
 import { useCategories } from '@/hooks/categories/useCategories';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { useColumnMutations } from '@/hooks/columns/useColumnMutations';
-import { useQueryClient } from '@tanstack/react-query';
 import { Column } from '@/types/column';
 import PageHeader from '@/components/layout/PageHeader';
 import { Helmet } from 'react-helmet';
-import ColumnsContainer from '@/components/columns/ColumnsContainer';
-import CreateColumnDialog from '@/components/columns/CreateColumnDialog';
+
+// NEW UNIFIED API
+import { useColumnsQuery, useColumnMutations } from '@/hooks/columns';
 
 const Columns: React.FC = () => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [columnFormDialogOpen, setColumnFormDialogOpen] = useState(false);
+  
+  // State management
   const [selectedColumn, setSelectedColumn] = useState<Column | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [columnDialogOpen, setColumnDialogOpen] = useState(false);
+  const [columnDialogMode, setColumnDialogMode] = useState<'create' | 'edit'>('create');
   const [editColumn, setEditColumn] = useState<Column | null>(null);
   
-  // Fetch all columns (no categoryId filter for this page)
-  const { columns, isLoading: columnsLoading, isError, error: columnsError, refetch: refetchColumns } = useColumnsQuery();
+  // NEW UNIFIED HOOKS - Fetch ALL columns (including deleted ones for archive tab)
+  const { 
+    data: columns = [], 
+    isLoading: columnsLoading, 
+    error: columnsError, 
+    refetch: refetchColumns 
+  } = useColumnsQuery({ 
+    // Include deleted columns so ColumnsContainer can show them in Archive tab
+    includeDeleted: true
+  });
+  
+  const {
+    createColumn,
+    updateColumn, 
+    deleteColumn,
+    restoreColumn,
+    isCreating,
+    isUpdating,
+    isDeleting,
+    createError,
+    updateError,
+    deleteError
+  } = useColumnMutations();
   
   const { 
     categories, 
@@ -59,17 +64,8 @@ const Columns: React.FC = () => {
   } = useCategories();
   
   const { userRole } = usePermissions();
-  const { createColumn, updateColumn, deleteColumn, restoreColumn, permanentDeleteColumn, isRestoring, isPermanentDeleting } = useColumnMutations();
   
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
-  
-  // Filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  // SuperAdmin və region admini sütun əlavə və redaktə edə bilər
-  const canManageColumns = userRole === 'superadmin' || userRole === 'regionadmin';
-  
+  // Dialog states
   const [deleteDialog, setDeleteDialog] = useState({
     isOpen: false,
     column: '',
@@ -77,14 +73,12 @@ const Columns: React.FC = () => {
     categoryId: ''
   });
 
-  // Restore column dialog state
   const [restoreDialog, setRestoreDialog] = useState({
     isOpen: false,
     columnId: '',
     columnName: ''
   });
 
-  // Permanent delete column dialog state
   const [permanentDeleteDialog, setPermanentDeleteDialog] = useState({
     isOpen: false,
     column: {
@@ -94,31 +88,10 @@ const Columns: React.FC = () => {
     }
   });
 
-  console.log('Columns page rendered, canManageColumns:', canManageColumns);
-
-  // Separate active and archived columns
-  const activeColumns = React.useMemo(() => {
-    return columns?.filter(column => column.status === 'active') || [];
-  }, [columns]);
+  // Permissions
+  const canManageColumns = userRole === 'superadmin' || userRole === 'regionadmin';
   
-  const archivedColumns = React.useMemo(() => {
-    return columns?.filter(column => column.status === 'deleted') || [];
-  }, [columns]);
-  
-  // Get current columns based on active tab
-  const currentColumns = activeTab === 'active' ? activeColumns : archivedColumns;
-  
-  // Filter columns (only search)
-  const filteredColumns = React.useMemo(() => {
-    if (!currentColumns || !Array.isArray(currentColumns)) return [];
-    
-    return currentColumns.filter(column => {
-      const matchesSearch = searchQuery === '' || 
-        column.name.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      return matchesSearch;
-    });
-  }, [currentColumns, searchQuery]);
+  console.log('Columns page rendered with NEW API, canManageColumns:', canManageColumns);
 
   // Get the first available category for new columns
   useEffect(() => {
@@ -128,62 +101,52 @@ const Columns: React.FC = () => {
     }
   }, [categories, selectedCategoryId]);
 
-  const handleCreateColumn = async (newColumn: Omit<Column, "id">): Promise<boolean> => {
-    try {
-      setIsSubmitting(true);
-      console.log('Creating new column:', newColumn);
-      
-      // Ensure category_id is set
-      if (!newColumn.category_id && selectedCategoryId) {
-        newColumn.category_id = selectedCategoryId;
-      }
-      
-      const result = await createColumn(newColumn);
-      
-      if (result.success) {
-        toast.success(t('columnAdded') || 'Column added successfully');
-        refetchColumns();
-        return true;
-      } else {
-        toast.error(t('columnAddFailed') || 'Failed to add column');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error creating column:', error);
-      toast.error(t('columnAddFailed') || 'Failed to add column');
-      return false;
-    } finally {
-      setIsSubmitting(false);
-    }
+  // Handler functions with NEW API
+  const handleCreateColumn = () => {
+    setColumnDialogMode('create');
+    setEditColumn(null);
+    setColumnDialogOpen(true);
   };
 
   const handleEditColumn = (column: Column) => {
-    console.log('Editing column:', column);
+    console.log('Editing column with NEW API:', column);
+    setColumnDialogMode('edit');
     setEditColumn(column);
+    setColumnDialogOpen(true);
   };
 
-  const handleUpdateColumn = async (updatedColumn: Column): Promise<boolean> => {
+  const handleSaveColumn = async (formData: any): Promise<boolean> => {
     try {
-      setIsSubmitting(true);
-      console.log('Updating column:', updatedColumn);
-      
-      const result = await updateColumn(updatedColumn);
-      
-      if (result.success) {
-        toast.success(t('columnUpdated') || 'Column updated successfully');
-        setEditColumn(null);
-        refetchColumns();
-        return true;
+      if (columnDialogMode === 'create') {
+        console.log('Creating new column with NEW API:', formData);
+        
+        await createColumn({
+          categoryId: formData.category_id,
+          data: formData
+        });
+        
+        toast.success(t('columnAdded') || 'Column added successfully');
       } else {
-        toast.error(t('columnUpdateFailed') || 'Failed to update column');
-        return false;
+        console.log('Updating column with NEW API:', formData);
+        
+        await updateColumn({
+          columnId: editColumn!.id,
+          data: formData
+        });
+        
+        toast.success(t('columnUpdated') || 'Column updated successfully');
       }
+      
+      refetchColumns();
+      return true;
+      
     } catch (error) {
-      console.error('Error updating column:', error);
-      toast.error(t('columnUpdateFailed') || 'Failed to update column');
+      console.error('Error saving column:', error);
+      const message = columnDialogMode === 'create' 
+        ? (t('columnAddFailed') || 'Failed to add column')
+        : (t('columnUpdateFailed') || 'Failed to update column');
+      toast.error(message);
       return false;
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -195,27 +158,47 @@ const Columns: React.FC = () => {
       return;
     }
     
+    // Show delete confirmation dialog instead of deleting directly
+    setDeleteDialog({
+      isOpen: true,
+      column: columnId,
+      columnName: columnName,
+      categoryId: editColumn?.category_id || ''
+    });
+  };
+
+  const handleConfirmDelete = async () => {
     try {
-      setIsSubmitting(true);
-      console.log('Deleting column:', columnId);
+      console.log('Deleting column with NEW API:', deleteDialog.column);
       
-      const result = await deleteColumn(columnId);
+      await deleteColumn({ columnId: deleteDialog.column });
       
-      if (result.success) {
-        toast.success(t('columnDeleted') || 'Column deleted successfully');
-        refetchColumns();
-      } else {
-        toast.error(t('columnDeleteFailed') || 'Failed to delete column');
-      }
+      toast.success(t('columnDeleted') || 'Column deleted successfully');
+      setDeleteDialog({ isOpen: false, column: '', columnName: '', categoryId: '' });
+      refetchColumns();
+      
     } catch (error) {
       console.error('Error deleting column:', error);
       toast.error(t('columnDeleteFailed') || 'Failed to delete column');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  // Show error message if retries failed
+  const handleRestoreColumnFromList = async (columnId: string, columnName: string) => {
+    try {
+      console.log('Restoring column with NEW API:', columnId);
+      
+      await restoreColumn(columnId);
+      
+      toast.success(t('columnRestored') || 'Column restored successfully');
+      refetchColumns();
+      
+    } catch (error) {
+      console.error('Error restoring column:', error);
+      toast.error(t('columnRestoreFailed') || 'Failed to restore column');
+    }
+  };
+
+  // Error handling
   if (categoriesError || columnsError) {
     return (
       <div className="container mx-auto py-6 space-y-6">
@@ -235,7 +218,7 @@ const Columns: React.FC = () => {
     );
   }
 
-  // Show loading state
+  // Loading state
   if ((columnsLoading || categoriesLoading) && !columnsError && !categoriesError) {
     return (
       <div className="container mx-auto py-6 space-y-6">
@@ -247,6 +230,9 @@ const Columns: React.FC = () => {
     );
   }
 
+  // Show loading indicators for mutations
+  const isLoading = isCreating || isUpdating || isDeleting;
+
   return (
     <>
       <Helmet>
@@ -254,34 +240,66 @@ const Columns: React.FC = () => {
       </Helmet>
 
       <div className="container mx-auto py-6">
+        {/* Display any mutation errors */}
+        {(createError || updateError || deleteError) && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              {String(createError || updateError || deleteError)}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <ColumnsContainer
           columns={columns}
           categories={categories}
-          isLoading={columnsLoading || categoriesLoading}
+          isLoading={columnsLoading || categoriesLoading || isLoading}
           onRefresh={refetchColumns}
           onCreate={handleCreateColumn}
           onEdit={handleEditColumn}
           onDelete={handleDeleteColumn}
+          onRestore={handleRestoreColumnFromList} // NEW: Restore handler
         />
 
-        <CreateColumnDialog
-          open={isCreateDialogOpen}
-          onOpenChange={setIsCreateDialogOpen}
-          onSaveColumn={handleCreateColumn}
+        {/* UNIFIED COLUMN DIALOG */}
+        <ColumnDialog
+          mode={columnDialogMode}
+          open={columnDialogOpen}
+          onOpenChange={setColumnDialogOpen}
+          onSave={handleSaveColumn}
+          column={editColumn || undefined}
           categories={categories}
-          columns={columns}
-          isSubmitting={isSubmitting}
+          isLoading={isLoading}
         />
 
-        {editColumn && (
-          <ColumnFormDialog
-            open={!!editColumn}
-            onOpenChange={(open) => !open && setEditColumn(null)}
-            column={editColumn}
-            categoryId={editColumn.category_id}
-            onSave={handleUpdateColumn}
-          />
-        )}
+        {/* Restore Dialog */}
+        <RestoreColumnDialog
+          open={restoreDialog.isOpen}
+          onOpenChange={(open) => setRestoreDialog(prev => ({ ...prev, isOpen: open }))}
+          columnId={restoreDialog.columnId}
+          columnName={restoreDialog.columnName}
+          onConfirm={() => handleRestoreColumnFromList(restoreDialog.columnId, restoreDialog.columnName)}
+        />
+
+        {/* Delete Dialog */}
+        <DeleteColumnDialog
+          open={deleteDialog.isOpen}
+          onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, isOpen: open }))}
+          columnId={deleteDialog.column}
+          columnName={deleteDialog.columnName}
+          onConfirm={handleConfirmDelete}
+        />
+
+        {/* Permanent Delete Dialog */}
+        <PermanentDeleteDialog
+          open={permanentDeleteDialog.isOpen}
+          onOpenChange={(open) => setPermanentDeleteDialog(prev => ({ ...prev, isOpen: open }))}
+          column={permanentDeleteDialog.column}
+          onConfirm={(columnId) => {
+            // Implement permanent delete with NEW API if needed
+            console.log('Permanent delete:', columnId);
+          }}
+        />
       </div>
     </>
   );

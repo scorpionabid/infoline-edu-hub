@@ -45,7 +45,7 @@ export const adaptFrontendColumnToDb = (column: Partial<ExtendedColumn>): Partia
 };
 
 // Custom hook for column adapter utilities
-const useColumnAdapters = () => {
+export const useColumnAdapters = () => {
   const adaptToFrontend = useCallback((column: Column): ExtendedColumn => {
     return adaptDbColumnToFrontend(column);
   }, []);

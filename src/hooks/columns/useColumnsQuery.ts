@@ -1,34 +1,18 @@
+// =============================================================================
+// DEPRECATED - USE '@/hooks/columns' INSTEAD
+// =============================================================================
+// This file is kept for backward compatibility only.
+// Please update your imports to use the new unified API from '@/hooks/columns'
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Column } from '@/types/column';
+console.warn(`
+⚠️  DEPRECATED IMPORT DETECTED ⚠️
+The import '@/hooks/columns/useColumnsQuery' is deprecated.
+Please update to: import { useColumnsQuery } from '@/hooks/columns'
 
-interface UseColumnsQueryOptions {
-  categoryId?: string;
-  enabled?: boolean;
-}
+Migration guide:
+OLD: import { useColumnsQuery } from '@/hooks/columns/useColumnsQuery'
+NEW: import { useColumnsQuery } from '@/hooks/columns'
+`);
 
-export const useColumnsQuery = ({ categoryId, enabled = true }: UseColumnsQueryOptions) => {
-  return useQuery({
-    queryKey: ['columns', categoryId],
-    queryFn: async () => {
-      let query = supabase.from('columns').select('*');
-      
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
-      
-      const { data, error } = await query.order('order_index');
-      
-      if (error) {
-        console.error('Error fetching columns:', error);
-        throw error;
-      }
-      
-      return (data || []) as Column[];
-    },
-    enabled: enabled
-  });
-};
-
+export { useColumnsQuery, useActiveColumnsQuery } from './core/useColumnsQuery';
 export default useColumnsQuery;

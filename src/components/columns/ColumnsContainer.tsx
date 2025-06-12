@@ -14,9 +14,10 @@ interface ColumnsContainerProps {
   categories?: Category[];
   isLoading?: boolean;
   onRefresh?: () => void;
-  onCreate?: (column: Omit<Column, 'id'>) => Promise<boolean>;
+  onCreate?: () => void;
   onEdit?: (column: Column) => void;
   onDelete?: (id: string, name: string) => void;
+  onRestore?: (id: string, name: string) => void; // NEW: Restore deleted columns
 }
 
 const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
@@ -26,7 +27,8 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   onRefresh,
   onCreate,
   onEdit,
-  onDelete
+  onDelete,
+  onRestore // NEW: Restore handler
 }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = React.useState<'active' | 'archived'>('active');
@@ -74,7 +76,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
           <h1 className="text-3xl font-bold">{t('columns')}</h1>
           <p className="text-muted-foreground">{t('manageDataColumns')}</p>
         </div>
-        <Button onClick={() => onCreate && onCreate({} as any)}>
+        <Button onClick={() => onCreate && onCreate()}>
           <Plus className="h-4 w-4 mr-2" />
           {t('createColumn')}
         </Button>
@@ -104,6 +106,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
         categories={categories}
         onEditColumn={onEdit}
         onDeleteColumn={onDelete}
+        onRestoreColumn={onRestore} // NEW: Pass restore handler
         canManageColumns={true}
       />
     </div>
