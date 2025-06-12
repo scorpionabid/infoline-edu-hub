@@ -1,13 +1,18 @@
+// Main data entry components
+export { DataEntryContainer } from './DataEntryContainer';
+export { SectorAdminProxyDataEntry } from './SectorAdminProxyDataEntry';
+export { SectorDataEntryForm } from './SectorDataEntryForm';
+export { BulkDataEntryDialog } from './BulkDataEntryDialog';
 
-// Main unified form component (PRIMARY)
-export { default as UnifiedDataEntryForm } from './UnifiedDataEntryForm';
+// Legacy components
+export { SectorDataEntry } from './SectorDataEntry';
+export { SchoolDataEntryManager } from './SchoolDataEntryManager';
+
+// Form components
+export { CategoryForm } from './CategoryForm';
+export { ColumnEntryForm } from './ColumnEntryForm';
 
 // Core components
-export { default as FormFields } from './core/FormFields';
-export { default as DataEntryFormContent } from './core/DataEntryFormContent';
-
-// Field components
+export * from './core';
 export * from './fields';
-
-// Re-export for backward compatibility
-export { default as DataEntryForm } from './UnifiedDataEntryForm';
+export * from './status';
