@@ -25,15 +25,173 @@ import { supabase } from '@/integrations/supabase/client';
  * ✅ Auto-save funksionallığı
  */
 const SchoolAdminDataEntry: React.FC = () => {
-  const user = useAuthStore(state => state.user);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const user = useAuthStore(state => state.user);
+  const { toast } = useToast();
+
+  // Fetch categories for the school
+  const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useSchoolCategories();
   
-  // Məktəb kateqoriyalarını yükləyir (yalnız aktiv sütunlarla)
-  const { 
-    data: categories = [], 
-    isLoading, 
-    error 
-  } = useSchoolCategories();
+  // Get selected category
+  const selectedCategory = selectedCategoryId ? categories.find(cat => cat.id === selectedCategoryId) : null;
+  
+  // Get real category data with ONLY ACTIVE columns - this hook will only fetch when selectedCategoryId exists
+  const { data: category, isLoading: categoryLoading } = useQuery({
+    queryKey: ['category', selectedCategoryId],
+    queryFn: async () => {
+      if (!selectedCategoryId) return null;
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .select(`
+          *,
+          columns!inner(
+            id,
+            name,
+            type,
+            is_required,
+            placeholder,
+            help_text,
+            order_index,
+            default_value,
+            options,
+            validation,
+            status
+          )
+        `)
+        .eq('id', selectedCategoryId)
+        .eq('columns.status', 'active') // FILTER: Only active columns
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCategoryId
+  });
+  
+  // Data entry manager hooks - will only be active when needed
+  const {
+    formData,
+    isLoading: dataLoading,
+    isSubmitting,
+    isSaving,
+    isDataModified,
+    entryStatus,
+    error: dataError,
+    lastSaved,
+    handleFormDataChange,
+    handleFieldChange,
+    handleSubmit,
+    handleSave,
+    resetForm,
+    loadData
+  } = useDataEntryManager({
+    categoryId: selectedCategoryId || '',
+    schoolId: user?.school_id || '',
+    userId: user?.id || '',
+    category: category || undefined,
+    enableRealTime: !!selectedCategoryId,
+    autoSave: false
+  });
+  
+  // Get columns from category
+  const columns = category?.columns || [];
+  
+  // Auto-save functionality
+  const autoSave = useAutoSave({
+    categoryId: selectedCategoryId || '',
+    schoolId: user?.school_id || '',
+    formData,
+    isDataModified,
+    enabled: !!selectedCategoryId,
+    onSaveSuccess: (savedAt) => {
+      console.log('Auto-save successful at:', savedAt);
+    },
+    onSaveError: (error) => {
+      console.error('Auto-save failed:', error);
+    }
+  });
+
+  // Event handlers
+  const handleManualSave = async () => {
+    const result = await handleSave();
+    if (result.success) {
+      toast({
+        title: 'Uğurlu',
+        description: 'Məlumatlar saxlanıldı'
+      });
+    }
+  };
+  
+  const handleFormSubmit = async () => {
+    const result = await handleSubmit();
+    if (result.success) {
+      toast({
+        title: 'Uğurlu',
+        description: 'Məlumatlar təsdiq üçün göndərildi'
+      });
+    } else {
+      toast({
+        title: 'Xəta',
+        description: result.error || 'Göndərmə zamanı xəta baş verdi',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  // Calculate completion percentage
+  const completionPercentage = useMemo(() => {
+    const requiredColumns = columns.filter(col => col.is_required);
+    if (requiredColumns.length === 0) return 100;
+    
+    const completedRequired = requiredColumns.filter(col => {
+      const value = formData[col.id];
+      return value !== undefined && value !== null && value !== '';
+    });
+    
+    return Math.round((completedRequired.length / requiredColumns.length) * 100);
+  }, [columns, formData]);
+  
+  // Loading state
+  if (categoriesLoading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Məlumat Daxiletmə</h1>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="opacity-70">
+              <CardHeader className="animate-pulse bg-muted/30 h-[60px]" />
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="h-4 bg-muted/50 rounded animate-pulse" />
+                  <div className="h-4 bg-muted/50 rounded animate-pulse w-3/4" />
+                  <div className="h-4 bg-muted/50 rounded animate-pulse w-1/2" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (categoriesError) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Məlumat Daxiletmə</h1>
+        <div className="flex flex-col items-center justify-center p-8 border border-red-200 rounded-lg bg-red-50">
+          <div className="text-center">
+            <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Xəta baş verdi</h3>
+            <p className="text-muted-foreground">
+              Kateqoriyalar yüklənərkən problem yaşandı. Yenidən cəhd edin.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!user?.school_id) {
     return (
@@ -51,7 +209,7 @@ const SchoolAdminDataEntry: React.FC = () => {
     );
   }
 
-  if (isLoading) {
+  if (categoryLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -60,7 +218,7 @@ const SchoolAdminDataEntry: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (dataError) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center space-y-4">
@@ -78,122 +236,6 @@ const SchoolAdminDataEntry: React.FC = () => {
 
   // Seçilmiş kateqoriya üçün data entry manager göstər
   if (selectedCategoryId) {
-    const { toast } = useToast();
-    const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
-    
-    // Get real category data with ONLY ACTIVE columns
-    const { data: category, isLoading: categoryLoading } = useQuery({
-      queryKey: ['category', selectedCategoryId],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from('categories')
-          .select(`
-            *,
-            columns!inner(
-              id,
-              name,
-              type,
-              is_required,
-              placeholder,
-              help_text,
-              order_index,
-              default_value,
-              options,
-              validation,
-              status
-            )
-          `)
-          .eq('id', selectedCategoryId)
-          .eq('columns.status', 'active') // FILTER: Only active columns
-          .single();
-        
-        if (error) throw error;
-        return data;
-      },
-      enabled: !!selectedCategoryId
-    });
-    
-    const {
-      formData,
-      isLoading,
-      isSubmitting,
-      isSaving,
-      isDataModified,
-      entryStatus,
-      error,
-      lastSaved,
-      handleFormDataChange,
-      handleFieldChange,
-      handleSubmit,
-      handleSave,
-      resetForm,
-      loadData
-    } = useDataEntryManager({
-      categoryId: selectedCategoryId,
-      schoolId: user.school_id,
-      userId: user.id,
-      category,
-      enableRealTime: true,
-      autoSave: false
-    });
-    
-    // Get columns from category
-    const columns = category?.columns || [];
-    
-    // Auto-save functionality
-    const autoSave = useAutoSave({
-      categoryId: selectedCategoryId,
-      schoolId: user.school_id,
-      formData,
-      isDataModified,
-      enabled: true,
-      onSaveSuccess: (savedAt) => {
-        console.log('Auto-save successful at:', savedAt);
-      },
-      onSaveError: (error) => {
-        console.error('Auto-save failed:', error);
-      }
-    });
-
-    const handleManualSave = async () => {
-      const result = await handleSave();
-      if (result.success) {
-        toast({
-          title: 'Uğurlu',
-          description: 'Məlumatlar saxlanıldı'
-        });
-      }
-    };
-    
-    const handleFormSubmit = async () => {
-      const result = await handleSubmit();
-      if (result.success) {
-        toast({
-          title: 'Uğurlu',
-          description: 'Məlumatlar təsdiq üçün göndərildi'
-        });
-      } else {
-        toast({
-          title: 'Xəta',
-          description: result.error || 'Göndərmə zamanı xəta baş verdi',
-          variant: 'destructive'
-        });
-      }
-    };
-    
-    // Calculate completion percentage
-    const completionPercentage = useMemo(() => {
-      const requiredColumns = columns.filter(col => col.is_required);
-      if (requiredColumns.length === 0) return 100;
-      
-      const completedRequired = requiredColumns.filter(col => {
-        const value = formData[col.id];
-        return value !== undefined && value !== null && value !== '';
-      });
-      
-      return Math.round((completedRequired.length / requiredColumns.length) * 100);
-    }, [columns, formData]);
-    
     return (
       <div className="space-y-6">
         {/* Header with back button */}
@@ -213,14 +255,14 @@ const SchoolAdminDataEntry: React.FC = () => {
         </div>
 
         {/* Data Entry Form */}
-        {isLoading || categoryLoading ? (
+        {dataLoading || categoryLoading ? (
           <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin" />
             <span className="ml-2">Yüklənir...</span>
           </div>
-        ) : error ? (
+        ) : dataError ? (
           <div className="flex items-center justify-center p-8">
-            <p className="text-red-600">Xəta: {error}</p>
+            <p className="text-red-600">Xəta: {dataError ? (typeof dataError === 'object' ? (dataError as any).message || 'Bilinməyən xəta' : String(dataError)) : 'Bilinməyən xəta'}</p>
           </div>
         ) : !category ? (
           <div className="flex items-center justify-center p-8">
