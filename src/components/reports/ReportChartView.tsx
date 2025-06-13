@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Report, REPORT_TYPE_VALUES } from '@/types/report';
+import { Report, REPORT_TYPE_VALUES } from '@/types/core/report';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
          LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';

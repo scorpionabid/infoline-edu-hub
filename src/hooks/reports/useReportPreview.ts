@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Report } from '@/types/report';
+import { Report } from '@/types/core/report';
 import { getSafeUUID } from '@/utils/uuidValidator';
 
 export const useReportPreview = () => {

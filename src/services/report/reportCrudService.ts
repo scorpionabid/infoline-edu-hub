@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Report } from '@/types/report';
+import { Report } from '@/types/core/report';
 import { getReportTableName, mapReportTableToReport, handleReportError } from './reportBaseService';
 import { TableNames } from '@/types/db';
 
@@ -15,9 +15,9 @@ export const createReport = async (report: Partial<Report>): Promise<Report> => 
         status: report.status || 'draft',
         content: report.content || {},
         filters: report.filters || {},
-        created_by: report.createdBy,
-        is_template: report.isTemplate || false,
-        shared_with: report.sharedWith || [],
+        created_by: report.created_by,
+        is_template: report.is_template || false,
+        shared_with: report.shared_with || [],
         insights: report.insights || [],
         recommendations: report.recommendations || []
       })
@@ -41,8 +41,8 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
     if (report.status !== undefined) updatePayload.status = report.status;
     if (report.content !== undefined) updatePayload.content = report.content;
     if (report.filters !== undefined) updatePayload.filters = report.filters;
-    if (report.isTemplate !== undefined) updatePayload.is_template = report.isTemplate;
-    if (report.sharedWith !== undefined) updatePayload.shared_with = report.sharedWith;
+    if (report.is_template !== undefined) updatePayload.is_template = report.is_template;
+    if (report.shared_with !== undefined) updatePayload.shared_with = report.shared_with;
     if (report.insights !== undefined) updatePayload.insights = report.insights;
     if (report.recommendations !== undefined) updatePayload.recommendations = report.recommendations;
     

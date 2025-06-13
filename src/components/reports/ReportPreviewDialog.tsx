@@ -1,7 +1,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
-import { Report, ReportPreviewDialogProps, REPORT_TYPE_VALUES, ReportStatus } from '@/types/report';
+import { Report, ReportPreviewDialogProps, REPORT_TYPE_VALUES, ReportStatus } from '@/types/core/report';
 import { useLanguage } from '@/context/LanguageContext';
 import { X } from 'lucide-react';
 import ReportChartView from './ReportChartView';

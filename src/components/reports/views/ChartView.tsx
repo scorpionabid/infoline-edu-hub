@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { BarChart, LineChart, PieChart, Bar, Line, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import { ReportTypeValues } from '@/types/report';
+import { ReportTypeValues } from '@/types/core/report';
 
 interface ChartViewProps {
   data: any[];

@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, BookOpen } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { ReportEmptyStateProps } from '@/types/report';
+import { ReportEmptyStateProps } from '@/types/core/report';
 
 const ReportEmptyState: React.FC<ReportEmptyStateProps> = ({ onCreateReport }) => {
   const { t } = useLanguage();

@@ -16,6 +16,7 @@ export enum TableNames {
   REPORTS = 'reports',
   REPORT_TEMPLATES = 'report_templates',
   SECTOR_DATA_ENTRIES = 'sector_data_entries',
+  SCHOOL_DATA_SUBMISSIONS = 'school_data_submissions',
   AUDIT_LOGS = 'audit_logs'
 }
 

@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Report } from '@/types/report';
+import { Report } from '@/types/core/report';
 import { 
   getReportTableName, 
   getReportTemplateTableName, 

@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Report, ReportTypeValues } from '@/types/report';
+import { Report, ReportTypeValues } from '@/types/core/report';
 import { 
   getReportTableName, 
   getReportTemplateTableName, 
@@ -161,8 +161,8 @@ export const updateReport = async (id: string, updates: Partial<Report>): Promis
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.content !== undefined) dbUpdates.content = updates.content;
     if (updates.filters !== undefined) dbUpdates.filters = updates.filters;
-    if (updates.isTemplate !== undefined) dbUpdates.is_template = updates.isTemplate;
-    if (updates.sharedWith !== undefined) dbUpdates.shared_with = updates.sharedWith;
+    if (updates.is_template !== undefined) dbUpdates.is_template = updates.is_template;
+    if (updates.shared_with !== undefined) dbUpdates.shared_with = updates.shared_with;
     if (updates.insights !== undefined) dbUpdates.insights = updates.insights;
     if (updates.recommendations !== undefined) dbUpdates.recommendations = updates.recommendations;
     

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, LineChart, PieChart, Table, LayoutGrid, MoreVertical, Calendar, Edit, Share2, Trash2 } from 'lucide-react';
-import { Report, ReportStatus, REPORT_TYPE_VALUES } from '@/types/report';
+import { Report, ReportStatus, REPORT_TYPE_VALUES } from '@/types/core/report';
 import { format } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
 import { 

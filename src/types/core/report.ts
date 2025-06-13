@@ -1,17 +1,28 @@
 
-// Core report type definitions
-export type ReportTypeValues = 'bar' | 'pie' | 'line' | 'table' | 'metrics' | 'custom';
+/**
+ * Mərkəzi Report modulu - bütün reportlarla bağlı tip tərifləri
+ */
 
-export const REPORT_TYPE_VALUES = {
-  BAR: 'bar' as ReportTypeValues,
-  PIE: 'pie' as ReportTypeValues,
-  LINE: 'line' as ReportTypeValues,
-  TABLE: 'table' as ReportTypeValues,
-  METRICS: 'metrics' as ReportTypeValues,
-  CUSTOM: 'custom' as ReportTypeValues
-};
+export enum ReportType {
+  BAR = 'bar',
+  PIE = 'pie',
+  LINE = 'line',
+  TABLE = 'table',
+  METRICS = 'metrics',
+  CUSTOM = 'custom'
+}
 
-// Adding ReportStatus enum 
+export type ReportTypeValues = `${ReportType}`;
+
+export const REPORT_TYPE_VALUES: Record<Uppercase<ReportTypeValues>, ReportTypeValues> = {
+  BAR: 'bar',
+  PIE: 'pie',
+  LINE: 'line',
+  TABLE: 'table',
+  METRICS: 'metrics',
+  CUSTOM: 'custom'
+} as const;
+
 export enum ReportStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
@@ -23,16 +34,63 @@ export interface Report {
   title: string;
   description?: string;
   type: ReportTypeValues;
-  status?: string;
+  status: ReportStatus | string;
   content?: any;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
   created_by?: string;
   shared_with?: string[];
   insights?: string[];
   recommendations?: string[];
   is_template?: boolean;
-  filters?: any;
+  filters?: Record<string, any>;
+  feedback?: string[];
+  school_id?: string;
+  data?: Record<string, any>;
+  metadata?: Record<string, any>;
+  version?: number;
+}
+
+export interface SchoolColumnData {
+  id: string;
+  name: string;
+  code?: string;
+  region_id?: string;
+  sector_id?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  principal_name?: string;
+  student_count?: number;
+  teacher_count?: number;
+  established_year?: number;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: any; // For dynamic column data
+}
+
+export interface CategoryColumn {
+  id: string;
+  name: string;
+  description?: string;
+  data_type: string;
+  is_required?: boolean;
+  default_value?: any;
+  validation_rules?: Record<string, any>;
+  display_order?: number;
+  category_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  options?: Array<{ label: string; value: any }>;
+  [key: string]: any; // For dynamic column data
+}
+
+export interface StatusFilterOptions {
+  label: string;
+  value: string;
+  count: number;
+  color?: string;
 }
 
 export interface ReportChartProps {
@@ -41,10 +99,63 @@ export interface ReportChartProps {
   height?: number;
   width?: number;
   className?: string;
+  type?: ReportTypeValues;
+  config?: any;
+  title?: string;
+  description?: string;
 }
 
 export interface ReportFilter {
+  // Əsas axtarış
   search?: string;
-  type?: ReportTypeValues | string;
-  status?: string;
+  
+  // Filter parametrləri
+  status?: string[] | string;
+  type?: ReportTypeValues[] | ReportTypeValues | string[] | string;
+  created_by?: string[] | string;
+  shared_with?: string[] | string;
+  is_template?: boolean;
+  
+  // Tarix filterləri
+  date_from?: string;
+  date_to?: string;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  
+  // Çeşidləmə
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface ReportHeaderProps {
+  report?: Report;
+  title?: string;
+  description?: string;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onCreateReport?: () => void;
+  onCategorySelect?: (categoryId: string) => void;
+}
+
+export interface ReportPreviewDialogProps {
+  open?: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onOpenChange?: (open: boolean) => void;
+  report: Report;
+}
+
+export interface ReportEmptyStateProps {
+  onCreateReport: () => void;
+}
+
+export interface CreateReportDialogProps {
+  open?: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onOpenChange?: (open: boolean) => void;
+  onSubmit?: (data: any) => void;
+  onCreate?: (data: any) => void;
 }

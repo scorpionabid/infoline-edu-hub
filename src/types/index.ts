@@ -22,7 +22,8 @@ export * from './database.d';
 // Form and UI Types
 export * from './form';
 export * from './notification';
-export * from './report';
+// Report ilə bağlı tiplər artıq core/report-dan export olunur
+export * from './core/report';
 
 // Utility Types
 export * from './permissions';

@@ -1,14 +1,22 @@
 
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { CategoryColumn, SchoolColumnData, ExportOptions } from '@/types/report';
+import { ExportOptions } from '@/types/excel';
+import { CategoryWithColumns } from '@/types/category';
+import { School } from '@/types/school';
+import { CategoryColumn, SchoolColumnData } from '@/types/core/report';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 export const exportToExcel = (
   data: SchoolColumnData[], 
   columns: CategoryColumn[], 
-  options: ExportOptions = {}
+  options: ExportOptions = {
+    format: 'xlsx',
+    includeHeaders: true,
+    filename: 'export',
+    includeMetadata: false
+  }
 ): { success: boolean; message?: string } => {
   try {
     // Əgər məlumat yoxdursa, xəta göndəririk
@@ -86,8 +94,8 @@ export const exportToExcel = (
     const fileData = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     
     // Faylı endiririk
-    const fileName = options.fileName || `Report_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
-    saveAs(fileData, fileName);
+    const filename = options.filename || `export-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    saveAs(fileData, filename);
 
     return { success: true };
   } catch (error) {

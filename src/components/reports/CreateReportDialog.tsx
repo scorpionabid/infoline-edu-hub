@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
-import { CreateReportDialogProps, REPORT_TYPE_VALUES, ReportTypeValues } from '@/types/report';
+import { CreateReportDialogProps, REPORT_TYPE_VALUES, ReportTypeValues } from '@/types/core/report';
 
 const CreateReportDialog: React.FC<CreateReportDialogProps> = ({ 
   open, 

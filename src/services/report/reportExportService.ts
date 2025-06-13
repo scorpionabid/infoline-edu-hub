@@ -1,5 +1,5 @@
 
-import { Report } from '@/types/report';
+import { Report } from '@/types/core/report';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { handleReportError } from './reportBaseService';

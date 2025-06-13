@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { TableNames } from '@/types/db';
-import { Report } from '@/types/report';
+import { Report } from '@/types/core/report';
 
 export const getReportTableName = (): string => {
   return TableNames.REPORTS;
@@ -20,11 +20,11 @@ export const mapReportTableToReport = (data: any): Report => {
     status: data.status,
     content: data.content || {},
     filters: data.filters || {},
-    createdBy: data.created_by,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-    isTemplate: data.is_template || false,
-    sharedWith: data.shared_with || [],
+    created_by: data.created_by,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    is_template: data.is_template || false,
+    shared_with: data.shared_with || [],
     insights: data.insights || [],
     recommendations: data.recommendations || []
   };
@@ -39,11 +39,11 @@ export const mapTemplateTableToReport = (data: any): Report => {
     status: data.status,
     content: data.config || {},
     filters: {},
-    createdBy: data.created_by,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-    isTemplate: true,
-    sharedWith: [],
+    created_by: data.created_by,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    is_template: true,
+    shared_with: [],
     insights: [],
     recommendations: []
   };

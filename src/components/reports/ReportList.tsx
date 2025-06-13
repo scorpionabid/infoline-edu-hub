@@ -10,7 +10,7 @@ import ReportLoading from './reportList/ReportLoading';
 import ExportButtons from './ExportButtons';
 import { useAdvancedReports } from '@/hooks/reports/useAdvancedReports';
 import CreateReportDialog from './CreateReportDialog';
-import { Report } from '@/types/report';
+import { Report } from '@/types/core/report';
 import { AdvancedReportData } from '@/types/advanced-report';
 
 export const ReportList: React.FC = () => {
