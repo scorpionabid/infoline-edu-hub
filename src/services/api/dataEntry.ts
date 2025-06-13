@@ -54,23 +54,7 @@ export async function fetchDataEntries({ categoryId, schoolId }: FetchDataEntrie
   }
 }
 
-/**
- * Safe UUID processing - returns valid UUID or null
- * Using centralized UUID validator utility with database safety
- */
-function processSafeUUID(userId: string | null | undefined, context: string = 'api_operation'): string | null {
-  // Use the database-safe utility for UUID validation
-  const safeUUID = getDBSafeUUID(userId, context);
-  
-  // Log the result for debugging
-  if (safeUUID) {
-    console.log(`[API dataEntry] Valid UUID processed for ${context}:`, safeUUID);
-  } else {
-    console.warn(`[API dataEntry] Invalid UUID detected for ${context}, set to null:`, userId);
-  }
-  
-  return safeUUID;
-}
+// UUID validation logic has been centralized to utils/uuidValidator.ts
 
 /**
  * Məlumat daxil etmələrini saxlamaq üçün mərkəzi servis funksiyası
@@ -93,7 +77,7 @@ export async function saveDataEntries(
     console.log('About to save data entries:', { categoryId, schoolId, entriesCount: entries.length, userId });
     
     // Process userId safely using centralized UUID validator
-    const safeUserId = processSafeUUID(userId, 'save_data_entries');
+    const safeUserId = getDBSafeUUID(userId, 'save_data_entries');
     console.log('[API dataEntry] Processed safe userId:', safeUserId);
     
     // Əvvəlcə mövcud entries-ləri əldə edirik
@@ -166,11 +150,8 @@ export async function saveDataEntries(
           hint: insertError.hint
         });
         
-        // Special handling for UUID errors
-        if (insertError.code === '22P02' && insertError.message?.includes('uuid')) {
-          console.error('UUID format error detected. Check created_by field values.');
-          console.error('Sample created_by values:', entriesToInsert.map(e => e.created_by));
-        }
+        // UUID errors should be prevented by using the centralized getDBSafeUUID function
+        // See utils/uuidValidator.ts for the implementation
         
         throw insertError;
       }
