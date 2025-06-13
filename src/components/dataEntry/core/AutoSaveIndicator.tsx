@@ -1,17 +1,9 @@
+
 import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Save, 
-  Clock, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Wifi, 
-  WifiOff,
-  RotateCcw
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Save, AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 
 interface AutoSaveIndicatorProps {
   isSaving: boolean;
@@ -21,17 +13,10 @@ interface AutoSaveIndicatorProps {
   saveAttempts: number;
   hasUnsavedChanges: boolean;
   onManualSave: () => void;
-  onRetry?: () => void;
-  onResetError?: () => void;
-  className?: string;
+  onRetry: () => void;
+  onResetError: () => void;
 }
 
-/**
- * Təkmilləşdirilmiş Auto-Save Indicator Komponenti
- * 
- * Bu komponent auto-save statusunu göstərir və istifadəçiyə
- * məlumatların saxlanma vəziyyəti haqqında real-time məlumat verir
- */
 const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
   isSaving,
   autoSaveEnabled,
@@ -41,171 +26,102 @@ const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
   hasUnsavedChanges,
   onManualSave,
   onRetry,
-  onResetError,
-  className
+  onResetError
 }) => {
-  
-  // Format last save time
-  const formatLastSaveTime = (time: Date | null) => {
-    if (!time) return 'Heç vaxt';
-    
-    const now = new Date();
-    const diffMs = now.getTime() - time.getTime();
-    const diffMinutes = Math.floor(diffMs / 60000);
-    
-    if (diffMinutes < 1) return 'İndi';
-    if (diffMinutes < 60) return `${diffMinutes} dəqiqə əvvəl`;
-    
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours} saat əvvəl`;
-    
-    return time.toLocaleDateString();
-  };
-  
-  // Get status badge
-  const getStatusBadge = () => {
-    if (saveError) {
-      return (
-        <Badge variant="destructive" className="flex items-center gap-1">
-          <AlertTriangle className="h-3 w-3" />
-          Xəta {saveAttempts > 0 && `(${saveAttempts} cəhd)`}
-        </Badge>
-      );
-    }
-    
+  const getStatusIcon = () => {
     if (isSaving) {
-      return (
-        <Badge variant="secondary" className="flex items-center gap-1">
-          <Clock className="h-3 w-3 animate-spin" />
-          Saxlanılır...
-        </Badge>
-      );
+      return <RefreshCw className="h-4 w-4 animate-spin" />;
     }
-    
-    if (hasUnsavedChanges) {
-      return (
-        <Badge variant="outline" className="flex items-center gap-1">
-          <WifiOff className="h-3 w-3 text-orange-600" />
-          Saxlanılmamış dəyişikliklər
-        </Badge>
-      );
-    }
-    
-    if (lastSaveTime) {
-      return (
-        <Badge variant="outline" className="flex items-center gap-1">
-          <CheckCircle2 className="h-3 w-3 text-green-600" />
-          Saxlanıldı {formatLastSaveTime(lastSaveTime)}
-        </Badge>
-      );
-    }
-    
-    return (
-      <Badge variant="outline" className="flex items-center gap-1">
-        <WifiOff className="h-3 w-3 text-gray-400" />
-        Saxlanılmayıb
-      </Badge>
-    );
-  };
-  
-  // Get connection status
-  const getConnectionStatus = () => {
     if (saveError) {
-      return (
-        <div className="flex items-center gap-1 text-xs text-red-600">
-          <WifiOff className="h-3 w-3" />
-          Bağlantı problemi
-        </div>
-      );
+      return <AlertCircle className="h-4 w-4 text-red-500" />;
     }
-    
-    if (autoSaveEnabled) {
-      return (
-        <div className="flex items-center gap-1 text-xs text-green-600">
-          <Wifi className="h-3 w-3" />
-          Avtomatik saxlama aktiv
-        </div>
-      );
+    if (hasUnsavedChanges) {
+      return <Clock className="h-4 w-4 text-yellow-500" />;
     }
-    
-    return (
-      <div className="flex items-center gap-1 text-xs text-gray-500">
-        <WifiOff className="h-3 w-3" />
-        Avtomatik saxlama deaktiv
-      </div>
-    );
+    return <CheckCircle className="h-4 w-4 text-green-500" />;
   };
-  
+
+  const getStatusText = () => {
+    if (isSaving) return 'Saxlanılır...';
+    if (saveError) return 'Saxlama xətası';
+    if (hasUnsavedChanges) return 'Saxlanmamış dəyişikliklər';
+    return 'Yadda saxlanıldı';
+  };
+
+  const getStatusVariant = () => {
+    if (saveError) return 'destructive';
+    if (hasUnsavedChanges) return 'secondary';
+    return 'default';
+  };
+
   return (
-    <div className={cn("space-y-3", className)}>
-      {/* Main status bar */}
-      <div className="flex items-center justify-between gap-3 p-3 bg-muted/30 rounded-lg border">
-        <div className="flex items-center gap-3">
-          {getStatusBadge()}
-          {getConnectionStatus()}
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Retry button for errors */}
-          {saveError && onRetry && (
+    <Card className="border-l-4 border-l-blue-500">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {getStatusIcon()}
+            <div>
+              <Badge variant={getStatusVariant()}>
+                {getStatusText()}
+              </Badge>
+              {lastSaveTime && !isSaving && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Son saxlanma: {lastSaveTime.toLocaleTimeString()}
+                </p>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {saveError && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onRetry}
+                  className="text-xs"
+                >
+                  Yenidən cəhd et
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onResetError}
+                  className="text-xs"
+                >
+                  Xətanı sil
+                </Button>
+              </>
+            )}
+            
             <Button
-              type="button"
-              variant="outline"
               size="sm"
-              onClick={onRetry}
+              variant="outline"
+              onClick={onManualSave}
+              disabled={isSaving || !hasUnsavedChanges}
               className="flex items-center gap-1"
             >
-              <RotateCcw className="h-3 w-3" />
-              Yenidən cəhd et
+              <Save className="h-3 w-3" />
+              İndi saxla
             </Button>
-          )}
-          
-          {/* Manual save button */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onManualSave}
-            disabled={isSaving}
-            className="flex items-center gap-1"
-          >
-            <Save className="h-3 w-3" />
-            {isSaving ? 'Saxlanılır...' : 'İndi saxla'}
-          </Button>
+          </div>
         </div>
-      </div>
-      
-      {/* Error alert */}
-      {saveError && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>
-              Saxlama xətası: {saveError}
-              {saveAttempts > 0 && ` (${saveAttempts} cəhd edildi)`}
-            </span>
-            {onResetError && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={onResetError}
-                className="text-xs"
-              >
-                Bağla
-              </Button>
+        
+        {saveError && (
+          <div className="mt-2 p-2 bg-red-50 rounded text-sm text-red-700">
+            <p><strong>Xəta:</strong> {saveError}</p>
+            {saveAttempts > 1 && (
+              <p className="text-xs mt-1">Cəhd sayı: {saveAttempts}</p>
             )}
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {/* Auto-save info */}
-      {autoSaveEnabled && !saveError && (
-        <div className="text-xs text-muted-foreground">
-          Avtomatik saxlama 30 saniyə interval ilə işləyir
+          </div>
+        )}
+        
+        <div className="mt-2 text-xs text-muted-foreground">
+          Auto-save: {autoSaveEnabled ? 'Aktiv' : 'Deaktiv'}
+          {autoSaveEnabled && ' (30 saniyə interval)'}
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

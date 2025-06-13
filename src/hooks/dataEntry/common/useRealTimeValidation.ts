@@ -14,8 +14,6 @@ export interface ValidationResult {
 
 export interface ConnectionHealth {
   status: 'connected' | 'disconnected' | 'connecting' | 'error';
-  health: 'good' | 'poor' | 'offline';
-  reconnectCount: number;
   lastError?: string;
 }
 

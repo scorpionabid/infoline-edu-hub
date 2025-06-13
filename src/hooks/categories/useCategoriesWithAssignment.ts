@@ -13,6 +13,8 @@ interface CategoryWithAssignment extends Category {
 }
 
 const getCategories = async (userRole?: string, regionId?: string, sectorId?: string, schoolId?: string): Promise<CategoryWithAssignment[]> => {
+  console.log('getCategories called with:', { userRole, regionId, sectorId, schoolId });
+  
   let query = supabase
     .from('categories')
     .select(`
@@ -34,20 +36,14 @@ const getCategories = async (userRole?: string, regionId?: string, sectorId?: st
     .eq('status', 'active')
     .eq('columns.status', 'active'); // FILTER: Only active columns
 
-  if (userRole === 'regionadmin' && regionId) {
-    query = query.eq('region_id', regionId);
-  } else if (userRole === 'sectoradmin' && sectorId) {
-    query = query.eq('sector_id', sectorId);
-  } else if (userRole === 'schooladmin' && schoolId) {
-    query = query.eq('school_id', schoolId);
-  }
-
   const { data, error } = await query.order('order_index');
 
   if (error) {
     console.error('Error fetching categories:', error);
     throw error;
   }
+
+  console.log('Fetched categories:', data?.length || 0);
 
   const categories = (data || []) as Category[];
 
@@ -81,6 +77,8 @@ export const useSchoolCategories = () => {
   return useQuery({
     queryKey: ['school-categories', user?.school_id],
     queryFn: async () => {
+      console.log('useSchoolCategories - Fetching for school:', user?.school_id);
+      
       const { data, error } = await supabase
         .from('categories')
         .select(`
@@ -103,10 +101,15 @@ export const useSchoolCategories = () => {
         .eq('columns.status', 'active') // FILTER: Only active columns
         .order('order_index');
       
-      if (error) throw error;
+      if (error) {
+        console.error('useSchoolCategories error:', error);
+        throw error;
+      }
+      
+      console.log('useSchoolCategories - Found categories:', data?.length || 0);
       return data || [];
     },
-    enabled: !!user?.school_id,
+    enabled: !!user,
     gcTime: 5 * 60 * 1000,
     staleTime: 2 * 60 * 1000
   });

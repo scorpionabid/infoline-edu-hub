@@ -37,3 +37,22 @@ export interface UserWithRole extends User {
     school_id?: string;
   }[];
 }
+
+export interface FullUserData extends User {
+  permissions?: string[];
+}
+
+export interface UserFilter {
+  role?: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  status?: string;
+}
+
+export interface NotificationSettings {
+  email_notifications: boolean;
+  sms_notifications: boolean;
+  push_notifications: boolean;
+  notification_frequency: 'instant' | 'daily' | 'weekly';
+}
