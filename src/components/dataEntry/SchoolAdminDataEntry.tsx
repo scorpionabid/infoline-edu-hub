@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,7 +41,7 @@ export const SchoolAdminDataEntry: React.FC<SchoolAdminDataEntryProps> = ({
   const [showDataEntry, setShowDataEntry] = useState(false);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
 
-  // Get school categories (assignment="all") - yalnız aktiv sütunlar
+  // Get school categories - yalnız aktiv sütunlar
   const { data: categories, isLoading: categoriesLoading } = useSchoolCategories();
 
   // Get school info
@@ -59,7 +60,7 @@ export const SchoolAdminDataEntry: React.FC<SchoolAdminDataEntryProps> = ({
     enabled: !!schoolId
   });
 
-  // Get data entry statistics
+  // Get data entry statistics - Enhanced with active columns count
   const { data: entryStats, isLoading: statsLoading } = useQuery({
     queryKey: ['school-entry-stats', schoolId],
     queryFn: async () => {
@@ -124,9 +125,47 @@ export const SchoolAdminDataEntry: React.FC<SchoolAdminDataEntryProps> = ({
   if (showDataEntry && selectedCategoryId) {
     return (
       <div className="h-full">
+        <div className="mb-4 flex items-center justify-between">
+          <Button
+            onClick={handleBackToCategories}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Kateqoriyalara qayıt
+          </Button>
+          
+          {categories && categories.length > 1 && (
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handlePreviousCategory}
+                variant="outline"
+                size="sm"
+                disabled={currentCategoryIndex === 0}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Əvvəlki
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {currentCategoryIndex + 1} / {categories.length}
+              </span>
+              <Button
+                onClick={handleNextCategory}
+                variant="outline"
+                size="sm"
+                disabled={currentCategoryIndex === categories.length - 1}
+              >
+                Növbəti
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+        
         <SchoolDataEntryManager
           schoolId={schoolId}
           categoryId={selectedCategoryId}
+          userId={user?.id}
           onClose={handleBackToCategories}
           onComplete={() => {
             console.log('SchoolAdmin data entry completed');
@@ -189,10 +228,10 @@ export const SchoolAdminDataEntry: React.FC<SchoolAdminDataEntryProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
-            Məlumat Daxil Etmə
+            Məlumat Daxil Etmə - Yalnız Aktiv Sütunlar
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Məktəbiniz üçün doldurulmalı olan kateqoriyalar (yalnız aktiv sütunlar)
+            Məktəbiniz üçün doldurulmalı olan kateqoriyalar (yalnız aktiv sütunlar göstərilir)
           </p>
         </CardHeader>
       </Card>
@@ -203,8 +242,9 @@ export const SchoolAdminDataEntry: React.FC<SchoolAdminDataEntryProps> = ({
           categories.map((category) => {
             const categoryStats = entryStats?.[category.id];
             const hasEntries = categoryStats && categoryStats.total > 0;
-            const completionRate = hasEntries ? 
-              Math.round((categoryStats.approved / Math.max(1, category.columns?.length || 1)) * 100) : 0;
+            const activeColumnsCount = category.columns?.filter(col => col.status === 'active').length || 0;
+            const completionRate = hasEntries && activeColumnsCount ? 
+              Math.round((categoryStats.approved / activeColumnsCount) * 100) : 0;
             
             return (
               <Card 
@@ -236,11 +276,11 @@ export const SchoolAdminDataEntry: React.FC<SchoolAdminDataEntryProps> = ({
                     <div className="flex items-center justify-between">
                       <Badge variant="outline" className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
-                        {category.columns?.length || 0} sahə
+                        {activeColumnsCount} aktiv sahə
                       </Badge>
                       
                       {/* Completion Status */}
-                      {hasEntries ? (
+                      {hasEntries && activeColumnsCount ? (
                         <Badge 
                           variant={completionRate >= 100 ? "default" : "secondary"}
                           className="flex items-center gap-1"
@@ -302,10 +342,10 @@ export const SchoolAdminDataEntry: React.FC<SchoolAdminDataEntryProps> = ({
             <CardContent className="py-12 text-center">
               <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                Hal-hazırda doldurulmalı kateqoriya tapılmadı
+                Hal-hazırda aktiv sütunları olan kateqoriya tapılmadı
               </p>
               <p className="text-sm text-muted-foreground mt-2">
-                Admin tərəfindən aktiv kateqoriyalar əlavə edildikdə burada görünəcək
+                Admin tərəfindən aktiv kateqoriyalar və sütunlar əlavə edildikdə burada görünəcək
               </p>
             </CardContent>
           </Card>
@@ -323,7 +363,7 @@ export const SchoolAdminDataEntry: React.FC<SchoolAdminDataEntryProps> = ({
               <div>
                 <h3 className="text-sm font-semibold text-amber-900">Məlumat Daxil Etmə Qaydaları</h3>
                 <p className="text-xs text-amber-700 mt-1">
-                  Yalnız aktiv sütunlar göstərilir. Arxivlənmiş sütunlar məlumat daxil etmədə görünmür.
+                  Yalnız aktiv sütunlar göstərilir. Arxivlənmiş və ya deaktiv sütunlar məlumat daxil etmədə görünmür.
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -332,7 +372,8 @@ export const SchoolAdminDataEntry: React.FC<SchoolAdminDataEntryProps> = ({
                   <ul className="text-xs text-amber-700 space-y-1">
                     <li>• Hər kateqoriya üçün ayrı-ayrı məlumat daxil edin</li>
                     <li>• Məcburi sahələri (*) mütləq doldurun</li>
-                    <li>• Məlumatlar avtomatik saxlanılır</li>
+                    <li>• Məlumatlar avtomatik yadda saxlanılır (30 saniyədə bir)</li>
+                    <li>• Yalnız aktiv sütunlar məlumat girişində göstərilir</li>
                   </ul>
                 </div>
                 <div className="space-y-2">
@@ -341,6 +382,7 @@ export const SchoolAdminDataEntry: React.FC<SchoolAdminDataEntryProps> = ({
                     <li>• <span className="font-medium">Gözləyən:</span> Təsdiq gözləyir</li>
                     <li>• <span className="font-medium">Təsdiqlənmiş:</span> Admin təsdiqləyib</li>
                     <li>• <span className="font-medium">Rədd edilmiş:</span> Düzəliş lazım</li>
+                    <li>• <span className="font-medium">Aktiv sahələr:</span> Yalnız statusu aktiv olan sütunlar</li>
                   </ul>
                 </div>
               </div>

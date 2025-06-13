@@ -1,10 +1,29 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/auth/useAuth';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntryService } from '@/services/dataEntry';
+
+interface CategoryWithColumns {
+  id: string;
+  name: string;
+  description?: string;
+  columns?: any[];
+}
+
+interface DataEntry {
+  id: string;
+  category_id: string;
+  school_id: string;
+  column_id: string;
+  value: any;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 
 interface UseDataEntryManagerOptions {
   categoryId?: string;
@@ -48,7 +67,7 @@ export const useDataEntryManager = ({
   autoSave = false,
   debounceMs = 1000
 }: UseDataEntryManagerOptions): UseDataEntryManagerReturn => {
-  const { user } = useAuth();
+  const user = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
   
   // Internal state

@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
@@ -14,7 +15,24 @@ interface CategoryWithAssignment extends Category {
 const getCategories = async (userRole?: string, regionId?: string, sectorId?: string, schoolId?: string): Promise<CategoryWithAssignment[]> => {
   let query = supabase
     .from('categories')
-    .select('*');
+    .select(`
+      *,
+      columns!inner(
+        id,
+        name,
+        type,
+        is_required,
+        placeholder,
+        help_text,
+        order_index,
+        default_value,
+        options,
+        validation,
+        status
+      )
+    `)
+    .eq('status', 'active')
+    .eq('columns.status', 'active'); // FILTER: Only active columns
 
   if (userRole === 'regionadmin' && regionId) {
     query = query.eq('region_id', regionId);
@@ -53,5 +71,119 @@ export const useCategoriesWithAssignment = () => {
     gcTime: 5 * 60 * 1000, // 5 minutes (was cacheTime)
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: !!user
+  });
+};
+
+// NEW: Export school categories specifically
+export const useSchoolCategories = () => {
+  const user = useAuthStore(state => state.user);
+  
+  return useQuery({
+    queryKey: ['school-categories', user?.school_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select(`
+          *,
+          columns!inner(
+            id,
+            name,
+            type,
+            is_required,
+            placeholder,
+            help_text,
+            order_index,
+            default_value,
+            options,
+            validation,
+            status
+          )
+        `)
+        .eq('status', 'active')
+        .eq('columns.status', 'active') // FILTER: Only active columns
+        .order('order_index');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.school_id,
+    gcTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000
+  });
+};
+
+// NEW: Export sector categories specifically  
+export const useSectorCategories = () => {
+  const user = useAuthStore(state => state.user);
+  
+  return useQuery({
+    queryKey: ['sector-categories', user?.sector_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select(`
+          *,
+          columns!inner(
+            id,
+            name,
+            type,
+            is_required,
+            placeholder,
+            help_text,
+            order_index,
+            default_value,
+            options,
+            validation,
+            status
+          )
+        `)
+        .eq('status', 'active')
+        .eq('columns.status', 'active') // FILTER: Only active columns
+        .order('order_index');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.sector_id,
+    gcTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000
+  });
+};
+
+// NEW: Export all categories for admin
+export const useAllCategoriesForAdmin = () => {
+  const user = useAuthStore(state => state.user);
+  
+  return useQuery({
+    queryKey: ['all-categories-admin'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select(`
+          *,
+          columns!inner(
+            id,
+            name,
+            type,
+            is_required,
+            placeholder,
+            help_text,
+            order_index,
+            default_value,
+            options,
+            validation,
+            status
+          )
+        `)
+        .eq('status', 'active')
+        .eq('columns.status', 'active') // FILTER: Only active columns
+        .order('order_index');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!(user?.role === 'superadmin' || user?.role === 'regionadmin'),
+    gcTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000
   });
 };
