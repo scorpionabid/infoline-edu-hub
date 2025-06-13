@@ -69,6 +69,14 @@ const SchoolAdminDataEntry: React.FC = () => {
     enabled: !!selectedCategoryId
   });
   
+  // Debug current user state
+  console.log('[SchoolAdminDataEntry] Current user state:', {
+    userId: user?.id,
+    schoolId: user?.school_id,
+    userType: typeof user?.id,
+    userIdValid: user?.id ? 'Present' : 'Missing'
+  });
+
   // Data entry manager hooks - will only be active when needed
   const {
     formData,
@@ -88,7 +96,7 @@ const SchoolAdminDataEntry: React.FC = () => {
   } = useDataEntryManager({
     categoryId: selectedCategoryId || '',
     schoolId: user?.school_id || '',
-    userId: user?.id || '',
+    userId: user?.id || '', // This should be a valid UUID
     category: category || undefined,
     enableRealTime: !!selectedCategoryId,
     autoSave: false
@@ -101,6 +109,7 @@ const SchoolAdminDataEntry: React.FC = () => {
   const autoSave = useAutoSave({
     categoryId: selectedCategoryId || '',
     schoolId: user?.school_id || '',
+    userId: user?.id || '', // Pass userId to auto-save
     formData,
     isDataModified,
     enabled: !!selectedCategoryId,

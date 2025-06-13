@@ -5,6 +5,7 @@ import { DataEntryService } from '@/services/dataEntry';
 interface UseAutoSaveOptions {
   categoryId: string;
   schoolId: string;
+  userId?: string; // Add userId for proper tracking
   formData: Record<string, any>;
   isDataModified: boolean;
   enabled?: boolean;
@@ -16,6 +17,7 @@ interface UseAutoSaveOptions {
 export const useAutoSave = ({
   categoryId,
   schoolId,
+  userId,
   formData,
   isDataModified,
   enabled = true,
@@ -41,6 +43,7 @@ export const useAutoSave = ({
       const result = await DataEntryService.saveFormData(formData, {
         categoryId,
         schoolId,
+        userId, // Pass userId to the service
         status: 'draft'
       });
 
@@ -59,7 +62,7 @@ export const useAutoSave = ({
     } finally {
       setIsSaving(false);
     }
-  }, [categoryId, schoolId, formData, isDataModified, isSaving, onSaveSuccess, onSaveError]);
+  }, [categoryId, schoolId, userId, formData, isDataModified, isSaving, onSaveSuccess, onSaveError]);
 
   // Auto-save interval
   useEffect(() => {

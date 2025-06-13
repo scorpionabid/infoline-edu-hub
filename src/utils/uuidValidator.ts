@@ -57,6 +57,7 @@ export const getDBSafeUUID = (
 ): string | null => {
   // Null və ya undefined dəyərləri həmişə null qaytarır
   if (uuid === null || uuid === undefined) {
+    console.log(`[UUID Validator] Null/undefined value for ${context}, using null`);
     return null;
   }
   
@@ -66,17 +67,28 @@ export const getDBSafeUUID = (
     return null;
   }
   
-  // "system" və ya "undefined" kimi mətn dəyərlərini rədd edir
-  if (typeof uuid === 'string' && (uuid === 'system' || uuid === 'undefined' || uuid === 'null')) {
-    console.warn(`[UUID Validator] Invalid literal value "${uuid}" for ${context}, using null`);
+  // CRITICAL: Invalid literal values that would cause UUID format errors
+  const invalidValues = ['system', 'undefined', 'null', 'false', 'true', 'NaN', 'object', 'function'];
+  if (typeof uuid === 'string' && invalidValues.includes(uuid.toLowerCase())) {
+    console.error(`[UUID Validator] ❌ CRITICAL: Invalid literal value "${uuid}" for ${context}`);
+    console.error(`[UUID Validator] This would cause PostgreSQL UUID format error (22P02)`);
+    console.error(`[UUID Validator] Using null instead to prevent database error`);
+    return null;
+  }
+  
+  // Type check - UUID must be string
+  if (typeof uuid !== 'string') {
+    console.error(`[UUID Validator] ❌ CRITICAL: Non-string value for ${context}:`, typeof uuid, uuid);
     return null;
   }
   
   // UUID formatını yoxlayır
   if (isValidUUID(uuid)) {
+    console.log(`[UUID Validator] ✅ Valid UUID for ${context}: ${uuid.substring(0, 8)}...`);
     return uuid;
   }
   
-  console.warn(`[UUID Validator] Invalid UUID format "${uuid}" for ${context}, using null`);
+  console.error(`[UUID Validator] ❌ Invalid UUID format "${uuid}" for ${context}, using null`);
+  console.error(`[UUID Validator] Expected format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`);
   return null;
 };

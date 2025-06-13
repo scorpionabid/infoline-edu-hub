@@ -386,11 +386,15 @@ export const SectorAdminProxyDataEntry: React.FC<SectorAdminProxyDataEntryProps>
                       required={column.is_required}
                     >
                       <option value="">Seçin...</option>
-                      {(column.options as any[])?.map((option: any, index: number) => (
-                        <option key={index} value={option.value || option}>
-                          {option.label || option}
-                        </option>
-                      ))}
+                      {Array.isArray(column.options) ? 
+                        column.options.map((option: any, index: number) => (
+                          <option key={index} value={option.value || option}>
+                            {option.label || option}
+                          </option>
+                        )) : 
+                        // Fallback if options is not an array
+                        <option value="error">Seçim variantları yüklənmədi</option>
+                      }
                     </select>
                   ) : column.type === 'textarea' ? (
                     <textarea

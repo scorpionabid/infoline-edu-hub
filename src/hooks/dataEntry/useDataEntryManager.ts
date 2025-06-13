@@ -199,12 +199,22 @@ export const useDataEntryManager = ({
       // Prioritize passed userId from props over user?.id from auth
       const effectiveUserId = userId || user?.id;
       
-      // Log for debugging
-      console.log(`[useDataEntryManager] Using userId: ${effectiveUserId}, from props: ${userId ? 'Yes' : 'No'}, from auth: ${user?.id ? 'Yes' : 'No'}`);
+      // Enhanced debugging for UUID validation
+      console.log(`[useDataEntryManager] handleSave - userId from props: ${userId}`);
+      console.log(`[useDataEntryManager] handleSave - user?.id from auth: ${user?.id}`);
+      console.log(`[useDataEntryManager] handleSave - effective userId: ${effectiveUserId}`);
+      console.log(`[useDataEntryManager] handleSave - effective userId type: ${typeof effectiveUserId}`);
       
       // Log the validation process
       const validatedUserId = getDBSafeUUID(effectiveUserId, 'save_operation');
-      console.log(`[useDataEntryManager] UUID validation - original: ${effectiveUserId}, validated: ${validatedUserId}`);
+      console.log(`[useDataEntryManager] UUID validation result: ${validatedUserId}`);
+      
+      // CRITICAL: Ensure we're not sending "system" string
+      if (effectiveUserId === 'system' || effectiveUserId === 'undefined' || effectiveUserId === 'null') {
+        console.error(`[useDataEntryManager] CRITICAL: Invalid userId detected: ${effectiveUserId}`);
+        console.error(`[useDataEntryManager] This will cause UUID format error!`);
+        console.error(`[useDataEntryManager] Using null instead`);
+      }
       
       // Mərkəzləşdirilmiş service istifadə et
       const result = await DataEntryService.saveFormData(formData, {
@@ -232,13 +242,14 @@ export const useDataEntryManager = ({
       return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Save failed';
+      console.error(`[useDataEntryManager] Save error details:`, error);
       setError(errorMessage);
       toast.error(`Yadda saxlama xətası: ${errorMessage}`);
       return { success: false, error: errorMessage };
     } finally {
       setIsSaving(false);
     }
-  }, [formData, categoryId, schoolId, queryClient, user?.id]);
+  }, [formData, categoryId, schoolId, queryClient, user?.id, userId]);
 
   // Handle submit
   const handleSubmit = useCallback(async () => {
@@ -260,12 +271,21 @@ export const useDataEntryManager = ({
       // UUID validation for submission - prioritize passed userId over user?.id
       const effectiveUserId = userId || user?.id;
       
-      // Log for debugging
-      console.log(`[useDataEntryManager] Using userId for submission: ${effectiveUserId}, from props: ${userId ? 'Yes' : 'No'}, from auth: ${user?.id ? 'Yes' : 'No'}`);
+      // Enhanced debugging for UUID validation
+      console.log(`[useDataEntryManager] handleSubmit - userId from props: ${userId}`);
+      console.log(`[useDataEntryManager] handleSubmit - user?.id from auth: ${user?.id}`);
+      console.log(`[useDataEntryManager] handleSubmit - effective userId: ${effectiveUserId}`);
+      console.log(`[useDataEntryManager] handleSubmit - effective userId type: ${typeof effectiveUserId}`);
+      
+      // CRITICAL: Ensure we're not sending "system" string
+      if (effectiveUserId === 'system' || effectiveUserId === 'undefined' || effectiveUserId === 'null') {
+        console.error(`[useDataEntryManager] CRITICAL: Invalid userId detected in submit: ${effectiveUserId}`);
+        console.error(`[useDataEntryManager] This will cause UUID format error in submission!`);
+      }
       
       // Log and validate the userId for submission
       const validatedSubmissionUserId = getDBSafeUUID(effectiveUserId, 'submit_operation');
-      console.log(`[useDataEntryManager] Submit UUID validation - original: ${effectiveUserId}, validated: ${validatedSubmissionUserId}`);
+      console.log(`[useDataEntryManager] Submit UUID validation result: ${validatedSubmissionUserId}`);
       
       const submitResult = await DataEntryService.submitForApproval(
         categoryId,
