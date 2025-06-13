@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Region } from '@/types/region';
@@ -18,6 +19,10 @@ export const useRegions = () => {
     throw new Error('useRegions must be used within a RegionsProvider');
   }
   return context;
+};
+
+export const useRegionsContext = () => {
+  return useRegions();
 };
 
 export const RegionsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

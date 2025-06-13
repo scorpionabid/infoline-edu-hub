@@ -1,66 +1,78 @@
+
 import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Send, Info, Building2, Database, Save } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { useSectorCategories } from '@/hooks/categories/useCategoriesWithAssignment';
-import { transformRawColumnData } from '@/utils/columnOptionsParser';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { toast } from 'sonner';
+import { Loader2, Save, Send, RefreshCw, FileText, Calendar, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
-/**
- * Sektor Məlumat Daxil Etmə Komponenti
- * 
- * Bu komponent sektoradmin-in birbaşa sektor adından məlumat daxil etməsi üçündür.
- * Məktəb seçimi yoxdur - yalnız sektor kateqoriyaları və sütunları.
- * 
- * Funksionallıq:
- * - Yalnız assignment="sectors" kateqoriyalar
- * - Sektor adından məlumat daxil etmə
- * - Auto-save və progress tracking
- * - Validation və error handling
- */
-export const SectorDataEntryForm: React.FC = () => {
-  const { toast } = useToast();
-  const user = useAuthStore(selectUser);
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  deadline?: string;
+  assignment: string;
+  status: string;
+  columns?: Column[];
+}
+
+interface Column {
+  id: string;
+  name: string;
+  type: string;
+  is_required: boolean;
+  placeholder?: string;
+  help_text?: string;
+  options?: Array<{ value: string; label: string }>;
+  default_value?: string;
+  order_index: number;
+  status: string;
+}
+
+interface SectorDataEntry {
+  id: string;
+  sector_id: string;
+  category_id: string;
+  column_id: string;
+  value: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface SectorDataEntryFormProps {
+  sectorId: string;
+  categoryId: string;
+  onClose?: () => void;
+}
+
+export const SectorDataEntryForm: React.FC<SectorDataEntryFormProps> = ({
+  sectorId,
+  categoryId,
+  onClose
+}) => {
+  const user = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
   
-  // State
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Get sector categories (assignment="sectors")
-  const { data: categories, isLoading: categoriesLoading } = useSectorCategories();
-
-  // Get current sector info
-  const { data: sector, isLoading: sectorLoading } = useQuery({
-    queryKey: ['current-sector', user?.sector_id],
-    queryFn: async () => {
-      if (!user?.sector_id) throw new Error('Sektor ID tapılmadı');
-      
-      const { data, error } = await supabase
-        .from('sectors')
-        .select('id, name, region_id')
-        .eq('id', user.sector_id)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.sector_id
-  });
-
-  // Get selected category with ONLY ACTIVE columns
-  const { data: selectedCategory, isLoading: categoryLoading } = useQuery({
-    queryKey: ['category-with-columns', selectedCategoryId],
+  // Fetch category with ONLY ACTIVE columns
+  const { data: category, isLoading: categoryLoading } = useQuery({
+    queryKey: ['category-sector', categoryId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categories')
@@ -80,71 +92,278 @@ export const SectorDataEntryForm: React.FC = () => {
             status
           )
         `)
-        .eq('id', selectedCategoryId)
+        .eq('id', categoryId)
         .eq('columns.status', 'active') // FILTER: Only active columns
         .single();
       
       if (error) throw error;
-      
-      // Process and transform column data
-      if (data?.columns) {
-        data.columns = data.columns.map((column: any) => transformRawColumnData(column));
-      }
-      
-      return data;
+      return data as Category;
     },
-    enabled: !!selectedCategoryId
+    enabled: !!categoryId
   });
 
-  // Get existing sector data for selected category
-  const { data: existingData, isLoading: dataLoading } = useQuery({
-    queryKey: ['sector-data-entries', user?.sector_id, selectedCategoryId],
+  // Fetch existing entries
+  const { data: entries = [], isLoading: entriesLoading } = useQuery({
+    queryKey: ['sector-data-entries', sectorId, categoryId],
     queryFn: async () => {
-      if (!user?.sector_id || !selectedCategoryId) return [];
-      
       const { data, error } = await supabase
         .from('sector_data_entries')
         .select('*')
-        .eq('sector_id', user.sector_id)
-        .eq('category_id', selectedCategoryId);
+        .eq('sector_id', sectorId)
+        .eq('category_id', categoryId);
       
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.sector_id && !!selectedCategoryId
+    enabled: !!sectorId && !!categoryId
   });
 
-  const columns = selectedCategory?.columns || [];
-
-  // Initialize form data from existing data
+  // Initialize form data from existing entries
   useEffect(() => {
-    if (existingData && existingData.length > 0) {
-      const initialFormData = existingData.reduce((acc, entry) => {
-        acc[entry.column_id] = entry.value || '';
+    if (entries.length > 0) {
+      const initialFormData = entries.reduce((acc, entry) => {
+        acc[entry.column_id] = entry.value;
         return acc;
       }, {} as Record<string, any>);
-      
       setFormData(initialFormData);
-      setHasUnsavedChanges(false);
-    } else {
-      // Reset form when category changes
-      setFormData({});
-      setHasUnsavedChanges(false);
     }
-  }, [existingData, selectedCategoryId]);
+  }, [entries]);
 
-  // Handle field change
-  const handleFieldChange = (fieldId: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldId]: value
-    }));
-    setHasUnsavedChanges(true);
+  // Auto-save mutation
+  const autoSaveMutation = useMutation({
+    mutationFn: async (data: Record<string, any>) => {
+      const updates = Object.entries(data).map(([columnId, value]) => ({
+        sector_id: sectorId,
+        category_id: categoryId,
+        column_id: columnId,
+        value: value?.toString() || '',
+        status: 'draft',
+        created_by: user?.id
+      }));
+
+      const { error } = await supabase
+        .from('sector_data_entries')
+        .upsert(updates, {
+          onConflict: 'sector_id,category_id,column_id'
+        });
+
+      if (error) throw error;
+      return updates;
+    },
+    onSuccess: () => {
+      setLastSaved(new Date());
+      queryClient.invalidateQueries({ 
+        queryKey: ['sector-data-entries', sectorId, categoryId] 
+      });
+    }
+  });
+
+  // Submit for approval mutation
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('sector_data_entries')
+        .update({ status: 'pending' })
+        .eq('sector_id', sectorId)
+        .eq('category_id', categoryId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Məlumatlar təsdiq üçün göndərildi');
+      queryClient.invalidateQueries({ 
+        queryKey: ['sector-data-entries', sectorId, categoryId] 
+      });
+      onClose?.();
+    },
+    onError: (error) => {
+      console.error('Submit error:', error);
+      toast.error('Göndərmə zamanı xəta baş verdi');
+    }
+  });
+
+  // Handle form field changes
+  const handleFieldChange = (columnId: string, value: any) => {
+    const newFormData = { ...formData, [columnId]: value };
+    setFormData(newFormData);
+    
+    // Auto-save after 2 seconds of inactivity
+    const timeoutId = setTimeout(() => {
+      autoSaveMutation.mutate(newFormData);
+    }, 2000);
+
+    // Clear previous timeout
+    return () => clearTimeout(timeoutId);
+  };
+
+  // Manual save
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await autoSaveMutation.mutateAsync(formData);
+      toast.success('Məlumatlar saxlanıldı');
+    } catch (error) {
+      toast.error('Saxlama zamanı xəta baş verdi');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Submit for approval
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      // First save current data
+      await autoSaveMutation.mutateAsync(formData);
+      // Then submit for approval
+      await submitMutation.mutateAsync();
+    } catch (error) {
+      toast.error('Göndərmə zamanı xəta baş verdi');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Render form field based on column type
+  const renderField = (column: Column) => {
+    const value = formData[column.id] || column.default_value || '';
+
+    switch (column.type) {
+      case 'text':
+      case 'email':
+      case 'tel':
+      case 'url':
+      case 'password':
+        return (
+          <Input
+            type={column.type}
+            value={value}
+            onChange={(e) => handleFieldChange(column.id, e.target.value)}
+            placeholder={column.placeholder}
+            required={column.is_required}
+          />
+        );
+
+      case 'textarea':
+        return (
+          <Textarea
+            value={value}
+            onChange={(e) => handleFieldChange(column.id, e.target.value)}
+            placeholder={column.placeholder}
+            required={column.is_required}
+            rows={3}
+          />
+        );
+
+      case 'number':
+        return (
+          <Input
+            type="number"
+            value={value}
+            onChange={(e) => handleFieldChange(column.id, e.target.value)}
+            placeholder={column.placeholder}
+            required={column.is_required}
+          />
+        );
+
+      case 'date':
+      case 'datetime-local':
+      case 'time':
+        return (
+          <Input
+            type={column.type}
+            value={value}
+            onChange={(e) => handleFieldChange(column.id, e.target.value)}
+            required={column.is_required}
+          />
+        );
+
+      case 'select':
+        if (column.options && Array.isArray(column.options) && column.options.length > 0) {
+          return (
+            <Select value={value} onValueChange={(newValue) => handleFieldChange(column.id, newValue)}>
+              <SelectTrigger>
+                <SelectValue placeholder={column.placeholder || 'Seçin'} />
+              </SelectTrigger>
+              <SelectContent>
+                {column.options.map((option, index) => (
+                  <SelectItem key={index} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          );
+        }
+        return (
+          <Input
+            value={value}
+            onChange={(e) => handleFieldChange(column.id, e.target.value)}
+            placeholder={column.placeholder}
+            required={column.is_required}
+          />
+        );
+
+      case 'radio':
+        if (column.options && Array.isArray(column.options) && column.options.length > 0) {
+          return (
+            <RadioGroup value={value} onValueChange={(newValue) => handleFieldChange(column.id, newValue)}>
+              {column.options.map((option, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <RadioGroupItem value={option.value} id={`${column.id}-${index}`} />
+                  <Label htmlFor={`${column.id}-${index}`}>{option.label}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+          );
+        }
+        return null;
+
+      case 'checkbox':
+        return (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id={column.id}
+              checked={value === true || value === 'true'}
+              onCheckedChange={(checked) => handleFieldChange(column.id, checked)}
+            />
+            <Label htmlFor={column.id}>{column.name}</Label>
+          </div>
+        );
+
+      case 'boolean':
+        return (
+          <Select 
+            value={value?.toString()} 
+            onValueChange={(newValue) => handleFieldChange(column.id, newValue === 'true')}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seçin" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="true">Bəli</SelectItem>
+              <SelectItem value="false">Xeyr</SelectItem>
+            </SelectContent>
+          </Select>
+        );
+
+      default:
+        return (
+          <Input
+            value={value}
+            onChange={(e) => handleFieldChange(column.id, e.target.value)}
+            placeholder={column.placeholder}
+            required={column.is_required}
+          />
+        );
+    }
   };
 
   // Calculate completion percentage
   const completionPercentage = React.useMemo(() => {
-    const requiredColumns = columns.filter(col => col.is_required);
+    if (!category?.columns || category.columns.length === 0) return 0;
+    
+    const requiredColumns = category.columns.filter(col => col.is_required);
     if (requiredColumns.length === 0) return 100;
     
     const completedRequired = requiredColumns.filter(col => {
@@ -153,110 +372,19 @@ export const SectorDataEntryForm: React.FC = () => {
     });
     
     return Math.round((completedRequired.length / requiredColumns.length) * 100);
-  }, [columns, formData]);
+  }, [category, formData]);
 
-  // Save mutation
-  const saveMutation = useMutation({
-    mutationFn: async ({ isDraft = true }: { isDraft?: boolean }) => {
-      if (!user?.sector_id || !selectedCategoryId) {
-        throw new Error('Sektor və ya kateqoriya seçilməyib');
-      }
+  // Check entry status
+  const entryStatus = React.useMemo(() => {
+    if (entries.length === 0) return 'draft';
+    const statuses = entries.map(e => e.status);
+    if (statuses.some(s => s === 'pending')) return 'pending';
+    if (statuses.some(s => s === 'approved')) return 'approved';
+    if (statuses.some(s => s === 'rejected')) return 'rejected';
+    return 'draft';
+  }, [entries]);
 
-      const entries = Object.entries(formData).map(([columnId, value]) => ({
-        sector_id: user.sector_id,
-        category_id: selectedCategoryId,
-        column_id: columnId,
-        value: value?.toString() || '',
-        status: isDraft ? 'draft' : 'approved',
-        created_by: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
-
-      // Delete existing entries first
-      const { error: deleteError } = await supabase
-        .from('sector_data_entries')
-        .delete()
-        .eq('sector_id', user.sector_id)
-        .eq('category_id', selectedCategoryId);
-
-      if (deleteError) throw deleteError;
-
-      // Insert new entries
-      const { data, error } = await supabase
-        .from('sector_data_entries')
-        .insert(entries)
-        .select();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data, variables) => {
-      setLastSaved(new Date());
-      setHasUnsavedChanges(false);
-      
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({
-        queryKey: ['sector-data-entries', user?.sector_id, selectedCategoryId]
-      });
-
-      const message = variables.isDraft 
-        ? `Draft saxlanıldı (${data.length} sahə)`
-        : `Məlumatlar təsdiqləndi (${data.length} sahə)`;
-        
-      toast({
-        title: 'Uğurlu',
-        description: message
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Xəta',
-        description: error instanceof Error ? error.message : 'Saxlama xətası',
-        variant: 'destructive'
-      });
-    }
-  });
-
-  // Auto-save every 30 seconds
-  useEffect(() => {
-    if (!hasUnsavedChanges || !selectedCategoryId) return;
-    
-    const autoSaveTimer = setTimeout(() => {
-      saveMutation.mutate({ isDraft: true });
-    }, 30000);
-
-    return () => clearTimeout(autoSaveTimer);
-  }, [formData, hasUnsavedChanges, selectedCategoryId]);
-
-  // Handle manual save
-  const handleSave = () => {
-    saveMutation.mutate({ isDraft: true });
-  };
-
-  // Handle submit
-  const handleSubmit = () => {
-    // Check required fields
-    const requiredColumns = columns.filter(col => col.is_required);
-    const missingFields = requiredColumns.filter(col => {
-      const value = formData[col.id];
-      return !value || value === '';
-    });
-
-    if (missingFields.length > 0) {
-      toast({
-        title: 'Tamamlanmayan sahələr',
-        description: `Zəhmət olmasa bu sahələri doldurun: ${missingFields.map(f => f.name).join(', ')}`,
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    saveMutation.mutate({ isDraft: false });
-  };
-
-  // Loading state
-  if (categoriesLoading || sectorLoading) {
+  if (categoryLoading || entriesLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -265,236 +393,132 @@ export const SectorDataEntryForm: React.FC = () => {
     );
   }
 
-  // Error states
-  if (!sector) {
+  if (!category) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center">
-          <p className="text-red-600">Sektor məlumatları tapılmadı</p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-8">
+        <p className="text-muted-foreground">Kateqoriya tapılmadı</p>
+      </div>
     );
   }
 
+  const columns = category.columns || [];
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
+    <div className="space-y-6">
+      {/* Header with status and progress */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            Sektor Məlumat Daxil Etmə
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            <strong>{sector.name}</strong> sektoru adından məlumat daxil edin
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                {category.name}
+              </CardTitle>
+              {category.description && (
+                <p className="text-sm text-muted-foreground mt-1">{category.description}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={
+                entryStatus === 'approved' ? 'default' :
+                entryStatus === 'pending' ? 'secondary' :
+                entryStatus === 'rejected' ? 'destructive' : 'outline'
+              }>
+                {entryStatus === 'approved' ? 'Təsdiqlənib' :
+                 entryStatus === 'pending' ? 'Gözləyir' :
+                 entryStatus === 'rejected' ? 'Rədd edilib' : 'Layihə'}
+              </Badge>
+            </div>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Tamamlanma</span>
+              <span>{completionPercentage}%</span>
+            </div>
+            <Progress value={completionPercentage} className="h-2" />
+          </div>
+
+          {/* Last saved indicator */}
+          {lastSaved && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <CheckCircle className="h-3 w-3" />
+              Son saxlanma: {lastSaved.toLocaleTimeString()}
+            </div>
+          )}
         </CardHeader>
       </Card>
 
-      {/* Info Alert */}
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          <p className="font-medium">Sektor Məlumat Rejimi</p>
-          <p className="text-sm mt-1">
-            Bu bölmədə sektorunuza aid xüsusi məlumatları daxil edirsiniz. 
-            Bu məlumatlar məktəb məlumatlarından fərqlidir və yalnız sektor səviyyəsində istifadə olunur.
-          </p>
-        </AlertDescription>
-      </Alert>
-
-      {/* Category Selection */}
+      {/* Form fields */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Kateqoriya Seçimi</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Sektor kateqoriyası seçin:</label>
-              <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Kateqoriya seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories?.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{category.name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {category.columns?.length || 0} sahə
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <CardContent className="pt-6">
+          {columns.length === 0 ? (
+            <div className="text-center py-8">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Bu kateqoriya üçün aktiv sahə tapılmadı</p>
             </div>
-
-            {categories?.length === 0 && (
-              <div className="text-center py-4">
-                <p className="text-muted-foreground">Sektor kateqoriyası tapılmadı</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Admin tərəfindən assignment="sectors" kateqoriyalar yaradılmalıdır
-                </p>
-              </div>
-            )}
-          </div>
+          ) : (
+            <div className="space-y-6">
+              {columns.map((column, index) => (
+                <div key={column.id} className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-1">
+                    {column.name}
+                    {column.is_required && <span className="text-red-500">*</span>}
+                  </Label>
+                  {renderField(column)}
+                  {column.help_text && (
+                    <p className="text-xs text-muted-foreground">{column.help_text}</p>
+                  )}
+                  {index < columns.length - 1 && <Separator className="mt-4" />}
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Data Entry Form */}
-      {selectedCategoryId && (
-        <>
-          {/* Progress */}
-          {selectedCategory && (
-            <Card>
-              <CardContent className="py-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Tamamlanma</span>
-                  <span className="text-sm font-medium">{completionPercentage}%</span>
-                </div>
-                <Progress value={completionPercentage} className="h-2" />
-                
-                <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-                  <div>
-                    {hasUnsavedChanges ? (
-                      <span>Dəyişikliklər saxlanılacaq...</span>
-                    ) : lastSaved ? (
-                      <span>Son saxlanma: {lastSaved.toLocaleTimeString()}</span>
-                    ) : (
-                      <span>Avtomatik saxlama aktiv</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Building2 className="h-3 w-3" />
-                    <span>{sector.name}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{selectedCategory?.name}</span>
-                <Badge variant={completionPercentage === 100 ? 'default' : 'secondary'}>
-                  {columns.filter(c => c.is_required).length} sahə
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {categoryLoading || dataLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <span className="ml-2">Kateqoriya yüklənir...</span>
-                </div>
-              ) : columns.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Bu kateqoriya üçün sahə tapılmadı</p>
-                </div>
+      {/* Action buttons */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex gap-2 justify-end">
+            <Button
+              onClick={handleSave}
+              variant="outline"
+              disabled={isSaving || autoSaveMutation.isPending}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saxlanılır...
+                </>
               ) : (
-                columns.map((column) => (
-                  <div key={column.id} className="space-y-2">
-                    <label className="text-sm font-medium flex items-center gap-2">
-                      {column.name}
-                      {column.is_required && <span className="text-red-500">*</span>}
-                    </label>
-                    
-                    <div className="space-y-1">
-                      {column.type === 'select' && column.options && column.options.length > 0 ? (
-                        <select
-                          value={formData[column.id] || ''}
-                          onChange={(e) => handleFieldChange(column.id, e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                          required={column.is_required}
-                        >
-                          <option value="">Seçin...</option>
-                          {column.options.map((option: any, index: number) => (
-                            <option key={option.id || index} value={option.value || option}>
-                              {option.label || option}
-                            </option>
-                          ))}
-                        </select>
-                      ) : column.type === 'textarea' ? (
-                        <textarea
-                          value={formData[column.id] || ''}
-                          onChange={(e) => handleFieldChange(column.id, e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]"
-                          placeholder={column.placeholder || `${column.name} daxil edin`}
-                          required={column.is_required}
-                        />
-                      ) : (
-                        <input
-                          type={
-                            column.type === 'number' ? 'number' :
-                            column.type === 'date' ? 'date' :
-                            column.type === 'email' ? 'email' :
-                            'text'
-                          }
-                          value={formData[column.id] || ''}
-                          onChange={(e) => handleFieldChange(column.id, e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder={column.placeholder || `${column.name} daxil edin`}
-                          required={column.is_required}
-                        />
-                      )}
-                      
-                      {column.help_text && (
-                        <p className="text-xs text-muted-foreground">{column.help_text}</p>
-                      )}
-                    </div>
-                  </div>
-                ))
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Saxla
+                </>
               )}
-              
-              {/* Action Buttons */}
-              <div className="flex justify-between items-center pt-6 border-t">
-                <div className="text-sm text-muted-foreground">
-                  💡 Məlumatlar arxa planda avtomatik saxlanılır
-                </div>
-                
-                <div className="flex gap-3">
-                  <Button
-                    onClick={handleSave}
-                    variant="outline"
-                    disabled={saveMutation.isPending}
-                  >
-                    {saveMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="h-4 w-4" />
-                    )}
-                    Draft Saxla
-                  </Button>
-                  
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={saveMutation.isPending || completionPercentage < 100}
-                    size="lg"
-                  >
-                    {saveMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                    Təsdiq et və Tamamla
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Validation Warning */}
-              {completionPercentage < 100 && (
-                <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
-                  ⚠️ Bütün məcburi sahələri doldurun və sonra təsdiqləyin
-                </div>
+            </Button>
+            
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || entryStatus === 'pending' || entryStatus === 'approved'}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Göndərilir...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Təsdiq üçün göndər
+                </>
               )}
-            </CardContent>
-          </Card>
-        </>
-      )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -12,6 +12,13 @@ export interface ValidationResult {
   errors: ValidationError[];
 }
 
+export interface ConnectionHealth {
+  status: 'connected' | 'disconnected' | 'connecting' | 'error';
+  health: 'good' | 'poor' | 'offline';
+  reconnectCount: number;
+  lastError?: string;
+}
+
 export const useRealTimeValidation = () => {
   const [errors, setErrors] = useState<ValidationError[]>([]);
 
