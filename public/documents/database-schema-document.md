@@ -219,9 +219,13 @@ Kateqoriyalara aid sütunların təsvirini saxlayır.
 **Indekslər:**
 - `data_entries_pkey`: Primary key indeksi `id` sütunu üzərində
 - `idx_data_entries_status`: Status üzərində indeks (yeni əlavə)
+- `data_entries_school_category_column_key`: Unikal indeks `school_id`, `category_id` və `column_id` sütunları üzərində (upsert əməliyyatları üçün)
 
 **Check Constraints:**
 - `status CHECK (status IN ('draft', 'pending', 'approved', 'rejected'))`: Status dəyərlərinin məhdudlaşdırılması
+
+**Unikal Məhdudiyyətlər:**
+- `data_entries_school_category_column_key`: Hər məktəb üçün hər kateqoriya və sütun kombinasiyası unikal olmalıdır
 
 **Foreign Keys:**
 - `data_entries_school_id_fkey`: `school_id` sütunu `schools` cədvəlinin `id` sütununa istinad edir

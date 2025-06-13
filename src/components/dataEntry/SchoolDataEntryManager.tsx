@@ -74,6 +74,7 @@ const SchoolDataEntryManager: React.FC<SchoolDataEntryManagerProps> = ({
   } = useDataEntryManager({
     categoryId,
     schoolId,
+    userId, // userId parametrini ötürürük
     category,
     enableRealTime: true,
     autoSave: false

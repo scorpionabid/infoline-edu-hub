@@ -1,6 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { DataEntry } from '@/types/dataEntry';
+import { getSafeUUID } from '@/utils/uuidValidator';
 
 export interface SectorDataEntry {
   id: string;
@@ -76,6 +77,10 @@ export async function saveSectorDataEntries(
     }
 
     console.log('Saving sector data entries:', { categoryId, sectorId, entriesCount: entries.length, userId });
+    
+    // Validate userId using centralized UUID validator
+    const safeUserId = getSafeUUID(userId);
+    console.log('[sectorDataEntry] Processed safe userId:', safeUserId);
 
     // Prepare entries for upsert
     const entriesToSave = entries.map(entry => ({
@@ -84,7 +89,7 @@ export async function saveSectorDataEntries(
       column_id: entry.column_id,
       value: entry.value?.toString() || '',
       status: entry.status || 'draft',
-      created_by: userId || null,
+      created_by: safeUserId, // Using validated UUID
       created_at: entry.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));

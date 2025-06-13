@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
+import { isValidUUID } from '@/utils/uuidValidator';
 import { DataEntryStatus } from '@/types/dataEntry';
 
 interface ApprovalItem {
@@ -104,7 +105,7 @@ export const useApprovalData = () => {
             schoolId: entry.school_id,
             schoolName: schoolMap.get(entry.school_id) || 'Unknown School',
             submittedAt: entry.created_at,
-            submittedBy: entry.created_by || 'Unknown User',
+            submittedBy: isValidUUID(entry.created_by) ? entry.created_by : 'Unknown User',
             status: entry.status as DataEntryStatus,
             entries: [],
             completionRate: 0

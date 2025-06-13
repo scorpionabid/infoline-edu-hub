@@ -1,6 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { DataEntry } from '@/types/dataEntry';
+import { isValidUUID, getDBSafeUUID } from '@/utils/uuidValidator';
 
 /**
  * Məlumat daxil etmələrini əldə etmək üçün sorğu parametrləri
@@ -54,31 +55,21 @@ export async function fetchDataEntries({ categoryId, schoolId }: FetchDataEntrie
 }
 
 /**
- * UUID validation helper function
- */
-function isValidUUID(uuid: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
-}
-
-/**
  * Safe UUID processing - returns valid UUID or null
+ * Using centralized UUID validator utility with database safety
  */
-function processSafeUUID(userId: string | null | undefined): string | null {
-  // Return null for invalid inputs
-  if (!userId || userId === 'system' || userId === 'null' || userId === 'undefined') {
-    console.warn('Invalid userId detected, setting to null:', userId);
-    return null;
+function processSafeUUID(userId: string | null | undefined, context: string = 'api_operation'): string | null {
+  // Use the database-safe utility for UUID validation
+  const safeUUID = getDBSafeUUID(userId, context);
+  
+  // Log the result for debugging
+  if (safeUUID) {
+    console.log(`[API dataEntry] Valid UUID processed for ${context}:`, safeUUID);
+  } else {
+    console.warn(`[API dataEntry] Invalid UUID detected for ${context}, set to null:`, userId);
   }
   
-  // Validate UUID format
-  if (typeof userId === 'string' && isValidUUID(userId)) {
-    console.log('Valid UUID detected:', userId);
-    return userId;
-  }
-  
-  console.warn('Invalid UUID format, setting to null:', userId);
-  return null;
+  return safeUUID;
 }
 
 /**
@@ -101,9 +92,9 @@ export async function saveDataEntries(
 
     console.log('About to save data entries:', { categoryId, schoolId, entriesCount: entries.length, userId });
     
-    // Process userId safely - no "system" strings allowed
-    const safeUserId = processSafeUUID(userId);
-    console.log('Processed safe userId:', safeUserId);
+    // Process userId safely using centralized UUID validator
+    const safeUserId = processSafeUUID(userId, 'save_data_entries');
+    console.log('[API dataEntry] Processed safe userId:', safeUserId);
     
     // Əvvəlcə mövcud entries-ləri əldə edirik
     const { data: existingEntries, error: fetchError } = await supabase

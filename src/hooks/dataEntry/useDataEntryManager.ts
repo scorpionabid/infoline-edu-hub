@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntryService } from '@/services/dataEntry';
+import { getDBSafeUUID, isValidUUID } from '@/utils/uuidValidator';
 
 interface CategoryWithColumns {
   id: string;
@@ -28,6 +29,7 @@ type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 interface UseDataEntryManagerOptions {
   categoryId?: string;
   schoolId?: string;
+  userId?: string; // userId parametrini əlavə edirik
   category?: CategoryWithColumns | null;
   enableRealTime?: boolean;
   autoSave?: boolean;
@@ -62,6 +64,7 @@ interface UseDataEntryManagerReturn {
 export const useDataEntryManager = ({
   categoryId,
   schoolId,
+  userId, // userId parametrini əlavə edirik
   category: initialCategory,
   enableRealTime = true,
   autoSave = false,
@@ -192,13 +195,27 @@ export const useDataEntryManager = ({
         throw new Error('Missing required parameters');
       }
       
+      // UUID validation - ensure we're sending a valid UUID
+      // Prioritize passed userId from props over user?.id from auth
+      const effectiveUserId = userId || user?.id;
+      
+      // Log for debugging
+      console.log(`[useDataEntryManager] Using userId: ${effectiveUserId}, from props: ${userId ? 'Yes' : 'No'}, from auth: ${user?.id ? 'Yes' : 'No'}`);
+      
+      // Log the validation process
+      const validatedUserId = getDBSafeUUID(effectiveUserId, 'save_operation');
+      console.log(`[useDataEntryManager] UUID validation - original: ${effectiveUserId}, validated: ${validatedUserId}`);
+      
       // Mərkəzləşdirilmiş service istifadə et
       const result = await DataEntryService.saveFormData(formData, {
         categoryId,
         schoolId,
-        userId: user?.id,
+        userId: validatedUserId, // Use the validated userId
         status: 'draft'
       });
+      
+      // Additional logging for debugging
+      console.log(`[useDataEntryManager] Save result: ${result.success ? 'Success' : 'Failed'}, count: ${result.savedCount}`);
 
       if (!result.success) {
         throw new Error(result.error || 'Save failed');
@@ -240,11 +257,24 @@ export const useDataEntryManager = ({
         throw new Error('Missing required parameters for submission');
       }
 
+      // UUID validation for submission - prioritize passed userId over user?.id
+      const effectiveUserId = userId || user?.id;
+      
+      // Log for debugging
+      console.log(`[useDataEntryManager] Using userId for submission: ${effectiveUserId}, from props: ${userId ? 'Yes' : 'No'}, from auth: ${user?.id ? 'Yes' : 'No'}`);
+      
+      // Log and validate the userId for submission
+      const validatedSubmissionUserId = getDBSafeUUID(effectiveUserId, 'submit_operation');
+      console.log(`[useDataEntryManager] Submit UUID validation - original: ${effectiveUserId}, validated: ${validatedSubmissionUserId}`);
+      
       const submitResult = await DataEntryService.submitForApproval(
         categoryId,
         schoolId,
-        user?.id
+        validatedSubmissionUserId // Use the validated userId
       );
+      
+      // Additional logging for debugging
+      console.log(`[useDataEntryManager] Submit result: ${submitResult.success ? 'Success' : 'Failed'}, count: ${submitResult.submittedCount}`);
 
       if (!submitResult.success) {
         throw new Error(submitResult.error || 'Submit failed');
@@ -260,13 +290,19 @@ export const useDataEntryManager = ({
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Submit failed';
+      
+      // Enhanced error logging
+      console.error('[useDataEntryManager] Submit error:', error);
+      console.error(`[useDataEntryManager] User ID: ${user?.id || 'undefined'}, Valid UUID: ${user?.id ? isValidUUID(user.id) : false}`);
+      console.error(`[useDataEntryManager] Effective User ID: ${effectiveUserId}, Props User ID: ${userId}`);
+      
       setError(errorMessage);
       toast.error(`Göndərmə xətası: ${errorMessage}`);
       return { success: false, error: errorMessage };
     } finally {
       setIsSubmitting(false);
     }
-  }, [handleSave, categoryId, schoolId, user?.id, queryClient]);
+  }, [handleSave, categoryId, schoolId, userId, user?.id, queryClient]);
 
   // Reset form
   const resetForm = useCallback(() => {

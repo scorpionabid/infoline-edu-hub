@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { AdvancedReportData, ReportTemplate } from '@/types/advanced-report';
+import { getSafeUUID } from '@/utils/uuidValidator';
 
 export interface UseAdvancedReportsReturn {
   reports: AdvancedReportData[];
@@ -126,7 +127,7 @@ export const useAdvancedReports = (): UseAdvancedReportsReturn => {
         .from('report_templates')
         .insert([{
           ...template,
-          created_by: user?.id || 'unknown'
+          created_by: getSafeUUID(user?.id) // UUID validation to prevent errors
         }]);
 
       if (saveError) throw saveError;

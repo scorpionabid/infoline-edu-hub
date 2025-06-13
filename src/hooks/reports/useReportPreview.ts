@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { Report } from '@/types/report';
+import { getSafeUUID } from '@/utils/uuidValidator';
 
 export const useReportPreview = () => {
   const [report, setReport] = useState<Report | null>(null);
@@ -15,7 +16,7 @@ export const useReportPreview = () => {
       filters: reportData.filters || {},
       status: reportData.status || 'draft',
       created_at: reportData.created_at || new Date().toISOString(),
-      created_by: reportData.created_by || 'current-user',
+      created_by: getSafeUUID(reportData.created_by, false) || null,
       updated_at: reportData.updated_at || new Date().toISOString(),
       shared_with: reportData.shared_with || [],
       insights: Array.isArray(reportData.insights) ? reportData.insights : [],
