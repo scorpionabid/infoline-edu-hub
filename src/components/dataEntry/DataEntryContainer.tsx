@@ -1,12 +1,11 @@
 
 import React from 'react';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import SchoolDataEntryManager from './SchoolDataEntryManager';
 import SchoolAdminDataEntry from './SchoolAdminDataEntry'; // Default import-a düzəltirik
 import { SectorAdminSchoolList } from '@/components/schools/SectorAdminSchoolList';
-import { SectorDataEntryForm } from './SectorDataEntryForm';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { Card, CardContent } from '@/components/ui/card';
+import { AlertCircle } from 'lucide-react';
 
 interface DataEntryContainerProps {
   assignment?: 'all' | 'schools' | 'sectors';
@@ -24,7 +23,17 @@ export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
   if (assignment === 'sectors') {
     if (userRole === 'sectoradmin' || userRole === 'regionadmin' || userRole === 'superadmin') {
       // Sektor məlumat daxil etmə formu - məktəb seçimi yoxdur
-      return <SectorDataEntryForm sectorId={user?.sector_id || ''} categoryId="" />;
+      return (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
+            <p className="font-semibold mb-2">Sektor məlumat daxiletmə formu hazırlanma prosesindədir</p>
+            <p className="text-muted-foreground">
+              Bu funksionallıq tezliklə əlavə olunacaq
+            </p>
+          </CardContent>
+        </Card>
+      );
     }
   }
 
@@ -86,7 +95,17 @@ export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
   // SuperAdmin can access everything
   if (userRole === 'superadmin') {
     if (assignment === 'sectors') {
-      return <SectorDataEntryForm sectorId="" categoryId="" />;
+      return (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
+            <p className="font-semibold mb-2">Sektor məlumat daxiletmə formu hazırlanma prosesindədir</p>
+            <p className="text-muted-foreground">
+              Bu funksionallıq tezliklə əlavə olunacaq
+            </p>
+          </CardContent>
+        </Card>
+      );
     } else {
       return (
         <div className="h-full">
