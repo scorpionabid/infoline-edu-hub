@@ -1,25 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export interface SaveDataEntryOptions {
-  categoryId: string;
-  schoolId: string;
-  userId?: string;
-  status?: string;
-}
-
-export interface SaveResult {
-  success: boolean;
-  error?: string;
-  savedCount: number;
-}
-
-export interface SubmitResult {
-  success: boolean;
-  error?: string;
-  submittedCount: number;
-}
-
 interface SaveFormDataOptions {
   categoryId: string;
   schoolId: string;

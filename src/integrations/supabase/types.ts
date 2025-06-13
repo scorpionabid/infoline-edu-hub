@@ -19,6 +19,7 @@ export type Database = {
           ip_address: string | null
           new_value: Json | null
           old_value: Json | null
+          proxy_info: Json | null
           user_agent: string | null
           user_id: string | null
         }
@@ -31,6 +32,7 @@ export type Database = {
           ip_address?: string | null
           new_value?: Json | null
           old_value?: Json | null
+          proxy_info?: Json | null
           user_agent?: string | null
           user_id?: string | null
         }
@@ -43,6 +45,7 @@ export type Database = {
           ip_address?: string | null
           new_value?: Json | null
           old_value?: Json | null
+          proxy_info?: Json | null
           user_agent?: string | null
           user_id?: string | null
         }
@@ -151,6 +154,7 @@ export type Database = {
       }
       data_entries: {
         Row: {
+          approval_comment: string | null
           approved_at: string | null
           approved_by: string | null
           category_id: string
@@ -159,6 +163,9 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           id: string
+          proxy_created_by: string | null
+          proxy_original_entity: string | null
+          proxy_reason: string | null
           rejected_at: string | null
           rejected_by: string | null
           rejection_reason: string | null
@@ -168,6 +175,7 @@ export type Database = {
           value: string | null
         }
         Insert: {
+          approval_comment?: string | null
           approved_at?: string | null
           approved_by?: string | null
           category_id: string
@@ -176,6 +184,9 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           id?: string
+          proxy_created_by?: string | null
+          proxy_original_entity?: string | null
+          proxy_reason?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
           rejection_reason?: string | null
@@ -185,6 +196,7 @@ export type Database = {
           value?: string | null
         }
         Update: {
+          approval_comment?: string | null
           approved_at?: string | null
           approved_by?: string | null
           category_id?: string
@@ -193,6 +205,9 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           id?: string
+          proxy_created_by?: string | null
+          proxy_original_entity?: string | null
+          proxy_reason?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
           rejection_reason?: string | null
@@ -930,6 +945,18 @@ export type Database = {
           | { user_id_param: string; sector_id_param: string }
         Returns: Json
       }
+      auto_approve_proxy_data: {
+        Args: {
+          p_school_id: string
+          p_category_id: string
+          p_proxy_user_id: string
+        }
+        Returns: {
+          success: boolean
+          message: string
+          approved_count: number
+        }[]
+      }
       calculate_completion_rate: {
         Args: { school_id_param: string }
         Returns: number
@@ -956,6 +983,10 @@ export type Database = {
       }
       can_view_own_role: {
         Args: { role_user_id: string }
+        Returns: boolean
+      }
+      check_proxy_data_entry_permission: {
+        Args: { user_id: string; user_role: string; target_school_id: string }
         Returns: boolean
       }
       create_audit_log: {
@@ -1057,6 +1088,16 @@ export type Database = {
           last_login: string
           created_at: string
           updated_at: string
+        }[]
+      }
+      get_proxy_data_status: {
+        Args: { p_school_id: string; p_category_id: string }
+        Returns: {
+          is_proxy_data: boolean
+          proxy_user_id: string
+          proxy_reason: string
+          data_status: string
+          entry_count: number
         }[]
       }
       get_recent_activities: {
@@ -1336,6 +1377,7 @@ export type Database = {
           p_reason?: string
         }
         Returns: {
+          approval_comment: string | null
           approved_at: string | null
           approved_by: string | null
           category_id: string
@@ -1344,6 +1386,9 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           id: string
+          proxy_created_by: string | null
+          proxy_original_entity: string | null
+          proxy_reason: string | null
           rejected_at: string | null
           rejected_by: string | null
           rejection_reason: string | null

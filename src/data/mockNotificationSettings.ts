@@ -1,11 +1,10 @@
+import { FullUserData } from '@/types/auth';
+import { NotificationSettings } from '@/types/auth';
 
-import { NotificationSettings } from "@/types/user";
-
-// Standart bildiriş ayarları şablonu
 export const defaultNotificationSettings: NotificationSettings = {
   email: true,
-  inApp: true,
   push: true,
+  inApp: true,
   system: true,
   deadline: true,
   sms: false,
@@ -14,18 +13,27 @@ export const defaultNotificationSettings: NotificationSettings = {
   weeklyReports: false
 };
 
-// Mock data üçün legacy notificationSettings-ləri yeni formata çevirmək
-export const adaptLegacyNotificationSettings = (legacySettings: any): NotificationSettings => {
-  return {
-    email: legacySettings?.email || true,
-    inApp: true, // Əksik olan məcburi xassələri default dəyərlərə mənimsədirik
-    push: legacySettings?.push || false,
-    system: legacySettings?.system || true,
-    deadline: true, // Əksik olan məcburi xassələri default dəyərlərə mənimsədirik
-    sms: legacySettings?.sms || false,
-    deadlineReminders: legacySettings?.deadlineReminders || true,
-    statusUpdates: legacySettings?.statusUpdates || true,
-    weeklyReports: legacySettings?.weeklyReports || false
-  };
+export const mockUserSettings: { [userId: string]: NotificationSettings } = {
+  'user1': {
+    email: false,
+    push: true,
+    inApp: true,
+    system: false,
+    deadline: true,
+    sms: false,
+    deadlineReminders: true,
+    statusUpdates: false,
+    weeklyReports: false
+  },
+  'user2': {
+    email: true,
+    push: false,
+    inApp: true,
+    system: true,
+    deadline: false,
+    sms: true,
+    deadlineReminders: false,
+    statusUpdates: true,
+    weeklyReports: true
+  }
 };
-

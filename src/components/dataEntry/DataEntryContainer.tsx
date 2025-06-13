@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import SchoolDataEntryManager from './SchoolDataEntryManager';
-import { SchoolAdminDataEntry } from './SchoolAdminDataEntry';
+import SchoolAdminDataEntry from './SchoolAdminDataEntry'; // Default import-a düzəltirik
 import { SectorAdminSchoolList } from '@/components/schools/SectorAdminSchoolList';
 import { SectorDataEntryForm } from './SectorDataEntryForm';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -11,16 +12,6 @@ interface DataEntryContainerProps {
   assignment?: 'all' | 'schools' | 'sectors';
 }
 
-/**
- * Təkmilləşdirilmiş DataEntry Container
- * 
- * Assignment əsasında düzgün komponent render edir:
- * - 'schools' | 'all': Məktəb məlumatları (assignment="all" kateqoriyalar)
- * - 'sectors': Sektor məlumatları (assignment="sectors" kateqoriyalar)
- * 
- * Sektoradmin məlumat daxil etməsi zamanı yalnız 'all' kateqoriyalar göstərilir.
- * Sektor kateqoriyaları ayrı bölmədə - '/sector-data-entry' səhifəsində.
- */
 export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ 
   assignment = 'all' 
 }) => {
@@ -33,7 +24,7 @@ export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
   if (assignment === 'sectors') {
     if (userRole === 'sectoradmin' || userRole === 'regionadmin' || userRole === 'superadmin') {
       // Sektor məlumat daxil etmə formu - məktəb seçimi yoxdur
-      return <SectorDataEntryForm />;
+      return <SectorDataEntryForm sectorId={user?.sector_id || ''} categoryId="" />;
     }
   }
 
@@ -71,11 +62,7 @@ export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
       }
 
       // SchoolAdmin üçün kateqoriya seçimi ilə data entry
-      return (
-        <SchoolAdminDataEntry 
-          schoolId={user.school_id}
-        />
-      );
+      return <SchoolAdminDataEntry />;
     } else if (userRole === 'regionadmin') {
       // RegionAdmin can also access school data entry with school selection
       return (
@@ -99,7 +86,7 @@ export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
   // SuperAdmin can access everything
   if (userRole === 'superadmin') {
     if (assignment === 'sectors') {
-      return <SectorDataEntryForm />;
+      return <SectorDataEntryForm sectorId="" categoryId="" />;
     } else {
       return (
         <div className="h-full">

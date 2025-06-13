@@ -1,109 +1,140 @@
-
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
+import React, { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { NotificationSettings } from '@/types/user';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
+import { NotificationSettings } from '@/types/auth';
+import { toast } from 'sonner';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
 interface NotificationSettingsFormProps {
-  settings: NotificationSettings;
-  onSubmit: (settings: NotificationSettings) => void;
-  loading?: boolean;
+  initialSettings: NotificationSettings;
+  onSave: (settings: NotificationSettings) => Promise<void>;
 }
 
-const NotificationSettingsForm: React.FC<NotificationSettingsFormProps> = ({
-  settings,
-  onSubmit,
-  loading
-}) => {
+const NotificationSettingsForm: React.FC<NotificationSettingsFormProps> = ({ initialSettings, onSave }) => {
   const { t } = useLanguage();
-  const [formState, setFormState] = React.useState<NotificationSettings>(settings);
+  const [settings, setSettings] = useState<NotificationSettings>(initialSettings);
+  const [isSaving, setIsSaving] = useState(false);
+  const user = useAuthStore(state => state.user);
+  const updateProfile = useAuthStore(state => state.updateProfile);
 
-  const handleChange = (key: keyof NotificationSettings, value: boolean) => {
-    setFormState(prev => ({
-      ...prev,
-      [key]: value
-    }));
+  useEffect(() => {
+    setSettings(initialSettings);
+  }, [initialSettings]);
+
+  const handleChange = (field: keyof NotificationSettings, value: boolean) => {
+    setSettings(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formState);
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      if (user) {
+        const updatedPreferences = {
+          ...user.preferences,
+          notificationSettings: settings
+        };
+        
+        await updateProfile({ preferences: updatedPreferences });
+        toast.success(t('notificationSettingsSaved'));
+      } else {
+        toast.error(t('userNotFound'));
+      }
+    } catch (error: any) {
+      console.error('Error saving notification settings:', error);
+      toast.error(t('notificationSettingsSaveError'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <Label htmlFor="email-notifications" className="font-medium">
-              {t('emailNotifications')}
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              {t('emailNotificationsDesc')}
-            </p>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('notificationSettings')}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="email">{t('emailNotifications')}</Label>
+            <Switch
+              id="email"
+              checked={settings.email}
+              onCheckedChange={(checked) => handleChange('email', checked)}
+            />
           </div>
-          <Switch
-            id="email-notifications"
-            checked={formState.email}
-            onCheckedChange={(checked) => handleChange('email', checked)}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <Label htmlFor="push-notifications" className="font-medium">
-              {t('pushNotifications')}
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              {t('pushNotificationsDesc')}
-            </p>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="push">{t('pushNotifications')}</Label>
+            <Switch
+              id="push"
+              checked={settings.push}
+              onCheckedChange={(checked) => handleChange('push', checked)}
+            />
           </div>
-          <Switch
-            id="push-notifications"
-            checked={formState.push}
-            onCheckedChange={(checked) => handleChange('push', checked)}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <Label htmlFor="system-notifications" className="font-medium">
-              {t('systemNotifications')}
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              {t('systemNotificationsDesc')}
-            </p>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="inApp">{t('inAppNotifications')}</Label>
+            <Switch
+              id="inApp"
+              checked={settings.inApp}
+              onCheckedChange={(checked) => handleChange('inApp', checked)}
+            />
           </div>
-          <Switch
-            id="system-notifications"
-            checked={formState.system}
-            onCheckedChange={(checked) => handleChange('system', checked)}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <Label htmlFor="deadline-reminders" className="font-medium">
-              {t('deadlineReminders')}
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              {t('deadlineRemindersDesc')}
-            </p>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="system">{t('systemNotifications')}</Label>
+            <Switch
+              id="system"
+              checked={settings.system}
+              onCheckedChange={(checked) => handleChange('system', checked)}
+            />
           </div>
-          <Switch
-            id="deadline-reminders"
-            checked={formState.deadline}
-            onCheckedChange={(checked) => handleChange('deadline', checked)}
-          />
+          <div className="flex items-center justify-between">
+            <Label htmlFor="deadline">{t('deadlineNotifications')}</Label>
+            <Switch
+              id="deadline"
+              checked={settings.deadline}
+              onCheckedChange={(checked) => handleChange('deadline', checked)}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="sms">{t('smsNotifications')}</Label>
+            <Switch
+              id="sms"
+              checked={settings.sms}
+              onCheckedChange={(checked) => handleChange('sms', checked)}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="deadlineReminders">{t('deadlineReminders')}</Label>
+            <Switch
+              id="deadlineReminders"
+              checked={settings.deadlineReminders}
+              onCheckedChange={(checked) => handleChange('deadlineReminders', checked)}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="statusUpdates">{t('statusUpdates')}</Label>
+            <Switch
+              id="statusUpdates"
+              checked={settings.statusUpdates}
+              onCheckedChange={(checked) => handleChange('statusUpdates', checked)}
+            />
+          </div>
+           <div className="flex items-center justify-between">
+            <Label htmlFor="weeklyReports">{t('weeklyReports')}</Label>
+            <Switch
+              id="weeklyReports"
+              checked={settings.weeklyReports}
+              onCheckedChange={(checked) => handleChange('weeklyReports', checked)}
+            />
+          </div>
         </div>
-      </div>
-
-      <Button type="submit" disabled={loading}>
-        {loading ? t('saving') : t('saveNotificationSettings')}
-      </Button>
-    </form>
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? t('saving') : t('save')}
+        </Button>
+      </CardContent>
+    </Card>
   );
 };
 
