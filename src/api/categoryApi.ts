@@ -36,9 +36,15 @@ export const categoryApi = {
   },
 
   async createCategory(categoryData: CreateCategoryData) {
+    // Ensure order_index is provided
+    const dataWithOrder = {
+      ...categoryData,
+      order_index: categoryData.order_index ?? 0
+    };
+    
     const { data, error } = await supabase
       .from('categories')
-      .insert([categoryData])
+      .insert([dataWithOrder])
       .select()
       .single();
     
@@ -68,9 +74,15 @@ export const categoryApi = {
   },
 
   async bulkCreateCategories(categories: CreateCategoryData[]) {
+    // Ensure all categories have order_index
+    const categoriesWithOrder = categories.map((cat, index) => ({
+      ...cat,
+      order_index: cat.order_index ?? index
+    }));
+    
     const { data, error } = await supabase
       .from('categories')
-      .insert(categories)
+      .insert(categoriesWithOrder)
       .select();
     
     if (error) throw error;

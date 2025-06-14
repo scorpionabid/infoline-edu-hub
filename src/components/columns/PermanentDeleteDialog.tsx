@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   AlertDialog,
@@ -53,8 +54,8 @@ const PermanentDeleteDialog: React.FC<PermanentDeleteDialogProps> = ({
     <AlertDialog open={open} onOpenChange={handleClose}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+          <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
             Tam silinmə
           </AlertDialogTitle>
           <AlertDialogDescription className="text-base">
@@ -66,15 +67,15 @@ const PermanentDeleteDialog: React.FC<PermanentDeleteDialogProps> = ({
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <div className="font-semibold mb-1">DİQQƏT: Bu əməliyyat geri qaytarıla bilməz!</div>
-              <div className="text-sm">
-                • Sütun verilənlər bazasından tamamilə silinəcək
-                • Bununla əlaqəli bütün məlumatlar itiriləcək
-                • Bu əməliyyat geri qaytarıla bilməz
-              </div>
+              <div className="font-semibold mb-2">⚠️ DİQQƏT: Bu əməliyyat geri qaytarıla bilməz!</div>
+              <ul className="text-sm space-y-1 list-disc list-inside">
+                <li>Sütun verilənlər bazasından tamamilə silinəcək</li>
+                <li>Bununla əlaqəli bütün məlumatlar itiriləcək</li>
+                <li>Bu əməliyyat geri qaytarıla bilməz</li>
+              </ul>
               {column.dataEntriesCount && column.dataEntriesCount > 0 && (
-                <div className="mt-2 text-sm font-medium">
-                  ⚠️ {column.dataEntriesCount} məlumat qeydi də silinəcək
+                <div className="mt-2 p-2 bg-red-100 rounded text-sm font-medium text-red-800">
+                  🗑️ {column.dataEntriesCount} məlumat qeydi də silinəcək
                 </div>
               )}
             </AlertDescription>
@@ -82,14 +83,15 @@ const PermanentDeleteDialog: React.FC<PermanentDeleteDialogProps> = ({
 
           <div className="space-y-2">
             <Label htmlFor="confirmation">
-              Təsdiq üçün <code className="bg-gray-100 px-1 rounded text-sm">{expectedConfirmation}</code> yazın:
+              Təsdiq üçün <code className="bg-muted px-2 py-1 rounded text-sm font-mono">{expectedConfirmation}</code> yazın:
             </Label>
             <Input
               id="confirmation"
               value={confirmationText}
               onChange={(e) => setConfirmationText(e.target.value)}
               placeholder={expectedConfirmation}
-              className={confirmationText && !isConfirmationValid ? 'border-destructive' : ''}
+              className={confirmationText && !isConfirmationValid ? 'border-destructive focus:ring-destructive' : ''}
+              disabled={isSubmitting}
             />
             {confirmationText && !isConfirmationValid && (
               <p className="text-sm text-destructive">
@@ -106,7 +108,7 @@ const PermanentDeleteDialog: React.FC<PermanentDeleteDialogProps> = ({
           <AlertDialogAction 
             onClick={handleConfirm}
             disabled={!isConfirmationValid || isSubmitting}
-            className="bg-destructive hover:bg-destructive/90"
+            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
           >
             {isSubmitting ? (
               <>

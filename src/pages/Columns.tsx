@@ -252,12 +252,15 @@ const Columns: React.FC = () => {
     }
   };
 
-  // NEW: Confirm permanent delete
+  // FIXED: Correct permanent delete implementation
   const handleConfirmPermanentDelete = async (columnId: string) => {
     try {
+      console.log('Permanently deleting column with NEW API:', columnId);
+      
+      // Call delete with permanent flag
       await deleteColumn({ columnId, permanent: true });
       
-      toast.success('Column permanently deleted');
+      toast.success('Sütun tamamilə silindi');
       setPermanentDeleteDialog({
         open: false,
         column: { id: '', name: '', dataEntriesCount: 0 }
@@ -266,7 +269,7 @@ const Columns: React.FC = () => {
       
     } catch (error) {
       console.error('Error permanently deleting column:', error);
-      toast.error('Failed to permanently delete column');
+      toast.error('Sütun tam silinərkən xəta baş verdi');
     }
   };
 
