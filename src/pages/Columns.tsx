@@ -1,3 +1,4 @@
+
 // Development server restart helper
 // Last updated: Columns improvement implementation - REFACTORED TO NEW API
 // Fixed: Migration to unified hooks API
@@ -19,7 +20,6 @@ import { Column } from '@/types/column';
 import PageHeader from '@/components/layout/PageHeader';
 import { Helmet } from 'react-helmet';
 import { supabase } from '@/integrations/supabase/client';
-import { columnService } from '@/services/columns/columnService';
 
 // NEW UNIFIED API
 import { useColumnsQuery, useColumnMutations } from '@/hooks/columns';
@@ -40,15 +40,14 @@ const Columns: React.FC = () => {
   // Calculate permissions
   const canManageColumns = userRole === 'superadmin' || userRole === 'regionadmin';
   
-  // NEW UNIFIED HOOKS - Fetch ALL columns (including deleted/inactive for admin management)
+  // NEW UNIFIED HOOKS - Fixed query
   const { 
     data: columns = [], 
     isLoading: columnsLoading, 
     error: columnsError, 
     refetch: refetchColumns 
   } = useColumnsQuery({ 
-    // Include all statuses for admin management
-    status: 'all',
+    status: 'all', // Include all statuses for admin management
     enabled: true
   });
   
@@ -85,7 +84,8 @@ const Columns: React.FC = () => {
     canManageColumns,
     userRole,
     columnsCount: columns?.length || 0,
-    categoriesCount: categories?.length || 0
+    categoriesCount: categories?.length || 0,
+    columns: columns?.slice(0, 3) // Show first 3 columns for debug
   });
   
   // Dialog states
