@@ -48,6 +48,8 @@ export interface FullUserData extends User {
   school_id?: string;
   language?: string;
   notifications?: NotificationSettings;
+  last_login?: string;
+  entityName?: string;
 }
 
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';

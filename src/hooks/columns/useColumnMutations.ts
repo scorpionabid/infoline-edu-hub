@@ -84,7 +84,11 @@ export const useColumnMutations = () => {
 
   const deleteColumn = useMutation({
     mutationFn: async ({ columnId, permanent = false }: { columnId: string; permanent?: boolean }): Promise<void> => {
+      console.log('🗑️ Delete column mutation called:', { columnId, permanent });
+      
       if (permanent) {
+        console.log('🗑️ Starting permanent deletion process...');
+        
         // First delete related data entries to avoid foreign key constraint
         const { error: dataDeleteError } = await supabase
           .from('data_entries')
@@ -92,7 +96,10 @@ export const useColumnMutations = () => {
           .eq('column_id', columnId);
 
         if (dataDeleteError) {
-          console.warn('Warning deleting data entries:', dataDeleteError);
+          console.warn('⚠️ Warning deleting data entries:', dataDeleteError);
+          // Continue with column deletion even if data entries deletion fails
+        } else {
+          console.log('✅ Data entries deleted successfully');
         }
 
         // Then permanently delete the column
@@ -101,7 +108,12 @@ export const useColumnMutations = () => {
           .delete()
           .eq('id', columnId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Error permanently deleting column:', error);
+          throw error;
+        }
+        
+        console.log('✅ Column permanently deleted successfully');
       } else {
         // Soft delete - mark as deleted
         const { error } = await supabase
@@ -109,15 +121,22 @@ export const useColumnMutations = () => {
           .update({ status: 'deleted', updated_at: new Date().toISOString() })
           .eq('id', columnId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Error soft deleting column:', error);
+          throw error;
+        }
+        
+        console.log('✅ Column soft deleted successfully');
       }
     },
     onSuccess: (_, { permanent }) => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
-      toast.success(permanent ? 'Sütun tamamilə silindi' : 'Sütun arxivə köçürüldü');
+      const message = permanent ? 'Sütun tamamilə silindi' : 'Sütun arxivə köçürüldü';
+      toast.success(message);
+      console.log('✅ Delete mutation completed successfully');
     },
     onError: (error) => {
-      console.error('Error deleting column:', error);
+      console.error('❌ Error deleting column:', error);
       toast.error('Sütun silinərkən xəta baş verdi');
     }
   });

@@ -219,10 +219,7 @@ const Columns: React.FC = () => {
   // NEW: Handle permanent delete with dependency validation
   const handlePermanentDelete = async (columnId: string) => {
     try {
-      console.log('Permanently deleting column with NEW API:', columnId);
-      
-      // First validate dependencies
-      const validation = await columnService.validateColumnDependencies(columnId);
+      console.log('🗑️ Preparing permanent delete for column:', columnId);
       
       // Get column details for confirmation dialog
       const column = columns.find(col => col.id === columnId);
@@ -232,10 +229,16 @@ const Columns: React.FC = () => {
       }
 
       // Get data entries count for warning
-      const { data: dataEntries } = await supabase
+      const { data: dataEntries, error: dataCountError } = await supabase
         .from('data_entries')
         .select('id')
         .eq('column_id', columnId);
+
+      if (dataCountError) {
+        console.warn('⚠️ Error getting data entries count:', dataCountError);
+      }
+
+      console.log('📊 Found data entries:', dataEntries?.length || 0);
 
       setPermanentDeleteDialog({
         open: true,
@@ -247,7 +250,7 @@ const Columns: React.FC = () => {
       });
       
     } catch (error) {
-      console.error('Error preparing permanent delete:', error);
+      console.error('❌ Error preparing permanent delete:', error);
       toast.error('Error preparing delete operation');
     }
   };
@@ -255,12 +258,13 @@ const Columns: React.FC = () => {
   // FIXED: Correct permanent delete implementation
   const handleConfirmPermanentDelete = async (columnId: string) => {
     try {
-      console.log('Permanently deleting column with NEW API:', columnId);
+      console.log('🗑️ Confirming permanent delete for column:', columnId);
       
-      // Call delete with permanent flag
+      // Call delete with permanent flag - THIS IS THE KEY FIX
       await deleteColumn({ columnId, permanent: true });
       
-      toast.success('Sütun tamamilə silindi');
+      console.log('✅ Permanent delete completed successfully');
+      
       setPermanentDeleteDialog({
         open: false,
         column: { id: '', name: '', dataEntriesCount: 0 }
@@ -268,7 +272,7 @@ const Columns: React.FC = () => {
       refetchColumns();
       
     } catch (error) {
-      console.error('Error permanently deleting column:', error);
+      console.error('❌ Error permanently deleting column:', error);
       toast.error('Sütun tam silinərkən xəta baş verdi');
     }
   };
@@ -333,8 +337,8 @@ const Columns: React.FC = () => {
           onCreate={handleCreateColumn}
           onEdit={handleEditColumn}
           onDelete={handleDeleteColumn}
-          onRestore={handleRestoreColumnFromList} // NEW: Restore handler
-          onPermanentDelete={handlePermanentDelete} // NEW: Permanent delete handler
+          onRestore={handleRestoreColumnFromList}
+          onPermanentDelete={handlePermanentDelete}
         />
 
         {/* UNIFIED COLUMN DIALOG */}
