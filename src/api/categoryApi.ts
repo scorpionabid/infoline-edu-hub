@@ -1,123 +1,79 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/category';
 
-export interface CreateCategoryParams {
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+  priority?: number;
+  deadline?: string;
+  assignment: string;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCategoryData {
   name: string;
   description?: string;
   status?: string;
   priority?: number;
   deadline?: string;
   assignment?: string;
+  order_index: number;
 }
 
-export interface UpdateCategoryParams {
-  name?: string;
-  description?: string;
-  status?: string;
-  priority?: number;
-  deadline?: string | null;
-  assignment?: string;
-}
-
-export const fetchCategories = async (filters?: {
-  status?: string | string[];
-  search?: string;
-}) => {
-  try {
-    let query = supabase.from('categories').select('*');
-
-    if (filters?.status) {
-      if (Array.isArray(filters.status)) {
-        query = query.in('status', filters.status);
-      } else {
-        query = query.eq('status', filters.status);
-      }
-    }
-
-    if (filters?.search) {
-      query = query.ilike('name', `%${filters.search}%`);
-    }
-
-    const { data, error } = await query.order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return { data: data as Category[], error: null };
-  } catch (error: any) {
-    console.error('Error fetching categories:', error);
-    return { data: [], error };
-  }
-};
-
-export const createCategory = async (category: CreateCategoryParams) => {
-  try {
-    const { data, error } = await supabase.from('categories').insert([{
-      name: category.name,
-      description: category.description,
-      status: category.status || 'active',
-      priority: category.priority,
-      deadline: category.deadline,
-      assignment: category.assignment || 'all',
-    }]).select();
-
-    if (error) throw error;
-    return { data: data[0] as Category, error: null };
-  } catch (error: any) {
-    console.error('Error creating category:', error);
-    return { data: null, error };
-  }
-};
-
-export const updateCategory = async (id: string, category: UpdateCategoryParams) => {
-  try {
+export const categoryApi = {
+  async getCategories() {
     const { data, error } = await supabase
       .from('categories')
-      .update({
-        name: category.name,
-        description: category.description,
-        status: category.status,
-        priority: category.priority,
-        deadline: category.deadline,
-        assignment: category.assignment
-      })
-      .eq('id', id)
-      .select();
-
+      .select('*')
+      .order('order_index', { ascending: true });
+    
     if (error) throw error;
-    return { data: data[0] as Category, error: null };
-  } catch (error: any) {
-    console.error('Error updating category:', error);
-    return { data: null, error };
-  }
-};
+    return data;
+  },
 
-export const deleteCategory = async (id: string) => {
-  try {
+  async createCategory(categoryData: CreateCategoryData) {
+    const { data, error } = await supabase
+      .from('categories')
+      .insert([categoryData])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async updateCategory(id: string, updates: Partial<CreateCategoryData>) {
+    const { data, error } = await supabase
+      .from('categories')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteCategory(id: string) {
     const { error } = await supabase
       .from('categories')
       .delete()
       .eq('id', id);
-
+    
     if (error) throw error;
-    return { error: null };
-  } catch (error: any) {
-    console.error('Error deleting category:', error);
-    return { error };
-  }
-};
+  },
 
-export const getCategoryById = async (id: string) => {
-  try {
+  async bulkCreateCategories(categories: CreateCategoryData[]) {
     const { data, error } = await supabase
       .from('categories')
-      .select('*')
-      .eq('id', id)
-      .single();
-
+      .insert(categories)
+      .select();
+    
     if (error) throw error;
-    return { data: data as Category, error: null };
-  } catch (error: any) {
-    console.error('Error getting category:', error);
-    return { data: null, error };
+    return data;
   }
 };

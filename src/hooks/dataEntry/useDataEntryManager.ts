@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -29,7 +30,7 @@ type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 interface UseDataEntryManagerOptions {
   categoryId?: string;
   schoolId?: string;
-  userId?: string; // userId parametrini əlavə edirik
+  userId?: string;
   category?: CategoryWithColumns | null;
   enableRealTime?: boolean;
   autoSave?: boolean;
@@ -64,7 +65,7 @@ interface UseDataEntryManagerReturn {
 export const useDataEntryManager = ({
   categoryId,
   schoolId,
-  userId, // userId parametrini əlavə edirik
+  userId,
   category: initialCategory,
   enableRealTime = true,
   autoSave = false,
@@ -105,7 +106,7 @@ export const useDataEntryManager = ({
           )
         `)
         .eq('id', categoryId)
-        .eq('columns.status', 'active') // FILTER: Only active columns
+        .eq('columns.status', 'active')
         .single();
       
       if (error) throw error;
@@ -195,36 +196,24 @@ export const useDataEntryManager = ({
         throw new Error('Missing required parameters');
       }
       
-      // UUID validation - ensure we're sending a valid UUID
-      // Prioritize passed userId from props over user?.id from auth
+      // UUID validation
       const effectiveUserId = userId || user?.id;
       
-      // Enhanced debugging for UUID validation
       console.log(`[useDataEntryManager] handleSave - userId from props: ${userId}`);
       console.log(`[useDataEntryManager] handleSave - user?.id from auth: ${user?.id}`);
       console.log(`[useDataEntryManager] handleSave - effective userId: ${effectiveUserId}`);
-      console.log(`[useDataEntryManager] handleSave - effective userId type: ${typeof effectiveUserId}`);
       
-      // Log the validation process
       const validatedUserId = getDBSafeUUID(effectiveUserId, 'save_operation');
       console.log(`[useDataEntryManager] UUID validation result: ${validatedUserId}`);
       
-      // CRITICAL: Ensure we're not sending "system" string
-      if (effectiveUserId === 'system' || effectiveUserId === 'undefined' || effectiveUserId === 'null') {
-        console.error(`[useDataEntryManager] CRITICAL: Invalid userId detected: ${effectiveUserId}`);
-        console.error(`[useDataEntryManager] This will cause UUID format error!`);
-        console.error(`[useDataEntryManager] Using null instead`);
-      }
-      
-      // Mərkəzləşdirilmiş service istifadə et
+      // ✅ DÜZƏLTMƏ: Save əməliyyatında status-u 'draft' saxlayırıq
       const result = await DataEntryService.saveFormData(formData, {
         categoryId,
         schoolId,
-        userId: validatedUserId, // Use the validated userId
-        status: 'draft'
+        userId: validatedUserId,
+        status: 'draft' // Save operation keeps draft status
       });
       
-      // Additional logging for debugging
       console.log(`[useDataEntryManager] Save result: ${result.success ? 'Success' : 'Failed'}, count: ${result.savedCount}`);
 
       if (!result.success) {
@@ -257,44 +246,43 @@ export const useDataEntryManager = ({
       setIsSubmitting(true);
       setError(null);
 
-      // First save the data
-      const saveResult = await handleSave();
-      if (!saveResult.success) {
-        return saveResult;
-      }
-
-      // Then submit for approval using service
+      // ✅ DÜZƏLTMƏ: Submit əməliyyatından əvvəl məlumatları 'pending' status ilə yaddaşa saxlayırıq
       if (!categoryId || !schoolId) {
         throw new Error('Missing required parameters for submission');
       }
 
-      // UUID validation for submission - prioritize passed userId over user?.id
+      // UUID validation for submission
       const effectiveUserId = userId || user?.id;
       
-      // Enhanced debugging for UUID validation
       console.log(`[useDataEntryManager] handleSubmit - userId from props: ${userId}`);
       console.log(`[useDataEntryManager] handleSubmit - user?.id from auth: ${user?.id}`);
       console.log(`[useDataEntryManager] handleSubmit - effective userId: ${effectiveUserId}`);
-      console.log(`[useDataEntryManager] handleSubmit - effective userId type: ${typeof effectiveUserId}`);
       
-      // CRITICAL: Ensure we're not sending "system" string
-      if (effectiveUserId === 'system' || effectiveUserId === 'undefined' || effectiveUserId === 'null') {
-        console.error(`[useDataEntryManager] CRITICAL: Invalid userId detected in submit: ${effectiveUserId}`);
-        console.error(`[useDataEntryManager] This will cause UUID format error in submission!`);
+      const validatedUserId = getDBSafeUUID(effectiveUserId, 'submit_operation');
+      console.log(`[useDataEntryManager] Submit UUID validation result: ${validatedUserId}`);
+      
+      // ✅ İLK: Məlumatları 'pending' status ilə saxlayırıq
+      const saveResult = await DataEntryService.saveFormData(formData, {
+        categoryId,
+        schoolId,
+        userId: validatedUserId,
+        status: 'pending' // ✅ KRITIK DÜZƏLTMƏ: Submit zamanı status 'pending' olmalıdır
+      });
+      
+      if (!saveResult.success) {
+        throw new Error(saveResult.error || 'Failed to save data with pending status');
       }
-      
-      // Log and validate the userId for submission
-      const validatedSubmissionUserId = getDBSafeUUID(effectiveUserId, 'submit_operation');
-      console.log(`[useDataEntryManager] Submit UUID validation result: ${validatedSubmissionUserId}`);
-      
+
+      console.log(`[useDataEntryManager] Submit save result: ${saveResult.success ? 'Success' : 'Failed'}, count: ${saveResult.savedCount}`);
+
+      // ✅ İKİNCİ: Submission service-i çağırırıq (əlavə təsdiq üçün)
       const submitResult = await DataEntryService.submitForApproval(
         categoryId,
         schoolId,
-        validatedSubmissionUserId // Use the validated userId
+        validatedUserId
       );
       
-      // Additional logging for debugging
-      console.log(`[useDataEntryManager] Submit result: ${submitResult.success ? 'Success' : 'Failed'}, count: ${submitResult.submittedCount}`);
+      console.log(`[useDataEntryManager] Submit approval result: ${submitResult.success ? 'Success' : 'Failed'}, count: ${submitResult.submittedCount}`);
 
       if (!submitResult.success) {
         throw new Error(submitResult.error || 'Submit failed');
@@ -311,7 +299,6 @@ export const useDataEntryManager = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Submit failed';
       
-      // Enhanced error logging
       console.error('[useDataEntryManager] Submit error:', error);
       console.error(`[useDataEntryManager] User ID: ${user?.id || 'undefined'}, Valid UUID: ${user?.id ? isValidUUID(user.id) : false}`);
       console.error(`[useDataEntryManager] Effective User ID: ${effectiveUserId}, Props User ID: ${userId}`);
@@ -322,7 +309,7 @@ export const useDataEntryManager = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [handleSave, categoryId, schoolId, userId, user?.id, queryClient]);
+  }, [formData, categoryId, schoolId, userId, user?.id, queryClient]);
 
   // Reset form
   const resetForm = useCallback(() => {

@@ -1,71 +1,33 @@
 
 import { useState, useEffect } from 'react';
 
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  isRead: boolean;
-  createdAt: string;
-}
-
 export interface UseNotificationsResult {
-  notifications: Notification[];
+  notifications: any[];
+  isLoading: boolean;
   unreadCount: number;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
-  addNotification: (notification: Omit<Notification, 'id' | 'isRead' | 'createdAt'>) => void;
-  removeNotification: (id: string) => void;
-  loading: boolean;
-  error: string | null;
 }
 
 export const useNotifications = (): UseNotificationsResult => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const [notifications, setNotifications] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, isRead: true }
-          : notification
-      )
-    );
+    setNotifications(prev => prev.map(notif => 
+      notif.id === id ? { ...notif, is_read: true } : notif
+    ));
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, isRead: true }))
-    );
-  };
-
-  const addNotification = (newNotification: Omit<Notification, 'id' | 'isRead' | 'createdAt'>) => {
-    const notification: Notification = {
-      ...newNotification,
-      id: Date.now().toString(),
-      isRead: false,
-      createdAt: new Date().toISOString()
-    };
-    setNotifications(prev => [notification, ...prev]);
-  };
-
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications(prev => prev.map(notif => ({ ...notif, is_read: true })));
   };
 
   return {
     notifications,
-    unreadCount,
+    isLoading,
+    unreadCount: notifications.filter(n => !n.is_read).length,
     markAsRead,
-    markAllAsRead,
-    addNotification,
-    removeNotification,
-    loading,
-    error
+    markAllAsRead
   };
 };
