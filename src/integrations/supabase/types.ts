@@ -61,6 +61,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          order_index: number
           priority: number | null
           status: string | null
           updated_at: string
@@ -74,6 +75,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          order_index: number
           priority?: number | null
           status?: string | null
           updated_at?: string
@@ -87,6 +89,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          order_index?: number
           priority?: number | null
           status?: string | null
           updated_at?: string
