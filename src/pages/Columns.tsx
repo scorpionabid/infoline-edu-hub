@@ -34,6 +34,12 @@ const Columns: React.FC = () => {
   const [columnDialogMode, setColumnDialogMode] = useState<'create' | 'edit'>('create');
   const [editColumn, setEditColumn] = useState<Column | null>(null);
   
+  // Get permissions first before other hooks
+  const { userRole } = usePermissions();
+  
+  // Calculate permissions
+  const canManageColumns = userRole === 'superadmin' || userRole === 'regionadmin';
+  
   // NEW UNIFIED HOOKS - Fetch ALL columns (including deleted/inactive for admin management)
   const { 
     data: columns = [], 
@@ -41,9 +47,9 @@ const Columns: React.FC = () => {
     error: columnsError, 
     refetch: refetchColumns 
   } = useColumnsQuery({ 
-    // Include deleted and inactive columns for admin management
-    includeDeleted: true,
-    includeInactive: true
+    // Include all statuses for admin management
+    status: 'all',
+    enabled: true
   });
   
   const {
@@ -66,7 +72,21 @@ const Columns: React.FC = () => {
     refetch: refetchCategories
   } = useCategories();
   
-  const { userRole } = usePermissions();
+  // Debug logging - now after all dependencies are defined
+  console.log('📋 Columns Page Debug:', {
+    columnsLoading,
+    columnsError,
+    columnsCount: columns?.length || 0,
+    canManageColumns,
+    userRole
+  });
+  
+  console.log('📄 Columns page rendered with NEW API:', {
+    canManageColumns,
+    userRole,
+    columnsCount: columns?.length || 0,
+    categoriesCount: categories?.length || 0
+  });
   
   // Dialog states
   const [deleteDialog, setDeleteDialog] = useState({
@@ -90,11 +110,6 @@ const Columns: React.FC = () => {
       dataEntriesCount: 0
     }
   });
-
-  // Permissions
-  const canManageColumns = userRole === 'superadmin' || userRole === 'regionadmin';
-  
-  console.log('Columns page rendered with NEW API, canManageColumns:', canManageColumns);
 
   // Get the first available category for new columns
   useEffect(() => {

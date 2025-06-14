@@ -19,7 +19,7 @@ import {
   BarChart3, // ✅ YENİ: Əlavə statistika ikonu
   FileBarChart // ✅ YENİ: Reports üçün ikon
 } from 'lucide-react';
-import { useLanguage } from '@/hooks/useTranslation';
+import { useLanguage } from '@/context/LanguageContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface SidebarProps {
@@ -54,19 +54,11 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole: rawUserRole, isOpen, onTogg
   
   const userRole = normalizeRole(rawUserRole);
   
-  console.log("[NavigationSidebar] Rendering with raw role:", rawUserRole);
-  console.log("[NavigationSidebar] Normalized role:", userRole);
-  console.log("[NavigationSidebar] isOpen:", isOpen);
-  
   const isAdmin = ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole);
   const isSuperAdmin = userRole === 'superadmin';
   const isRegionAdmin = userRole === 'regionadmin';
   const isSectorAdmin = userRole === 'sectoradmin';
   const isSchoolAdmin = userRole === 'schooladmin';
-  
-  console.log("[NavigationSidebar] Role flags:", { 
-    isAdmin, isSuperAdmin, isRegionAdmin, isSectorAdmin, isSchoolAdmin
-  });
   
   const navItems = [
     { 
@@ -195,10 +187,6 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole: rawUserRole, isOpen, onTogg
   );
 
   const visibleItems = uniqueItems.filter(item => item.visible);
-  
-  console.log("[NavigationSidebar] Visible nav items:", 
-    visibleItems.map(item => item.label)
-  );
 
   return (
     <div className="h-full py-2 sm:py-4">

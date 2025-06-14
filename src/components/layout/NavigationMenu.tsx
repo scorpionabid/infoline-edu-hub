@@ -15,9 +15,6 @@ const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuClick, isSidebarO
   const { t } = useLanguage();
   const location = useLocation();
   const { userRole } = usePermissions();
-  
-  console.log("NavigationMenu rendering with user role:", userRole);
-  console.log("NavigationMenu sidebar open state:", isSidebarOpen);
 
   const activeItem = location.pathname.split('/')[1] || 'dashboard';
 

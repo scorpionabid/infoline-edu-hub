@@ -1,44 +1,21 @@
-import React, { useState } from 'react';
-import ReportHeader from '@/components/reports/ReportHeader';
-import { ReportList } from '@/components/reports/ReportList';
-import EnhancedSchoolColumnTable from '@/components/reports/EnhancedSchoolColumnTable';
-import ReportDashboard from '@/components/reports/advanced/ReportDashboard';
+import React from 'react';
+
+import SchoolColumnDataTable from '@/components/reports/SchoolColumnDataTable';
 import { useLanguage } from '@/context/LanguageContext';
 import { Helmet } from 'react-helmet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRoleBasedReports } from '@/hooks/reports/useRoleBasedReports';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, Info } from 'lucide-react';
 
-interface FilterState {
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  category_id?: string;
-}
-
 const Reports: React.FC = () => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState("schools-columns");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
-  const [filters, setFilters] = useState<FilterState>({});
   
   const { 
     userRole, 
     loading: roleLoading, 
     error: roleError,
-    canAccessReportType,
     getPermissionsSummary
   } = useRoleBasedReports();
-
-  const handleFiltersChange = (newFilters: FilterState) => {
-    setFilters(newFilters);
-  };
-
-  const handleCategorySelect = (categoryId: string) => {
-    setSelectedCategoryId(categoryId);
-    setFilters(prev => ({ ...prev, category_id: categoryId }));
-  };
 
   // Show loading state while determining user role
   if (roleLoading) {
@@ -69,36 +46,6 @@ const Reports: React.FC = () => {
   // Get permissions summary
   const permissions = getPermissionsSummary();
 
-  // Determine available tabs based on user role
-  const getAvailableTabs = () => {
-    const tabs = [];
-    
-    // School column reports - available for all roles (PRIMARY TAB)
-    tabs.push({
-      id: 'schools-columns',
-      label: t("schoolColumnReportTitle"),
-      component: <EnhancedSchoolColumnTable categoryId={selectedCategoryId} />
-    });
-
-    // Advanced reporting - available for all roles
-    tabs.push({
-      id: 'advanced',
-      label: t("advancedReporting"),
-      component: <ReportDashboard />
-    });
-
-    // All reports/templates - available for all roles
-    tabs.push({
-      id: 'templates',
-      label: t("allReports"),
-      component: <ReportList />
-    });
-
-    return tabs;
-  };
-
-  const availableTabs = getAvailableTabs();
-
   return (
     <>
       <Helmet>
@@ -107,10 +54,6 @@ const Reports: React.FC = () => {
 
       <div className="container mx-auto py-3 space-y-4">
         <div className="space-y-4">
-          <ReportHeader 
-            onCategorySelect={handleCategorySelect}
-            onFiltersChange={handleFiltersChange}
-          />
 
           {/* Role-based access info */}
           {permissions && permissions.role !== 'superadmin' && (
@@ -131,21 +74,8 @@ const Reports: React.FC = () => {
             </Alert>
           )}
           
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className={`grid w-full grid-cols-${availableTabs.length}`}>
-              {availableTabs.map(tab => (
-                <TabsTrigger key={tab.id} value={tab.id}>
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            
-            {availableTabs.map(tab => (
-              <TabsContent key={tab.id} value={tab.id} className="mt-4">
-                {tab.component}
-              </TabsContent>
-            ))}
-          </Tabs>
+          {/* Only Məktəb-Sütun Məlumatları component */}
+          <SchoolColumnDataTable />
         </div>
       </div>
     </>

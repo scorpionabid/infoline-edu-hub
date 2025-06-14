@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,15 +17,7 @@ export const useRoleBasedReports = () => {
   const [userRole, setUserRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const getPermissionsSummary = useCallback((): PermissionsSummary | null => {
-    if (!userRole) return null;
-    
-    return {
-      role: userRole,
-      restrictions: {}
-    };
-  }, [userRole]);
+  const [permissions, setPermissions] = useState<PermissionsSummary | null>(null);
 
   const canAccessReportType = useCallback((reportType: string): boolean => {
     return true; // For now, allow all report types
@@ -49,13 +41,22 @@ export const useRoleBasedReports = () => {
     }
   }, []);
 
+  const userId = user?.id;
+  
   useEffect(() => {
     const loadUserRole = async () => {
       try {
         setLoading(true);
-        if (user?.id) {
+        if (userId) {
           // Mock role loading
-          setUserRole('superadmin');
+          const role = 'superadmin';
+          setUserRole(role);
+          
+          // Set permissions directly
+          setPermissions({
+            role: role,
+            restrictions: {}
+          });
         }
       } catch (err: any) {
         setError(err.message);
@@ -65,7 +66,11 @@ export const useRoleBasedReports = () => {
     };
 
     loadUserRole();
-  }, [user?.id]);
+  }, [userId]); // Stable reference
+
+  const getPermissionsSummary = useCallback((): PermissionsSummary | null => {
+    return permissions;
+  }, [permissions]);
 
   return {
     userRole,
@@ -73,6 +78,7 @@ export const useRoleBasedReports = () => {
     error,
     canAccessReportType,
     getPermissionsSummary,
+    permissions, // Direct access to permissions
     getSchoolPerformanceReport
   };
 };

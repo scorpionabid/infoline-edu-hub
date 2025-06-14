@@ -11,7 +11,8 @@ import { Toaster } from '@/components/ui/toaster'
 import { NotificationProvider } from '@/context/NotificationContext'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+  // Temporarily disabled StrictMode to debug infinite loop issue
+  // <React.StrictMode>
     <BrowserRouter>
       <ThemeProvider defaultTheme="light">
         <QueryClientProvider client={queryClient}>
@@ -24,5 +25,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </QueryClientProvider>
       </ThemeProvider>
     </BrowserRouter>
-  </React.StrictMode>,
+  // </React.StrictMode>,
 )
