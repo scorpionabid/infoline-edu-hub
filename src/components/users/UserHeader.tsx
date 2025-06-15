@@ -1,394 +1,205 @@
+
 import React from 'react';
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
-import { UserPlus, Upload, Download, Filter, X } from 'lucide-react';
-import { H1 } from '@/components/ui/typography';
-import AddUserDialog from './AddUserDialog';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuCheckboxItem
-} from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { UserFilter } from '@/hooks/user/useUserList';
-import { useUserList } from '@/hooks/user/useUserList';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Search, Filter, Download } from 'lucide-react';
+import { UserFilter } from '@/types/user';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface UserHeaderProps {
-  title?: string;
-  filterProps?: any;
-  onRefresh?: () => void;
-  entityTypes?: Array<'region' | 'sector' | 'school'>;
-  onUserAddedOrEdited?: () => void;
+  onCreateUser: () => void;
+  onExport: () => void;
+  filter: UserFilter;
+  onFilterChange: (filter: Partial<UserFilter>) => void;
+  regions: Array<{ id: string; name: string }>;
+  sectors: Array<{ id: string; name: string }>;
+  schools: Array<{ id: string; name: string }>;
+  isLoading?: boolean;
 }
 
-const UserHeader: React.FC<UserHeaderProps> = ({ 
-  title,
-  filterProps,
-  onRefresh
+const UserHeader: React.FC<UserHeaderProps> = ({
+  onCreateUser,
+  onExport,
+  filter,
+  onFilterChange,
+  regions,
+  sectors,
+  schools,
+  isLoading = false
 }) => {
   const { t } = useLanguage();
-  const { filter, updateFilter, resetFilter } = useUserList();
-  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [importFile, setImportFile] = useState<File | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
-  // Filter parametrlərini izləyək
-  useEffect(() => {
-    if (filterProps) {
-      updateFilter(filterProps);
-    }
-  }, [filterProps, updateFilter]);
-
-  // Aktiv filterləri izləyək - handle both string and array types safely
-  useEffect(() => {
-    const newActiveFilters: string[] = [];
-    
-    // Safe handling of role filter (can be string or array)
-    if (filter.role) {
-      const roleValue = Array.isArray(filter.role) ? filter.role.join(', ') : filter.role;
-      newActiveFilters.push(`${t('role')}: ${t(roleValue)}`);
-    }
-    
-    // Safe handling of status filter (can be string or array)
-    if (filter.status) {
-      const statusValue = Array.isArray(filter.status) ? filter.status.join(', ') : filter.status;
-      newActiveFilters.push(`${t('status')}: ${t(statusValue)}`);
-    }
-    
-    if (filter.regionId) newActiveFilters.push(`${t('region')}: ${filter.regionId}`);
-    if (filter.sectorId) newActiveFilters.push(`${t('sector')}: ${filter.sectorId}`);
-    if (filter.schoolId) newActiveFilters.push(`${t('school')}: ${filter.schoolId}`);
-    if (filter.search) newActiveFilters.push(`${t('search')}: ${filter.search}`);
-    
-    setActiveFilters(newActiveFilters);
-  }, [filter, t]);
-
-  // İstifadəçi əlavə etmə dialoqu
-  const handleOpenAddDialog = () => {
-    setIsAddUserDialogOpen(true);
+  const handleClearFilters = () => {
+    onFilterChange({
+      search: '',
+      region: '',
+      sector: '',
+      school: '',
+      role: '',
+      status: ''
+    });
   };
 
-  // İstifadəçi əlavə edildikdən sonra
-  const handleUserAdded = () => {
-    setIsAddUserDialogOpen(false);
-    onRefresh?.();
-  };
-
-  // İmport dialoqu
-  const handleOpenImportDialog = () => {
-    setIsImportDialogOpen(true);
-  };
-
-  // Fayl seçimi
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setImportFile(e.target.files[0]);
-    }
-  };
-
-  // İmport funksiyası
-  const handleImport = () => {
-    if (!importFile) {
-      toast.error(t('pleaseSelectFile'));
-      return;
-    }
-
-    setIsImporting(true);
-    
-    // İmport əməliyyatını simulyasiya et
-    setTimeout(() => {
-      setIsImporting(false);
-      setIsImportDialogOpen(false);
-      setImportFile(null);
-      toast.success(t('usersImported'));
-      onRefresh?.();
-    }, 2000);
-  };
-
-  // Export funksiyası
-  const handleExport = () => {
-    setIsExporting(true);
-    
-    // Export əməliyyatını simulyasiya et
-    setTimeout(() => {
-      setIsExporting(false);
-      toast.success(t('usersExported'));
-    }, 2000);
-  };
-
-  // Axtarış funksiyası
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    updateFilter({ ...filter, search: value });
-  };
-
-  // Axtarışı təmizlə
-  const clearSearch = () => {
-    setSearchQuery('');
-    updateFilter({ ...filter, search: '' });
-  };
-
-  // Filter funksiyaları - handle array types properly
-  const handleFilterChange = (key: keyof UserFilter, value: string) => {
-    if (key === "role") {
-      updateFilter({ ...filter, role: value });
-    } else if (key === "regionId") {
-      updateFilter({ ...filter, regionId: value });
-    } else if (key === "sectorId") {
-      updateFilter({ ...filter, sectorId: value });
-    } else if (key === "schoolId") {
-      updateFilter({ ...filter, schoolId: value });
-    } else if (key === "status") {
-      updateFilter({ ...filter, status: value });
-    }
-  };
-
-  // Bütün filterləri sıfırla
-  const handleResetFilters = () => {
-    resetFilter();
-    setSearchQuery('');
-  };
-
-  // Bir filteri sil
-  const handleRemoveFilter = (filterText: string) => {
-    // Filteri analiz et və müvafiq filteri sil
-    if (filterText.startsWith(`${t('role')}`)) {
-      updateFilter({ ...filter, role: undefined });
-    } else if (filterText.startsWith(`${t('status')}`)) {
-      updateFilter({ ...filter, status: undefined });
-    } else if (filterText.startsWith(`${t('region')}`)) {
-      updateFilter({ ...filter, regionId: undefined });
-    } else if (filterText.startsWith(`${t('sector')}`)) {
-      updateFilter({ ...filter, sectorId: undefined });
-    } else if (filterText.startsWith(`${t('school')}`)) {
-      updateFilter({ ...filter, schoolId: undefined });
-    } else if (filterText.startsWith(`${t('search')}`)) {
-      updateFilter({ ...filter, search: undefined });
-      setSearchQuery('');
-    }
-  };
+  const hasActiveFilters = Boolean(
+    filter.search || filter.region || filter.sector || filter.school || filter.role || filter.status
+  );
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <H1>{title}</H1>
-        
-        <div className="flex space-x-2">
-          {/* Axtarış */}
-          <div className="relative">
-            <Input
-              placeholder={t('searchUsers')}
-              value={searchQuery}
-              onChange={handleSearch}
-              className="w-[250px] pl-8 pr-8"
-            />
-            <Filter className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            {searchQuery && (
-              <button
-                onClick={clearSearch}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          
-          {/* Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-1">
-                <Filter className="h-4 w-4" />
-                {t('filters')}
-                {activeFilters.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs">
-                    {activeFilters.length}
-                  </Badge>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={handleResetFilters} disabled={!filter || Object.keys(filter).length === 0}>
-                {t('clearAllFilters')}
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
-              <div className="px-2 py-1.5 text-sm font-semibold">{t('status')}</div>
-              <DropdownMenuCheckboxItem 
-                checked={filter.status === 'active'}
-                onCheckedChange={() => handleFilterChange('status', 'active')}
-              >
-                {t('active')}
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem 
-                checked={filter.status === 'inactive'}
-                onCheckedChange={() => handleFilterChange('status', 'inactive')}
-              >
-                {t('inactive')}
-              </DropdownMenuCheckboxItem>
-              
-              <DropdownMenuSeparator />
-              
-              <div className="px-2 py-1.5 text-sm font-semibold">{t('role')}</div>
-              <DropdownMenuCheckboxItem 
-                checked={filter.role === 'superadmin'}
-                onCheckedChange={() => handleFilterChange('role', 'superadmin')}
-              >
-                {t('superadmin')}
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem 
-                checked={filter.role === 'regionadmin'}
-                onCheckedChange={() => handleFilterChange('role', 'regionadmin')}
-              >
-                {t('regionadmin')}
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem 
-                checked={filter.role === 'sectoradmin'}
-                onCheckedChange={() => handleFilterChange('role', 'sectoradmin')}
-              >
-                {t('sectoradmin')}
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem 
-                checked={filter.role === 'schooladmin'}
-                onCheckedChange={() => handleFilterChange('role', 'schooladmin')}
-              >
-                {t('schooladmin')}
-              </DropdownMenuCheckboxItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          {/* Export */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-1">
-                <Download className="h-4 w-4" />
-                {t('export')}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleExport} disabled={isExporting}>
-                {isExporting ? t('exporting') : t('exportToCsv')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExport} disabled={isExporting}>
-                {isExporting ? t('exporting') : t('exportToExcel')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          {/* İmport */}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleOpenImportDialog}
-            className="flex items-center gap-1"
-          >
-            <Upload className="h-4 w-4" />
-            {t('import')}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">{t('users')}</h1>
+          <p className="text-muted-foreground">{t('manageSystemUsers')}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onExport} disabled={isLoading}>
+            <Download className="h-4 w-4 mr-2" />
+            {t('export')}
           </Button>
-          
-          {/* İstifadəçi əlavə et */}
-          <Button 
-            onClick={handleOpenAddDialog}
-            className="flex items-center gap-1"
-          >
-            <UserPlus className="h-4 w-4" />
-            {t('addUser')}
+          <Button onClick={onCreateUser} disabled={isLoading}>
+            <Plus className="h-4 w-4 mr-2" />
+            {t('createUser')}
           </Button>
         </div>
       </div>
-      
-      {/* Aktiv filterlər */}
-      {activeFilters.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {activeFilters.map((filterText, index) => (
-            <Badge key={index} variant="secondary" className="flex items-center gap-1 px-2 py-1">
-              {filterText}
-              <button 
-                onClick={() => handleRemoveFilter(filterText)}
-                className="ml-1 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
-          {activeFilters.length > 1 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleResetFilters} 
-              className="h-6 text-xs"
-            >
-              {t('clearAll')}
-            </Button>
-          )}
-        </div>
-      )}
 
-      {/* İstifadəçi əlavə etmə dialoqu */}
-      {isAddUserDialogOpen && (
-        <AddUserDialog
-          open={isAddUserDialogOpen}
-          onClose={() => setIsAddUserDialogOpen(false)}
-          onComplete={() => {
-            setIsAddUserDialogOpen(false);
-            onRefresh?.();
-          }}
-          entityTypes={['region', 'sector', 'school']}
-        />
-      )}
-      
-      {/* İmport dialoqu */}
-      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('importUsers')}</DialogTitle>
-            <DialogDescription>
-              {t('importUsersDescription')}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="file">{t('selectFile')}</Label>
-              <Input
-                id="file"
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={handleFileChange}
-              />
-            </div>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg">
+        <div className="flex-1 min-w-[200px]">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t('searchUsers')}
+              value={filter.search || ''}
+              onChange={(e) => onFilterChange({ search: e.target.value })}
+              className="pl-10"
+            />
           </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
-              {t('cancel')}
-            </Button>
-            <Button onClick={handleImport} disabled={!importFile || isImporting}>
-              {isImporting ? t('importing') : t('import')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+
+        <Select
+          value={filter.region || 'all'}
+          onValueChange={(value) => {
+            if (value === 'all') {
+              onFilterChange({ region: '' });
+            } else {
+              onFilterChange({ region: value });
+            }
+          }}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder={t('allRegions')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('allRegions')}</SelectItem>
+            {regions.map((region) => (
+              <SelectItem key={region.id} value={region.id}>
+                {region.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={filter.sector || 'all'}
+          onValueChange={(value) => {
+            if (value === 'all') {
+              onFilterChange({ sector: '' });
+            } else {
+              onFilterChange({ sector: value });
+            }
+          }}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder={t('allSectors')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('allSectors')}</SelectItem>
+            {sectors.map((sector) => (
+              <SelectItem key={sector.id} value={sector.id}>
+                {sector.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={filter.school || 'all'}
+          onValueChange={(value) => {
+            if (value === 'all') {
+              onFilterChange({ school: '' });
+            } else {
+              onFilterChange({ school: value });
+            }
+          }}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder={t('allSchools')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('allSchools')}</SelectItem>
+            {schools.map((school) => (
+              <SelectItem key={school.id} value={school.id}>
+                {school.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={filter.role || 'all'}
+          onValueChange={(value) => {
+            if (value === 'all') {
+              onFilterChange({ role: '' });
+            } else {
+              onFilterChange({ role: value });
+            }
+          }}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder={t('allRoles')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('allRoles')}</SelectItem>
+            <SelectItem value="superadmin">{t('superadmin')}</SelectItem>
+            <SelectItem value="regionadmin">{t('regionadmin')}</SelectItem>
+            <SelectItem value="sectoradmin">{t('sectoradmin')}</SelectItem>
+            <SelectItem value="schooladmin">{t('schooladmin')}</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={filter.status || 'all'}
+          onValueChange={(value) => {
+            if (value === 'all') {
+              onFilterChange({ status: '' });
+            } else {
+              onFilterChange({ status: value });
+            }
+          }}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder={t('allStatuses')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('allStatuses')}</SelectItem>
+            <SelectItem value="active">{t('active')}</SelectItem>
+            <SelectItem value="inactive">{t('inactive')}</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {hasActiveFilters && (
+          <Button 
+            variant="outline" 
+            onClick={handleClearFilters}
+            className="shrink-0"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            {t('clearFilters')}
+          </Button>
+        )}
+      </div>
     </div>
   );
 };

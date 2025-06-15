@@ -1,41 +1,53 @@
 
-import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 import { UserFormData } from '@/types/user';
 
-interface SchoolSectionProps {
-  form: any;
-  data: UserFormData;
-  onFormChange: (fieldName: string, value: any) => void;
-  filteredSchools: { id: string; name: string }[];
-  hideSection?: boolean;
+interface School {
+  id: string;
+  name: string;
 }
 
-const SchoolSection: React.FC<SchoolSectionProps> = ({
-  form,
-  data,
-  onFormChange,
-  filteredSchools,
-  hideSection = false,
-}) => {
-  const { t } = useLanguage();
+interface SchoolSectionProps {
+  form: ReturnType<typeof useForm<UserFormData>>;
+}
 
-  const isFiltering = !!(data.sector_id || data.sectorId);
+const SchoolSection: React.FC<SchoolSectionProps> = ({ form }) => {
+  const [schools, setSchools] = useState<School[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const sectorId = form.watch('sector_id');
 
-  if (hideSection || !(data.role === 'schooladmin' && isFiltering)) {
-    return null;
-  }
+  useEffect(() => {
+    const fetchSchools = async () => {
+      if (!sectorId) {
+        setSchools([]);
+        return;
+      }
 
-  // Filter schools to ensure valid IDs with additional safety checks
-  const validSchools = filteredSchools.filter(school => 
-    school && 
-    school.id && 
-    String(school.id).trim() !== '' && 
-    school.id !== null && 
-    school.id !== undefined
-  );
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('schools')
+          .select('id, name')
+          .eq('sector_id', sectorId)
+          .eq('status', 'active')
+          .order('name');
+
+        if (error) throw error;
+        setSchools(data || []);
+      } catch (error) {
+        console.error('Error fetching schools:', error);
+        setSchools([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSchools();
+  }, [sectorId]);
 
   return (
     <FormField
@@ -43,39 +55,25 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
       name="school_id"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{t('school')}</FormLabel>
+          <FormLabel>Məktəb</FormLabel>
           <Select
-            value={data.school_id || data.schoolId || undefined}
-            onValueChange={(value) => {
-              const schoolValue = value === 'NONE' ? null : value;
-              field.onChange(schoolValue);
-              onFormChange('school_id', schoolValue);
-            }}
-            disabled={!isFiltering || validSchools.length === 0}
+            onValueChange={field.onChange}
+            value={field.value || ''}
+            disabled={!sectorId || isLoading}
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder={t('selectSchool')} />
+                <SelectValue placeholder="Məktəb seçin" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="NONE">{t('selectSchool')}</SelectItem>
-              {validSchools.map((school) => (
-                <SelectItem 
-                  key={school.id} 
-                  value={String(school.id)}
-                >
-                  {school.name || 'Unknown School'}
+              {schools.map((school) => (
+                <SelectItem key={school.id} value={school.id}>
+                  {school.name}
                 </SelectItem>
               ))}
-              {validSchools.length === 0 && (
-                <div className="p-2 text-center text-sm text-muted-foreground">
-                  {t('noSchoolsFound') || 'Məktəb tapılmadı'}
-                </div>
-              )}
             </SelectContent>
           </Select>
-          <FormMessage />
         </FormItem>
       )}
     />

@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCategoryOperations } from "@/hooks/categories/useCategoryOperations";
+import { useCategoryOperations } from "@/hooks/categories";
 import { toast } from "sonner";
 import { useLanguage } from "@/context/LanguageContext";
 import { CategoryStatus, AddCategoryFormData } from "@/types/category";
@@ -31,7 +31,7 @@ const formSchema = z.object({
 
 const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOpen, onSuccess }) => {
   const { t } = useLanguage();
-  const { addCategory, isLoading } = useCategoryOperations();
+  const { createCategory, isCreating } = useCategoryOperations();
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -47,13 +47,11 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      // Ensure name is not missing
       if (!values.name || values.name.trim() === '') {
         toast.error(t("nameRequired"));
         return;
       }
 
-      // Convert deadline to string if it exists
       const deadline = values.deadline ? String(values.deadline) : null;
 
       const categoryData: AddCategoryFormData = {
@@ -65,7 +63,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
         priority: values.priority,
       };
 
-      await addCategory(categoryData);
+      createCategory(categoryData);
       
       setOpen(false);
       form.reset();
@@ -215,16 +213,16 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
           <Button 
             variant="outline" 
             onClick={() => setOpen(false)} 
-            disabled={isLoading}
+            disabled={isCreating}
           >
             {t("cancel")}
           </Button>
           <Button 
             type="submit" 
             onClick={form.handleSubmit(onSubmit)} 
-            disabled={isLoading}
+            disabled={isCreating}
           >
-            {isLoading ? t("creating") : t("create")}
+            {isCreating ? t("creating") : t("create")}
           </Button>
         </DialogFooter>
       </DialogContent>

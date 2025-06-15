@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
-import { FullUserData } from '@/types/auth';
+import { User } from '@/types/user';
 
 interface AdminUserSelectorProps {
   entityId: string | undefined;
@@ -20,7 +21,7 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
   onChange
 }) => {
   const { t } = useLanguage();
-  const [users, setUsers] = useState<FullUserData[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -29,10 +30,16 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 
       setLoading(true);
       try {
+        const roleMap = {
+          region: 'regionadmin',
+          sector: 'sectoradmin', 
+          school: 'schooladmin'
+        };
+
         let query = supabase
           .from('profiles')
           .select('*')
-          .eq('role', `${entityType.replace('region', 'regionadmin').replace('sector', 'sectoradmin').replace('school', 'schooladmin')}`);
+          .eq('role', roleMap[entityType]);
 
         if (entityType === 'region') {
           query = query.eq('region_id', entityId);
@@ -49,7 +56,7 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
           return;
         }
 
-        setUsers(data as FullUserData[]);
+        setUsers(data as User[]);
       } catch (error) {
         console.error('Error fetching users:', error);
       } finally {

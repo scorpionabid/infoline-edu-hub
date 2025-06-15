@@ -4,7 +4,6 @@ import { useState } from 'react';
 export interface UsePaginationOptions {
   initialPage?: number;
   itemsPerPage?: number;
-  totalItems?: number;
 }
 
 export interface UsePaginationReturn {
