@@ -3,7 +3,7 @@ export interface Region {
   id: string;
   name: string;
   description?: string;
-  status?: 'active' | 'inactive'; // Make optional to match school types
+  status: 'active' | 'inactive';
   admin_id?: string;
   admin_email?: string;
   created_at: string;
@@ -21,6 +21,11 @@ export interface EnhancedRegion extends Region {
   sector_count?: number;
   completionRate?: number;
   completion_rate?: number;
+  admin?: {
+    id: string;
+    full_name: string;
+    email: string;
+  };
 }
 
 export interface RegionFormData {

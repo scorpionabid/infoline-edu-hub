@@ -3,31 +3,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-export interface AdvancedReportConfig {
-  id?: string;
-  name: string;
-  type: string;
-  filters: Record<string, any>;
-  columns: string[];
-  groupBy?: string[];
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface AdvancedReportData {
-  id: string;
-  title: string;
-  description?: string;
-  type: string;
-  data: any[];
-  filters: Record<string, any>;
-  metadata: Record<string, any>;
-  generatedAt: string;
-  generatedBy: string;
-  insights?: string[];
-  recommendations?: string[];
-}
+import { AdvancedReportConfig, AdvancedReportData } from '@/types/advanced-report';
 
 export const useAdvancedReports = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -62,13 +38,13 @@ export const useAdvancedReports = () => {
         title: report.title,
         description: report.description,
         type: report.type,
-        data: report.content?.data || [],
-        filters: report.filters || {},
-        metadata: report.content?.metadata || {},
+        data: Array.isArray(report.content?.data) ? report.content.data : [],
+        filters: typeof report.filters === 'object' && report.filters !== null ? report.filters as Record<string, any> : {},
+        metadata: typeof report.content?.metadata === 'object' && report.content?.metadata !== null ? report.content.metadata as Record<string, any> : {},
         generatedAt: report.created_at,
         generatedBy: report.created_by || '',
-        insights: report.insights || [],
-        recommendations: report.recommendations || []
+        insights: Array.isArray(report.insights) ? report.insights : [],
+        recommendations: Array.isArray(report.recommendations) ? report.recommendations : []
       }));
     }
   });
@@ -125,7 +101,6 @@ export const useAdvancedReports = () => {
   });
 
   const exportReport = useCallback(async (reportId: string, format: string) => {
-    // Basic export implementation
     console.log('Exporting report:', reportId, 'in format:', format);
     toast.success(`Hesabat ${format} formatında ixrac edildi`);
   }, []);
@@ -133,7 +108,7 @@ export const useAdvancedReports = () => {
   return {
     reports,
     reportTemplates,
-    templates: reportTemplates, // alias for backward compatibility
+    templates: reportTemplates,
     isLoadingTemplates,
     loading,
     error,
