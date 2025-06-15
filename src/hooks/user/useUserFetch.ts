@@ -1,14 +1,14 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserFilter, NotificationSettings } from '@/types/user';
+import { UserData, UserFilter, NotificationSettings } from '@/types/user';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
 type ValidUserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
 export const useUserFetch = () => {
-  const [users, setUsers] = useState<FullUserData[]>([]);
+  const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -43,31 +43,19 @@ export const useUserFetch = () => {
         query = query.eq('user_roles.region_id', regionId);
       } else if (userRole === 'sectoradmin' && sectorId) {
         query = query.eq('user_roles.sector_id', sectorId);
-        query = query.eq('user_roles.role', 'schooladmin'); // Sector admins can only see school admins
+        query = query.eq('user_roles.role', 'schooladmin');
       }
 
-      // Apply filters - handle both string and array types safely with proper casting
-      if (filters.role) {
-        if (Array.isArray(filters.role)) {
-          if (filters.role.length > 0) {
-            // Cast array elements to ValidUserRole
-            const validRoles = filters.role.filter((role): role is ValidUserRole => 
-              ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(role as ValidUserRole)
-            );
-            if (validRoles.length > 0) {
-              query = query.in('user_roles.role', validRoles);
-            }
-          }
-        } else {
-          // Cast single role to ValidUserRole
-          const validRole = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(filters.role as ValidUserRole) 
-            ? filters.role as ValidUserRole 
-            : null;
-          if (validRole) {
-            query = query.eq('user_roles.role', validRole);
-          }
+      // Apply filters
+      if (filters.role && Array.isArray(filters.role) && filters.role.length > 0) {
+        const validRoles = filters.role.filter((role): role is ValidUserRole => 
+          ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(role as ValidUserRole)
+        );
+        if (validRoles.length > 0) {
+          query = query.in('user_roles.role', validRoles);
         }
       }
+      
       if (filters.region_id) {
         query = query.eq('user_roles.region_id', filters.region_id);
       }
@@ -77,14 +65,8 @@ export const useUserFetch = () => {
       if (filters.school_id) {
         query = query.eq('user_roles.school_id', filters.school_id);
       }
-      if (filters.status) {
-        if (Array.isArray(filters.status)) {
-          if (filters.status.length > 0) {
-            query = query.in('status', filters.status);
-          }
-        } else {
-          query = query.eq('status', filters.status);
-        }
+      if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
+        query = query.in('status', filters.status);
       }
       if (filters.search) {
         query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
@@ -102,73 +84,57 @@ export const useUserFetch = () => {
       // Default notification settings
       const defaultNotificationSettings: NotificationSettings = {
         email: true,
-        push: false,
         sms: false,
         inApp: true,
         system: true,
-        deadline: true,
         deadlineReminders: true,
-        statusUpdates: true,
-        weeklyReports: false
+        email_notifications: true,
+        sms_notifications: false,
+        notification_frequency: 'daily'
       };
 
-      // Transform data to match FullUserData interface
-      const transformedUsers: FullUserData[] = (data || []).map((item: any) => {
-        const userRole = item.user_roles;
-        
-        return {
-          id: item.id,
-          email: item.email,
-          full_name: item.full_name || '',
-          fullName: item.full_name || '',
-          name: item.full_name || '',
-          role: userRole?.role || 'user',
-          region_id: userRole?.region_id,
-          sector_id: userRole?.sector_id,
-          school_id: userRole?.school_id,
-          regionId: userRole?.region_id,
-          sectorId: userRole?.sector_id,
-          schoolId: userRole?.school_id,
-          phone: item.phone || '',
-          position: item.position || '',
-          language: item.language || 'az',
-          avatar: item.avatar || '',
-          avatar_url: item.avatar || '',
-          status: item.status || 'active',
-          last_login: item.last_login,
-          last_sign_in_at: item.last_login,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          preferences: {},
-          notificationSettings: defaultNotificationSettings,
-          notification_settings: defaultNotificationSettings,
-          entityName: undefined
-        };
-      });
+      const processedUsers: UserData[] = data?.map((profile: any) => ({
+        id: profile.id,
+        email: profile.email,
+        full_name: profile.full_name,
+        name: profile.full_name,
+        role: profile.user_roles.role,
+        region_id: profile.user_roles.region_id,
+        regionId: profile.user_roles.region_id,
+        sector_id: profile.user_roles.sector_id,
+        sectorId: profile.user_roles.sector_id,
+        school_id: profile.user_roles.school_id,
+        schoolId: profile.user_roles.school_id,
+        phone: profile.phone,
+        position: profile.position,
+        language: profile.language || 'az',
+        avatar: profile.avatar,
+        status: profile.status || 'active',
+        last_login: profile.last_login,
+        lastLogin: profile.last_login,
+        created_at: profile.created_at,
+        createdAt: profile.created_at,
+        updated_at: profile.updated_at,
+        updatedAt: profile.updated_at,
+        entity_name: profile.entity_name,
+        entityName: profile.entity_name
+      })) || [];
 
-      setUsers(transformedUsers);
+      setUsers(processedUsers);
       setTotalCount(count || 0);
-
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching users:', err);
-      setError(err as Error);
+      setError(err);
     } finally {
       setLoading(false);
     }
   }, [user, userRole, regionId, sectorId]);
-
-  const refreshUsers = useCallback(() => {
-    return fetchUsers();
-  }, [fetchUsers]);
 
   return {
     users,
     loading,
     error,
     totalCount,
-    fetchUsers,
-    refreshUsers
+    fetchUsers
   };
 };
-
-export default useUserFetch;

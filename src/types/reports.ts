@@ -70,3 +70,15 @@ export interface ReportsFilters {
   date_to?: string;
   status?: string[];
 }
+
+export interface ReportTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  type: string;
+  config: any;
+  status: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}

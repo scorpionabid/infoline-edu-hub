@@ -83,7 +83,7 @@ export const useSchoolForm = (): UseSchoolFormReturn => {
       email: school.email || '',
       studentCount: school.student_count?.toString() || '',
       teacherCount: school.teacher_count?.toString() || '',
-      status: school.status || 'active',
+      status: (school.status === 'active' || school.status === 'inactive') ? school.status as 'active' | 'inactive' : 'active',
       type: school.type || 'full_secondary',
       language: school.language || 'az',
       adminEmail: school.admin_email || '',

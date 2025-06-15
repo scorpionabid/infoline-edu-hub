@@ -26,7 +26,12 @@ export interface UserData {
   updated_at: string;
   updatedAt?: string; // alias for updated_at
   entity_name?: string;
+  entityName?: string; // alias for entity_name
 }
+
+// Alias exports for backward compatibility
+export type User = UserData;
+export type FullUserData = UserData;
 
 export interface UserFilter {
   role?: UserRole[];
@@ -38,6 +43,22 @@ export interface UserFilter {
   school_id?: string; // alias for schoolId
   status?: UserStatus[];
   search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface UserFormData {
+  full_name: string;
+  email: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  status?: UserStatus;
+  notifications?: NotificationSettings;
 }
 
 export interface NotificationSettings {

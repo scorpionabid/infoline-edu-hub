@@ -12,55 +12,54 @@ interface SuperAdminDashboardProps {
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData }) => {
   const { t } = useLanguage();
 
-  // Mock data for demonstration
-  const mockActiveData = {
-    schools: 150,
-    regions: 10,
-    sectors: 45,
-    users: 200
-  };
+  if (!dashboardData) {
+    return (
+      <div className="p-8 text-center">{t('loading') || 'Yüklənir...'}</div>
+    );
+  }
 
-  const mockStats: DashboardFormStats = {
-    completedForms: 750,
-    pendingForms: 150,
-    approvalRate: 75,
-    total: 1000,
-    approved: 750,
-    pending: 150,
-    rejected: 50,
-    dueSoon: 25,
-    overdue: 10,
-    draft: 15,
-    completed: 750,
-    percentage: 75,
-    completion_rate: 75,
-    completionRate: 75
+  // Use real data from the backend
+  const formStats: DashboardFormStats = {
+    completedForms: dashboardData.formsByStatus?.approved || 0,
+    pendingForms: dashboardData.formsByStatus?.pending || 0,
+    approvalRate: dashboardData.approvalRate || 0,
+    total: dashboardData.formsByStatus?.total || 0,
+    completed: dashboardData.formsByStatus?.approved || 0,
+    approved: dashboardData.formsByStatus?.approved || 0,
+    pending: dashboardData.formsByStatus?.pending || 0,
+    rejected: dashboardData.formsByStatus?.rejected || 0,
+    dueSoon: 0,
+    overdue: 0,
+    draft: 0,
+    percentage: dashboardData.completionRate || 0,
+    completion_rate: dashboardData.completionRate || 0,
+    completionRate: dashboardData.completionRate || 0,
   };
 
   const statsGridData = [
     {
-      title: t('totalSchools'),
-      value: mockActiveData.schools,
+      title: t('totalSchools') || 'Məktəblər',
+      value: dashboardData.totalSchools || 0,
       color: 'text-blue-600',
-      description: t('activeSchools')
+      description: t('activeSchools') || 'Aktiv məktəblər'
     },
     {
-      title: t('totalRegions'),
-      value: mockActiveData.regions,
+      title: t('totalRegions') || 'Regionlar',
+      value: dashboardData.totalRegions || 0,
       color: 'text-green-600',
-      description: t('regions')
+      description: t('regions') || 'Regionlar'
     },
     {
-      title: t('totalSectors'),
-      value: mockActiveData.sectors,
+      title: t('totalSectors') || 'Sektorlar',
+      value: dashboardData.totalSectors || 0,
       color: 'text-purple-600',
-      description: t('sectors')
+      description: t('sectors') || 'Sektorlar'
     },
     {
-      title: t('totalUsers'),
-      value: mockActiveData.users,
+      title: t('totalUsers') || 'İstifadəçilər',
+      value: dashboardData.totalUsers || 0,
       color: 'text-orange-600',
-      description: t('users')
+      description: t('users') || 'İstifadəçilər'
     }
   ];
 
@@ -69,7 +68,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
       <StatsGrid stats={statsGridData} />
       
       <div className="grid gap-4 md:grid-cols-2">
-        <DashboardChart stats={mockStats} />
+        <DashboardChart stats={formStats} />
       </div>
     </div>
   );

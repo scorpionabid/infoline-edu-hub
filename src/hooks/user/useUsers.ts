@@ -1,171 +1,110 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, UserFilter, UserRole } from '@/types/user';
+import { UserData, UserFilter } from '@/types/user';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
-export const useUsers = (initialFilter: UserFilter = {}) => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [filter, setFilter] = useState<UserFilter>(initialFilter);
-  const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
+export const useUsers = () => {
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  
+  const currentUser = useAuthStore(selectUser);
 
-  const fetchUsers = useCallback(async (currentFilter: UserFilter) => {
+  const fetchUsers = useCallback(async (filters: UserFilter = {}) => {
+    if (!currentUser) return;
+
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError(null);
+      let query = supabase.from('profiles').select(`
+        *,
+        user_roles!inner(
+          role,
+          region_id,
+          sector_id,
+          school_id
+        )
+      `, { count: 'exact' });
 
-      console.log('İstifadəçilər üçün filtrlər:', currentFilter);
+      // Apply role-based restrictions
+      if (currentUser.role === 'regionadmin' && currentUser.region_id) {
+        query = query.eq('user_roles.region_id', currentUser.region_id);
+      } else if (currentUser.role === 'sectoradmin' && currentUser.sector_id) {
+        query = query.eq('user_roles.sector_id', currentUser.sector_id);
+      }
 
-      // Build query - düzgün FK join ilə
-      let query = supabase
-        .from('user_roles')
-        .select(`
-          *,
-          profiles:user_id(email, full_name, phone, position, language, status, created_at, updated_at),
-          regions:region_id(name),
-          sectors:sector_id(name),
-          schools:school_id(name)
-        `, { count: 'exact' });
-      
       // Apply filters
-      if (currentFilter.role && currentFilter.role.length) {
-        if (Array.isArray(currentFilter.role)) {
-          // role massivi için uyğun sorğu
-          query = query.in('role', currentFilter.role as any);
-        } else {
-          // tek rol üçün uyğun sorğu
-          query = query.eq('role', currentFilter.role as any);
-        }
+      if (filters.role && Array.isArray(filters.role) && filters.role.length > 0) {
+        query = query.in('user_roles.role', filters.role);
       }
       
-      if (currentFilter.status && currentFilter.status.length && currentFilter.status !== "") {
-        if (Array.isArray(currentFilter.status)) {
-          query = query.in('profiles.status', currentFilter.status);
-        } else {
-          query = query.eq('profiles.status', currentFilter.status);
-        }
+      if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
+        query = query.in('status', filters.status);
       }
       
-      if (currentFilter.region_id) {
-        query = query.eq('region_id', currentFilter.region_id);
+      if (filters.search) {
+        query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
       }
-      
-      if (currentFilter.sector_id) {
-        query = query.eq('sector_id', currentFilter.sector_id);
-      }
-      
-      if (currentFilter.school_id) {
-        query = query.eq('school_id', currentFilter.school_id);
-      }
-      
-      if (currentFilter.search) {
-        query = query.or(`or(profiles.email.ilike.%${currentFilter.search}%,profiles.full_name.ilike.%${currentFilter.search}%)`);
-      }
-      
+
       // Pagination
-      const page = currentFilter.page || 1;
-      const limit = currentFilter.limit || 10;
-      const from = (page - 1) * limit;
-      const to = page * limit - 1;
-      
-      query = query.range(from, to);
-      query = query.order('created_at', { ascending: false });
-      
-      // Execute query
+      const page = filters.page || 1;
+      const limit = filters.limit || 20;
+      const offset = (page - 1) * limit;
+      query = query.range(offset, offset + limit - 1);
+
       const { data, error, count } = await query;
-      
-      if (error) {
-        console.error('Supabase sorğu xətası:', error);
-        throw error;
-      }
-      
-      if (!data) {
-        console.warn('Sorğudan məlumat qayıtmadı');
-        setUsers([]);
-        setTotalRecords(0);
-        setTotalPages(1);
-        setCurrentPage(1);
-        setLoading(false);
-        return;
-      }
-      
-      console.log(`${data.length} istifadəçi məlumatı alındı`);
-      
-      // Process data - type assertions ilə təhlükəsiz data çevrilməsi
-      const processedUsers = data.map(item => {
-        // Profil və əlaqəli məlumatlar üçün təhlükəsiz çevrilmə
-        const profile = (item.profiles as any) || {};
-        const regions = (item.regions as any) || {};
-        const sectors = (item.sectors as any) || {};
-        const schools = (item.schools as any) || {};
-        
-        return {
-          id: item.user_id,
-          email: profile.email || '',
-          full_name: profile.full_name || '',
-          fullName: profile.full_name || '',
-          name: profile.full_name || '',
-          role: item.role as UserRole,
-          region_id: item.region_id || '',
-          regionId: item.region_id || '',
-          sector_id: item.sector_id || '',
-          sectorId: item.sector_id || '',
-          school_id: item.school_id || '',
-          schoolId: item.school_id || '',
-          phone: profile.phone || '',
-          position: profile.position || '',
-          language: profile.language || '',
-          status: profile.status || '',
-          created_at: profile.created_at || '',
-          updated_at: profile.updated_at || '',
-          region_name: regions.name || '',
-          sector_name: sectors.name || '',
-          school_name: schools.name || ''
-        };
-      });
-      
+
+      if (error) throw error;
+
+      const processedUsers: UserData[] = data?.map((user: any) => ({
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        role: user.user_roles.role,
+        region_id: user.user_roles.region_id,
+        sector_id: user.user_roles.sector_id,
+        school_id: user.user_roles.school_id,
+        phone: user.phone,
+        position: user.position,
+        language: user.language,
+        avatar: user.avatar,
+        status: user.status,
+        last_login: user.last_login,
+        created_at: user.created_at,
+        updated_at: user.updated_at
+      })) || [];
+
       setUsers(processedUsers);
-      setTotalRecords(count || 0);
-      setTotalPages(Math.ceil((count || 0) / limit));
-      setCurrentPage(page);
-    } catch (err) {
-      console.error('İstifadəçilər əldə edilərkən xəta:', err);
-      setError(err as Error);
+      setTotalCount(count || 0);
+    } catch (err: any) {
+      console.error('Error fetching users:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
-  const updateFilter = useCallback((newFilter: Partial<UserFilter>) => {
-    const updatedFilter = { ...filter, ...newFilter };
-    setFilter(updatedFilter);
-    fetchUsers(updatedFilter);
-  }, [filter, fetchUsers]);
+  const updateFilters = useCallback((newFilters: Partial<UserFilter>) => {
+    fetchUsers(newFilters);
+  }, [fetchUsers]);
 
-  const handlePageChange = useCallback((page: number) => {
-    if (page < 1 || page > totalPages) return;
-    updateFilter({ page });
-  }, [totalPages, updateFilter]);
+  const refreshUsers = useCallback(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   useEffect(() => {
-    fetchUsers(filter);
-  }, [fetchUsers, filter]);
+    fetchUsers();
+  }, [fetchUsers]);
 
   return {
     users,
     loading,
     error,
-    filter,
-    updateFilter,
-    totalPages,
-    currentPage,
-    totalRecords,
-    handlePageChange,
-    refetch: () => fetchUsers(filter)
+    totalCount,
+    refreshUsers,
+    updateFilters
   };
 };
-
-export default useUsers;
