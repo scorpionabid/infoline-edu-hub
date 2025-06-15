@@ -1,7 +1,9 @@
+
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { StatsGrid, StatsCard } from '@/components/ui/statistics';
+import { StatsGrid } from '@/components/dashboard/StatsGrid';
+import { StatsCard } from '@/components/dashboard/StatsCard';
 
 const Statistics: React.FC = () => {
   const { t } = useLanguageSafe();
