@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { UnifiedDataEntry, DataEntryParams } from './unifiedDataEntry';
 import { validateUserIdForDB } from '@/utils/uuidValidator';
@@ -37,13 +38,13 @@ export interface EnhancedDataEntryParams {
   id?: string;
 }
 
-export const validateDataEntryUpdates = (updates: Partial<EnhancedDataEntryParams>): Partial<EnhancedDataEntryParams> => {
+export const validateDataEntryUpdates = (updates: Partial<EnhancedDataEntryParams>): Record<string, any> => {
   // Remove undefined values and return clean object
-  const cleanUpdates: Partial<EnhancedDataEntryParams> = {};
+  const cleanUpdates: Record<string, any> = {};
   
   Object.entries(updates).forEach(([key, value]) => {
     if (value !== undefined) {
-      cleanUpdates[key as keyof EnhancedDataEntryParams] = value;
+      cleanUpdates[key] = value;
     }
   });
   

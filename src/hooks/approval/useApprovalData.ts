@@ -1,12 +1,12 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { isValidUUID } from '@/utils/uuidValidator';
-import { DataEntryStatus } from '@/types/dataEntry';
+import { DataEntryStatus, DataEntryStatusEnum } from '@/types/dataEntry';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { DataEntryStatusEnum } from '@/types/dataEntry';
 
 interface ApprovalItem {
   id: string;
@@ -142,16 +142,16 @@ export const useApprovalData = () => {
         const mostCommonStatus = Object.entries(statusCounts)
           .sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] as DataEntryStatus;
         
-        item.status = mostCommonStatus || DataEntryStatus.PENDING;
+        item.status = mostCommonStatus || 'pending';
 
         switch (item.status) {
-          case DataEntryStatus.PENDING:
+          case 'pending':
             pending.push(item);
             break;
-          case DataEntryStatus.APPROVED:
+          case 'approved':
             approved.push(item);
             break;
-          case DataEntryStatus.REJECTED:
+          case 'rejected':
             rejected.push(item);
             break;
         }

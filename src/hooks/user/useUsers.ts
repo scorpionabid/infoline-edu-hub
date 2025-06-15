@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types/user';
@@ -68,7 +69,11 @@ export const useUsers = () => {
         const userRole = user.role ? user.role[0]?.role : 'schooladmin';
         const userStatus = user.status || 'active';
         
-        let entityName: User['entityName'] = {};
+        let entityName: User['entityName'] = {
+          region: null,
+          sector: null,
+          school: null
+        };
         
         if (user.role && user.role[0]) {
           const { region_id, sector_id, school_id } = user.role[0];

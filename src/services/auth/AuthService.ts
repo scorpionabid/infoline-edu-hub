@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { FullUserData, UserStatus } from '@/types/auth';
 import { Session, User } from '@supabase/supabase-js';
@@ -117,7 +118,7 @@ export class AuthService {
       
       // Then sign out from Supabase
       const response = await supabase.auth.signOut();
-      return response;
+      return { data: response.error ? null : response, error: response.error };
     } catch (error) {
       console.error('Sign out error:', error);
       return {
@@ -160,13 +161,13 @@ export class AuthService {
       
       // Wait for other refresh to complete
       return new Promise((resolve) => {
-        const checkInterval = setInterval(() => {
+        const checkInterval = setInterval(async () => {
           if (!this.refreshInProgress) {
             clearInterval(checkInterval);
             
             // Get session from cache to avoid another API call
-            const { data, error } = supabase.auth.getSession();
-            resolve({ session: data.session, error: null });
+            const sessionResult = await this.getSession();
+            resolve(sessionResult);
           }
         }, 100);
         
@@ -261,6 +262,7 @@ export class AuthService {
         id: session.user.id,
         email: session.user.email || '',
         full_name: profileData?.full_name || session.user.email?.split('@')[0] || 'User',
+        name: profileData?.full_name || session.user.email?.split('@')[0] || 'User',
         role: roleData?.role || 'schooladmin',
         region_id: roleData?.region_id,
         sector_id: roleData?.sector_id,
@@ -276,7 +278,7 @@ export class AuthService {
         notification_settings: {
           email: true,
           push: true,
-          app: true
+          sms: true
         }
       };
       
