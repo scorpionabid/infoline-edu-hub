@@ -24,6 +24,9 @@ export interface UserFilter {
   role?: UserRole;
   status?: UserStatus;
   search?: string;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
 }
 
 export interface FullUserData {
@@ -41,6 +44,8 @@ export interface FullUserData {
   created_at: string;
   updated_at: string;
   last_login?: string;
+  avatar?: string;
+  entityName?: string;
 }
 
 export interface UserWithAssignments extends FullUserData {
@@ -48,3 +53,6 @@ export interface UserWithAssignments extends FullUserData {
   sector?: string;
   school?: string;
 }
+
+// Legacy alias for backward compatibility
+export interface User extends FullUserData {}
