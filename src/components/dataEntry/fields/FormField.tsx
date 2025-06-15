@@ -1,194 +1,113 @@
 
 import React from 'react';
+import { Column } from '@/types/column';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-
-interface Column {
-  id: string;
-  name: string;
-  type: string;
-  placeholder?: string;
-  help_text?: string;
-  options?: any[];
-  is_required?: boolean;
-}
+import { Label } from '@/components/ui/label';
 
 interface FormFieldProps {
-  id: string;
-  name: string;
-  value?: any;
+  column: Column;
+  value: any;
   onChange: (value: any) => void;
-  column?: Column;
-  type?: string;
-  placeholder?: string;
-  required?: boolean;
-  options?: any[];
-  readOnly?: boolean;
+  disabled?: boolean;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
-  id,
-  name,
+  column,
   value,
   onChange,
-  column,
-  type = 'text',
-  placeholder,
-  required = false,
-  options = [],
-  readOnly = false
+  disabled = false
 }) => {
-  const fieldType = column?.type || type;
-  const fieldPlaceholder = column?.placeholder || placeholder;
-  const fieldRequired = column?.is_required || required;
-
-  const handleChange = (newValue: any) => {
-    if (!readOnly) {
-      onChange(newValue);
-    }
-  };
-
   const renderField = () => {
-    switch (fieldType) {
+    switch (column.type) {
       case 'text':
-      case 'email':
-      case 'url':
         return (
           <Input
-            id={id}
-            name={name}
-            type={fieldType}
             value={value || ''}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder={fieldPlaceholder}
-            required={fieldRequired}
-            readOnly={readOnly}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={column.placeholder || ''}
+            disabled={disabled}
           />
         );
-
-      case 'number':
-        return (
-          <Input
-            id={id}
-            name={name}
-            type="number"
-            value={value || ''}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder={fieldPlaceholder}
-            required={fieldRequired}
-            readOnly={readOnly}
-          />
-        );
-
+      
       case 'textarea':
         return (
           <Textarea
-            id={id}
-            name={name}
             value={value || ''}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder={fieldPlaceholder}
-            required={fieldRequired}
-            readOnly={readOnly}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={column.placeholder || ''}
+            disabled={disabled}
+            rows={3}
           />
         );
-
-      case 'select':
-        const selectOptions = column?.options || options;
-        // Filter and validate options to ensure no empty values
-        const validOptions = selectOptions
-          .filter((option: any) => {
-            const optionValue = option?.value !== undefined ? option.value : option;
-            return optionValue !== null && optionValue !== undefined && String(optionValue).trim() !== '';
-          })
-          .map((option: any, index: number) => {
-            const optionValue = option?.value !== undefined ? option.value : option;
-            const optionLabel = option?.label !== undefined ? option.label : option;
-            
-            // Ensure value is never empty string
-            const safeValue = String(optionValue).trim() || `option-${index}`;
-            
-            return {
-              value: safeValue,
-              label: optionLabel || safeValue
-            };
-          });
-        
+      
+      case 'number':
         return (
-          <Select 
-            value={value || undefined} 
-            onValueChange={handleChange} 
-            disabled={readOnly}
+          <Input
+            type="number"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={column.placeholder || ''}
+            disabled={disabled}
+          />
+        );
+      
+      case 'select':
+        return (
+          <Select
+            value={value || ''}
+            onValueChange={onChange}
+            disabled={disabled}
           >
             <SelectTrigger>
-              <SelectValue placeholder={fieldPlaceholder || 'Seçin...'} />
+              <SelectValue placeholder={column.placeholder || 'Seçin'} />
             </SelectTrigger>
             <SelectContent>
-              {validOptions.length > 0 ? (
-                validOptions.map((option: any, index: number) => (
-                  <SelectItem 
-                    key={`${option.value}-${index}`} 
-                    value={option.value}
-                  >
-                    {option.label}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="no-options-available" disabled>
-                  Seçim yoxdur
+              {column.options && Array.isArray(column.options) && column.options.map((option: any, index: number) => (
+                <SelectItem key={index} value={option.value || option}>
+                  {option.label || option}
                 </SelectItem>
-              )}
+              ))}
             </SelectContent>
           </Select>
         );
-
+      
       case 'checkbox':
         return (
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id={id}
-              checked={value || false}
-              onCheckedChange={handleChange}
-              disabled={readOnly}
-            />
-            <Label htmlFor={id}>{name}</Label>
-          </div>
+          <Checkbox
+            checked={value || false}
+            onCheckedChange={onChange}
+            disabled={disabled}
+          />
         );
-
+      
       default:
         return (
           <Input
-            id={id}
-            name={name}
             value={value || ''}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder={fieldPlaceholder}
-            required={fieldRequired}
-            readOnly={readOnly}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={column.placeholder || ''}
+            disabled={disabled}
           />
         );
     }
   };
 
-  if (fieldType === 'checkbox') {
-    return renderField();
-  }
-
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>
-        {name}
-        {fieldRequired && <span className="text-red-500 ml-1">*</span>}
+      <Label htmlFor={column.id} className="text-sm font-medium">
+        {column.name}
+        {column.is_required && <span className="text-red-500 ml-1">*</span>}
       </Label>
       {renderField()}
-      {column?.help_text && (
+      {column.help_text && (
         <p className="text-sm text-muted-foreground">{column.help_text}</p>
       )}
     </div>
   );
 };
 
+export { FormField };
 export default FormField;

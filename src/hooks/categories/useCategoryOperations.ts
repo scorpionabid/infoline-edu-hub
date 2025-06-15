@@ -2,107 +2,74 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CategoryAssignment, CategoryStatus } from '@/types/category';
+import { Category } from '@/types/category';
 
 export interface CreateCategoryData {
   name: string;
   description?: string;
-  assignment?: CategoryAssignment;
-  status?: CategoryStatus;
-  order_index?: number;
+  assignment?: string;
   priority?: number;
-  deadline?: string;
-}
-
-export interface UpdateCategoryData extends Partial<CreateCategoryData> {
-  id: string;
+  status?: string;
 }
 
 export const useCategoryOperations = () => {
   const queryClient = useQueryClient();
 
-  const createCategory = useMutation({
-    mutationFn: async (data: CreateCategoryData) => {
-      const { data: result, error } = await supabase
-        .from('categories')
-        .insert([{
-          ...data,
-          order_index: data.order_index || 0,
-          status: data.status || 'active',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
+  const fetchCategories = async (searchQuery: string = '', filters: any = {}) => {
+    let query = supabase
+      .from('categories')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast.success('Kateqoriya uğurla yaradıldı');
-    },
-    onError: (error) => {
-      console.error('Create category error:', error);
-      toast.error('Kateqoriya yaradılarkən xəta baş verdi');
+    if (searchQuery) {
+      query = query.ilike('name', `%${searchQuery}%`);
     }
-  });
 
-  const updateCategory = useMutation({
-    mutationFn: async ({ id, ...data }: UpdateCategoryData) => {
-      const { data: result, error } = await supabase
-        .from('categories')
-        .update({
-          ...data,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast.success('Kateqoriya uğurla yeniləndi');
-    },
-    onError: (error) => {
-      console.error('Update category error:', error);
-      toast.error('Kateqoriya yenilənərkən xəta baş verdi');
+    if (filters.status) {
+      query = query.eq('status', filters.status);
     }
-  });
 
-  const deleteCategory = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('categories')
-        .update({ status: 'archived' })
-        .eq('id', id);
-
-      if (error) throw error;
-      return id;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast.success('Kateqoriya uğurla silindi');
-    },
-    onError: (error) => {
-      console.error('Delete category error:', error);
-      toast.error('Kateqoriya silinərkən xəta baş verdi');
+    if (filters.assignment) {
+      query = query.eq('assignment', filters.assignment);
     }
-  });
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    return (data || []).map(category => ({
+      ...category,
+      assignment: category.assignment || 'all',
+      archived: category.archived || false,
+      column_count: category.column_count || 0,
+      priority: category.priority || 0,
+      status: category.status || 'active'
+    }));
+  };
+
+  const addCategory = async (categoryData: CreateCategoryData) => {
+    const { data, error } = await supabase
+      .from('categories')
+      .insert({
+        name: categoryData.name,
+        description: categoryData.description,
+        assignment: categoryData.assignment || 'all',
+        priority: categoryData.priority || 0,
+        status: categoryData.status || 'active',
+        archived: false,
+        column_count: 0,
+        order_index: 0
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  };
 
   return {
-    createCategory: createCategory.mutate,
-    updateCategory: updateCategory.mutate,
-    deleteCategory: deleteCategory.mutate,
-    addCategory: createCategory.mutate,
-    isCreating: createCategory.isPending,
-    isUpdating: updateCategory.isPending,
-    isDeleting: deleteCategory.isPending,
-    isLoading: createCategory.isPending || updateCategory.isPending,
+    fetchCategories,
+    addCategory,
+    error: null
   };
 };
-
-export default useCategoryOperations;

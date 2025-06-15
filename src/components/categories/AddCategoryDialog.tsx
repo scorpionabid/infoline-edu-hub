@@ -14,8 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export interface AddCategoryDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: (open: boolean) => void;
   onSubmit: (categoryData: any) => Promise<void>;
 }
 
@@ -26,9 +26,9 @@ interface CategoryFormData {
   priority: number;
 }
 
-export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
-  open,
-  onOpenChange,
+const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
+  isOpen,
+  onClose,
   onSubmit
 }) => {
   const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<CategoryFormData>({
@@ -41,11 +41,11 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   const handleFormSubmit = async (data: CategoryFormData) => {
     await onSubmit(data);
     reset();
-    onOpenChange(false);
+    onClose(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Yeni Kateqoriya Əlavə Et</DialogTitle>
@@ -105,7 +105,7 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => onClose(false)}
             >
               Ləğv et
             </Button>
@@ -118,3 +118,5 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
     </Dialog>
   );
 };
+
+export default AddCategoryDialog;
