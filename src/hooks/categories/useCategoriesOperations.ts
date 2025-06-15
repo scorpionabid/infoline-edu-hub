@@ -39,9 +39,20 @@ export const useCategoriesOperations = () => {
 
   const createCategory = useMutation({
     mutationFn: async (categoryData: CreateCategoryData) => {
+      const insertData = {
+        name: categoryData.name,
+        description: categoryData.description,
+        assignment: categoryData.assignment || 'all',
+        deadline: categoryData.deadline ? new Date(categoryData.deadline).toISOString() : null,
+        priority: categoryData.priority || 1,
+        order_index: 0,
+        status: 'active',
+        archived: false
+      };
+
       const { data, error } = await supabase
         .from('categories')
-        .insert([categoryData])
+        .insert([insertData])
         .select()
         .single();
       
@@ -61,9 +72,14 @@ export const useCategoriesOperations = () => {
   const updateCategory = useMutation({
     mutationFn: async (categoryData: UpdateCategoryData) => {
       const { id, ...updates } = categoryData;
+      const updateData = {
+        ...updates,
+        deadline: updates.deadline ? new Date(updates.deadline).toISOString() : null
+      };
+
       const { data, error } = await supabase
         .from('categories')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

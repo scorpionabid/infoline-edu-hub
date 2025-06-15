@@ -12,6 +12,17 @@ export interface Sector {
   updated_at: string;
 }
 
+export interface EnhancedSector extends Sector {
+  regionName?: string;
+  region_name?: string;
+  adminName?: string;
+  admin_name?: string;
+  schoolCount?: number;
+  school_count?: number;
+  completionRate?: number;
+  completion_rate?: number;
+}
+
 export interface SectorFormData {
   name: string;
   description?: string;

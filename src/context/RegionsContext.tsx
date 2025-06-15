@@ -55,7 +55,19 @@ export const RegionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         throw new Error(error.message);
       }
 
-      setRegions(data || []);
+      // Type-safe conversion with status field mapping
+      const typedRegions: Region[] = (data || []).map(region => ({
+        id: region.id,
+        name: region.name,
+        description: region.description,
+        status: (region.status === 'active' || region.status === 'inactive') ? region.status : 'active',
+        admin_id: region.admin_id,
+        admin_email: region.admin_email,
+        created_at: region.created_at,
+        updated_at: region.updated_at
+      }));
+
+      setRegions(typedRegions);
     } catch (err: any) {
       setError(err.message);
     } finally {

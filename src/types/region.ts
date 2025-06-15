@@ -10,6 +10,19 @@ export interface Region {
   updated_at: string;
 }
 
+export interface EnhancedRegion extends Region {
+  regionName?: string;
+  region_name?: string;
+  adminName?: string;
+  admin_name?: string;
+  schoolCount?: number;
+  school_count?: number;
+  sectorCount?: number;
+  sector_count?: number;
+  completionRate?: number;
+  completion_rate?: number;
+}
+
 export interface RegionFormData {
   name: string;
   description?: string;
