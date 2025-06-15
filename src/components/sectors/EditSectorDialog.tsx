@@ -2,15 +2,16 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { Sector, Region } from '@/types/supabase';
+import { Region } from '@/types/supabase';
+import { EnhancedSector } from '@/types/sector';
 import SectorForm from './SectorForm';
 
 interface EditSectorDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  sector: Sector;
+  sector: EnhancedSector;
   regions: Region[];
-  onSubmit: (sectorData: Partial<Sector>) => Promise<void>;
+  onSubmit: (sectorData: Partial<EnhancedSector>) => Promise<boolean>;
   isSubmitting?: boolean;
 }
 
@@ -24,12 +25,15 @@ const EditSectorDialog: React.FC<EditSectorDialogProps> = ({
 }) => {
   const { t } = useLanguageSafe();
 
-  const handleSubmit = async (data: Partial<Sector>) => {
-    await onSubmit({
+  const handleSubmit = async (data: Partial<EnhancedSector>) => {
+    const success = await onSubmit({
       id: sector.id,
-      ...data
+      ...data,
+      region_name: regions.find(r => r.id === data.region_id)?.name || sector.region_name
     });
-    onClose();
+    if (success) {
+      onClose();
+    }
   };
 
   return (

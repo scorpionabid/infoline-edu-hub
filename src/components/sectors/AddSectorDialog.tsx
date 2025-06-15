@@ -2,14 +2,15 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { Sector, Region } from '@/types/supabase';
+import { Region } from '@/types/supabase';
+import { EnhancedSector } from '@/types/sector';
 import SectorForm from './SectorForm';
 
 interface AddSectorDialogProps {
   isOpen: boolean;
   onClose: () => void;
   regions: Region[];
-  onSubmit: (sectorData: Partial<Sector>) => Promise<void>;
+  onSubmit: (sectorData: Partial<EnhancedSector>) => Promise<boolean>;
   isSubmitting?: boolean;
 }
 
@@ -22,16 +23,19 @@ const AddSectorDialog: React.FC<AddSectorDialogProps> = ({
 }) => {
   const { t } = useLanguageSafe();
 
-  const handleSubmit = async (data: Partial<Sector>) => {
-    await onSubmit({
-      name: data.name,
-      description: data.description,
-      region_id: data.region_id,
+  const handleSubmit = async (data: Partial<EnhancedSector>) => {
+    const success = await onSubmit({
+      name: data.name || '',
+      description: data.description || '',
+      region_id: data.region_id || '',
       status: data.status || 'active',
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      region_name: regions.find(r => r.id === data.region_id)?.name
     });
-    onClose();
+    if (success) {
+      onClose();
+    }
   };
 
   return (

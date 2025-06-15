@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Sector } from '@/types/supabase';
+import { EnhancedSector } from '@/types/sector';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { Loader2 } from 'lucide-react';
 
@@ -18,7 +18,7 @@ interface DeleteSectorDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  sector: Sector;
+  sector: EnhancedSector;
   isSubmitting?: boolean;
 }
 

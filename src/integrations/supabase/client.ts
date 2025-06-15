@@ -248,44 +248,79 @@ export const locationService = {
    * Get all regions
    */
   async getRegions() {
+    console.log('getRegions called');
     try {
-      const { data, error } = await supabase
+      const { data, error, status } = await supabase
         .from('regions')
         .select('*')
         .order('name', { ascending: true });
 
+      console.log('getRegions response:', { status, dataLength: data?.length, error });
+
       if (error) {
         console.error('Error fetching regions:', error);
-        return [];
+        if (error.code === '42501') {
+          console.error('RLS Policy Violation: Check if the user has permission to access regions table');
+        }
+        throw error;
       }
 
-      return data;
+      return data || [];
     } catch (error) {
       console.error('Unexpected error in getRegions:', error);
-      return [];
+      throw error; // Re-throw to be handled by the caller
     }
   },
 
   /**
    * Get sectors by region ID
    */
-  async getSectors(regionId: string) {
+  async getSectors(regionId?: string) {
+    console.log('getSectors called with regionId:', regionId);
+    
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('sectors')
-        .select('*')
-        .eq('region_id', regionId)
+        .select(`
+          *,
+          regions!inner(*)
+        `)
         .order('name', { ascending: true });
+
+      // Only filter by region if regionId is provided
+      if (regionId) {
+        query = query.eq('region_id', regionId);
+      }
+
+      const { data, error, status } = await query;
+
+      console.log('getSectors response:', { 
+        status, 
+        dataLength: data?.length, 
+        error,
+        regionId,
+        fetchingAll: !regionId
+      });
 
       if (error) {
         console.error('Error fetching sectors:', error);
-        return [];
+        if (error.code === '42501') {
+          console.error('RLS Policy Violation: Check if the user has permission to access sectors table');
+        }
+        throw error;
       }
 
-      return data;
+      // Map the response to include region_name for backward compatibility
+      const mappedData = data?.map(sector => ({
+        ...sector,
+        region_name: sector.regions?.name
+      })) || [];
+
+      console.log('Mapped sectors data:', mappedData);
+      return mappedData;
     } catch (error) {
       console.error('Unexpected error in getSectors:', error);
-      return [];
+      throw error; // Re-throw to be handled by the caller
     }
   },
 

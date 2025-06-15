@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { Sector, Region } from '@/types/supabase';
+import { Region } from '@/types/supabase';
+import { EnhancedSector } from '@/types/sector';
 
 export interface SectorFormProps {
-  initialData?: Partial<Sector>;
+  initialData?: Partial<EnhancedSector>;
   regions?: Region[];
-  onSubmit: (data: Partial<Sector>) => Promise<void>;
+  onSubmit: (data: Partial<EnhancedSector>) => void;
   onCancel?: () => void;
   isSubmitting?: boolean;
 }
@@ -24,7 +25,7 @@ const SectorForm: React.FC<SectorFormProps> = ({
   isSubmitting = false
 }) => {
   const { t } = useLanguageSafe();
-  const [formData, setFormData] = useState<Partial<Sector>>({
+  const [formData, setFormData] = useState<Partial<EnhancedSector>>({
     name: initialData?.name || '',
     description: initialData?.description || '',
     region_id: initialData?.region_id || '',
@@ -45,7 +46,7 @@ const SectorForm: React.FC<SectorFormProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof Sector, value: string) => {
+  const handleInputChange = (field: keyof EnhancedSector, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
