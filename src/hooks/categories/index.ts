@@ -1,7 +1,7 @@
 
 // Enhanced categories hooks
 export { useCategoriesEnhanced } from './useCategoriesEnhanced';
-export { useCategoriesWithAssignment } from './useCategoriesWithAssignment';
+export { useCategoriesWithAssignment, useSchoolCategories } from './useCategoriesWithAssignment';
 export { useCategoryOperations } from './useCategoryOperations';
 export { useCategoryActions } from './useCategoryActions';
 
@@ -9,5 +9,5 @@ export { useCategoryActions } from './useCategoryActions';
 export { useCategories } from './useCategories';
 export { default as useCategoriesQuery } from './useCategoriesQuery';
 
-// School categories alias - fix the duplicate export
-export { useCategoriesWithAssignment as useSchoolCategories } from './useCategoriesWithAssignment';
+// Form hooks
+export { useCategoryForm } from './useCategoryForm';

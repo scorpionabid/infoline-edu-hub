@@ -6,13 +6,14 @@ import { Category, CategoryAssignment } from '@/types/category';
 export interface UseCategoriesWithAssignmentOptions {
   assignment?: CategoryAssignment;
   enabled?: boolean;
+  strictMode?: boolean; // Əlavə edilən parametr
 }
 
 export const useCategoriesWithAssignment = (options: UseCategoriesWithAssignmentOptions = {}) => {
-  const { assignment = 'schools', enabled = true } = options;
+  const { assignment = 'all', enabled = true, strictMode = false } = options;
 
   return useQuery({
-    queryKey: ['categories', 'assignment', assignment],
+    queryKey: ['categories', 'assignment', assignment, strictMode],
     queryFn: async () => {
       let query = supabase
         .from('categories')
@@ -20,8 +21,14 @@ export const useCategoriesWithAssignment = (options: UseCategoriesWithAssignment
         .eq('status', 'active')
         .order('order_index', { ascending: true });
 
-      if (assignment !== 'all') {
-        query = query.in('assignment', ['all', assignment]);
+      // Strict mode: yalnız müəyyən assignment
+      if (strictMode) {
+        query = query.eq('assignment', assignment);
+      } else {
+        // Normal mode: həm 'all' həm də müəyyən assignment
+        if (assignment !== 'all') {
+          query = query.in('assignment', ['all', assignment]);
+        }
       }
 
       const { data, error } = await query;
@@ -31,6 +38,7 @@ export const useCategoriesWithAssignment = (options: UseCategoriesWithAssignment
         throw error;
       }
 
+      console.log('Categories fetched:', data?.map(c => ({ id: c.id, name: c.name, assignment: c.assignment })));
       return (data || []) as Category[];
     },
     enabled,
@@ -38,7 +46,13 @@ export const useCategoriesWithAssignment = (options: UseCategoriesWithAssignment
   });
 };
 
-// Add the missing export alias
-export const useSchoolCategories = useCategoriesWithAssignment;
+// School categories üçün xüsusi hook
+export const useSchoolCategories = (options: UseCategoriesWithAssignmentOptions = {}) => {
+  return useCategoriesWithAssignment({
+    assignment: 'all',
+    strictMode: true, // Yalnız 'all' assignment-li kateqoriyalar
+    ...options
+  });
+};
 
 export default useCategoriesWithAssignment;

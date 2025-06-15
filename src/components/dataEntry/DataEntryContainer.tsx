@@ -1,142 +1,152 @@
 
-import React from 'react';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import SchoolAdminDataEntry from './SchoolAdminDataEntry'; // Default import-a düzəltirik
-import { SectorAdminSchoolList } from '@/components/schools/SectorAdminSchoolList';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { useAuthStore, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
+
+// Hooks
+import { useSchoolCategories } from '@/hooks/categories/useCategoriesWithAssignment';
+import { useSchools } from '@/hooks/useSchools';
+
+// Components
+import DataEntryTabs from './DataEntryTabs';
+import SchoolManagement from './SchoolManagement';
+import { SimpleSchoolSelector } from './SimpleSchoolSelector';
 
 interface DataEntryContainerProps {
-  assignment?: 'all' | 'schools' | 'sectors';
+  assignment?: 'all' | 'sectors';
+  strictMode?: boolean;
 }
 
-export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ 
-  assignment = 'all' 
+const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ 
+  assignment = 'all', 
+  strictMode = false 
 }) => {
+  const { t } = useLanguage();
+  const { schoolId: urlSchoolId } = useParams();
   const user = useAuthStore(selectUser);
-  const { userRole } = usePermissions();
+  const userRole = useAuthStore(selectUserRole);
+  
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  console.log('DataEntryContainer - User role:', userRole, 'Assignment:', assignment);
+  // Categories hook-u yeniləmə
+  const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useSchoolCategories({
+    assignment,
+    strictMode,
+    enabled: true
+  });
 
-  // Sektor məlumatları üçün (assignment="sectors" kateqoriyalar)
-  if (assignment === 'sectors') {
-    if (userRole === 'sectoradmin' || userRole === 'regionadmin' || userRole === 'superadmin') {
-      // Sektor məlumat daxil etmə formu - məktəb seçimi yoxdur
-      return (
-        <Card>
-          <CardContent className="py-8 text-center">
-            <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
-            <p className="font-semibold mb-2">Sektor məlumat daxiletmə formu hazırlanma prosesindədir</p>
-            <p className="text-muted-foreground">
-              Bu funksionallıq tezliklə əlavə olunacaq
-            </p>
-          </CardContent>
-        </Card>
-      );
+  const { data: schools = [], isLoading: schoolsLoading } = useSchools({
+    enabled: userRole === 'sectoradmin'
+  });
+
+  // Debug məlumatları
+  useEffect(() => {
+    console.log('DataEntryContainer debug:', {
+      assignment,
+      strictMode,
+      categoriesCount: categories.length,
+      categories: categories.map(c => ({ id: c.id, name: c.name, assignment: c.assignment })),
+      userRole,
+      user: user ? { id: user.id, role: userRole } : null
+    });
+  }, [categories, assignment, strictMode, userRole, user]);
+
+  // School ID management
+  useEffect(() => {
+    if (urlSchoolId) {
+      setSelectedSchoolId(urlSchoolId);
+    } else if (userRole === 'schooladmin' && user?.school_id) {
+      setSelectedSchoolId(user.school_id);
     }
+    setIsLoading(false);
+  }, [urlSchoolId, userRole, user]);
+
+  // Loading state
+  if (isLoading || categoriesLoading || (userRole === 'sectoradmin' && schoolsLoading)) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>{t('loading')}</span>
+        </div>
+      </div>
+    );
   }
 
-  // Məktəb məlumatları üçün (assignment="all" kateqoriyalar)
-  if (assignment === 'schools' || assignment === 'all') {
-    if (userRole === 'sectoradmin') {
-      // SectorAdmin məktəb seçir və proxy məlumat daxil edir
-      return (
-        <div className="h-full">
-          <SectorAdminSchoolList
-            onSchoolSelect={(schoolId) => {
-              console.log('SectorAdmin selected school:', schoolId);
-            }}
-            onDataEntry={(schoolId) => {
-              console.log('SectorAdmin starting data entry for school:', schoolId);
-            }}
-            onBulkSelect={(schoolIds) => {
-              console.log('SectorAdmin bulk selected schools:', schoolIds);
-            }}
-          />
-        </div>
-      );
-    } else if (userRole === 'schooladmin') {
-      // SchoolAdmin birbaşa öz məktəbi üçün məlumat daxil edir
-      if (!user?.school_id) {
-        return (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <p className="text-red-600">
-                Məktəb məlumatları tapılmadı. Zəhmət olmasa admin ilə əlaqə saxlayın.
-              </p>
-            </CardContent>
-          </Card>
-        );
-      }
-
-      // SchoolAdmin üçün kateqoriya seçimi ilə data entry
-      return <SchoolAdminDataEntry />;
-    } else if (userRole === 'regionadmin') {
-      // RegionAdmin can also access school data entry with school selection
-      return (
-        <div className="h-full">
-          <SectorAdminSchoolList
-            onSchoolSelect={(schoolId) => {
-              console.log('RegionAdmin selected school:', schoolId);
-            }}
-            onDataEntry={(schoolId) => {
-              console.log('RegionAdmin starting data entry for school:', schoolId);
-            }}
-            onBulkSelect={(schoolIds) => {
-              console.log('RegionAdmin bulk selected schools:', schoolIds);
-            }}
-          />
-        </div>
-      );
-    }
+  // Error state
+  if (categoriesError) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>
+          {t('errorLoadingCategories')}: {categoriesError.message}
+        </AlertDescription>
+      </Alert>
+    );
   }
 
-  // SuperAdmin can access everything
-  if (userRole === 'superadmin') {
-    if (assignment === 'sectors') {
-      return (
-        <Card>
-          <CardContent className="py-8 text-center">
-            <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
-            <p className="font-semibold mb-2">Sektor məlumat daxiletmə formu hazırlanma prosesindədir</p>
-            <p className="text-muted-foreground">
-              Bu funksionallıq tezliklə əlavə olunacaq
-            </p>
-          </CardContent>
-        </Card>
-      );
-    } else {
-      return (
-        <div className="h-full">
-          <SectorAdminSchoolList
-            onSchoolSelect={(schoolId) => {
-              console.log('SuperAdmin selected school:', schoolId);
-            }}
-            onDataEntry={(schoolId) => {
-              console.log('SuperAdmin starting data entry for school:', schoolId);
-            }}
-            onBulkSelect={(schoolIds) => {
-              console.log('SuperAdmin bulk selected schools:', schoolIds);
-            }}
-          />
-        </div>
-      );
-    }
+  // No categories
+  if (categories.length === 0) {
+    return (
+      <Alert>
+        <AlertDescription>
+          {strictMode 
+            ? 'Məktəb üçün aktiv kateqoriya tapılmadı.' 
+            : t('noCategoriesFound')
+          }
+        </AlertDescription>
+      </Alert>
+    );
   }
 
-  // Default case - no access
+  // School selection for sector admins
+  if (userRole === 'sectoradmin' && !selectedSchoolId) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="text-xl font-semibold mb-4">{t('selectSchool')}</h2>
+          <SimpleSchoolSelector
+            schools={schools}
+            onSchoolSelect={setSelectedSchoolId}
+            selectedSchoolId={selectedSchoolId}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // No school selected
+  if (!selectedSchoolId) {
+    return (
+      <Alert>
+        <AlertDescription>
+          {t('pleaseSelectSchool')}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
-    <Card>
-      <CardContent className="py-8 text-center space-y-4">
-        <p className="text-muted-foreground">
-          Bu bölmə sizin rolunuz üçün uyğun deyil
-        </p>
-        <div className="text-sm text-muted-foreground space-y-1">
-          <p><strong>Sizin rolunuz:</strong> {userRole}</p>
-          <p><strong>Tələb olunan assignment:</strong> {assignment}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      {userRole === 'sectoradmin' && (
+        <SchoolManagement
+          selectedSchoolId={selectedSchoolId}
+          onSchoolChange={setSelectedSchoolId}
+          schools={schools}
+        />
+      )}
+      
+      <DataEntryTabs
+        categories={categories}
+        schoolId={selectedSchoolId}
+        userRole={userRole}
+      />
+    </div>
   );
 };
+
+export { DataEntryContainer };
