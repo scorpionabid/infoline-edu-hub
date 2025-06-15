@@ -1,6 +1,8 @@
 
 import { UserRole } from '@/types/auth';
 
+export { UserRole } from '@/types/auth';
+
 export interface UserFormData {
   full_name: string;
   email: string;
@@ -13,6 +15,7 @@ export interface UserFormData {
   school_id?: string;
   language?: string;
   status?: 'active' | 'inactive';
+  notificationSettings?: NotificationSettings;
 }
 
 export interface UserFilter {
@@ -43,6 +46,10 @@ export interface UserData {
   updated_at: string;
   entity_name?: string;
 }
+
+// Add missing type aliases for backward compatibility
+export type User = UserData;
+export type FullUserData = UserData;
 
 export interface NotificationSettings {
   email_notifications: boolean;

@@ -48,7 +48,7 @@ export const useRealDashboardData = () => {
       .limit(10)
       .order('created_at', { ascending: false });
 
-    const regions = regionsData?.map(region => ({
+    const regionsProcessed = regionsData?.map(region => ({
       id: region.id,
       name: region.name,
       status: region.status,
@@ -72,7 +72,7 @@ export const useRealDashboardData = () => {
       pendingApprovals: [],
       deadlines: [],
       regionStats: [],
-      regions,
+      regions: regionsProcessed,
       formsByStatus: {
         pending: statusCounts.pending || 0,
         approved: statusCounts.approved || 0,
@@ -106,7 +106,7 @@ export const useRealDashboardData = () => {
       `)
       .eq('region_id', regionId);
 
-    const sectors = sectorsData?.map(sector => ({
+    const sectorsProcessed = sectorsData?.map(sector => ({
       id: sector.id,
       name: sector.name,
       totalSchools: sector.schools?.length || 0,
@@ -146,10 +146,10 @@ export const useRealDashboardData = () => {
         assignment: cat.assignment
       })) || [],
       deadlines: [],
-      sectors,
+      sectors: sectorsProcessed,
       stats: {
-        sectors: sectors.length,
-        schools: sectors.reduce((sum, s) => sum + s.totalSchools, 0),
+        sectors: sectorsProcessed.length,
+        schools: sectorsProcessed.reduce((sum, s) => sum + s.totalSchools, 0),
         users: 0 // Could calculate if needed
       },
       pendingItems: [],
@@ -167,6 +167,7 @@ export const useRealDashboardData = () => {
         completion_rate: statusCounts.approved ? (statusCounts.approved / (formStats?.length || 1)) * 100 : 0,
         completionRate: statusCounts.approved ? (statusCounts.approved / (formStats?.length || 1)) * 100 : 0,
         completedForms: statusCounts.approved || 0,
+        pendingForms: statusCounts.pending || 0,
         approvalRate: statusCounts.approved ? (statusCounts.approved / (formStats?.length || 1)) * 100 : 0
       }
     };
@@ -180,7 +181,7 @@ export const useRealDashboardData = () => {
       .select('id, name, completion_rate, status, updated_at, admin_email')
       .eq('sector_id', sectorId);
 
-    const schools = schoolsData?.map(school => ({
+    const schoolsProcessed = schoolsData?.map(school => ({
       id: school.id,
       name: school.name,
       completionRate: typeof school.completion_rate === 'number' ? school.completion_rate : 0,
@@ -208,13 +209,13 @@ export const useRealDashboardData = () => {
         assignment: cat.assignment
       })) || [],
       deadlines: [],
-      schools,
+      schools: schoolsProcessed,
       stats: {
-        schools: schools.length
+        schools: schoolsProcessed.length
       },
       pendingItems: [],
       notifications: [],
-      completionRate: schools.reduce((sum, s) => sum + s.completionRate, 0) / (schools.length || 1)
+      completionRate: schoolsProcessed.reduce((sum, s) => sum + s.completionRate, 0) / (schoolsProcessed.length || 1)
     };
   };
 
