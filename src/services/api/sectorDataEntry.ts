@@ -1,6 +1,18 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+export interface SectorDataEntry {
+  id: string;
+  sector_id: string;
+  category_id: string;
+  column_id: string;
+  value: string;
+  status: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const fetchSectorDataEntries = async (options: { categoryId: string; sectorId: string }) => {
   const { categoryId, sectorId } = options;
   
@@ -32,6 +44,23 @@ export const saveSectorDataEntries = async (
   const { data, error } = await supabase
     .from('sector_data_entries')
     .upsert(entriesData, { onConflict: 'sector_id,category_id,column_id' })
+    .select();
+  
+  if (error) throw error;
+  return data;
+};
+
+// Add missing updateSectorDataEntriesStatus function
+export const updateSectorDataEntriesStatus = async (entries: any[], status: string) => {
+  const entryIds = entries.map(entry => entry.id);
+  
+  const { data, error } = await supabase
+    .from('sector_data_entries')
+    .update({ 
+      status,
+      updated_at: new Date().toISOString()
+    })
+    .in('id', entryIds)
     .select();
   
   if (error) throw error;

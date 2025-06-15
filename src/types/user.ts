@@ -3,6 +3,7 @@ export interface User {
   id: string;
   email: string;
   full_name: string;
+  fullName?: string; // Add compatibility alias
   avatar?: string;
   phone?: string;
   position?: string;
@@ -44,6 +45,7 @@ export interface NotificationSettings {
 
 export interface UserFormData {
   full_name: string;
+  fullName?: string; // Add compatibility alias
   email: string;
   phone?: string;
   position?: string;

@@ -144,7 +144,7 @@ export class DataEntryService {
   ): Promise<SubmitForApprovalResult> {
     try {
       // Validate userId
-      const safeUserId = getDBSafeUUID(userId, 'updated_by');
+      const safeUserId = getDBSafeUUID(userId, 'submit operation');
       
       // Debug logging
       logUUIDValidation(userId, 'DataEntryService.submitForApproval', safeUserId);
@@ -155,15 +155,16 @@ export class DataEntryService {
         validatedUserId: safeUserId
       });
       
-      // Prepare update object
+      // Prepare update object - REMOVE updated_by reference
       const updateData: any = { 
         status: 'pending',
         updated_at: new Date().toISOString()
       };
       
-      // Only add updated_by if we have a valid UUID
+      // Don't add any user reference fields since updated_by doesn't exist
+      // Only add created_by if we have a valid UUID and it's needed for audit
       if (safeUserId) {
-        updateData.updated_by = safeUserId;
+        updateData.created_by = safeUserId;
       }
       
       const { data, error } = await supabase

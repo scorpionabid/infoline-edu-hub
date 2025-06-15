@@ -15,6 +15,20 @@ export interface Category {
   archived?: boolean;
   created_at: string;
   updated_at: string;
+  completion_rate?: number; // Add missing completion_rate property
+  completionRate?: number; // Alias for compatibility
+}
+
+// Add missing CategoryWithColumns interface
+export interface CategoryWithColumns extends Category {
+  columns: any[]; // Using any[] for now to avoid circular dependencies
+}
+
+// Add missing CategoryFilter interface
+export interface CategoryFilter {
+  search: string;
+  status: CategoryStatus | '';
+  assignment: CategoryAssignment | '';
 }
 
 export interface AddCategoryFormData {
@@ -24,7 +38,7 @@ export interface AddCategoryFormData {
   status: CategoryStatus;
   priority: number;
   deadline?: string | null;
-  order_index?: number; // Add this field
+  order_index?: number;
 }
 
 export interface CreateCategoryFormData extends AddCategoryFormData {
@@ -36,3 +50,11 @@ export interface UpdateCategoryFormData extends Partial<AddCategoryFormData> {
   id: string;
   updated_at?: string;
 }
+
+// Add missing formatDeadlineForApi utility function
+export const formatDeadlineForApi = (deadline: any): string | null => {
+  if (!deadline) return null;
+  if (typeof deadline === 'string') return deadline;
+  if (deadline instanceof Date) return deadline.toISOString();
+  return null;
+};

@@ -26,6 +26,7 @@ export const useCategoryOperations = () => {
         .from('categories')
         .insert([{
           ...data,
+          order_index: data.order_index || 0, // Ensure order_index is always provided
           status: 'active',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()

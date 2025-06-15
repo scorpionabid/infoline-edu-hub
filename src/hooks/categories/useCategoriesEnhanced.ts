@@ -13,6 +13,7 @@ export function useCategoriesEnhanced() {
     return rawCategories.map((category: Category) => ({
       ...category,
       columnCount: category.column_count,
+      completion_rate: category.completion_rate || 0, // Handle missing completion_rate
       completionRate: category.completion_rate || category.completionRate || 0
     }));
   }, [rawCategories]);
