@@ -1,50 +1,67 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 
 export interface UsePaginationOptions {
-  initialPage?: number;
+  totalItems: number;
   initialPageSize?: number;
+  initialPage?: number;
 }
 
 export interface UsePaginationReturn {
   currentPage: number;
   pageSize: number;
-  totalCount: number;
-  setTotalCount: (count: number) => void;
-  goToPage: (page: number) => void;
+  totalPages: number;
+  setCurrentPage: (page: number) => void;
   setPageSize: (size: number) => void;
-  getTotalPages: () => number;
+  nextPage: () => void;
+  prevPage: () => void;
   hasNextPage: boolean;
-  hasPreviousPage: boolean;
+  hasPrevPage: boolean;
+  startIndex: number;
+  endIndex: number;
 }
 
-export const usePagination = (options: UsePaginationOptions = {}): UsePaginationReturn => {
-  const { initialPage = 1, initialPageSize = 10 } = options;
-  
+export const usePagination = ({
+  totalItems,
+  initialPageSize = 10,
+  initialPage = 1
+}: UsePaginationOptions): UsePaginationReturn => {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
-  const [totalCount, setTotalCount] = useState(0);
 
-  const goToPage = useCallback((page: number) => {
-    setCurrentPage(page);
-  }, []);
+  const totalPages = useMemo(() => {
+    return Math.ceil(totalItems / pageSize);
+  }, [totalItems, pageSize]);
 
-  const getTotalPages = useCallback(() => {
-    return Math.ceil(totalCount / pageSize);
-  }, [totalCount, pageSize]);
+  const hasNextPage = currentPage < totalPages;
+  const hasPrevPage = currentPage > 1;
 
-  const hasNextPage = currentPage < getTotalPages();
-  const hasPreviousPage = currentPage > 1;
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+  const nextPage = () => {
+    if (hasNextPage) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const prevPage = () => {
+    if (hasPrevPage) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
 
   return {
     currentPage,
     pageSize,
-    totalCount,
-    setTotalCount,
-    goToPage,
+    totalPages,
+    setCurrentPage,
     setPageSize,
-    getTotalPages,
+    nextPage,
+    prevPage,
     hasNextPage,
-    hasPreviousPage
+    hasPrevPage,
+    startIndex,
+    endIndex
   };
 };

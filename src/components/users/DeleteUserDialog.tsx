@@ -1,58 +1,49 @@
-
 import React from 'react';
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useLanguage } from '@/context/LanguageContext';
+  AlertDialogDescription,
+  AlertDialogTrigger,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
+import { Button } from '@/components/ui/button';
 import { User } from '@/types/user';
 
 interface DeleteUserDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  user: Partial<User>;
-  onDelete: () => void;
+  user: Partial<User> | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
 }
 
 const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
-  open,
-  onOpenChange,
   user,
-  onDelete
+  isOpen,
+  onClose,
+  onConfirm
 }) => {
-  const { t } = useLanguage();
-  
-  const handleConfirmDelete = () => {
-    onDelete();
-  };
-
-  // Get user name from fullName, full_name, or email with fallback to "unknown user"
-  const userName = user.fullName || user.full_name || user.email || t('unknownUser');
+  if (!user) return null;
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive" size="sm">Sil</Button>
+      </AlertDialogTrigger>
+      
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t('deleteUserConfirmation')}</AlertDialogTitle>
+          <AlertDialogTitle>İstifadəçini Sil</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteUserWarning', { name: userName })}
+            <strong>{user.full_name || user.email}</strong> istifadəçisini silmək istədiyinizə əminsiniz?
+            Bu əməliyyat geri qaytarıla bilməz.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={handleConfirmDelete}
-            className="bg-red-500 hover:bg-red-600"
-          >
-            {t('delete')}
-          </AlertDialogAction>
-        </AlertDialogFooter>
+        
+        <AlertDialogCancel>Ləğv Et</AlertDialogCancel>
+        <AlertDialogAction onClick={onConfirm}>Sil</AlertDialogAction>
       </AlertDialogContent>
     </AlertDialog>
   );

@@ -1,14 +1,9 @@
 
-// UNIFIED CATEGORY HOOKS EXPORT
-// All category functionality is now consolidated in useCategories.ts
+// Enhanced categories hooks
+export { useCategoriesEnhanced } from './useCategoriesEnhanced';
+export { useCategoriesWithAssignment } from './useCategoriesWithAssignment';
+export { useCategoryOperations } from './useCategoryOperations';
+export { useCategoryActions } from './useCategoryActions';
 
-export { 
-  useCategories,
-  useCategoryOperations,
-  useSchoolCategories,
-  useSectorCategories,
-  useAllCategoriesForAdmin,
-  // Backward compatibility exports
-  useCategoriesWithAssignment,
-  useCategoryActions
-} from './useCategories';
+// Legacy exports for backward compatibility
+export { default as useCategoriesQuery } from './useCategoriesQuery';
