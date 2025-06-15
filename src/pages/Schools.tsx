@@ -21,14 +21,24 @@ const Schools = () => {
   const [error, setError] = useState<string | null>(null);
 
   const { userRole, regionId, sectorId } = usePermissions();
+  // Initialize pagination with default values
   const { 
     currentPage, 
     pageSize, 
-    totalCount, 
-    setTotalCount, 
-    goToPage,
-    setPageSize: updatePageSize 
-  } = usePagination();
+    totalPages,
+    setCurrentPage,
+    setPageSize: updatePageSize,
+    nextPage,
+    prevPage,
+    hasNextPage,
+    hasPrevPage
+  } = usePagination({
+    totalItems: 0, // Will be updated after first fetch
+    initialPage: 1,
+    initialPageSize: 10
+  });
+  
+  const [totalCount, setTotalCount] = useState(0);
 
   const [filters, setFilters] = useState({
     search: '',
@@ -91,7 +101,10 @@ const Schools = () => {
       }));
 
       setSchools(transformedSchools);
-      setTotalCount(count || 0);
+      // Update total count if it has changed
+      if (count !== totalCount) {
+        setTotalCount(count || 0);
+      }
     } catch (err) {
       console.error('Error fetching schools:', err);
       setError('Failed to fetch schools');
@@ -103,7 +116,7 @@ const Schools = () => {
 
   const createSchool = useCallback(async (schoolData: Omit<School, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('schools')
         .insert({
           name: schoolData.name,
@@ -118,25 +131,22 @@ const Schools = () => {
           status: schoolData.status || 'active',
           type: schoolData.type || 'public',
           language: schoolData.language || 'az'
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
 
       await fetchSchools();
-      toast.success('School created successfully');
-      return data;
+      toast.success(t('schoolCreated'));
     } catch (err) {
       console.error('Error creating school:', err);
-      toast.error('Failed to create school');
+      toast.error(t('schoolCreationFailed'));
       throw err;
     }
-  }, [fetchSchools]);
+  }, [fetchSchools, t]);
 
-  const updateSchool = useCallback(async (id: string, schoolData: Partial<School>) => {
+  const updateSchool = useCallback(async (schoolData: School) => {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('schools')
         .update({
           name: schoolData.name,
@@ -146,45 +156,42 @@ const Schools = () => {
           address: schoolData.address || null,
           phone: schoolData.phone || null,
           email: schoolData.email || null,
-          student_count: schoolData.student_count || null,
-          teacher_count: schoolData.teacher_count || null,
+          student_count: schoolData.student_count || 0,
+          teacher_count: schoolData.teacher_count || 0,
           status: schoolData.status,
           type: schoolData.type,
           language: schoolData.language
         })
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', schoolData.id);
 
       if (error) throw error;
 
       await fetchSchools();
-      toast.success('School updated successfully');
-      return data;
+      toast.success(t('schoolUpdated'));
     } catch (err) {
       console.error('Error updating school:', err);
-      toast.error('Failed to update school');
+      toast.error(t('schoolUpdateFailed'));
       throw err;
     }
-  }, [fetchSchools]);
+  }, [fetchSchools, t]);
 
-  const deleteSchool = useCallback(async (id: string) => {
+  const deleteSchool = useCallback(async (school: School) => {
     try {
       const { error } = await supabase
         .from('schools')
         .delete()
-        .eq('id', id);
+        .eq('id', school.id);
 
       if (error) throw error;
 
       await fetchSchools();
-      toast.success('School deleted successfully');
+      toast.success(t('schoolDeleted'));
     } catch (err) {
       console.error('Error deleting school:', err);
-      toast.error('Failed to delete school');
+      toast.error(t('schoolDeletionFailed'));
       throw err;
     }
-  }, [fetchSchools]);
+  }, [fetchSchools, t]);
 
   const fetchRegions = useCallback(async () => {
     try {
@@ -195,7 +202,13 @@ const Schools = () => {
 
       if (error) throw error;
       
-      setRegions(data || []);
+      // Transform data to ensure proper typing
+      const transformedRegions: Region[] = (data || []).map(region => ({
+        ...region,
+        status: region.status === 'active' ? 'active' : 'inactive'
+      }));
+      
+      setRegions(transformedRegions);
     } catch (err) {
       console.error('Error fetching regions:', err);
       toast.error('Failed to fetch regions');
@@ -211,7 +224,15 @@ const Schools = () => {
 
       if (error) throw error;
       
-      setSectors(data || []);
+      // Transform data to ensure proper typing
+      const transformedSectors: Sector[] = (data || []).map(sector => ({
+        ...sector,
+        status: sector.status === 'active' ? 'active' : 'inactive',
+        completion_rate: sector.completion_rate || 0,
+        region_id: sector.region_id || ''
+      }));
+      
+      setSectors(transformedSectors);
     } catch (err) {
       console.error('Error fetching sectors:', err);
       toast.error('Failed to fetch sectors');
@@ -277,8 +298,49 @@ const Schools = () => {
   }, []);
 
   React.useEffect(() => {
-    Promise.all([fetchSchools(), fetchRegions(), fetchSectors(), fetchUsers()]);
-  }, [fetchSchools, fetchRegions, fetchSectors, fetchUsers]);
+    // Only fetch schools when pagination or filters change
+    fetchSchools();
+  }, [currentPage, pageSize, filters, fetchSchools]);
+  
+  // Initial data load
+  React.useEffect(() => {
+    fetchRegions();
+    fetchSectors();
+    fetchUsers();
+  }, [fetchRegions, fetchSectors, fetchUsers]);
+
+  // Create name maps for regions and sectors
+  const regionNames = React.useMemo(() => {
+    return regions.reduce<Record<string, string>>((acc, region) => {
+      acc[region.id] = region.name;
+      return acc;
+    }, {});
+  }, [regions]);
+
+  const sectorNames = React.useMemo(() => {
+    return sectors.reduce<Record<string, string>>((acc, sector) => {
+      acc[sector.id] = sector.name;
+      return acc;
+    }, {});
+  }, [sectors]);
+
+  const handleAssignAdmin = useCallback(async (schoolId: string, userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('schools')
+        .update({ admin_id: userId })
+        .eq('id', schoolId);
+
+      if (error) throw error;
+      
+      await fetchSchools();
+      toast.success(t('adminAssigned'));
+    } catch (err) {
+      console.error('Error assigning admin:', err);
+      toast.error(t('adminAssignmentFailed'));
+      throw err;
+    }
+  }, [fetchSchools, t]);
 
   return (
     <>
@@ -291,18 +353,14 @@ const Schools = () => {
           schools={schools}
           regions={regions}
           sectors={sectors}
-          users={users}
-          loading={loading}
-          error={error}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          totalCount={totalCount}
-          filters={filters}
-          onFiltersChange={setFilters}
-          onPageChange={goToPage}
-          onPageSizeChange={updatePageSize}
-          onCreateSchool={createSchool}
+          isLoading={loading}
           onRefresh={fetchSchools}
+          onCreate={createSchool}
+          onEdit={updateSchool}
+          onDelete={deleteSchool}
+          onAssignAdmin={handleAssignAdmin}
+          regionNames={regionNames}
+          sectorNames={sectorNames}
         />
       </div>
     </>
