@@ -1,6 +1,28 @@
+
 import { useState, useCallback, useEffect } from 'react';
-import { School, SchoolFormData, mockRegions, mockSectors } from '@/data/schoolsData';
+import { School } from '@/types/school';
 import { toast } from 'sonner';
+import { useSchoolsData } from './useSchoolsData';
+
+// Real school form data interface
+export interface SchoolFormData {
+  name: string;
+  principalName: string;
+  address: string;
+  regionId: string;
+  sectorId: string;
+  phone: string;
+  email: string;
+  studentCount: string;
+  teacherCount: string;
+  status: 'active' | 'inactive';
+  type: string;
+  language: string;
+  adminEmail: string;
+  adminFullName: string;
+  adminPassword: string;
+  adminStatus: 'active' | 'inactive';
+}
 
 // Initial form data
 export const getInitialFormState = (): SchoolFormData => ({
@@ -25,6 +47,8 @@ export const getInitialFormState = (): SchoolFormData => ({
 interface UseSchoolFormReturn {
   formData: SchoolFormData;
   currentTab: string;
+  regions: any[];
+  sectors: any[];
   setCurrentTab: (tab: string) => void;
   setFormDataFromSchool: (school: School) => void;
   handleFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
@@ -35,6 +59,9 @@ interface UseSchoolFormReturn {
 export const useSchoolForm = (): UseSchoolFormReturn => {
   const [formData, setFormData] = useState<SchoolFormData>(getInitialFormState());
   const [currentTab, setCurrentTab] = useState('school');
+  
+  // Use real data instead of mock
+  const { regions, sectors } = useSchoolsData();
 
   const handleFormChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -48,21 +75,21 @@ export const useSchoolForm = (): UseSchoolFormReturn => {
   const setFormDataFromSchool = useCallback((school: School) => {
     const newFormData = {
       name: school.name,
-      principalName: school.principalName || '',
+      principalName: school.principal_name || '',
       address: school.address || '',
-      regionId: school.regionId,
-      sectorId: school.sectorId,
+      regionId: school.region_id,
+      sectorId: school.sector_id,
       phone: school.phone || '',
       email: school.email || '',
-      studentCount: school.studentCount?.toString() || '',
-      teacherCount: school.teacherCount?.toString() || '',
+      studentCount: school.student_count?.toString() || '',
+      teacherCount: school.teacher_count?.toString() || '',
       status: school.status || 'active',
       type: school.type || 'full_secondary',
       language: school.language || 'az',
-      adminEmail: school.adminEmail || '',
+      adminEmail: school.admin_email || '',
       adminFullName: '',
       adminPassword: '',
-      adminStatus: 'active'
+      adminStatus: 'active' as 'active' | 'inactive'
     };
     
     setFormData(newFormData);
@@ -87,7 +114,6 @@ export const useSchoolForm = (): UseSchoolFormReturn => {
     return true;
   }, [formData, currentTab]);
 
-  // Component unmount olduqdan sonra formanı sıfırla
   useEffect(() => {
     return () => {
       setFormData(getInitialFormState());
@@ -98,6 +124,8 @@ export const useSchoolForm = (): UseSchoolFormReturn => {
   return {
     formData,
     currentTab,
+    regions,
+    sectors,
     setCurrentTab,
     setFormDataFromSchool,
     handleFormChange,

@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 export interface UserFormData {
   full_name: string;
   email: string;
-  role: string;
+  role: 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
   phone?: string;
   position?: string;
   region_id?: string;
@@ -48,15 +48,15 @@ export const useCreateUser = () => {
 
       if (profileError) throw profileError;
 
-      // Create user role
+      // Create user role - fix role typing
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert({
           user_id: authUser.user.id,
-          role: userData.role,
-          region_id: userData.region_id,
-          sector_id: userData.sector_id,
-          school_id: userData.school_id
+          role: userData.role as 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin',
+          region_id: userData.region_id || null,
+          sector_id: userData.sector_id || null,
+          school_id: userData.school_id || null
         });
 
       if (roleError) throw roleError;

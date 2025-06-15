@@ -190,7 +190,7 @@ export const SchoolsProvider: React.FC<SchoolsProviderProps> = ({ children }) =>
 
   const assignAdmin = async (schoolId: string, adminData: any) => {
     try {
-      // Call the assign_school_admin function
+      // Call the assign_school_admin function with proper parameter names
       const { data, error } = await supabase
         .rpc('assign_school_admin', {
           user_id_param: adminData.userId,
