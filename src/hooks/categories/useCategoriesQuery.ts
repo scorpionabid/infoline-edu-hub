@@ -7,9 +7,13 @@ interface Category {
   id: string;
   name: string;
   description?: string;
-  status: string;
+  status: CategoryStatus;
+  assignment: CategoryAssignment;
   created_at: string;
   updated_at: string;
+  order_index?: number;
+  priority?: number;
+  deadline?: string;
 }
 
 interface CreateCategoryData {

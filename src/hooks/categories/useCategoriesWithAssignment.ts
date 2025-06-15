@@ -1,10 +1,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/category';
+import { Category, CategoryAssignment } from '@/types/category';
 
 export interface UseCategoriesWithAssignmentOptions {
-  assignment?: 'all' | 'schools' | 'sectors';
+  assignment?: CategoryAssignment;
   enabled?: boolean;
 }
 
@@ -37,5 +37,8 @@ export const useCategoriesWithAssignment = (options: UseCategoriesWithAssignment
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
+
+// Add the missing export alias
+export const useSchoolCategories = useCategoriesWithAssignment;
 
 export default useCategoriesWithAssignment;
