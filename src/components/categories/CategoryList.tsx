@@ -1,11 +1,8 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CategoryItem from "./CategoryItem";
-import { PlusIcon } from "lucide-react";
 import { useCategories } from "@/hooks/categories";
-import CreateCategoryDialog from "./CreateCategoryDialog";
 import { useLanguage } from "@/context/LanguageContext";
 import { CategoryStatus } from "@/types/category";
 import EmptyState from "@/components/ui/empty-state";
@@ -26,7 +23,6 @@ const CategoryList: React.FC<CategoryListProps> = ({
   filters = { status: '', assignment: '' }
 }) => {
   const { categories, loading, error, refetch } = useCategories();
-  const [open, setOpen] = useState(false);
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<CategoryStatus>("active");
   
@@ -94,11 +90,10 @@ const CategoryList: React.FC<CategoryListProps> = ({
       return false;
     }
     
-    // Status filter (if different from tab)
-    if (filters.status && filters.status !== category.status) return false;
-    
-    // Assignment filter
-    if (filters.assignment && filters.assignment !== category.assignment) return false;
+    // Assignment filter from top-level filters (only if different from 'all')
+    if (filters.assignment && filters.assignment !== 'all' && filters.assignment !== category.assignment) {
+      return false;
+    }
     
     return true;
   });
@@ -108,60 +103,67 @@ const CategoryList: React.FC<CategoryListProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Tabs defaultValue="active" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-slate-100/80 backdrop-blur-sm">
+        <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-100/80 via-blue-100/50 to-indigo-100/50 backdrop-blur-sm p-1 rounded-2xl">
           <TabsTrigger 
             value="active" 
             onClick={() => handleTabChange("active")}
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            className="data-[state=active]:bg-white data-[state=active]:shadow-lg rounded-xl font-semibold
+                     data-[state=active]:text-blue-700 transition-all duration-200"
           >
             Aktiv
           </TabsTrigger>
           <TabsTrigger 
             value="inactive" 
             onClick={() => handleTabChange("inactive")}
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            className="data-[state=active]:bg-white data-[state=active]:shadow-lg rounded-xl font-semibold
+                     data-[state=active]:text-slate-700 transition-all duration-200"
           >
             Deaktiv
           </TabsTrigger>
           <TabsTrigger 
             value="draft" 
             onClick={() => handleTabChange("draft")}
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            className="data-[state=active]:bg-white data-[state=active]:shadow-lg rounded-xl font-semibold
+                     data-[state=active]:text-yellow-700 transition-all duration-200"
           >
             Qaralama
           </TabsTrigger>
           <TabsTrigger 
             value="archived" 
             onClick={() => handleTabChange("archived")}
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            className="data-[state=active]:bg-white data-[state=active]:shadow-lg rounded-xl font-semibold
+                     data-[state=active]:text-red-700 transition-all duration-200"
           >
             Arxivlənmiş
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-6">
+        <TabsContent value={activeTab} className="mt-8">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex items-center space-x-3 text-slate-600">
-                <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent"></div>
-                <p className="text-lg">Kateqoriyalar yüklənir...</p>
+            <div className="flex items-center justify-center py-16">
+              <div className="flex items-center space-x-4 text-slate-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-3 border-blue-600 border-t-transparent"></div>
+                <p className="text-xl font-medium">Kateqoriyalar yüklənir...</p>
               </div>
             </div>
           ) : error ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center space-y-3">
-                <div className="text-red-500 text-lg font-medium">
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center space-y-4">
+                <div className="text-red-500 text-xl font-semibold">
                   Kateqoriyalar yüklənə bilmədi
                 </div>
-                <Button onClick={safeRefetch} variant="outline" className="mt-4">
+                <button 
+                  onClick={safeRefetch} 
+                  className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
+                >
                   Yenidən cəhd et
-                </Button>
+                </button>
               </div>
             </div>
           ) : filteredCategories && filteredCategories.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredCategories.map((category) => (
                 <CategoryItem
                   key={category.id}
@@ -181,8 +183,6 @@ const CategoryList: React.FC<CategoryListProps> = ({
           )}
         </TabsContent>
       </Tabs>
-
-      <CreateCategoryDialog open={open} setOpen={setOpen} onSuccess={safeRefetch} />
     </div>
   );
 };

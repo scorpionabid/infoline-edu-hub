@@ -8,7 +8,6 @@ const categories = {
   category: "Kateqoriya",
   categoriesPageTitle: "Kateqoriyalar",
   categoriesPageDescription: "Təhsil verilənlərini təşkil etmək üçün kateqoriyaları idarə edin",
-  categoriesList: "Kateqoriyalar Siyahısı",
   
   // Əməliyyatlar
   addCategory: "Kateqoriya əlavə et",
@@ -129,14 +128,26 @@ const categories = {
   columns: "sütun",
   completed: "tamamlandı",
   dueDate: "Son tarix",
-  priority: "Prioritet",
   
   // Filter və axtarış
   filterByStatus: "Statusa görə filtr",
   filterByAssignment: "Təyinata görə filtr",
   clearFilters: "Filtri təmizlə",
   noResultsFound: "Heç bir nəticə tapılmadı",
-  tryDifferentSearch: "Axtarış kriteriyalarını dəyişdirməyə çalışın"
+  tryDifferentSearch: "Axtarış kriteriyalarını dəyişdirməyə çalışın",
+  
+  // Yeni əlavələr
+  statusActive: "Aktiv",
+  statusInactive: "Deaktiv",
+  statusDraft: "Qaralama", 
+  statusArchived: "Arxivlənmiş",
+  statusApproved: "Təsdiqlənmiş",
+  statusPending: "Gözləmədə",
+  
+  assignmentAll: "Hamısı",
+  assignmentSchools: "Məktəblər",
+  assignmentSectors: "Sektorlar", 
+  assignmentRegions: "Regionlar"
 };
 
 export default categories;

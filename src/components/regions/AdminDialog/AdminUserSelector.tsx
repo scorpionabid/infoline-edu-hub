@@ -4,7 +4,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useLanguage } from '@/context/LanguageContext';
 
 interface SimpleUser {
   id: string;
@@ -25,7 +24,6 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
   selectedAdminId,
   onChange
 }) => {
-  const { t } = useLanguage();
   const [users, setUsers] = useState<SimpleUser[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +33,7 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 
       setLoading(true);
       try {
-        const roleMap: Record<string, string> = {
+        const roleMap = {
           region: 'regionadmin',
           sector: 'sectoradmin', 
           school: 'schooladmin'

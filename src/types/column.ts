@@ -4,10 +4,12 @@ export type ColumnType =
   | 'number'
   | 'email'
   | 'phone'
+  | 'tel'
   | 'url'
   | 'date'
   | 'time'
   | 'datetime'
+  | 'datetime-local'
   | 'textarea'
   | 'select'
   | 'multiselect'
@@ -16,7 +18,11 @@ export type ColumnType =
   | 'file'
   | 'image'
   | 'currency'
-  | 'percentage';
+  | 'percentage'
+  | 'boolean'
+  | 'json'
+  | 'password'
+  | 'switch';
 
 export interface ColumnOption {
   id?: string;
@@ -48,6 +54,7 @@ export interface Column {
   category_id: string;
   placeholder?: string;
   help_text?: string;
+  description?: string;
   is_required: boolean;
   default_value?: string;
   options?: ColumnOption[];
@@ -65,6 +72,7 @@ export interface ColumnFormData {
   category_id: string;
   placeholder?: string;
   help_text?: string;
+  description?: string;
   is_required: boolean;
   default_value?: string;
   options?: ColumnOption[];
@@ -80,6 +88,7 @@ export interface ColumnFormValues {
   category_id: string;
   placeholder?: string;
   help_text?: string;
+  description?: string;
   is_required: boolean;
   default_value?: string;
   options?: ColumnOption[];
