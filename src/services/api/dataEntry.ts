@@ -1,8 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { UnifiedDataEntry, DataEntryParams } from './unifiedDataEntry';
 import { validateUserIdForDB } from '@/utils/uuidValidator';
-import { validateDataEntryUpdates, EnhancedDataEntryParams } from '@/utils/buildFixes';
 
 export interface DataEntryFilters {
   school_id?: string;
@@ -12,6 +10,45 @@ export interface DataEntryFilters {
   created_by?: string;
   approved_by?: string;
 }
+
+export interface EnhancedDataEntryParams {
+  schoolId?: string;
+  categoryId?: string;
+  formData?: Record<string, any>;
+  userId?: string;
+  column_id?: string;
+  category_id?: string;
+  school_id?: string;
+  value?: string;
+  status?: string;
+  created_by?: string;
+  approved_by?: string;
+  rejected_by?: string;
+  approval_comment?: string;
+  rejection_reason?: string;
+  proxy_created_by?: string;
+  proxy_reason?: string;
+  proxy_original_entity?: string;
+  created_at?: string;
+  updated_at?: string;
+  approved_at?: string;
+  rejected_at?: string;
+  deleted_at?: string;
+  id?: string;
+}
+
+export const validateDataEntryUpdates = (updates: Partial<EnhancedDataEntryParams>): Partial<EnhancedDataEntryParams> => {
+  // Remove undefined values and return clean object
+  const cleanUpdates: Partial<EnhancedDataEntryParams> = {};
+  
+  Object.entries(updates).forEach(([key, value]) => {
+    if (value !== undefined) {
+      cleanUpdates[key as keyof EnhancedDataEntryParams] = value;
+    }
+  });
+  
+  return cleanUpdates;
+};
 
 export const createDataEntry = async (params: DataEntryParams): Promise<UnifiedDataEntry> => {
   const { data, error } = await supabase
@@ -31,7 +68,6 @@ export const createDataEntry = async (params: DataEntryParams): Promise<UnifiedD
 };
 
 export const updateDataEntry = async (id: string, updates: Partial<EnhancedDataEntryParams>): Promise<UnifiedDataEntry> => {
-  // Use the safe validation function
   const validatedUpdates = validateDataEntryUpdates(updates);
 
   const { data, error } = await supabase

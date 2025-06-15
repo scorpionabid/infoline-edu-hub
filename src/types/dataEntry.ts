@@ -42,12 +42,8 @@ export interface SaveResult {
 }
 
 export interface DataEntryTableData {
-  id: string;
-  value: string;
-  status: DataEntryStatus;
-  column_name: string;
-  created_at: string;
-  created_by_name?: string;
+  columns: import('./column').Column[];
+  values: Record<string, any>;
 }
 
 export interface ValidationResult {
@@ -55,7 +51,15 @@ export interface ValidationResult {
   errors: string[];
 }
 
-// Export const values for runtime usage
+// Export enum values for runtime usage
+export const DataEntryStatusEnum = {
+  DRAFT: 'draft' as const,
+  PENDING: 'pending' as const,
+  APPROVED: 'approved' as const,
+  REJECTED: 'rejected' as const,
+  REQUIRES_REVISION: 'requires_revision' as const
+} as const;
+
 export const DATA_ENTRY_STATUSES: DataEntryStatus[] = ['draft', 'pending', 'approved', 'rejected', 'requires_revision'];
 
 export const DATA_ENTRY_STATUS_MAP: Record<DataEntryStatus, string> = {

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLanguage } from '@/context/LanguageContext';
@@ -36,7 +35,7 @@ const Schools = () => {
 
   // Fetch data
   const { 
-    schools, 
+    data: schools = [], 
     isLoading: schoolsLoading, 
     error: schoolsError,
     refetch: refetchSchools 
@@ -219,7 +218,7 @@ const Schools = () => {
                     regions={regions}
                     sectors={sectors}
                     isLoading={isLoading}
-                    errorMessage={schoolsError || null}
+                    error={schoolsError?.message || null}
                     currentPage={currentPage}
                     pageSize={pageSize}
                     totalCount={processedSchools.length}

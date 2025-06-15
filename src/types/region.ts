@@ -1,5 +1,4 @@
 
-
 export type RegionStatus = 'active' | 'inactive' | 'deleted';
 
 export interface Region {
@@ -16,6 +15,7 @@ export interface Region {
 export interface EnhancedRegion extends Region {
   region_name?: string;
   admin_name?: string;
+  adminName?: string;
   completion_rate?: number;
   total_sectors?: number;
   total_schools?: number;
@@ -40,4 +40,3 @@ export interface CreateRegionData {
 export interface UpdateRegionData extends Partial<CreateRegionData> {
   id: string;
 }
-

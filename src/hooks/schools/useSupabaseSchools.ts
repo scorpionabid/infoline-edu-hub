@@ -30,7 +30,7 @@ export const useSupabaseSchools = () => {
   
   // Regionları və sektorları əldə etmək üçün hookları istifadə edirik
   const { regions } = useRegions();
-  const { sectors, loading: sectorsLoading } = useSectors(selectedRegion);
+  const { data: sectors = [], isLoading: sectorsLoading } = useSectors();
 
   // Məktəbləri yükləmək metodu
   const fetchSchools = useCallback(async () => {

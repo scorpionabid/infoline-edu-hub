@@ -5,6 +5,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { isValidUUID } from '@/utils/uuidValidator';
 import { DataEntryStatus } from '@/types/dataEntry';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DataEntryStatusEnum } from '@/types/dataEntry';
 
 interface ApprovalItem {
   id: string;
@@ -30,6 +32,8 @@ export const useApprovalData = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const loadingRef = useRef(false);
+
+  const queryClient = useQueryClient();
 
   const loadApprovalData = useCallback(async () => {
     if (!user?.id) {
@@ -246,6 +250,21 @@ export const useApprovalData = () => {
     console.log('Viewing item:', item);
   }, []);
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case DataEntryStatusEnum.PENDING:
+        return 'yellow';
+      case DataEntryStatusEnum.APPROVED:
+        return 'green';
+      case DataEntryStatusEnum.REJECTED:
+        return 'red';
+      case DataEntryStatusEnum.REQUIRES_REVISION:
+        return 'orange';
+      default:
+        return 'gray';
+    }
+  };
+
   useEffect(() => {
     if (user?.id && !loadingRef.current) {
       loadApprovalData();
@@ -260,6 +279,7 @@ export const useApprovalData = () => {
     approveItem,
     rejectItem,
     viewItem,
-    refreshData: loadApprovalData
+    refreshData: loadApprovalData,
+    getStatusColor
   };
 };

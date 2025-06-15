@@ -312,3 +312,76 @@ export class AuthService {
     }
   }
 }
+
+export const signUp = async (email: string, password: string, userData: any) => {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: userData
+      }
+    });
+
+    if (error) {
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error as any };
+  }
+};
+
+export const signIn = async (email: string, password: string) => {
+  try {
+    const response = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    const { data, error } = response;
+    
+    if (error) {
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error as any };
+  }
+};
+
+export const updateUserProfile = async (userId: string, updates: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Map the profile data to match FullUserData interface
+    const userData = {
+      id: data.id,
+      email: data.email,
+      full_name: data.full_name,
+      name: data.full_name,
+      role: 'schooladmin', // Default role, should be fetched from user_roles
+      phone: data.phone,
+      position: data.position,
+      language: data.language,
+      avatar: data.avatar,
+      status: data.status,
+      last_login: data.last_login,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+
+    return userData;
+  } catch (error) {
+    throw error;
+  }
+};

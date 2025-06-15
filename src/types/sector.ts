@@ -1,5 +1,4 @@
 
-
 export type SectorStatus = 'active' | 'inactive' | 'deleted';
 
 export interface Sector {
@@ -44,4 +43,3 @@ export interface CreateSectorData {
 export interface UpdateSectorData extends Partial<CreateSectorData> {
   id: string;
 }
-

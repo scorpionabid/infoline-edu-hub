@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnFormData } from '@/types/column';
+import { ColumnFormData, Column, ColumnOption, ColumnValidation, ColumnType, ColumnStatus } from '@/types/column';
+import { parseColumnOptions, parseValidationRules } from '@/types/column';
 import { toast } from 'sonner';
 
 /**
@@ -403,3 +404,101 @@ export class ColumnService {
 
 // Export singleton instance
 export const columnService = new ColumnService();
+
+export const getColumns = async (): Promise<Column[]> => {
+  const { data, error } = await supabase
+    .from('columns')
+    .select('*')
+    .order('order_index');
+
+  if (error) throw error;
+
+  return (data || []).map(item => ({
+    id: item.id,
+    name: item.name,
+    type: item.type as ColumnType,
+    is_required: item.is_required,
+    help_text: item.help_text,
+    description: item.description,
+    placeholder: item.placeholder,
+    default_value: item.default_value,
+    options: parseColumnOptions(item.options),
+    validation: parseValidationRules(item.validation),
+    order_index: item.order_index,
+    category_id: item.category_id,
+    status: item.status as ColumnStatus,
+    created_at: item.created_at,
+    updated_at: item.updated_at
+  }));
+};
+
+export const getColumnById = async (id: string): Promise<Column> => {
+  const { data, error } = await supabase
+    .from('columns')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    name: data.name,
+    type: data.type as ColumnType,
+    is_required: data.is_required,
+    help_text: data.help_text,
+    description: data.description,
+    placeholder: data.placeholder,
+    default_value: data.default_value,
+    options: parseColumnOptions(data.options),
+    validation: parseValidationRules(data.validation),
+    order_index: data.order_index,
+    category_id: data.category_id,
+    status: data.status as ColumnStatus,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  };
+};
+
+export const updateColumn = async (id: string, updates: Partial<ColumnFormData>): Promise<Column> => {
+  const updateData: any = {
+    ...updates,
+    type: updates.type as string,
+    updated_at: new Date().toISOString()
+  };
+
+  // Convert options and validation to JSON
+  if (updates.options) {
+    updateData.options = updates.options;
+  }
+  if (updates.validation) {
+    updateData.validation = updates.validation;
+  }
+
+  const { data, error } = await supabase
+    .from('columns')
+    .update(updateData)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    name: data.name,
+    type: data.type as ColumnType,
+    is_required: data.is_required,
+    help_text: data.help_text,
+    description: data.description,
+    placeholder: data.placeholder,
+    default_value: data.default_value,
+    options: parseColumnOptions(data.options),
+    validation: parseValidationRules(data.validation),
+    order_index: data.order_index,
+    category_id: data.category_id,
+    status: data.status as ColumnStatus,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  };
+};
