@@ -30,8 +30,8 @@ export interface UserFilter {
   region?: string;
   sector?: string;
   school?: string;
-  role?: UserRole | '';
-  status?: UserStatus | '';
+  role?: UserRole | UserRole[] | '';
+  status?: UserStatus | UserStatus[] | '';
   search?: string;
   regionId?: string;
   sectorId?: string;
@@ -39,6 +39,8 @@ export interface UserFilter {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface FullUserData {

@@ -21,11 +21,11 @@ export const useOptimizedUserList = () => {
     setError(null);
     
     try {
-      // Fix type casting for role filter
+      // Process filters to handle array types properly
       const processedFilters: UserFilter = {
         ...filters,
-        role: filters.role ? (Array.isArray(filters.role) ? filters.role : [filters.role]) : undefined,
-        status: filters.status ? (Array.isArray(filters.status) ? filters.status : [filters.status]) : undefined
+        role: Array.isArray(filters.role) ? filters.role[0] : filters.role,
+        status: Array.isArray(filters.status) ? filters.status[0] : filters.status
       };
 
       const result = await fetchUserData(

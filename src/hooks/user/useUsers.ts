@@ -31,7 +31,7 @@ export const useUsers = (initialFilter: UserFilter = {}) => {
         `, { count: 'exact' });
       
       // Apply filters
-      if (currentFilter.role && currentFilter.role.length) {
+      if (currentFilter.role && currentFilter.role !== '') {
         if (Array.isArray(currentFilter.role)) {
           // role massivi için uyğun sorğu
           query = query.in('role', currentFilter.role as any);
@@ -41,7 +41,7 @@ export const useUsers = (initialFilter: UserFilter = {}) => {
         }
       }
       
-      if (currentFilter.status && currentFilter.status.length && currentFilter.status !== "") {
+      if (currentFilter.status && currentFilter.status !== '') {
         if (Array.isArray(currentFilter.status)) {
           query = query.in('profiles.status', currentFilter.status);
         } else {

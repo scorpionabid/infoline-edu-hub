@@ -10,6 +10,20 @@ export interface DataEntryParams {
   status?: string;
 }
 
+export interface UnifiedDataEntry {
+  id: string;
+  column_id: string;
+  category_id: string;
+  school_id: string;
+  value: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  approved_by?: string;
+  approved_at?: string;
+}
+
 export const createDataEntry = async (params: DataEntryParams) => {
   const { data, error } = await supabase
     .from('data_entries')

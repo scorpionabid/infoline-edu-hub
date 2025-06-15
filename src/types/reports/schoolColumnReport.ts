@@ -16,13 +16,23 @@ export interface ColumnDefinition {
 export interface EnhancedSchoolData {
   id: string;
   name: string;
+  region_id: string;
+  sector_id: string;
   region_name: string;
   sector_name: string;
   completion_rate: number;
+  status: string;
+  principal_name?: string;
   columns: Record<string, {
     value: any;
     status?: string;
   }>;
+  completion_stats?: {
+    total_required: number;
+    filled_count: number;
+    approved_count: number;
+    completion_rate: number;
+  };
 }
 
 export interface SchoolPerformanceData {

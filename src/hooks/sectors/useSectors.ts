@@ -17,7 +17,14 @@ export interface Sector {
   updated_at: string;
 }
 
-export const useSectors = () => {
+export interface SectorsStore {
+  sectors: Sector[];
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+export const useSectors = (): SectorsStore => {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
