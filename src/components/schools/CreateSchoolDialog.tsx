@@ -13,13 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { School } from '@/types/school';
+import { CreateSchoolData } from '@/types/school';
 import { Loader2 } from 'lucide-react';
 
 interface CreateSchoolDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (school: Omit<School, 'id'>) => Promise<void>;
+  onSubmit: (school: CreateSchoolData) => Promise<void>;
   regions: { id: string; name: string }[];
   sectors: { id: string; name: string }[];
   isSubmitting: boolean;
@@ -34,10 +34,9 @@ const CreateSchoolDialog: React.FC<CreateSchoolDialogProps> = ({
   isSubmitting
 }) => {
   const { t } = useLanguage();
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<Partial<School>>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CreateSchoolData>({
     defaultValues: {
-      status: 'active',
-      admin_id: null
+      status: 'active'
     }
   });
 
@@ -47,16 +46,14 @@ const CreateSchoolDialog: React.FC<CreateSchoolDialogProps> = ({
     !selectedRegionId || sector.id === selectedRegionId
   );
 
-  const handleFormSubmit = async (data: Partial<School>) => {
+  const handleFormSubmit = async (data: CreateSchoolData) => {
     // Add default values for created_at and updated_at
     const now = new Date().toISOString();
-    const schoolData: any = {
-      ...data,
-      created_at: now,
-      updated_at: now
+    const schoolData: CreateSchoolData = {
+      ...data
     };
 
-    await onSubmit(schoolData as Omit<School, 'id'>);
+    await onSubmit(schoolData);
     reset();
   };
 
