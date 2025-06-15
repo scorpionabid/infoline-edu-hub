@@ -3,98 +3,61 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
+import { useRealDashboardData } from '@/hooks/dashboard/useRealDashboardData';
+import LoadingScreen from '@/components/auth/LoadingScreen';
+import SuperAdminDashboard from './SuperAdminDashboard';
+import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
+import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
+import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
 import { LinksCard } from './school-admin/LinksCard';
 import { FilesCard } from './school-admin/FilesCard';
 import { RegionLinksCard } from './region-admin/RegionLinksCard';
 import { RegionFilesCard } from './region-admin/RegionFilesCard';
 import SectorLinksCard from './sector-admin/SectorLinksCard';
 import { SectorFilesCard } from './sector-admin/SectorFilesCard';
+import { toast } from 'sonner';
 
-/**
- * Dashboard əsas məzmunu komponenti
- * İstifadəçinin roluna görə fərqli məlumatlar göstərir
- */
 const DashboardContent: React.FC = () => {
   const user = useAuthStore(selectUser);
   const userRole = useAuthStore(selectUserRole);
   const { t } = useLanguage();
+  
+  const { loading, error, dashboardData } = useRealDashboardData();
+
+  console.log('[DashboardContent] Real Dashboard Data:', { dashboardData, loading, error, userRole });
+
+  if (loading) {
+    return <LoadingScreen message="Dashboard yüklənir..." />;
+  }
+
+  if (error) {
+    console.error('[DashboardContent] Dashboard data error:', error);
+    toast.error('Dashboard məlumatları yüklənərkən xəta baş verdi');
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600">Xəta baş verdi</p>
+        <p className="text-sm text-muted-foreground mt-2">{error.message}</p>
+      </div>
+    );
+  }
+
+  if (!user || !user.id) {
+    return <p>İstifadəçi məlumatları yüklənir...</p>;
+  }
 
   const renderRoleSpecificContent = () => {
-    if (!user || !user.id) {
-      return <p>İstifadəçi məlumatları yüklənir...</p>;
-    }
-
     switch (userRole) {
       case 'superadmin':
-        return (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('systemOverview')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{t('superadminDashboardDescription')}</p>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <SuperAdminDashboard dashboardData={dashboardData} />;
 
       case 'regionadmin':
-        return (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('regionOverview')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{t('regionadminDashboardDescription')}</p>
-              </CardContent>
-            </Card>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <RegionLinksCard />
-              <RegionFilesCard />
-            </div>
-          </div>
-        );
+        return <RegionAdminDashboard dashboardData={dashboardData} />;
 
       case 'sectoradmin':
-        return (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('sectorOverview')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{t('sectoradminDashboardDescription')}</p>
-              </CardContent>
-            </Card>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SectorLinksCard links={[]} />
-              <SectorFilesCard />
-            </div>
-          </div>
-        );
+        return <SectorAdminDashboard dashboardData={dashboardData} />;
 
       case 'schooladmin':
-        return (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('schoolOverview')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{t('schooladminDashboardDescription')}</p>
-              </CardContent>
-            </Card>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <LinksCard />
-              <FilesCard />
-            </div>
-          </div>
-        );
+        return <SchoolAdminDashboard data={dashboardData} />;
 
       default:
         return (

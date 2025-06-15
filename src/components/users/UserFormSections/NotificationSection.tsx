@@ -1,122 +1,123 @@
 
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { useLanguage } from '@/context/LanguageContext';
-import { UserFormData } from '@/types/user';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { NotificationSettings } from '@/types/user';
 
 interface NotificationSectionProps {
-  formData: UserFormData;
-  onChange: (name: string, value: any) => void;
-  isDisabled?: boolean;
+  notificationSettings: NotificationSettings | {
+    email: boolean;
+    inApp: boolean;
+    sms: boolean;
+    deadlineReminders: boolean;
+    system: boolean;
+  };
+  onNotificationSettingsChange: (settings: NotificationSettings) => void;
 }
 
-export const NotificationSection: React.FC<NotificationSectionProps> = ({
-  formData,
-  onChange,
-  isDisabled
+const NotificationSection: React.FC<NotificationSectionProps> = ({
+  notificationSettings,
+  onNotificationSettingsChange
 }) => {
-  const { t } = useLanguage();
-
-  // Əgər notificationSettings yoxdursa, standart dəyərlər təyin et
-  const notificationSettings = formData.notificationSettings || {
-    email: true,
-    inApp: true,
-    sms: false,
-    deadlineReminders: true,
-    system: true
-  };
-
-  const handleNotificationChange = (field: string, checked: boolean) => {
-    // notificationSettings daxilində dəyəri dəyişdirik
+  const handleSettingChange = (key: string, value: boolean | string) => {
     const updatedSettings = {
       ...notificationSettings,
-      [field]: checked
+      [key]: value
     };
+    
+    // Convert to proper NotificationSettings format
+    const properSettings: NotificationSettings = {
+      email_notifications: updatedSettings.email_notifications ?? (updatedSettings as any).email ?? false,
+      sms_notifications: updatedSettings.sms_notifications ?? (updatedSettings as any).sms ?? false,
+      push_notifications: updatedSettings.push_notifications ?? (updatedSettings as any).inApp ?? false,
+      notification_frequency: updatedSettings.notification_frequency ?? 'immediate'
+    };
+    
+    onNotificationSettingsChange(properSettings);
+  };
 
-    // formData-ya yeni notificationSettings dəyərini ötürürük
-    onChange('notificationSettings', updatedSettings);
+  const getSettingValue = (key: string, fallbackKey?: string): boolean => {
+    if (key in notificationSettings) {
+      return (notificationSettings as any)[key];
+    }
+    if (fallbackKey && fallbackKey in notificationSettings) {
+      return (notificationSettings as any)[fallbackKey];
+    }
+    return false;
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="email-notifications">{t('emailNotifications')}</Label>
-              <p className="text-sm text-muted-foreground">{t('emailNotificationsDesc')}</p>
-            </div>
-            <Switch
-              id="email-notifications"
-              checked={Boolean(notificationSettings.email)}
-              onCheckedChange={(checked) => handleNotificationChange('email', checked)}
-              disabled={isDisabled}
-            />
-          </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Bildiriş Ayarları</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="email"
+            checked={getSettingValue('email_notifications', 'email')}
+            onCheckedChange={(checked) => handleSettingChange('email_notifications', Boolean(checked))}
+          />
+          <Label htmlFor="email">E-poçt bildirişləri</Label>
         </div>
 
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="inapp-notifications">{t('inAppNotifications')}</Label>
-              <p className="text-sm text-muted-foreground">{t('inAppNotificationsDesc')}</p>
-            </div>
-            <Switch
-              id="inapp-notifications"
-              checked={Boolean(notificationSettings.inApp)}
-              onCheckedChange={(checked) => handleNotificationChange('inApp', checked)}
-              disabled={isDisabled}
-            />
-          </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="push"
+            checked={getSettingValue('push_notifications', 'inApp')}
+            onCheckedChange={(checked) => handleSettingChange('push_notifications', Boolean(checked))}
+          />
+          <Label htmlFor="push">Push bildirişlər</Label>
         </div>
 
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="sms-notifications">{t('smsNotifications')}</Label>
-              <p className="text-sm text-muted-foreground">{t('smsNotificationsDesc')}</p>
-            </div>
-            <Switch
-              id="sms-notifications"
-              checked={Boolean(notificationSettings.sms)}
-              onCheckedChange={(checked) => handleNotificationChange('sms', checked)}
-              disabled={isDisabled}
-            />
-          </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="sms"
+            checked={getSettingValue('sms_notifications', 'sms')}
+            onCheckedChange={(checked) => handleSettingChange('sms_notifications', Boolean(checked))}
+          />
+          <Label htmlFor="sms">SMS bildirişləri</Label>
         </div>
 
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="deadline-notifications">{t('deadlineNotifications')}</Label>
-              <p className="text-sm text-muted-foreground">{t('deadlineNotificationsDesc')}</p>
-            </div>
-            <Switch
-              id="deadline-notifications"
-              checked={Boolean(notificationSettings.deadlineReminders)}
-              onCheckedChange={(checked) => handleNotificationChange('deadlineReminders', checked)}
-              disabled={isDisabled}
-            />
-          </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="deadlines"
+            checked={getSettingValue('deadline', 'deadlineReminders')}
+            onCheckedChange={(checked) => handleSettingChange('deadline', Boolean(checked))}
+          />
+          <Label htmlFor="deadlines">Son tarix xatırlatmaları</Label>
         </div>
 
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="system-notifications">{t('systemNotifications')}</Label>
-              <p className="text-sm text-muted-foreground">{t('systemNotificationsDesc')}</p>
-            </div>
-            <Switch
-              id="system-notifications"
-              checked={Boolean(notificationSettings.system)}
-              onCheckedChange={(checked) => handleNotificationChange('system', checked)}
-              disabled={isDisabled}
-            />
-          </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="system"
+            checked={getSettingValue('system')}
+            onCheckedChange={(checked) => handleSettingChange('system', Boolean(checked))}
+          />
+          <Label htmlFor="system">Sistem bildirişləri</Label>
         </div>
-      </div>
-    </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="frequency">Bildiriş tezliyi</Label>
+          <Select
+            value={notificationSettings.notification_frequency || 'immediate'}
+            onValueChange={(value) => handleSettingChange('notification_frequency', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Tezlik seçin" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="immediate">Dərhal</SelectItem>
+              <SelectItem value="daily">Günlük</SelectItem>
+              <SelectItem value="weekly">Həftəlik</SelectItem>
+              <SelectItem value="never">Heç vaxt</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

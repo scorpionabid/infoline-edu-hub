@@ -1,137 +1,167 @@
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, CheckCircle, User, User2, Users } from 'lucide-react';
-import { format } from 'date-fns';
+import { UserData } from '@/types/user';
 import { useLanguage } from '@/context/LanguageContext';
-import { FullUserData } from '@/types/user';
+import { formatDistanceToNow } from 'date-fns';
 
 interface UserDetailsDialogProps {
+  user: UserData | null;
   open: boolean;
-  onClose: () => void;
-  user: FullUserData | null;
+  onOpenChange: (open: boolean) => void;
 }
 
-const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({ open, onClose, user }) => {
+const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
+  user,
+  open,
+  onOpenChange
+}) => {
+  const { t } = useLanguage();
+
+  if (!user) return null;
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'superadmin': return 'destructive';
+      case 'regionadmin': return 'default';
+      case 'sectoradmin': return 'secondary';
+      case 'schooladmin': return 'outline';
+      default: return 'outline';
+    }
+  };
+
+  const getEntityName = () => {
+    return user.entity_name || user.entityName || 'Təyin edilməyib';
+  };
+
+  const getEntityType = () => {
+    switch (user.role) {
+      case 'regionadmin':
+        return getEntityName() || 'Region təyin edilməyib';
+      case 'sectoradmin':
+        return getEntityName() || 'Sektor təyin edilməyib';
+      case 'schooladmin':
+        return getEntityName() || 'Məktəb təyin edilməyib';
+      default:
+        return 'Sistem administratoru';
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[525px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>İstifadəçi Detalları</DialogTitle>
-          <DialogDescription>
-            İstifadəçi məlumatlarına baxın və idarə edin.
-          </DialogDescription>
+          <DialogTitle>{t('userDetails') || 'İstifadəçi məlumatları'}</DialogTitle>
         </DialogHeader>
-        
-        {user ? (
-          <UserDetailsSection user={user} />
-        ) : (
-          <div className="text-center py-8">
-            İstifadəçi məlumatları yüklənir...
+
+        <div className="space-y-6">
+          {/* Basic Info */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
+                {t('fullName') || 'Ad Soyad'}
+              </label>
+              <p className="text-sm">{user.full_name}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
+                {t('email') || 'E-poçt'}
+              </label>
+              <p className="text-sm">{user.email}</p>
+            </div>
           </div>
-        )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
+                {t('phone') || 'Telefon'}
+              </label>
+              <p className="text-sm">{user.phone || 'Təyin edilməyib'}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
+                {t('position') || 'Vəzifə'}
+              </label>
+              <p className="text-sm">{user.position || 'Təyin edilməyib'}</p>
+            </div>
+          </div>
+
+          {/* Role and Entity */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
+                {t('role') || 'Rol'}
+              </label>
+              <div className="mt-1">
+                <Badge variant={getRoleBadgeVariant(user.role)}>
+                  {user.role}
+                </Badge>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
+                {user.role === 'regionadmin' && 'Region'}
+                {user.role === 'sectoradmin' && 'Sektor'}
+                {user.role === 'schooladmin' && 'Məktəb'}
+                {user.role === 'superadmin' && 'Səlahiyyət'}
+              </label>
+              <p className="text-sm">{getEntityType()}</p>
+            </div>
+          </div>
+
+          {/* Status and Activity */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
+                {t('status') || 'Status'}
+              </label>
+              <div className="mt-1">
+                <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
+                  {user.status === 'active' ? (t('active') || 'Aktiv') : (t('inactive') || 'Qeyri-aktiv')}
+                </Badge>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
+                {t('lastLogin') || 'Son giriş'}
+              </label>
+              <p className="text-sm">
+                {user.last_login 
+                  ? formatDistanceToNow(new Date(user.last_login), { addSuffix: true })
+                  : 'Heç vaxt'
+                }
+              </p>
+            </div>
+          </div>
+
+          {/* Language */}
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">
+              {t('language') || 'Dil'}
+            </label>
+            <p className="text-sm">{user.language || 'az'}</p>
+          </div>
+
+          {/* Timestamps */}
+          <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
+            <div>
+              <label className="font-medium">
+                {t('createdAt') || 'Yaradılma tarixi'}
+              </label>
+              <p>{new Date(user.created_at).toLocaleDateString()}</p>
+            </div>
+            <div>
+              <label className="font-medium">
+                {t('updatedAt') || 'Yenilənmə tarixi'}
+              </label>
+              <p>{new Date(user.updated_at).toLocaleDateString()}</p>
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
 };
 
 export default UserDetailsDialog;
-
-const UserDetailsSection = ({ user }: { user: FullUserData }) => {
-  const { t } = useLanguage();
-
-  // Type guard to check if entityName is an object
-  const isEntityObject = (value: any): value is { region?: string; sector?: string; school?: string } => {
-    return value && typeof value === 'object' && !Array.isArray(value);
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* User basic info */}
-      <div className="space-y-4">
-        <div className="flex items-center space-x-4">
-          <Avatar>
-            <AvatarImage src={user.avatar || ''} alt={user.full_name || 'User'} />
-            <AvatarFallback>{user.full_name?.charAt(0) || '?'}</AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="text-lg font-semibold">{user.full_name}</div>
-            <div className="text-sm text-muted-foreground">{user.email}</div>
-          </div>
-        </div>
-        
-        <div className="flex justify-between py-1 border-b">
-          <span className="text-sm text-muted-foreground">{t('role')}</span>
-          <span className="text-sm font-medium">{t(user.role || 'user')}</span>
-        </div>
-        
-        <div className="flex justify-between py-1 border-b">
-          <span className="text-sm text-muted-foreground">{t('status')}</span>
-          <span className="text-sm font-medium">{t(user.status || 'active')}</span>
-        </div>
-      </div>
-      
-      {/* User entity info */}
-      <div className="space-y-2">
-        <div className="text-sm font-medium">{t('userEntityDetails')}</div>
-        
-        {/* Region */}
-        {user.region_id && (
-          <div className="flex justify-between py-1 border-b">
-            <span className="text-sm text-muted-foreground">{t('region')}</span>
-            <span className="text-sm font-medium">
-              {user.entityName && isEntityObject(user.entityName) ? user.entityName.region : user.region_id}
-            </span>
-          </div>
-        )}
-        
-        {/* Sector */}
-        {user.sector_id && (
-          <div className="flex justify-between py-1 border-b">
-            <span className="text-sm text-muted-foreground">{t('sector')}</span>
-            <span className="text-sm font-medium">
-              {user.entityName && isEntityObject(user.entityName) ? user.entityName.sector : user.sector_id}
-            </span>
-          </div>
-        )}
-        
-        {/* School */}
-        {user.school_id && (
-          <div className="flex justify-between py-1 border-b">
-            <span className="text-sm text-muted-foreground">{t('school')}</span>
-            <span className="text-sm font-medium">
-              {user.entityName && isEntityObject(user.entityName) ? user.entityName.school : user.school_id}
-            </span>
-          </div>
-        )}
-      </div>
-      
-      {/* User activity info */}
-      <div className="space-y-2">
-        <div className="text-sm font-medium">{t('userActivityDetails')}</div>
-        
-        <div className="flex justify-between py-1 border-b">
-          <span className="text-sm text-muted-foreground">{t('lastLogin')}</span>
-          <span className="text-sm font-medium">
-            {user.last_login ? format(new Date(user.last_login), 'PPP p') : t('never')}
-          </span>
-        </div>
-        
-        <div className="flex justify-between py-1 border-b">
-          <span className="text-sm text-muted-foreground">{t('createdAt')}</span>
-          <span className="text-sm font-medium">
-            {user.created_at ? format(new Date(user.created_at), 'PPP') : t('unknown')}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-};

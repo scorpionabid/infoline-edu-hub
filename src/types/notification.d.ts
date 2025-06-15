@@ -7,10 +7,11 @@ export interface AppNotification {
   isRead?: boolean;
   createdAt: string;
   date?: string;
-  priority?: NotificationPriority | string;  // Fixed to accept both string and enum
+  priority?: NotificationPriority | string;
   link?: string;
   relatedEntityId?: string;
   relatedEntityType?: string;
+  is_read?: boolean;
 }
 
 export interface DashboardNotification extends AppNotification {
@@ -32,15 +33,15 @@ export interface NotificationsCardProps {
 }
 
 export interface NotificationSettings {
-  email: boolean;
-  push: boolean;
-  inApp: boolean;
-  system: boolean;
-  deadline: boolean;
+  email_notifications: boolean;
+  sms_notifications: boolean;
+  push_notifications: boolean;
+  notification_frequency: 'immediate' | 'daily' | 'weekly' | 'never';
+  email?: boolean;
+  inApp?: boolean;
   sms?: boolean;
   deadlineReminders?: boolean;
-  statusUpdates?: boolean;
-  weeklyReports?: boolean;
+  system?: boolean;
 }
 
 export function adaptDashboardNotificationToApp(notification: any): AppNotification {

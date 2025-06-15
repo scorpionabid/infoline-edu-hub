@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from '../common/StatsCard';
@@ -45,11 +46,12 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     );
   }
 
+  console.log('[SchoolAdminDashboard] Data received:', data);
+
   // Ensure notifications exist and are properly formatted
   const adaptedNotifications: AppNotification[] = 
     Array.isArray(data.notifications)
       ? data.notifications.map(notification => {
-          // Ensure all required fields exist
           const notificationWithAllFields = {
             ...notification,
             isRead: notification.isRead ?? false,
@@ -71,8 +73,11 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     inactive: 0
   };
 
-  // Ensure formStats data exists
-  const formStats = data.formStats || {
+  // Ensure formStats data exists with dueSoon fallback
+  const formStats = data.formStats ? {
+    ...data.formStats,
+    dueSoon: data.formStats.dueSoon || 0
+  } : {
     pending: 0,
     approved: 0,
     rejected: 0,
@@ -88,14 +93,6 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     : (typeof data.completion === 'number' 
         ? data.completion 
         : (data.completionRate || 0));
-      
-  // Safely get completion details for display
-  const completionDetails = typeof data.completion === 'object' && data.completion
-    ? {
-        completed: data.completion.completed || 0,
-        total: data.completion.total || 0
-      }
-    : { completed: 0, total: 0 };
 
   // Prepare categories as CategoryItem array
   const categories: CategoryItem[] = Array.isArray(data.categories) 
@@ -155,7 +152,6 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         />
       </Grid>
       
-      {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <LinksCard />
         <FilesCard />
