@@ -111,3 +111,19 @@ export const ensureUserStatus = (status: any): 'active' | 'inactive' => {
 export const ensureSectorStatus = (status: any): 'active' | 'inactive' => {
   return ['active', 'inactive'].includes(status) ? status : 'active';
 };
+
+// Safe role array filter
+export const safeRoleFilter = (role: any): '' | 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user' => {
+  if (Array.isArray(role)) {
+    return role.length > 0 ? ensureValidRole(role[0]) : '';
+  }
+  return role === '' ? '' : ensureValidRole(role);
+};
+
+// Safe status array filter
+export const safeStatusFilter = (status: any): '' | 'active' | 'inactive' => {
+  if (Array.isArray(status)) {
+    return status.length > 0 ? ensureValidStatus(status[0]) : '';
+  }
+  return status === '' ? '' : ensureValidStatus(status);
+};

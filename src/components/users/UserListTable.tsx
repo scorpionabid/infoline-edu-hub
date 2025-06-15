@@ -54,9 +54,9 @@ const UserListTable: React.FC<UserListTableProps> = ({ refreshTrigger, filterPar
             region_id, 
             sector_id, 
             school_id,
-            regions:region_id(name),
-            sectors:sector_id(name), 
-            schools:school_id(name)
+            regions!user_roles_region_id_fkey(name),
+            sectors!user_roles_sector_id_fkey(name), 
+            schools!user_roles_school_id_fkey(name)
           )
         `);
 

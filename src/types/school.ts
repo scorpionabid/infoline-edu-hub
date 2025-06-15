@@ -73,7 +73,7 @@ export interface Sector {
   updated_at: string;
 }
 
-// Create School Data type for context compatibility
+// Create School Data type for context compatibility with limited statuses
 export interface CreateSchoolData {
   name: string;
   region_id: string;
