@@ -2,9 +2,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useCategoryOperations } from './useCategoryOperations';
 
 export const useCategoryActions = () => {
   const queryClient = useQueryClient();
+  const { createCategory, updateCategory } = useCategoryOperations();
 
   const toggleCategoryStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: 'active' | 'inactive' }) => {
@@ -34,7 +36,6 @@ export const useCategoryActions = () => {
 
   const duplicateCategory = useMutation({
     mutationFn: async (categoryId: string) => {
-      // First get the original category
       const { data: original, error: fetchError } = await supabase
         .from('categories')
         .select('*')
@@ -43,7 +44,6 @@ export const useCategoryActions = () => {
 
       if (fetchError) throw fetchError;
 
-      // Create duplicate
       const { data, error } = await supabase
         .from('categories')
         .insert([{
@@ -76,8 +76,11 @@ export const useCategoryActions = () => {
   return {
     toggleStatus: toggleCategoryStatus.mutate,
     duplicate: duplicateCategory.mutate,
+    updateCategory,
+    createCategory,
     isToggling: toggleCategoryStatus.isPending,
     isDuplicating: duplicateCategory.isPending,
+    isLoading: toggleCategoryStatus.isPending || duplicateCategory.isPending,
   };
 };
 

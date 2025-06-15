@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { CategoryAssignment, CategoryStatus } from '@/types/category';
 
 interface Category {
   id: string;
@@ -14,6 +15,11 @@ interface Category {
 interface CreateCategoryData {
   name: string;
   description?: string;
+  assignment?: CategoryAssignment;
+  status?: CategoryStatus;
+  order_index?: number;
+  priority?: number;
+  deadline?: string;
 }
 
 interface UpdateCategoryData {
@@ -41,7 +47,13 @@ const useCategoriesQuery = () => {
     mutationFn: async (categoryData: CreateCategoryData) => {
       const { data, error } = await supabase
         .from('categories')
-        .insert(categoryData)
+        .insert([{
+          ...categoryData,
+          order_index: categoryData.order_index || 0,
+          status: categoryData.status || 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
         .select()
         .single();
       

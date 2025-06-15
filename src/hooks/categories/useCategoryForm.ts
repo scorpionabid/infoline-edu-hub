@@ -1,12 +1,9 @@
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { AddCategoryFormData, Category, formatDeadlineForApi } from "@/types/category";
 import { useToast } from "@/components/ui/use-toast";
 
-/**
- * Hook to handle category form operations
- */
 export const useCategoryForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -15,7 +12,6 @@ export const useCategoryForm = () => {
     setIsLoading(true);
     
     try {
-      // Always convert deadline to string format
       const deadline = formatDeadlineForApi(data.deadline);
       
       const { data: newCategory, error } = await supabase
@@ -27,6 +23,7 @@ export const useCategoryForm = () => {
           status: data.status,
           priority: data.priority,
           deadline: deadline,
+          order_index: data.order_index || 0,
         })
         .select()
         .single();
@@ -63,5 +60,3 @@ export const useCategoryForm = () => {
     createCategory
   };
 };
-
-// Default export artıq istifadə edilmir - named export istifadə edirik

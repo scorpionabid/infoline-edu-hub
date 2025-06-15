@@ -2,12 +2,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Category } from '@/types/category';
+import { CategoryAssignment, CategoryStatus } from '@/types/category';
 
 export interface CreateCategoryData {
   name: string;
   description?: string;
-  assignment?: 'all' | 'schools' | 'sectors';
+  assignment?: CategoryAssignment;
+  status?: CategoryStatus;
   order_index?: number;
   priority?: number;
   deadline?: string;
@@ -26,8 +27,8 @@ export const useCategoryOperations = () => {
         .from('categories')
         .insert([{
           ...data,
-          order_index: data.order_index || 0, // Ensure order_index is always provided
-          status: 'active',
+          order_index: data.order_index || 0,
+          status: data.status || 'active',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }])
@@ -96,11 +97,11 @@ export const useCategoryOperations = () => {
     createCategory: createCategory.mutate,
     updateCategory: updateCategory.mutate,
     deleteCategory: deleteCategory.mutate,
-    addCategory: createCategory.mutate, // Alias for backward compatibility
+    addCategory: createCategory.mutate,
     isCreating: createCategory.isPending,
     isUpdating: updateCategory.isPending,
     isDeleting: deleteCategory.isPending,
-    isLoading: createCategory.isPending || updateCategory.isPending, // Alias
+    isLoading: createCategory.isPending || updateCategory.isPending,
   };
 };
 
