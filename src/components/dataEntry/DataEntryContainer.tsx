@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import SchoolAdminDataEntry from './SchoolAdminDataEntry'; // Default import-a düzəltirik
-import { SectorAdminSchoolList } from '@/components/schools/SectorAdminSchoolList';
+import SchoolAdminDataEntry from './SchoolAdminDataEntry'; // Fixed import
+import { SectorAdminSchoolList } from '@/components/schools/SectorAdminSchoolList'; // Fixed import
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';

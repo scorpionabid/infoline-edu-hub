@@ -21,10 +21,10 @@ export interface UserFilter {
 }
 
 export interface NotificationSettings {
-  email_notifications: boolean;
-  sms_notifications: boolean;
-  push_notifications: boolean;
-  notification_frequency: 'immediate' | 'daily' | 'weekly';
+  email_notifications?: boolean; // Made optional with proper name
+  sms_notifications?: boolean;   // Made optional with proper name
+  push_notifications?: boolean;
+  notification_frequency?: 'immediate' | 'daily' | 'weekly';
   // UI-specific notification preferences
   email?: boolean;
   inApp?: boolean;

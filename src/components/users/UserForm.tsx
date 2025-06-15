@@ -11,9 +11,12 @@ import { supabase } from '@/integrations/supabase/client';
 interface UserFormProps {
   formData: any;
   onChange: (data: any) => void;
+  onSubmit?: (data: any) => Promise<void>; // Added this property
   isEditMode?: boolean;
   disableFields?: string[];
   requiredFields?: string[];
+  initialData?: any;
+  isLoading?: boolean;
 }
 
 const UserForm: React.FC<UserFormProps> = ({

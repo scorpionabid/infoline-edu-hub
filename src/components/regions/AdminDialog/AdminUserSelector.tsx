@@ -5,7 +5,12 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
-import { User } from '@/types/user';
+
+interface SimpleUser {
+  id: string;
+  full_name: string;
+  email: string;
+}
 
 interface AdminUserSelectorProps {
   entityId: string | undefined;
@@ -21,7 +26,7 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
   onChange
 }) => {
   const { t } = useLanguage();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<SimpleUser[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -38,7 +43,7 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 
         let query = supabase
           .from('profiles')
-          .select('*')
+          .select('id, full_name, email')
           .eq('role', roleMap[entityType]);
 
         if (entityType === 'region') {
@@ -56,7 +61,7 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
           return;
         }
 
-        setUsers(data as User[]);
+        setUsers(data as SimpleUser[]);
       } catch (error) {
         console.error('Error fetching users:', error);
       } finally {
