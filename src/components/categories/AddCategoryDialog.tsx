@@ -1,177 +1,120 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CategoryAssignment } from '@/types/category';
-import { useCategoryForm } from '@/hooks/categories/useCategoryForm';
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "Category name must be at least 2 characters.",
-  }),
-  description: z.string().optional(),
-  assignment: z.enum(['all', 'sectors']),
-  priority: z.number().min(1).max(10).default(5),
-  order_index: z.number().optional(),
-  deadline: z.string().optional(),
-});
-
-interface AddCategoryDialogProps {
-  children: React.ReactNode;
+export interface AddCategoryDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (categoryData: any) => Promise<void>;
 }
 
-const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({ children }) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const { toast } = useToast();
-  const { createCategory, isLoading } = useCategoryForm();
+interface CategoryFormData {
+  name: string;
+  description: string;
+  assignment: string;
+  priority: number;
+}
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
+  open,
+  onOpenChange,
+  onSubmit
+}) => {
+  const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<CategoryFormData>({
     defaultValues: {
-      name: "",
-      description: "",
-      assignment: "all",
-      priority: 5,
-      order_index: 0,
-      deadline: ""
-    },
+      assignment: 'all',
+      priority: 1
+    }
   });
 
+  const handleFormSubmit = async (data: CategoryFormData) => {
+    await onSubmit(data);
+    reset();
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Category</DialogTitle>
-          <DialogDescription>
-            Add a new category to the system.
-          </DialogDescription>
+          <DialogTitle>Yeni Kateqoriya Əlavə Et</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(async (data) => {
-            const formData = {
-              name: data.name,
-              description: data.description,
-              assignment: data.assignment as CategoryAssignment,
-              status: 'active' as const,
-              priority: data.priority,
-              deadline: data.deadline,
-              order_index: data.order_index
-            };
-            
-            const result = await createCategory(formData);
-            if (result) {
-              setIsOpen(false);
-              form.reset();
-            }
-          })} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Category Name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Kateqoriya Adı *</Label>
+            <Input
+              id="name"
+              {...register('name', { required: 'Kateqoriya adı tələb olunur' })}
+              placeholder="Kateqoriya adını daxil edin"
             />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Category Description"
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+            {errors.name && (
+              <p className="text-sm text-red-500">{errors.name.message}</p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="description">Təsvir</Label>
+            <Textarea
+              id="description"
+              {...register('description')}
+              placeholder="Kateqoriya təsvirini daxil edin"
+              rows={3}
             />
-            <FormField
-              control={form.control}
-              name="assignment"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Assignment</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select assignment" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="sectors">Sectors</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+
+          <div>
+            <Label htmlFor="assignment">Təyinat</Label>
+            <Select
+              defaultValue="all"
+              onValueChange={(value) => setValue('assignment', value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Hamısı</SelectItem>
+                <SelectItem value="sectors">Sektorlar</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="priority">Prioritet</Label>
+            <Input
+              id="priority"
+              type="number"
+              {...register('priority', { valueAsNumber: true })}
+              min={1}
+              max={10}
             />
-            <FormField
-              control={form.control}
-              name="priority"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Priority</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      defaultValue="5"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Set the priority of the category.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Ləğv et
+            </Button>
+            <Button type="submit">
+              Əlavə et
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
 };
-
-export default AddCategoryDialog;

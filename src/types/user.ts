@@ -1,5 +1,5 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 export type UserStatus = 'active' | 'inactive';
 
 export interface UserData {
@@ -71,6 +71,7 @@ export interface UserFormData {
 export interface NotificationSettings {
   email_notifications: boolean;
   sms_notifications: boolean;
+  push_notifications: boolean; // Added missing field
   notification_frequency: 'immediate' | 'daily' | 'weekly' | 'never';
   email?: boolean;
   inApp?: boolean;

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/school';
@@ -112,8 +111,8 @@ export const SchoolsProvider: React.FC<SchoolsProviderProps> = ({ children }) =>
         sector_id: school.sector_id,
         phone: school.phone,
         email: school.email,
-        student_count: school.student_count,
-        teacher_count: school.teacher_count,
+        student_count: school.student_count || 0, // Convert to number
+        teacher_count: school.teacher_count || 0, // Convert to number
         status: school.status,
         type: school.type,
         language: school.language,
@@ -158,7 +157,7 @@ export const SchoolsProvider: React.FC<SchoolsProviderProps> = ({ children }) =>
 
   const updateSchool = async (id: string, updates: Partial<School>) => {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('schools')
         .update({
           name: updates.name,
@@ -168,24 +167,20 @@ export const SchoolsProvider: React.FC<SchoolsProviderProps> = ({ children }) =>
           sector_id: updates.sector_id,
           phone: updates.phone,
           email: updates.email,
-          student_count: updates.student_count ? String(updates.student_count) : null,
-          teacher_count: updates.teacher_count ? String(updates.teacher_count) : null,
+          student_count: updates.student_count ? Number(updates.student_count) : null,
+          teacher_count: updates.teacher_count ? Number(updates.teacher_count) : null,
           status: updates.status,
           type: updates.type,
           language: updates.language,
           updated_at: new Date().toISOString()
         })
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
       
       if (error) throw error;
       
       setSchools(prev => prev.map(school => 
         school.id === id ? { ...school, ...updates } : school
       ));
-      
-      return data;
     } catch (err) {
       console.error('Error updating school:', err);
       throw err;
@@ -196,7 +191,7 @@ export const SchoolsProvider: React.FC<SchoolsProviderProps> = ({ children }) =>
     try {
       const { data, error } = await supabase
         .from('schools')
-        .insert([{
+        .insert({
           name: schoolData.name,
           principal_name: schoolData.principal_name,
           address: schoolData.address,
@@ -204,12 +199,12 @@ export const SchoolsProvider: React.FC<SchoolsProviderProps> = ({ children }) =>
           sector_id: schoolData.sector_id,
           phone: schoolData.phone,
           email: schoolData.email,
-          student_count: schoolData.student_count ? String(schoolData.student_count) : null,
-          teacher_count: schoolData.teacher_count ? String(schoolData.teacher_count) : null,
+          student_count: schoolData.student_count ? Number(schoolData.student_count) : null,
+          teacher_count: schoolData.teacher_count ? Number(schoolData.teacher_count) : null,
           status: schoolData.status,
           type: schoolData.type,
           language: schoolData.language
-        }])
+        })
         .select()
         .single();
       
@@ -219,7 +214,9 @@ export const SchoolsProvider: React.FC<SchoolsProviderProps> = ({ children }) =>
         ...schoolData,
         id: data.id,
         created_at: data.created_at,
-        updated_at: data.updated_at
+        updated_at: data.updated_at,
+        student_count: data.student_count || 0,
+        teacher_count: data.teacher_count || 0
       };
       
       setSchools(prev => [...prev, newSchool]);
