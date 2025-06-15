@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslation } from '@/hooks/common/useTranslation';
+import { useLanguage } from '@/context/LanguageContext';
 import { 
   Dialog, 
   DialogContent, 
@@ -44,7 +45,8 @@ const formSchema = z.object({
     message: "Kateqoriya adı ən az 2 hərfdən ibarət olmalıdır",
   }),
   description: z.string().optional(),
-  assignment: z.enum(["all", "sectors"]),
+  assignment: z.enum(["all", "sectors", "schools", "regions"]),
+  status: z.enum(["active", "inactive", "draft", "approved", "archived", "pending"]).default("draft"),
   deadline: z.date().optional().nullable(),
   priority: z.coerce.number().min(0).default(0),
 });
@@ -64,7 +66,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   onSubmit,
   isSubmitting = false,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -72,19 +74,20 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
       name: '',
       description: '',
       assignment: 'all',
+      status: 'draft',
       deadline: null,
       priority: 0,
     },
   });
   
   const handleSubmit = async (data: FormValues) => {
-    // Create a new object with the deadline converted to string
     const categoryData: AddCategoryFormData = {
       name: data.name,
-      description: data.description,
+      description: data.description || '',
       assignment: data.assignment,
+      status: data.status,
       priority: data.priority,
-      deadline: data.deadline ? formatDeadlineForApi(data.deadline) : null,
+      deadline: data.deadline ? formatDeadlineForApi(data.deadline) : '',
     };
     
     await onSubmit(categoryData);
@@ -99,9 +102,9 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t('addCategory')}</DialogTitle>
+          <DialogTitle>Kateqoriya əlavə et</DialogTitle>
           <DialogDescription>
-            {t('addCategoryDescription')}
+            Yeni kateqoriya yaratmaq üçün məlumatları doldurun
           </DialogDescription>
         </DialogHeader>
         
@@ -112,10 +115,10 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('categoryName')}</FormLabel>
+                  <FormLabel>Kateqoriya adı</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder={t('categoryName')} 
+                      placeholder="Kateqoriya adı" 
                       {...field} 
                       disabled={isSubmitting}
                     />
@@ -130,10 +133,10 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('categoryDescription')}</FormLabel>
+                  <FormLabel>Kateqoriya təsviri</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder={t('categoryDescription')} 
+                      placeholder="Kateqoriya təsviri" 
                       {...field} 
                       value={field.value || ''}
                       disabled={isSubmitting}
@@ -149,7 +152,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
               name="assignment"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('assignment')}</FormLabel>
+                  <FormLabel>Təyinat</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     defaultValue={field.value}
@@ -157,18 +160,18 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('selectAssignment')} />
+                        <SelectValue placeholder="Təyinat seçin" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="all">{t('allSchools')}</SelectItem>
-                      <SelectItem value="sectors">{t('onlySectors')}</SelectItem>
+                      <SelectItem value="all">Bütün məktəblər</SelectItem>
+                      <SelectItem value="sectors">Yalnız sektorlar</SelectItem>
+                      <SelectItem value="schools">Yalnız məktəblər</SelectItem>
+                      <SelectItem value="regions">Yalnız regionlar</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    {field.value === 'all' 
-                      ? t('allSchoolsDescription') 
-                      : t('onlySectorsDescription')}
+                    Bu kateqoriya hansı istifadəçi qrupuna görünəcək
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -180,7 +183,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
               name="deadline"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>{t('deadline')}</FormLabel>
+                  <FormLabel>Son tarix</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -195,7 +198,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
                           {field.value ? (
                             format(field.value, "PPP", { locale: az })
                           ) : (
-                            <span>{t('selectDate')}</span>
+                            <span>Tarix seçin</span>
                           )}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
@@ -212,7 +215,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
                     </PopoverContent>
                   </Popover>
                   <FormDescription>
-                    {t('deadlineDescription')}
+                    Kateqoriya üçün son tarix (istəyə bağlı)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -224,7 +227,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
               name="priority"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('priority')}</FormLabel>
+                  <FormLabel>Prioritet</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -234,7 +237,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
                     />
                   </FormControl>
                   <FormDescription>
-                    {t('priorityDescription')}
+                    Daha yüksək rəqəm daha yüksək prioritet deməkdir
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -248,10 +251,10 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
                 onClick={handleClose}
                 disabled={isSubmitting}
               >
-                {t('cancel')}
+                Ləğv et
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('saving') : t('saveCategory')}
+                {isSubmitting ? 'Saxlanılır...' : 'Kateqoriyanı saxla'}
               </Button>
             </DialogFooter>
           </form>

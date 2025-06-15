@@ -35,7 +35,7 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 
       setLoading(true);
       try {
-        const roleMap = {
+        const roleMap: Record<string, string> = {
           region: 'regionadmin',
           sector: 'sectoradmin', 
           school: 'schooladmin'
@@ -74,16 +74,16 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 
   return (
     <div>
-      <Label htmlFor="admin">{t('admin')}</Label>
+      <Label htmlFor="admin">Admin</Label>
       <Select
         value={selectedAdminId || 'select-admin'}
         onValueChange={(value) => onChange(value === 'select-admin' ? null : value)}
       >
         <SelectTrigger>
-          <SelectValue placeholder={t('selectAdmin')} />
+          <SelectValue placeholder="Admin seçin" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="select-admin">{t('selectAdmin')}</SelectItem>
+          <SelectItem value="select-admin">Admin seçin</SelectItem>
           {users.map((user) => (
             <SelectItem key={user.id} value={user.id}>
               {user.full_name}
@@ -94,7 +94,7 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
       {loading && (
         <div className="mt-2 flex items-center text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          {t('loadingUsers')}
+          İstifadəçilər yüklənir...
         </div>
       )}
     </div>

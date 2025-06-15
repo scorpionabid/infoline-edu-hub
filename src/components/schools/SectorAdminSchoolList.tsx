@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,16 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import { Building, Search, Users, BarChart3 } from 'lucide-react';
-
-interface School {
-  id: string;
-  name: string;
-  status: 'active' | 'inactive';
-  principal_name?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-}
+import { School } from '@/types/school';
 
 interface SectorAdminSchoolListProps {
   onSchoolSelect?: (schoolId: string) => void;
@@ -52,7 +42,14 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
         .order('name');
 
       if (error) throw error;
-      setSchools(data || []);
+      
+      // Convert to proper School type
+      const schoolData: School[] = (data || []).map(school => ({
+        ...school,
+        status: (school.status as 'active' | 'inactive') || 'active'
+      }));
+      
+      setSchools(schoolData);
     } catch (error) {
       console.error('Error fetching schools:', error);
     } finally {

@@ -68,8 +68,18 @@ export const useCategories = (options: UseCategoriesOptions = {}) => {
         throw error;
       }
 
-      console.log('✅ Fetched categories:', data?.length || 0);
-      return data || [];
+      // Type casting to ensure proper types
+      const typedData: Category[] = (data || []).map(item => ({
+        ...item,
+        assignment: item.assignment as 'all' | 'schools' | 'sectors' | 'regions',
+        status: item.status as 'active' | 'inactive' | 'draft' | 'approved' | 'archived' | 'pending',
+        column_count: item.columns?.length || 0,
+        completion_rate: 0, // Default value
+        completionRate: 0 // Alternative field name
+      }));
+
+      console.log('✅ Fetched categories:', typedData.length);
+      return typedData;
     },
     enabled: enabled && !!user,
     gcTime: 5 * 60 * 1000,
@@ -105,7 +115,13 @@ export const useCategoryOperations = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Type casting for response
+      return {
+        ...data,
+        assignment: data.assignment as 'all' | 'schools' | 'sectors' | 'regions',
+        status: data.status as 'active' | 'inactive' | 'draft' | 'approved' | 'archived' | 'pending'
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -133,7 +149,13 @@ export const useCategoryOperations = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Type casting for response
+      return {
+        ...data,
+        assignment: data.assignment as 'all' | 'schools' | 'sectors' | 'regions',
+        status: data.status as 'active' | 'inactive' | 'draft' | 'approved' | 'archived' | 'pending'
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });

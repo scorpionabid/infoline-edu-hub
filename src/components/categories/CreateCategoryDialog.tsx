@@ -21,11 +21,11 @@ interface CreateCategoryDialogProps {
 }
 
 const formSchema = z.object({
-  name: z.string().min(3, { message: "İsim ən az 3 simvol olmalıdır" }),
+  name: z.string().min(3, { message: "Ad ən az 3 simvol olmalıdır" }),
   description: z.string().optional(),
-  status: z.string().default("draft"),
+  status: z.enum(["draft", "active", "inactive", "approved", "archived", "pending"]).default("draft"),
   priority: z.number().int().nonnegative().default(0),
-  assignment: z.string().default("all"),
+  assignment: z.enum(["all", "schools", "sectors", "regions"]).default("all"),
   deadline: z.string().optional().nullable(),
 });
 
@@ -38,9 +38,9 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
     defaultValues: {
       name: "",
       description: "",
-      status: "draft",
+      status: "draft" as CategoryStatus,
       priority: 0,
-      assignment: "all",
+      assignment: "all" as const,
       deadline: null,
     },
   });
@@ -48,7 +48,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       if (!values.name || values.name.trim() === '') {
-        toast.error(t("nameRequired"));
+        toast.error("Ad tələb olunur");
         return;
       }
 
@@ -56,8 +56,8 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
 
       const categoryData: AddCategoryFormData = {
         name: values.name,
-        description: values.description,
-        deadline: deadline,
+        description: values.description || "",
+        deadline: deadline || "",
         status: values.status as CategoryStatus,
         assignment: values.assignment,
         priority: values.priority,
@@ -68,10 +68,10 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
       setOpen(false);
       form.reset();
       onSuccess?.();
-      toast.success(t("categoryCreated"));
+      toast.success("Kateqoriya yaradıldı");
     } catch (error) {
       console.error("Failed to create category:", error);
-      toast.error(t("errorCreatingCategory"));
+      toast.error("Kateqoriya yaradılarkən xəta baş verdi");
     }
   };
 
@@ -79,9 +79,9 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t("newCategory")}</DialogTitle>
+          <DialogTitle>Yeni Kateqoriya</DialogTitle>
           <DialogDescription>
-            {t("createCategoryDescription")}
+            Yeni kateqoriya yaratmaq üçün məlumatları doldurun
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -91,9 +91,9 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("name")}</FormLabel>
+                  <FormLabel>Ad</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input placeholder="Kateqoriya adı" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -105,9 +105,9 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("description")}</FormLabel>
+                  <FormLabel>Təsvir</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea placeholder="Kateqoriya təsviri" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -120,20 +120,20 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("status")}</FormLabel>
+                    <FormLabel>Status</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={t("selectStatus")} />
+                          <SelectValue placeholder="Status seçin" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="draft">{t("draft")}</SelectItem>
-                        <SelectItem value="active">{t("active")}</SelectItem>
-                        <SelectItem value="inactive">{t("inactive")}</SelectItem>
+                        <SelectItem value="draft">Qaralama</SelectItem>
+                        <SelectItem value="active">Aktiv</SelectItem>
+                        <SelectItem value="inactive">Deaktiv</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -146,20 +146,21 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
                 name="assignment"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("assignment")}</FormLabel>
+                    <FormLabel>Təyinat</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={t("selectAssignment")} />
+                          <SelectValue placeholder="Təyinat seçin" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="all">{t("all")}</SelectItem>
-                        <SelectItem value="sectors">{t("sectors")}</SelectItem>
-                        <SelectItem value="regions">{t("regions")}</SelectItem>
+                        <SelectItem value="all">Hamısı</SelectItem>
+                        <SelectItem value="sectors">Sektorlar</SelectItem>
+                        <SelectItem value="schools">Məktəblər</SelectItem>
+                        <SelectItem value="regions">Regionlar</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -174,7 +175,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("priority")}</FormLabel>
+                    <FormLabel>Prioritet</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -192,7 +193,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
                 name="deadline"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("deadline")}</FormLabel>
+                    <FormLabel>Son tarix</FormLabel>
                     <FormControl>
                       <Input 
                         type="date" 
@@ -215,14 +216,14 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
             onClick={() => setOpen(false)} 
             disabled={isCreating}
           >
-            {t("cancel")}
+            Ləğv et
           </Button>
           <Button 
             type="submit" 
             onClick={form.handleSubmit(onSubmit)} 
             disabled={isCreating}
           >
-            {isCreating ? t("creating") : t("create")}
+            {isCreating ? "Yaradılır..." : "Yarat"}
           </Button>
         </DialogFooter>
       </DialogContent>
