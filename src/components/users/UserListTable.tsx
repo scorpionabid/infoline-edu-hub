@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Pencil, Trash2, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { UserFilter, UserWithAssignments } from '@/types/user';
+import { UserFilter, UserWithAssignments, UserStatus } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/utils/dateUtils';
 import { useLanguage } from '@/context/LanguageContext';
@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import EditUserDialog from './EditUserDialog';
 import DeleteConfirmDialog from '@/components/common/DeleteConfirmDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ensureValidStatus, ensureValidRole } from '@/utils/buildFixes';
 
 interface UserListTableProps {
   refreshTrigger: number;
@@ -48,10 +49,15 @@ const UserListTable: React.FC<UserListTableProps> = ({ refreshTrigger, filterPar
           last_login,
           created_at,
           updated_at,
-          user_roles(role, region_id, sector_id, school_id),
-          regions:user_roles(regions:region_id(name)),
-          sectors:user_roles(sectors:sector_id(name)),
-          schools:user_roles(schools:school_id(name))
+          user_roles!inner(
+            role, 
+            region_id, 
+            sector_id, 
+            school_id,
+            regions:region_id(name),
+            sectors:sector_id(name),
+            schools:school_id(name)
+          )
         `);
 
       // Apply filters
@@ -67,12 +73,12 @@ const UserListTable: React.FC<UserListTableProps> = ({ refreshTrigger, filterPar
 
       if (error) throw error;
 
-      // Transform data to match UserWithAssignments
+      // Transform data safely
       const transformedData: UserWithAssignments[] = (data || []).map(user => {
-        const userRole = user.user_roles?.[0] || {};
-        const regionName = user.regions?.[0]?.regions?.name || '';
-        const sectorName = user.sectors?.[0]?.sectors?.name || '';
-        const schoolName = user.schools?.[0]?.schools?.name || '';
+        const userRole = Array.isArray(user.user_roles) ? user.user_roles[0] : user.user_roles || {};
+        const regions = userRole?.regions;
+        const sectors = userRole?.sectors;
+        const schools = userRole?.schools;
 
         return {
           id: user.id,
@@ -80,19 +86,19 @@ const UserListTable: React.FC<UserListTableProps> = ({ refreshTrigger, filterPar
           email: user.email || '',
           phone: user.phone || '',
           position: user.position || '',
-          role: userRole.role || 'user',
-          status: user.status || 'active',
-          region_id: userRole.region_id || '',
-          sector_id: userRole.sector_id || '',
-          school_id: userRole.school_id || '',
+          role: ensureValidRole(userRole?.role),
+          status: ensureValidStatus(user.status) as UserStatus,
+          region_id: userRole?.region_id || '',
+          sector_id: userRole?.sector_id || '',
+          school_id: userRole?.school_id || '',
           language: user.language || 'az',
           created_at: user.created_at || '',
           updated_at: user.updated_at || '',
           last_login: user.last_login || '',
           avatar: user.avatar || '',
-          region: regionName,
-          sector: sectorName,
-          school: schoolName,
+          region: regions?.name || '',
+          sector: sectors?.name || '',
+          school: schools?.name || '',
         };
       });
 
@@ -155,7 +161,6 @@ const UserListTable: React.FC<UserListTableProps> = ({ refreshTrigger, filterPar
 
       if (error) throw error;
 
-      // Update user role if changed
       if (userData.role !== selectedUser.role ||
           userData.region_id !== selectedUser.region_id ||
           userData.sector_id !== selectedUser.sector_id ||
@@ -195,7 +200,7 @@ const UserListTable: React.FC<UserListTableProps> = ({ refreshTrigger, filterPar
   };
 
   const getStatusBadgeVariant = (status: string) => {
-    return status === 'active' ? 'success' : 'secondary';
+    return status === 'active' ? 'default' : 'secondary';
   };
 
   const getRoleTranslation = (role: string) => {

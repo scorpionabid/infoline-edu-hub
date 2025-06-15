@@ -52,3 +52,35 @@ export interface ReportsFilters {
   date_from?: string;
   date_to?: string;
 }
+
+// Advanced report types
+export interface ReportTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  type: string;
+  config: any;
+  status: string;
+  is_public?: boolean;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdvancedReport {
+  id: string;
+  title: string;
+  description?: string;
+  type: string;
+  content: any;
+  filters: any;
+  status: string;
+  is_template?: boolean;
+  is_public?: boolean;
+  shared_with?: any[];
+  insights?: string[];
+  recommendations?: string[];
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}

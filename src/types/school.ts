@@ -34,6 +34,9 @@ export interface EnhancedSchoolData extends SchoolData {
   region_name?: string;
   sector_name?: string;
   completion_rate: number;
+  region_id: string;
+  sector_id: string;
+  status: SchoolStatus;
   columns?: Record<string, any>;
   completion_stats?: {
     total_required: number;
@@ -45,6 +48,7 @@ export interface EnhancedSchoolData extends SchoolData {
 
 // Legacy aliases for backward compatibility
 export interface School extends SchoolData {}
+
 export interface Region {
   id: string;
   name: string;
@@ -67,4 +71,22 @@ export interface Sector {
   completion_rate?: number;
   created_at: string;
   updated_at: string;
+}
+
+// Create School Data type for context compatibility
+export interface CreateSchoolData {
+  name: string;
+  region_id: string;
+  sector_id: string;
+  status: 'active' | 'inactive';
+  admin_id?: string;
+  admin_email?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  principal_name?: string;
+  student_count?: number;
+  teacher_count?: number;
+  type?: string;
+  language?: string;
 }
