@@ -23,3 +23,14 @@ export interface AdvancedReportConfig {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
+
+export interface AdvancedReportFilter {
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  status?: string[];
+  regions?: string[];
+  sectors?: string[];
+  schools?: string[];
+}

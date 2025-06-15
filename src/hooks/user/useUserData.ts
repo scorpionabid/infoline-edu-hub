@@ -25,19 +25,21 @@ export const useUserData = (userId: string) => {
 
       if (error) throw error;
 
+      const userRoles = Array.isArray(data.user_roles) ? data.user_roles[0] : data.user_roles;
+
       return {
         id: data.id,
         email: data.email,
         full_name: data.full_name,
-        role: data.user_roles.role,
-        region_id: data.user_roles.region_id,
-        sector_id: data.user_roles.sector_id,
-        school_id: data.user_roles.school_id,
+        role: userRoles.role,
+        region_id: userRoles.region_id,
+        sector_id: userRoles.sector_id,
+        school_id: userRoles.school_id,
         phone: data.phone,
         position: data.position,
         language: data.language,
         avatar: data.avatar,
-        status: data.status,
+        status: (data.status === 'active' || data.status === 'inactive') ? data.status : 'active',
         last_login: data.last_login,
         created_at: data.created_at,
         updated_at: data.updated_at

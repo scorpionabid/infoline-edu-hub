@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAdvancedReports } from '@/hooks/reports/useAdvancedReports';
-import { AdvancedReportFilter } from '@/types/advanced-report';
+import { AdvancedReportFilter, AdvancedReportConfig } from '@/types/advanced-report';
 import { FileText, Download, Settings } from 'lucide-react';
 
 interface AdvancedReportBuilderProps {
@@ -29,11 +29,18 @@ const AdvancedReportBuilder: React.FC<AdvancedReportBuilderProps> = ({
   const [generatedReportId, setGeneratedReportId] = useState<string | null>(null);
 
   const handleGenerateReport = async () => {
-    if (!selectedTemplate) {
+    if (!selectedTemplate || !reportTitle) {
       return;
     }
 
-    const report = await generateReport(selectedTemplate, filters, reportTitle);
+    const config: AdvancedReportConfig = {
+      name: reportTitle,
+      type: selectedTemplate,
+      filters: filters,
+      columns: []
+    };
+
+    const report = await generateReport(config);
     if (report) {
       setGeneratedReportId(report.id);
       if (onReportGenerated) {
@@ -161,7 +168,7 @@ const AdvancedReportBuilder: React.FC<AdvancedReportBuilderProps> = ({
           <div className="flex justify-end">
             <Button
               onClick={handleGenerateReport}
-              disabled={!selectedTemplate || loading}
+              disabled={!selectedTemplate || !reportTitle || loading}
               className="flex items-center gap-2"
             >
               <Settings className="h-4 w-4" />

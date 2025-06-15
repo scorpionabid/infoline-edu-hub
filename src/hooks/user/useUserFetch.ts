@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserData, UserFilter, NotificationSettings } from '@/types/user';
@@ -90,6 +89,7 @@ export const useUserFetch = () => {
         deadlineReminders: true,
         email_notifications: true,
         sms_notifications: false,
+        push_notifications: false,
         notification_frequency: 'daily'
       };
 

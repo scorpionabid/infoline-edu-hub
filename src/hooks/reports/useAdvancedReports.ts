@@ -33,19 +33,25 @@ export const useAdvancedReports = () => {
       
       if (error) throw error;
       
-      return (data || []).map(report => ({
-        id: report.id,
-        title: report.title,
-        description: report.description,
-        type: report.type,
-        data: Array.isArray(report.content?.data) ? report.content.data : [],
-        filters: typeof report.filters === 'object' && report.filters !== null ? report.filters as Record<string, any> : {},
-        metadata: typeof report.content?.metadata === 'object' && report.content?.metadata !== null ? report.content.metadata as Record<string, any> : {},
-        generatedAt: report.created_at,
-        generatedBy: report.created_by || '',
-        insights: Array.isArray(report.insights) ? report.insights : [],
-        recommendations: Array.isArray(report.recommendations) ? report.recommendations : []
-      }));
+      return (data || []).map(report => {
+        const content = report.content as any;
+        const reportData = Array.isArray(content?.data) ? content.data : [];
+        const metadata = typeof content?.metadata === 'object' && content?.metadata !== null ? content.metadata as Record<string, any> : {};
+        
+        return {
+          id: report.id,
+          title: report.title,
+          description: report.description,
+          type: report.type,
+          data: reportData,
+          filters: typeof report.filters === 'object' && report.filters !== null ? report.filters as Record<string, any> : {},
+          metadata,
+          generatedAt: report.created_at,
+          generatedBy: report.created_by || '',
+          insights: Array.isArray(report.insights) ? report.insights : [],
+          recommendations: Array.isArray(report.recommendations) ? report.recommendations : []
+        };
+      });
     }
   });
 
@@ -80,11 +86,11 @@ export const useAdvancedReports = () => {
     mutationFn: async (config: AdvancedReportConfig) => {
       const { data, error } = await supabase
         .from('report_templates')
-        .insert([{
+        .insert({
           name: config.name,
           type: config.type,
-          config: config
-        }])
+          config: config as any
+        })
         .select()
         .single();
       
