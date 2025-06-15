@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntryFormData, DataEntryStatus, SaveResult } from '@/types/dataEntry';
 import { getSafeUUID } from '@/utils/uuidValidator';
@@ -59,6 +60,83 @@ export class ProxyDataEntryService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to save proxy data',
+        savedCount: 0
+      };
+    }
+  }
+
+  // NEW: Added missing method
+  static async saveProxyFormData(formData: Record<string, any>, options: {
+    schoolId: string;
+    categoryId: string;
+    proxyUserId: string;
+    proxyReason: string;
+    proxyOriginalEntity: string;
+  }): Promise<SaveResult & { proxyInfo?: any }> {
+    try {
+      const entries = Object.entries(formData).map(([columnId, value]) => ({
+        school_id: options.schoolId,
+        category_id: options.categoryId,
+        column_id: columnId,
+        value: value?.toString() || '',
+        proxy_created_by: options.proxyUserId,
+        proxy_reason: options.proxyReason,
+        proxy_original_entity: options.proxyOriginalEntity
+      }));
+
+      const results = await Promise.all(
+        entries.map(entry => this.saveProxyData(entry))
+      );
+
+      const successfulSaves = results.filter(r => r.success).length;
+      const hasErrors = results.some(r => !r.success);
+
+      return {
+        success: !hasErrors,
+        savedCount: successfulSaves,
+        error: hasErrors ? 'Some entries failed to save' : undefined,
+        proxyInfo: {
+          proxy_created_by: options.proxyUserId,
+          proxy_reason: options.proxyReason
+        }
+      };
+    } catch (error) {
+      console.error('Error saving proxy form data:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save proxy form data',
+        savedCount: 0
+      };
+    }
+  }
+
+  // NEW: Added missing method
+  static async submitProxyData(schoolId: string, categoryId: string, proxyUserId: string): Promise<SaveResult & { submittedCount?: number }> {
+    try {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'pending' as DataEntryStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('school_id', schoolId)
+        .eq('category_id', categoryId)
+        .eq('proxy_created_by', proxyUserId)
+        .eq('status', 'draft')
+        .select();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        savedCount: data?.length || 0,
+        submittedCount: data?.length || 0
+      };
+    } catch (error) {
+      console.error('Error submitting proxy data:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to submit proxy data',
         savedCount: 0
       };
     }

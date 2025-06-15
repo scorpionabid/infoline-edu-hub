@@ -1,3 +1,4 @@
+
 // ============================================================================
 // İnfoLine Auth Types - Unified Type System
 // ============================================================================
@@ -11,6 +12,44 @@ export type UserStatus = 'active' | 'inactive' | 'pending' | 'suspended';
 // ============================================================================
 // Core User Interfaces
 // ============================================================================
+
+export interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  inApp: boolean;
+  system: boolean;
+  deadline: boolean;
+  sms: boolean;
+  deadlineReminders: boolean;
+  statusUpdates: boolean;
+  weeklyReports: boolean;
+  email_notifications?: boolean;
+  sms_notifications?: boolean;
+  push_notifications?: boolean;
+}
+
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  language: string;
+  timezone: string;
+  notifications: NotificationSettings;
+  dashboard: {
+    defaultView: string;
+    showQuickActions: boolean;
+    compactMode: boolean;
+  };
+}
+
+export interface UserPermissions {
+  canManageUsers: boolean;
+  canManageCategories: boolean;
+  canManageSchools: boolean;
+  canApproveData: boolean;
+  canExportData: boolean;
+  canViewReports: boolean;
+  canManageRegions: boolean;
+  canManageSectors: boolean;
+}
 
 export interface FullUserData {
   id: string;
@@ -35,11 +74,9 @@ export interface FullUserData {
   createdAt?: string;
   updated_at: string;
   updatedAt?: string;
-  notification_settings?: {
-    email_notifications: boolean;
-    sms_notifications: boolean;
-    push_notifications: boolean;
-  };
+  preferences?: UserPreferences;
+  permissions?: UserPermissions;
+  notification_settings?: NotificationSettings;
 }
 
 export interface User {
@@ -201,22 +238,6 @@ export interface PublicRouteProps {
 }
 
 // ============================================================================
-// Notification Settings (Auth Related)
-// ============================================================================
-
-export interface NotificationSettings {
-  email: boolean;
-  push: boolean;
-  inApp: boolean;
-  system: boolean;
-  deadline: boolean;
-  sms: boolean;
-  deadlineReminders: boolean;
-  statusUpdates: boolean;
-  weeklyReports: boolean;
-}
-
-// ============================================================================
 // Login/Register Form Types
 // ============================================================================
 
@@ -258,6 +279,7 @@ export interface UserFormData {
   status?: UserStatus;
   notifications?: NotificationSettings;
   notificationSettings?: NotificationSettings;
+  preferences?: UserPreferences;
 }
 
 // ============================================================================
