@@ -114,10 +114,25 @@ export const generateSuperAdminDashboard = (): SuperAdminDashboardData => {
     totalRegions: 3,
     totalSectors: 12,
     totalSchools: 150,
+    totalUsers: 200,
     categories: generateMockCategories(8),
     pendingApprovals: generateMockPendingApprovals(6),
     deadlines: generateMockDeadlines(5),
     regionStats: [],
+    regions: [],
+    formsByStatus: {
+      pending: 150,
+      approved: 750,
+      rejected: 50,
+      total: 1000
+    },
+    regionCount: 3,
+    sectorCount: 12,
+    schoolCount: 150,
+    userCount: 200,
+    approvalRate: 75,
+    completionRate: 75,
+    notifications: [],
     stats: {
       completed: Math.floor(Math.random() * 50),
       pending: Math.floor(Math.random() * 30),
@@ -133,6 +148,14 @@ export const generateRegionAdminDashboard = (): RegionAdminDashboardData => {
     categories: generateMockCategories(6),
     deadlines: generateMockDeadlines(4),
     sectors: generateMockSectorStats(6),
+    completionRate: 75,
+    formStats: {
+      completed: Math.floor(Math.random() * 40),
+      pending: Math.floor(Math.random() * 25),
+      completedForms: Math.floor(Math.random() * 40),
+      pendingForms: Math.floor(Math.random() * 25),
+      approvalRate: Math.floor(Math.random() * 100)
+    },
     stats: {
       completed: Math.floor(Math.random() * 40),
       pending: Math.floor(Math.random() * 25),
@@ -148,6 +171,14 @@ export const generateSectorAdminDashboard = (): SectorAdminDashboardData => {
     categories: generateMockCategories(5),
     deadlines: generateMockDeadlines(3),
     schools: generateMockSchoolStats(12),
+    completionRate: 75,
+    formStats: {
+      completed: Math.floor(Math.random() * 30),
+      pending: Math.floor(Math.random() * 20),
+      completedForms: Math.floor(Math.random() * 30),
+      pendingForms: Math.floor(Math.random() * 20),
+      approvalRate: Math.floor(Math.random() * 100)
+    },
     stats: {
       completed: Math.floor(Math.random() * 30),
       pending: Math.floor(Math.random() * 20),
@@ -162,12 +193,19 @@ export const generateSchoolAdminDashboard = (): SchoolAdminDashboardData => {
   return {
     categories: generateMockCategories(4),
     deadlines: generateMockDeadlines(2),
+    completionRate: 75,
     stats: {
       completed: Math.floor(Math.random() * 20),
+      pending: Math.floor(Math.random() * 15)
+    },
+    formStats: {
+      total: 100,
       pending: Math.floor(Math.random() * 15),
-      completedForms: Math.floor(Math.random() * 20),
-      pendingForms: Math.floor(Math.random() * 15),
-      approvalRate: Math.floor(Math.random() * 100)
+      approved: Math.floor(Math.random() * 80),
+      rejected: Math.floor(Math.random() * 5),
+      drafts: Math.floor(Math.random() * 10),
+      incomplete: Math.floor(Math.random() * 5),
+      dueSoon: Math.floor(Math.random() * 5)
     }
   };
 };

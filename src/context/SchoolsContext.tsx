@@ -16,7 +16,7 @@ export interface CreateSchoolData {
   student_count?: number;
   teacher_count?: number;
   type?: string;
-  status: 'active' | 'inactive';
+  status: SchoolStatus;
   language?: string;
 }
 
@@ -199,8 +199,11 @@ export const SchoolsProvider: React.FC<SchoolsProviderProps> = ({ children }) =>
 
       if (error) throw error;
 
-      if (data && !data.success) {
-        throw new Error(data.error || 'Admin təyin edilərkən xəta baş verdi');
+      // Check if the result is a JSON object with success/error properties
+      if (data && typeof data === 'object' && 'success' in data) {
+        if (!data.success) {
+          throw new Error(data.error || 'Admin təyin edilərkən xəta baş verdi');
+        }
       }
 
       toast.success('Məktəb admini uğurla təyin edildi');

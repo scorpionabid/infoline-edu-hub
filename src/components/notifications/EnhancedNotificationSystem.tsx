@@ -28,7 +28,7 @@ const EnhancedNotificationSystem: React.FC<NotificationSystemProps> = ({
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    isLoading,
+    loading,
     error
   } = useEnhancedNotificationContext();
 
@@ -99,7 +99,7 @@ const EnhancedNotificationSystem: React.FC<NotificationSystemProps> = ({
       <Card className="w-full">
         <CardContent className="pt-6">
           <div className="text-center text-red-600">
-            Bildirişləri yükləyərkən xəta baş verdi: {error.message}
+            Bildirişləri yükləyərkən xəta baş verdi: {typeof error === 'string' ? error : 'Naməlum xəta'}
           </div>
         </CardContent>
       </Card>
@@ -124,7 +124,7 @@ const EnhancedNotificationSystem: React.FC<NotificationSystemProps> = ({
               variant="outline"
               size="sm"
               onClick={handleMarkAllAsRead}
-              disabled={isLoading}
+              disabled={loading}
             >
               <Check className="h-4 w-4 mr-1" />
               Hamısını oxunmuş et
@@ -177,7 +177,7 @@ const EnhancedNotificationSystem: React.FC<NotificationSystemProps> = ({
       </CardHeader>
 
       <CardContent>
-        {isLoading && notifications.length === 0 ? (
+        {loading && notifications.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             Bildirişlər yüklənir...
           </div>
@@ -202,7 +202,7 @@ const EnhancedNotificationSystem: React.FC<NotificationSystemProps> = ({
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-lg">{getTypeIcon(notification.type)}</span>
+                      <span className="text-lg">{getTypeIcon(notification.type || 'info')}</span>
                       <h4 className={`font-medium ${notification.is_read ? 'text-gray-700' : 'text-gray-900'}`}>
                         {notification.title}
                       </h4>
@@ -233,7 +233,7 @@ const EnhancedNotificationSystem: React.FC<NotificationSystemProps> = ({
                         variant="ghost"
                         size="sm"
                         onClick={() => handleMarkAsRead(notification.id)}
-                        disabled={isLoading}
+                        disabled={loading}
                       >
                         <Check className="h-4 w-4" />
                       </Button>
@@ -242,7 +242,7 @@ const EnhancedNotificationSystem: React.FC<NotificationSystemProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteNotification(notification.id)}
-                      disabled={isLoading}
+                      disabled={loading}
                     >
                       <X className="h-4 w-4" />
                     </Button>
