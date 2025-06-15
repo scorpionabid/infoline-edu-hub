@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Column, ColumnType } from '@/types/column';
@@ -30,17 +31,22 @@ interface UpdateColumnData {
   status?: 'active' | 'inactive';
 }
 
+interface BulkOperationParams {
+  columnIds: string[];
+  status?: 'active' | 'inactive';
+  targetCategoryId?: string;
+}
+
 export const useColumnMutations = (categoryId?: string) => {
   const queryClient = useQueryClient();
 
   const fixColumnType = (col: any) => ({
     ...col,
-    type: col.type as ColumnType, // explicit casting
+    type: col.type as ColumnType,
   });
 
   const createColumn = useMutation({
     mutationFn: async (columnData: CreateColumnData) => {
-      // Ensure options and validation are stored as strings if they're objects
       const dataToInsert = {
         ...columnData,
         options: columnData.options && typeof columnData.options === 'object' 
@@ -61,27 +67,10 @@ export const useColumnMutations = (categoryId?: string) => {
 
       if (error) throw error;
       
-      const transformed = fixColumnType({
-        category_id: data.category_id,
-        created_at: data.created_at,
-        default_value: data.default_value,
-        help_text: data.help_text,
-        id: data.id,
-        is_required: data.is_required,
-        name: data.name,
-        options: data.options,
-        order_index: data.order_index,
-        placeholder: data.placeholder,
-        status: data.status,
-        type: data.type,
-        updated_at: data.updated_at,
-        validation: data.validation,
-      });
-      
-      return transformed;
+      return fixColumnType(data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['columns', categoryId] });
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
       toast.success('Sütun uğurla yaradıldı');
     },
     onError: (error) => {
@@ -92,7 +81,6 @@ export const useColumnMutations = (categoryId?: string) => {
 
   const updateColumn = useMutation({
     mutationFn: async ({ id, ...columnData }: UpdateColumnData & { id: string }) => {
-      // Ensure options and validation are stored as strings if they're objects
       const dataToUpdate = {
         ...columnData,
         options: columnData.options && typeof columnData.options === 'object' 
@@ -113,27 +101,10 @@ export const useColumnMutations = (categoryId?: string) => {
 
       if (error) throw error;
       
-      const transformed = fixColumnType({
-        category_id: data.category_id,
-        created_at: data.created_at,
-        default_value: data.default_value,
-        help_text: data.help_text,
-        id: data.id,
-        is_required: data.is_required,
-        name: data.name,
-        options: data.options,
-        order_index: data.order_index,
-        placeholder: data.placeholder,
-        status: data.status,
-        type: data.type,
-        updated_at: data.updated_at,
-        validation: data.validation,
-      });
-      
-      return transformed;
+      return fixColumnType(data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['columns', categoryId] });
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
       toast.success('Sütun uğurla yeniləndi');
     },
     onError: (error) => {
@@ -146,15 +117,15 @@ export const useColumnMutations = (categoryId?: string) => {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('columns')
-        .delete()
+        .update({ status: 'deleted', updated_at: new Date().toISOString() })
         .eq('id', id);
 
       if (error) throw error;
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['columns', categoryId] });
-      toast.success('Sütun uğurla silindi');
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success('Sütun arxivləndi');
     },
     onError: (error) => {
       console.error('Error deleting column:', error);
@@ -162,27 +133,152 @@ export const useColumnMutations = (categoryId?: string) => {
     }
   });
 
-  const reorderColumns = useMutation({
-    mutationFn: async (columns: { id: string; order_index: number }[]) => {
-      // Create an array of updates to be performed
-      const updates = columns.map(({ id, order_index }) => ({
-        id,
-        order_index,
-        updated_at: new Date().toISOString()
-      }));
-
-      // Use upsert to update multiple rows at once
+  const restoreColumn = useMutation({
+    mutationFn: async (id: string) => {
       const { data, error } = await supabase
         .from('columns')
-        .upsert(updates)
-        .select();
+        .update({ status: 'active', updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) throw error;
-      return data;
+      return fixColumnType(data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['columns', categoryId] });
-      toast.success('Sütunlar uğurla yenidən sıralandı');
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success('Sütun bərpa edildi');
+    },
+    onError: (error) => {
+      console.error('Error restoring column:', error);
+      toast.error('Sütun bərpa edilərkən xəta baş verdi');
+    }
+  });
+
+  const duplicateColumn = useMutation({
+    mutationFn: async ({ columnId }: { columnId: string }) => {
+      // Get original column
+      const { data: original, error: fetchError } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('id', columnId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Create duplicate
+      const duplicateData = {
+        ...original,
+        id: undefined,
+        name: `${original.name} (Kopya)`,
+        order_index: (original.order_index || 0) + 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('columns')
+        .insert([duplicateData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return fixColumnType(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success('Sütun kopyalandı');
+    },
+    onError: (error) => {
+      console.error('Error duplicating column:', error);
+      toast.error('Sütun kopyalanarkən xəta baş verdi');
+    }
+  });
+
+  const bulkToggleStatus = useMutation({
+    mutationFn: async ({ columnIds, status }: BulkOperationParams & { status: 'active' | 'inactive' }) => {
+      const { error } = await supabase
+        .from('columns')
+        .update({ status, updated_at: new Date().toISOString() })
+        .in('id', columnIds);
+
+      if (error) throw error;
+      return { columnIds, status };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      const statusText = data.status === 'active' ? 'aktivləşdirildi' : 'deaktivləşdirildi';
+      toast.success(`${data.columnIds.length} sütun ${statusText}`);
+    },
+    onError: (error) => {
+      console.error('Error bulk toggling status:', error);
+      toast.error('Toplu status dəyişikliyi uğursuz oldu');
+    }
+  });
+
+  const bulkDelete = useMutation({
+    mutationFn: async ({ columnIds }: BulkOperationParams) => {
+      const { error } = await supabase
+        .from('columns')
+        .update({ status: 'deleted', updated_at: new Date().toISOString() })
+        .in('id', columnIds);
+
+      if (error) throw error;
+      return columnIds;
+    },
+    onSuccess: (columnIds) => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success(`${columnIds.length} sütun arxivləndi`);
+    },
+    onError: (error) => {
+      console.error('Error bulk deleting:', error);
+      toast.error('Toplu silmə uğursuz oldu');
+    }
+  });
+
+  const moveColumnsToCategory = useMutation({
+    mutationFn: async ({ columnIds, targetCategoryId }: BulkOperationParams & { targetCategoryId: string }) => {
+      const { error } = await supabase
+        .from('columns')
+        .update({ category_id: targetCategoryId, updated_at: new Date().toISOString() })
+        .in('id', columnIds);
+
+      if (error) throw error;
+      return { columnIds, targetCategoryId };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success(`${data.columnIds.length} sütun kateqoriyaya köçürüldü`);
+    },
+    onError: (error) => {
+      console.error('Error moving columns:', error);
+      toast.error('Sütunlar köçürülən zaman xəta baş verdi');
+    }
+  });
+
+  const reorderColumns = useMutation({
+    mutationFn: async (columns: { id: string; order_index: number }[]) => {
+      // Update each column individually to avoid upsert issues
+      const updatePromises = columns.map(({ id, order_index }) =>
+        supabase
+          .from('columns')
+          .update({ order_index, updated_at: new Date().toISOString() })
+          .eq('id', id)
+      );
+
+      const results = await Promise.all(updatePromises);
+      
+      // Check for errors
+      const errors = results.filter(result => result.error);
+      if (errors.length > 0) {
+        throw new Error(`Failed to update ${errors.length} columns`);
+      }
+
+      return columns;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success('Sütunlar yenidən sıralandı');
     },
     onError: (error) => {
       console.error('Error reordering columns:', error);
@@ -194,10 +290,28 @@ export const useColumnMutations = (categoryId?: string) => {
     createColumn: createColumn.mutate,
     updateColumn: updateColumn.mutate,
     deleteColumn: deleteColumn.mutate,
+    restoreColumn: restoreColumn.mutate,
+    duplicateColumn: duplicateColumn.mutate,
+    bulkToggleStatus: bulkToggleStatus.mutate,
+    bulkDelete: bulkDelete.mutate,
+    moveColumnsToCategory: moveColumnsToCategory.mutate,
     reorderColumns: reorderColumns.mutate,
+    
+    // Async versions
+    createColumnAsync: createColumn.mutateAsync,
+    updateColumnAsync: updateColumn.mutateAsync,
+    deleteColumnAsync: deleteColumn.mutateAsync,
+    restoreColumnAsync: restoreColumn.mutateAsync,
+    duplicateColumnAsync: duplicateColumn.mutateAsync,
+    bulkToggleStatusAsync: bulkToggleStatus.mutateAsync,
+    bulkDeleteAsync: bulkDelete.mutateAsync,
+    moveColumnsToCategoryAsync: moveColumnsToCategory.mutateAsync,
+    
+    // Loading states
     isCreating: createColumn.isPending,
     isUpdating: updateColumn.isPending,
     isDeleting: deleteColumn.isPending,
+    isRestoring: restoreColumn.isPending,
     isReordering: reorderColumns.isPending
   };
 };

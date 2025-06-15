@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { Column } from '@/types/column';
 import { Category } from '@/types/category';
@@ -27,7 +28,7 @@ interface ColumnsContainerProps {
   onEdit?: (column: Column) => void;
   onDelete?: (id: string, name: string) => void;
   onRestore?: (id: string, name: string) => void;
-  onPermanentDelete?: (id: string) => void; // NEW
+  onPermanentDelete?: (id: string) => void;
 }
 
 const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
@@ -39,11 +40,11 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   onEdit,
   onDelete,
   onRestore,
-  onPermanentDelete // NEW
+  onPermanentDelete
 }) => {
   const { t } = useLanguage();
   
-  // Enhanced column mutations - MOVED TO TOP BEFORE ANY CONDITIONAL RETURNS
+  // Enhanced column mutations - with all required methods
   const {
     duplicateColumn,
     bulkToggleStatus,
@@ -141,7 +142,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
     const types = new Set(
       columns
         .map(col => col.type)
-        .filter(type => type && type.trim() !== '') // Filter out empty/null/undefined types
+        .filter(type => type && type.trim() !== '')
     );
     return Array.from(types);
   }, [columns]);
@@ -312,7 +313,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
             <SelectContent>
               <SelectItem value="all">Bütün kateqoriyalar</SelectItem>
               {categories
-                .filter(category => category.id && category.id.trim() !== '') // Safety check for category id
+                .filter(category => category.id && category.id.trim() !== '')
                 .map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name || 'Adsız kateqoriya'}
@@ -329,7 +330,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
             <SelectContent>
               <SelectItem value="all">Bütün tiplər</SelectItem>
               {uniqueTypes
-                .filter(type => type && type.trim() !== '') // Extra safety check
+                .filter(type => type && type.trim() !== '')
                 .map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
@@ -394,7 +395,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
         onEditColumn={onEdit}
         onDeleteColumn={onDelete}
         onRestoreColumn={(columnId) => onRestore?.(columnId, '')}
-        onPermanentDeleteColumn={onPermanentDelete} // NEW
+        onPermanentDeleteColumn={onPermanentDelete}
         onDuplicateColumn={handleDuplicate}
         onToggleColumnStatus={handleToggleStatus}
         onColumnSelection={toggleColumnSelection}
