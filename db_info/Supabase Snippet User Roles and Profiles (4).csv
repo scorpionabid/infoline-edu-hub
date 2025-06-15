@@ -1,5 +1,0 @@
-schemaname,tablename,policyname,permissive,roles,cmd,qual,with_check
-public,user_roles,Authenticated users read access,PERMISSIVE,{authenticated},SELECT,true,null
-public,user_roles,Users can view their own roles,PERMISSIVE,{public},SELECT,(auth.uid() = user_id),null
-public,user_roles,Superadmins can manage all roles,PERMISSIVE,{public},ALL,is_superadmin(),null
-public,user_roles,Regionadmins can manage roles in their region,PERMISSIVE,{public},ALL,(is_regionadmin() AND (region_id = get_user_region_id())),null
