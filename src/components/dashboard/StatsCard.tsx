@@ -13,6 +13,8 @@ export interface StatsCardProps {
   };
   icon?: React.ReactNode;
   className?: string;
+  color?: string;
+  onClick?: () => void;
 }
 
 const StatsCard: React.FC<StatsCardProps> = ({
@@ -21,13 +23,21 @@ const StatsCard: React.FC<StatsCardProps> = ({
   subtitle,
   trend,
   icon,
-  className = ""
+  className = "",
+  color,
+  onClick
 }) => {
+  const cardClassName = `${className} ${onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`;
+  
   return (
-    <Card className={`${className}`}>
+    <Card className={cardClassName} onClick={onClick}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon && <div className="h-4 w-4 text-muted-foreground">{icon}</div>}
+        {icon && (
+          <div className={`h-4 w-4 ${color ? `text-${color}-500` : 'text-muted-foreground'}`}>
+            {icon}
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>

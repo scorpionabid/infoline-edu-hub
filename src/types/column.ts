@@ -18,6 +18,7 @@ export interface ColumnFormData {
   validation?: ColumnValidation;
   order_index?: number;
   status?: ColumnStatus;
+  section?: string;
 }
 
 export interface ColumnFormValues extends ColumnFormData {
@@ -41,6 +42,7 @@ export interface Column {
   created_at: string;
   updated_at: string;
   category?: Category;
+  section?: string;
 }
 
 export interface ColumnOption {
@@ -59,6 +61,9 @@ export interface ColumnValidation {
   pattern?: string;
   email?: boolean;
 }
+
+// Export ValidationRules as alias for ColumnValidation
+export type ValidationRules = ColumnValidation;
 
 // Utility functions for parsing
 export const parseColumnOptions = (options: any): ColumnOption[] => {

@@ -65,7 +65,6 @@ export class ProxyDataEntryService {
     }
   }
 
-  // NEW: Added missing method
   static async saveProxyFormData(formData: Record<string, any>, options: {
     schoolId: string;
     categoryId: string;
@@ -110,7 +109,6 @@ export class ProxyDataEntryService {
     }
   }
 
-  // NEW: Added missing method
   static async submitProxyData(schoolId: string, categoryId: string, proxyUserId: string): Promise<SaveResult & { submittedCount?: number }> {
     try {
       const { data, error } = await supabase
