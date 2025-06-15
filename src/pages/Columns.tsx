@@ -1,4 +1,3 @@
-
 // Development server restart helper
 // Last updated: Columns improvement implementation - REFACTORED TO NEW API
 // Fixed: Migration to unified hooks API
@@ -14,7 +13,7 @@ import DeleteColumnDialog from '@/components/columns/DeleteColumnDialog';
 import ColumnsContainer from '@/components/columns/ColumnsContainer';
 // NEW UNIFIED COMPONENT
 import ColumnDialog from '@/components/columns/unified/ColumnDialog';
-import { useCategories } from '@/hooks/categories/useCategories';
+import { useCategories } from '@/hooks/categories';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { Column } from '@/types/column';
 import PageHeader from '@/components/layout/PageHeader';

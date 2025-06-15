@@ -1,12 +1,14 @@
-// Export the new assignment-based category hooks
+
+// UNIFIED CATEGORY HOOKS EXPORT
+// All category functionality is now consolidated in useCategories.ts
+
 export { 
-  useCategoriesWithAssignment,
+  useCategories,
+  useCategoryOperations,
   useSchoolCategories,
   useSectorCategories,
-  useAllCategoriesForAdmin
-} from './useCategoriesWithAssignment';
-
-// Export existing hooks
-export { useCategories } from './useCategories';
-export { useCategoryActions } from './useCategoryActions';
-export { useCategoryOperations } from './useCategoryOperations';
+  useAllCategoriesForAdmin,
+  // Backward compatibility exports
+  useCategoriesWithAssignment,
+  useCategoryActions
+} from './useCategories';

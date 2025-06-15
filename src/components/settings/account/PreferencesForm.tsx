@@ -10,13 +10,18 @@ import { Switch } from '@/components/ui/switch';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
 import { useAuthStore, selectUser, selectUpdateProfile } from '@/hooks/auth/useAuthStore';
-import { NotificationSettings } from '@/types/user';
+import { NotificationSettings } from '@/types/settings';
 
 const formSchema = z.object({
+  email_notifications: z.boolean().default(true),
+  push_notifications: z.boolean().default(false),
+  sms_notifications: z.boolean().default(false),
+  notification_frequency: z.enum(['immediate', 'daily', 'weekly']).default('immediate'),
+  // UI-specific fields
   email: z.boolean().default(true),
+  inApp: z.boolean().default(true),
   push: z.boolean().default(false),
   sms: z.boolean().default(false),
-  inApp: z.boolean().default(true),
   deadlineReminders: z.boolean().default(true),
   statusUpdates: z.boolean().default(true),
   weeklyReports: z.boolean().default(false),
@@ -30,6 +35,10 @@ const PreferencesForm = () => {
   const updateProfile = useAuthStore(selectUpdateProfile);
   
   const defaultValues: NotificationSettings = {
+    email_notifications: true,
+    sms_notifications: false,
+    push_notifications: false,
+    notification_frequency: 'immediate',
     email: true,
     inApp: true,
     push: false,
@@ -43,7 +52,6 @@ const PreferencesForm = () => {
   
   const form = useForm<NotificationSettings>({
     resolver: zodResolver(formSchema),
-    // Supabase profiles cədvəlində preferences sahəsində saxlanıla bilər
     defaultValues: (user?.preferences as NotificationSettings) || defaultValues,
   });
   

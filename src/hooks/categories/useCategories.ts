@@ -1,175 +1,190 @@
 
-import { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Category, CategoryFilter } from '@/types/category';
+/**
+ * UNIFIED CATEGORY HOOKS - All category operations consolidated
+ * This replaces the previous scattered category hooks
+ */
 
-export const useCategories = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<CategoryFilter>({
-    search: '',
-    status: '',
-    assignment: ''
-  });
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { Category, AddCategoryFormData, formatDeadlineForApi } from '@/types/category';
+import { toast } from 'sonner';
 
-  // Fetch categories from Supabase
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+interface UseCategoriesOptions {
+  enabled?: boolean;
+  assignment?: 'all' | 'schools' | 'sectors' | 'regions';
+}
 
+interface CategoryWithAssignment extends Category {
+  isAssigned: boolean;
+}
+
+// MAIN CATEGORIES QUERY HOOK
+export const useCategories = (options: UseCategoriesOptions = {}) => {
+  const { enabled = true, assignment } = options;
+  const user = useAuthStore(state => state.user);
+  
+  const {
+    data: categories = [],
+    isLoading: loading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['categories', assignment, user?.role, user?.region_id, user?.sector_id, user?.school_id],
+    queryFn: async (): Promise<Category[]> => {
+      console.log('🔍 useCategories - Fetching categories with options:', { assignment, userRole: user?.role });
+      
       let query = supabase
         .from('categories')
-        .select('*');
+        .select(`
+          *,
+          columns!inner(
+            id,
+            name,
+            type,
+            is_required,
+            placeholder,
+            help_text,
+            order_index,
+            default_value,
+            options,
+            validation,
+            status
+          )
+        `)
+        .eq('status', 'active')
+        .eq('columns.status', 'active')
+        .order('order_index');
 
-      // Apply filters if they exist
-      if (filter.status) {
-        query = query.eq('status', filter.status);
-      }
-
-      if (filter.assignment) {
-        query = query.eq('assignment', filter.assignment);
-      }
-
-      if (filter.search) {
-        query = query.ilike('name', `%${filter.search}%`);
-      }
-
-      // Add sorting if specified
-      if ('sortBy' in filter && filter.sortBy) {
-        const order = (filter.sortOrder as 'asc' | 'desc') || 'asc';
-        query = query.order(filter.sortBy, { ascending: order === 'asc' });
-      } else {
-        // Default sorting
-        query = query.order('created_at', { ascending: false });
+      // Apply assignment filter if specified
+      if (assignment && assignment !== 'all') {
+        query = query.in('assignment', [assignment, 'all']);
       }
 
       const { data, error } = await query;
 
       if (error) {
+        console.error('❌ Error fetching categories:', error);
         throw error;
       }
 
-      setCategories(data || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch categories');
-      console.error('Error fetching categories:', err);
-    } finally {
-      setLoading(false);
-    }
+      console.log('✅ Fetched categories:', data?.length || 0);
+      return data || [];
+    },
+    enabled: enabled && !!user,
+    gcTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000
+  });
+
+  return {
+    categories,
+    loading,
+    error: error as Error | null,
+    refetch
   };
+};
 
-  // Update filter and refetch
-  const updateFilter = (newFilter: Partial<CategoryFilter>) => {
-    setFilter(prev => ({
-      ...prev,
-      ...newFilter
-    }));
-  };
+// CATEGORY MUTATIONS HOOK
+export const useCategoryOperations = () => {
+  const queryClient = useQueryClient();
 
-  // Effect to fetch categories when the filter changes
-  useEffect(() => {
-    fetchCategories();
-  }, [filter]);
-
-  // Create, update and delete functions
-  const createCategory = async (category: Omit<Category, 'id'>) => {
-    try {
-      setLoading(true);
-      
-      // Convert the deadline to string if it's a Date object
-      const processedCategory = {
-        ...category,
-        deadline: category.deadline ? String(category.deadline) : null
+  const createCategory = useMutation({
+    mutationFn: async (categoryData: AddCategoryFormData): Promise<Category> => {
+      const dataToInsert = {
+        ...categoryData,
+        deadline: formatDeadlineForApi(categoryData.deadline),
+        status: categoryData.status || 'active',
+        assignment: categoryData.assignment || 'all',
+        order_index: categoryData.order_index ?? 0
       };
 
       const { data, error } = await supabase
         .from('categories')
-        .insert(processedCategory)
-        .select();
+        .insert([dataToInsert])
+        .select()
+        .single();
 
       if (error) throw error;
-      
-      setCategories(prev => [...prev, data[0]]);
-      return { data: data[0], error: null };
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error creating category:', err);
-      return { data: null, error: err };
-    } finally {
-      setLoading(false);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      toast.success('Kateqoriya uğurla yaradıldı');
+    },
+    onError: (error) => {
+      console.error('Error creating category:', error);
+      toast.error('Kateqoriya yaradılarkən xəta baş verdi');
     }
-  };
+  });
 
-  const updateCategory = async (id: string, updates: Partial<Category>) => {
-    try {
-      setLoading(true);
-      
-      // Convert the deadline to string if it's a Date object
-      const processedUpdates = {
+  const updateCategory = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<AddCategoryFormData> }): Promise<Category> => {
+      const updateData = {
         ...updates,
-        deadline: updates.deadline ? String(updates.deadline) : null
+        deadline: updates.deadline ? formatDeadlineForApi(updates.deadline) : undefined,
+        updated_at: new Date().toISOString()
       };
-      
+
       const { data, error } = await supabase
         .from('categories')
-        .update(processedUpdates)
+        .update(updateData)
         .eq('id', id)
-        .select();
+        .select()
+        .single();
 
       if (error) throw error;
-      
-      setCategories(prev => 
-        prev.map(cat => cat.id === id ? { ...cat, ...updates } : cat)
-      );
-      return { data: data[0], error: null };
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error updating category:', err);
-      return { data: null, error: err };
-    } finally {
-      setLoading(false);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      toast.success('Kateqoriya uğurla yeniləndi');
+    },
+    onError: (error) => {
+      console.error('Error updating category:', error);
+      toast.error('Kateqoriya yenilənərkən xəta baş verdi');
     }
-  };
+  });
 
-  const deleteCategory = async (id: string) => {
-    try {
-      setLoading(true);
+  const deleteCategory = useMutation({
+    mutationFn: async (id: string): Promise<void> => {
       const { error } = await supabase
         .from('categories')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-      
-      setCategories(prev => prev.filter(cat => cat.id !== id));
-      return { error: null };
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error deleting category:', err);
-      return { error: err };
-    } finally {
-      setLoading(false);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      toast.success('Kateqoriya silindi');
+    },
+    onError: (error) => {
+      console.error('Error deleting category:', error);
+      toast.error('Kateqoriya silinərkən xəta baş verdi');
     }
-  };
-
-  // Filtered categories memo
-  const filteredCategories = useMemo(() => {
-    return categories;
-  }, [categories]);
+  });
 
   return {
-    categories: filteredCategories,
-    loading,
-    error,
-    filter,
-    updateFilter,
-    createCategory,
-    updateCategory,
-    deleteCategory,
-    refetch: fetchCategories
+    createCategory: createCategory.mutate,
+    updateCategory: updateCategory.mutate,
+    deleteCategory: deleteCategory.mutate,
+    createCategoryAsync: createCategory.mutateAsync,
+    updateCategoryAsync: updateCategory.mutateAsync,
+    deleteCategoryAsync: deleteCategory.mutateAsync,
+    isCreating: createCategory.isPending,
+    isUpdating: updateCategory.isPending,
+    isDeleting: deleteCategory.isPending,
+    createError: createCategory.error,
+    updateError: updateCategory.error,
+    deleteError: deleteCategory.error
   };
 };
 
-export default useCategories;
+// SPECIFIC ASSIGNMENT HOOKS
+export const useSchoolCategories = () => useCategories({ assignment: 'schools' });
+export const useSectorCategories = () => useCategories({ assignment: 'sectors' });
+export const useAllCategoriesForAdmin = () => useCategories({ assignment: 'all' });
+
+// BACKWARD COMPATIBILITY - Legacy hook names
+export const useCategoriesWithAssignment = () => useCategories();
+export const useCategoryActions = () => useCategoryOperations();

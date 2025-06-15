@@ -25,10 +25,10 @@ export const useCategoriesQuery = ({
       let query = supabase
         .from('categories')
         .select('*')
-        .eq('archived', false)
-        .order('name');
+        .eq('status', 'active')
+        .order('order_index');
 
-      // ✅ YENİ: Assignment filtri əlavə edirik
+      // Apply assignment filter if specified
       if (assignment && assignment !== 'all') {
         query = query.in('assignment', [assignment, 'all']);
       }
