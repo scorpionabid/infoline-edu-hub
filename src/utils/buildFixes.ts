@@ -65,6 +65,16 @@ export const ensureValidRole = (role: string): UserRole => {
   return validRoles.includes(role as UserRole) ? role as UserRole : 'schooladmin';
 };
 
+// NEW: School status functions
+export const ensureValidSchoolStatus = (status: string): 'active' | 'inactive' | 'deleted' => {
+  const validStatuses = ['active', 'inactive', 'deleted'];
+  return validStatuses.includes(status) ? status as 'active' | 'inactive' | 'deleted' : 'active';
+};
+
+export const ensureSchoolStatus = (status: string): 'active' | 'inactive' | 'deleted' => {
+  return ensureValidSchoolStatus(status);
+};
+
 // NEW: User data mapping functions
 export const mapUserDataProperties = (userData: any): any => {
   return {
@@ -88,4 +98,16 @@ export const getEntityDisplayName = (entityType: string, entityData: any): strin
     default:
       return entityData.name || entityData.title || 'Unknown';
   }
+};
+
+// NEW: Missing data entry validation functions
+export interface EnhancedDataEntryParams {
+  schoolId: string;
+  categoryId: string;
+  formData: Record<string, any>;
+  userId: string;
+}
+
+export const validateDataEntryUpdates = (params: EnhancedDataEntryParams): boolean => {
+  return !!(params.schoolId && params.categoryId && params.formData && params.userId);
 };
