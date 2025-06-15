@@ -44,7 +44,8 @@
     "status": "Status",
     "actions": "Əməliyyatlar",
     "language": "Dil",
-    "selectLanguage": "Dil seçin"
+    "selectLanguage": "Dil seçin",
+    "clear": "Təmizlə"
   },
   "navigation": {
     "dashboard": "İdarəetmə paneli",
@@ -59,7 +60,8 @@
     "dataEntry": "Məlumat daxiletməsi",
     "approvals": "Təsdiq gözləyən",
     "profile": "Profil",
-    "logout": "Çıxış"
+    "logout": "Çıxış",
+    "statistics": "Statistika"
   },
   "users": {
     "users": "İstifadəçilər",
@@ -124,5 +126,71 @@
     "recentActivity": "Son Fəaliyyətlər",
     "upcomingDeadlines": "Yaxınlaşan Son Tarixlər",
     "notifications": "Bildirişlər"
+  },
+  "categories": {
+    "filters": "Filterlər",
+    "activeFilters": "Aktiv filterlər"
+  },
+  "columns": {
+    "selectCategoryFirst": "Əvvəl kateqoriya seçin"
+  },
+  "settings": {
+    "profile": "Profil",
+    "notifications": "Bildirişlər",
+    "security": "Təhlükəsizlik",
+    "appearance": "Görünüş",
+    "language": "Dil",
+    "team": "Komanda",
+    "languageDescription": "Sistem dilini seçin"
+  },
+  "auth": {
+    "resetEmailSent": "Şifrə sıfırlama linki e-poçtunuza göndərildi",
+    "forgotPassword": "Şifrəni unutmusunuz?",
+    "forgotPasswordDescription": "E-poçt ünvanınızı daxil edin",
+    "enterEmail": "E-poçt ünvanınızı daxil edin",
+    "sending": "Göndərilir...",
+    "sendResetEmail": "Sıfırlama linki göndər",
+    "backToLogin": "Giriş səhifəsinə qayıt",
+    "register": "Qeydiyyat",
+    "registerDescription": "Yeni hesab yaradın",
+    "fullName": "Tam ad",
+    "enterFullName": "Tam adınızı daxil edin",
+    "enterPassword": "Şifrə daxil edin",
+    "confirmPassword": "Şifrəni təsdiq edin",
+    "registering": "Qeydiyyat...",
+    "alreadyHaveAccount": "Hesabınız var?",
+    "signIn": "Daxil ol",
+    "passwordMismatch": "Şifrələr uyğun gəlmir",
+    "registrationSuccessful": "Qeydiyyat uğurla tamamlandı",
+    "registrationSuccessDescription": "Hesabınız yaradıldı",
+    "checkEmailVerification": "E-poçtunuzu yoxlayın",
+    "verificationEmailSent": "Təsdiq linki göndərildi",
+    "resetPassword": "Şifrəni sıfırla",
+    "resetPasswordDescription": "Yeni şifrə təyin edin",
+    "newPassword": "Yeni şifrə",
+    "enterNewPassword": "Yeni şifrə daxil edin",
+    "confirmNewPassword": "Yeni şifrəni təsdiq edin",
+    "updating": "Yenilənir...",
+    "updatePassword": "Şifrəni yenilə",
+    "passwordResetSuccess": "Şifrə uğurla yeniləndi"
+  },
+  "statistics": {
+    "noData": "Məlumat yoxdur",
+    "lastUpdated": "Son yenilənmə",
+    "totalSchools": "Ümumi məktəblər",
+    "users": "istifadəçilər",
+    "completionRate": "Tamamlanma dərəcəsi",
+    "aboveAverage": "Ortalamadan yuxarı",
+    "belowAverage": "Ortalamadan aşağı",
+    "pendingApprovals": "Gözləyən təsdiqlər",
+    "needsReview": "Baxış tələb olunur",
+    "activeForms": "Aktiv formalar",
+    "totalForms": "Ümumi formalar",
+    "formsByStatus": "Status üzrə formalar",
+    "performanceMetrics": "Performans göstəriciləri",
+    "approvalRate": "Təsdiq dərəcəsi",
+    "approved": "Təsdiqləndi",
+    "pending": "Gözləyir",
+    "rejected": "Rədd edildi"
   }
 }

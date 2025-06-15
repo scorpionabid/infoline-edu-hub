@@ -44,7 +44,8 @@
     "status": "Статус",
     "actions": "Действия",
     "language": "Язык",
-    "selectLanguage": "Выберите язык"
+    "selectLanguage": "Выберите язык",
+    "clear": "Очистить"
   },
   "navigation": {
     "dashboard": "Панель управления",
@@ -59,7 +60,8 @@
     "dataEntry": "Ввод данных",
     "approvals": "Ожидающие подтверждения",
     "profile": "Профиль",
-    "logout": "Выход"
+    "logout": "Выход",
+    "statistics": "Статистика"
   },
   "users": {
     "users": "Пользователи",
@@ -124,5 +126,71 @@
     "recentActivity": "Последняя активность",
     "upcomingDeadlines": "Предстоящие сроки",
     "notifications": "Уведомления"
+  },
+  "categories": {
+    "filters": "Фильтры",
+    "activeFilters": "Активные фильтры"
+  },
+  "columns": {
+    "selectCategoryFirst": "Сначала выберите категорию"
+  },
+  "settings": {
+    "profile": "Профиль",
+    "notifications": "Уведомления",
+    "security": "Безопасность",
+    "appearance": "Внешний вид",
+    "language": "Язык",
+    "team": "Команда",
+    "languageDescription": "Выберите предпочитаемый язык"
+  },
+  "auth": {
+    "resetEmailSent": "Ссылка для сброса пароля отправлена на вашу почту",
+    "forgotPassword": "Забыли пароль?",
+    "forgotPasswordDescription": "Введите ваш адрес электронной почты",
+    "enterEmail": "Введите ваш адрес электронной почты",
+    "sending": "Отправка...",
+    "sendResetEmail": "Отправить ссылку сброса",
+    "backToLogin": "Вернуться к входу",
+    "register": "Регистрация",
+    "registerDescription": "Создать новый аккаунт",
+    "fullName": "Полное имя",
+    "enterFullName": "Введите ваше полное имя",
+    "enterPassword": "Введите пароль",
+    "confirmPassword": "Подтвердите пароль",
+    "registering": "Регистрация...",
+    "alreadyHaveAccount": "Уже есть аккаунт?",
+    "signIn": "Войти",
+    "passwordMismatch": "Пароли не совпадают",
+    "registrationSuccessful": "Регистрация успешна",
+    "registrationSuccessDescription": "Ваш аккаунт создан",
+    "checkEmailVerification": "Проверьте вашу почту",
+    "verificationEmailSent": "Ссылка подтверждения отправлена",
+    "resetPassword": "Сброс пароля",
+    "resetPasswordDescription": "Установите новый пароль",
+    "newPassword": "Новый пароль",
+    "enterNewPassword": "Введите новый пароль",
+    "confirmNewPassword": "Подтвердите новый пароль",
+    "updating": "Обновление...",
+    "updatePassword": "Обновить пароль",
+    "passwordResetSuccess": "Пароль успешно обновлен"
+  },
+  "statistics": {
+    "noData": "Нет данных",
+    "lastUpdated": "Последнее обновление",
+    "totalSchools": "Всего школ",
+    "users": "пользователей",
+    "completionRate": "Процент завершения",
+    "aboveAverage": "Выше среднего",
+    "belowAverage": "Ниже среднего",
+    "pendingApprovals": "Ожидающие одобрения",
+    "needsReview": "Требует проверки",
+    "activeForms": "Активные формы",
+    "totalForms": "Всего форм",
+    "formsByStatus": "Формы по статусу",
+    "performanceMetrics": "Показатели производительности",
+    "approvalRate": "Процент одобрения",
+    "approved": "Одобрено",
+    "pending": "Ожидание",
+    "rejected": "Отклонено"
   }
 }

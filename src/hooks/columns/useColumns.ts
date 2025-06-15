@@ -1,23 +1,15 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnType } from '@/types/column';
-import { transformRawColumnData } from '@/utils/columnOptionsParser';
+import { supabase } from '@/lib/supabase';
+import { Column, ColumnOption } from '@/types/column';
 
-interface UseColumnsOptions {
-  categoryId?: string;
-}
-
-export const useColumns = (options: UseColumnsOptions = {}) => {
-  const { categoryId } = options;
-
+export const useColumns = (categoryId?: string) => {
   return useQuery({
     queryKey: ['columns', categoryId],
-    queryFn: async (): Promise<Column[]> => {
+    queryFn: async () => {
       let query = supabase
         .from('columns')
         .select('*')
-        .eq('status', 'active')
         .order('order_index', { ascending: true });
 
       if (categoryId) {
@@ -31,19 +23,43 @@ export const useColumns = (options: UseColumnsOptions = {}) => {
         throw error;
       }
 
-      // Properly transform the data to match Column interface
-      return (data || []).map(item => {
-        const transformed = transformRawColumnData(item);
+      return (data || []).map((item: any): Column => {
+        const options = item.options 
+          ? (typeof item.options === 'string' ? JSON.parse(item.options) : item.options)
+          : [];
+          
+        const validation = item.validation
+          ? (typeof item.validation === 'string' ? JSON.parse(item.validation) : item.validation)
+          : null;
+          
+        const formattedOptions = Array.isArray(options) 
+          ? options.map((opt: any): ColumnOption => ({
+              id: opt.id || String(Math.random()),
+              label: opt.label || '',
+              value: opt.value || ''
+            }))
+          : [];
+        
         return {
-          ...item,
-          type: item.type as ColumnType,
-          options: transformed.options || [],
-          validation: item.validation || {},
-          description: transformed.description || item.description || '',
-          section: item.section || ''
-        } as Column;
+          id: item.id,
+          category_id: item.category_id,
+          name: item.name,
+          type: item.type,
+          is_required: item.is_required,
+          placeholder: item.placeholder || '',
+          help_text: item.help_text || '',
+          description: item.description || '',
+          section: item.section || '',
+          order_index: item.order_index,
+          status: item.status,
+          validation: validation,
+          default_value: item.default_value || '',
+          options: formattedOptions,
+          created_at: item.created_at,
+          updated_at: item.updated_at
+        };
       });
     },
-    enabled: !!categoryId || categoryId === undefined
+    enabled: true
   });
 };

@@ -5,7 +5,7 @@ export interface ColumnOption {
   id?: string;
   label: string;
   value: string;
-  [key: string]: string | undefined; // Add index signature for Json compatibility
+  [key: string]: string | undefined;
 }
 
 export interface Column {
@@ -24,7 +24,7 @@ export interface Column {
   options?: ColumnOption[];
   created_at: string;
   updated_at: string;
-  section?: string; // Add missing section property
+  section?: string;
 }
 
 export interface ColumnFormValues {
@@ -38,8 +38,8 @@ export interface ColumnFormValues {
   default_value?: string;
   options?: ColumnOption[];
   validation?: any;
-  order_index?: number;
-  status?: string;
+  order_index: number;
+  status: string;
 }
 
 export interface ColumnFormData {
@@ -57,7 +57,6 @@ export interface ColumnFormData {
   status: string;
 }
 
-// Add missing interface
 export interface UseColumnFormProps {
   column?: Column;
   categoryId: string;

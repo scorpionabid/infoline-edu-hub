@@ -44,7 +44,8 @@
     "status": "Status",
     "actions": "Actions",
     "language": "Language",
-    "selectLanguage": "Select Language"
+    "selectLanguage": "Select Language",
+    "clear": "Clear"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -59,7 +60,8 @@
     "dataEntry": "Data Entry",
     "approvals": "Approvals",
     "profile": "Profile",
-    "logout": "Logout"
+    "logout": "Logout",
+    "statistics": "Statistics"
   },
   "users": {
     "users": "Users",
@@ -124,5 +126,71 @@
     "recentActivity": "Recent Activity",
     "upcomingDeadlines": "Upcoming Deadlines",
     "notifications": "Notifications"
+  },
+  "categories": {
+    "filters": "Filters",
+    "activeFilters": "Active filters"
+  },
+  "columns": {
+    "selectCategoryFirst": "Select a category first"
+  },
+  "settings": {
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "security": "Security",
+    "appearance": "Appearance",
+    "language": "Language",
+    "team": "Team",
+    "languageDescription": "Choose your preferred language"
+  },
+  "auth": {
+    "resetEmailSent": "Password reset link sent to your email",
+    "forgotPassword": "Forgot Password?",
+    "forgotPasswordDescription": "Enter your email address",
+    "enterEmail": "Enter your email address",
+    "sending": "Sending...",
+    "sendResetEmail": "Send Reset Link",
+    "backToLogin": "Back to Login",
+    "register": "Register",
+    "registerDescription": "Create a new account",
+    "fullName": "Full Name",
+    "enterFullName": "Enter your full name",
+    "enterPassword": "Enter password",
+    "confirmPassword": "Confirm Password",
+    "registering": "Registering...",
+    "alreadyHaveAccount": "Already have an account?",
+    "signIn": "Sign In",
+    "passwordMismatch": "Passwords do not match",
+    "registrationSuccessful": "Registration Successful",
+    "registrationSuccessDescription": "Your account has been created",
+    "checkEmailVerification": "Check your email",
+    "verificationEmailSent": "Verification link sent",
+    "resetPassword": "Reset Password",
+    "resetPasswordDescription": "Set a new password",
+    "newPassword": "New Password",
+    "enterNewPassword": "Enter new password",
+    "confirmNewPassword": "Confirm new password",
+    "updating": "Updating...",
+    "updatePassword": "Update Password",
+    "passwordResetSuccess": "Password updated successfully"
+  },
+  "statistics": {
+    "noData": "No data available",
+    "lastUpdated": "Last updated",
+    "totalSchools": "Total schools",
+    "users": "users",
+    "completionRate": "Completion rate",
+    "aboveAverage": "Above average",
+    "belowAverage": "Below average",
+    "pendingApprovals": "Pending approvals",
+    "needsReview": "Needs review",
+    "activeForms": "Active forms",
+    "totalForms": "Total forms",
+    "formsByStatus": "Forms by status",
+    "performanceMetrics": "Performance metrics",
+    "approvalRate": "Approval rate",
+    "approved": "Approved",
+    "pending": "Pending",
+    "rejected": "Rejected"
   }
 }

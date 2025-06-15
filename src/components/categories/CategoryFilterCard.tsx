@@ -1,116 +1,57 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { CategoryStatus } from '@/types/category';
-import { useTranslation } from '@/hooks/common/useTranslation';
+import { Button } from '@/components/ui/button';
+import { Filter, X } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
-export interface CategoryFilterProps {
-  title?: string;
-  statuses: string[];
-  onStatusChange: (status: string, checked: boolean) => void;
-  assignments: string[];
-  onAssignmentChange: (assignment: string, checked: boolean) => void;
-  showArchived: boolean;
-  onArchivedChange: (checked: boolean) => void;
+interface CategoryFilterCardProps {
+  filters: {
+    status: string;
+    assignment: string;
+    archived: boolean;
+  };
+  onFilterChange: (filters: any) => void;
+  onClearFilters: () => void;
 }
 
-const CategoryFilterCard: React.FC<CategoryFilterProps> = ({
-  title = 'Filters',
-  statuses = [],
-  onStatusChange,
-  assignments = [],
-  onAssignmentChange,
-  showArchived,
-  onArchivedChange
+const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
+  filters,
+  onFilterChange,
+  onClearFilters
 }) => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   
-  // Available status options
-  const statusOptions = [
-    { value: 'all', label: t('all') },
-    { value: 'active', label: t('active'), color: 'bg-green-500' },
-    { value: 'draft', label: t('draft'), color: 'bg-yellow-500' },
-    { value: 'approved', label: t('approved'), color: 'bg-blue-500' },
-    { value: 'pending', label: t('pending'), color: 'bg-orange-500' }
-  ];
-  
-  // Available assignment options
-  const assignmentOptions = [
-    { value: 'all', label: t('all') },
-    { value: 'schools', label: t('schools') },
-    { value: 'sectors', label: t('sectors') }
-  ];
-  
-  // Handle status checkbox changes
-  const handleStatusChange = (status: string, checked: boolean) => {
-    onStatusChange(status, checked);
-  };
-  
-  // Handle assignment checkbox changes
-  const handleAssignmentChange = (assignment: string, checked: boolean) => {
-    onAssignmentChange(assignment, checked);
-  };
+  const hasActiveFilters = filters.status !== 'all' || 
+                          filters.assignment !== 'all' || 
+                          filters.archived;
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Filter className="h-4 w-4" />
+          {t('categories.filters')}
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-medium mb-2">{t('status')}</h3>
-            <div className="space-y-2">
-              {statusOptions.map((option) => (
-                <div key={option.value} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`status-${option.value}`} 
-                    checked={statuses.includes(option.value)} 
-                    onCheckedChange={(checked: boolean) => handleStatusChange(option.value, checked)}
-                  />
-                  <Label htmlFor={`status-${option.value}`} className="flex items-center cursor-pointer">
-                    {option.value !== 'all' && (
-                      <Badge variant="outline" className={`mr-2 w-3 h-3 rounded-full ${option.color}`}>&nbsp;</Badge>
-                    )}
-                    {option.label}
-                  </Label>
-                </div>
-              ))}
-            </div>
+      <CardContent className="space-y-4">
+        {hasActiveFilters && (
+          <div className="flex items-center justify-between">
+            <Badge variant="secondary" className="text-xs">
+              {t('categories.activeFilters')}: {Object.values(filters).filter(Boolean).length}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClearFilters}
+              className="h-6 px-2 text-xs"
+            >
+              <X className="h-3 w-3 mr-1" />
+              {t('common.clear')}
+            </Button>
           </div>
-          
-          <Separator />
-          
-          <div>
-            <h3 className="font-medium mb-2">{t('assignment')}</h3>
-            <div className="space-y-2">
-              {assignmentOptions.map((option) => (
-                <div key={option.value} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`assignment-${option.value}`} 
-                    checked={assignments.includes(option.value)} 
-                    onCheckedChange={(checked: boolean) => handleAssignmentChange(option.value, checked)}
-                  />
-                  <Label htmlFor={`assignment-${option.value}`}>{option.label}</Label>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <Separator />
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="show-archived" 
-              checked={showArchived} 
-              onCheckedChange={(checked: boolean) => onArchivedChange(checked)}
-            />
-            <Label htmlFor="show-archived">{t('showArchived')}</Label>
-          </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

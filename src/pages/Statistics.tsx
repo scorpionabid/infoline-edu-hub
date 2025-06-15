@@ -1,264 +1,222 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  School, 
-  Building2, 
-  Users, 
-  CheckCircle,
-  Clock,
-  AlertTriangle,
-  BarChart3,
-  PieChart
-} from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useRealDashboardData } from '@/hooks/dashboard/useRealDashboardData';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, TrendingDown, Activity, Users } from 'lucide-react';
+import LoadingScreen from '@/components/auth/LoadingScreen';
 
-// Mock data - gerçək data ilə əvəz ediləcək
-const mockRegionStats = {
-  totalSectors: 12,
-  totalSchools: 240,
-  completionRate: 67,
-  pendingApprovals: 45,
-  activeForms: 8,
-  lastUpdated: new Date().toLocaleDateString('az-AZ')
-};
-
-const mockSectorStats = {
-  totalSchools: 24,
-  completionRate: 73,
-  pendingApprovals: 8,
-  activeForms: 3,
-  schoolsCompleted: 18,
-  schoolsPending: 6,
-  lastUpdated: new Date().toLocaleDateString('az-AZ')
-};
-
-const StatisticsPage: React.FC = () => {
+const Statistics = () => {
   const { t } = useLanguage();
-  const { hasRole } = usePermissions();
-  
-  const isRegionAdmin = hasRole(['regionadmin']);
-  const isSectorAdmin = hasRole(['sectoradmin']);
-  
-  const stats = isRegionAdmin ? mockRegionStats : mockSectorStats;
-  const pageTitle = isRegionAdmin ? 'Region Statistikası' : 'Sektor Statistikası';
-  
-  // Set document title
-  useEffect(() => {
-    document.title = `${pageTitle} | InfoLine`;
-  }, [pageTitle]);
-  
-  return (
-    <>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">{pageTitle}</h1>
-            <p className="text-muted-foreground">
-              Son yenilənmə: {stats.lastUpdated}
-            </p>
-          </div>
-          <Badge variant="outline" className="px-3 py-1">
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Canlı Məlumatlar
-          </Badge>
-        </div>
+  const { isSuperAdmin, isRegionAdmin, isSectorAdmin } = usePermissions();
+  const { dashboardData, loading, error } = useRealDashboardData();
 
-        {/* Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {isRegionAdmin && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Ümumi Sektorlar</CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalSectors}</div>
-                <p className="text-xs text-green-600">
-                  <TrendingUp className="h-3 w-3 inline mr-1" />
-                  +2 bu ay
-                </p>
-              </CardContent>
-            </Card>
-          )}
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ümumi Məktəblər</CardTitle>
-              <School className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalSchools}</div>
-              <p className="text-xs text-muted-foreground">
-                {isRegionAdmin ? 'Region daxilində' : 'Sektor daxilində'}
-              </p>
-            </CardContent>
-          </Card>
+  if (loading) {
+    return <LoadingScreen message={t('common.loading')} />;
+  }
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tamamlanma Faizi</CardTitle>
-              <PieChart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.completionRate}%</div>
-              <Progress value={stats.completionRate} className="mt-2" />
-              <p className="text-xs text-green-600 mt-1">
-                <TrendingUp className="h-3 w-3 inline mr-1" />
-                +5% bu həftə
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Gözləyən Təsdiqlər</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingApprovals}</div>
-              <p className="text-xs text-orange-600">
-                <AlertTriangle className="h-3 w-3 inline mr-1" />
-                Təcili baxış tələb olunur
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Detailed Stats Tabs */}
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Ümumi Baxış</TabsTrigger>
-            <TabsTrigger value="schools">Məktəblər</TabsTrigger>
-            <TabsTrigger value="forms">Formlar</TabsTrigger>
-            <TabsTrigger value="trends">Tendensiyalar</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Məlumat Doldurulma Statusu</CardTitle>
-                  <CardDescription>
-                    {isRegionAdmin ? 'Region' : 'Sektor'} üzrə tamamlanma səviyyələri
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Tamamlanmış</span>
-                      <span>{stats.completionRate}%</span>
-                    </div>
-                    <Progress value={stats.completionRate} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Davam edən</span>
-                      <span>{100 - stats.completionRate}%</span>
-                    </div>
-                    <Progress value={100 - stats.completionRate} className="h-2 bg-orange-100" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Aktiv Formlar</CardTitle>
-                  <CardDescription>
-                    Hazırda doldurulması gözlənilən form sayı
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold mb-2">{stats.activeForms}</div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="flex items-center">
-                        <CheckCircle className="h-3 w-3 text-green-500 mr-1" />
-                        Təsdiqlənmiş
-                      </span>
-                      <span>142</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="flex items-center">
-                        <Clock className="h-3 w-3 text-yellow-500 mr-1" />
-                        Gözləmədə
-                      </span>
-                      <span>{stats.pendingApprovals}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="schools">
-            <Card>
-              <CardHeader>
-                <CardTitle>Məktəb Performansı</CardTitle>
-                <CardDescription>
-                  Məktəblərin məlumat doldurma performansı
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Alert>
-                  <BarChart3 className="h-4 w-4" />
-                  <AlertDescription>
-                    Məktəb səviyyəli statistika hazırlanır. Tezliklə əlavə ediləcək.
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="forms">
-            <Card>
-              <CardHeader>
-                <CardTitle>Form Statistikası</CardTitle>
-                <CardDescription>
-                  Form növləri üzrə məlumat doldurulma nəticələri
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Alert>
-                  <PieChart className="h-4 w-4" />
-                  <AlertDescription>
-                    Form əsaslı analitika hazırlanır. Tezliklə əlavə ediləcək.
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="trends">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tendensiya Analizi</CardTitle>
-                <CardDescription>
-                  Vaxt seriyası və tendensiya məlumatları
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Alert>
-                  <TrendingUp className="h-4 w-4" />
-                  <AlertDescription>
-                    Tendensiya analizi və qrafiklər hazırlanır. Tezliklə əlavə ediləcək.
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600">{t('common.error')}</p>
+        <p className="text-sm text-muted-foreground mt-2">{error.message}</p>
       </div>
-    </>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-muted-foreground">{t('statistics.noData')}</p>
+      </div>
+    );
+  }
+
+  // Transform data for charts
+  const chartData = [
+    {
+      name: t('statistics.approved'),
+      value: dashboardData.formsByStatus?.approved || 0,
+      color: '#10b981'
+    },
+    {
+      name: t('statistics.pending'),
+      value: dashboardData.formsByStatus?.pending || 0,
+      color: '#f59e0b'
+    },
+    {
+      name: t('statistics.rejected'),
+      value: dashboardData.formsByStatus?.rejected || 0,
+      color: '#ef4444'
+    }
+  ];
+
+  // Get role-specific data
+  const getRoleSpecificData = () => {
+    if (isSuperAdmin) {
+      return {
+        totalSchools: dashboardData.totalSchools || 0,
+        totalUsers: dashboardData.totalUsers || 0,
+        completionRate: dashboardData.completionRate || 0,
+        pendingApprovals: dashboardData.formsByStatus?.pending || 0,
+        activeForms: dashboardData.formsByStatus?.total || 0,
+        lastUpdated: new Date().toLocaleDateString()
+      };
+    } else if (isRegionAdmin) {
+      return {
+        totalSchools: dashboardData.totalSchools || 0,
+        completionRate: dashboardData.completionRate || 0,
+        pendingApprovals: dashboardData.formsByStatus?.pending || 0,
+        activeForms: dashboardData.formsByStatus?.total || 0,
+        schoolsCompleted: dashboardData.formsByStatus?.approved || 0,
+        schoolsPending: dashboardData.formsByStatus?.pending || 0,
+        lastUpdated: new Date().toLocaleDateString()
+      };
+    } else {
+      return {
+        totalSchools: dashboardData.totalSchools || 0,
+        completionRate: dashboardData.completionRate || 0,
+        pendingApprovals: dashboardData.formsByStatus?.pending || 0,
+        activeForms: dashboardData.formsByStatus?.total || 0,
+        schoolsCompleted: dashboardData.formsByStatus?.approved || 0,
+        schoolsPending: dashboardData.formsByStatus?.pending || 0,
+        lastUpdated: new Date().toLocaleDateString()
+      };
+    }
+  };
+
+  const stats = getRoleSpecificData();
+
+  return (
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">{t('navigation.statistics')}</h1>
+        <p className="text-sm text-muted-foreground">
+          {t('statistics.lastUpdated')}: {stats.lastUpdated}
+        </p>
+      </div>
+
+      {/* Overview Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('statistics.totalSchools')}
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalSchools}</div>
+            <p className="text-xs text-muted-foreground">
+              {isSuperAdmin && stats.totalUsers && `+${stats.totalUsers} ${t('statistics.users')}`}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('statistics.completionRate')}
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{Math.round(stats.completionRate)}%</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.completionRate > 50 ? t('statistics.aboveAverage') : t('statistics.belowAverage')}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('statistics.pendingApprovals')}
+            </CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.pendingApprovals}</div>
+            <p className="text-xs text-muted-foreground">
+              {t('statistics.needsReview')}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('statistics.activeForms')}
+            </CardTitle>
+            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.activeForms}</div>
+            <p className="text-xs text-muted-foreground">
+              {t('statistics.totalForms')}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('statistics.formsByStatus')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('statistics.performanceMetrics')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{t('statistics.completionRate')}</span>
+                <span className="text-sm text-muted-foreground">{Math.round(stats.completionRate)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full" 
+                  style={{ width: `${stats.completionRate}%` }}
+                ></div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{t('statistics.approvalRate')}</span>
+                <span className="text-sm text-muted-foreground">
+                  {Math.round((dashboardData.formsByStatus?.approved || 0) / Math.max(1, dashboardData.formsByStatus?.total || 1) * 100)}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-green-600 h-2 rounded-full" 
+                  style={{ 
+                    width: `${(dashboardData.formsByStatus?.approved || 0) / Math.max(1, dashboardData.formsByStatus?.total || 1) * 100}%` 
+                  }}
+                ></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 
-export default StatisticsPage;
+export default Statistics;
