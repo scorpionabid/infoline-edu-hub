@@ -3,7 +3,8 @@ export { useColumnMutations } from './useColumnMutations';
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnType } from '@/types/column';
+import { Column, ColumnType, ColumnStatus } from '@/types/column';
+import { assertColumnStatus } from '@/utils/buildFixes';
 
 // Fixed useColumnsQuery hook
 export const useColumnsQuery = (options: { status?: string; enabled?: boolean } = {}) => {
@@ -49,7 +50,7 @@ export const useColumnsQuery = (options: { status?: string; enabled?: boolean } 
         options: item.options ? (typeof item.options === 'string' ? JSON.parse(item.options) : item.options) : [],
         validation: item.validation ? (typeof item.validation === 'string' ? JSON.parse(item.validation) : item.validation) : {},
         order_index: item.order_index || 0,
-        status: item.status || 'active',
+        status: assertColumnStatus(item.status || 'active') as ColumnStatus,
         created_at: item.created_at,
         updated_at: item.updated_at
       }));

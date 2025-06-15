@@ -159,23 +159,20 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
           // Create form data with single column value
           const formData = { [selectedColumnId]: bulkValue };
 
-          // Save proxy form data
+          // Save proxy form data with updated interface
           const saveResult = await ProxyDataEntryService.saveProxyFormData(formData, {
             categoryId,
             schoolId,
-            userId: user!.id,
             proxyUserId: user!.id,
-            proxyUserRole: user!.role,
-            originalSchoolId: schoolId,
             proxyReason: `Bulk data entry: ${selectedColumn?.name} = ${bulkValue}`,
-            status: 'draft'
+            proxyOriginalEntity: schoolId
           });
 
           if (!saveResult.success) {
             throw new Error(saveResult.error || 'Saxlama xətası');
           }
 
-          // Submit for auto-approval
+          // Submit for auto-approval with updated interface
           const submitResult = await ProxyDataEntryService.submitProxyData({
             categoryId,
             schoolId,

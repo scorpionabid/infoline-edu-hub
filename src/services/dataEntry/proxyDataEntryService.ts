@@ -13,6 +13,23 @@ export interface ProxyDataEntryData {
   proxy_original_entity: string;
 }
 
+export interface ProxyDataEntryOptions {
+  schoolId: string;
+  categoryId: string;
+  proxyUserId: string;
+  proxyReason: string;
+  proxyOriginalEntity: string;
+}
+
+export interface ProxySubmitOptions {
+  categoryId: string;
+  schoolId: string;
+  proxyUserId: string;
+  proxyUserRole?: string;
+  proxyReason: string;
+  autoApprove?: boolean;
+}
+
 export class ProxyDataEntryService {
   static async saveProxyData(data: ProxyDataEntryData): Promise<SaveResult & { proxyInfo?: any }> {
     try {
@@ -65,13 +82,7 @@ export class ProxyDataEntryService {
     }
   }
 
-  static async saveProxyFormData(formData: Record<string, any>, options: {
-    schoolId: string;
-    categoryId: string;
-    proxyUserId: string;
-    proxyReason: string;
-    proxyOriginalEntity: string;
-  }): Promise<SaveResult & { proxyInfo?: any }> {
+  static async saveProxyFormData(formData: Record<string, any>, options: ProxyDataEntryOptions): Promise<SaveResult & { proxyInfo?: any }> {
     try {
       const entries = Object.entries(formData).map(([columnId, value]) => ({
         school_id: options.schoolId,
@@ -109,7 +120,7 @@ export class ProxyDataEntryService {
     }
   }
 
-  static async submitProxyData(schoolId: string, categoryId: string, proxyUserId: string): Promise<SaveResult & { submittedCount?: number }> {
+  static async submitProxyData(options: ProxySubmitOptions): Promise<SaveResult & { submittedCount?: number }> {
     try {
       const { data, error } = await supabase
         .from('data_entries')
@@ -117,13 +128,18 @@ export class ProxyDataEntryService {
           status: 'pending' as DataEntryStatus,
           updated_at: new Date().toISOString()
         })
-        .eq('school_id', schoolId)
-        .eq('category_id', categoryId)
-        .eq('proxy_created_by', proxyUserId)
+        .eq('school_id', options.schoolId)
+        .eq('category_id', options.categoryId)
+        .eq('proxy_created_by', options.proxyUserId)
         .eq('status', 'draft')
         .select();
 
       if (error) throw error;
+
+      // Auto-approve if requested
+      if (options.autoApprove) {
+        await this.autoApproveProxyData(options.schoolId, options.categoryId, options.proxyUserId);
+      }
 
       return {
         success: true,
