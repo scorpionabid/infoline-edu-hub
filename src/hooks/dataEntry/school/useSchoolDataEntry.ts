@@ -1,16 +1,18 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns, CategoryAssignment } from '@/types/category';
+import { useAuth } from '@/hooks/auth/useAuth';
+import { CategoryWithColumns } from '@/types/category';
 import { toast } from 'sonner';
 
-export const useSchoolCategories = (schoolId?: string) => {
+export const useSchoolDataEntry = (schoolId?: string) => {
+  const { user } = useAuth();
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchCategories = async () => {
-    if (!schoolId) return;
+    if (!schoolId || !user) return;
 
     try {
       setLoading(true);
@@ -20,7 +22,6 @@ export const useSchoolCategories = (schoolId?: string) => {
           *,
           columns(*)
         `)
-        .in('assignment', ['all', 'schools'])
         .eq('status', 'active')
         .order('order_index');
 
@@ -28,23 +29,14 @@ export const useSchoolCategories = (schoolId?: string) => {
 
       const categoriesWithColumns: CategoryWithColumns[] = (data || []).map(category => ({
         ...category,
-        assignment: category.assignment as CategoryAssignment,
-        columns: (category.columns || []).map(column => ({
-          ...column,
-          options: column.options ? 
-            (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
-            [],
-          validation: column.validation ? 
-            (typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation) : 
-            {}
-        }))
+        columns: category.columns || []
       }));
 
       setCategories(categoriesWithColumns);
     } catch (err: any) {
       console.error('Error fetching school categories:', err);
       setError(err.message);
-      toast.error('Məktəb kateqoriyaları yüklənərkən xəta baş verdi');
+      toast.error('Kateqoriyalar yüklənərkən xəta baş verdi');
     } finally {
       setLoading(false);
     }
@@ -52,7 +44,7 @@ export const useSchoolCategories = (schoolId?: string) => {
 
   useEffect(() => {
     fetchCategories();
-  }, [schoolId]);
+  }, [schoolId, user]);
 
   return {
     categories,

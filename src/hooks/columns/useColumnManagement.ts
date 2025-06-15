@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useColumnsQuery, useColumnMutations } from './index';
 import { Column, ColumnFormData } from '@/types/column';
@@ -9,7 +10,6 @@ import { toast } from 'sonner';
  */
 export const useColumnManagement = (categoryId?: string) => {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
-  const [isReordering, setIsReordering] = useState(false);
 
   // Core queries and mutations
   const { 
@@ -18,8 +18,7 @@ export const useColumnManagement = (categoryId?: string) => {
     error, 
     refetch 
   } = useColumnsQuery({ 
-    categoryId,
-    includeDeleted: true 
+    categoryId
   });
 
   const {
@@ -27,20 +26,14 @@ export const useColumnManagement = (categoryId?: string) => {
     updateColumn,
     deleteColumn,
     restoreColumn,
-    bulkDelete,
-    reorderColumns,
     createColumnAsync,
     updateColumnAsync,
     deleteColumnAsync,
     restoreColumnAsync,
-    bulkDeleteAsync,
-    reorderColumnsAsync,
     isCreating,
     isUpdating,
     isDeleting,
-    isRestoring,
-    isBulkDeleting,
-    isReordering: isMutationReordering
+    isRestoring
   } = useColumnMutations();
 
   // Enhanced operations
@@ -98,48 +91,6 @@ export const useColumnManagement = (categoryId?: string) => {
     }
   }, [updateColumnAsync]);
 
-  const moveColumnsToCategory = useCallback(async (
-    columnIds: string[], 
-    targetCategoryId: string
-  ): Promise<boolean> => {
-    try {
-      const updatePromises = columnIds.map(columnId => 
-        updateColumnAsync({
-          columnId,
-          data: { category_id: targetCategoryId }
-        })
-      );
-
-      await Promise.all(updatePromises);
-      
-      toast.success(`${columnIds.length} sütun yeni kateqoriyaya köçürüldü`);
-      return true;
-    } catch (error) {
-      console.error('Move columns error:', error);
-      toast.error('Sütunların köçürülməsi uğursuz oldu');
-      return false;
-    }
-  }, [updateColumnAsync]);
-
-  const handleDragAndDropReorder = useCallback(async (
-    reorderedColumns: Column[]
-  ): Promise<boolean> => {
-    setIsReordering(true);
-    try {
-      const columnIds = reorderedColumns.map(col => col.id);
-      await reorderColumnsAsync(columnIds);
-      
-      toast.success('Sütun sırası yeniləndi');
-      return true;
-    } catch (error) {
-      console.error('Drag and drop reorder error:', error);
-      toast.error('Sıralama dəyişikliyi uğursuz oldu');
-      return false;
-    } finally {
-      setIsReordering(false);
-    }
-  }, [reorderColumnsAsync]);
-
   // Selection management
   const toggleColumnSelection = useCallback((columnId: string) => {
     setSelectedColumns(prev => 
@@ -188,8 +139,6 @@ export const useColumnManagement = (categoryId?: string) => {
     isUpdating,
     isDeleting,
     isRestoring,
-    isBulkDeleting,
-    isReordering: isReordering || isMutationReordering,
     error,
     
     // Basic operations
@@ -208,12 +157,6 @@ export const useColumnManagement = (categoryId?: string) => {
     // Enhanced operations
     duplicateColumn,
     bulkToggleStatus,
-    moveColumnsToCategory,
-    handleDragAndDropReorder,
-    
-    // Bulk operations
-    bulkDelete,
-    bulkDeleteAsync,
     
     // Selection management
     toggleColumnSelection,

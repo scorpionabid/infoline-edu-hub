@@ -44,7 +44,7 @@ interface AddCategoryDialogProps {
   children: React.ReactNode;
 }
 
-export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({ children }) => {
+const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({ children }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const { toast } = useToast();
   const { createCategory, isLoading } = useCategoryForm();
@@ -173,3 +173,5 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({ children }
     </Dialog>
   );
 };
+
+export default AddCategoryDialog;
