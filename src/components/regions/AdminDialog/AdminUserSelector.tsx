@@ -1,90 +1,117 @@
-import React, { useState, useEffect } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useLanguage } from '@/context/LanguageContext';
-import { FullUserData } from '@/types/auth';
 
-interface AdminUserSelectorProps {
-  entityId: string | undefined;
-  entityType: 'region' | 'sector' | 'school';
-  selectedAdminId: string | null;
-  onChange: (userId: string | null) => void;
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Search, Users } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+
+interface User {
+  id: string;
+  full_name?: string;
+  email?: string;
+  role?: string;
 }
 
-const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
-  entityId,
-  entityType,
-  selectedAdminId,
-  onChange
+interface AdminUserSelectorProps {
+  users: User[];
+  loading: boolean;
+  selectedUserId?: string;
+  onUserSelect: (userId: string) => void;
+  error?: Error | null;
+}
+
+export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
+  users,
+  loading,
+  selectedUserId,
+  onUserSelect,
+  error
 }) => {
   const { t } = useLanguage();
-  const [users, setUsers] = useState<FullUserData[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if (!entityId) return;
+  const filteredUsers = users.filter(user => 
+    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-      setLoading(true);
-      try {
-        let query = supabase
-          .from('profiles')
-          .select('*')
-          .eq('role', `${entityType.replace('region', 'regionadmin').replace('sector', 'sectoradmin').replace('school', 'schooladmin')}`);
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Search className="h-4 w-4 animate-spin" />
+          <span className="text-sm text-muted-foreground">
+            {t('loadingUsers') || 'İstifadəçilər yüklənir...'}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
-        if (entityType === 'region') {
-          query = query.eq('region_id', entityId);
-        } else if (entityType === 'sector') {
-          query = query.eq('sector_id', entityId);
-        } else if (entityType === 'school') {
-          query = query.eq('school_id', entityId);
-        }
-
-        const { data, error } = await query.order('full_name');
-
-        if (error) {
-          console.error('Error fetching users:', error);
-          return;
-        }
-
-        setUsers(data as FullUserData[]);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
-  }, [entityId, entityType]);
+  if (error) {
+    return (
+      <div className="text-red-500 text-sm">
+        {t('errorLoadingUsers') || 'İstifadəçilər yüklənərkən xəta baş verdi'}
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <Label htmlFor="admin">{t('admin')}</Label>
-      <Select
-        value={selectedAdminId || 'select-admin'}
-        onValueChange={(value) => onChange(value === 'select-admin' ? null : value)}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder={t('selectAdmin')} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="select-admin">{t('selectAdmin')}</SelectItem>
-          {users.map((user) => (
-            <SelectItem key={user.id} value={user.id}>
-              {user.full_name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {loading && (
-        <div className="mt-2 flex items-center text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          {t('loadingUsers')}
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="search">
+          {t('searchUsers') || 'İstifadəçi axtarın'}
+        </Label>
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="search"
+            placeholder={t('searchPlaceholder') || 'Ad və ya email daxil edin...'}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8"
+          />
         </div>
-      )}
+      </div>
+
+      <div className="space-y-2 max-h-60 overflow-y-auto">
+        {filteredUsers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <Users className="h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">
+              {t('noUsersFound') || 'İstifadəçi tapılmadı'}
+            </p>
+          </div>
+        ) : (
+          filteredUsers.map((user) => (
+            <div
+              key={user.id}
+              className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                selectedUserId === user.id
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:bg-muted/50'
+              }`}
+              onClick={() => onUserSelect(user.id)}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{user.full_name || user.email}</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  {user.role && (
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {user.role}
+                    </p>
+                  )}
+                </div>
+                {selectedUserId === user.id && (
+                  <div className="w-2 h-2 bg-primary rounded-full" />
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 };

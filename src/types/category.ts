@@ -1,6 +1,6 @@
 
 export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'approved' | 'archived';
-export type CategoryAssignment = 'all' | 'sectors';
+export type CategoryAssignment = 'all' | 'sectors' | 'schools';
 
 export interface Category {
   id: string;
@@ -47,6 +47,17 @@ export interface CreateCategoryFormData extends AddCategoryFormData {
 
 export interface UpdateCategoryFormData extends Partial<AddCategoryFormData> {
   id: string;
+  updated_at?: string;
+}
+
+// Add the missing UpdateCategoryData type
+export interface UpdateCategoryData {
+  name?: string;
+  description?: string;
+  assignment?: CategoryAssignment;
+  status?: CategoryStatus;
+  priority?: number;
+  deadline?: string | null;
   updated_at?: string;
 }
 

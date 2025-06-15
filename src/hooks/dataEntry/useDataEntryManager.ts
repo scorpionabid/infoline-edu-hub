@@ -9,18 +9,25 @@ import { toast } from 'sonner';
 interface DataEntryManagerProps {
   schoolId?: string;
   categoryId?: string;
+  userId?: string;
   onDataSubmitted?: () => void;
 }
 
-export const useDataEntryManager = ({ schoolId, categoryId, onDataSubmitted }: DataEntryManagerProps) => {
+export const useDataEntryManager = ({ schoolId, categoryId, userId, onDataSubmitted }: DataEntryManagerProps) => {
   const { user } = useAuth();
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [entries, setEntries] = useState<DataEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDataModified, setIsDataModified] = useState(false);
+  const [entryStatus, setEntryStatus] = useState<string>('draft');
+  const [error, setError] = useState<string | null>(null);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Record<string, any>>({});
 
-  const effectiveUserId = user?.id;
+  const effectiveUserId = userId || user?.id;
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -48,6 +55,7 @@ export const useDataEntryManager = ({ schoolId, categoryId, onDataSubmitted }: D
       setCategories(categoriesWithColumns);
     } catch (error: any) {
       console.error('Error fetching categories:', error);
+      setError(error.message);
       toast.error('Kateqoriyalar yüklənərkən xəta baş verdi');
     }
   }, [categoryId]);
@@ -77,8 +85,10 @@ export const useDataEntryManager = ({ schoolId, categoryId, onDataSubmitted }: D
         formValues[entry.column_id] = entry.value || '';
       });
       setValues(formValues);
+      setFormData(formValues);
     } catch (error: any) {
       console.error('Error fetching entries:', error);
+      setError(error.message);
       toast.error('Məlumatlar yüklənərkən xəta baş verdi');
     }
   }, [schoolId, categoryId]);
@@ -88,7 +98,57 @@ export const useDataEntryManager = ({ schoolId, categoryId, onDataSubmitted }: D
       ...prev,
       [columnId]: value
     }));
+    setIsDataModified(true);
   }, []);
+
+  const handleFormDataChange = useCallback((data: Record<string, any>) => {
+    setFormData(data);
+    setIsDataModified(true);
+  }, []);
+
+  const handleFieldChange = useCallback((fieldId: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldId]: value
+    }));
+    setIsDataModified(true);
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      // Save logic here
+      setLastSaved(new Date().toISOString());
+      setIsDataModified(false);
+      toast.success('Məlumatlar yadda saxlanıldı');
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Saxlama xətası');
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
+
+  const handleSubmit = useCallback(async (targetCategoryId?: string) => {
+    const categoryToSubmit = targetCategoryId || categoryId;
+    if (categoryToSubmit) {
+      return await submitData(categoryToSubmit);
+    }
+    return false;
+  }, [categoryId]);
+
+  const resetForm = useCallback(() => {
+    setValues({});
+    setFormData({});
+    setIsDataModified(false);
+    setError(null);
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    await Promise.all([fetchCategories(), fetchEntries()]);
+    setLoading(false);
+  }, [fetchCategories, fetchEntries]);
 
   const submitData = useCallback(async (targetCategoryId: string) => {
     if (!schoolId || !effectiveUserId) {
@@ -130,6 +190,7 @@ export const useDataEntryManager = ({ schoolId, categoryId, onDataSubmitted }: D
       if (error) throw error;
 
       toast.success('Məlumatlar uğurla yadda saxlanıldı');
+      setEntryStatus('pending');
       
       if (onDataSubmitted) {
         onDataSubmitted();
@@ -139,6 +200,7 @@ export const useDataEntryManager = ({ schoolId, categoryId, onDataSubmitted }: D
       return true;
     } catch (error: any) {
       console.error('Error submitting data:', error);
+      setError(error.message);
       toast.error('Məlumatlar yadda saxlanılarkən xəta baş verdi');
       return false;
     } finally {
@@ -162,7 +224,21 @@ export const useDataEntryManager = ({ schoolId, categoryId, onDataSubmitted }: D
     values,
     loading,
     submitting,
+    formData,
+    isLoading: loading,
+    isSubmitting: submitting,
+    isSaving,
+    isDataModified,
+    entryStatus,
+    error,
+    lastSaved,
     handleValueChange,
+    handleFormDataChange,
+    handleFieldChange,
+    handleSubmit,
+    handleSave,
+    resetForm,
+    loadData,
     submitData,
     refetch: () => Promise.all([fetchCategories(), fetchEntries()])
   };

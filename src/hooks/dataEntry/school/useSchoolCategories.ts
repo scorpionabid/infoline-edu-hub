@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns, CategoryAssignment } from '@/types/category';
+import { ColumnType } from '@/types/column';
 import { toast } from 'sonner';
 
 export const useSchoolCategories = (schoolId?: string) => {
@@ -29,8 +30,10 @@ export const useSchoolCategories = (schoolId?: string) => {
       const categoriesWithColumns: CategoryWithColumns[] = (data || []).map(category => ({
         ...category,
         assignment: category.assignment as CategoryAssignment,
-        columns: (category.columns || []).map(column => ({
+        columns: (category.columns || []).map((column: any) => ({
           ...column,
+          type: column.type as ColumnType,
+          status: column.status as 'active' | 'inactive' | 'deleted',
           options: column.options ? 
             (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
             [],

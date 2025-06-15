@@ -1,115 +1,72 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns } from '@/types/category';
-import { useErrorHandler } from '@/hooks/core/useErrorHandler';
-import { useLanguage } from '@/context/LanguageContext';
+import { CategoryWithColumns, CategoryAssignment } from '@/types/category';
 
-/**
- * Tək kateqoriya məlumatını əldə etmək üçün hook parametrləri
- */
-export interface UseCategoryQueryOptions {
-  categoryId: string;
+interface UseCategoryQueryOptions {
+  categoryId?: string;
+  withColumns?: boolean;
+  assignment?: CategoryAssignment;
+  status?: string;
   enabled?: boolean;
-  staleTime?: number;
 }
 
-/**
- * Tək kateqoriya və onun sütunlarını əldə etmək üçün React Query əsaslı hook
- */
-export function useCategoryQuery({
-  categoryId,
-  enabled = true,
-  staleTime = 1000 * 60 * 5, // 5 dəqiqə
-}: UseCategoryQueryOptions) {
-  const { t } = useLanguage();
-  const { handleError } = useErrorHandler('Category');
+export const useCategoryQuery = (options: UseCategoryQueryOptions = {}) => {
+  const { 
+    categoryId, 
+    withColumns = false, 
+    assignment, 
+    status = 'active',
+    enabled = true 
+  } = options;
   
-  // Sorğu açarını hazırlayırıq
-  const queryKey = ['category', categoryId];
-  
-  // Kateqoriya və sütunlarını əldə etmək üçün sorğu
-  const query = useQuery({
-    queryKey,
-    queryFn: async (): Promise<CategoryWithColumns | null> => {
-      if (!categoryId) {
-        console.warn('Category ID is required');
-        return null;
+  return useQuery({
+    queryKey: ['categories', categoryId, withColumns, assignment, status],
+    queryFn: async (): Promise<CategoryWithColumns[]> => {
+      let query = supabase
+        .from('categories')
+        .select(withColumns ? `
+          *,
+          columns(*)
+        ` : '*');
+
+      if (categoryId) {
+        query = query.eq('id', categoryId);
       }
 
-      console.log(`Fetching category with columns for ID: ${categoryId}`);
-      
-      const { data, error } = await supabase
-        .from('categories')
-        .select(`
-          *,
-          columns:columns(
-            id,
-            name,
-            type,
-            is_required,
-            placeholder,
-            help_text,
-            options,
-            validation,
-            default_value,
-            order_index,
-            status,
-            category_id,
-            created_at,
-            updated_at
-          )
-        `)
-        .eq('id', categoryId)
-        .single();
+      if (assignment) {
+        query = query.eq('assignment', assignment);
+      }
+
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      query = query.order('order_index');
+
+      const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching category:', error);
+        console.error('Error fetching categories:', error);
         throw error;
       }
 
-      if (!data) {
-        console.log('Category not found');
-        return null;
-      }
-
-      // Sütunları order_index-ə görə sıralayırıq
-      const sortedColumns = (data.columns || []).sort((a, b) => 
-        (a.order_index || 0) - (b.order_index || 0)
-      );
-
-      const categoryWithColumns: CategoryWithColumns = {
-        ...data,
-        columns: sortedColumns
-      };
-
-      console.log(`Successfully fetched category with ${sortedColumns.length} columns`);
-      return categoryWithColumns;
+      return (data || []).map(category => ({
+        ...category,
+        assignment: category.assignment as CategoryAssignment,
+        columns: withColumns ? (category.columns || []).map((column: any) => ({
+          ...column,
+          options: column.options ? 
+            (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
+            [],
+          validation: column.validation ? 
+            (typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation) : 
+            {}
+        })) : []
+      }));
     },
-    enabled: enabled && !!categoryId,
-    staleTime,
-    gcTime: 1000 * 60 * 10, // 10 dəqiqə
+    enabled
   });
-  
-  // Xəta baş verdikdə emal edirik
-  if (query.error) {
-    handleError(query.error, t('errorFetchingCategory'));
-  }
-  
-  // Hook nəticələrini qaytarırıq
-  return {
-    // Sorğu nəticələri
-    category: query.data || null,
-    columns: query.data?.columns || [],
-    isLoading: query.isLoading,
-    isError: query.isError,
-    error: query.error,
-    refetch: query.refetch,
-    
-    // Hesablanmış dəyərlər
-    hasColumns: (query.data?.columns || []).length > 0,
-    columnCount: (query.data?.columns || []).length,
-  };
-}
+};
 
 export default useCategoryQuery;

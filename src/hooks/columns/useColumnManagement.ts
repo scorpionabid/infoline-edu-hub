@@ -18,7 +18,8 @@ export const useColumnManagement = (categoryId?: string) => {
     error, 
     refetch 
   } = useColumnsQuery({ 
-    categoryId
+    categoryId,
+    enabled: true
   });
 
   const {

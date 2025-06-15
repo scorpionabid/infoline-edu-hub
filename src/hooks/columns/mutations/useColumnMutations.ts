@@ -24,7 +24,7 @@ export const useColumnMutations = () => {
         status: result.status as 'active' | 'inactive' | 'deleted',
         options: result.options ? (typeof result.options === 'string' ? JSON.parse(result.options) : result.options) : [],
         validation: result.validation ? (typeof result.validation === 'string' ? JSON.parse(result.validation) : result.validation) : {}
-      };
+      } as Column;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ 
@@ -59,7 +59,7 @@ export const useColumnMutations = () => {
         status: result.status as 'active' | 'inactive' | 'deleted',
         options: result.options ? (typeof result.options === 'string' ? JSON.parse(result.options) : result.options) : [],
         validation: result.validation ? (typeof result.validation === 'string' ? JSON.parse(result.validation) : result.validation) : {}
-      };
+      } as Column;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ 
@@ -118,7 +118,7 @@ export const useColumnMutations = () => {
         status: result.status as 'active' | 'inactive' | 'deleted',
         options: result.options ? (typeof result.options === 'string' ? JSON.parse(result.options) : result.options) : [],
         validation: result.validation ? (typeof result.validation === 'string' ? JSON.parse(result.validation) : result.validation) : {}
-      };
+      } as Column;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
