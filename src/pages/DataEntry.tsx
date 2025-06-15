@@ -21,11 +21,9 @@ const DataEntry: React.FC = () => {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { categories, isLoading: categoriesLoading } = useCategories({
-    assignment: 'all' // Changed from 'schools' to 'all'
-  });
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   
-  const { columns, isLoading: columnsLoading } = useColumns({
+  const { data: columns = [], isLoading: columnsLoading } = useColumns({
     categoryId: categoryId || ''
   });
 
