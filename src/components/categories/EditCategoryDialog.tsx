@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   Dialog,
@@ -86,7 +85,6 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           deadline: deadline ? deadline.toISOString() : null,
           updated_at: now
         };
-        // Fixed: pass "updateData", not "category.id" as a string only
         await updateCategory(category.id, updateData);
       } else {
         const categoryData = {
@@ -99,7 +97,6 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           created_at: now,
           updated_at: now
         };
-        
         await createCategory(categoryData);
       }
       

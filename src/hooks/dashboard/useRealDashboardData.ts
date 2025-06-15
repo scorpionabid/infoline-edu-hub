@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
@@ -40,11 +39,11 @@ export const useRealDashboardData = () => {
 
     let categories: any[] = [];
     if (!catErr && Array.isArray(categoriesData)) {
-      categories = categoriesData.map(cat => ({
-        id: String(cat.id),
-        name: String(cat.name),
-        status: cat.status,
-        completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : 0
+      categories = categoriesData.filter(cat => cat && typeof cat === 'object').map(cat => ({
+        id: String((cat as any).id),
+        name: String((cat as any).name),
+        status: (cat as any).status as string,
+        completionRate: typeof (cat as any).completion_rate === 'number' ? (cat as any).completion_rate : 0
       }));
     }
 
@@ -84,11 +83,11 @@ export const useRealDashboardData = () => {
 
     let categories: any[] = [];
     if (!catErr && Array.isArray(categoriesData)) {
-      categories = categoriesData.map(cat => ({
-        id: String(cat.id),
-        name: String(cat.name),
-        status: cat.status,
-        completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : 0
+      categories = categoriesData.filter(cat => cat && typeof cat === 'object').map(cat => ({
+        id: String((cat as any).id),
+        name: String((cat as any).name),
+        status: (cat as any).status as string,
+        completionRate: typeof (cat as any).completion_rate === 'number' ? (cat as any).completion_rate : 0
       }));
     }
 
@@ -126,11 +125,11 @@ export const useRealDashboardData = () => {
 
     let categories: any[] = [];
     if (!catErr && Array.isArray(categoriesData)) {
-      categories = categoriesData.map(cat => ({
-        id: String(cat.id),
-        name: String(cat.name),
-        status: cat.status,
-        completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : 0
+      categories = categoriesData.filter(cat => cat && typeof cat === 'object').map(cat => ({
+        id: String((cat as any).id),
+        name: String((cat as any).name),
+        status: (cat as any).status as string,
+        completionRate: typeof (cat as any).completion_rate === 'number' ? (cat as any).completion_rate : 0
       }));
     }
 
@@ -150,11 +149,11 @@ export const useRealDashboardData = () => {
 
     let categories: any[] = [];
     if (!catErr && Array.isArray(categoriesData)) {
-      categories = categoriesData.map(cat => ({
-        id: String(cat.id),
-        name: String(cat.name),
-        status: cat.status,
-        completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : 0
+      categories = categoriesData.filter(cat => cat && typeof cat === 'object').map(cat => ({
+        id: String((cat as any).id),
+        name: String((cat as any).name),
+        status: (cat as any).status as string,
+        completionRate: typeof (cat as any).completion_rate === 'number' ? (cat as any).completion_rate : 0
       }));
     }
 

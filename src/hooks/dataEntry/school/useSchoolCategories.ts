@@ -27,13 +27,13 @@ export const useSchoolCategories = (schoolId?: string) => {
 
       if (error) throw error;
 
-      const categoriesWithColumns: CategoryWithColumns[] = (Array.isArray(data) ? data : []).map(category => ({
+      const categoriesWithColumns: CategoryWithColumns[] = (Array.isArray(data) ? data : []).map((category: any) => ({
         ...category,
-        assignment: category.assignment,
+        assignment: (category.assignment || 'all') as CategoryAssignment,
         columns: Array.isArray(category.columns)
           ? (category.columns || []).map((column: any) => ({
               ...column,
-              type: column.type,
+              type: column.type as ColumnType,
               status: column.status,
               options: column.options ? 
                 (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 

@@ -52,7 +52,7 @@ export const useCategoryQuery = (options: UseCategoryQueryOptions = {}) => {
         .filter(category => typeof category === 'object' && category && 'id' in category)
         .map((category: any) => ({
           ...category,
-          assignment: category.assignment,
+          assignment: (category.assignment || 'all') as CategoryAssignment,
           columns: withColumns && Array.isArray(category.columns)
             ? (category.columns || []).map((column: any) => ({
                 ...column,
