@@ -1,31 +1,14 @@
 
-// UUID validation utilities
-
-export const isValidUUID = (value: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(value);
+export const validateUserIdForDB = (userId: string): boolean => {
+  // UUID v4 regex pattern
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(userId);
 };
 
-export const getDBSafeUUID = (value: string | null | undefined, allowNull: boolean = true): string | null => {
-  if (!value) {
-    return allowNull ? null : '';
-  }
-  
-  if (typeof value !== 'string') {
-    return allowNull ? null : '';
-  }
-  
-  return isValidUUID(value) ? value : (allowNull ? null : '');
+export const validateUUID = (uuid: string): boolean => {
+  return validateUserIdForDB(uuid);
 };
 
-// Legacy compatibility
-export const getSafeUUID = getDBSafeUUID;
-
-export const generateTempUUID = (): string => {
-  return 'temp-' + Math.random().toString(36).substring(2, 15);
-};
-
-export const sanitizeUUIDArray = (uuids: (string | null | undefined)[]): string[] => {
-  return uuids
-    .filter((uuid): uuid is string => Boolean(uuid && isValidUUID(uuid)));
+export const isValidUUID = (uuid: string): boolean => {
+  return validateUserIdForDB(uuid);
 };

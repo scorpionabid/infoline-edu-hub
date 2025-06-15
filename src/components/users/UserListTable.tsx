@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -65,7 +66,7 @@ const UserListTable: React.FC<UserListTableProps> = ({ refreshTrigger, filterPar
         query = query.or(`full_name.ilike.%${filterParams.search}%,email.ilike.%${filterParams.search}%`);
       }
 
-      if (filterParams.status) {
+      if (filterParams.status && !Array.isArray(filterParams.status)) {
         query = query.eq('status', filterParams.status);
       }
 

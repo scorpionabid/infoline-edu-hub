@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, UserFilter, UserRole } from '@/types/user';
+import { User, UserFilter, UserRole, UserStatus } from '@/types/user';
 
 export const useUsers = (initialFilter: UserFilter = {}) => {
   const [users, setUsers] = useState<User[]>([]);
@@ -31,22 +31,16 @@ export const useUsers = (initialFilter: UserFilter = {}) => {
         `, { count: 'exact' });
       
       // Apply filters
-      if (currentFilter.role && currentFilter.role !== '') {
-        if (Array.isArray(currentFilter.role)) {
-          // role massivi için uyğun sorğu
-          query = query.in('role', currentFilter.role as any);
-        } else {
-          // tek rol üçün uyğun sorğu
-          query = query.eq('role', currentFilter.role as any);
-        }
+      if (currentFilter.role && !Array.isArray(currentFilter.role) && currentFilter.role !== '') {
+        query = query.eq('role', currentFilter.role);
+      } else if (Array.isArray(currentFilter.role) && currentFilter.role.length > 0) {
+        query = query.in('role', currentFilter.role);
       }
       
-      if (currentFilter.status && currentFilter.status !== '') {
-        if (Array.isArray(currentFilter.status)) {
-          query = query.in('profiles.status', currentFilter.status);
-        } else {
-          query = query.eq('profiles.status', currentFilter.status);
-        }
+      if (currentFilter.status && !Array.isArray(currentFilter.status) && currentFilter.status !== '') {
+        query = query.eq('profiles.status', currentFilter.status);
+      } else if (Array.isArray(currentFilter.status) && currentFilter.status.length > 0) {
+        query = query.in('profiles.status', currentFilter.status);
       }
       
       if (currentFilter.region_id) {
