@@ -25,6 +25,7 @@ export interface CategoryItem {
   totalFields?: number;
   completedFields?: number;
   lastUpdated?: string;
+  assignment?: string;
 }
 
 export interface DeadlineItem {
@@ -51,6 +52,7 @@ export interface SectorStat {
   completion?: number;
   completion_rate?: number;
   status: string;
+  adminEmail?: string;
 }
 
 export interface SchoolStat {
@@ -73,6 +75,7 @@ export interface SchoolStat {
   address?: string;
   phone?: string;
   email?: string;
+  adminEmail?: string;
 }
 
 export interface PendingApproval {
