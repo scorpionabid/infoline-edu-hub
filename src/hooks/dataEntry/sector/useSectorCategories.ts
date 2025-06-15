@@ -26,7 +26,8 @@ export const useSectorCategories = () => {
         // Transform data with proper type casting
         const transformedData: CategoryWithColumns[] = (data || []).map(item => ({
           ...item,
-          assignment: item.assignment as CategoryAssignment, // Proper type casting
+          assignment: item.assignment as CategoryAssignment,
+          status: item.status as 'active' | 'inactive' | 'draft' | 'approved' | 'archived' | 'pending',
           columns: item.columns || []
         }));
 

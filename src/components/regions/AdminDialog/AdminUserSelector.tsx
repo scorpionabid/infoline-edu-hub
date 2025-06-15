@@ -33,7 +33,7 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 
       setLoading(true);
       try {
-        const roleMap = {
+        const roleMap: Record<string, string> = {
           region: 'regionadmin',
           sector: 'sectoradmin', 
           school: 'schooladmin'

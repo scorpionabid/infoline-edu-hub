@@ -11,14 +11,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus, Search, SlidersHorizontal, X } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CreateCategoryDialog from '@/components/categories/CreateCategoryDialog';
 import CategoryList from '@/components/categories/CategoryList';
+import { CategoryStatus } from '@/types/category';
 
 const Categories = () => {
   const { t } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<CategoryStatus>('active');
   const [filters, setFilters] = useState({
     status: '',
     assignment: '',
@@ -39,7 +42,7 @@ const Categories = () => {
   };
 
   const handleSuccess = () => {
-    // Refresh işlemi CategoryList tərəfindən idarə olunur
+    // Refresh will be handled by CategoryList component
   };
 
   return (
@@ -71,10 +74,7 @@ const Categories = () => {
           <CardHeader className="pb-6 bg-gradient-to-r from-white to-slate-50/50">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <CardTitle className="text-2xl font-bold text-slate-800 mb-2">Kateqoriyalar</CardTitle>
-                <CardDescription className="text-slate-600 text-base">
-                  Bütün kateqoriyaları görün və idarə edin
-                </CardDescription>
+                <CardTitle className="text-2xl font-bold text-slate-800 mb-2">Kateqoriya İdarəetməsi</CardTitle>
               </div>
               <div className="flex items-center space-x-3 w-full sm:w-auto">
                 <div className="relative flex-1 sm:flex-initial">
@@ -103,25 +103,6 @@ const Categories = () => {
             {isFilterOpen && (
               <div className="flex flex-wrap items-center gap-6 mt-8 p-6 bg-gradient-to-r from-slate-50 via-blue-50/50 to-indigo-50/50 
                             rounded-2xl border border-slate-100/50 backdrop-blur-sm">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Status</label>
-                  <Select
-                    value={filters.status}
-                    onValueChange={(value) => updateFilter('status', value)}
-                  >
-                    <SelectTrigger className="w-[200px] bg-white border-slate-200 hover:border-slate-300 rounded-xl">
-                      <SelectValue placeholder="Status seçin" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-slate-200 rounded-xl">
-                      <SelectItem value="">Bütün statuslar</SelectItem>
-                      <SelectItem value="active">Aktiv</SelectItem>
-                      <SelectItem value="inactive">Deaktiv</SelectItem>
-                      <SelectItem value="draft">Qaralama</SelectItem>
-                      <SelectItem value="archived">Arxivlənmiş</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Təyinat</label>
                   <Select
@@ -155,11 +136,50 @@ const Categories = () => {
             )}
           </CardHeader>
           <CardContent className="pt-0 px-6 pb-6">
-            <CategoryList 
-              onCategorySelect={handleCategorySelect}
-              searchQuery={searchQuery}
-              filters={filters}
-            />
+            {/* Unified Tab System */}
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as CategoryStatus)} className="w-full">
+              <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-100/80 via-blue-100/50 to-indigo-100/50 backdrop-blur-sm p-1 rounded-2xl mb-6">
+                <TabsTrigger 
+                  value="active"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-lg rounded-xl font-semibold
+                           data-[state=active]:text-blue-700 transition-all duration-200"
+                >
+                  Aktiv
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="inactive"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-lg rounded-xl font-semibold
+                           data-[state=active]:text-slate-700 transition-all duration-200"
+                >
+                  Deaktiv
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="draft"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-lg rounded-xl font-semibold
+                           data-[state=active]:text-yellow-700 transition-all duration-200"
+                >
+                  Qaralama
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="archived"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-lg rounded-xl font-semibold
+                           data-[state=active]:text-red-700 transition-all duration-200"
+                >
+                  Arxivlənmiş
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value={activeTab} className="mt-0">
+                <CategoryList 
+                  onCategorySelect={handleCategorySelect}
+                  searchQuery={searchQuery}
+                  filters={{
+                    ...filters,
+                    status: activeTab // Pass current tab as status filter
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
