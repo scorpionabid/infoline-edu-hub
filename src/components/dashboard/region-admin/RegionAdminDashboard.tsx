@@ -13,96 +13,67 @@ interface RegionAdminDashboardProps {
 const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ dashboardData }) => {
   const { t } = useLanguage();
 
-  // Mock data for demonstration
-  const mockStats: DashboardFormStats = {
-    completedForms: 380,
-    pendingForms: 85,
-    approvalRate: 76,
-    total: 500,
-    completed: 380,
-    approved: 320,
-    pending: 85,
-    rejected: 15,
-    draft: 20,
-    dueSoon: 12,
-    overdue: 5,
-    percentage: 76,
-    completion_rate: 76,
-    completionRate: 76
-  };
+  if (!dashboardData) {
+    return (
+      <div className="p-8 text-center">{t('loading') || 'Yüklənir...'}</div>
+    );
+  }
 
+  // Real Backend Data
   const formStats: DashboardFormStats = {
-    completedForms: mockStats.completedForms,
-    pendingForms: mockStats.pendingForms,
-    approvalRate: mockStats.approvalRate,
-    total: mockStats.total,
-    pending: mockStats.pending,
-    approved: mockStats.approved,
-    rejected: mockStats.rejected,
-    draft: mockStats.draft,
-    dueSoon: mockStats.dueSoon,
-    overdue: mockStats.overdue,
-    completed: mockStats.completed,
-    percentage: mockStats.percentage,
-    completion_rate: mockStats.completion_rate,
-    completionRate: mockStats.completionRate
+    completedForms: dashboardData.formStats?.completedForms || 0,
+    pendingForms: dashboardData.formStats?.pendingForms || 0,
+    approvalRate: dashboardData.formStats?.approvalRate || 0,
+    total: dashboardData.formStats?.total || 0,
+    completed: dashboardData.formStats?.completed || 0,
+    approved: dashboardData.formStats?.approved || 0,
+    pending: dashboardData.formStats?.pending || 0,
+    rejected: dashboardData.formStats?.rejected || 0,
+    draft: dashboardData.formStats?.draft || 0,
+    dueSoon: dashboardData.formStats?.dueSoon || 0,
+    overdue: dashboardData.formStats?.overdue || 0,
+    percentage: dashboardData.formStats?.percentage || 0,
+    completion_rate: dashboardData.formStats?.completion_rate || 0,
+    completionRate: dashboardData.formStats?.completionRate || 0,
   };
 
   const statsGridData = [
     {
       title: t('totalApproved'),
-      value: mockStats.approved || 0,
+      value: formStats.approved || 0,
       color: 'text-green-600',
       description: t('approved')
     },
     {
       title: t('totalPending'),
-      value: mockStats.pending || 0,
+      value: formStats.pending || 0,
       color: 'text-yellow-600',
       description: t('pending')
     },
     {
       title: t('totalRejected'),
-      value: mockStats.rejected || 0,
+      value: formStats.rejected || 0,
       color: 'text-red-600',
       description: t('rejected')
     },
     {
       title: t('completion'),
-      value: `${mockStats.percentage || 0}%`,
+      value: `${formStats.percentage || 0}%`,
       color: 'text-blue-600',
       description: t('completionRate')
     }
   ];
 
-  const mockSectors = [
-    { 
-      id: '1', 
-      name: 'Sektor 1', 
-      schoolCount: 10, 
-      totalSchools: 12,
-      activeSchools: 10,
-      completionRate: 85, 
-      status: 'active' as const 
-    },
-    { 
-      id: '2', 
-      name: 'Sektor 2', 
-      schoolCount: 8, 
-      totalSchools: 10,
-      activeSchools: 8,
-      completionRate: 92, 
-      status: 'active' as const 
-    }
-  ];
+  // Real sector data
+  const sectors = dashboardData.sectors || [];
 
   return (
     <div className="space-y-6">
       <StatsGrid stats={statsGridData} />
-      
+
       <div className="grid gap-4 md:grid-cols-2">
         <DashboardChart stats={formStats} />
-        <SectorStatsTable sectors={mockSectors} />
+        <SectorStatsTable sectors={sectors} />
       </div>
     </div>
   );
