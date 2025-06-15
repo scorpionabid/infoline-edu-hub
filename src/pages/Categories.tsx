@@ -13,9 +13,10 @@ import {
 import { Plus, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CreateCategoryDialog from '@/components/categories/CreateCategoryDialog';
+import EnhancedAddCategoryDialog from '@/components/categories/EnhancedAddCategoryDialog';
 import CategoryList from '@/components/categories/CategoryList';
 import { CategoryStatus } from '@/types/category';
+import { useCategoryOperations } from '@/hooks/categories/useCategories';
 
 const Categories = () => {
   const { t } = useLanguage();
@@ -27,6 +28,8 @@ const Categories = () => {
     assignment: '',
   });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const { createCategoryAsync, isCreating } = useCategoryOperations();
 
   const updateFilter = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -41,8 +44,13 @@ const Categories = () => {
     window.location.href = `/categories/${categoryId}`;
   };
 
-  const handleSuccess = () => {
-    // Refresh will be handled by CategoryList component
+  const handleCreateCategory = async (categoryData: any) => {
+    try {
+      await createCategoryAsync(categoryData);
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating category:', error);
+    }
   };
 
   return (
@@ -183,10 +191,11 @@ const Categories = () => {
           </CardContent>
         </Card>
 
-        <CreateCategoryDialog
-          open={isDialogOpen}
-          setOpen={setIsDialogOpen}
-          onSuccess={handleSuccess}
+        <EnhancedAddCategoryDialog
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          onSubmit={handleCreateCategory}
+          isSubmitting={isCreating}
         />
       </div>
     </div>

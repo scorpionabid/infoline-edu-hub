@@ -46,25 +46,25 @@ const Statistics: React.FC = () => {
           <StatsCard
             title={t('totalSectors')}
             value={mockData.totalSectors}
-            description={t('activeSectors')}
+            subtitle={t('activeSectors')}
             trend={{ value: 5, isPositive: true }}
           />
           <StatsCard
             title={t('totalSchools')}
             value={mockData.totalSchools}
-            description={t('activeSchools')}
+            subtitle={t('activeSchools')}
             trend={{ value: 3, isPositive: false }}
           />
           <StatsCard
             title={t('completionRate')}
-            value={mockData.completionRate}
-            description={t('overallCompletionRate')}
+            value={`${mockData.completionRate}%`}
+            subtitle={t('overallCompletionRate')}
             trend={{ value: 1.2, isPositive: true }}
           />
           <StatsCard
             title={t('pendingApprovals')}
             value={mockData.pendingApprovals}
-            description={t('formsAwaitingApproval')}
+            subtitle={t('formsAwaitingApproval')}
             trend={{ value: 2, isPositive: false }}
           />
         </StatsGrid>

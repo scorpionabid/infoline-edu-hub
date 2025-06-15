@@ -1,78 +1,53 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
 
-interface StatsCardProps {
+export interface StatsCardProps {
   title: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color: 'blue' | 'green' | 'amber' | 'red' | 'purple';
+  value: number | string;
+  subtitle?: string;
   trend?: {
     value: number;
-    isPositive?: boolean;
-    label?: string;
+    isPositive: boolean;
   };
-  onClick?: () => void;
+  icon?: React.ReactNode;
+  className?: string;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, trend, onClick }) => {
-  const colorClasses = {
-    blue: 'bg-blue-50 dark:bg-blue-900/20',
-    green: 'bg-green-50 dark:bg-green-900/20',
-    amber: 'bg-amber-50 dark:bg-amber-900/20',
-    red: 'bg-red-50 dark:bg-red-900/20',
-    purple: 'bg-purple-50 dark:bg-purple-900/20',
-  };
-  
-  const borderClasses = {
-    blue: 'border-l-blue-500',
-    green: 'border-l-green-500',
-    amber: 'border-l-amber-500',
-    red: 'border-l-red-500',
-    purple: 'border-l-purple-500',
-  };
-  
-  const renderTrend = () => {
-    if (!trend) return null;
-    
-    const trendColor = trend.isPositive === undefined ? 'text-gray-500' : 
-                       trend.isPositive ? 'text-green-500' : 'text-red-500';
-    const TrendIcon = trend.isPositive === undefined ? Minus :
-                      trend.isPositive ? TrendingUp : TrendingDown;
-    
-    return (
-      <div className={`flex items-center gap-1 text-xs ${trendColor} mt-1.5`}>
-        <TrendIcon className="h-3.5 w-3.5" />
-        <span>{trend.value}%</span>
-        {trend.label && <span className="text-muted-foreground">({trend.label})</span>}
-      </div>
-    );
-  };
-  
+const StatsCard: React.FC<StatsCardProps> = ({
+  title,
+  value,
+  subtitle,
+  trend,
+  icon,
+  className = ""
+}) => {
   return (
-    <motion.div
-      whileHover={{ y: -5 }}
-      transition={{ duration: 0.2 }}
-      onClick={onClick}
-      className={onClick ? 'cursor-pointer' : ''}
-    >
-      <Card className={`border-l-4 ${borderClasses[color]}`}>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">{title}</p>
-              <div className="text-2xl font-bold">{value}</div>
-              {renderTrend()}
-            </div>
-            <div className={`p-2 rounded-full ${colorClasses[color]}`}>
-              {icon}
-            </div>
+    <Card className={`${className}`}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {icon && <div className="h-4 w-4 text-muted-foreground">{icon}</div>}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {subtitle && (
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
+        )}
+        {trend && (
+          <div className="flex items-center space-x-1 text-xs">
+            {trend.isPositive ? (
+              <ArrowUpIcon className="h-3 w-3 text-green-500" />
+            ) : (
+              <ArrowDownIcon className="h-3 w-3 text-red-500" />
+            )}
+            <span className={trend.isPositive ? "text-green-500" : "text-red-500"}>
+              {Math.abs(trend.value)}%
+            </span>
           </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
