@@ -33,26 +33,26 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 
       setLoading(true);
       try {
-        const roleMap = {
+        const roleMap: Record<string, string> = {
           region: 'regionadmin',
           sector: 'sectoradmin', 
           school: 'schooladmin'
         };
 
-        let query = supabase
+        let queryBuilder = supabase
           .from('profiles')
           .select('id, full_name, email')
           .eq('role', roleMap[entityType]);
 
         if (entityType === 'region') {
-          query = query.eq('region_id', entityId);
+          queryBuilder = queryBuilder.eq('region_id', entityId);
         } else if (entityType === 'sector') {
-          query = query.eq('sector_id', entityId);
+          queryBuilder = queryBuilder.eq('sector_id', entityId);
         } else if (entityType === 'school') {
-          query = query.eq('school_id', entityId);
+          queryBuilder = queryBuilder.eq('school_id', entityId);
         }
 
-        const { data, error } = await query.order('full_name');
+        const { data, error } = await queryBuilder.order('full_name');
 
         if (error) {
           console.error('Error fetching users:', error);

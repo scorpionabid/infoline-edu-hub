@@ -45,6 +45,7 @@ export interface ValidationRules {
   date?: boolean;
   step?: number;
   custom?: string;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface Column {
@@ -97,3 +98,32 @@ export interface ColumnFormValues {
   section?: string;
   status?: string;
 }
+
+// Helper function to safely parse JSON fields from database
+export const parseColumnOptions = (options: any): ColumnOption[] => {
+  if (!options) return [];
+  if (Array.isArray(options)) return options;
+  if (typeof options === 'string') {
+    try {
+      const parsed = JSON.parse(options);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+export const parseValidationRules = (validation: any): ValidationRules => {
+  if (!validation) return {};
+  if (typeof validation === 'object' && !Array.isArray(validation)) return validation;
+  if (typeof validation === 'string') {
+    try {
+      const parsed = JSON.parse(validation);
+      return typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+  return {};
+};

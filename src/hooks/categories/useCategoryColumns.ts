@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { Column, ColumnOption } from "@/types/column";
+import { Column, ColumnOption, ColumnType, parseColumnOptions, parseValidationRules } from "@/types/column";
 
 /**
  * Hook to fetch columns for a specific category
@@ -22,42 +22,23 @@ const useCategoryColumns = (categoryId: string | undefined) => {
       
       // Convert to Column[] with proper type handling
       return (data || []).map((item: any): Column => {
-        // Parse JSON fields if they're stored as strings
-        const options = item.options 
-          ? (typeof item.options === 'string' ? JSON.parse(item.options) : item.options)
-          : [];
-          
-        const validation = item.validation
-          ? (typeof item.validation === 'string' ? JSON.parse(item.validation) : item.validation)
-          : null;
-          
-        // Format options correctly
-        const formattedOptions = Array.isArray(options) 
-          ? options.map((opt: any): ColumnOption => ({
-              id: opt.id || String(Math.random()),
-              label: opt.label || '',
-              value: opt.value || ''
-            }))
-          : [];
-        
         return {
           id: item.id,
           category_id: item.category_id,
           name: item.name,
-          type: item.type,
+          type: item.type as ColumnType,
           is_required: item.is_required,
           placeholder: item.placeholder || '',
           help_text: item.help_text || '',
+          description: item.description || '',
           order_index: item.order_index,
           status: item.status,
-          validation: validation,
+          validation: parseValidationRules(item.validation),
           default_value: item.default_value || '',
-          options: formattedOptions,
+          options: parseColumnOptions(item.options),
           created_at: item.created_at,
           updated_at: item.updated_at,
-          description: item.description || '',
-          section: item.section || '',
-          color: item.color || '',
+          section: item.section || ''
         };
       });
     },
