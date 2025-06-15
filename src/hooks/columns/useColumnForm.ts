@@ -6,10 +6,10 @@ export const useColumnForm = () => {
   
   return {
     ...mutations,
-    // Legacy compatibility
-    createColumnAsync: mutations.createColumn.mutateAsync,
-    updateColumnAsync: mutations.updateColumn.mutateAsync,
-    isCreating: mutations.createColumn.isPending,
-    isUpdating: mutations.updateColumn.isPending,
+    // Legacy compatibility with proper property access
+    createColumnAsync: mutations.createColumnAsync,
+    updateColumnAsync: mutations.updateColumnAsync,
+    isCreating: mutations.isCreating,
+    isUpdating: mutations.isUpdating,
   };
 };

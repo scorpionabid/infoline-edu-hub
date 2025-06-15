@@ -1,56 +1,44 @@
 
 import { useState, useEffect } from 'react';
-import { CategoryWithColumns } from '@/types/category';
 import { supabase } from '@/integrations/supabase/client';
+import { CategoryWithColumns, CategoryAssignment } from '@/types/category';
 
-export interface UseSchoolCategoriesResult {
-  categories: CategoryWithColumns[];
-  isLoading: boolean;
-  error: string | null;
-  refreshCategories: () => Promise<void>;
-}
-
-export const useSchoolCategories = (schoolId: string): UseSchoolCategoriesResult => {
+export const useSchoolCategories = () => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCategories = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('categories')
-        .select(`
-          *,
-          columns (*)
-        `)
-        .eq('status', 'active')
-        .order('name');
-
-      if (fetchError) throw fetchError;
-
-      setCategories(data || []);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (schoolId) {
-      fetchCategories();
-    }
-  }, [schoolId]);
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select(`
+            *,
+            columns(*)
+          `)
+          .eq('status', 'active')
+          .order('order_index');
 
-  return {
-    categories,
-    isLoading,
-    error,
-    refreshCategories: fetchCategories
-  };
+        if (error) throw error;
+
+        // Transform data with proper type casting
+        const transformedData: CategoryWithColumns[] = (data || []).map(item => ({
+          ...item,
+          assignment: item.assignment as CategoryAssignment, // Proper type casting
+          columns: item.columns || []
+        }));
+
+        setCategories(transformedData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Naməlum xəta');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  return { categories, loading, error };
 };
-
-export default useSchoolCategories;
