@@ -37,6 +37,7 @@ export interface ValidationRules {
   numeric?: boolean;
   integer?: boolean;
   date?: boolean;
+  step?: number;
   custom?: string;
 }
 
@@ -70,4 +71,20 @@ export interface ColumnFormData {
   validation?: ValidationRules;
   order_index?: number;
   section?: string;
+  status?: string;
+}
+
+export interface ColumnFormValues {
+  name: string;
+  type: ColumnType;
+  category_id: string;
+  placeholder?: string;
+  help_text?: string;
+  is_required: boolean;
+  default_value?: string;
+  options?: ColumnOption[];
+  validation?: ValidationRules;
+  order_index?: number;
+  section?: string;
+  status?: string;
 }

@@ -35,111 +35,138 @@ const Categories = () => {
   };
 
   const handleCategorySelect = (categoryId: string) => {
-    // Navigate to category details page
     window.location.href = `/categories/${categoryId}`;
   };
 
   const handleSuccess = () => {
-    // Refresh the category list when a new category is created
+    // Refresh işlemi CategoryList tərəfindən idarə olunur
   };
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Kateqoriyalar</h1>
-          <p className="text-gray-600 mt-1">Təhsil verilənlərini təşkil etmək üçün kateqoriyaları idarə edin</p>
-        </div>
-        <Button onClick={() => setIsDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="mr-2 h-4 w-4" />
-          Yeni Kateqoriya
-        </Button>
-      </div>
-
-      {/* Search and Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle className="text-xl">Kateqoriyalar Siyahısı</CardTitle>
-            <div className="flex items-center space-x-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:flex-initial">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Kateqoriya axtar..."
-                  className="w-full sm:w-[200px] pl-10 border-gray-300 focus:border-blue-500"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className="border-gray-300 hover:bg-gray-50"
-              >
-                <SlidersHorizontal className="mr-2 h-4 w-4" />
-                Filtrlər
-              </Button>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Modern Page Header */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-900 to-indigo-700 bg-clip-text text-transparent">
+              Kateqoriyalar
+            </h1>
+            <p className="text-lg text-slate-600 max-w-2xl">
+              Təhsil verilənlərini təşkil etmək və idarə etmək üçün kateqoriyalar sistemi
+            </p>
           </div>
-          
-          {isFilterOpen && (
-            <div className="flex flex-wrap items-center gap-3 mt-4 p-4 bg-gray-50 rounded-lg">
-              <Select
-                value={filters.status}
-                onValueChange={(value) => updateFilter('status', value)}
-              >
-                <SelectTrigger className="w-[180px] bg-white">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Bütün statuslar</SelectItem>
-                  <SelectItem value="active">Aktiv</SelectItem>
-                  <SelectItem value="inactive">Deaktiv</SelectItem>
-                  <SelectItem value="draft">Qaralama</SelectItem>
-                  <SelectItem value="archived">Arxivlənmiş</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select
-                value={filters.assignment}
-                onValueChange={(value) => updateFilter('assignment', value)}
-              >
-                <SelectTrigger className="w-[180px] bg-white">
-                  <SelectValue placeholder="Təyinat" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Bütün təyinatlar</SelectItem>
-                  <SelectItem value="all">Bütün vahidlər</SelectItem>
-                  <SelectItem value="sectors">Yalnız sektorlar</SelectItem>
-                  <SelectItem value="schools">Yalnız məktəblər</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={resetFilters}
-                className="ml-auto text-gray-600 hover:text-gray-900"
-              >
-                <X className="mr-2 h-4 w-4" />
-                Filtri sıfırla
-              </Button>
-            </div>
-          )}
-        </CardHeader>
-        <CardContent>
-          <CategoryList onCategorySelect={handleCategorySelect} />
-        </CardContent>
-      </Card>
+          <Button 
+            onClick={() => setIsDialogOpen(true)} 
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 
+                     shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 text-base font-medium"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Yeni Kateqoriya
+          </Button>
+        </div>
 
-      {/* Create Category Dialog - yalnız bir tənə dialog */}
-      <CreateCategoryDialog
-        open={isDialogOpen}
-        setOpen={setIsDialogOpen}
-        onSuccess={handleSuccess}
-      />
+        {/* Enhanced Search and Filters Card */}
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <CardTitle className="text-2xl font-semibold text-slate-800">Kateqoriyalar Siyahısı</CardTitle>
+                <CardDescription className="text-slate-600 mt-1">
+                  Bütün kateqoriyaları görün və idarə edin
+                </CardDescription>
+              </div>
+              <div className="flex items-center space-x-3 w-full sm:w-auto">
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Kateqoriya axtar..."
+                    className="w-full sm:w-[250px] pl-10 border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 
+                             bg-white/90 backdrop-blur-sm"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  className="border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors"
+                >
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  Filtrlər
+                </Button>
+              </div>
+            </div>
+            
+            {isFilterOpen && (
+              <div className="flex flex-wrap items-center gap-4 mt-6 p-5 bg-gradient-to-r from-slate-50 to-blue-50 
+                            rounded-xl border border-slate-100">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Status</label>
+                  <Select
+                    value={filters.status}
+                    onValueChange={(value) => updateFilter('status', value)}
+                  >
+                    <SelectTrigger className="w-[180px] bg-white border-slate-200 hover:border-slate-300">
+                      <SelectValue placeholder="Status seçin" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-slate-200">
+                      <SelectItem value="">Bütün statuslar</SelectItem>
+                      <SelectItem value="active">Aktiv</SelectItem>
+                      <SelectItem value="inactive">Deaktiv</SelectItem>
+                      <SelectItem value="draft">Qaralama</SelectItem>
+                      <SelectItem value="archived">Arxivlənmiş</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Təyinat</label>
+                  <Select
+                    value={filters.assignment}
+                    onValueChange={(value) => updateFilter('assignment', value)}
+                  >
+                    <SelectTrigger className="w-[180px] bg-white border-slate-200 hover:border-slate-300">
+                      <SelectValue placeholder="Təyinat seçin" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-slate-200">
+                      <SelectItem value="">Bütün təyinatlar</SelectItem>
+                      <SelectItem value="all">Bütün vahidlər</SelectItem>
+                      <SelectItem value="sectors">Sektorlar</SelectItem>
+                      <SelectItem value="schools">Məktəblər</SelectItem>
+                      <SelectItem value="regions">Regionlar</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="ml-auto text-slate-600 hover:text-slate-900 hover:bg-slate-100 
+                           transition-colors self-end"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Filtri təmizlə
+                </Button>
+              </div>
+            )}
+          </CardHeader>
+          <CardContent className="pt-0">
+            <CategoryList 
+              onCategorySelect={handleCategorySelect}
+              searchQuery={searchQuery}
+              filters={filters}
+            />
+          </CardContent>
+        </Card>
+
+        <CreateCategoryDialog
+          open={isDialogOpen}
+          setOpen={setIsDialogOpen}
+          onSuccess={handleSuccess}
+        />
+      </div>
     </div>
   );
 };

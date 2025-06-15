@@ -13,36 +13,40 @@ import { toast } from "sonner";
 
 interface CategoryListProps {
   onCategorySelect?: (categoryId: string) => void;
+  searchQuery?: string;
+  filters?: {
+    status: string;
+    assignment: string;
+  };
 }
 
-const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
+const CategoryList: React.FC<CategoryListProps> = ({ 
+  onCategorySelect, 
+  searchQuery = '', 
+  filters = { status: '', assignment: '' }
+}) => {
   const { categories, loading, error, refetch } = useCategories();
   const [open, setOpen] = useState(false);
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<CategoryStatus>("active");
   
-  // Add refs to prevent excessive refetches and track mount state
   const didMountRef = useRef(false);
   const lastRefetchTime = useRef(Date.now());
   const refetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Optimize refetch with useCallback and debounce
   const safeRefetch = useCallback(() => {
     const now = Date.now();
     
-    // Clear any pending timeout
     if (refetchTimeoutRef.current) {
       clearTimeout(refetchTimeoutRef.current);
       refetchTimeoutRef.current = null;
     }
     
-    // Only refetch if 2 seconds have passed since the last refetch
     if (now - lastRefetchTime.current > 2000) {
       lastRefetchTime.current = now;
       console.log("Refetching categories...");
       refetch();
     } else {
-      // Schedule a delayed refetch
       console.log("Delaying refetch - too soon after last one");
       refetchTimeoutRef.current = setTimeout(() => {
         lastRefetchTime.current = Date.now();
@@ -53,7 +57,6 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
     }
   }, [refetch]);
 
-  // Initial fetch only on mount
   useEffect(() => {
     if (!didMountRef.current) {
       console.log("Initial fetch of categories...");
@@ -61,7 +64,6 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
       didMountRef.current = true;
     }
     
-    // Clean up any pending timeout on unmount
     return () => {
       if (refetchTimeoutRef.current) {
         clearTimeout(refetchTimeoutRef.current);
@@ -73,59 +75,93 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
     setActiveTab(tab);
   };
 
-  // Handle errors in a separate effect
   useEffect(() => {
     if (error) {
-      const errorMessage = typeof error === 'string' ? error : 'An unknown error occurred';
-      toast.error("Failed to load categories", {
+      const errorMessage = typeof error === 'string' ? error : 'Naməlum xəta baş verdi';
+      toast.error("Kateqoriyalar yüklənə bilmədi", {
         description: errorMessage,
       });
     }
   }, [error]);
 
-  const filteredCategories = categories?.filter((category) => category.status === activeTab);
+  // Filter categories based on search and filters
+  const filteredCategories = categories?.filter((category) => {
+    // Tab filter
+    if (category.status !== activeTab) return false;
+    
+    // Search filter
+    if (searchQuery && !category.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    
+    // Status filter (if different from tab)
+    if (filters.status && filters.status !== category.status) return false;
+    
+    // Assignment filter
+    if (filters.assignment && filters.assignment !== category.assignment) return false;
+    
+    return true;
+  });
 
   const handleCategorySelect = (categoryId: string) => {
     onCategorySelect?.(categoryId);
   };
 
   return (
-    <>
-      <div className="md:flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">{t("categories")}</h2>
-        <Button onClick={() => setOpen(true)}>
-          <PlusIcon className="mr-2 h-4 w-4" />
-          {t("newCategory")}
-        </Button>
-      </div>
-
+    <div className="space-y-6">
       <Tabs defaultValue="active" className="w-full">
-        <TabsList>
-          <TabsTrigger value="active" onClick={() => handleTabChange("active")}>
-            {t("active")}
+        <TabsList className="grid w-full grid-cols-4 bg-slate-100/80 backdrop-blur-sm">
+          <TabsTrigger 
+            value="active" 
+            onClick={() => handleTabChange("active")}
+            className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            Aktiv
           </TabsTrigger>
-          <TabsTrigger value="inactive" onClick={() => handleTabChange("inactive")}>
-            {t("inactive")}
+          <TabsTrigger 
+            value="inactive" 
+            onClick={() => handleTabChange("inactive")}
+            className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            Deaktiv
           </TabsTrigger>
-          <TabsTrigger value="draft" onClick={() => handleTabChange("draft")}>
-            {t("draft")}
+          <TabsTrigger 
+            value="draft" 
+            onClick={() => handleTabChange("draft")}
+            className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            Qaralama
           </TabsTrigger>
-          <TabsTrigger value="archived" onClick={() => handleTabChange("archived")}>
-            {t("archived")}
+          <TabsTrigger 
+            value="archived" 
+            onClick={() => handleTabChange("archived")}
+            className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            Arxivlənmiş
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab}>
+        <TabsContent value={activeTab} className="mt-6">
           {loading ? (
-            <div className="p-8 text-center">
-              <p>{t("loadingCategories")}</p>
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center space-x-3 text-slate-600">
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent"></div>
+                <p className="text-lg">Kateqoriyalar yüklənir...</p>
+              </div>
             </div>
           ) : error ? (
-            <div className="p-8 text-center text-red-500">
-              <p>{typeof error === 'string' ? error : "Failed to load categories"}</p>
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center space-y-3">
+                <div className="text-red-500 text-lg font-medium">
+                  Kateqoriyalar yüklənə bilmədi
+                </div>
+                <Button onClick={safeRefetch} variant="outline" className="mt-4">
+                  Yenidən cəhd et
+                </Button>
+              </div>
             </div>
           ) : filteredCategories && filteredCategories.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCategories.map((category) => (
                 <CategoryItem
                   key={category.id}
@@ -136,16 +172,18 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
             </div>
           ) : (
             <EmptyState
-              title={t("noCategories")}
-              description={t("noCategoriesDescription")}
+              title={searchQuery || filters.status || filters.assignment ? "Heç bir kateqoriya tapılmadı" : "Kateqoriya yoxdur"}
+              description={searchQuery || filters.status || filters.assignment ? 
+                "Axtarış kriteriyalarını dəyişdirməyə çalışın" : 
+                "Hələ heç bir kateqoriya yaradılmayıb"
+              }
             />
           )}
         </TabsContent>
       </Tabs>
 
-      {/* Use the safeRefetch callback for dialog success */}
       <CreateCategoryDialog open={open} setOpen={setOpen} onSuccess={safeRefetch} />
-    </>
+    </div>
   );
 };
 

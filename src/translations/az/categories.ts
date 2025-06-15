@@ -123,7 +123,20 @@ const categories = {
   totalCategories: "Ümumi kateqoriyalar",
   activeCategories: "Aktiv kateqoriyalar",
   inactiveCategories: "Deaktiv kateqoriyalar",
-  draftCategories: "Qaralama kateqoriyalar"
+  draftCategories: "Qaralama kateqoriyalar",
+  
+  // Badge mətnləri
+  columns: "sütun",
+  completed: "tamamlandı",
+  dueDate: "Son tarix",
+  priority: "Prioritet",
+  
+  // Filter və axtarış
+  filterByStatus: "Statusa görə filtr",
+  filterByAssignment: "Təyinata görə filtr",
+  clearFilters: "Filtri təmizlə",
+  noResultsFound: "Heç bir nəticə tapılmadı",
+  tryDifferentSearch: "Axtarış kriteriyalarını dəyişdirməyə çalışın"
 };
 
 export default categories;
