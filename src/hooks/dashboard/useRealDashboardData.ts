@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
@@ -15,191 +16,278 @@ export const useRealDashboardData = () => {
   const [error, setError] = useState<Error | null>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
 
-  // --------- Superadmin real data
+  // --------- Real Superadmin dashboard
   const fetchSuperAdminData = async (): Promise<SuperAdminDashboardData> => {
-    // Total region count
-    const { count: totalRegions } = await supabase
+    // Get real counts from database
+    const [regionsResult, sectorsResult, schoolsResult, usersResult, categoriesResult] = await Promise.all([
+      supabase.from('regions').select('*', { count: 'exact', head: true }),
+      supabase.from('sectors').select('*', { count: 'exact', head: true }),
+      supabase.from('schools').select('*', { count: 'exact', head: true }),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('categories').select('id, name, status, assignment').eq('status', 'active')
+    ]);
+
+    // Get form statistics from data_entries
+    const { data: formStats } = await supabase
+      .from('data_entries')
+      .select('status')
+      .not('status', 'is', null);
+
+    const statusCounts = formStats?.reduce((acc, entry) => {
+      acc[entry.status] = (acc[entry.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>) || {};
+
+    // Get recent regions with admin info
+    const { data: regionsData } = await supabase
       .from('regions')
-      .select('*', { count: 'exact', head: true });
+      .select(`
+        id, name, status, admin_email, created_at,
+        sectors(count)
+      `)
+      .limit(10)
+      .order('created_at', { ascending: false });
 
-    // Total sector count
-    const { count: totalSectors } = await supabase
-      .from('sectors')
-      .select('*', { count: 'exact', head: true });
-
-    // Total school count
-    const { count: totalSchools } = await supabase
-      .from('schools')
-      .select('*', { count: 'exact', head: true });
-
-    // Categories
-    const { data: categoriesData, error: catErr } = await supabase
-      .from('categories')
-      .select('id, name, status, completion_rate');
-
-    let categories: any[] = [];
-    if (!catErr && Array.isArray(categoriesData)) {
-      categories = categoriesData.filter(cat => cat && typeof cat === 'object').map(cat => ({
-        id: String((cat as any).id),
-        name: String((cat as any).name),
-        status: (cat as any).status as string,
-        completionRate: typeof (cat as any).completion_rate === 'number' ? (cat as any).completion_rate : 0
-      }));
-    }
+    const regions = regionsData?.map(region => ({
+      id: region.id,
+      name: region.name,
+      status: region.status,
+      adminEmail: region.admin_email,
+      sectorCount: region.sectors?.length || 0,
+      completionRate: 0 // Calculate if needed
+    })) || [];
 
     return {
-      totalRegions: totalRegions || 0,
-      totalSectors: totalSectors || 0,
-      totalSchools: totalSchools || 0,
-      categories,
+      totalRegions: regionsResult.count || 0,
+      totalSectors: sectorsResult.count || 0,
+      totalSchools: schoolsResult.count || 0,
+      totalUsers: usersResult.count || 0,
+      categories: categoriesResult.data?.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        status: cat.status,
+        completionRate: 0,
+        assignment: cat.assignment
+      })) || [],
       pendingApprovals: [],
       deadlines: [],
-      regionStats: []
+      regionStats: [],
+      regions,
+      formsByStatus: {
+        pending: statusCounts.pending || 0,
+        approved: statusCounts.approved || 0,
+        rejected: statusCounts.rejected || 0,
+        total: formStats?.length || 0
+      },
+      stats: {
+        regions: regionsResult.count || 0,
+        sectors: sectorsResult.count || 0,
+        schools: schoolsResult.count || 0,
+        users: usersResult.count || 0
+      },
+      regionCount: regionsResult.count || 0,
+      sectorCount: sectorsResult.count || 0,
+      schoolCount: schoolsResult.count || 0,
+      userCount: usersResult.count || 0,
+      approvalRate: statusCounts.approved ? (statusCounts.approved / (formStats?.length || 1)) * 100 : 0,
+      completionRate: statusCounts.approved ? (statusCounts.approved / (formStats?.length || 1)) * 100 : 0,
+      notifications: []
     };
   };
 
-  // --------- Region admin real data
+  // --------- Real Region admin dashboard
   const fetchRegionAdminData = async (regionId: string): Promise<RegionAdminDashboardData> => {
-    // Sektorlar
+    // Get sectors in this region
     const { data: sectorsData } = await supabase
       .from('sectors')
-      .select('id, name, completion_rate, status')
+      .select(`
+        id, name, completion_rate, status, admin_email,
+        schools(count)
+      `)
       .eq('region_id', regionId);
 
-    const sectors = Array.isArray(sectorsData) ? sectorsData.map(sec => ({
-      id: sec.id,
-      name: sec.name,
-      totalSchools: 0,
-      activeSchools: 0,
-      completionRate: typeof sec.completion_rate === 'number' ? sec.completion_rate : 0,
-      status: sec.status
-    })) : [];
+    const sectors = sectorsData?.map(sector => ({
+      id: sector.id,
+      name: sector.name,
+      totalSchools: sector.schools?.length || 0,
+      activeSchools: sector.schools?.length || 0, // Could filter by status
+      completionRate: typeof sector.completion_rate === 'number' ? sector.completion_rate : 0,
+      status: sector.status,
+      adminEmail: sector.admin_email
+    })) || [];
 
-    // Categories
-    const { data: categoriesData, error: catErr } = await supabase
+    // Get form statistics for this region
+    const { data: formStats } = await supabase
+      .from('data_entries')
+      .select(`
+        status,
+        schools!inner(region_id)
+      `)
+      .eq('schools.region_id', regionId);
+
+    const statusCounts = formStats?.reduce((acc, entry) => {
+      acc[entry.status] = (acc[entry.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>) || {};
+
+    // Get categories accessible to regions
+    const { data: categoriesData } = await supabase
       .from('categories')
-      .select('id, name, status, completion_rate')
-      .in('assignment', ['all', 'sectors']);
-
-    let categories: any[] = [];
-    if (!catErr && Array.isArray(categoriesData)) {
-      categories = categoriesData.filter(cat => cat && typeof cat === 'object').map(cat => ({
-        id: String((cat as any).id),
-        name: String((cat as any).name),
-        status: (cat as any).status as string,
-        completionRate: typeof (cat as any).completion_rate === 'number' ? (cat as any).completion_rate : 0
-      }));
-    }
+      .select('id, name, status, assignment')
+      .in('assignment', ['all', 'sectors'])
+      .eq('status', 'active');
 
     return {
-      categories,
+      categories: categoriesData?.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        status: cat.status,
+        completionRate: 0,
+        assignment: cat.assignment
+      })) || [],
       deadlines: [],
-      sectors
+      sectors,
+      stats: {
+        sectors: sectors.length,
+        schools: sectors.reduce((sum, s) => sum + s.totalSchools, 0),
+        users: 0 // Could calculate if needed
+      },
+      pendingItems: [],
+      notifications: [],
+      completionRate: statusCounts.approved ? (statusCounts.approved / (formStats?.length || 1)) * 100 : 0,
+      formStats: {
+        total: formStats?.length || 0,
+        pending: statusCounts.pending || 0,
+        approved: statusCounts.approved || 0,
+        rejected: statusCounts.rejected || 0,
+        draft: statusCounts.draft || 0,
+        dueSoon: 0,
+        overdue: 0,
+        percentage: statusCounts.approved ? (statusCounts.approved / (formStats?.length || 1)) * 100 : 0,
+        completion_rate: statusCounts.approved ? (statusCounts.approved / (formStats?.length || 1)) * 100 : 0,
+        completionRate: statusCounts.approved ? (statusCounts.approved / (formStats?.length || 1)) * 100 : 0,
+        completedForms: statusCounts.approved || 0,
+        approvalRate: statusCounts.approved ? (statusCounts.approved / (formStats?.length || 1)) * 100 : 0
+      }
     };
   };
 
-  // --------- Real sectoradmin dashboard
+  // --------- Real Sector admin dashboard
   const fetchSectorAdminData = async (sectorId: string): Promise<SectorAdminDashboardData> => {
+    // Get schools in this sector
     const { data: schoolsData } = await supabase
       .from('schools')
-      .select('id, name, completion_rate, status, updated_at')
+      .select('id, name, completion_rate, status, updated_at, admin_email')
       .eq('sector_id', sectorId);
 
-    // Count forms
-    const schools = Array.isArray(schoolsData) ? schoolsData.map(sch => ({
-      id: sch.id,
-      name: sch.name,
-      completionRate: typeof sch.completion_rate === 'number' ? sch.completion_rate : 0,
-      totalForms: 0,
+    const schools = schoolsData?.map(school => ({
+      id: school.id,
+      name: school.name,
+      completionRate: typeof school.completion_rate === 'number' ? school.completion_rate : 0,
+      totalForms: 0, // Could calculate from data_entries
       completedForms: 0,
       pendingForms: 0,
-      status: sch.status,
-      lastUpdated: sch.updated_at || new Date().toISOString()
-    })) : [];
+      status: school.status,
+      lastUpdated: school.updated_at || new Date().toISOString(),
+      adminEmail: school.admin_email
+    })) || [];
 
-    // Categories
-    const { data: categoriesData, error: catErr } = await supabase
+    // Get categories for sectors
+    const { data: categoriesData } = await supabase
       .from('categories')
-      .select('id, name, status, completion_rate')
-      .in('assignment', ['all', 'sectors']);
-
-    let categories: any[] = [];
-    if (!catErr && Array.isArray(categoriesData)) {
-      categories = categoriesData.filter(cat => cat && typeof cat === 'object').map(cat => ({
-        id: String((cat as any).id),
-        name: String((cat as any).name),
-        status: (cat as any).status as string,
-        completionRate: typeof (cat as any).completion_rate === 'number' ? (cat as any).completion_rate : 0
-      }));
-    }
+      .select('id, name, status, assignment')
+      .in('assignment', ['all', 'sectors'])
+      .eq('status', 'active');
 
     return {
-      categories,
+      categories: categoriesData?.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        status: cat.status,
+        completionRate: 0,
+        assignment: cat.assignment
+      })) || [],
       deadlines: [],
-      schools
+      schools,
+      stats: {
+        schools: schools.length
+      },
+      pendingItems: [],
+      notifications: [],
+      completionRate: schools.reduce((sum, s) => sum + s.completionRate, 0) / (schools.length || 1)
     };
   };
 
-  // --------- Schooladmin dashboard (qismən dummy, TODO)
+  // --------- Real School admin dashboard
   const fetchSchoolAdminData = async (schoolId: string): Promise<SchoolAdminDashboardData> => {
-    const { data: categoriesData, error: catErr } = await supabase
-      .from('categories')
-      .select('id, name, status, completion_rate')
-      .eq('assignment', 'all');
+    // Get school's data entries
+    const { data: dataEntries } = await supabase
+      .from('data_entries')
+      .select('status, category_id')
+      .eq('school_id', schoolId);
 
-    let categories: any[] = [];
-    if (!catErr && Array.isArray(categoriesData)) {
-      categories = categoriesData.filter(cat => cat && typeof cat === 'object').map(cat => ({
-        id: String((cat as any).id),
-        name: String((cat as any).name),
-        status: (cat as any).status as string,
-        completionRate: typeof (cat as any).completion_rate === 'number' ? (cat as any).completion_rate : 0
-      }));
-    }
+    const statusCounts = dataEntries?.reduce((acc, entry) => {
+      acc[entry.status] = (acc[entry.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>) || {};
+
+    // Get categories for schools
+    const { data: categoriesData } = await supabase
+      .from('categories')
+      .select('id, name, status, assignment')
+      .eq('assignment', 'all')
+      .eq('status', 'active');
+
+    const categories = categoriesData?.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      status: cat.status,
+      completionRate: 0
+    })) || [];
 
     return {
       categories,
       deadlines: [],
       stats: {
-        completed: 0,
-        pending: 0
-      }
+        completed: statusCounts.approved || 0,
+        pending: statusCounts.pending || 0
+      },
+      formStats: {
+        total: dataEntries?.length || 0,
+        pending: statusCounts.pending || 0,
+        approved: statusCounts.approved || 0,
+        rejected: statusCounts.rejected || 0,
+        drafts: statusCounts.draft || 0,
+        incomplete: 0
+      },
+      notifications: [],
+      completionRate: statusCounts.approved ? (statusCounts.approved / (dataEntries?.length || 1)) * 100 : 0,
+      status: {
+        pending: statusCounts.pending || 0,
+        approved: statusCounts.approved || 0,
+        rejected: statusCounts.rejected || 0,
+        draft: statusCounts.draft || 0,
+        total: dataEntries?.length || 0,
+        active: 0,
+        inactive: 0
+      },
+      completion: {
+        percentage: statusCounts.approved ? (statusCounts.approved / (dataEntries?.length || 1)) * 100 : 0,
+        completed: statusCounts.approved || 0,
+        total: dataEntries?.length || 0
+      },
+      pendingForms: [],
+      upcoming: []
     };
   };
 
-  // Main function:
-  const getDashboardData = async (userRole: UserRole) => {
-    if (!user) {
-      setLoading(false);
-      return null;
-    }
-    setLoading(true);
-    try {
-      if (userRole === 'superadmin') {
-        return await fetchSuperAdminData();
-      } else if (userRole === 'regionadmin' && user.region_id) {
-        return await fetchRegionAdminData(user.region_id);
-      } else if (userRole === 'sectoradmin' && user.sector_id) {
-        return await fetchSectorAdminData(user.sector_id);
-      } else if (userRole === 'schooladmin' && user.school_id) {
-        return await fetchSchoolAdminData(user.school_id);
-      } else {
-        throw new Error('Invalid user role or missing entity ID');
-      }
-    } catch (err: any) {
-      console.error('Error fetching dashboard data:', err);
-      setError(err);
-      setLoading(false);
-      return null;
-    }
-  };
-  
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!user) {
         setLoading(false);
         return;
       }
+      
       setLoading(true);
       try {
         const userRole = user.role;
@@ -216,6 +304,7 @@ export const useRealDashboardData = () => {
         } else {
           throw new Error('Invalid user role or missing entity ID');
         }
+        
         setDashboardData(data);
       } catch (err: any) {
         console.error('Error fetching dashboard data:', err);
@@ -224,8 +313,25 @@ export const useRealDashboardData = () => {
         setLoading(false);
       }
     };
+
     fetchDashboardData();
   }, [user]);
+
+  const getDashboardData = async (userRole: UserRole) => {
+    if (!user) return null;
+    
+    if (userRole === 'superadmin') {
+      return await fetchSuperAdminData();
+    } else if (userRole === 'regionadmin' && user.region_id) {
+      return await fetchRegionAdminData(user.region_id);
+    } else if (userRole === 'sectoradmin' && user.sector_id) {
+      return await fetchSectorAdminData(user.sector_id);
+    } else if (userRole === 'schooladmin' && user.school_id) {
+      return await fetchSchoolAdminData(user.school_id);
+    }
+    
+    return null;
+  };
 
   return {
     loading,
@@ -236,5 +342,3 @@ export const useRealDashboardData = () => {
 };
 
 export default useRealDashboardData;
-
-// Qeyd: Bu fayl çox uzundur və gələcəkdə modul tipli kiçik fayllara bölmək tövsiyə olunur.

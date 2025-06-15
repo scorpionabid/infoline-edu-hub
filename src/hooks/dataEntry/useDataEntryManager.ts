@@ -19,6 +19,8 @@ interface DataEntryManagerOptions {
   autoSave?: boolean;
 }
 
+type EntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
+
 export const useDataEntryManager = (options?: DataEntryManagerOptions | CategoryAssignment) => {
   const user = useAuthStore(selectUser);
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
@@ -31,7 +33,7 @@ export const useDataEntryManager = (options?: DataEntryManagerOptions | Category
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDataModified, setIsDataModified] = useState(false);
-  const [entryStatus, setEntryStatus] = useState<'draft' | 'pending' | 'approved' | 'rejected'>('draft');
+  const [entryStatus, setEntryStatus] = useState<EntryStatus>('draft');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   // Handle both old and new usage patterns
@@ -109,7 +111,13 @@ export const useDataEntryManager = (options?: DataEntryManagerOptions | Category
       });
 
       setFormData(loadedData);
-      setEntryStatus(data[0]?.status || 'draft');
+      // Fix: Ensure status is one of the allowed types
+      const status = data[0]?.status;
+      if (status === 'draft' || status === 'pending' || status === 'approved' || status === 'rejected') {
+        setEntryStatus(status);
+      } else {
+        setEntryStatus('draft');
+      }
       setIsDataModified(false);
     } catch (err: any) {
       console.error('Error loading data:', err);
@@ -132,7 +140,7 @@ export const useDataEntryManager = (options?: DataEntryManagerOptions | Category
     setIsDataModified(true);
   }, []);
 
-  const handleSave = useCallback(async (status: 'draft' | 'pending' = 'draft') => {
+  const handleSave = useCallback(async (status: EntryStatus = 'draft') => {
     if (!schoolId || !categoryId || !user) return false;
 
     try {

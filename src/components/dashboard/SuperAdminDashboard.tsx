@@ -14,62 +14,54 @@ interface SuperAdminDashboardProps {
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData }) => {
   const { t } = useLanguage();
 
-  // Mock data for demonstration
-  const mockData = {
-    stats: {
-      totalUsers: 150,
-      totalSchools: 85,
-      totalRegions: 12,
-      totalSectors: 45,
-    },
-    completion: {
-      percentage: 78,
-      total: 1250,
-      completed: 975
-    }
-  };
+  if (!dashboardData) {
+    return (
+      <div className="p-8 text-center">{t('loading') || 'Yüklənir...'}</div>
+    );
+  }
 
+  // Use real data from the backend
   const formStats: DashboardFormStats = {
-    completedForms: mockData.completion.completed || 0,
-    pendingForms: 175,
-    approvalRate: 85,
-    total: mockData.completion.total || 0,
-    completed: mockData.completion.completed || 0,
-    approved: 800,
-    pending: 175,
-    rejected: 50,
-    dueSoon: 25,
-    overdue: 10,
-    draft: 40,
-    percentage: mockData.completion.percentage || 0,
-    completion_rate: mockData.completion.percentage || 0,
-    completionRate: mockData.completion.percentage || 0,
+    completedForms: dashboardData.formsByStatus?.approved || 0,
+    pendingForms: dashboardData.formsByStatus?.pending || 0,
+    approvalRate: dashboardData.approvalRate || 0,
+    total: dashboardData.formsByStatus?.total || 0,
+    completed: dashboardData.formsByStatus?.approved || 0,
+    approved: dashboardData.formsByStatus?.approved || 0,
+    pending: dashboardData.formsByStatus?.pending || 0,
+    rejected: dashboardData.formsByStatus?.rejected || 0,
+    dueSoon: 0, // Could be calculated based on deadlines
+    overdue: 0,
+    draft: 0,
+    percentage: dashboardData.completionRate || 0,
+    completion_rate: dashboardData.completionRate || 0,
+    completionRate: dashboardData.completionRate || 0,
   };
 
   const statsGridData: StatsGridItem[] = [
     {
-      title: t('totalApproved'),
+      title: t('totalApproved') || 'Təsdiqlənmiş',
       value: formStats.approved || 0,
       color: 'text-green-600',
-      description: t('approved')
+      description: t('approved') || 'Təsdiqləndi'
     },
     {
-      title: t('totalPending'),
+      title: t('totalPending') || 'Gözləyən',
       value: formStats.pending || 0,
       color: 'text-yellow-600',
-      description: t('pending')
+      description: t('pending') || 'Gözləyir'
     },
     {
-      title: t('totalRejected'),
+      title: t('totalRejected') || 'Rədd edilmiş',
       value: formStats.rejected || 0,
       color: 'text-red-600',
-      description: t('rejected')
+      description: t('rejected') || 'Rədd edildi'
     },
     {
-      title: t('totalDraft'),
-      value: formStats.draft || 0,
-      color: 'text-gray-600',
-      description: t('draft')
+      title: t('completion') || 'Tamamlanma',
+      value: `${Math.round(formStats.percentage || 0)}%`,
+      color: 'text-blue-600',
+      description: t('completionRate') || 'Tamamlanma dərəcəsi'
     }
   ];
 
@@ -79,14 +71,14 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('totalUsers')}
+              {t('totalUsers') || 'İstifadəçilər'}
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockData.stats.totalUsers}</div>
+            <div className="text-2xl font-bold">{dashboardData.totalUsers || 0}</div>
             <p className="text-xs text-muted-foreground">
-              +12% {t('fromLastMonth')}
+              Sistem istifadəçiləri
             </p>
           </CardContent>
         </Card>
@@ -94,14 +86,14 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('totalSchools')}
+              {t('totalSchools') || 'Məktəblər'}
             </CardTitle>
             <School className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockData.stats.totalSchools}</div>
+            <div className="text-2xl font-bold">{dashboardData.totalSchools || 0}</div>
             <p className="text-xs text-muted-foreground">
-              +5% {t('fromLastMonth')}
+              Qeydiyyatlı məktəblər
             </p>
           </CardContent>
         </Card>
@@ -109,14 +101,14 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('totalRegions')}
+              {t('totalRegions') || 'Regionlar'}
             </CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockData.stats.totalRegions}</div>
+            <div className="text-2xl font-bold">{dashboardData.totalRegions || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {t('stable')}
+              İdarə regionları
             </p>
           </CardContent>
         </Card>
@@ -124,14 +116,14 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('completion')}
+              {t('completion') || 'Tamamlanma'}
             </CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockData.completion.percentage}%</div>
+            <div className="text-2xl font-bold">{Math.round(dashboardData.completionRate || 0)}%</div>
             <p className="text-xs text-muted-foreground">
-              +8% {t('fromLastMonth')}
+              Ortalama tamamlanma
             </p>
           </CardContent>
         </Card>
@@ -140,7 +132,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>{t('formStatistics')}</CardTitle>
+            <CardTitle>{t('formStatistics') || 'Form Statistikaları'}</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
             <DashboardChart stats={formStats} />
@@ -148,42 +140,28 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
         </Card>
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>{t('recentActivity')}</CardTitle>
+            <CardTitle>{t('recentActivity') || 'Son Fəaliyyətlər'}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center">
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    {t('dataSubmission')}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    ABC Məktəbi - 2 saat əvvəl
-                  </p>
+              {dashboardData.regions?.slice(0, 3).map((region: any) => (
+                <div key={region.id} className="flex items-center">
+                  <div className="ml-4 space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {region.name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {region.sectorCount} sektor • {region.adminEmail || 'Admin təyin edilməyib'}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ))}
               
-              <div className="flex items-center">
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    {t('dataApproval')}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    XYZ Sektor - 1 gün əvvəl
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center">
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    {t('userRegistration')}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Yeni istifadəçi qeydiyyatdan keçdi - 3 gün əvvəl
-                  </p>
-                </div>
-              </div>
+              {(!dashboardData.regions || dashboardData.regions.length === 0) && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Hələ heç bir fəaliyyət yoxdur
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

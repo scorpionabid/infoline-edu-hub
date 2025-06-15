@@ -1,81 +1,59 @@
 
-export interface User {
-  id: string;
-  email: string;
+import { UserRole } from '@/types/auth';
+
+export interface UserFormData {
   full_name: string;
-  fullName?: string; // Add compatibility alias
-  avatar?: string;
+  email: string;
+  password?: string;
   phone?: string;
   position?: string;
-  status: 'active' | 'inactive';
-  created_at: string;
-  updated_at: string;
-  role?: string; // Add role property
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  language?: string;
+  status?: 'active' | 'inactive';
 }
 
 export interface UserFilter {
-  region?: string;
-  sector?: string;
-  role?: string;
-  status?: string;
-  search?: string;
-  school?: string;
-  // Backward compatibility aliases
+  role?: UserRole[];
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
+  status?: ('active' | 'inactive')[];
+  search?: string;
+}
+
+export interface UserData {
+  id: string;
+  email: string;
+  full_name: string;
+  name?: string;
+  phone?: string;
+  position?: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  language?: string;
+  status: 'active' | 'inactive';
+  avatar?: string;
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
+  entity_name?: string;
 }
 
 export interface NotificationSettings {
   email_notifications: boolean;
   sms_notifications: boolean;
   push_notifications: boolean;
-  notification_frequency: 'immediate' | 'daily' | 'weekly';
-  // UI-specific notification preferences
-  email?: boolean;
-  inApp?: boolean;
-  push?: boolean;
-  sms?: boolean;
-  deadlineReminders?: boolean;
-  statusUpdates?: boolean;
-  weeklyReports?: boolean;
-  system?: boolean;
-  deadline?: boolean;
+  notification_frequency: 'immediate' | 'daily' | 'weekly' | 'never';
 }
 
-export interface UserFormData {
-  full_name: string;
-  fullName?: string; // Add compatibility alias
-  email: string;
-  phone?: string;
-  position?: string;
-  role: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  status: 'active' | 'inactive';
-  language?: string;
-  notifications?: NotificationSettings;
-  notificationSettings?: NotificationSettings; // Alias for compatibility
-  // Backward compatibility aliases
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
+export interface UserStats {
+  total: number;
+  active: number;
+  inactive: number;
+  by_role: Record<UserRole, number>;
 }
-
-export interface FullUserData extends User {
-  role: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  language?: string;
-  notifications?: NotificationSettings;
-  last_login?: string;
-  entityName?: string;
-  // Backward compatibility aliases
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-}
-
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
