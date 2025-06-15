@@ -1,4 +1,3 @@
-
 export interface ReportTemplate {
   id: string;
   name: string;
@@ -34,6 +33,37 @@ export interface ReportConfig {
   groupBy?: string;
   sortBy?: string;
   chartType?: string;
+}
+
+// Enhanced dashboard statistics with all required fields
+export interface DetailedDashboardStatistics {
+  overview: {
+    total_regions: number;
+    total_sectors: number;
+    total_schools: number;
+    total_categories: number;
+    overall_completion_rate: number;
+  };
+  recent_activity: Array<{
+    id: string;
+    type: string;
+    description: string;
+    timestamp: string;
+    user_name: string;
+  }>;
+  pending_approvals: Array<{
+    id: string;
+    school_name: string;
+    category_name: string;
+    submitted_at: string;
+    submitted_by: string;
+  }>;
+  // Additional fields required by the codebase
+  total_schools: number;
+  regions: number;
+  sectors: number;
+  schools: number;
+  totalSectors: number;
 }
 
 // Missing exports that are being imported
@@ -95,30 +125,6 @@ export interface DetailedSchoolDataByCategoryData {
       status: string;
     }>;
     completion_rate: number;
-  }>;
-}
-
-export interface DetailedDashboardStatistics {
-  overview: {
-    total_regions: number;
-    total_sectors: number;
-    total_schools: number;
-    total_categories: number;
-    overall_completion_rate: number;
-  };
-  recent_activity: Array<{
-    id: string;
-    type: string;
-    description: string;
-    timestamp: string;
-    user_name: string;
-  }>;
-  pending_approvals: Array<{
-    id: string;
-    school_name: string;
-    category_name: string;
-    submitted_at: string;
-    submitted_by: string;
   }>;
 }
 

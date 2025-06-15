@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, UserFilter, UserRole, UserStatus } from '@/types/user';
@@ -32,31 +31,29 @@ export const useUsers = (initialFilter: UserFilter = {}) => {
         `, { count: 'exact' });
       
       // Apply filters with safe type casting
-      if (currentFilter.role && currentFilter.role !== '') {
+      if (currentFilter.role && !Array.isArray(currentFilter.role) && currentFilter.role !== '') {
         const safeRole = safeAdminRoleFilter(currentFilter.role);
         if (safeRole) {
-          if (Array.isArray(currentFilter.role)) {
-            const validRoles = currentFilter.role.filter(r => ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(r));
-            if (validRoles.length > 0) {
-              query = query.in('role', validRoles);
-            }
-          } else {
-            query = query.eq('role', safeRole);
-          }
+          query = query.eq('role', safeRole);
+        }
+      } else if (Array.isArray(currentFilter.role) && currentFilter.role.length > 0) {
+        const validRoles = currentFilter.role.filter(r => 
+          ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(r)
+        ) as ('superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin')[];
+        if (validRoles.length > 0) {
+          query = query.in('role', validRoles);
         }
       }
       
-      if (currentFilter.status && currentFilter.status !== '') {
+      if (currentFilter.status && !Array.isArray(currentFilter.status) && currentFilter.status !== '') {
         const safeStatus = safeUserStatusFilter(currentFilter.status);
         if (safeStatus) {
-          if (Array.isArray(currentFilter.status)) {
-            const validStatuses = currentFilter.status.filter(s => ['active', 'inactive'].includes(s));
-            if (validStatuses.length > 0) {
-              query = query.in('profiles.status', validStatuses);
-            }
-          } else {
-            query = query.eq('profiles.status', safeStatus);
-          }
+          query = query.eq('profiles.status', safeStatus);
+        }
+      } else if (Array.isArray(currentFilter.status) && currentFilter.status.length > 0) {
+        const validStatuses = currentFilter.status.filter(s => ['active', 'inactive'].includes(s));
+        if (validStatuses.length > 0) {
+          query = query.in('profiles.status', validStatuses);
         }
       }
       

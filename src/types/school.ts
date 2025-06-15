@@ -6,13 +6,15 @@ import { Sector } from './sector';
 export { Region } from './region';
 export { Sector } from './sector';
 
+export type SchoolStatus = 'active' | 'inactive' | 'pending' | 'archived';
+
 export interface School {
   id: string;
   name: string;
   description?: string;
   region_id: string;
   sector_id: string;
-  status: 'active' | 'inactive' | 'pending' | 'archived';
+  status: SchoolStatus;
   principal_name?: string;
   principal_email?: string;
   contact_number?: string;
@@ -30,6 +32,7 @@ export interface School {
   regionName?: string;
   sectorName?: string;
   completion_rate?: number;
+  logo?: string;
 }
 
 export interface EnhancedSchool extends School {
@@ -43,7 +46,7 @@ export interface SchoolFormData {
   description?: string;
   region_id: string;
   sector_id: string;
-  status?: 'active' | 'inactive' | 'pending' | 'archived';
+  status?: SchoolStatus;
   principal_name?: string;
   principal_email?: string;
   contact_number?: string;
@@ -70,7 +73,7 @@ export interface CreateSchoolData {
   student_count?: number;
   teacher_count?: number;
   type?: string;
-  status?: 'active' | 'inactive' | 'pending' | 'archived';
+  status?: SchoolStatus;
   language?: string;
   admin_id?: string;
   admin_email?: string;
@@ -88,12 +91,18 @@ export interface SchoolsContainerProps {
   schools: School[];
   regions: Region[];
   sectors: Sector[];
-  loading: boolean;
-  error: string;
+  isLoading: boolean;
+  error: string | null;
   currentPage: number;
   pageSize: number;
   totalCount: number;
   onPageChange: (page: number) => void;
   onSchoolSelect: (school: School) => void;
   onRefresh: () => Promise<void>;
+  onCreate: (schoolData: CreateSchoolData) => Promise<void>;
+  onEdit: (schoolData: School) => Promise<void>;
+  onDelete: (school: School) => Promise<void>;
+  onAssignAdmin: (schoolId: string, userId: string) => Promise<void>;
+  regionNames: Record<string, string>;
+  sectorNames: Record<string, string>;
 }

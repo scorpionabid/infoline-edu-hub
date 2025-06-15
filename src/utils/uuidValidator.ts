@@ -21,6 +21,9 @@ export const getSafeUUID = (value: any, allowNull: boolean = true): string | nul
   return allowNull ? null : '';
 };
 
+// Export alias for legacy usage
+export const getDBSafeUUID = getSafeUUID;
+
 export const getUUIDOrDefault = (value: any, defaultValue: string = ''): string => {
   const safeUUID = getSafeUUID(value, false);
   return safeUUID || defaultValue;

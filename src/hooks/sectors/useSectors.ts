@@ -12,7 +12,7 @@ export interface SectorsStore {
   refetch: () => Promise<void>;
 }
 
-export const useSectors = (): SectorsStore => {
+export const useSectors = (regionId?: string): SectorsStore => {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,10 +22,16 @@ export const useSectors = (): SectorsStore => {
     setError(null);
     
     try {
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from('sectors')
         .select('*')
         .order('name');
+      
+      if (regionId) {
+        query = query.eq('region_id', regionId);
+      }
+        
+      const { data, error: fetchError } = await query;
         
       if (fetchError) throw fetchError;
       
@@ -41,7 +47,7 @@ export const useSectors = (): SectorsStore => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [regionId]);
 
   const refetch = useCallback(async () => {
     await fetchSectors();

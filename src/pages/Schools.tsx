@@ -1,13 +1,14 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import { School } from '@/types/school';
+import { School, SchoolStatus } from '@/types/school';
 import { Region } from '@/types/region';
 import { Sector } from '@/types/sector';
 import SchoolsContainer from '@/components/schools/SchoolsContainer';
 import { Loader2 } from 'lucide-react';
-import { ensureRegionStatus, ensureSectorStatus } from '@/utils/buildFixes';
+import { ensureRegionStatus, ensureSectorStatus, ensureValidSchoolStatus } from '@/utils/buildFixes';
 
 const Schools = () => {
   const { t } = useLanguageSafe();
@@ -34,7 +35,14 @@ const Schools = () => {
         .order('name');
 
       if (schoolsError) throw schoolsError;
-      setSchools(schoolsData || []);
+      
+      // Transform schools with safe type casting
+      const transformedSchools: School[] = (schoolsData || []).map(school => ({
+        ...school,
+        status: ensureValidSchoolStatus(school.status) as SchoolStatus
+      }));
+      
+      setSchools(transformedSchools);
       setTotalCount(count || 0);
 
       // Fetch regions
@@ -90,6 +98,37 @@ const Schools = () => {
     setSelectedSchool(school);
   };
 
+  // Create region and sector name mappings
+  const regionNames = regions.reduce((acc, region) => {
+    acc[region.id] = region.name;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const sectorNames = sectors.reduce((acc, sector) => {
+    acc[sector.id] = sector.name;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const handleCreate = async (schoolData: any) => {
+    // Implementation for creating schools
+    console.log('Creating school:', schoolData);
+  };
+
+  const handleEdit = async (schoolData: School) => {
+    // Implementation for editing schools
+    console.log('Editing school:', schoolData);
+  };
+
+  const handleDelete = async (school: School) => {
+    // Implementation for deleting schools
+    console.log('Deleting school:', school);
+  };
+
+  const handleAssignAdmin = async (schoolId: string, userId: string) => {
+    // Implementation for assigning admin
+    console.log('Assigning admin:', schoolId, userId);
+  };
+
   return (
     <>
       <Helmet>
@@ -108,7 +147,7 @@ const Schools = () => {
             schools={schools}
             regions={regions}
             sectors={sectors}
-            loading={loading}
+            isLoading={loading}
             error={error}
             currentPage={currentPage}
             pageSize={pageSize}
@@ -116,6 +155,12 @@ const Schools = () => {
             onPageChange={handlePageChange}
             onSchoolSelect={handleSchoolSelect}
             onRefresh={fetchData}
+            onCreate={handleCreate}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onAssignAdmin={handleAssignAdmin}
+            regionNames={regionNames}
+            sectorNames={sectorNames}
           />
         )}
       </div>
