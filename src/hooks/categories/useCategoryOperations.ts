@@ -95,9 +95,11 @@ export const useCategoryOperations = () => {
     createCategory: createCategory.mutate,
     updateCategory: updateCategory.mutate,
     deleteCategory: deleteCategory.mutate,
+    addCategory: createCategory.mutate, // Alias for backward compatibility
     isCreating: createCategory.isPending,
     isUpdating: updateCategory.isPending,
     isDeleting: deleteCategory.isPending,
+    isLoading: createCategory.isPending || updateCategory.isPending, // Alias
   };
 };
 

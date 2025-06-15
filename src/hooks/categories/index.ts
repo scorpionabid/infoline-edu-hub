@@ -5,5 +5,9 @@ export { useCategoriesWithAssignment } from './useCategoriesWithAssignment';
 export { useCategoryOperations } from './useCategoryOperations';
 export { useCategoryActions } from './useCategoryActions';
 
-// Legacy exports for backward compatibility
+// Main hooks
+export { useCategories } from './useCategories';
 export { default as useCategoriesQuery } from './useCategoriesQuery';
+
+// School categories alias
+export { useCategoriesWithAssignment as useSchoolCategories } from './useCategoriesWithAssignment';

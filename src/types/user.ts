@@ -9,6 +9,7 @@ export interface User {
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
+  role?: string; // Add role property
 }
 
 export interface UserFilter {
@@ -18,6 +19,10 @@ export interface UserFilter {
   status?: string;
   search?: string;
   school?: string;
+  // Backward compatibility aliases
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
 }
 
 export interface NotificationSettings {
@@ -49,6 +54,11 @@ export interface UserFormData {
   status: 'active' | 'inactive';
   language?: string;
   notifications?: NotificationSettings;
+  notificationSettings?: NotificationSettings; // Alias for compatibility
+  // Backward compatibility aliases
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
 }
 
 export interface FullUserData extends User {
@@ -60,6 +70,10 @@ export interface FullUserData extends User {
   notifications?: NotificationSettings;
   last_login?: string;
   entityName?: string;
+  // Backward compatibility aliases
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
 }
 
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
