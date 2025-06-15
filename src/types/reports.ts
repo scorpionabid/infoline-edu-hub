@@ -78,6 +78,7 @@ export interface ReportTemplate {
   type: string;
   config: any;
   status: string;
+  is_public?: boolean;
   created_by?: string;
   created_at: string;
   updated_at: string;

@@ -1,16 +1,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserFilter } from '@/types/user';
+import { UserData, UserFilter } from '@/types/user';
 
 type ValidUserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
-interface EntityDisplay {
-  region?: string;
-  sector?: string;  
-  school?: string;
-}
-
-export const getEntityDisplay = (userData: any): EntityDisplay | string | null => {
+export const getEntityDisplay = (userData: any): string | null => {
   // Return display name based on role
   const role = userData.role;
   
@@ -101,7 +95,7 @@ export const buildUserQuery = (filters: UserFilter, userRole: string, regionId?:
   return query;
 };
 
-export const transformUserData = (item: any): FullUserData => {
+export const transformUserData = (item: any): UserData => {
   const userRole = item.user_roles;
   
   return {
@@ -110,7 +104,7 @@ export const transformUserData = (item: any): FullUserData => {
     fullName: item.full_name || '',
     full_name: item.full_name || '',
     name: item.full_name || '',
-    role: userRole?.role || 'user',
+    role: userRole?.role || 'schooladmin',
     region_id: userRole?.region_id,
     sector_id: userRole?.sector_id,
     school_id: userRole?.school_id,
@@ -121,45 +115,15 @@ export const transformUserData = (item: any): FullUserData => {
     position: item.position || '',
     language: item.language || 'az',
     avatar: item.avatar || '',
-    avatar_url: item.avatar || '',
-    status: item.status || 'active',
+    status: (item.status === 'active' || item.status === 'inactive') ? item.status : 'active',
     last_login: item.last_login,
-    last_sign_in_at: item.last_login,
     created_at: item.created_at,
     updated_at: item.updated_at,
-    preferences: {},
-    region_name: item.region_name,
-    sector_name: item.sector_name,
-    school_name: item.school_name,
     entityName: getEntityDisplay(item)
   };
 };
 
-export const createMockUserData = (): FullUserData => {
-  return {
-    id: '1',
-    email: 'test@example.com',
-    fullName: 'Test User',
-    full_name: 'Test User',
-    role: 'user',
-    region_id: null,
-    sector_id: null,
-    school_id: null,
-    phone: '',
-    position: '',
-    language: 'az',
-    avatar: '',
-    status: 'active',
-    last_login: '',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    adminEntity: null
-  } as FullUserData;
-};
-
-export const fetchUserData = async (filters: UserFilter, page: number, limit: number, userRole: string, regionId?: string, sectorId?: string): Promise<{ data: FullUserData[], count: number }> => {
+export const fetchUserData = async (filters: UserFilter, page: number, limit: number, userRole: string, regionId?: string, sectorId?: string): Promise<{ data: UserData[], count: number }> => {
   try {
     console.log('Fetching users with role:', userRole, 'regionId:', regionId, 'sectorId:', sectorId);
 
@@ -180,11 +144,6 @@ export const fetchUserData = async (filters: UserFilter, page: number, limit: nu
     };
   } catch (error) {
     console.error('Error fetching user data:', error);
-    
-    // Return mock data on error
-    return {
-      data: [createMockUserData()],
-      count: 1
-    };
+    throw error;
   }
 };

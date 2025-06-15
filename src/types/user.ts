@@ -7,6 +7,7 @@ export interface UserData {
   email: string;
   full_name: string;
   name?: string; // alias for full_name
+  fullName?: string; // alias for full_name
   role: UserRole;
   region_id?: string;
   regionId?: string; // alias for region_id
@@ -27,6 +28,7 @@ export interface UserData {
   updatedAt?: string; // alias for updated_at
   entity_name?: string;
   entityName?: string; // alias for entity_name
+  adminEntity?: string | null;
 }
 
 // Alias exports for backward compatibility
@@ -49,15 +51,20 @@ export interface UserFilter {
 
 export interface UserFormData {
   full_name: string;
+  fullName?: string; // alias for full_name
   email: string;
   role: UserRole;
   region_id?: string;
+  regionId?: string; // alias for region_id
   sector_id?: string;
+  sectorId?: string; // alias for sector_id
   school_id?: string;
+  schoolId?: string; // alias for school_id
   phone?: string;
   position?: string;
   language?: string;
   status?: UserStatus;
+  password?: string;
   notifications?: NotificationSettings;
 }
 
