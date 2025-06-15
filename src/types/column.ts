@@ -1,129 +1,62 @@
+import { Category } from './category';
 
-export type ColumnType = 
-  | 'text'
-  | 'number'
-  | 'email'
-  | 'phone'
-  | 'tel'
-  | 'url'
-  | 'date'
-  | 'time'
-  | 'datetime'
-  | 'datetime-local'
-  | 'textarea'
-  | 'select'
-  | 'multiselect'
-  | 'checkbox'
-  | 'radio'
-  | 'file'
-  | 'image'
-  | 'currency'
-  | 'percentage'
-  | 'boolean'
-  | 'json'
-  | 'password'
-  | 'switch';
+export type ColumnStatus = 'active' | 'inactive';
 
-export interface ColumnOption {
-  id?: string;
-  label: string;
-  value: string;
-  [key: string]: string | boolean | undefined;
-}
+export type ColumnType = 'text' | 'number' | 'email' | 'phone' | 'date' | 'select' | 'multiselect' | 'textarea' | 'file' | 'boolean' | 'url';
 
-export interface ValidationRules {
-  required?: boolean;
-  min?: number;
-  max?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  email?: boolean;
-  url?: boolean;
-  numeric?: boolean;
-  integer?: boolean;
-  date?: boolean;
-  step?: number;
-  custom?: string;
-  [key: string]: string | number | boolean | undefined;
+export interface ColumnFormData {
+  name: string;
+  type: ColumnType;
+  is_required?: boolean;
+  help_text?: string;
+  placeholder?: string;
+  default_value?: string;
+  options?: ColumnOption[];
+  validation?: ColumnValidation;
+  order_index?: number;
+  status?: ColumnStatus;
 }
 
 export interface Column {
   id: string;
   name: string;
   type: ColumnType;
-  category_id: string;
-  placeholder?: string;
-  help_text?: string;
-  description?: string;
   is_required: boolean;
+  help_text?: string;
+  placeholder?: string;
   default_value?: string;
   options?: ColumnOption[];
-  validation?: ValidationRules;
-  order_index: number;
-  status: string;
+  validation?: ColumnValidation;
+  order_index?: number;
+  category_id: string;
+  status: ColumnStatus;
   created_at: string;
   updated_at: string;
-  section?: string;
+  category?: Category;
 }
 
-export interface ColumnFormData {
-  name: string;
-  type: ColumnType;
-  category_id: string;
-  placeholder?: string;
-  help_text?: string;
-  description?: string;
-  is_required: boolean;
-  default_value?: string;
-  options?: ColumnOption[];
-  validation?: ValidationRules;
-  order_index?: number;
-  section?: string;
-  status?: string;
+export interface ColumnOption {
+  id?: string;
+  label: string;
+  value: string;
 }
 
-export interface ColumnFormValues {
-  name: string;
-  type: ColumnType;
-  category_id: string;
-  placeholder?: string;
-  help_text?: string;
-  description?: string;
-  is_required: boolean;
-  default_value?: string;
-  options?: ColumnOption[];
-  validation?: ValidationRules;
-  order_index?: number;
-  section?: string;
-  status?: string;
+export interface ColumnValidation {
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  min?: number;
+  max?: number;
+  pattern?: string;
+  email?: boolean;
 }
 
-// Helper function to safely parse JSON fields from database
-export const parseColumnOptions = (options: any): ColumnOption[] => {
-  if (!options) return [];
-  if (Array.isArray(options)) return options;
-  if (typeof options === 'string') {
-    try {
-      const parsed = JSON.parse(options);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-};
-
-export const parseValidationRules = (validation: any): ValidationRules => {
-  if (!validation) return {};
-  if (typeof validation === 'object' && !Array.isArray(validation)) return validation;
-  if (typeof validation === 'string') {
-    try {
-      const parsed = JSON.parse(validation);
-      return typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-    } catch {
-      return {};
-    }
-  }
-  return {};
-};
+export interface ColumnsContainerProps {
+  columns: Column[];
+  isLoading: boolean;
+  error: string | null;
+  onColumnCreate: (columnData: ColumnFormData) => Promise<void>;
+  onColumnUpdate: (columnId: string, columnData: Partial<ColumnFormData>) => Promise<void>;
+  onColumnDelete: (columnId: string) => Promise<void>;
+  onRefresh: () => Promise<void>;
+}

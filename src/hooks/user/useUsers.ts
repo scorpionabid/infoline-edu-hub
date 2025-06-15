@@ -30,7 +30,7 @@ export const useUsers = (initialFilter: UserFilter = {}) => {
           schools:school_id(name)
         `, { count: 'exact' });
       
-      // Apply filters with safe type casting
+      // Apply filters with safe type casting - fix enum comparison
       if (currentFilter.role && !Array.isArray(currentFilter.role) && currentFilter.role !== '') {
         const safeRole = safeAdminRoleFilter(currentFilter.role);
         if (safeRole) {
@@ -45,6 +45,7 @@ export const useUsers = (initialFilter: UserFilter = {}) => {
         }
       }
       
+      // Fix status filter enum comparison
       if (currentFilter.status && !Array.isArray(currentFilter.status) && currentFilter.status !== '') {
         const safeStatus = safeUserStatusFilter(currentFilter.status);
         if (safeStatus) {

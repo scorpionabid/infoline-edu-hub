@@ -1,3 +1,4 @@
+
 export interface ReportTemplate {
   id: string;
   name: string;
@@ -58,8 +59,15 @@ export interface DetailedDashboardStatistics {
     submitted_at: string;
     submitted_by: string;
   }>;
-  // Additional fields required by the codebase
+  // Database schema compatible fields
   total_schools: number;
+  active_schools: number;
+  total_students: number;
+  total_teachers: number;
+  total_submissions: number;
+  approved_submissions: number;
+  pending_submissions: number;
+  // Legacy compatibility fields
   regions: number;
   sectors: number;
   schools: number;
@@ -137,4 +145,57 @@ export interface ReportsFilters {
   status?: string;
   date_from?: string;
   date_to?: string;
+}
+
+// Dashboard service compatible types
+export interface DashboardFormStats {
+  total: number;
+  draft: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  // Legacy fields for backward compatibility
+  regions?: number;
+  sectors?: number;
+  schools?: number;
+  drafts?: number;
+}
+
+export interface SuperAdminDashboardData {
+  formStats: DashboardFormStats;
+  regionCount: number;
+  sectorCount: number;
+  schoolCount: number;
+  userCount: number;
+  approvalRate: number;
+  completionRate: number;
+  regions: any[];
+  recentActivity: any[];
+  notifications: any[];
+  formsByStatus: any[];
+}
+
+export interface RegionAdminDashboardData {
+  formStats: DashboardFormStats;
+  pendingItems: any[];
+  recentActivity: any[];
+  notifications: any[];
+  completionRate: number;
+}
+
+export interface SectorAdminDashboardData {
+  formStats: DashboardFormStats;
+  pendingItems: any[];
+  recentActivity: any[];
+  notifications: any[];
+  completionRate: number;
+}
+
+export interface SchoolAdminDashboardData {
+  formStats: DashboardFormStats;
+  categories: any[];
+  notifications: any[];
+  completionRate: number;
+  deadlines: any[];
+  stats: any;
 }

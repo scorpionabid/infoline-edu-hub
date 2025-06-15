@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { FullUserData, UserStatus } from '@/types/auth';
 import { Session, User } from '@supabase/supabase-js';
@@ -110,20 +109,21 @@ export class AuthService {
   }
 
   // Logout user
-  public static async logout(): Promise<{ error: Error | null }> {
+  public static async signOut(): Promise<{ data: any; error: any }> {
     try {
-      const { error } = await supabase.auth.signOut();
+      // Clear any local storage first
+      localStorage.removeItem('user');
+      localStorage.removeItem('authState');
       
-      if (error) throw error;
-      
-      // Clear cache on logout
-      this.clearCache();
-      
-      return { error: null };
-      
-    } catch (error: any) {
-      console.error('Logout error:', error);
-      return { error };
+      // Then sign out from Supabase
+      const response = await supabase.auth.signOut();
+      return response;
+    } catch (error) {
+      console.error('Sign out error:', error);
+      return {
+        data: null,
+        error: error
+      };
     }
   }
 
@@ -288,6 +288,27 @@ export class AuthService {
     } catch (error) {
       console.error('Error fetching user data:', error);
       return null;
+    }
+  }
+
+  // Update user profile
+  public static async updateUserProfile(userId: string, updates: Partial<FullUserData>): Promise<FullUserData | null> {
+    try {
+      // Remove notification_settings from updates as it's not in profiles table
+      const { notification_settings, ...profileUpdates } = updates;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
     }
   }
 }

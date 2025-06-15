@@ -1,5 +1,4 @@
-
-export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'requires_revision';
+export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 
 export interface ApprovalItem {
   id: string;
@@ -142,4 +141,10 @@ export interface DataEntrySaveBarProps {
   readOnly?: boolean;
   errors?: boolean;
   isPendingApproval?: boolean;
+}
+
+export interface SaveResult {
+  success: boolean;
+  error?: string;
+  savedCount: number;
 }

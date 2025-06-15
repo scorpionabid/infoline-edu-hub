@@ -119,24 +119,16 @@ export class ColumnService {
   /**
    * Update an existing column
    */
-  async updateColumn(columnId: string, columnData: Partial<ColumnFormData>): Promise<Column> {
+  static async updateColumn(columnId: string, data: Partial<ColumnFormData>): Promise<Column> {
     try {
-      // Prepare data for update
+      // Ensure type is properly cast
       const updateData = {
-        ...columnData,
-        // Ensure proper serialization
-        default_value: columnData.default_value !== undefined 
-          ? String(columnData.default_value) 
-          : undefined,
-        options: columnData.options 
-          ? JSON.stringify(columnData.options) 
-          : undefined,
-        validation: columnData.validation 
-          ? JSON.stringify(columnData.validation) 
-          : undefined,
+        ...data,
+        type: data.type as ColumnType,
+        updated_at: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
+      const { data: updatedColumn, error } = await supabase
         .from('columns')
         .update(updateData)
         .eq('id', columnId)
@@ -144,14 +136,9 @@ export class ColumnService {
         .single();
 
       if (error) throw error;
-
-      toast.success('Column updated successfully');
-      return data as Column;
-      
-    } catch (error: any) {
-      console.error('ColumnService.updateColumn error:', error);
-      const message = error.message || 'Error updating column';
-      toast.error(message);
+      return updatedColumn;
+    } catch (error) {
+      console.error('Error updating column:', error);
       throw error;
     }
   }

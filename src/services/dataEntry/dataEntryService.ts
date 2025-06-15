@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { getDBSafeUUID } from '@/utils/uuidValidator';
 import { logUUIDValidation, logDatabaseOperation, logDataEntryFlow } from '@/utils/debugUtils';
@@ -205,6 +204,64 @@ export class DataEntryService {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         submittedCount: 0
+      };
+    }
+  }
+
+  static async saveDataEntry(data: DataEntryFormData): Promise<SaveResult> {
+    try {
+      const { data: result, error } = await supabase
+        .from('data_entries')
+        .insert({
+          ...data,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        savedCount: 1
+      };
+    } catch (error) {
+      console.error('Error saving data entry:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save data entry',
+        savedCount: 0
+      };
+    }
+  }
+
+  static async bulkSaveDataEntries(entries: DataEntryFormData[]): Promise<SaveResult> {
+    try {
+      const processedEntries = entries.map(entry => ({
+        ...entry,
+        created_by: getDBSafeUUID(entry.created_by, false) || undefined,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+
+      const { data, error } = await supabase
+        .from('data_entries')
+        .insert(processedEntries)
+        .select();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        savedCount: data?.length || 0
+      };
+    } catch (error) {
+      console.error('Error bulk saving data entries:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to bulk save data entries',
+        savedCount: 0
       };
     }
   }
