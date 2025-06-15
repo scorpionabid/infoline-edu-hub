@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +15,7 @@ interface CategoryListProps {
 }
 
 const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
-  const { categories, loading, error, refetch } = useCategories();
+  const { data: categories, isLoading: loading, error, refetch } = useCategories();
   const [open, setOpen] = useState(false);
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<CategoryStatus>("active");

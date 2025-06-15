@@ -45,10 +45,10 @@ export const useColumnForm = ({ column, categoryId, onSuccess }: UseColumnFormPr
   const onSubmit = async (data: ColumnFormValues) => {
     try {
       if (column) {
-        await updateColumnAsync({ columnId: column.id, data });
+        await updateColumnAsync({ id: column.id, data });
         toast.success('Column updated successfully');
       } else {
-        await createColumnAsync({ categoryId, data });
+        await createColumnAsync({ category_id: categoryId, data });
         toast.success('Column created successfully');
       }
       onSuccess();

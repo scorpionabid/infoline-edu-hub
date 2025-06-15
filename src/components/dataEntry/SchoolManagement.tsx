@@ -34,7 +34,14 @@ const SchoolManagement: React.FC<SchoolManagementProps> = ({
         .order('name');
 
       if (error) throw error;
-      setSchools(data || []);
+      
+      // Type cast the database response to School type
+      const schoolsData: School[] = (data || []).map(school => ({
+        ...school,
+        status: school.status as 'active' | 'inactive'
+      }));
+      
+      setSchools(schoolsData);
     } catch (error: any) {
       console.error('Error fetching schools:', error);
       toast.error('Məktəbləri yükləyərkən xəta baş verdi');

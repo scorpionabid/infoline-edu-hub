@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import useCategoryActions from '@/hooks/categories/useCategoryActions';
-import { Category, CategoryAssignment, CategoryStatus } from '@/types/category';
+import { Category, CategoryAssignment, CategoryStatus, UpdateCategoryFormData } from '@/types/category';
 import {
   Select,
   SelectContent,
@@ -76,7 +76,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
     
     try {
       if (category?.id) {
-        const categoryData = {
+        const updateData: UpdateCategoryFormData = {
           id: category.id,
           name,
           description,
@@ -87,7 +87,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           updated_at: now
         };
         
-        await updateCategory(category.id, categoryData);
+        await updateCategory(category.id, updateData);
       } else {
         const categoryData = {
           name,

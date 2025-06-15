@@ -4,7 +4,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { ConnectionHealth } from '@/hooks/notifications/useEnhancedNotifications';
+
+interface ConnectionHealth {
+  status: 'connected' | 'disconnected' | 'reconnecting';
+  lastConnected?: Date;
+  reconnectCount: number;
+  health: 'excellent' | 'good' | 'poor' | 'offline';
+}
 
 interface NotificationConnectionStatusProps {
   status: string;

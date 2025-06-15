@@ -1,4 +1,4 @@
 
-// School data entry hooks - cleaned up
-export { useUnifiedDataEntry } from '../useUnifiedDataEntry';
-export { useDataEntryManager } from '../useDataEntryManager';
+// School data entry hooks
+export { useSchoolDataEntry } from './useSchoolDataEntry';
+export { useSchoolCategories } from './useSchoolCategories';

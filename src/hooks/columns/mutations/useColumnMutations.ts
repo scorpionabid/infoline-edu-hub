@@ -17,10 +17,13 @@ export const useColumnMutations = () => {
 
       if (error) throw error;
       
+      // Properly cast database response to Column type
       return {
         ...result,
         type: result.type as ColumnType,
-        status: result.status as 'active' | 'inactive' | 'deleted'
+        status: result.status as 'active' | 'inactive' | 'deleted',
+        options: result.options ? (typeof result.options === 'string' ? JSON.parse(result.options) : result.options) : [],
+        validation: result.validation ? (typeof result.validation === 'string' ? JSON.parse(result.validation) : result.validation) : {}
       };
     },
     onSuccess: (data) => {
@@ -49,10 +52,13 @@ export const useColumnMutations = () => {
 
       if (error) throw error;
       
+      // Properly cast database response to Column type
       return {
         ...result,
         type: result.type as ColumnType,
-        status: result.status as 'active' | 'inactive' | 'deleted'
+        status: result.status as 'active' | 'inactive' | 'deleted',
+        options: result.options ? (typeof result.options === 'string' ? JSON.parse(result.options) : result.options) : [],
+        validation: result.validation ? (typeof result.validation === 'string' ? JSON.parse(result.validation) : result.validation) : {}
       };
     },
     onSuccess: (data) => {
