@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Column } from '@/types/column';
+import { Column, ColumnFormData } from '@/types/column';
 
 export const useColumnMutations = () => {
   const queryClient = useQueryClient();
@@ -69,10 +69,35 @@ export const useColumnMutations = () => {
     }
   });
 
+  // Add missing bulk operations as no-ops for now
+  const duplicateColumn = (id: string) => {
+    console.log('Duplicate column not implemented:', id);
+  };
+
+  const bulkToggleStatus = (ids: string[]) => {
+    console.log('Bulk toggle status not implemented:', ids);
+  };
+
+  const moveColumnsToCategory = (columnIds: string[], categoryId: string) => {
+    console.log('Move columns to category not implemented:', columnIds, categoryId);
+  };
+
+  const bulkDelete = (ids: string[]) => {
+    console.log('Bulk delete not implemented:', ids);
+  };
+
   return {
     createColumn: createColumn.mutate,
     updateColumn: updateColumn.mutate,
     deleteColumn: deleteColumn.mutate,
+    duplicateColumn,
+    bulkToggleStatus,
+    moveColumnsToCategory,
+    bulkDelete,
+    duplicateColumnAsync: async (id: string) => duplicateColumn(id),
+    bulkToggleStatusAsync: async (ids: string[]) => bulkToggleStatus(ids),
+    moveColumnsToCategoryAsync: async (columnIds: string[], categoryId: string) => moveColumnsToCategory(columnIds, categoryId),
+    bulkDeleteAsync: async (ids: string[]) => bulkDelete(ids),
     isCreating: createColumn.isPending,
     isUpdating: updateColumn.isPending,
     isDeleting: deleteColumn.isPending

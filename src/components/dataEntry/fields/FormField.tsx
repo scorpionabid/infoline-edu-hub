@@ -12,23 +12,31 @@ interface FormFieldProps {
   value: any;
   onChange: (value: any) => void;
   disabled?: boolean;
+  readOnly?: boolean;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
   column,
   value,
   onChange,
-  disabled = false
+  disabled = false,
+  readOnly = false
 }) => {
   const renderField = () => {
     switch (column.type) {
       case 'text':
+      case 'email':
+      case 'phone':
+      case 'tel':
+      case 'url':
+      case 'password':
         return (
           <Input
+            type={column.type === 'text' ? 'text' : column.type}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder={column.placeholder || ''}
-            disabled={disabled}
+            disabled={disabled || readOnly}
           />
         );
       
@@ -38,7 +46,7 @@ const FormField: React.FC<FormFieldProps> = ({
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder={column.placeholder || ''}
-            disabled={disabled}
+            disabled={disabled || readOnly}
             rows={3}
           />
         );
@@ -50,7 +58,37 @@ const FormField: React.FC<FormFieldProps> = ({
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder={column.placeholder || ''}
-            disabled={disabled}
+            disabled={disabled || readOnly}
+          />
+        );
+
+      case 'date':
+        return (
+          <Input
+            type="date"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled || readOnly}
+          />
+        );
+
+      case 'datetime-local':
+        return (
+          <Input
+            type="datetime-local"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled || readOnly}
+          />
+        );
+
+      case 'time':
+        return (
+          <Input
+            type="time"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled || readOnly}
           />
         );
       
@@ -59,7 +97,7 @@ const FormField: React.FC<FormFieldProps> = ({
           <Select
             value={value || ''}
             onValueChange={onChange}
-            disabled={disabled}
+            disabled={disabled || readOnly}
           >
             <SelectTrigger>
               <SelectValue placeholder={column.placeholder || 'Seçin'} />
@@ -75,11 +113,12 @@ const FormField: React.FC<FormFieldProps> = ({
         );
       
       case 'checkbox':
+      case 'boolean':
         return (
           <Checkbox
             checked={value || false}
             onCheckedChange={onChange}
-            disabled={disabled}
+            disabled={disabled || readOnly}
           />
         );
       
@@ -89,7 +128,7 @@ const FormField: React.FC<FormFieldProps> = ({
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder={column.placeholder || ''}
-            disabled={disabled}
+            disabled={disabled || readOnly}
           />
         );
     }

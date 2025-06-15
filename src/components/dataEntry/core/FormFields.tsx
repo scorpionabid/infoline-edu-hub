@@ -29,8 +29,6 @@ const FormFields: React.FC<FormFieldsProps> = ({
       {columns.map((column) => (
         <FormField
           key={column.id}
-          id={column.id}
-          name={column.name}
           column={column}
           value={formData[column.id] || ''}
           onChange={(value) => onChange(column.id, value)}

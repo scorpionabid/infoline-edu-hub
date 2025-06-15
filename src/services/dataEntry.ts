@@ -5,8 +5,19 @@ export interface SaveFormDataOptions {
   status: 'draft' | 'pending';
 }
 
+export interface SaveDataEntryOptions {
+  categoryId: string;
+  schoolId: string;
+  status: 'draft' | 'pending';
+}
+
+export interface SaveResult {
+  id: string;
+  success: boolean;
+}
+
 export class DataEntryService {
-  static async saveFormData(formData: Record<string, any>, options: SaveFormDataOptions) {
+  static async saveFormData(formData: Record<string, any>, options: SaveFormDataOptions): Promise<SaveResult> {
     // Mock implementation for now
     console.log('Saving form data:', formData, options);
     

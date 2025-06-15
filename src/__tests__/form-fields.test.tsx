@@ -4,25 +4,35 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import FormField from '../components/dataEntry/fields/FormField';
 
-const mockColumn = {
+const createMockColumn = (overrides = {}) => ({
   id: 'test-field',
+  category_id: 'test-category',
   name: 'Test Field',
-  type: 'text',
+  type: 'text' as const,
   is_required: true,
-  placeholder: 'Enter test value'
-};
+  placeholder: 'Enter test value',
+  help_text: '',
+  description: '',
+  order_index: 0,
+  status: 'active',
+  default_value: '',
+  options: [],
+  validation: {},
+  created_at: '2023-01-01T00:00:00Z',
+  updated_at: '2023-01-01T00:00:00Z',
+  ...overrides
+});
 
 describe('FormField Component', () => {
   it('renders text input correctly', () => {
     const mockOnChange = vi.fn();
+    const mockColumn = createMockColumn();
     
     render(
       <FormField
-        id="test"
-        name="Test Field"
+        column={mockColumn}
         value=""
         onChange={mockOnChange}
-        column={mockColumn}
       />
     );
 
@@ -32,14 +42,13 @@ describe('FormField Component', () => {
 
   it('handles value changes', () => {
     const mockOnChange = vi.fn();
+    const mockColumn = createMockColumn();
     
     render(
       <FormField
-        id="test"
-        name="Test Field"
+        column={mockColumn}
         value=""
         onChange={mockOnChange}
-        column={mockColumn}
       />
     );
 
@@ -51,14 +60,13 @@ describe('FormField Component', () => {
 
   it('shows required indicator', () => {
     const mockOnChange = vi.fn();
+    const mockColumn = createMockColumn();
     
     render(
       <FormField
-        id="test"
-        name="Test Field"
+        column={mockColumn}
         value=""
         onChange={mockOnChange}
-        column={mockColumn}
       />
     );
 
@@ -66,24 +74,21 @@ describe('FormField Component', () => {
   });
 
   it('renders select field correctly', () => {
-    const selectColumn = {
-      ...mockColumn,
+    const selectColumn = createMockColumn({
       type: 'select',
       options: [
         { value: 'option1', label: 'Option 1' },
         { value: 'option2', label: 'Option 2' }
       ]
-    };
+    });
 
     const mockOnChange = vi.fn();
     
     render(
       <FormField
-        id="test"
-        name="Test Field"
+        column={selectColumn}
         value=""
         onChange={mockOnChange}
-        column={selectColumn}
       />
     );
 
