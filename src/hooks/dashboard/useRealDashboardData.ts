@@ -38,14 +38,15 @@ export const useRealDashboardData = () => {
       .from('categories')
       .select('id, name, status, completion_rate');
 
-    const categories = (categoriesData || []).map(cat => ({
-      id: cat.id,
-      name: cat.name,
-      status: cat.status,
-      completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : cat.completionRate || 0
+    const categories = (categoriesData || []).filter(cat =>
+      cat && cat.id !== undefined && cat.name !== undefined && cat.status !== undefined
+    ).map(cat => ({
+      id: String(cat.id),
+      name: String(cat.name),
+      status: cat.status as any,
+      completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : (cat.completionRate || 0)
     }));
 
-    // TODO: Real pendingApprovals & deadlines
     return {
       totalRegions: totalRegions || 0,
       totalSectors: totalSectors || 0,
@@ -80,14 +81,15 @@ export const useRealDashboardData = () => {
       .select('id, name, status, completion_rate')
       .in('assignment', ['all', 'sectors']);
 
-    const categories = (categoriesData || []).map(cat => ({
-      id: cat.id,
-      name: cat.name,
-      status: cat.status,
-      completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : cat.completionRate || 0
+    const categories = (categoriesData || []).filter(cat =>
+      cat && cat.id !== undefined && cat.name !== undefined && cat.status !== undefined
+    ).map(cat => ({
+      id: String(cat.id),
+      name: String(cat.name),
+      status: cat.status as any,
+      completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : (cat.completionRate || 0)
     }));
 
-    // TODO: deadlines real
     return {
       categories,
       deadlines: [],
@@ -99,7 +101,7 @@ export const useRealDashboardData = () => {
   const fetchSectorAdminData = async (sectorId: string): Promise<SectorAdminDashboardData> => {
     const { data: schoolsData } = await supabase
       .from('schools')
-      .select('id, name, completion_rate, status')
+      .select('id, name, completion_rate, status, updated_at')
       .eq('sector_id', sectorId);
 
     // Count forms
@@ -120,11 +122,13 @@ export const useRealDashboardData = () => {
       .select('id, name, status, completion_rate')
       .in('assignment', ['all', 'sectors']);
 
-    const categories = (categoriesData || []).map(cat => ({
-      id: cat.id,
-      name: cat.name,
-      status: cat.status,
-      completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : cat.completionRate || 0
+    const categories = (categoriesData || []).filter(cat =>
+      cat && cat.id !== undefined && cat.name !== undefined && cat.status !== undefined
+    ).map(cat => ({
+      id: String(cat.id),
+      name: String(cat.name),
+      status: cat.status as any,
+      completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : (cat.completionRate || 0)
     }));
 
     return {
@@ -141,14 +145,15 @@ export const useRealDashboardData = () => {
       .select('id, name, status, completion_rate')
       .eq('assignment', 'all');
 
-    const categories = (categoriesData || []).map(cat => ({
-      id: cat.id,
-      name: cat.name,
-      status: cat.status,
-      completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : cat.completionRate || 0
+    const categories = (categoriesData || []).filter(cat =>
+      cat && cat.id !== undefined && cat.name !== undefined && cat.status !== undefined
+    ).map(cat => ({
+      id: String(cat.id),
+      name: String(cat.name),
+      status: cat.status as any,
+      completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : (cat.completionRate || 0)
     }));
 
-    // TODO: deadlines, pending approvals, stats
     return {
       categories,
       deadlines: [],
@@ -228,3 +233,5 @@ export const useRealDashboardData = () => {
 };
 
 export default useRealDashboardData;
+
+// Qeyd: Bu fayl çox uzundur və gələcəkdə modul tipli kiçik fayllara bölmək tövsiyə olunur.

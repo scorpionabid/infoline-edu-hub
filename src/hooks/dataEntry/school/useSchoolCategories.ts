@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns, CategoryAssignment } from '@/types/category';
@@ -29,11 +28,11 @@ export const useSchoolCategories = (schoolId?: string) => {
 
       const categoriesWithColumns: CategoryWithColumns[] = (data || []).map(category => ({
         ...category,
-        assignment: category.assignment as CategoryAssignment,
+        assignment: category.assignment,
         columns: (category.columns || []).map((column: any) => ({
           ...column,
-          type: column.type as ColumnType,
-          status: column.status as 'active' | 'inactive' | 'deleted',
+          type: column.type,
+          status: column.status,
           options: column.options ? 
             (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
             [],

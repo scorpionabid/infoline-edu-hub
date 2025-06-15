@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Column, ColumnType } from '@/types/column';
@@ -38,15 +37,15 @@ export const useColumnsQuery = (options: UseColumnsQueryOptions = {}) => {
 
       return (data || []).map(column => ({
         ...column,
-        type: column.type as ColumnType,
-        status: column.status as 'active' | 'inactive' | 'deleted',
+        type: column.type,
+        status: column.status,
         options: column.options ? 
           (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
           [],
         validation: column.validation ? 
           (typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation) : 
           {}
-      }));
+      })) as Column[];
     },
     enabled
   });

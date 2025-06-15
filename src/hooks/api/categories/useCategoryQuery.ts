@@ -51,19 +51,21 @@ export const useCategoryQuery = (options: UseCategoryQueryOptions = {}) => {
         throw error;
       }
 
-      return (data || []).map(category => ({
+      return (data || []).filter(category => category && 'id' in category)
+        .map(category => ({
         ...category,
-        assignment: category.assignment as CategoryAssignment,
-        columns: withColumns ? (category.columns || []).map((column: any) => ({
-          ...column,
-          options: column.options ? 
-            (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
-            [],
-          validation: column.validation ? 
-            (typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation) : 
-            {}
-        })) : []
-      }));
+        assignment: category.assignment,
+        columns: withColumns && Array.isArray(category.columns)
+          ? (category.columns || []).map((column: any) => ({
+              ...column,
+              options: column.options ? 
+                (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
+                [],
+              validation: column.validation ? 
+                (typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation) : 
+                {}
+            })) : []
+      })) as CategoryWithColumns[];
     },
     enabled
   });
