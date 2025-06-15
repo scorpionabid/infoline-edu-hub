@@ -3,7 +3,7 @@ export { useColumnMutations } from './useColumnMutations';
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column } from '@/types/column';
+import { Column, ColumnType } from '@/types/column';
 
 // Fixed useColumnsQuery hook
 export const useColumnsQuery = (options: { status?: string; enabled?: boolean } = {}) => {
@@ -36,11 +36,11 @@ export const useColumnsQuery = (options: { status?: string; enabled?: boolean } 
 
       console.log('✅ Fetched columns:', data?.length || 0);
       
-      // Transform data to match Column interface
+      // Transform data to match Column interface with proper type casting
       const transformedColumns: Column[] = (data || []).map(item => ({
         id: item.id,
         name: item.name,
-        type: item.type,
+        type: item.type as ColumnType, // Type assertion for database string to ColumnType
         category_id: item.category_id,
         placeholder: item.placeholder,
         help_text: item.help_text,

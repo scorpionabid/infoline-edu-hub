@@ -13,9 +13,9 @@ interface SimpleUser {
 }
 
 interface AdminUserSelectorProps {
-  entityId: string | undefined;
+  entityId?: string;
   entityType: 'region' | 'sector' | 'school';
-  selectedAdminId: string | null;
+  selectedAdminId?: string | null;
   onChange: (userId: string | null) => void;
 }
 
@@ -35,7 +35,7 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 
       setLoading(true);
       try {
-        const roleMap: Record<string, string> = {
+        const roleMap = {
           region: 'regionadmin',
           sector: 'sectoradmin', 
           school: 'schooladmin'
@@ -61,7 +61,7 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
           return;
         }
 
-        setUsers(data as SimpleUser[]);
+        setUsers(data || []);
       } catch (error) {
         console.error('Error fetching users:', error);
       } finally {

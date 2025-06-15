@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,8 +26,8 @@ const userFormSchema = z.object({
 });
 
 export interface UserFormProps {
-  formData: UserFormData;
-  onChange: (data: UserFormData) => void;
+  formData?: UserFormData;
+  onChange?: (data: UserFormData) => void;
   onSubmit: (data: UserFormData) => Promise<void>;
   initialData?: UserFormData;
   isLoading?: boolean;
@@ -41,13 +42,34 @@ const UserForm: React.FC<UserFormProps> = ({
   isLoading = false,
   isEditMode = false
 }) => {
+  const [currentFormData, setCurrentFormData] = useState<UserFormData>(
+    initialData || formData || {
+      full_name: '',
+      email: '',
+      phone: '',
+      position: '',
+      role: '',
+      region_id: '',
+      sector_id: '',
+      school_id: '',
+      status: 'active',
+      language: 'az',
+      notifications: {
+        email_notifications: true,
+        sms_notifications: false,
+        push_notifications: true,
+      }
+    }
+  );
+
   const form = useForm<UserFormData>({
     resolver: zodResolver(userFormSchema),
-    defaultValues: initialData || formData,
+    defaultValues: currentFormData,
   });
 
   const handleSubmit = async (data: UserFormData) => {
-    onChange(data);
+    setCurrentFormData(data);
+    onChange?.(data);
     await onSubmit(data);
   };
 
