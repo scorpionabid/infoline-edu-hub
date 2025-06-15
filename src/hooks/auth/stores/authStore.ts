@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
-import { AuthState, FullUserData } from '@/types/auth';
+import { AuthState, FullUserData, UserStatus } from '@/types/auth';
 import { toast } from 'sonner';
 
 export const useAuthStore = create<AuthState>()(
@@ -98,7 +98,7 @@ export const useAuthStore = create<AuthState>()(
               position: profile.position,
               language: profile.language || 'az',
               avatar: profile.avatar,
-              status: profile.status || 'active',
+              status: (profile.status || 'active') as UserStatus,
               last_login: profile.last_login,
               lastLogin: profile.last_login,
               created_at: profile.created_at,
@@ -205,3 +205,42 @@ export const useAuthStore = create<AuthState>()(
 export const selectUser = (state: AuthState) => state.user;
 export const selectIsAuthenticated = (state: AuthState) => state.isAuthenticated;
 export const selectIsLoading = (state: AuthState) => state.isLoading;
+export const selectError = (state: AuthState) => state.error;
+export const selectSession = (state: AuthState) => state.session;
+
+// Derived selectors
+export const selectUserRole = (state: AuthState) => state.user?.role;
+export const selectRegionId = (state: AuthState) => state.user?.region_id;
+export const selectSectorId = (state: AuthState) => state.user?.sector_id;
+export const selectSchoolId = (state: AuthState) => state.user?.school_id;
+
+// Action selectors
+export const selectUpdateProfile = (state: AuthState) => state.updateProfile;
+export const selectUpdatePassword = (state: AuthState) => state.updatePassword;
+export const selectHasPermission = (state: AuthState) => state.hasPermission;
+export const selectSignOut = (state: AuthState) => state.signOut;
+
+// Utility functions
+export const shouldAuthenticate = (route: string): boolean => {
+  const publicRoutes = ['/login', '/register', '/forgot-password'];
+  return !publicRoutes.includes(route);
+};
+
+export const isProtectedRoute = (route: string): boolean => {
+  return shouldAuthenticate(route);
+};
+
+export const getRedirectPath = (userRole: string): string => {
+  switch (userRole) {
+    case 'superadmin':
+      return '/dashboard';
+    case 'regionadmin':
+      return '/dashboard';
+    case 'sectoradmin':
+      return '/dashboard';
+    case 'schooladmin':
+      return '/dashboard';
+    default:
+      return '/dashboard';
+  }
+};

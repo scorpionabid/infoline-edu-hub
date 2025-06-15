@@ -1,51 +1,41 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useAuthStore, selectUser, selectUpdateProfile } from '@/hooks/auth/useAuthStore';
 import { toast } from 'sonner';
 
 const ProfileSettings: React.FC = () => {
   const user = useAuthStore(selectUser);
   const updateProfile = useAuthStore(selectUpdateProfile);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
-    email: user?.email || '',
     phone: user?.phone || '',
     position: user?.position || '',
+    language: user?.language || 'az'
   });
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!updateProfile) return;
+    
     setIsLoading(true);
-
     try {
       const result = await updateProfile(formData);
-      
-      if (result.error) {
-        toast.error('Profil yenilənə bilmədi', {
-          description: result.error
-        });
+      if (result.success) {
+        toast.success('Profil məlumatları yeniləndi');
       } else {
-        toast.success('Profil uğurla yeniləndi');
+        toast.error(result.error || 'Xəta baş verdi');
       }
     } catch (error) {
-      toast.error('Xəta baş verdi', {
-        description: 'Profil yenilənərkən xəta baş verdi'
-      });
+      toast.error('Xəta baş verdi');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
   };
 
   return (
@@ -55,53 +45,35 @@ const ProfileSettings: React.FC = () => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="full_name">Ad Soyad</Label>
             <Input
               id="full_name"
-              name="full_name"
               value={formData.full_name}
-              onChange={handleChange}
-              placeholder="Ad və soyadınızı daxil edin"
+              onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Email ünvanınızı daxil edin"
-            />
-          </div>
-
-          <div className="space-y-2">
+          
+          <div>
             <Label htmlFor="phone">Telefon</Label>
             <Input
               id="phone"
-              name="phone"
               value={formData.phone}
-              onChange={handleChange}
-              placeholder="Telefon nömrənizi daxil edin"
+              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
             />
           </div>
-
-          <div className="space-y-2">
+          
+          <div>
             <Label htmlFor="position">Vəzifə</Label>
             <Input
               id="position"
-              name="position"
               value={formData.position}
-              onChange={handleChange}
-              placeholder="Vəzifənizi daxil edin"
+              onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
             />
           </div>
-
+          
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Yenilənir...' : 'Yadda saxla'}
+            {isLoading ? 'Yenilənir...' : 'Yenilə'}
           </Button>
         </form>
       </CardContent>

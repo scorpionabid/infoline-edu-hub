@@ -1,4 +1,5 @@
 
+
 export type SectorStatus = 'active' | 'inactive' | 'deleted';
 
 export interface Sector {
@@ -12,6 +13,14 @@ export interface Sector {
   admin_email?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface EnhancedSector extends Sector {
+  region_name?: string;
+  regionName?: string;
+  region_name_display?: string;
+  admin_name?: string;
+  total_schools?: number;
 }
 
 export interface SectorFormData {
@@ -35,3 +44,4 @@ export interface CreateSectorData {
 export interface UpdateSectorData extends Partial<CreateSectorData> {
   id: string;
 }
+

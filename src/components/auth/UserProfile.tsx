@@ -12,7 +12,11 @@ const UserProfile: React.FC = () => {
   if (!user) return null;
 
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   return (

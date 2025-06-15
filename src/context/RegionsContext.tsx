@@ -25,6 +25,9 @@ export const useRegions = () => {
   return context;
 };
 
+// Alias for backward compatibility
+export const useRegionsContext = useRegions;
+
 export const RegionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const {
     data: regions = [],
