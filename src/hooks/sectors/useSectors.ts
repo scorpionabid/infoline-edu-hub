@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ensureSectorStatus } from '@/utils/buildFixes';
 
 export interface Sector {
   id: string;
@@ -31,7 +32,13 @@ export const useSectors = () => {
 
       if (error) throw error;
 
-      setSectors(data || []);
+      // Ensure proper type casting
+      const typedSectors: Sector[] = (data || []).map(sector => ({
+        ...sector,
+        status: ensureSectorStatus(sector.status)
+      }));
+
+      setSectors(typedSectors);
     } catch (err: any) {
       console.error('Error fetching sectors:', err);
       setError(err.message);

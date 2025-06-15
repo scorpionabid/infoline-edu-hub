@@ -101,15 +101,11 @@ export const useUserFetch = () => {
 
       // Default notification settings
       const defaultNotificationSettings: NotificationSettings = {
+        email_notifications: true,
+        sms_notifications: false,
+        push_notifications: true,
         email: true,
-        push: false,
-        sms: false,
-        inApp: true,
-        system: true,
-        deadline: true,
-        deadlineReminders: true,
-        statusUpdates: true,
-        weeklyReports: false
+        system: true
       };
 
       // Transform data to match FullUserData interface
@@ -120,29 +116,19 @@ export const useUserFetch = () => {
           id: item.id,
           email: item.email,
           full_name: item.full_name || '',
-          fullName: item.full_name || '',
-          name: item.full_name || '',
           role: userRole?.role || 'user',
           region_id: userRole?.region_id,
           sector_id: userRole?.sector_id,
           school_id: userRole?.school_id,
-          regionId: userRole?.region_id,
-          sectorId: userRole?.sector_id,
-          schoolId: userRole?.school_id,
           phone: item.phone || '',
           position: item.position || '',
           language: item.language || 'az',
           avatar: item.avatar || '',
-          avatar_url: item.avatar || '',
           status: item.status || 'active',
           last_login: item.last_login,
-          last_sign_in_at: item.last_login,
           created_at: item.created_at,
           updated_at: item.updated_at,
-          preferences: {},
-          notificationSettings: defaultNotificationSettings,
-          notification_settings: defaultNotificationSettings,
-          entityName: undefined
+          notifications: defaultNotificationSettings
         };
       });
 

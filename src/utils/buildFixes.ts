@@ -154,3 +154,63 @@ export const validateNotificationSettings = (settings: any) => {
     push_notifications: Boolean(settings.push_notifications ?? true),
   };
 };
+
+// Enhanced school data type casting
+export const ensureEnhancedSchoolData = (data: any): any => {
+  if (!data || typeof data !== 'object') return null;
+  
+  return {
+    id: data.id || '',
+    name: data.name || '',
+    region_id: data.region_id || '',
+    sector_id: data.sector_id || '',
+    status: ensureValidSchoolStatus(data.status),
+    completion_rate: Number(data.completion_rate) || 0,
+    principal_name: data.principal_name || '',
+    region_name: data.region_name || '',
+    sector_name: data.sector_name || '',
+    columns: data.columns || {},
+    completion_stats: data.completion_stats || {
+      total_required: 0,
+      filled_count: 0,
+      approved_count: 0,
+      completion_rate: 0,
+    },
+    ...data
+  };
+};
+
+// User data property mapping helper
+export const mapUserDataProperties = (userData: any): any => {
+  if (!userData || typeof userData !== 'object') return userData;
+  
+  return {
+    ...userData,
+    full_name: userData.full_name || userData.fullName || '',
+    region_id: userData.region_id || userData.regionId,
+    sector_id: userData.sector_id || userData.sectorId,
+    school_id: userData.school_id || userData.schoolId,
+    status: ensureUserStatus(userData.status),
+  };
+};
+
+// Entity display name helper
+export const getEntityDisplayName = (userData: any): string => {
+  if (!userData || typeof userData !== 'object') return '';
+  
+  const role = userData.role;
+  
+  if (role === 'regionadmin' && userData.region_name) {
+    return userData.region_name;
+  }
+  
+  if (role === 'sectoradmin' && userData.sector_name) {
+    return userData.sector_name;
+  }
+  
+  if (role === 'schooladmin' && userData.school_name) {
+    return userData.school_name;
+  }
+  
+  return '';
+};

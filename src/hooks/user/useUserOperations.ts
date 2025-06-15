@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/user';
 import { toast } from 'sonner';
+import { mapUserDataProperties } from '@/utils/buildFixes';
 
 type ValidUserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
@@ -23,17 +24,19 @@ export const useUserOperations = () => {
         throw new Error('Invalid user role');
       }
 
+      const mappedData = mapUserDataProperties(userData);
+
       // Create auth user first via auth.admin
       const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
         email: userData.email || '',
         password: Math.random().toString(36).slice(-8), // Generate random password
         email_confirm: true,
         user_metadata: {
-          full_name: userData.full_name || userData.fullName || '',
+          full_name: mappedData.full_name,
           role: userRole,
-          region_id: userData.region_id || userData.regionId || null,
-          sector_id: userData.sector_id || userData.sectorId || null,
-          school_id: userData.school_id || userData.schoolId || null
+          region_id: mappedData.region_id || null,
+          sector_id: mappedData.sector_id || null,
+          school_id: mappedData.school_id || null
         }
       });
 
@@ -44,7 +47,7 @@ export const useUserOperations = () => {
       // Let's verify and update if needed
       const profileData = {
         id: authUser.user.id,
-        full_name: userData.full_name || userData.fullName || '',
+        full_name: mappedData.full_name,
         email: userData.email || '',
         phone: userData.phone || '',
         position: userData.position || '',
@@ -76,11 +79,13 @@ export const useUserOperations = () => {
     setError(null);
     
     try {
+      const mappedData = mapUserDataProperties(userData);
+      
       // Update profile
       const { error } = await supabase
         .from('profiles')
         .update({
-          full_name: userData.full_name || userData.fullName,
+          full_name: mappedData.full_name,
           email: userData.email,
           phone: userData.phone,
           position: userData.position,
@@ -101,9 +106,9 @@ export const useUserOperations = () => {
             .from('user_roles')
             .update({
               role: userRole,
-              region_id: userData.region_id || userData.regionId,
-              sector_id: userData.sector_id || userData.sectorId,
-              school_id: userData.school_id || userData.schoolId
+              region_id: mappedData.region_id,
+              sector_id: mappedData.sector_id,
+              school_id: mappedData.school_id
             })
             .eq('user_id', userId);
 
