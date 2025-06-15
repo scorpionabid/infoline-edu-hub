@@ -40,7 +40,7 @@ export const ensureValidRole = (role: any): 'superadmin' | 'regionadmin' | 'sect
   return validRoles.includes(role) ? role : 'user';
 };
 
-// JSON parsing safety
+// Safe JSON parsing with type casting
 export const safeJsonParse = <T>(jsonString: any, fallback: T): T => {
   if (typeof jsonString === 'object' && jsonString !== null) {
     return jsonString as T;
@@ -57,37 +57,57 @@ export const safeJsonParse = <T>(jsonString: any, fallback: T): T => {
   return fallback;
 };
 
-// Report data type casting
-export const ensureReportDataArray = <T>(data: any, fallback: T[] = []): T[] => {
-  if (isValidArray(data)) {
+// Safe JSON array parsing for reports
+export const safeJsonArrayParse = <T>(data: any): T[] => {
+  if (Array.isArray(data)) {
     return data as T[];
   }
   
   if (typeof data === 'string') {
     try {
       const parsed = JSON.parse(data);
-      return isValidArray(parsed) ? parsed : fallback;
+      return Array.isArray(parsed) ? parsed as T[] : [];
     } catch {
-      return fallback;
+      return [];
     }
   }
   
-  return fallback;
+  return [];
 };
 
-export const ensureReportDataObject = <T extends object>(data: any, fallback: T): T => {
-  if (isValidObject(data)) {
+// Safe JSON object parsing for reports  
+export const safeJsonObjectParse = <T extends object>(data: any): T | null => {
+  if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
     return data as T;
   }
   
   if (typeof data === 'string') {
     try {
       const parsed = JSON.parse(data);
-      return isValidObject(parsed) ? parsed as T : fallback;
+      return (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) ? parsed as T : null;
     } catch {
-      return fallback;
+      return null;
     }
   }
   
-  return fallback;
+  return null;
+};
+
+// Report data type casting
+export const ensureReportDataArray = <T>(data: any, fallback: T[] = []): T[] => {
+  return safeJsonArrayParse<T>(data) || fallback;
+};
+
+export const ensureReportDataObject = <T extends object>(data: any, fallback: T): T => {
+  return safeJsonObjectParse<T>(data) || fallback;
+};
+
+// User status validation
+export const ensureUserStatus = (status: any): 'active' | 'inactive' => {
+  return ['active', 'inactive'].includes(status) ? status : 'active';
+};
+
+// Safe sector status casting
+export const ensureSectorStatus = (status: any): 'active' | 'inactive' => {
+  return ['active', 'inactive'].includes(status) ? status : 'active';
 };

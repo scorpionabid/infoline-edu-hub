@@ -8,6 +8,8 @@ export interface NotificationSettings {
   email_notifications?: boolean;
   sms_notifications?: boolean;
   push_notifications?: boolean;
+  email?: boolean;
+  system?: boolean;
 }
 
 export interface UserFormData {
@@ -28,12 +30,15 @@ export interface UserFilter {
   region?: string;
   sector?: string;
   school?: string;
-  role?: UserRole;
-  status?: UserStatus;
+  role?: UserRole | '';
+  status?: UserStatus | '';
   search?: string;
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
 }
 
 export interface FullUserData {

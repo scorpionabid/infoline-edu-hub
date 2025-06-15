@@ -55,7 +55,7 @@ const UserListTable: React.FC<UserListTableProps> = ({ refreshTrigger, filterPar
             sector_id, 
             school_id,
             regions:region_id(name),
-            sectors:sector_id(name),
+            sectors:sector_id(name), 
             schools:school_id(name)
           )
         `);
@@ -76,10 +76,7 @@ const UserListTable: React.FC<UserListTableProps> = ({ refreshTrigger, filterPar
       // Transform data safely
       const transformedData: UserWithAssignments[] = (data || []).map(user => {
         const userRole = Array.isArray(user.user_roles) ? user.user_roles[0] : user.user_roles || {};
-        const regions = userRole?.regions;
-        const sectors = userRole?.sectors;
-        const schools = userRole?.schools;
-
+        
         return {
           id: user.id,
           full_name: user.full_name || '',
@@ -96,9 +93,9 @@ const UserListTable: React.FC<UserListTableProps> = ({ refreshTrigger, filterPar
           updated_at: user.updated_at || '',
           last_login: user.last_login || '',
           avatar: user.avatar || '',
-          region: regions?.name || '',
-          sector: sectors?.name || '',
-          school: schools?.name || '',
+          region: userRole?.regions?.name || '',
+          sector: userRole?.sectors?.name || '',
+          school: userRole?.schools?.name || '',
         };
       });
 
