@@ -41,32 +41,28 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 
         const targetRole = roleMap[entityType];
         
+        // Use a simple query since the RPC function might not exist
         let query = supabase
           .from('profiles')
-          .select('id, full_name, email');
+          .select('id, full_name, email')
+          .limit(10);
 
-        // Use RPC function to get users with specific role and entity
-        const { data, error } = await supabase.rpc('get_users_by_role_and_entity', {
-          target_role: targetRole,
-          entity_type: entityType,
-          entity_id: entityId
-        });
+        const { data, error } = await query;
 
         if (error) {
           console.error('Error fetching users:', error);
-          // Fallback to simple query if RPC fails
-          const fallbackQuery = supabase
-            .from('profiles')
-            .select('id, full_name, email')
-            .limit(10);
-          
-          const { data: fallbackData, error: fallbackError } = await fallbackQuery;
-          if (fallbackError) throw fallbackError;
-          setUsers(fallbackData || []);
+          setUsers([]);
           return;
         }
 
-        setUsers(data || []);
+        // Safely cast the response to our expected type
+        const userData: SimpleUser[] = (data || []).map(item => ({
+          id: item.id,
+          full_name: item.full_name || 'İsimsiz İstifadəçi',
+          email: item.email || ''
+        }));
+
+        setUsers(userData);
       } catch (error) {
         console.error('Error fetching users:', error);
         setUsers([]);

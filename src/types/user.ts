@@ -4,6 +4,12 @@
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 export type UserStatus = 'active' | 'inactive';
 
+export interface NotificationSettings {
+  email_notifications?: boolean;
+  sms_notifications?: boolean;
+  push_notifications?: boolean;
+}
+
 export interface UserFormData {
   full_name: string;
   email: string;
@@ -15,6 +21,7 @@ export interface UserFormData {
   school_id?: string;
   language?: string;
   status?: UserStatus;
+  notifications?: NotificationSettings;
 }
 
 export interface UserFilter {
@@ -46,6 +53,7 @@ export interface FullUserData {
   last_login?: string;
   avatar?: string;
   entityName?: string;
+  notifications?: NotificationSettings;
 }
 
 export interface UserWithAssignments extends FullUserData {

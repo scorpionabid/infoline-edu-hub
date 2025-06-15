@@ -5,14 +5,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
-import { UserFormData } from '@/types/user';
+import { UserFormData, UserRole, UserStatus } from '@/types/user';
 
 const userFormSchema = z.object({
   full_name: z.string().min(2, 'Ad ən az 2 simvoldan ibarət olmalıdır'),
   email: z.string().email('Düzgün email ünvanı daxil edin'),
   phone: z.string().optional(),
   position: z.string().optional(),
-  role: z.string().min(1, 'Rol seçilməlidir'),
+  role: z.enum(['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin', 'user']),
   region_id: z.string().optional(),
   sector_id: z.string().optional(),
   school_id: z.string().optional(),
@@ -48,11 +48,11 @@ const UserForm: React.FC<UserFormProps> = ({
       email: '',
       phone: '',
       position: '',
-      role: '',
+      role: 'user' as UserRole,
       region_id: '',
       sector_id: '',
       school_id: '',
-      status: 'active',
+      status: 'active' as UserStatus,
       language: 'az',
       notifications: {
         email_notifications: true,

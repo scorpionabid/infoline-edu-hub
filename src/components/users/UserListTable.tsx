@@ -1,185 +1,327 @@
-
-import React from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Pencil, Trash2, MoreHorizontal } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Lock } from 'lucide-react';
-import { FullUserData } from '@/types/user';
-import { UserRole } from '@/types/supabase';
+import { UserFilter, UserWithAssignments } from '@/types/user';
+import { supabase } from '@/integrations/supabase/client';
+import { formatDate } from '@/utils/dateUtils';
 import { useLanguage } from '@/context/LanguageContext';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
+import EditUserDialog from './EditUserDialog';
+import DeleteConfirmDialog from '@/components/common/DeleteConfirmDialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface UserListTableProps {
-  users: FullUserData[];
-  onEdit: (user: FullUserData) => void;
-  onDelete: (user: FullUserData) => void;
-  onViewDetails: (user: FullUserData) => void;
-  currentUserRole: UserRole;
-  renderRow?: (user: FullUserData) => React.ReactNode;
+  refreshTrigger: number;
+  filterParams: UserFilter;
 }
 
-const UserListTable: React.FC<UserListTableProps> = ({
-  users,
-  onEdit,
-  onDelete,
-  onViewDetails,
-  currentUserRole,
-  renderRow
-}) => {
+const UserListTable: React.FC<UserListTableProps> = ({ refreshTrigger, filterParams }) => {
+  const [users, setUsers] = useState<UserWithAssignments[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<UserWithAssignments | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { t } = useLanguage();
-  
+
+  useEffect(() => {
+    fetchUsers();
+  }, [refreshTrigger, filterParams]);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('profiles')
+        .select(`
+          id,
+          full_name,
+          email,
+          phone,
+          position,
+          status,
+          language,
+          avatar,
+          last_login,
+          created_at,
+          updated_at,
+          user_roles(role, region_id, sector_id, school_id),
+          regions:user_roles(regions:region_id(name)),
+          sectors:user_roles(sectors:sector_id(name)),
+          schools:user_roles(schools:school_id(name))
+        `);
+
+      // Apply filters
+      if (filterParams.search) {
+        query = query.or(`full_name.ilike.%${filterParams.search}%,email.ilike.%${filterParams.search}%`);
+      }
+
+      if (filterParams.status) {
+        query = query.eq('status', filterParams.status);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // Transform data to match UserWithAssignments
+      const transformedData: UserWithAssignments[] = (data || []).map(user => {
+        const userRole = user.user_roles?.[0] || {};
+        const regionName = user.regions?.[0]?.regions?.name || '';
+        const sectorName = user.sectors?.[0]?.sectors?.name || '';
+        const schoolName = user.schools?.[0]?.schools?.name || '';
+
+        return {
+          id: user.id,
+          full_name: user.full_name || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          position: user.position || '',
+          role: userRole.role || 'user',
+          status: user.status || 'active',
+          region_id: userRole.region_id || '',
+          sector_id: userRole.sector_id || '',
+          school_id: userRole.school_id || '',
+          language: user.language || 'az',
+          created_at: user.created_at || '',
+          updated_at: user.updated_at || '',
+          last_login: user.last_login || '',
+          avatar: user.avatar || '',
+          region: regionName,
+          sector: sectorName,
+          school: schoolName,
+        };
+      });
+
+      setUsers(transformedData);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error(t('errorFetchingUsers') || 'İstifadəçilər yüklənərkən xəta baş verdi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditUser = (user: UserWithAssignments) => {
+    setSelectedUser(user);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteUser = (user: UserWithAssignments) => {
+    setSelectedUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: selectedUser.id }
+      });
+
+      if (error) throw error;
+
+      toast.success(t('userDeletedSuccessfully') || 'İstifadəçi uğurla silindi');
+      fetchUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error(t('errorDeletingUser') || 'İstifadəçi silinərkən xəta baş verdi');
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const handleUpdateUser = async (userData: any) => {
+    if (!selectedUser) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: userData.full_name,
+          phone: userData.phone,
+          position: userData.position,
+          status: userData.status,
+          language: userData.language,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedUser.id);
+
+      if (error) throw error;
+
+      // Update user role if changed
+      if (userData.role !== selectedUser.role ||
+          userData.region_id !== selectedUser.region_id ||
+          userData.sector_id !== selectedUser.sector_id ||
+          userData.school_id !== selectedUser.school_id) {
+        
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .update({
+            role: userData.role,
+            region_id: userData.region_id || null,
+            sector_id: userData.sector_id || null,
+            school_id: userData.school_id || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', selectedUser.id);
+
+        if (roleError) throw roleError;
+      }
+
+      toast.success(t('userUpdatedSuccessfully') || 'İstifadəçi uğurla yeniləndi');
+      fetchUsers();
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast.error(t('errorUpdatingUser') || 'İstifadəçi yenilənərkən xəta baş verdi');
+    }
+  };
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case 'superadmin':
-        return 'default';
-      case 'regionadmin':
-        return 'secondary';
-      case 'sectoradmin':
-        return 'warning';
-      case 'schooladmin':
-        return 'success';
-      default:
-        return 'outline';
+      case 'superadmin': return 'destructive';
+      case 'regionadmin': return 'default';
+      case 'sectoradmin': return 'secondary';
+      case 'schooladmin': return 'outline';
+      default: return 'default';
     }
   };
 
-  const getRoleText = (role: string) => {
-    switch (role) {
-      case 'superadmin':
-        return t('superadmin');
-      case 'regionadmin':
-        return t('regionAdmin');
-      case 'sectoradmin':
-        return t('sectorAdmin');
-      case 'schooladmin':
-        return t('schoolAdmin');
-      default:
-        return t('user');
-    }
+  const getStatusBadgeVariant = (status: string) => {
+    return status === 'active' ? 'success' : 'secondary';
   };
+
+  const getRoleTranslation = (role: string) => {
+    const roleMap: Record<string, string> = {
+      'superadmin': t('superadmin') || 'Super Admin',
+      'regionadmin': t('regionadmin') || 'Region Admin',
+      'sectoradmin': t('sectoradmin') || 'Sektor Admin',
+      'schooladmin': t('schooladmin') || 'Məktəb Admin',
+      'user': t('user') || 'İstifadəçi'
+    };
+    return roleMap[role] || role;
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-6">
+          <h3 className="text-lg font-medium mb-4">{t('users') || 'İstifadəçilər'}</h3>
+          <div className="space-y-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[200px]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <TooltipProvider>
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t('fullName')}</TableHead>
-              <TableHead>{t('email')}</TableHead>
-              <TableHead>{t('role')}</TableHead>
-              <TableHead>{t('lastLogin')}</TableHead>
-              <TableHead>{t('status')}</TableHead>
-              <TableHead className="text-right">{t('actions')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  {t('noUsers')}
-                </TableCell>
-              </TableRow>
-            ) : (
-              users.map((user) => (
-                renderRow ? (
-                  <React.Fragment key={user.id}>
-                    {renderRow(user)}
-                  </React.Fragment>
-                ) : (
+    <div className="bg-white rounded-lg shadow">
+      <div className="p-6">
+        <h3 className="text-lg font-medium mb-4">{t('users') || 'İstifadəçilər'}</h3>
+        
+        {users.length === 0 ? (
+          <p className="text-center py-8 text-gray-500">
+            {t('noUsersFound') || 'İstifadəçi tapılmadı'}
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('name') || 'Ad'}</TableHead>
+                  <TableHead>{t('email') || 'Email'}</TableHead>
+                  <TableHead>{t('role') || 'Rol'}</TableHead>
+                  <TableHead>{t('entity') || 'Təşkilat'}</TableHead>
+                  <TableHead>{t('status') || 'Status'}</TableHead>
+                  <TableHead>{t('lastLogin') || 'Son giriş'}</TableHead>
+                  <TableHead className="text-right">{t('actions') || 'Əməliyyatlar'}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.full_name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {getRoleText(user.role)}
+                        {getRoleTranslation(user.role)}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {user.last_login
-                        ? new Date(user.last_login).toLocaleDateString()
-                        : t('never')}
+                      {user.role === 'regionadmin' && user.region ? user.region : 
+                       user.role === 'sectoradmin' && user.sector ? user.sector :
+                       user.role === 'schooladmin' && user.school ? user.school : '-'}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.status === 'active' ? 'success' : 'destructive'}>
-                        {user.status === 'active' ? t('active') : t('inactive')}
+                      <Badge variant={getStatusBadgeVariant(user.status)}>
+                        {user.status === 'active' ? (t('active') || 'Aktiv') : (t('inactive') || 'Deaktiv')}
                       </Badge>
                     </TableCell>
+                    <TableCell>{user.last_login ? formatDate(user.last_login) : '-'}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => onViewDetails(user)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{t('viewDetails')}</p>
-                          </TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => onEdit(user)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{t('edit')}</p>
-                          </TooltipContent>
-                        </Tooltip>
-
-                        {currentUserRole === 'superadmin' && (
-                          <>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {/* Implement reset password */}}
-                                >
-                                  <Lock className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{t('resetPassword')}</p>
-                              </TooltipContent>
-                            </Tooltip>
-
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => onDelete(user)}
-                                  className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{t('delete')}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </>
-                        )}
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">{t('openMenu') || 'Menyu aç'}</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            {t('edit') || 'Redaktə et'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeleteUser(user)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {t('delete') || 'Sil'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                )
-              ))
-            )}
-          </TableBody>
-        </Table>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
-    </TooltipProvider>
+
+      {selectedUser && (
+        <>
+          <EditUserDialog
+            isOpen={isEditDialogOpen}
+            onClose={() => setIsEditDialogOpen(false)}
+            onSave={handleUpdateUser}
+            user={selectedUser}
+          />
+
+          <DeleteConfirmDialog
+            isOpen={isDeleteDialogOpen}
+            onClose={() => setIsDeleteDialogOpen(false)}
+            onConfirm={confirmDeleteUser}
+            title={t('deleteUser') || 'İstifadəçini sil'}
+            description={t('deleteUserConfirmation') || 'Bu istifadəçini silmək istədiyinizə əminsiniz?'}
+            isDeleting={isDeleting}
+          />
+        </>
+      )}
+    </div>
   );
 };
 

@@ -24,6 +24,8 @@ export interface SchoolData {
   student_count?: number;
   teacher_count?: number;
   completion_rate?: number;
+  type?: string;
+  language?: string;
   created_at: string;
   updated_at: string;
 }

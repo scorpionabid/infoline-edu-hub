@@ -36,7 +36,11 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     school_id: user.school_id,
     status: user.status,
     language: user.language,
-    notifications: user.notifications,
+    notifications: user.notifications || {
+      email_notifications: true,
+      sms_notifications: false,
+      push_notifications: true,
+    },
   } : undefined;
 
   return (
