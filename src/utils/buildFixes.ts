@@ -127,3 +127,30 @@ export const safeStatusFilter = (status: any): '' | 'active' | 'inactive' => {
   }
   return status === '' ? '' : ensureValidStatus(status);
 };
+
+// Type safe property accessors
+export const safePropertyAccess = <T extends object, K extends keyof T>(obj: T, key: K): T[K] | undefined => {
+  return obj && typeof obj === 'object' ? obj[key] : undefined;
+};
+
+// Safe array element access
+export const safeArrayAccess = <T>(arr: T[], index: number): T | undefined => {
+  return Array.isArray(arr) && index >= 0 && index < arr.length ? arr[index] : undefined;
+};
+
+// Safe function parameter validation
+export const validateNotificationSettings = (settings: any) => {
+  if (!settings || typeof settings !== 'object') {
+    return {
+      email_notifications: true,
+      sms_notifications: false,
+      push_notifications: true,
+    };
+  }
+  
+  return {
+    email_notifications: Boolean(settings.email_notifications ?? true),
+    sms_notifications: Boolean(settings.sms_notifications ?? false), 
+    push_notifications: Boolean(settings.push_notifications ?? true),
+  };
+};

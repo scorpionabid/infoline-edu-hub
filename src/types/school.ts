@@ -78,7 +78,7 @@ export interface CreateSchoolData {
   name: string;
   region_id: string;
   sector_id: string;
-  status: 'active' | 'inactive';
+  status?: 'active' | 'inactive';
   admin_id?: string;
   admin_email?: string;
   phone?: string;

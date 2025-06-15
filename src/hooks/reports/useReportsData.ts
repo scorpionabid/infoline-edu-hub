@@ -1,130 +1,31 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { reportCache, CacheHelpers } from '@/services/reports/cacheService';
+import { 
+  DetailedSchoolPerformanceData,
+  DetailedRegionalComparisonData,
+  DetailedCategoryCompletionData,
+  DetailedSchoolDataByCategoryData,
+  DetailedDashboardStatistics,
+  ReportsFilters
+} from '@/types/report';
 
-// Types for report data
-export interface SchoolPerformanceData {
-  school_id: string;
-  school_name: string;
-  principal_name?: string;
-  region_id: string;
-  region_name: string;
-  sector_id: string;
-  sector_name: string;
-  student_count?: number;
-  teacher_count?: number;
-  completion_rate: number;
-  total_entries: number;
-  approved_entries: number;
-  pending_entries: number;
-  rejected_entries: number;
-  approval_rate: number;
-  last_submission?: string;
-  categories_covered: number;
-  phone?: string;
-  email?: string;
-  address?: string;
-  status: string;
-}
+// Safe type casting helper
+const safeCastArray = <T>(data: any): T[] => {
+  if (Array.isArray(data)) {
+    return data as T[];
+  }
+  return [];
+};
 
-export interface RegionalComparisonData {
-  region_id: string;
-  region_name: string;
-  total_schools: number;
-  active_schools: number;
-  total_sectors: number;
-  total_students: number;
-  total_teachers: number;
-  avg_completion_rate: number;
-  total_submissions: number;
-  approved_submissions: number;
-  pending_submissions: number;
-  rejected_submissions: number;
-  approval_rate: number;
-  schools_with_submissions: number;
-  submission_rate: number;
-}
-
-export interface CategoryCompletionData {
-  category_id: string;
-  category_name: string;
-  category_description?: string;
-  assignment: string;
-  deadline?: string;
-  total_columns: number;
-  required_columns: number;
-  schools_completed: number;
-  schools_partial: number;
-  schools_not_started: number;
-  total_schools: number;
-  completion_percentage: number;
-  total_submissions: number;
-  approved_submissions: number;
-  pending_submissions: number;
-  avg_completion_time_days?: number;
-}
-
-export interface SchoolDataByCategoryData {
-  column_id: string;
-  column_name: string;
-  column_type: string;
-  is_required: boolean;
-  order_index: number;
-  placeholder?: string;
-  help_text?: string;
-  options?: any;
-  validation?: any;
-  value?: string;
-  status: string;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: string;
-  approved_by?: string;
-  approved_at?: string;
-  rejected_by?: string;
-  rejection_reason?: string;
-}
-
-export interface DashboardStatistics {
-  total_schools: number;
-  active_schools: number;
-  total_regions?: number;
-  total_sectors?: number;
-  total_students: number;
-  total_teachers: number;
-  avg_completion_rate?: number;
-  completion_rate?: number; // For school admin
-  total_submissions: number;
-  approved_submissions: number;
-  pending_submissions: number;
-  rejected_submissions?: number;
-  approval_rate?: number;
-  schools_with_high_completion?: number;
-  schools_needing_attention?: number;
-  total_categories?: number;
-  completed_categories?: number;
-  recent_activities?: Array<{
-    school_name?: string;
-    action: string;
-    category: string;
-    status?: string;
-    timestamp: string;
-  }>;
-  top_performing_schools?: Array<{
-    school_name: string;
-    completion_rate: number;
-    total_submissions: number;
-  }>;
-}
-
-export interface ReportsFilters {
-  region_id?: string;
-  sector_id?: string;
-  category_id?: string;
-  date_from?: string;
-  date_to?: string;
-}
+const safeCastObject = <T>(data: any): T | null => {
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    return data as T;
+  }
+  return null;
+};
 
 export const useReportsData = () => {
   const [loading, setLoading] = useState(false);
@@ -134,7 +35,7 @@ export const useReportsData = () => {
   const getSchoolPerformanceReport = async (
     filters: ReportsFilters = {},
     useCache = true
-  ): Promise<SchoolPerformanceData[]> => {
+  ): Promise<DetailedSchoolPerformanceData[]> => {
     try {
       setLoading(true);
       setError(null);
@@ -142,7 +43,7 @@ export const useReportsData = () => {
       // Try cache first if enabled
       if (useCache) {
         const cacheKey = { ...filters, type: 'school_performance' };
-        const cached = reportCache.get<SchoolPerformanceData[]>('school_performance', cacheKey);
+        const cached = reportCache.get<DetailedSchoolPerformanceData[]>('school_performance', cacheKey);
         if (cached) {
           setLoading(false);
           return cached;
@@ -162,7 +63,7 @@ export const useReportsData = () => {
         throw new Error(error.message);
       }
 
-      const result = data || [];
+      const result = safeCastArray<DetailedSchoolPerformanceData>(data);
       
       // Cache the result
       if (useCache) {
@@ -185,7 +86,7 @@ export const useReportsData = () => {
   const getRegionalComparisonReport = async (
     filters: { date_from?: string; date_to?: string } = {},
     useCache = true
-  ): Promise<RegionalComparisonData[]> => {
+  ): Promise<DetailedRegionalComparisonData[]> => {
     try {
       setLoading(true);
       setError(null);
@@ -193,7 +94,7 @@ export const useReportsData = () => {
       // Try cache first if enabled
       if (useCache) {
         const cacheKey = { ...filters, type: 'regional_comparison' };
-        const cached = reportCache.get<RegionalComparisonData[]>('regional_comparison', cacheKey);
+        const cached = reportCache.get<DetailedRegionalComparisonData[]>('regional_comparison', cacheKey);
         if (cached) {
           setLoading(false);
           return cached;
@@ -215,7 +116,7 @@ export const useReportsData = () => {
         throw new Error(error.message);
       }
 
-      const result = data || [];
+      const result = safeCastArray<DetailedRegionalComparisonData>(data);
       
       // Cache the result for longer (10 minutes for regional data)
       if (useCache) {
@@ -241,7 +142,7 @@ export const useReportsData = () => {
   // Function to get category completion report
   const getCategoryCompletionReport = async (
     filters: ReportsFilters = {}
-  ): Promise<CategoryCompletionData[]> => {
+  ): Promise<DetailedCategoryCompletionData[]> => {
     try {
       setLoading(true);
       setError(null);
@@ -257,7 +158,7 @@ export const useReportsData = () => {
         throw new Error(error.message);
       }
 
-      return data || [];
+      return safeCastArray<DetailedCategoryCompletionData>(data);
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to fetch category completion report';
       setError(errorMessage);
@@ -272,7 +173,7 @@ export const useReportsData = () => {
   const getSchoolDataByCategory = async (
     school_id: string,
     category_id: string
-  ): Promise<SchoolDataByCategoryData[]> => {
+  ): Promise<DetailedSchoolDataByCategoryData[]> => {
     try {
       setLoading(true);
       setError(null);
@@ -287,7 +188,7 @@ export const useReportsData = () => {
         throw new Error(error.message);
       }
 
-      return data || [];
+      return safeCastArray<DetailedSchoolDataByCategoryData>(data);
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to fetch school data by category';
       setError(errorMessage);
@@ -301,7 +202,7 @@ export const useReportsData = () => {
   // Function to get dashboard statistics
   const getDashboardStatistics = async (
     filters: { region_id?: string; sector_id?: string } = {}
-  ): Promise<DashboardStatistics | null> => {
+  ): Promise<DetailedDashboardStatistics | null> => {
     try {
       setLoading(true);
       setError(null);
@@ -330,7 +231,7 @@ export const useReportsData = () => {
         throw new Error(error.message);
       }
 
-      return data || null;
+      return safeCastObject<DetailedDashboardStatistics>(data);
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to fetch dashboard statistics';
       setError(errorMessage);
@@ -425,7 +326,7 @@ export const useReportsData = () => {
 
 // Hook specifically for school column table data
 export const useSchoolColumnData = (school_id?: string, category_id?: string) => {
-  const [data, setData] = useState<SchoolDataByCategoryData[]>([]);
+  const [data, setData] = useState<DetailedSchoolDataByCategoryData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { getSchoolDataByCategory } = useReportsData();
@@ -464,7 +365,7 @@ export const useSchoolColumnData = (school_id?: string, category_id?: string) =>
 
 // Hook specifically for dashboard statistics
 export const useDashboardData = (region_id?: string, sector_id?: string) => {
-  const [data, setData] = useState<DashboardStatistics | null>(null);
+  const [data, setData] = useState<DetailedDashboardStatistics | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { getDashboardStatistics } = useReportsData();
@@ -494,14 +395,4 @@ export const useDashboardData = (region_id?: string, sector_id?: string) => {
     error,
     refetch: fetchData,
   };
-};
-
-// Export types for use in components
-export type {
-  SchoolPerformanceData,
-  RegionalComparisonData,
-  CategoryCompletionData,
-  SchoolDataByCategoryData,
-  DashboardStatistics,
-  ReportsFilters,
 };
