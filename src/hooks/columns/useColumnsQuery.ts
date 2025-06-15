@@ -1,21 +1,12 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnType, ColumnOption } from '@/types/column';
-import { transformRawColumnData } from '@/utils/columnOptionsParser';
+import { supabase } from '@/lib/supabase';
+import { Column, ColumnOption } from '@/types/column';
 
-interface UseColumnsQueryOptions {
-  categoryId?: string;
-  status?: 'all' | 'active' | 'inactive' | 'deleted';
-  enabled?: boolean;
-}
-
-export const useColumnsQuery = (options: UseColumnsQueryOptions = {}) => {
-  const { categoryId, status = 'active', enabled = true } = options;
-
+export const useColumnsQuery = (categoryId?: string) => {
   return useQuery({
-    queryKey: ['columns', categoryId, status],
-    queryFn: async (): Promise<Column[]> => {
+    queryKey: ['columns-query', categoryId],
+    queryFn: async () => {
       let query = supabase
         .from('columns')
         .select('*')
@@ -25,10 +16,6 @@ export const useColumnsQuery = (options: UseColumnsQueryOptions = {}) => {
         query = query.eq('category_id', categoryId);
       }
 
-      if (status !== 'all') {
-        query = query.eq('status', status);
-      }
-
       const { data, error } = await query;
 
       if (error) {
@@ -36,19 +23,43 @@ export const useColumnsQuery = (options: UseColumnsQueryOptions = {}) => {
         throw error;
       }
 
-      // Type conversion for column data with proper transformation
-      return (data || []).map(column => {
-        const transformed = transformRawColumnData(column);
+      return (data || []).map((item: any): Column => {
+        const options = item.options 
+          ? (typeof item.options === 'string' ? JSON.parse(item.options) : item.options)
+          : [];
+          
+        const validation = item.validation
+          ? (typeof item.validation === 'string' ? JSON.parse(item.validation) : item.validation)
+          : null;
+          
+        const formattedOptions = Array.isArray(options) 
+          ? options.map((opt: any): ColumnOption => ({
+              id: opt.id || String(Math.random()),
+              label: opt.label || '',
+              value: opt.value || ''
+            }))
+          : [];
+        
         return {
-          ...column,
-          type: column.type as ColumnType,
-          options: transformed.options || [],
-          validation: column.validation || {},
-          description: transformed.description || column.description || '',
-          section: column.section || ''
-        } as Column;
+          id: item.id,
+          category_id: item.category_id,
+          name: item.name,
+          type: item.type,
+          is_required: item.is_required,
+          placeholder: item.placeholder || '',
+          help_text: item.help_text || '',
+          description: item.description || '',
+          section: item.section || '',
+          order_index: item.order_index,
+          status: item.status,
+          validation: validation,
+          default_value: item.default_value || '',
+          options: formattedOptions,
+          created_at: item.created_at,
+          updated_at: item.updated_at
+        };
       });
     },
-    enabled: enabled
+    enabled: true
   });
 };

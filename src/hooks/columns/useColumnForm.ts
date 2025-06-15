@@ -1,66 +1,95 @@
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { Column, ColumnFormData, UseColumnFormProps } from '@/types/column';
 import { toast } from 'sonner';
-import { ColumnFormValues, Column, UseColumnFormProps } from '@/types/column';
-import { useColumnMutations } from './mutations/useColumnMutations';
-
-const columnFormSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  type: z.string().min(1, 'Type is required'),
-  category_id: z.string().min(1, 'Category is required'),
-  placeholder: z.string().optional(),
-  help_text: z.string().optional(),
-  is_required: z.boolean().default(true),
-  default_value: z.string().optional(),
-  options: z.any().optional(),
-  validation: z.any().optional(),
-  order_index: z.number().default(0),
-  status: z.enum(['active', 'inactive']).default('active'),
-});
 
 export const useColumnForm = ({ column, categoryId, onSuccess }: UseColumnFormProps) => {
-  const { createColumnAsync, updateColumnAsync, isCreating, isUpdating } = useColumnMutations();
-  
-  const form = useForm<ColumnFormValues>({
-    resolver: zodResolver(columnFormSchema),
-    defaultValues: {
-      name: column?.name || '',
-      type: column?.type || 'text',
-      category_id: categoryId,
-      placeholder: column?.placeholder || '',
-      help_text: column?.help_text || '',
-      is_required: column?.is_required ?? true,
-      default_value: column?.default_value || '',
-      options: column?.options || [],
-      validation: column?.validation || {},
-      order_index: column?.order_index || 0,
-      status: column?.status || 'active',
+  const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const initialData: ColumnFormData = {
+    name: column?.name || '',
+    type: column?.type || 'text',
+    category_id: column?.category_id || categoryId,
+    is_required: column?.is_required || false,
+    placeholder: column?.placeholder || '',
+    help_text: column?.help_text || '',
+    description: column?.description || '',
+    default_value: column?.default_value || '',
+    options: column?.options || [],
+    validation: column?.validation || null,
+    order_index: column?.order_index || 0,
+    status: column?.status || 'active'
+  };
+
+  const createMutation = useMutation({
+    mutationFn: async (data: ColumnFormData) => {
+      const { data: result, error } = await supabase
+        .from('columns')
+        .insert([data])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      queryClient.invalidateQueries({ queryKey: ['category-columns'] });
+      toast.success('Sütun uğurla yaradıldı');
+      onSuccess();
+    },
+    onError: (error) => {
+      console.error('Error creating column:', error);
+      toast.error('Sütun yaradılarkən xəta baş verdi');
+    }
   });
 
-  const isLoading = isCreating || isUpdating;
+  const updateMutation = useMutation({
+    mutationFn: async (data: ColumnFormData) => {
+      if (!column?.id) throw new Error('Column ID is required for update');
 
-  const onSubmit = async (data: ColumnFormValues) => {
-    try {
-      if (column) {
-        await updateColumnAsync({ columnId: column.id, data });
-        toast.success('Column updated successfully');
-      } else {
-        await createColumnAsync({ categoryId, data });
-        toast.success('Column created successfully');
-      }
+      const { data: result, error } = await supabase
+        .from('columns')
+        .update(data)
+        .eq('id', column.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      queryClient.invalidateQueries({ queryKey: ['category-columns'] });
+      toast.success('Sütun uğurla yeniləndi');
       onSuccess();
-    } catch (error) {
-      console.error('Form submission error:', error);
-      toast.error('Failed to save column');
+    },
+    onError: (error) => {
+      console.error('Error updating column:', error);
+      toast.error('Sütun yenilənərkən xəta baş verdi');
+    }
+  });
+
+  const handleSubmit = async (formData: ColumnFormData) => {
+    setIsSubmitting(true);
+    try {
+      if (column?.id) {
+        await updateMutation.mutateAsync(formData);
+      } else {
+        await createMutation.mutateAsync(formData);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return {
-    form,
-    isLoading,
-    onSubmit: form.handleSubmit(onSubmit),
+    initialData,
+    handleSubmit,
+    isSubmitting: isSubmitting || createMutation.isPending || updateMutation.isPending,
+    isLoading: createMutation.isPending || updateMutation.isPending
   };
 };

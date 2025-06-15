@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -37,7 +38,6 @@ const UserList: React.FC<UserListProps> = ({
   refreshTrigger,
   filterParams = {}
 }) => {
-  // Ensure users is always an array
   const safeUsers = Array.isArray(users) ? users : [];
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,7 +79,6 @@ const UserList: React.FC<UserListProps> = ({
     }
   };
 
-  // Calculate if we should show pagination
   const showPagination = typeof currentPage === 'number' && 
     typeof totalPages === 'number' && 
     totalPages > 1 && 
@@ -88,16 +87,16 @@ const UserList: React.FC<UserListProps> = ({
   return (
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{t('users')}</CardTitle>
+        <CardTitle>{t('navigation.users')}</CardTitle>
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
             <Filter className="h-4 w-4 mr-2" />
-            {t('filter')}
+            {t('common.filter')}
           </Button>
           {onAddUser && (
             <Button size="sm" onClick={onAddUser}>
               <UserPlus className="h-4 w-4 mr-2" />
-              {t('addUser')}
+              {t('users.addUser')}
             </Button>
           )}
         </div>
@@ -107,7 +106,7 @@ const UserList: React.FC<UserListProps> = ({
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={t('searchUsers')}
+              placeholder={t('users.searchUsers')}
               className="pl-8"
               value={searchQuery}
               onChange={handleSearchChange}
@@ -124,8 +123,7 @@ const UserList: React.FC<UserListProps> = ({
 
           {showFilters && (
             <div className="bg-muted/50 p-3 rounded-md">
-              <h4 className="text-sm font-medium mb-2">{t('filters')}</h4>
-              {/* Filter controls would go here */}
+              <h4 className="text-sm font-medium mb-2">{t('users.filters')}</h4>
             </div>
           )}
 
@@ -135,7 +133,7 @@ const UserList: React.FC<UserListProps> = ({
             </div>
           ) : safeUsers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchQuery ? (t('noUsersFound') || 'No users found') : (t('noUsers') || 'No users available')}
+              {searchQuery ? t('users.noUsersFound') : t('users.noUsers')}
             </div>
           ) : (
             <div className="space-y-2">
@@ -149,10 +147,10 @@ const UserList: React.FC<UserListProps> = ({
                     <div className="text-sm text-muted-foreground">{user.email}</div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Badge variant={getRoleBadgeVariant(user.role)}>{user.role}</Badge>
+                    <Badge variant={getRoleBadgeVariant(user.role)}>{t(`roles.${user.role}`)}</Badge>
                     {onEditUser && (
                       <Button variant="ghost" size="sm" onClick={() => onEditUser(user)}>
-                        {t('edit')}
+                        {t('common.edit')}
                       </Button>
                     )}
                     {onDeleteUser && (
@@ -162,7 +160,7 @@ const UserList: React.FC<UserListProps> = ({
                         className="text-destructive hover:text-destructive"
                         onClick={() => onDeleteUser(user)}
                       >
-                        {t('delete')}
+                        {t('common.delete')}
                       </Button>
                     )}
                   </div>
@@ -171,7 +169,6 @@ const UserList: React.FC<UserListProps> = ({
             </div>
           )}
 
-          {/* Pagination */}
           {showPagination && (
             <div className="mt-6">
               <Pagination

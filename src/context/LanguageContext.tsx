@@ -65,7 +65,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const t = useCallback((key: string, options?: any): string => {
     const translated = i18n.t(key, options);
-    // Ensure we always return a string
     return typeof translated === 'string' ? translated : key;
   }, [i18n]);
 
@@ -94,7 +93,6 @@ export const useLanguage = (): LanguageContextProps => {
   return context;
 };
 
-// For backward compatibility
 export const useLanguageSafe = (): LanguageContextProps => {
   const context = useContext(LanguageContext);
   if (!context) {

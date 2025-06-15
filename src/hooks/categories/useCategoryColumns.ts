@@ -3,9 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Column, ColumnOption } from "@/types/column";
 
-/**
- * Hook to fetch columns for a specific category
- */
 const useCategoryColumns = (categoryId: string | undefined) => {
   const query = useQuery({
     queryKey: ['category-columns', categoryId],
@@ -20,9 +17,7 @@ const useCategoryColumns = (categoryId: string | undefined) => {
         
       if (error) throw error;
       
-      // Convert to Column[] with proper type handling
       return (data || []).map((item: any): Column => {
-        // Parse JSON fields if they're stored as strings
         const options = item.options 
           ? (typeof item.options === 'string' ? JSON.parse(item.options) : item.options)
           : [];
@@ -31,7 +26,6 @@ const useCategoryColumns = (categoryId: string | undefined) => {
           ? (typeof item.validation === 'string' ? JSON.parse(item.validation) : item.validation)
           : null;
           
-        // Format options correctly
         const formattedOptions = Array.isArray(options) 
           ? options.map((opt: any): ColumnOption => ({
               id: opt.id || String(Math.random()),
@@ -56,8 +50,7 @@ const useCategoryColumns = (categoryId: string | undefined) => {
           created_at: item.created_at,
           updated_at: item.updated_at,
           description: item.description || '',
-          section: item.section || '',
-          color: item.color || '',
+          section: item.section || ''
         };
       });
     },

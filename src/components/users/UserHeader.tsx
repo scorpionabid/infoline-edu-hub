@@ -31,7 +31,6 @@ const UserHeader: React.FC<UserHeaderProps> = ({
   onFilterChange = () => {},
   onAddUser = () => {}
 }) => {
-  // Ensure entityTypes is always an array
   const safeEntityTypes = Array.isArray(entityTypes) ? entityTypes : [];
   const { t } = useLanguage();
   const [showFilters, setShowFilters] = useState(false);
@@ -55,39 +54,30 @@ const UserHeader: React.FC<UserHeaderProps> = ({
   const userRoles = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'] as const;
   const userStatuses = ['active', 'inactive'] as const;
   
-  // Helper to safely get array from filter value
   const getArrayFromFilter = (value: string | string[] | undefined): string[] => {
     if (!value) return [];
     if (Array.isArray(value)) return value;
     return [value];
   };
   
-  // Helper to safely get the first value from a filter
   const getFirstFromFilter = (value: string | string[] | undefined): string => {
     if (!value) return '';
     if (Array.isArray(value)) return value[0] || '';
     return value;
-  };
-  
-  // Helper to check if a value is in an array
-  const isValueInFilter = (value: string, filter: string | string[] | undefined): boolean => {
-    if (!filter) return false;
-    if (Array.isArray(filter)) return filter.includes(value);
-    return filter === value;
   };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">{t('users') || 'İstifadəçilər'}</h1>
+          <h1 className="text-2xl font-bold">{t('navigation.users')}</h1>
           <p className="text-muted-foreground">
-            {t('usersDescription') || 'Sistem istifadəçilərini idarə edin'}
+            {t('users.usersDescription')}
           </p>
         </div>
         <Button onClick={handleAddUser}>
           <Plus className="h-4 w-4 mr-2" />
-          {t('addUser') || 'İstifadəçi əlavə et'}
+          {t('users.addUser')}
         </Button>
       </div>
 
@@ -95,7 +85,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder={t('searchUsers') || 'İstifadəçi axtarın...'}
+            placeholder={t('users.searchUsers')}
             value={currentFilter?.search || ''}
             onChange={(e) => handleFilterChange('search', e.target.value)}
             className="pl-10"
@@ -106,13 +96,13 @@ const UserHeader: React.FC<UserHeaderProps> = ({
           onClick={() => setShowFilters(!showFilters)}
         >
           <Filter className="h-4 w-4 mr-2" />
-          {t('filters') || 'Filterlər'}
+          {t('users.filters')}
         </Button>
         {((currentFilter.role && currentFilter.role.length > 0) || 
           (currentFilter.status && currentFilter.status.length > 0) || 
           currentFilter.schoolId) && (
           <Button variant="ghost" onClick={clearFilters}>
-            {t('clearFilters') || 'Filteri sil'}
+            {t('users.clearFilters')}
           </Button>
         )}
       </div>
@@ -121,7 +111,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
           <div>
             <label className="text-sm font-medium mb-2 block">
-              {t('role') || 'Rol'}
+              {t('users.role')}
             </label>
             <Select
               value={Array.isArray(currentFilter?.role) 
@@ -132,13 +122,13 @@ const UserHeader: React.FC<UserHeaderProps> = ({
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder={t('selectRole') || 'Rol seçin'} />
+                <SelectValue placeholder={t('users.selectRole')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t('allRoles') || 'Bütün rollar'}</SelectItem>
+                <SelectItem value="">{t('users.allRoles')}</SelectItem>
                 {userRoles.map((role) => (
                   <SelectItem key={role} value={role}>
-                    {t(`role.${role}`) || role}
+                    {t(`roles.${role}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -147,7 +137,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
 
           <div>
             <label className="text-sm font-medium mb-2 block">
-              {t('status') || 'Status'}
+              {t('common.status')}
             </label>
             <Select
               value={getFirstFromFilter(currentFilter.status)}
@@ -156,32 +146,29 @@ const UserHeader: React.FC<UserHeaderProps> = ({
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder={t('selectStatus') || 'Status seçin'} />
+                <SelectValue placeholder={t('users.selectStatus')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t('allStatuses') || 'Bütün statuslar'}</SelectItem>
-                {userStatuses.map((status) => {
-                  const statusLabel = status === 'active' ? 'active' : 'inactive';
-                  return (
-                    <SelectItem key={status} value={status}>
-                      {t(`status.${statusLabel}`) || status}
-                    </SelectItem>
-                  );
-                })}
+                <SelectItem value="">{t('users.allStatuses')}</SelectItem>
+                {userStatuses.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {t(`common.${status}`)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div>
             <label className="text-sm font-medium mb-2 block">
-              {t('school') || 'Məktəb'}
+              {t('users.school')}
             </label>
             {safeEntityTypes
             .filter((t) => t === 'school' || t === 'sector')
             .map((type) => (
               <Input
                 key={type}
-                placeholder={t('schoolId') || 'Məktəb ID-si'}
+                placeholder={t('users.schoolId')}
                 value={currentFilter.schoolId || ''}
                 onChange={(e) => handleFilterChange('schoolId', e.target.value)}
               />
@@ -190,11 +177,10 @@ const UserHeader: React.FC<UserHeaderProps> = ({
         </div>
       )}
 
-      {/* Filter pills */}
       <div className="flex flex-wrap gap-2">
         {getArrayFromFilter(currentFilter?.role).map((role) => (
           <div key={role} className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center">
-            {t('role')}: {t(role) || role}
+            {t('users.role')}: {t(`roles.${role}`)}
             <Button
               variant="ghost"
               size="sm"
@@ -212,7 +198,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
         
         {getArrayFromFilter(currentFilter?.status).map((status) => (
           <div key={status} className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center">
-            {t('status')}: {t(`status.${status.toLowerCase()}`) || status}
+            {t('common.status')}: {t(`common.${status.toLowerCase()}`)}
             <Button
               variant="ghost"
               size="sm"
@@ -230,7 +216,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
         
         {currentFilter?.schoolId && (
           <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center">
-            {t('school')}: {currentFilter.schoolId}
+            {t('users.school')}: {currentFilter.schoolId}
             <Button
               variant="ghost"
               size="sm"

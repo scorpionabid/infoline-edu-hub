@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { Region } from '@/types/supabase';
 import { EnhancedSector } from '@/types/sector';
 import SectorForm from './SectorForm';
@@ -23,7 +23,7 @@ const EditSectorDialog: React.FC<EditSectorDialogProps> = ({
   onSubmit,
   isSubmitting = false
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
 
   const handleSubmit = async (data: Partial<EnhancedSector>) => {
     const success = await onSubmit({
@@ -40,7 +40,7 @@ const EditSectorDialog: React.FC<EditSectorDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t('editSector')}</DialogTitle>
+          <DialogTitle>{t('sectors.editSector')}</DialogTitle>
         </DialogHeader>
         <SectorForm
           initialData={sector}

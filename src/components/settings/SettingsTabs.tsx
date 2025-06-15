@@ -1,81 +1,94 @@
 
 import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { useLanguage } from '@/context/LanguageContext';
-import { Shield, Globe, Bell, Users, Mail } from 'lucide-react';
-import AccountSettings from './AccountSettings';
-import SecuritySettings from './SecuritySettings';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { User, Bell, Lock, Palette, Users, Globe } from 'lucide-react';
+import ProfileSettings from './ProfileSettings';
 import NotificationSettings from './NotificationSettings';
+import SecuritySettings from './SecuritySettings';
+import AppearanceSettings from './AppearanceSettings';
 import TeamSettings from './TeamSettings';
-import LanguageSettingsForm from './LanguageSettingsForm';
+import { useLanguage } from '@/context/LanguageContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const SettingsTabs = () => {
-  const { t } = useLanguage();
-  
+const SettingsTabs: React.FC = () => {
+  const { t, currentLanguage, setLanguage, availableLanguages, languages } = useLanguage();
+
   return (
-    <Tabs defaultValue="account" className="space-y-4">
-      <TabsList className="grid grid-cols-5 md:w-fit w-full">
-        <TabsTrigger value="account" className="flex items-center">
-          <Users className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">{t('account')}</span>
+    <Tabs defaultValue="profile" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-6">
+        <TabsTrigger value="profile" className="flex items-center gap-2">
+          <User className="h-4 w-4" />
+          {t('settings.profile')}
         </TabsTrigger>
-        <TabsTrigger value="security" className="flex items-center">
-          <Shield className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">{t('security')}</span>
+        <TabsTrigger value="notifications" className="flex items-center gap-2">
+          <Bell className="h-4 w-4" />
+          {t('settings.notifications')}
         </TabsTrigger>
-        <TabsTrigger value="notifications" className="flex items-center">
-          <Bell className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">{t('notifications')}</span>
+        <TabsTrigger value="security" className="flex items-center gap-2">
+          <Lock className="h-4 w-4" />
+          {t('settings.security')}
         </TabsTrigger>
-        <TabsTrigger value="team" className="flex items-center">
-          <Mail className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">{t('team')}</span>
+        <TabsTrigger value="appearance" className="flex items-center gap-2">
+          <Palette className="h-4 w-4" />
+          {t('settings.appearance')}
         </TabsTrigger>
-        <TabsTrigger value="language" className="flex items-center">
-          <Globe className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">{t('language')}</span>
+        <TabsTrigger value="language" className="flex items-center gap-2">
+          <Globe className="h-4 w-4" />
+          {t('settings.language')}
+        </TabsTrigger>
+        <TabsTrigger value="team" className="flex items-center gap-2">
+          <Users className="h-4 w-4" />
+          {t('settings.team')}
         </TabsTrigger>
       </TabsList>
-      
-      <TabsContent value="account">
-        <Card>
-          <CardContent className="pt-6">
-            <AccountSettings />
-          </CardContent>
-        </Card>
+
+      <TabsContent value="profile">
+        <ProfileSettings />
       </TabsContent>
-      
-      <TabsContent value="security">
-        <Card>
-          <CardContent className="pt-6">
-            <SecuritySettings />
-          </CardContent>
-        </Card>
-      </TabsContent>
-      
+
       <TabsContent value="notifications">
-        <Card>
-          <CardContent className="pt-6">
-            <NotificationSettings />
-          </CardContent>
-        </Card>
+        <NotificationSettings />
       </TabsContent>
-      
-      <TabsContent value="team">
-        <Card>
-          <CardContent className="pt-6">
-            <TeamSettings />
-          </CardContent>
-        </Card>
+
+      <TabsContent value="security">
+        <SecuritySettings />
       </TabsContent>
-      
+
+      <TabsContent value="appearance">
+        <AppearanceSettings />
+      </TabsContent>
+
       <TabsContent value="language">
         <Card>
-          <CardContent className="pt-6">
-            <LanguageSettingsForm />
+          <CardHeader>
+            <CardTitle>{t('settings.language')}</CardTitle>
+            <CardDescription>
+              {t('settings.languageDescription')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('common.selectLanguage')}</label>
+              <Select value={currentLanguage} onValueChange={setLanguage}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableLanguages.map((lang) => (
+                    <SelectItem key={lang} value={lang}>
+                      {languages[lang]?.flag} {languages[lang]?.nativeName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
+      </TabsContent>
+
+      <TabsContent value="team">
+        <TeamSettings />
       </TabsContent>
     </Tabs>
   );
