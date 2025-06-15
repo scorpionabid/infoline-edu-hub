@@ -12,7 +12,7 @@ export const useCreateUser = () => {
   const user = useAuthStore(selectUser);
 
   const createUser = useCallback(async (userData: UserFormData) => {
-    if (!userData.fullName || !userData.email || !userData.password) {
+    if (!userData.full_name || !userData.email) {
       toast.error(t('requiredFieldsMissing') || 'Zəhmət olmasa bütün vacib sahələri doldurun');
       return { success: false, error: 'Məlumatlar natamamdır' };
     }
@@ -22,18 +22,20 @@ export const useCreateUser = () => {
     try {
       console.log('İstifadəçi yaratma başladı:', {
         email: userData.email,
-        fullName: userData.fullName,
-        role: userData.role,
-        hasPassword: !!userData.password
+        fullName: userData.full_name,
+        role: userData.role
       });
+      
+      // Generate a temporary password if not provided
+      const tempPassword = `TempPass${Math.random().toString(36).substring(2, 15)}!`;
       
       // Supabase-də yeni istifadəçi yaratmaq
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           email: userData.email,
-          password: userData.password,
+          password: tempPassword,
           userData: {
-            full_name: userData.fullName,
+            full_name: userData.full_name,
             role: userData.role,
             region_id: userData.region_id || null,
             sector_id: userData.sector_id || null,

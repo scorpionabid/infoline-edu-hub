@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,13 +50,17 @@ export const useEnhancedNotifications = () => {
       const formattedNotifications: NotificationData[] = (data || []).map(notification => ({
         id: notification.id,
         title: notification.title,
-        description: notification.description,
-        type: notification.type || 'info',
-        priority: notification.priority || 'normal',
+        description: notification.message || '',
+        type: (['info', 'success', 'warning', 'error'].includes(notification.type)) 
+          ? notification.type as 'info' | 'success' | 'warning' | 'error'
+          : 'info',
+        priority: (['low', 'normal', 'high', 'urgent'].includes(notification.priority)) 
+          ? notification.priority as 'low' | 'normal' | 'high' | 'urgent'
+          : 'normal',
         is_read: notification.is_read || false,
         created_at: notification.created_at,
-        reference_id: notification.reference_id,
-        reference_type: notification.reference_type
+        reference_id: notification.related_entity_id,
+        reference_type: notification.related_entity_type
       }));
 
       setNotifications(formattedNotifications);

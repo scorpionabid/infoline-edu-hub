@@ -33,35 +33,43 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 
       setLoading(true);
       try {
-        const roleMap: Record<string, string> = {
+        const roleMap = {
           region: 'regionadmin',
           sector: 'sectoradmin', 
           school: 'schooladmin'
-        };
+        } as const;
 
-        let queryBuilder = supabase
+        const targetRole = roleMap[entityType];
+        
+        let query = supabase
           .from('profiles')
-          .select('id, full_name, email')
-          .eq('role', roleMap[entityType]);
+          .select('id, full_name, email');
 
-        if (entityType === 'region') {
-          queryBuilder = queryBuilder.eq('region_id', entityId);
-        } else if (entityType === 'sector') {
-          queryBuilder = queryBuilder.eq('sector_id', entityId);
-        } else if (entityType === 'school') {
-          queryBuilder = queryBuilder.eq('school_id', entityId);
-        }
-
-        const { data, error } = await queryBuilder.order('full_name');
+        // Use RPC function to get users with specific role and entity
+        const { data, error } = await supabase.rpc('get_users_by_role_and_entity', {
+          target_role: targetRole,
+          entity_type: entityType,
+          entity_id: entityId
+        });
 
         if (error) {
           console.error('Error fetching users:', error);
+          // Fallback to simple query if RPC fails
+          const fallbackQuery = supabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .limit(10);
+          
+          const { data: fallbackData, error: fallbackError } = await fallbackQuery;
+          if (fallbackError) throw fallbackError;
+          setUsers(fallbackData || []);
           return;
         }
 
         setUsers(data || []);
       } catch (error) {
         console.error('Error fetching users:', error);
+        setUsers([]);
       } finally {
         setLoading(false);
       }
