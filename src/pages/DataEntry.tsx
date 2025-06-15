@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { useDataEntryOperations } from '@/hooks/data-entry/useDataEntryOperations';
+import { useDataEntryManager } from '@/hooks/dataEntry/useDataEntryManager';
+import type { EntryStatus } from '@/hooks/dataEntry/useDataEntryManager';
 import { useCategories } from '@/hooks/categories/useCategories';
 import { useColumns } from '@/hooks/columns/useColumns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,7 +28,25 @@ const DataEntry: React.FC = () => {
     categoryId: categoryId || ''
   });
 
-  const { createDataEntry, updateDataEntry } = useDataEntryOperations();
+  const { 
+    handleSave,
+    handleSubmit,
+    isSaving,
+    isLoading: isDataLoading,
+    formData: managerFormData,
+    handleFieldChange: managerHandleFieldChange
+  } = useDataEntryManager({
+    categoryId,
+    schoolId,
+    userId: user?.id
+  });
+
+  // Sync local form data with manager's form data
+  useEffect(() => {
+    if (managerFormData && Object.keys(managerFormData).length > 0) {
+      setFormData(managerFormData);
+    }
+  }, [managerFormData]);
 
   useEffect(() => {
     if (!categoryId || !schoolId) {
@@ -37,7 +56,9 @@ const DataEntry: React.FC = () => {
   }, [categoryId, schoolId]);
 
   const handleInputChange = (columnId: string, value: any) => {
+    // Update both local state and manager's state
     setFormData(prev => ({ ...prev, [columnId]: value }));
+    managerHandleFieldChange(columnId, value);
   };
 
   const validateForm = () => {
@@ -57,30 +78,29 @@ const DataEntry: React.FC = () => {
     return true;
   };
 
-  const handleSubmit = async (status: 'draft' | 'pending') => {
+  const handleFormSubmit = async (status: EntryStatus) => {
     if (!categoryId || !schoolId || !user) return;
+
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
     try {
-      const entryData = {
-        school_id: schoolId,
-        category_id: categoryId,
-        entries: Object.entries(formData).map(([columnId, value]) => ({
-          column_id: columnId,
-          value: String(value)
-        })),
-        status
-      };
-
-      await createDataEntry(entryData);
-      
-      toast.success(
-        status === 'draft' 
-          ? t('dataSavedAsDraft') || 'Məlumatlar layihə kimi saxlanıldı'
-          : t('dataSubmittedForReview') || 'Məlumatlar yoxlanılmaq üçün göndərildi'
-      );
-      
-      navigate('/data-entry');
+      // For draft, use handleSave
+      if (status === 'draft') {
+        const success = await handleSave('draft');
+        if (success) {
+          toast.success(t('dataSavedAsDraft') || 'Məlumatlar layihə kimi saxlanıldı');
+          navigate('/data-entry');
+        }
+      } 
+      // For pending submission, use handleSubmit
+      else if (status === 'pending') {
+        const success = await handleSubmit();
+        if (success) {
+          toast.success(t('dataSubmittedForReview') || 'Məlumatlar yoxlanılmaq üçün göndərildi');
+          navigate('/data-entry');
+        }
+      }
     } catch (error) {
       console.error('Error submitting data:', error);
       toast.error(t('dataSubmissionFailed') || 'Məlumat göndərilməsində xəta baş verdi');
@@ -89,7 +109,7 @@ const DataEntry: React.FC = () => {
     }
   };
 
-  if (categoriesLoading || columnsLoading) {
+  if (categoriesLoading || columnsLoading || isDataLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -146,17 +166,17 @@ const DataEntry: React.FC = () => {
           <div className="flex justify-end gap-2 mt-6">
             <Button
               variant="outline"
-              onClick={() => handleSubmit('draft')}
+              onClick={() => handleFormSubmit('draft')}
               disabled={isSubmitting}
             >
               <Save className="h-4 w-4 mr-2" />
               {t('saveAsDraft') || 'Layihə kimi saxla'}
             </Button>
             <Button
-              onClick={() => handleSubmit('pending')}
+              onClick={() => handleFormSubmit('pending')}
               disabled={isSubmitting}
             >
-              {isSubmitting ? (
+              {isSubmitting || isSaving ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Send className="h-4 w-4 mr-2" />

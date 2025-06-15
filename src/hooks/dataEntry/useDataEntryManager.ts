@@ -19,7 +19,7 @@ interface DataEntryManagerOptions {
   autoSave?: boolean;
 }
 
-type EntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
+export type EntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 
 export const useDataEntryManager = (options?: DataEntryManagerOptions | CategoryAssignment) => {
   const user = useAuthStore(selectUser);
