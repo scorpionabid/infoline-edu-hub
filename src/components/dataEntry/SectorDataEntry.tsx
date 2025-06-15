@@ -22,14 +22,13 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
   const user = useAuthStore(selectUser);
 
   const handleDataEntry = (schoolId: string) => {
-    console.log('SectorDataEntry: Data entry requested for school:', schoolId);
     if (onDataEntry) {
       onDataEntry(schoolId);
     }
   };
 
   const handleSchoolSelect = (schoolId: string) => {
-    console.log('SectorDataEntry: School selected:', schoolId);
+    // School selected handler
   };
 
   return (

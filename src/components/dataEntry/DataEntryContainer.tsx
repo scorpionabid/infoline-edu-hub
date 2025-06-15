@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Loader2 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuthStore, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
@@ -15,6 +16,8 @@ import { useSchools } from '@/hooks/entities/useSchools';
 import DataEntryTabs from './DataEntryTabs';
 import SchoolManagement from './SchoolManagement';
 import { SimpleSchoolSelector } from './SimpleSchoolSelector';
+// Import DataEntry component from pages
+import DataEntry from '@/pages/DataEntry';
 
 interface DataEntryContainerProps {
   assignment?: 'all' | 'sectors';
@@ -27,12 +30,15 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
 }) => {
   const { t } = useLanguage();
   const { schoolId: urlSchoolId } = useParams();
+  const navigate = useNavigate();
   const user = useAuthStore(selectUser);
   const userRole = useAuthStore(selectUserRole);
   
   const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Categories hook-u yeniləmə
   const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useSchoolCategories({
@@ -43,17 +49,6 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
 
   const { schools, loading: schoolsLoading } = useSchools();
 
-  // Debug məlumatları
-  useEffect(() => {
-    console.log('DataEntryContainer debug:', {
-      assignment,
-      strictMode,
-      categoriesCount: categories.length,
-      categories: categories.map(c => ({ id: c.id, name: c.name, assignment: c.assignment })),
-      userRole,
-      user: user ? { id: user.id, role: userRole } : null
-    });
-  }, [categories, assignment, strictMode, userRole, user]);
 
   // School ID management
   useEffect(() => {
@@ -136,16 +131,63 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
       {userRole === 'sectoradmin' && (
         <SchoolManagement
           selectedSchoolId={selectedSchoolId}
-          onSchoolChange={setSelectedSchoolId}
+          onSchoolChange={(schoolId) => {
+            setSelectedSchoolId(schoolId);
+            // Reset selected category when school changes
+            setSelectedCategoryId(null);
+          }}
           schools={schools}
         />
       )}
       
       <DataEntryTabs
         categories={categories}
-        selectedCategory={selectedSchoolId}
-        onCategoryChange={setSelectedSchoolId}
+        selectedCategory={selectedCategoryId}
+        onCategoryChange={setSelectedCategoryId}
       />
+
+      {selectedCategoryId && selectedSchoolId ? (
+        <div className="mt-6">
+          <div className="p-4 border rounded-lg bg-muted/50 flex flex-col items-center justify-center">
+            {isNavigating ? (
+              <div className="flex items-center">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span className="text-sm">Məlumat daxil etmə səhifəsinə yönləndirilir...</span>
+              </div>
+            ) : (
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Məlumat daxil etmə səhifəsinə yönləndiriləcəksiniz
+                </p>
+                <Button 
+                  variant="default"
+                  onClick={() => {
+                    setIsNavigating(true);
+                    navigate(`/data-entry/${selectedCategoryId}/${selectedSchoolId}`);
+                  }}
+                  disabled={isNavigating}
+                >
+                  {isNavigating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Yönləndirilir...
+                    </>
+                  ) : (
+                    'Məlumat Daxil Etməyə Keçid'
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <Alert className="mt-6">
+          <AlertTitle>Məlumat daxil etmək üçün kateqoriya seçin</AlertTitle>
+          <AlertDescription>
+            Yuxarıdakı siyahıdan məlumat daxil etmək istədiyiniz kateqoriyanı seçin.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 };

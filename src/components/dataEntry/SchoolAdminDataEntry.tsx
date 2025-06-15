@@ -21,6 +21,9 @@ const SchoolAdminDataEntry: React.FC = () => {
   const { t } = useLanguage();
   const user = useAuthStore(selectUser);
   
+  // Get school ID from user data
+  const schoolId = user?.school_id || user?.schoolId;
+
   // Enhanced data entry manager with form state
   const {
     categories,
@@ -41,10 +44,14 @@ const SchoolAdminDataEntry: React.FC = () => {
     handleSave,
     resetForm,
     loadData
-  } = useDataEntryManager('all'); // Məktəb adminləri üçün yalnız 'all' assignment
+  } = useDataEntryManager({
+    // Obyekt şəklində parametrləri ötürürük
+    schoolId: schoolId as string, // Məktəb ID-sini ötürürük
+    userId: user?.id,             // İstifadəçi ID-sini ötürürük
+    autoSave: true,               // Avtomatik yadda saxlama aktivləşdiririk
+    enableRealTime: true          // Real-time yeniləməni aktivləşdiririk
+  });
 
-  // Get school ID from user data
-  const schoolId = user?.school_id || user?.schoolId;
 
   // Loading state
   if (loading || isLoading) {

@@ -24,6 +24,7 @@ import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
 import SectorDataEntry from "@/pages/SectorDataEntry"; // ✅ YENİ: Sektor məlumat daxil etmə
+import SchoolAdminDataEntry from "@/components/dataEntry/SchoolAdminDataEntry"; // ✅ YENİ: Məktəb admini məlumat daxil etmə
 import Profile from "@/pages/Profile";
 import ApprovalPage from "@/pages/Approval";
 import Statistics from "@/pages/Statistics";
@@ -168,8 +169,18 @@ const AppRoutes = () => (
       
       {/* ✅ YENİ: Ayrı məlumat daxil etmə route-ları */}
       <Route path="/data-entry" element={<DataEntry />} />
-      
       <Route path="/data-entry/:categoryId" element={<DataEntry />} />
+      <Route path="/data-entry/:categoryId/:schoolId" element={<DataEntry />} />
+
+      {/* ✅ YENİ: Məktəb admini məlumat daxil etmə route-u */}
+      <Route 
+        path="/school-data-entry" 
+        element={
+          <ProtectedRoute allowedRoles={['schooladmin']}>
+            <SchoolAdminDataEntry />
+          </ProtectedRoute>
+        } 
+      />
       
       {/* ✅ YENİ: Sektor məlumat daxil etmə - yalnız sektor adminləri üçün */}
       <Route 

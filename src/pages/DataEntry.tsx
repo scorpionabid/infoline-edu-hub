@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useDataEntryManager } from '@/hooks/dataEntry/useDataEntryManager';
 import type { EntryStatus } from '@/hooks/dataEntry/useDataEntryManager';
-import { useCategories } from '@/hooks/categories/useCategories';
+import { useSchoolCategories } from '@/hooks/categories/useCategoriesWithAssignment';
 import { useColumns } from '@/hooks/columns/useColumns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,12 +21,40 @@ const DataEntry: React.FC = () => {
   
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasInitialData, setHasInitialData] = useState(false);
 
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  // Fetch categories with assignment 'all' in strict mode
+  const { 
+    data: categories = [], 
+    isLoading: categoriesLoading, 
+    error: categoriesError 
+  } = useSchoolCategories({
+    assignment: 'all',
+    strictMode: true,
+    enabled: !!categoryId
+  });
   
-  const { data: columns = [], isLoading: columnsLoading } = useColumns({
+  // Fetch columns for the selected category
+  const { 
+    data: columns = [], 
+    isLoading: columnsLoading, 
+    error: columnsError 
+  } = useColumns({
     categoryId: categoryId || ''
   });
+  
+  // Log errors if any
+  useEffect(() => {
+    if (categoriesError) {
+      console.error('Error loading categories:', categoriesError);
+      toast.error(t('errorLoadingCategories') || 'Kateqoriyalar yüklənərkən xəta baş verdi');
+    }
+    
+    if (columnsError) {
+      console.error('Error loading columns:', columnsError);
+      toast.error(t('errorLoadingColumns') || 'Sütunlar yüklənərkən xəta baş verdi');
+    }
+  }, [categoriesError, columnsError, t]);
 
   const { 
     handleSave,
@@ -45,8 +73,17 @@ const DataEntry: React.FC = () => {
   useEffect(() => {
     if (managerFormData && Object.keys(managerFormData).length > 0) {
       setFormData(managerFormData);
+      setHasInitialData(true);
     }
   }, [managerFormData]);
+  
+  // Auto-navigate back if essential data is missing
+  useEffect(() => {
+    if (!categoryId || !schoolId) {
+      console.warn('Missing required parameters - navigating back to data entry');
+      navigate('/data-entry', { replace: true });
+    }
+  }, [categoryId, schoolId, navigate]);
 
   useEffect(() => {
     if (!categoryId || !schoolId) {
@@ -109,6 +146,7 @@ const DataEntry: React.FC = () => {
     }
   };
 
+  // Show loading state if any data is still loading
   if (categoriesLoading || columnsLoading || isDataLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -118,13 +156,52 @@ const DataEntry: React.FC = () => {
     );
   }
 
+  // Check if we have a valid category ID
+  if (!categoryId) {
+    return (
+      <div className="text-center py-8">
+        <h2 className="text-xl font-semibold mb-2">{t('categoryNotSelected') || 'Kateqoriya seçilməyib'}</h2>
+        <p className="text-muted-foreground mb-4">
+          {t('pleaseSelectCategoryFirst') || 'Zəhmət olmasa əvvəlcə məlumat daxil etmək istədiyiniz kateqoriyanı seçin'}
+        </p>
+        <Button onClick={() => navigate('/data-entry')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          {t('backToDataEntry') || 'Məlumat Giriş Səhifəsinə Qayıt'}
+        </Button>
+      </div>
+    );
+  }
+
+  // Check if we have a valid school ID
+  if (!schoolId) {
+    return (
+      <div className="text-center py-8">
+        <h2 className="text-xl font-semibold mb-2">{t('schoolNotSelected') || 'Məktəb seçilməyib'}</h2>
+        <p className="text-muted-foreground mb-4">
+          {t('pleaseSelectSchoolFirst') || 'Zəhmət olmasa əvvəlcə məktəbi seçin'}
+        </p>
+        <Button onClick={() => navigate('/data-entry')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          {t('backToDataEntry') || 'Məlumat Giriş Səhifəsinə Qayıt'}
+        </Button>
+      </div>
+    );
+  }
+
+  // Find the selected category and its columns
   const category = categories.find(cat => cat.id === categoryId);
   const categoryColumns = columns.filter(col => col.category_id === categoryId);
 
+  // Show category not found if no matching category is found
   if (!category) {
     return (
       <div className="text-center py-8">
-        <h2 className="text-xl font-semibold mb-2">{t('categoryNotFound') || 'Kateqoriya tapılmadı'}</h2>
+        <h2 className="text-xl font-semibold mb-2">
+          {t('categoryNotFound') || `"${categoryId}" ID-li kateqoriya tapılmadı`}
+        </h2>
+        <p className="text-muted-foreground mb-4">
+          {t('categoryMayBeDeleted') || 'Bu kateqoriya silinmiş və ya dəyişdirilmiş ola bilər'}
+        </p>
         <Button onClick={() => navigate('/data-entry')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           {t('backToDataEntry') || 'Məlumat Giriş Səhifəsinə Qayıt'}

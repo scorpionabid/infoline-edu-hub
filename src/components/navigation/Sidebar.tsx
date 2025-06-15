@@ -153,7 +153,7 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole: rawUserRole, isOpen, onTogg
     { 
       id: 'data-entry',
       label: t('dataEntry') || 'Məlumat daxiletmə', 
-      href: '/data-entry', 
+      href: isSchoolAdmin ? '/school-data-entry' : '/data-entry', 
       icon: FileText,
       visible: true
     },
