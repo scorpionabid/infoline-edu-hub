@@ -54,3 +54,14 @@ export interface ValidationResult {
   isValid: boolean;
   errors: string[];
 }
+
+// Export const values for runtime usage
+export const DATA_ENTRY_STATUSES: DataEntryStatus[] = ['draft', 'pending', 'approved', 'rejected', 'requires_revision'];
+
+export const DATA_ENTRY_STATUS_MAP: Record<DataEntryStatus, string> = {
+  'draft': 'Qaralama',
+  'pending': 'Gözləyir',
+  'approved': 'Təsdiqlənib',
+  'rejected': 'Rədd edilib',
+  'requires_revision': 'Düzəliş tələb olunur'
+};

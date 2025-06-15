@@ -4,7 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Sector, SectorStatus } from '@/types/sector';
 import { ensureSectorStatus } from '@/utils/buildFixes';
 
-export const useSectors = (options: { regionId?: string; status?: string } = {}) => {
+interface UseSectorsOptions {
+  regionId?: string;
+  status?: string;
+}
+
+export const useSectors = (options: UseSectorsOptions = {}) => {
   return useQuery({
     queryKey: ['sectors', options.regionId, options.status],
     queryFn: async (): Promise<Sector[]> => {

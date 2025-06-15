@@ -1,14 +1,17 @@
 
 import React from 'react';
 import { Helmet } from 'react-helmet';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { useSectors } from '@/hooks/sectors/useSectors';
+import { useLanguage } from '@/context/LanguageContext';
 import SectorsContainer from '@/components/sectors/SectorsContainer';
-import { Loader2 } from 'lucide-react';
+import { useSectors } from '@/hooks/sectors/useSectors';
 
 const Sectors = () => {
-  const { t } = useLanguageSafe();
-  const { sectors, loading, refetch } = useSectors();
+  const { t } = useLanguage();
+  const { data: sectors = [], isLoading, refetch } = useSectors();
+
+  const handleRefresh = async () => {
+    await refetch();
+  };
 
   return (
     <>
@@ -16,18 +19,14 @@ const Sectors = () => {
         <title>{t('sectors')} | InfoLine</title>
       </Helmet>
 
-      <div className="container mx-auto py-6">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
+        <div className="container mx-auto px-4 py-8">
           <SectorsContainer
             sectors={sectors}
-            isLoading={loading}
-            onRefresh={refetch}
+            isLoading={isLoading}
+            onRefresh={handleRefresh}
           />
-        )}
+        </div>
       </div>
     </>
   );
