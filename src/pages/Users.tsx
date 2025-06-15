@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import UserList from '@/components/users/UserList';
 import UserHeader from '@/components/users/UserHeader';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
@@ -7,7 +7,11 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 import { Helmet } from 'react-helmet';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { UserFilter } from '@/hooks/user/useUserList';
+import { useUserList } from '@/hooks/user/useUserList';
+import { User, UserRole, UserFilter as UserFilterType, UserStatus } from '@/types/user';
+import { toast } from 'sonner';
+
+// Using UserFilterType from types/user
 
 const Users = () => {
   const { t } = useLanguage();
@@ -15,9 +19,6 @@ const Users = () => {
   const isAuthorized = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const user = useAuthStore(selectUser);
   const navigate = useNavigate();
-  
-  // User list refresh trigger state - incrementing this will refresh the list
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // Redirect if not allowed to access this page
   React.useEffect(() => {
@@ -38,20 +39,71 @@ const Users = () => {
         ? ['sector', 'school'] 
         : ['school'];
 
-  // Refresh user list when a user is added or edited
-  const handleUserAddedOrEdited = useCallback(() => {
-    setRefreshTrigger(prev => prev + 1);
-  }, []);
-
-  // Filter parameters for sector and region admins - ensure all fields are initialized
-  const filterParams: UserFilter = {
+  // State for filters and pagination
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  
+  // Local filter state that matches the UserFilterType but with string for role/status
+  const [filters, setFilters] = useState({
     search: '',
     role: '',
-    status: '',
+    status: '' as string,
     regionId: isRegionAdmin && regionId ? regionId : '',
     sectorId: isSectorAdmin && sectorId ? sectorId : '',
     schoolId: ''
+  });
+
+  // Prepare filters for the useUserList hook
+  const listFilters: UserFilterType = {
+    ...filters,
+    role: filters.role ? [filters.role as UserRole] : [],
+    status: filters.status ? [filters.status as UserStatus] : []
   };
+
+  // Fetch users with filters and pagination
+  const { 
+    users = [], 
+    loading, 
+    error, 
+    totalCount,
+    refreshUsers 
+  } = useUserList(listFilters);
+  
+  // Handle user added/edited
+  const handleUserAddedOrEdited = useCallback(() => {
+    refreshUsers();
+    setRefreshTrigger(prev => prev + 1);
+  }, [refreshUsers]);
+  
+  const totalPages = Math.ceil((totalCount || 0) / pageSize);
+
+  // Handle errors
+  useEffect(() => {
+    if (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Xəta baş verdi: İstifadəçilər yüklənərkən xəta baş verdi');
+    }
+  }, [error]);
+
+  // Handle filter changes
+  const handleFilterChange = useCallback((newFilters: Partial<typeof filters>) => {
+    setFilters(prev => ({
+      ...prev,
+      ...newFilters
+    }));
+    // Reset to first page when filters change
+    setCurrentPage(1);
+  }, []);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Optional: Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+
 
   return (
     <>
@@ -61,13 +113,33 @@ const Users = () => {
 
       <div className="container mx-auto py-6 space-y-6">
         <UserHeader 
-          entityTypes={entityTypes} 
-          onUserAddedOrEdited={handleUserAddedOrEdited} 
+          entityTypes={entityTypes}
+          currentFilter={filters}
+          onFilterChange={handleFilterChange}
+          onUserAddedOrEdited={handleUserAddedOrEdited}
+          onAddUser={() => {
+            // TODO: Implement add user modal or navigation
+            console.log('Add user clicked');
+          }}
         />
 
         <UserList 
-          refreshTrigger={refreshTrigger} 
-          filterParams={filterParams}
+          users={users}
+          isLoading={loading}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          onEditUser={(user: User) => {
+            // TODO: Implement edit user functionality
+            console.log('Edit user:', user);
+          }}
+          onDeleteUser={(user: User) => {
+            // TODO: Implement delete user functionality
+            console.log('Delete user:', user);
+          }}
+          onSearch={(query: string) => {
+            handleFilterChange({ search: query });
+          }}
         />
       </div>
     </>

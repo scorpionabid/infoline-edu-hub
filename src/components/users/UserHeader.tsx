@@ -4,27 +4,42 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Filter } from 'lucide-react';
-import { UserFilter, UserRole } from '@/types/user';
+import { UserRole } from '@/types/user';
 import { useLanguage } from '@/context/LanguageContext';
 
+type EntityType = 'region' | 'sector' | 'school';
+
 interface UserHeaderProps {
-  onAddUser: () => void;
-  onFilterChange: (filter: UserFilter) => void;
-  currentFilter: UserFilter;
+  entityTypes: EntityType[];
+  onUserAddedOrEdited: () => void;
+  currentFilter?: {
+    search?: string;
+    role?: string | string[];
+    status?: string | string[];
+    regionId?: string;
+    sectorId?: string;
+    schoolId?: string;
+  };
+  onFilterChange?: (filter: any) => void;
+  onAddUser?: () => void;
 }
 
 const UserHeader: React.FC<UserHeaderProps> = ({
-  onAddUser,
-  onFilterChange,
-  currentFilter
+  entityTypes = [],
+  onUserAddedOrEdited,
+  currentFilter = {},
+  onFilterChange = () => {},
+  onAddUser = () => {}
 }) => {
+  // Ensure entityTypes is always an array
+  const safeEntityTypes = Array.isArray(entityTypes) ? entityTypes : [];
   const { t } = useLanguage();
   const [showFilters, setShowFilters] = useState(false);
 
-  const handleFilterChange = (key: keyof UserFilter, value: any) => {
+  const handleFilterChange = (key: string, value: string | string[] | undefined) => {
     onFilterChange({
       ...currentFilter,
-      [key]: value
+      [key]: value || undefined
     });
   };
 
@@ -32,8 +47,34 @@ const UserHeader: React.FC<UserHeaderProps> = ({
     onFilterChange({});
   };
 
-  const userRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
-  const userStatuses = ['active', 'inactive'];
+  const handleAddUser = () => {
+    onAddUser();
+    onUserAddedOrEdited();
+  };
+
+  const userRoles = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'] as const;
+  const userStatuses = ['active', 'inactive'] as const;
+  
+  // Helper to safely get array from filter value
+  const getArrayFromFilter = (value: string | string[] | undefined): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    return [value];
+  };
+  
+  // Helper to safely get the first value from a filter
+  const getFirstFromFilter = (value: string | string[] | undefined): string => {
+    if (!value) return '';
+    if (Array.isArray(value)) return value[0] || '';
+    return value;
+  };
+  
+  // Helper to check if a value is in an array
+  const isValueInFilter = (value: string, filter: string | string[] | undefined): boolean => {
+    if (!filter) return false;
+    if (Array.isArray(filter)) return filter.includes(value);
+    return filter === value;
+  };
 
   return (
     <div className="space-y-4">
@@ -44,7 +85,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
             {t('usersDescription') || 'Sistem istifadəçilərini idarə edin'}
           </p>
         </div>
-        <Button onClick={onAddUser}>
+        <Button onClick={handleAddUser}>
           <Plus className="h-4 w-4 mr-2" />
           {t('addUser') || 'İstifadəçi əlavə et'}
         </Button>
@@ -55,7 +96,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder={t('searchUsers') || 'İstifadəçi axtarın...'}
-            value={currentFilter.search || ''}
+            value={currentFilter?.search || ''}
             onChange={(e) => handleFilterChange('search', e.target.value)}
             className="pl-10"
           />
@@ -67,7 +108,9 @@ const UserHeader: React.FC<UserHeaderProps> = ({
           <Filter className="h-4 w-4 mr-2" />
           {t('filters') || 'Filterlər'}
         </Button>
-        {(currentFilter.role?.length || currentFilter.status?.length || currentFilter.schoolId) && (
+        {((currentFilter.role && currentFilter.role.length > 0) || 
+          (currentFilter.status && currentFilter.status.length > 0) || 
+          currentFilter.schoolId) && (
           <Button variant="ghost" onClick={clearFilters}>
             {t('clearFilters') || 'Filteri sil'}
           </Button>
@@ -81,13 +124,11 @@ const UserHeader: React.FC<UserHeaderProps> = ({
               {t('role') || 'Rol'}
             </label>
             <Select
-              value={currentFilter.role?.join(',') || ''}
+              value={Array.isArray(currentFilter?.role) 
+                ? currentFilter.role[0] || '' 
+                : currentFilter?.role || ''}
               onValueChange={(value) => {
-                if (value) {
-                  handleFilterChange('role', [value as UserRole]);
-                } else {
-                  handleFilterChange('role', undefined);
-                }
+                handleFilterChange('role', value || undefined);
               }}
             >
               <SelectTrigger>
@@ -97,7 +138,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
                 <SelectItem value="">{t('allRoles') || 'Bütün rollar'}</SelectItem>
                 {userRoles.map((role) => (
                   <SelectItem key={role} value={role}>
-                    {t(role) || role}
+                    {t(`role.${role}`) || role}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -109,13 +150,9 @@ const UserHeader: React.FC<UserHeaderProps> = ({
               {t('status') || 'Status'}
             </label>
             <Select
-              value={currentFilter.status?.join(',') || ''}
+              value={getFirstFromFilter(currentFilter.status)}
               onValueChange={(value) => {
-                if (value) {
-                  handleFilterChange('status', [value as 'active' | 'inactive']);
-                } else {
-                  handleFilterChange('status', undefined);
-                }
+                handleFilterChange('status', value || undefined);
               }}
             >
               <SelectTrigger>
@@ -123,11 +160,14 @@ const UserHeader: React.FC<UserHeaderProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">{t('allStatuses') || 'Bütün statuslar'}</SelectItem>
-                {userStatuses.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {t(status) || status}
-                  </SelectItem>
-                ))}
+                {userStatuses.map((status) => {
+                  const statusLabel = status === 'active' ? 'active' : 'inactive';
+                  return (
+                    <SelectItem key={status} value={status}>
+                      {t(`status.${statusLabel}`) || status}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -136,18 +176,23 @@ const UserHeader: React.FC<UserHeaderProps> = ({
             <label className="text-sm font-medium mb-2 block">
               {t('school') || 'Məktəb'}
             </label>
-            <Input
-              placeholder={t('schoolId') || 'Məktəb ID-si'}
-              value={currentFilter.schoolId || ''}
-              onChange={(e) => handleFilterChange('schoolId', e.target.value)}
-            />
+            {safeEntityTypes
+            .filter((t) => t === 'school' || t === 'sector')
+            .map((type) => (
+              <Input
+                key={type}
+                placeholder={t('schoolId') || 'Məktəb ID-si'}
+                value={currentFilter.schoolId || ''}
+                onChange={(e) => handleFilterChange('schoolId', e.target.value)}
+              />
+            ))}
           </div>
         </div>
       )}
 
       {/* Filter pills */}
       <div className="flex flex-wrap gap-2">
-        {currentFilter.role?.map((role) => (
+        {getArrayFromFilter(currentFilter?.role).map((role) => (
           <div key={role} className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center">
             {t('role')}: {t(role) || role}
             <Button
@@ -155,8 +200,9 @@ const UserHeader: React.FC<UserHeaderProps> = ({
               size="sm"
               className="ml-2 h-4 w-4 p-0"
               onClick={() => {
-                const newRoles = currentFilter.role?.filter(r => r !== role);
-                handleFilterChange('role', newRoles?.length ? newRoles : undefined);
+                const currentRoles = getArrayFromFilter(currentFilter?.role);
+                const newRoles = currentRoles.filter((r: string) => r !== role);
+                handleFilterChange('role', newRoles.length ? newRoles : undefined);
               }}
             >
               ×
@@ -164,16 +210,17 @@ const UserHeader: React.FC<UserHeaderProps> = ({
           </div>
         ))}
         
-        {currentFilter.status?.map((status) => (
-          <div key={status} className="bg-secondary/10 text-secondary-foreground px-3 py-1 rounded-full text-sm flex items-center">
-            {t('status')}: {t(status) || status}
+        {getArrayFromFilter(currentFilter?.status).map((status) => (
+          <div key={status} className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center">
+            {t('status')}: {t(`status.${status.toLowerCase()}`) || status}
             <Button
               variant="ghost"
               size="sm"
               className="ml-2 h-4 w-4 p-0"
               onClick={() => {
-                const newStatuses = currentFilter.status?.filter(s => s !== status);
-                handleFilterChange('status', newStatuses?.length ? newStatuses : undefined);
+                const currentStatuses = getArrayFromFilter(currentFilter?.status);
+                const newStatuses = currentStatuses.filter((s: string) => s !== status);
+                handleFilterChange('status', newStatuses.length ? newStatuses : undefined);
               }}
             >
               ×
@@ -181,8 +228,8 @@ const UserHeader: React.FC<UserHeaderProps> = ({
           </div>
         ))}
         
-        {currentFilter.schoolId && (
-          <div className="bg-accent/10 text-accent-foreground px-3 py-1 rounded-full text-sm flex items-center">
+        {currentFilter?.schoolId && (
+          <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center">
             {t('school')}: {currentFilter.schoolId}
             <Button
               variant="ghost"

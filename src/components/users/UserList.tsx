@@ -9,30 +9,36 @@ import { User } from '@/types/user';
 import { Pagination } from '@/components/ui/pagination';
 
 interface UserListProps {
-  users: User[];
+  users?: User[];
   isLoading?: boolean;
   onAddUser?: () => void;
   onEditUser?: (user: User) => void;
   onDeleteUser?: (user: User) => void;
   onSearch?: (query: string) => void;
-  onFilter?: (filters: any) => void;
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
+  onFilter?: (filters: Record<string, unknown>) => void;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  refreshTrigger?: number;
+  filterParams?: Record<string, unknown>;
 }
 
 const UserList: React.FC<UserListProps> = ({
-  users,
+  users = [],
   isLoading = false,
   onAddUser,
   onEditUser,
   onDeleteUser,
   onSearch,
   onFilter,
-  currentPage,
-  totalPages,
-  onPageChange
+  currentPage = 1,
+  totalPages = 1,
+  onPageChange = () => {},
+  refreshTrigger,
+  filterParams = {}
 }) => {
+  // Ensure users is always an array
+  const safeUsers = Array.isArray(users) ? users : [];
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -73,8 +79,14 @@ const UserList: React.FC<UserListProps> = ({
     }
   };
 
+  // Calculate if we should show pagination
+  const showPagination = typeof currentPage === 'number' && 
+    typeof totalPages === 'number' && 
+    totalPages > 1 && 
+    typeof onPageChange === 'function';
+
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>{t('users')}</CardTitle>
         <div className="flex items-center space-x-2">
@@ -121,13 +133,13 @@ const UserList: React.FC<UserListProps> = ({
             <div className="flex justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : users.length === 0 ? (
+          ) : safeUsers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchQuery ? t('noUsersFound') : t('noUsers')}
+              {searchQuery ? (t('noUsersFound') || 'No users found') : (t('noUsers') || 'No users available')}
             </div>
           ) : (
             <div className="space-y-2">
-              {users.map((user) => (
+              {safeUsers.map((user) => (
                 <div
                   key={user.id}
                   className="flex items-center justify-between p-3 border rounded-md hover:bg-muted/50 transition-colors"
@@ -160,13 +172,15 @@ const UserList: React.FC<UserListProps> = ({
           )}
 
           {/* Pagination */}
-          <div className="mt-6">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={onPageChange}
-            />
-          </div>
+          {showPagination && (
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={onPageChange}
+              />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
