@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { useState, useCallback, useMemo } from 'react';
 import { EnhancedRegion, Region } from '@/types/region';
+import { ensureEnhancedRegionData } from '@/utils/buildFixes';
 
 // Query keys
 export const REGIONS_QUERY_KEY = 'regions';
@@ -95,12 +96,6 @@ export const useRegionsQuery = (options = {}, initialPageSize = 10): UseRegionsQ
     
     isRegionsFetchInProgress = true;
     
-    // Check if we have a valid session
-    const session = await supabase.auth.getSession();
-    if (!session || !session.data.session) {
-      console.warn('No valid session found when fetching regions');
-    }
-    
     try {
       // Try using direct table query first
       console.log('Attempting direct table query for regions');
@@ -127,44 +122,28 @@ export const useRegionsQuery = (options = {}, initialPageSize = 10): UseRegionsQ
           // Return mock data as a last resort
           console.log('Using mock regions data as fallback');
           const mockRegions: EnhancedRegion[] = [
-            {
+            ensureEnhancedRegionData({
               id: '1',
               name: 'Bakı',
-              name_az: 'Bakı',
-              name_en: 'Baku',
               status: 'active',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
               admin_id: null,
-              admin_name: 'Test Admin',
-              adminName: 'Test Admin',
-              adminEmail: 'admin@example.com',
               sectors_count: 5,
               schools_count: 20,
-              sector_count: 5,
-              school_count: 20,
-              completion_rate: 80,
-              completionRate: 80
-            },
-            {
+              completion_rate: 80
+            }),
+            ensureEnhancedRegionData({
               id: '2',
               name: 'Sumqayıt',
-              name_az: 'Sumqayıt',
-              name_en: 'Sumgait',
               status: 'active',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
               admin_id: null,
-              admin_name: 'Test Admin 2',
-              adminName: 'Test Admin 2',
-              adminEmail: 'admin2@example.com',
               sectors_count: 3,
               schools_count: 15,
-              sector_count: 3,
-              school_count: 15,
-              completion_rate: 60,
-              completionRate: 60
-            }
+              completion_rate: 60
+            })
           ];
           
           isRegionsFetchInProgress = false;
@@ -173,19 +152,15 @@ export const useRegionsQuery = (options = {}, initialPageSize = 10): UseRegionsQ
         }
         
         // Process basic data without joins
-        const enhancedBasicRegions = basicRegions.map(region => ({
-          ...region,
-          sectors_count: 0,
-          schools_count: 0,
-          sector_count: 0,
-          school_count: 0,
-          admin_name: '',
-          adminName: '',
-          adminEmail: '',
-          admin: undefined,
-          completion_rate: 0,
-          completionRate: 0
-        }));
+        const enhancedBasicRegions = basicRegions.map(region => 
+          ensureEnhancedRegionData({
+            ...region,
+            sectors_count: 0,
+            schools_count: 0,
+            admin_name: '',
+            completion_rate: 0
+          })
+        );
         
         isRegionsFetchInProgress = false;
         REGIONS_CACHE = enhancedBasicRegions;
@@ -197,29 +172,22 @@ export const useRegionsQuery = (options = {}, initialPageSize = 10): UseRegionsQ
         const sectors_count = region.sectors?.[0]?.count || 0;
         const schools_count = region.schools?.[0]?.count || 0;
         
-        // Handle admin data - Supabase returns it in a special format that needs processing
-        // It could be an array with one item or an object depending on the query
+        // Handle admin data safely
         const adminData = region.admin;
-        // Safely access admin properties by normalizing the data structure
         const adminObj = Array.isArray(adminData) ? adminData[0] : adminData;
         
-        return {
+        return ensureEnhancedRegionData({
           ...region,
           sectors_count,
           schools_count,
-          sector_count: sectors_count,
-          school_count: schools_count,
           admin_name: adminObj?.full_name || '',
-          adminName: adminObj?.full_name || '',
-          adminEmail: adminObj?.email || '',
           admin: adminObj ? {
             id: adminObj.id,
             full_name: adminObj.full_name,
             email: adminObj.email
           } : undefined,
           completion_rate: Math.floor(Math.random() * 100), // This should be replaced with actual calculation
-          completionRate: Math.floor(Math.random() * 100) // For compatibility
-        };
+        });
       });
       
       isRegionsFetchInProgress = false;
@@ -269,7 +237,7 @@ export const useRegionsQuery = (options = {}, initialPageSize = 10): UseRegionsQ
     const searchMatch = !searchLower || 
       region.name.toLowerCase().includes(searchLower) ||
       region.description?.toLowerCase().includes(searchLower) ||
-      region.admin_name?.toLowerCase().includes(searchLower);
+      region.adminName?.toLowerCase().includes(searchLower);
     
     return statusMatch && searchMatch;
   });

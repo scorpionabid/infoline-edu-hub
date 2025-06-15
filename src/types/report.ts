@@ -21,6 +21,7 @@ export interface ReportData {
   filters: any;
   status: string;
   is_template?: boolean;
+  is_public?: boolean;
   shared_with?: any[];
   created_by?: string;
   created_at: string;

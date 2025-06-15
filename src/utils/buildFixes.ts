@@ -1,4 +1,3 @@
-
 // Build fixes and compatibility helpers
 
 // Type guard functions
@@ -213,4 +212,31 @@ export const getEntityDisplayName = (userData: any): string => {
   }
   
   return '';
+};
+
+// Safe region status casting
+export const ensureRegionStatus = (status: any): 'active' | 'inactive' => {
+  return ['active', 'inactive'].includes(status) ? status : 'active';
+};
+
+// Enhanced region data type casting with safe status conversion
+export const ensureEnhancedRegionData = (data: any): any => {
+  if (!data || typeof data !== 'object') return null;
+  
+  return {
+    ...data,
+    status: ensureRegionStatus(data.status),
+    // Ensure all expected properties exist
+    name_az: data.name_az || data.name || '',
+    name_en: data.name_en || data.name || '',
+    sectors_count: Number(data.sectors_count) || 0,
+    schools_count: Number(data.schools_count) || 0,
+    sector_count: Number(data.sector_count) || Number(data.sectors_count) || 0,
+    school_count: Number(data.school_count) || Number(data.schools_count) || 0,
+    admin_name: data.admin_name || data.adminName || '',
+    adminName: data.adminName || data.admin_name || '',
+    adminEmail: data.adminEmail || data.admin_email || '',
+    completion_rate: Number(data.completion_rate) || Number(data.completionRate) || 0,
+    completionRate: Number(data.completionRate) || Number(data.completion_rate) || 0,
+  };
 };

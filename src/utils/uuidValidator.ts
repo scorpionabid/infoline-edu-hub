@@ -12,3 +12,16 @@ export const validateUUID = (uuid: string): boolean => {
 export const isValidUUID = (uuid: string): boolean => {
   return validateUserIdForDB(uuid);
 };
+
+// Add missing functions that are being imported
+export const getSafeUUID = (value: any): string | null => {
+  if (typeof value === 'string' && validateUUID(value)) {
+    return value;
+  }
+  return null;
+};
+
+export const getUUIDOrDefault = (value: any, defaultValue: string = ''): string => {
+  const safeUUID = getSafeUUID(value);
+  return safeUUID || defaultValue;
+};

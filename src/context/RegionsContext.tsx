@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { supabase } from '@/integrations/supabase/client';
 import { Region } from '@/types/region';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import { ensureRegionStatus } from '@/utils/buildFixes';
 
 interface RegionsContextProps {
   regions: Region[];
@@ -55,7 +56,13 @@ export const RegionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         throw new Error(error.message);
       }
 
-      setRegions(data || []);
+      // Apply safe type conversion
+      const typedRegions: Region[] = (data || []).map(region => ({
+        ...region,
+        status: ensureRegionStatus(region.status)
+      }));
+
+      setRegions(typedRegions);
     } catch (err: any) {
       setError(err.message);
     } finally {
