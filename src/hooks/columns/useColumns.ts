@@ -1,7 +1,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column } from '@/types/column';
+import { Column, ColumnType } from '@/types/column';
+import { transformRawColumnData } from '@/utils/columnOptionsParser';
 
 interface UseColumnsOptions {
   categoryId?: string;
@@ -30,7 +31,18 @@ export const useColumns = (options: UseColumnsOptions = {}) => {
         throw error;
       }
 
-      return data || [];
+      // Properly transform the data to match Column interface
+      return (data || []).map(item => {
+        const transformed = transformRawColumnData(item);
+        return {
+          ...item,
+          type: item.type as ColumnType,
+          options: transformed.options || [],
+          validation: item.validation || {},
+          description: transformed.description || item.description || '',
+          section: item.section || ''
+        } as Column;
+      });
     },
     enabled: !!categoryId || categoryId === undefined
   });

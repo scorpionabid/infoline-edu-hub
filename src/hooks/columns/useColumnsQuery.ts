@@ -1,26 +1,32 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column } from '@/types/column';
+import { Column, ColumnType, ColumnOption } from '@/types/column';
+import { transformRawColumnData } from '@/utils/columnOptionsParser';
 
 interface UseColumnsQueryOptions {
   categoryId?: string;
+  status?: 'all' | 'active' | 'inactive' | 'deleted';
+  enabled?: boolean;
 }
 
 export const useColumnsQuery = (options: UseColumnsQueryOptions = {}) => {
-  const { categoryId } = options;
+  const { categoryId, status = 'active', enabled = true } = options;
 
   return useQuery({
-    queryKey: ['columns', categoryId],
+    queryKey: ['columns', categoryId, status],
     queryFn: async (): Promise<Column[]> => {
       let query = supabase
         .from('columns')
         .select('*')
-        .eq('status', 'active')
         .order('order_index', { ascending: true });
 
       if (categoryId) {
         query = query.eq('category_id', categoryId);
+      }
+
+      if (status !== 'all') {
+        query = query.eq('status', status);
       }
 
       const { data, error } = await query;
@@ -30,14 +36,19 @@ export const useColumnsQuery = (options: UseColumnsQueryOptions = {}) => {
         throw error;
       }
 
-      // Type conversion for column data
-      return (data || []).map(column => ({
-        ...column,
-        type: column.type as any, // Convert to ColumnType
-        options: column.options || null,
-        validation: column.validation || null
-      }));
+      // Type conversion for column data with proper transformation
+      return (data || []).map(column => {
+        const transformed = transformRawColumnData(column);
+        return {
+          ...column,
+          type: column.type as ColumnType,
+          options: transformed.options || [],
+          validation: column.validation || {},
+          description: transformed.description || column.description || '',
+          section: column.section || ''
+        } as Column;
+      });
     },
-    enabled: !!categoryId || categoryId === undefined
+    enabled: enabled
   });
 };

@@ -39,14 +39,13 @@ const Columns: React.FC = () => {
   // Calculate permissions
   const canManageColumns = userRole === 'superadmin' || userRole === 'regionadmin';
   
-  // NEW UNIFIED HOOKS - Fixed query
+  // NEW UNIFIED HOOKS - Fixed query with proper options
   const { 
     data: columns = [], 
     isLoading: columnsLoading, 
     error: columnsError, 
     refetch: refetchColumns 
   } = useColumnsQuery({ 
-    status: 'all', // Include all statuses for admin management
     enabled: true
   });
   

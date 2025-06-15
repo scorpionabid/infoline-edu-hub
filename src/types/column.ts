@@ -24,6 +24,7 @@ export interface Column {
   options?: ColumnOption[];
   created_at: string;
   updated_at: string;
+  section?: string; // Add missing section property
 }
 
 export interface ColumnFormValues {
@@ -54,4 +55,11 @@ export interface ColumnFormData {
   validation?: any;
   order_index: number;
   status: string;
+}
+
+// Add missing interface
+export interface UseColumnFormProps {
+  column?: Column;
+  categoryId: string;
+  onSuccess: () => void;
 }

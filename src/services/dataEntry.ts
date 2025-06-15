@@ -3,6 +3,7 @@ export interface SaveFormDataOptions {
   categoryId: string;
   schoolId: string;
   status: 'draft' | 'pending';
+  userId?: string; // Add missing userId property
 }
 
 export interface SaveDataEntryOptions {
@@ -14,6 +15,7 @@ export interface SaveDataEntryOptions {
 export interface SaveResult {
   id: string;
   success: boolean;
+  error?: string; // Add missing error property
 }
 
 export class DataEntryService {
@@ -32,3 +34,7 @@ export class DataEntryService {
     });
   }
 }
+
+// Add missing exports for backward compatibility
+export type { SaveFormDataOptions as SaveDataEntryOptions };
+export type { SaveResult };

@@ -69,37 +69,68 @@ export const useColumnMutations = () => {
     }
   });
 
-  // Add missing bulk operations as no-ops for now
-  const duplicateColumn = (id: string) => {
-    console.log('Duplicate column not implemented:', id);
+  const restoreColumn = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('columns')
+        .update({ status: 'active' })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success('Sütun bərpa edildi');
+    },
+    onError: (error: Error) => {
+      toast.error('Sütun bərpa edilərkən xəta baş verdi');
+      console.error('Error restoring column:', error);
+    }
+  });
+
+  // Add missing bulk operations
+  const duplicateColumn = (columnId: string) => {
+    console.log('Duplicate column not implemented:', columnId);
   };
 
-  const bulkToggleStatus = (ids: string[]) => {
-    console.log('Bulk toggle status not implemented:', ids);
+  const bulkToggleStatus = (columnIds: string[], status: 'active' | 'inactive') => {
+    console.log('Bulk toggle status not implemented:', columnIds, status);
   };
 
   const moveColumnsToCategory = (columnIds: string[], categoryId: string) => {
     console.log('Move columns to category not implemented:', columnIds, categoryId);
   };
 
-  const bulkDelete = (ids: string[]) => {
-    console.log('Bulk delete not implemented:', ids);
+  const bulkDelete = (columnIds: string[]) => {
+    console.log('Bulk delete not implemented:', columnIds);
   };
 
   return {
     createColumn: createColumn.mutate,
     updateColumn: updateColumn.mutate,
     deleteColumn: deleteColumn.mutate,
+    restoreColumn: restoreColumn.mutate,
     duplicateColumn,
     bulkToggleStatus,
     moveColumnsToCategory,
     bulkDelete,
-    duplicateColumnAsync: async (id: string) => duplicateColumn(id),
-    bulkToggleStatusAsync: async (ids: string[]) => bulkToggleStatus(ids),
+    // Add async versions
+    createColumnAsync: createColumn.mutateAsync,
+    updateColumnAsync: updateColumn.mutateAsync,
+    deleteColumnAsync: deleteColumn.mutateAsync,
+    restoreColumnAsync: restoreColumn.mutateAsync,
+    duplicateColumnAsync: async (columnId: string) => duplicateColumn(columnId),
+    bulkToggleStatusAsync: async (columnIds: string[], status: 'active' | 'inactive') => bulkToggleStatus(columnIds, status),
     moveColumnsToCategoryAsync: async (columnIds: string[], categoryId: string) => moveColumnsToCategory(columnIds, categoryId),
-    bulkDeleteAsync: async (ids: string[]) => bulkDelete(ids),
+    bulkDeleteAsync: async (columnIds: string[]) => bulkDelete(columnIds),
+    // Add loading states
     isCreating: createColumn.isPending,
     isUpdating: updateColumn.isPending,
-    isDeleting: deleteColumn.isPending
+    isDeleting: deleteColumn.isPending,
+    isRestoring: restoreColumn.isPending,
+    // Add error states
+    createError: createColumn.error,
+    updateError: updateColumn.error,
+    deleteError: deleteColumn.error
   };
 };

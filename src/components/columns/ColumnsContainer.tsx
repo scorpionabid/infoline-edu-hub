@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Column } from '@/types/column';
 import { Category } from '@/types/category';
@@ -156,18 +155,17 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
     }
   };
 
-  // IMPROVED: Handle toggle status with proper tab switching
+  // FIXED: Handle toggle status with proper function signatures
   const handleToggleStatus = async (columnId: string, status: 'active' | 'inactive') => {
     try {
       console.log(`Toggling column ${columnId} to status: ${status}`);
       
       if (bulkToggleStatusAsync) {
-        await bulkToggleStatusAsync({ columnIds: [columnId], status });
+        await bulkToggleStatusAsync([columnId], status);
       } else {
-        bulkToggleStatus({ columnIds: [columnId], status });
+        bulkToggleStatus([columnId], status);
       }
       
-      // If making inactive, switch to archived tab to see the change
       if (status === 'inactive') {
         setActiveTab('archived');
       }
@@ -182,9 +180,9 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   const handleDuplicate = async (column: Column) => {
     try {
       if (duplicateColumnAsync) {
-        await duplicateColumnAsync({ columnId: column.id });
+        await duplicateColumnAsync(column.id);
       } else {
-        duplicateColumn({ columnId: column.id });
+        duplicateColumn(column.id);
       }
       onRefresh?.();
     } catch (error) {
@@ -192,12 +190,13 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
     }
   };
 
+  // FIXED: Handle bulk operations with correct parameters
   const handleBulkDelete = async (columnIds: string[]) => {
     try {
       if (bulkDeleteAsync) {
-        await bulkDeleteAsync({ columnIds });
+        await bulkDeleteAsync(columnIds);
       } else {
-        bulkDelete({ columnIds });
+        bulkDelete(columnIds);
       }
       onRefresh?.();
       return true;
@@ -210,9 +209,9 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   const handleBulkToggle = async (columnIds: string[], status: 'active' | 'inactive') => {
     try {
       if (bulkToggleStatusAsync) {
-        await bulkToggleStatusAsync({ columnIds, status });
+        await bulkToggleStatusAsync(columnIds, status);
       } else {
-        bulkToggleStatus({ columnIds, status });
+        bulkToggleStatus(columnIds, status);
       }
       onRefresh?.();
       return true;
@@ -225,9 +224,9 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   const handleBulkMoveCategory = async (columnIds: string[], categoryId: string) => {
     try {
       if (moveColumnsToCategoryAsync) {
-        await moveColumnsToCategoryAsync({ columnIds, targetCategoryId: categoryId });
+        await moveColumnsToCategoryAsync(columnIds, categoryId);
       } else {
-        moveColumnsToCategory({ columnIds, targetCategoryId: categoryId });
+        moveColumnsToCategory(columnIds, categoryId);
       }
       onRefresh?.();
       return true;
@@ -238,7 +237,6 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   };
 
   const handleDragAndDropReorder = async (reorderedColumns: Column[]) => {
-    // Temporarily disabled - drag & drop not implemented without @dnd-kit
     console.log('Drag and drop reorder:', reorderedColumns);
     return true;
   };
