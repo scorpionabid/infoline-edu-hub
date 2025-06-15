@@ -9,7 +9,7 @@ import { useAuthStore, selectUser, selectUserRole } from '@/hooks/auth/useAuthSt
 
 // Hooks
 import { useSchoolCategories } from '@/hooks/categories/useCategoriesWithAssignment';
-import { useSchools } from '@/hooks/useSchools';
+import { useSchools } from '@/hooks/entities/useSchools';
 
 // Components
 import DataEntryTabs from './DataEntryTabs';
@@ -32,6 +32,7 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
   
   const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Categories hook-u yeniləmə
   const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useSchoolCategories({
@@ -40,9 +41,7 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
     enabled: true
   });
 
-  const { data: schools = [], isLoading: schoolsLoading } = useSchools({
-    enabled: userRole === 'sectoradmin'
-  });
+  const { schools, loading: schoolsLoading } = useSchools();
 
   // Debug məlumatları
   useEffect(() => {
@@ -113,6 +112,8 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
             schools={schools}
             onSchoolSelect={setSelectedSchoolId}
             selectedSchoolId={selectedSchoolId}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
           />
         </CardContent>
       </Card>
@@ -142,8 +143,8 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({
       
       <DataEntryTabs
         categories={categories}
-        schoolId={selectedSchoolId}
-        userRole={userRole}
+        selectedCategory={selectedSchoolId}
+        onCategoryChange={setSelectedSchoolId}
       />
     </div>
   );

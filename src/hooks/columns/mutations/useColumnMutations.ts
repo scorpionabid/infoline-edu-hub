@@ -1,7 +1,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnFormData } from '@/types/column';
+import { Column, ColumnFormData, ColumnType } from '@/types/column';
 import { toast } from 'sonner';
 
 export const useColumnMutations = () => {
@@ -16,7 +16,12 @@ export const useColumnMutations = () => {
         .single();
 
       if (error) throw error;
-      return result;
+      
+      return {
+        ...result,
+        type: result.type as ColumnType,
+        status: result.status as 'active' | 'inactive' | 'deleted'
+      };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ 
@@ -43,7 +48,12 @@ export const useColumnMutations = () => {
         .single();
 
       if (error) throw error;
-      return result;
+      
+      return {
+        ...result,
+        type: result.type as ColumnType,
+        status: result.status as 'active' | 'inactive' | 'deleted'
+      };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ 
@@ -87,6 +97,12 @@ export const useColumnMutations = () => {
   return {
     createColumn,
     updateColumn,
-    deleteColumn
+    deleteColumn,
+    createColumnAsync: createColumn.mutateAsync,
+    updateColumnAsync: updateColumn.mutateAsync,
+    deleteColumnAsync: deleteColumn.mutateAsync,
+    isCreating: createColumn.isPending,
+    isUpdating: updateColumn.isPending,
+    isDeleting: deleteColumn.isPending
   };
 };

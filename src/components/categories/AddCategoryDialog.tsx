@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -74,18 +75,22 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({ children }
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(async (data) => {
-          const formData = {
-            ...data,
-            status: 'active' as const, // Default status əlavə edilir
-            assignment: data.assignment as CategoryAssignment
-          };
-          
-          const result = await createCategory(formData);
-          if (result) {
-            setIsOpen(false);
-            form.reset();
-          }
-        })} className="space-y-4">
+            const formData = {
+              name: data.name,
+              description: data.description,
+              assignment: data.assignment as CategoryAssignment,
+              status: 'active' as const,
+              priority: data.priority,
+              deadline: data.deadline,
+              order_index: data.order_index
+            };
+            
+            const result = await createCategory(formData);
+            if (result) {
+              setIsOpen(false);
+              form.reset();
+            }
+          })} className="space-y-4">
             <FormField
               control={form.control}
               name="name"

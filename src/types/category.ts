@@ -1,6 +1,6 @@
 
 export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'approved' | 'archived';
-export type CategoryAssignment = 'all' | 'sectors'; // 'schools' removed
+export type CategoryAssignment = 'all' | 'sectors';
 
 export interface Category {
   id: string;
@@ -17,6 +17,7 @@ export interface Category {
   updated_at: string;
   completion_rate?: number;
   completionRate?: number;
+  columns?: any[];
 }
 
 export interface CategoryWithColumns extends Category {

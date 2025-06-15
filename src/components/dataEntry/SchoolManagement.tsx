@@ -7,19 +7,21 @@ import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { School } from '@/hooks/entities/useSchools';
 
-interface School {
-  id: string;
-  name: string;
-  status: string;
-  principal_name?: string;
-  email?: string;
-  phone?: string;
+interface SchoolManagementProps {
+  selectedSchoolId: string;
+  onSchoolChange: (schoolId: string) => void;
+  schools: School[];
 }
 
-const SchoolManagement: React.FC = () => {
+const SchoolManagement: React.FC<SchoolManagementProps> = ({
+  selectedSchoolId,
+  onSchoolChange,
+  schools: propSchools
+}) => {
   const { t } = useLanguage();
-  const [schools, setSchools] = useState<School[]>([]);
+  const [schools, setSchools] = useState<School[]>(propSchools || []);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -42,8 +44,12 @@ const SchoolManagement: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchSchools();
-  }, []);
+    if (propSchools && propSchools.length > 0) {
+      setSchools(propSchools);
+    } else {
+      fetchSchools();
+    }
+  }, [propSchools]);
 
   const filteredSchools = schools.filter(school =>
     school.name.toLowerCase().includes(searchTerm.toLowerCase())

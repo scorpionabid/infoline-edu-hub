@@ -9,7 +9,7 @@ export interface ConnectionHealth {
 export const useConnectionHealth = () => {
   const connectionHealth: ConnectionHealth = {
     status: 'connected',
-    health: 'good',
+    health: 'excellent',
     reconnectCount: 0,
     lastConnected: new Date()
   };
