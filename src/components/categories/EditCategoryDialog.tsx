@@ -85,7 +85,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           deadline: deadline ? deadline.toISOString() : null,
           updated_at: now
         };
-        await updateCategory(category.id, updateData);
+        await updateCategory({ id: category.id, ...updateData });
       } else {
         const categoryData = {
           name,
@@ -97,7 +97,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           created_at: now,
           updated_at: now
         };
-        await createCategory(categoryData);
+        await createCategory(categoryData as any);
       }
       
       if (onSave) {

@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useColumnsQuery, useColumnMutations } from './index';
 import { Column, ColumnFormData } from '@/types/column';
@@ -18,7 +17,6 @@ export const useColumnManagement = (categoryId?: string) => {
     error, 
     refetch 
   } = useColumnsQuery({ 
-    categoryId,
     enabled: true
   });
 

@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/auth/useAuth';
-import { CategoryWithColumns } from '@/types/category';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
+import { CategoryWithColumns, CategoryAssignment } from '@/types/category';
+import { ColumnType } from '@/types/column';
 import { toast } from 'sonner';
 
 export const useSchoolDataEntry = (schoolId?: string) => {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,9 +28,22 @@ export const useSchoolDataEntry = (schoolId?: string) => {
 
       if (error) throw error;
 
-      const categoriesWithColumns: CategoryWithColumns[] = (data || []).map(category => ({
+      const categoriesWithColumns: CategoryWithColumns[] = (Array.isArray(data) ? data : []).map((category: any) => ({
         ...category,
-        columns: category.columns || []
+        assignment: (category.assignment || 'all') as CategoryAssignment,
+        columns: Array.isArray(category.columns)
+          ? (category.columns || []).map((column: any) => ({
+              ...column,
+              type: column.type as ColumnType,
+              status: column.status,
+              options: column.options ? 
+                (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
+                [],
+              validation: column.validation ? 
+                (typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation) : 
+                {}
+            }))
+          : []
       }));
 
       setCategories(categoriesWithColumns);
