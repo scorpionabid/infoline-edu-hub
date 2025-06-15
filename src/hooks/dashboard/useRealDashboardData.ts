@@ -34,18 +34,19 @@ export const useRealDashboardData = () => {
       .select('*', { count: 'exact', head: true });
 
     // Categories
-    const { data: categoriesData } = await supabase
+    const { data: categoriesData, error: catErr } = await supabase
       .from('categories')
       .select('id, name, status, completion_rate');
 
-    const categories = (categoriesData || []).filter(cat =>
-      cat && cat.id !== undefined && cat.name !== undefined && cat.status !== undefined
-    ).map(cat => ({
-      id: String(cat.id),
-      name: String(cat.name),
-      status: cat.status as any,
-      completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : (cat.completionRate || 0)
-    }));
+    let categories: any[] = [];
+    if (!catErr && Array.isArray(categoriesData)) {
+      categories = categoriesData.map(cat => ({
+        id: String(cat.id),
+        name: String(cat.name),
+        status: cat.status,
+        completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : 0
+      }));
+    }
 
     return {
       totalRegions: totalRegions || 0,
@@ -66,29 +67,30 @@ export const useRealDashboardData = () => {
       .select('id, name, completion_rate, status')
       .eq('region_id', regionId);
 
-    const sectors = (sectorsData || []).map(sec => ({
+    const sectors = Array.isArray(sectorsData) ? sectorsData.map(sec => ({
       id: sec.id,
       name: sec.name,
       totalSchools: 0,
       activeSchools: 0,
-      completionRate: sec.completion_rate ?? 0,
+      completionRate: typeof sec.completion_rate === 'number' ? sec.completion_rate : 0,
       status: sec.status
-    }));
+    })) : [];
 
     // Categories
-    const { data: categoriesData } = await supabase
+    const { data: categoriesData, error: catErr } = await supabase
       .from('categories')
       .select('id, name, status, completion_rate')
       .in('assignment', ['all', 'sectors']);
 
-    const categories = (categoriesData || []).filter(cat =>
-      cat && cat.id !== undefined && cat.name !== undefined && cat.status !== undefined
-    ).map(cat => ({
-      id: String(cat.id),
-      name: String(cat.name),
-      status: cat.status as any,
-      completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : (cat.completionRate || 0)
-    }));
+    let categories: any[] = [];
+    if (!catErr && Array.isArray(categoriesData)) {
+      categories = categoriesData.map(cat => ({
+        id: String(cat.id),
+        name: String(cat.name),
+        status: cat.status,
+        completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : 0
+      }));
+    }
 
     return {
       categories,
@@ -105,31 +107,32 @@ export const useRealDashboardData = () => {
       .eq('sector_id', sectorId);
 
     // Count forms
-    const schools = (schoolsData || []).map(sch => ({
+    const schools = Array.isArray(schoolsData) ? schoolsData.map(sch => ({
       id: sch.id,
       name: sch.name,
-      completionRate: sch.completion_rate ?? 0,
+      completionRate: typeof sch.completion_rate === 'number' ? sch.completion_rate : 0,
       totalForms: 0,
       completedForms: 0,
       pendingForms: 0,
       status: sch.status,
       lastUpdated: sch.updated_at || new Date().toISOString()
-    }));
+    })) : [];
 
     // Categories
-    const { data: categoriesData } = await supabase
+    const { data: categoriesData, error: catErr } = await supabase
       .from('categories')
       .select('id, name, status, completion_rate')
       .in('assignment', ['all', 'sectors']);
 
-    const categories = (categoriesData || []).filter(cat =>
-      cat && cat.id !== undefined && cat.name !== undefined && cat.status !== undefined
-    ).map(cat => ({
-      id: String(cat.id),
-      name: String(cat.name),
-      status: cat.status as any,
-      completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : (cat.completionRate || 0)
-    }));
+    let categories: any[] = [];
+    if (!catErr && Array.isArray(categoriesData)) {
+      categories = categoriesData.map(cat => ({
+        id: String(cat.id),
+        name: String(cat.name),
+        status: cat.status,
+        completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : 0
+      }));
+    }
 
     return {
       categories,
@@ -140,19 +143,20 @@ export const useRealDashboardData = () => {
 
   // --------- Schooladmin dashboard (qismən dummy, TODO)
   const fetchSchoolAdminData = async (schoolId: string): Promise<SchoolAdminDashboardData> => {
-    const { data: categoriesData } = await supabase
+    const { data: categoriesData, error: catErr } = await supabase
       .from('categories')
       .select('id, name, status, completion_rate')
       .eq('assignment', 'all');
 
-    const categories = (categoriesData || []).filter(cat =>
-      cat && cat.id !== undefined && cat.name !== undefined && cat.status !== undefined
-    ).map(cat => ({
-      id: String(cat.id),
-      name: String(cat.name),
-      status: cat.status as any,
-      completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : (cat.completionRate || 0)
-    }));
+    let categories: any[] = [];
+    if (!catErr && Array.isArray(categoriesData)) {
+      categories = categoriesData.map(cat => ({
+        id: String(cat.id),
+        name: String(cat.name),
+        status: cat.status,
+        completionRate: typeof cat.completion_rate === 'number' ? cat.completion_rate : 0
+      }));
+    }
 
     return {
       categories,

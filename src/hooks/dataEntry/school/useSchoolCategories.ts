@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns, CategoryAssignment } from '@/types/category';
@@ -26,20 +27,22 @@ export const useSchoolCategories = (schoolId?: string) => {
 
       if (error) throw error;
 
-      const categoriesWithColumns: CategoryWithColumns[] = (data || []).map(category => ({
+      const categoriesWithColumns: CategoryWithColumns[] = (Array.isArray(data) ? data : []).map(category => ({
         ...category,
         assignment: category.assignment,
-        columns: (category.columns || []).map((column: any) => ({
-          ...column,
-          type: column.type,
-          status: column.status,
-          options: column.options ? 
-            (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
-            [],
-          validation: column.validation ? 
-            (typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation) : 
-            {}
-        }))
+        columns: Array.isArray(category.columns)
+          ? (category.columns || []).map((column: any) => ({
+              ...column,
+              type: column.type,
+              status: column.status,
+              options: column.options ? 
+                (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
+                [],
+              validation: column.validation ? 
+                (typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation) : 
+                {}
+            }))
+          : []
       }));
 
       setCategories(categoriesWithColumns);

@@ -86,7 +86,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           deadline: deadline ? deadline.toISOString() : null,
           updated_at: now
         };
-        
+        // Fixed: pass "updateData", not "category.id" as a string only
         await updateCategory(category.id, updateData);
       } else {
         const categoryData = {

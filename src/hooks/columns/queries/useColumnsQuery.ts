@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Column, ColumnType } from '@/types/column';
@@ -35,7 +36,7 @@ export const useColumnsQuery = (options: UseColumnsQueryOptions = {}) => {
         throw error;
       }
 
-      return (data || []).map(column => ({
+      return (Array.isArray(data) ? data : []).map((column: any) => ({
         ...column,
         type: column.type,
         status: column.status,
@@ -50,3 +51,4 @@ export const useColumnsQuery = (options: UseColumnsQueryOptions = {}) => {
     enabled
   });
 };
+

@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns, CategoryAssignment } from '@/types/category';
@@ -25,10 +24,7 @@ export const useCategoryQuery = (options: UseCategoryQueryOptions = {}) => {
     queryFn: async (): Promise<CategoryWithColumns[]> => {
       let query = supabase
         .from('categories')
-        .select(withColumns ? `
-          *,
-          columns(*)
-        ` : '*');
+        .select(withColumns ? `*,columns(*)` : '*');
 
       if (categoryId) {
         query = query.eq('id', categoryId);
@@ -51,21 +47,23 @@ export const useCategoryQuery = (options: UseCategoryQueryOptions = {}) => {
         throw error;
       }
 
-      return (data || []).filter(category => category && 'id' in category)
-        .map(category => ({
-        ...category,
-        assignment: category.assignment,
-        columns: withColumns && Array.isArray(category.columns)
-          ? (category.columns || []).map((column: any) => ({
-              ...column,
-              options: column.options ? 
-                (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
-                [],
-              validation: column.validation ? 
-                (typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation) : 
-                {}
-            })) : []
-      })) as CategoryWithColumns[];
+      // Defensive conversion
+      return (Array.isArray(data) ? data : [])
+        .filter(category => typeof category === 'object' && category && 'id' in category)
+        .map((category: any) => ({
+          ...category,
+          assignment: category.assignment,
+          columns: withColumns && Array.isArray(category.columns)
+            ? (category.columns || []).map((column: any) => ({
+                ...column,
+                options: column.options ? 
+                  (typeof column.options === 'string' ? JSON.parse(column.options) : column.options) : 
+                  [],
+                validation: column.validation ? 
+                  (typeof column.validation === 'string' ? JSON.parse(column.validation) : column.validation) : 
+                  {}
+              })) : []
+        })) as CategoryWithColumns[];
     },
     enabled
   });
