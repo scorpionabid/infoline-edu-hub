@@ -1,92 +1,60 @@
+import { Region } from './region';
+import { Sector } from './sector';
 
-// School related types
-export type SchoolStatus = 'active' | 'inactive' | 'pending' | 'archived';
+export interface School {
+  id: string;
+  name: string;
+  description?: string;
+  region_id: string;
+  sector_id: string;
+  status: 'active' | 'inactive' | 'pending' | 'archived';
+  principal_name?: string;
+  principal_email?: string;
+  contact_number?: string;
+  address?: string;
+  created_at: string;
+  updated_at: string;
+  regionName?: string;
+  sectorName?: string;
+  completion_rate?: number;
+}
+
+export interface EnhancedSchool extends School {
+  totalStudents?: number;
+  totalTeachers?: number;
+  adminName?: string;
+}
+
+export interface SchoolFormData {
+  name: string;
+  description?: string;
+  region_id: string;
+  sector_id: string;
+  status?: 'active' | 'inactive' | 'pending' | 'archived';
+  principal_name?: string;
+  principal_email?: string;
+  contact_number?: string;
+  address?: string;
+}
 
 export interface SchoolFilter {
-  region?: string;
-  sector?: string;
-  status?: SchoolStatus;
   search?: string;
+  region_id?: string;
+  sector_id?: string;
+  status?: string;
 }
 
-export interface SchoolData {
-  id: string;
-  name: string;
-  region_id: string;
-  sector_id: string;
-  status: SchoolStatus;
-  admin_id?: string;
-  admin_email?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  principal_name?: string;
-  student_count?: number;
-  teacher_count?: number;
-  completion_rate?: number;
-  type?: string;
-  language?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface EnhancedSchoolData extends SchoolData {
-  region_name?: string;
-  sector_name?: string;
-  completion_rate: number;
-  region_id: string;
-  sector_id: string;
-  status: SchoolStatus;
-  columns?: Record<string, any>;
-  completion_stats?: {
-    total_required: number;
-    filled_count: number;
-    approved_count: number;
-    completion_rate: number;
-  };
-}
-
-// Legacy aliases for backward compatibility
-export interface School extends SchoolData {}
-
-export interface Region {
-  id: string;
-  name: string;
-  description?: string;
-  status: 'active' | 'inactive';
-  admin_id?: string;
-  admin_email?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Sector {
-  id: string;
-  name: string;
-  description?: string;
-  region_id: string;
-  admin_id?: string;
-  admin_email?: string;
-  status: 'active' | 'inactive';
-  completion_rate?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-// Create School Data type for context compatibility with limited statuses
-export interface CreateSchoolData {
-  name: string;
-  region_id: string;
-  sector_id: string;
-  status?: 'active' | 'inactive';
-  admin_id?: string;
-  admin_email?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  principal_name?: string;
-  student_count?: number;
-  teacher_count?: number;
-  type?: string;
-  language?: string;
+// Add missing interface for SchoolsContainer
+export interface SchoolsContainerProps {
+  schools: School[];
+  regions: Region[];
+  sectors: Sector[];
+  loading: boolean;
+  error: string;
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  onPageChange: (page: number) => void;
+  onSchoolSelect: (school: School) => void;
+  onRefresh: () => Promise<void>;
 }

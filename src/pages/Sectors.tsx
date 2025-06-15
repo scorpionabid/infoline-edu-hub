@@ -2,13 +2,13 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { useSectorsStore } from '@/hooks/useSectorsStore';
+import { useSectors } from '@/hooks/sectors/useSectors';
 import SectorsContainer from '@/components/sectors/SectorsContainer';
 import { Loader2 } from 'lucide-react';
 
 const Sectors = () => {
   const { t } = useLanguageSafe();
-  const { sectors, loading, refetch } = useSectorsStore();
+  const { sectors, loading, refetch } = useSectors();
 
   return (
     <>

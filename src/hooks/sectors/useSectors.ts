@@ -1,59 +1,51 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { Sector } from '@/types/sector';
 import { ensureSectorStatus } from '@/utils/buildFixes';
-
-export interface Sector {
-  id: string;
-  name: string;
-  description?: string;
-  region_id: string;
-  admin_id?: string;
-  admin_email?: string;
-  status: 'active' | 'inactive';
-  completion_rate?: number;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface SectorsStore {
   sectors: Sector[];
   loading: boolean;
   error: string | null;
+  fetchSectors: () => Promise<void>;
   refetch: () => Promise<void>;
 }
 
 export const useSectors = (): SectorsStore => {
   const [sectors, setSectors] = useState<Sector[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchSectors = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('sectors')
         .select('*')
         .order('name');
-
-      if (error) throw error;
-
-      // Ensure proper type casting
+        
+      if (fetchError) throw fetchError;
+      
       const typedSectors: Sector[] = (data || []).map(sector => ({
         ...sector,
         status: ensureSectorStatus(sector.status)
       }));
-
+      
       setSectors(typedSectors);
     } catch (err: any) {
-      console.error('Error fetching sectors:', err);
       setError(err.message);
-      toast.error('Sektorlar yüklənərkən xəta baş verdi');
+      console.error('Error fetching sectors:', err);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const refetch = useCallback(async () => {
+    await fetchSectors();
+  }, [fetchSectors]);
 
   useEffect(() => {
     fetchSectors();
@@ -63,6 +55,9 @@ export const useSectors = (): SectorsStore => {
     sectors,
     loading,
     error,
-    refetch: fetchSectors
+    fetchSectors,
+    refetch
   };
 };
+
+export const useSectorsStore = useSectors;

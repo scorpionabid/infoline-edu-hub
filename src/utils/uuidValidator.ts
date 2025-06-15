@@ -13,15 +13,15 @@ export const isValidUUID = (uuid: string): boolean => {
   return validateUserIdForDB(uuid);
 };
 
-// Add missing functions that are being imported
-export const getSafeUUID = (value: any): string | null => {
+// Updated function signature to match usage
+export const getSafeUUID = (value: any, allowNull: boolean = true): string | null => {
   if (typeof value === 'string' && validateUUID(value)) {
     return value;
   }
-  return null;
+  return allowNull ? null : '';
 };
 
 export const getUUIDOrDefault = (value: any, defaultValue: string = ''): string => {
-  const safeUUID = getSafeUUID(value);
+  const safeUUID = getSafeUUID(value, false);
   return safeUUID || defaultValue;
 };

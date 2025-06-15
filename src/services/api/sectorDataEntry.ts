@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { ensureSectorDataEntryStatus } from '@/utils/buildFixes';
 
 export interface SectorDataEntry {
   id: string;
@@ -21,7 +22,12 @@ export const sectorDataEntryApi = {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // Safe type casting for status
+    return (data || []).map(item => ({
+      ...item,
+      status: ensureSectorDataEntryStatus(item.status)
+    }));
   },
 
   async getBySector(sectorId: string): Promise<SectorDataEntry[]> {
@@ -35,7 +41,12 @@ export const sectorDataEntryApi = {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // Safe type casting for status
+    return (data || []).map(item => ({
+      ...item,
+      status: ensureSectorDataEntryStatus(item.status)
+    }));
   },
 
   async create(entry: Omit<SectorDataEntry, 'id' | 'created_at' | 'updated_at'>): Promise<SectorDataEntry> {
@@ -46,7 +57,11 @@ export const sectorDataEntryApi = {
       .single();
 
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      status: ensureSectorDataEntryStatus(data.status)
+    };
   },
 
   async update(id: string, updates: Partial<SectorDataEntry>): Promise<SectorDataEntry> {
@@ -58,6 +73,10 @@ export const sectorDataEntryApi = {
       .single();
 
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      status: ensureSectorDataEntryStatus(data.status)
+    };
   }
 };

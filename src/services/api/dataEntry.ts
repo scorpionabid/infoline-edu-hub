@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { UnifiedDataEntry, DataEntryParams } from './unifiedDataEntry';
 import { validateUserIdForDB } from '@/utils/uuidValidator';
+import { validateDataEntryUpdates, EnhancedDataEntryParams } from '@/utils/buildFixes';
 
 export interface DataEntryFilters {
   school_id?: string;
@@ -29,18 +30,13 @@ export const createDataEntry = async (params: DataEntryParams): Promise<UnifiedD
   return data;
 };
 
-export const updateDataEntry = async (id: string, updates: Partial<DataEntryParams>): Promise<UnifiedDataEntry> => {
-  // Validate user IDs if present
-  if (updates.created_by && !validateUserIdForDB(updates.created_by)) {
-    throw new Error('Invalid created_by user ID');
-  }
-  if (updates.approved_by && !validateUserIdForDB(updates.approved_by)) {
-    throw new Error('Invalid approved_by user ID');
-  }
+export const updateDataEntry = async (id: string, updates: Partial<EnhancedDataEntryParams>): Promise<UnifiedDataEntry> => {
+  // Use the safe validation function
+  const validatedUpdates = validateDataEntryUpdates(updates);
 
   const { data, error } = await supabase
     .from('data_entries')
-    .update(updates)
+    .update(validatedUpdates)
     .eq('id', id)
     .select()
     .single();

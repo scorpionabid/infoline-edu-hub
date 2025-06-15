@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, UserFilter, UserRole, UserStatus } from '@/types/user';
+import { safeAdminRoleFilter, safeUserStatusFilter } from '@/utils/buildFixes';
 
 export const useUsers = (initialFilter: UserFilter = {}) => {
   const [users, setUsers] = useState<User[]>([]);
@@ -30,17 +31,33 @@ export const useUsers = (initialFilter: UserFilter = {}) => {
           schools:school_id(name)
         `, { count: 'exact' });
       
-      // Apply filters
-      if (currentFilter.role && !Array.isArray(currentFilter.role) && currentFilter.role !== '') {
-        query = query.eq('role', currentFilter.role);
-      } else if (Array.isArray(currentFilter.role) && currentFilter.role.length > 0) {
-        query = query.in('role', currentFilter.role);
+      // Apply filters with safe type casting
+      if (currentFilter.role && currentFilter.role !== '') {
+        const safeRole = safeAdminRoleFilter(currentFilter.role);
+        if (safeRole) {
+          if (Array.isArray(currentFilter.role)) {
+            const validRoles = currentFilter.role.filter(r => ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(r));
+            if (validRoles.length > 0) {
+              query = query.in('role', validRoles);
+            }
+          } else {
+            query = query.eq('role', safeRole);
+          }
+        }
       }
       
-      if (currentFilter.status && !Array.isArray(currentFilter.status) && currentFilter.status !== '') {
-        query = query.eq('profiles.status', currentFilter.status);
-      } else if (Array.isArray(currentFilter.status) && currentFilter.status.length > 0) {
-        query = query.in('profiles.status', currentFilter.status);
+      if (currentFilter.status && currentFilter.status !== '') {
+        const safeStatus = safeUserStatusFilter(currentFilter.status);
+        if (safeStatus) {
+          if (Array.isArray(currentFilter.status)) {
+            const validStatuses = currentFilter.status.filter(s => ['active', 'inactive'].includes(s));
+            if (validStatuses.length > 0) {
+              query = query.in('profiles.status', validStatuses);
+            }
+          } else {
+            query = query.eq('profiles.status', safeStatus);
+          }
+        }
       }
       
       if (currentFilter.region_id) {

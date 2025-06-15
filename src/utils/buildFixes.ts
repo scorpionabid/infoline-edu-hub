@@ -240,3 +240,72 @@ export const ensureEnhancedRegionData = (data: any): any => {
     completionRate: Number(data.completionRate) || Number(data.completion_rate) || 0,
   };
 };
+
+// Enhanced role and status validation
+export const ensureValidUserRole = (role: any): 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user' => {
+  const validRoles = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin', 'user'];
+  return validRoles.includes(role) ? role : 'user';
+};
+
+export const ensureValidUserStatus = (status: any): 'active' | 'inactive' => {
+  return ['active', 'inactive'].includes(status) ? status : 'active';
+};
+
+// Safe role filter for SQL queries (excludes 'user' role when needed)
+export const safeAdminRoleFilter = (role: any): '' | 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' => {
+  if (Array.isArray(role)) {
+    const validRole = role.length > 0 ? role[0] : '';
+    return ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(validRole) ? validRole : '';
+  }
+  return ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(role) ? role : '';
+};
+
+// Safe status array filter with proper typing
+export const safeUserStatusFilter = (status: any): '' | 'active' | 'inactive' => {
+  if (Array.isArray(status)) {
+    return status.length > 0 ? ensureValidUserStatus(status[0]) : '';
+  }
+  return status === '' ? '' : ensureValidUserStatus(status);
+};
+
+// Enhanced sector data type casting
+export const ensureSectorDataEntryStatus = (status: any): 'draft' | 'submitted' | 'approved' | 'rejected' => {
+  const validStatuses = ['draft', 'submitted', 'approved', 'rejected'];
+  return validStatuses.includes(status) ? status : 'draft';
+};
+
+// Safe sector data entry casting
+export const ensureSectorDataEntry = (data: any): any => {
+  if (!data || typeof data !== 'object') return null;
+  
+  return {
+    ...data,
+    status: ensureSectorDataEntryStatus(data.status)
+  };
+};
+
+// Enhanced data entry params interface
+export interface EnhancedDataEntryParams {
+  column_id: string;
+  category_id: string;
+  school_id: string;
+  value: string;
+  status?: string;
+  created_by?: string;
+  approved_by?: string;
+}
+
+// Safe data entry updates validation
+export const validateDataEntryUpdates = (updates: any): Partial<EnhancedDataEntryParams> => {
+  const validatedUpdates: Partial<EnhancedDataEntryParams> = {};
+  
+  if (updates.column_id) validatedUpdates.column_id = updates.column_id;
+  if (updates.category_id) validatedUpdates.category_id = updates.category_id;
+  if (updates.school_id) validatedUpdates.school_id = updates.school_id;
+  if (updates.value !== undefined) validatedUpdates.value = updates.value;
+  if (updates.status) validatedUpdates.status = updates.status;
+  if (updates.created_by && isValidUUID(updates.created_by)) validatedUpdates.created_by = updates.created_by;
+  if (updates.approved_by && isValidUUID(updates.approved_by)) validatedUpdates.approved_by = updates.approved_by;
+  
+  return validatedUpdates;
+};
