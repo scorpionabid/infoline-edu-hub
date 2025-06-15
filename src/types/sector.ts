@@ -12,6 +12,9 @@ export interface Sector {
   admin_email?: string;
   created_at: string;
   updated_at: string;
+  // Add missing properties that components expect
+  regionName?: string;
+  region_name?: string;
 }
 
 export interface EnhancedSector extends Sector {

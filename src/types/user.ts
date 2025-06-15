@@ -1,73 +1,70 @@
 
-// User related types and interfaces
-
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
-export type UserStatus = 'active' | 'inactive';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+export type UserStatus = 'active' | 'inactive' | 'suspended';
 
 export interface NotificationSettings {
-  email_notifications?: boolean;
-  sms_notifications?: boolean;
-  push_notifications?: boolean;
-  email?: boolean;
-  system?: boolean;
+  email: boolean;
+  push: boolean;
+  sms: boolean;
+  inApp: boolean;
+  system: boolean;
+  deadline: boolean;
+  deadlineReminders: boolean;
+  email_notifications: boolean;
+  sms_notifications: boolean;
+  push_notifications: boolean;
+  notification_frequency: 'immediate' | 'daily' | 'weekly';
 }
 
-export interface UserFormData {
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  language: string;
+  timezone: string;
+  notifications: NotificationSettings;
+  dashboard: {
+    defaultView: string;
+    compactMode: boolean;
+  };
+}
+
+export interface EntityName {
+  region: string | null;
+  sector: string | null;  
+  school: string | null;
+}
+
+export interface User {
+  id: string;
   full_name: string;
   email: string;
+  role: UserRole;
+  status: UserStatus;
   phone?: string;
   position?: string;
-  role: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
   language?: string;
-  status?: UserStatus;
-  notifications?: NotificationSettings;
-}
-
-export interface UserFilter {
-  region?: string;
-  sector?: string;
-  school?: string;
-  role?: UserRole | UserRole[] | '';
-  status?: UserStatus | UserStatus[] | '';
-  search?: string;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  page?: number;
-  limit?: number;
+  avatar?: string;
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
+  entityName?: EntityName;
 }
 
 export interface FullUserData {
   id: string;
-  full_name: string;
   email: string;
-  phone?: string;
-  position?: string;
+  full_name: string;
+  name: string;
   role: UserRole;
-  status: UserStatus;
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  phone?: string;
+  position?: string;
   language?: string;
+  avatar?: string;
+  status: UserStatus;
+  last_login?: string;
   created_at: string;
   updated_at: string;
-  last_login?: string;
-  avatar?: string;
-  entityName?: string;
-  notifications?: NotificationSettings;
+  notification_settings?: NotificationSettings;
 }
-
-export interface UserWithAssignments extends FullUserData {
-  region?: string;
-  sector?: string;
-  school?: string;
-}
-
-// Legacy alias for backward compatibility
-export interface User extends FullUserData {}

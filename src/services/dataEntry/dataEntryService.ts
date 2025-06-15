@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getDBSafeUUID } from '@/utils/uuidValidator';
 import { logUUIDValidation, logDatabaseOperation, logDataEntryFlow } from '@/utils/debugUtils';
+import { DataEntryFormData } from '@/types/dataEntry';
 
 /**
  * Data Entry Service - məlumat daxil etmə əməliyyatları üçün mərkəzləşdirilmiş servis
@@ -240,7 +241,7 @@ export class DataEntryService {
     try {
       const processedEntries = entries.map(entry => ({
         ...entry,
-        created_by: getDBSafeUUID(entry.created_by, false) || undefined,
+        created_by: getDBSafeUUID(entry.created_by) || undefined,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }));

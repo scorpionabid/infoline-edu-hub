@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@/types/user';
+import { User, EntityName } from '@/types/user';
 import { UserRole, UserStatus } from '@/types/auth';
 
 export interface FilterOption {
@@ -69,7 +69,7 @@ export const useUsers = () => {
         const userRole = user.role ? user.role[0]?.role : 'schooladmin';
         const userStatus = user.status || 'active';
         
-        let entityName: User['entityName'] = {
+        let entityName: EntityName = {
           region: null,
           sector: null,
           school: null

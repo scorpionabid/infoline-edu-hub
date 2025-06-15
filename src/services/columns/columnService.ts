@@ -79,8 +79,8 @@ export const createColumn = async (columnData: ColumnFormData): Promise<Column> 
       help_text: columnData.help_text || '',
       placeholder: columnData.placeholder || '',
       default_value: columnData.default_value || '',
-      options: (columnData.options as Json) || [],
-      validation: (columnData.validation as Json) || {},
+      options: (columnData.options as unknown as Json) || [],
+      validation: (columnData.validation as unknown as Json) || {},
       order_index: columnData.order_index || 0,
       status: columnData.status || 'active',
       updated_at: new Date().toISOString()
@@ -115,8 +115,8 @@ export const updateColumn = async (columnId: string, updates: Partial<ColumnForm
     if (updates.help_text !== undefined) dbUpdates.help_text = updates.help_text;
     if (updates.placeholder !== undefined) dbUpdates.placeholder = updates.placeholder;
     if (updates.default_value !== undefined) dbUpdates.default_value = updates.default_value;
-    if (updates.options !== undefined) dbUpdates.options = updates.options as Json;
-    if (updates.validation !== undefined) dbUpdates.validation = updates.validation as Json;
+    if (updates.options !== undefined) dbUpdates.options = updates.options as unknown as Json;
+    if (updates.validation !== undefined) dbUpdates.validation = updates.validation as unknown as Json;
     if (updates.order_index !== undefined) dbUpdates.order_index = updates.order_index;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
 

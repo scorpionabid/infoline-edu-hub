@@ -1,6 +1,5 @@
-
 import { supabase } from '@/lib/supabase';
-import { FullUserData, UserStatus } from '@/types/auth';
+import { FullUserData, UserStatus, NotificationSettings } from '@/types/auth';
 import { Session, User } from '@supabase/supabase-js';
 
 // Cache keys
@@ -257,6 +256,21 @@ export class AuthService {
         console.error('Error fetching profile:', profileError);
       }
       
+      // Create proper notification settings
+      const notificationSettings: NotificationSettings = {
+        email: true,
+        push: true,
+        sms: true,
+        inApp: true,
+        system: true,
+        deadline: true,
+        deadlineReminders: true,
+        email_notifications: true,
+        sms_notifications: true,
+        push_notifications: true,
+        notification_frequency: 'immediate'
+      };
+      
       // Build user data object with defaults
       const userData: FullUserData = {
         id: session.user.id,
@@ -275,11 +289,7 @@ export class AuthService {
         last_login: profileData?.last_login || new Date().toISOString(),
         created_at: profileData?.created_at || new Date().toISOString(),
         updated_at: profileData?.updated_at || new Date().toISOString(),
-        notification_settings: {
-          email: true,
-          push: true,
-          sms: true
-        }
+        notification_settings: notificationSettings
       };
       
       // Store user in cache
@@ -297,7 +307,7 @@ export class AuthService {
   public static async updateUserProfile(userId: string, updates: Partial<FullUserData>): Promise<FullUserData | null> {
     try {
       // Remove notification_settings from updates as it's not in profiles table
-      const { notification_settings, ...profileUpdates } = updates;
+      const { notification_settings, name, role, ...profileUpdates } = updates;
       
       const { data, error } = await supabase
         .from('profiles')
@@ -307,7 +317,13 @@ export class AuthService {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Return complete user data
+      return {
+        ...data,
+        name: data.full_name,
+        role: 'schooladmin' // This should be fetched from user_roles
+      };
     } catch (error) {
       console.error('Error updating user profile:', error);
       throw error;
