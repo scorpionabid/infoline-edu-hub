@@ -1,20 +1,35 @@
-import React, { createContext, useContext, useState } from 'react';
+
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { School } from '@/types/school';
-import { FullUserData } from '@/types/auth';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
+import { School, SchoolStatus } from '@/types/school';
+import { toast } from 'sonner';
+
+export interface CreateSchoolData {
+  name: string;
+  sector_id: string;
+  region_id: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  principal_name?: string;
+  student_count?: number;
+  teacher_count?: number;
+  type?: string;
+  status: 'active' | 'inactive';
+  language?: string;
+}
 
 interface SchoolsContextProps {
   schools: School[];
   isLoading: boolean;
-  error: string | null;
+  error: string;
   fetchSchools: (regionId?: string, sectorId?: string) => Promise<void>;
-  createSchool: (schoolData: Omit<School, 'id'>) => Promise<void>;
+  createSchool: (schoolData: CreateSchoolData) => Promise<void>;
   updateSchool: (schoolId: string, schoolData: Partial<School>) => Promise<void>;
   deleteSchool: (schoolId: string) => Promise<void>;
-  assignSchoolAdmin: (schoolId: string, userId: string) => Promise<void>;
-  bulkCreateSchools: (schoolsData: Partial<School>[]) => Promise<void>;
+  assignAdmin: (schoolId: string, adminData: any) => Promise<void>;
+  refreshSchools: () => Promise<void>;
 }
 
 const SchoolsContext = createContext<SchoolsContextProps | undefined>(undefined);
@@ -27,151 +42,136 @@ export const useSchoolsContext = () => {
   return context;
 };
 
-export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface SchoolsProviderProps {
+  children: React.ReactNode;
+}
+
+export const SchoolsProvider: React.FC<SchoolsProviderProps> = ({ children }) => {
   const [schools, setSchools] = useState<School[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const user = useAuthStore(selectUser);
 
   const fetchSchools = async (regionId?: string, sectorId?: string) => {
+    setIsLoading(true);
+    setError('');
+    
     try {
-      setIsLoading(true);
-      setError(null);
+      let query = supabase
+        .from('schools')
+        .select(`
+          *,
+          regions(id, name),
+          sectors(id, name)
+        `);
 
-      let query = supabase.from('schools').select('*');
-      
+      // Apply filters based on user role and parameters
+      if (user?.role === 'regionadmin' && user.region_id) {
+        query = query.eq('region_id', user.region_id);
+      } else if (user?.role === 'sectoradmin' && user.sector_id) {
+        query = query.eq('sector_id', user.sector_id);
+      } else if (user?.role === 'schooladmin' && user.school_id) {
+        query = query.eq('id', user.school_id);
+      }
+
+      // Apply additional filters
       if (regionId) {
         query = query.eq('region_id', regionId);
       }
-      
       if (sectorId) {
         query = query.eq('sector_id', sectorId);
       }
+
+      query = query.order('created_at', { ascending: false });
 
       const { data, error } = await query;
 
       if (error) throw error;
 
-      setSchools(data as School[]);
+      const processedSchools: School[] = data?.map((school: any) => ({
+        id: school.id,
+        name: school.name,
+        region_id: school.region_id,
+        sector_id: school.sector_id,
+        address: school.address,
+        phone: school.phone,
+        email: school.email,
+        principal_name: school.principal_name,
+        student_count: school.student_count,
+        teacher_count: school.teacher_count,
+        type: school.type,
+        status: school.status as SchoolStatus,
+        language: school.language,
+        logo: school.logo,
+        completion_rate: school.completion_rate,
+        admin_id: school.admin_id,
+        admin_email: school.admin_email,
+        created_at: school.created_at,
+        updated_at: school.updated_at
+      })) || [];
+
+      setSchools(processedSchools);
     } catch (err: any) {
       console.error('Error fetching schools:', err);
-      setError(err.message);
-      toast.error('Error', {
-        description: `Failed to load schools: ${err.message}`
-      });
+      setError(err.message || 'Məktəblər yüklənərkən xəta baş verdi');
+      toast.error('Məktəblər yüklənərkən xəta baş verdi');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Məktəb yaratmaq üçün minimal tələbləri təyin edirləm
-  interface CreateSchoolData {
-    name: string;          // Məcburidir
-    region_id: string;     // Məcburidir
-    sector_id: string;     // Məcburidir
-    address?: string;
-    email?: string;
-    phone?: string;
-    status?: 'active' | 'inactive';
-    admin_id?: string;
-    admin_email?: string;
-    principal_name?: string;
-    [key: string]: any;    // Digər sahələr
-  }
-  
   const createSchool = async (schoolData: CreateSchoolData) => {
     try {
-      setIsLoading(true);
-      setError(null);
-
       const { data, error } = await supabase
         .from('schools')
-        .insert([schoolData])
+        .insert({
+          name: schoolData.name,
+          sector_id: schoolData.sector_id,
+          region_id: schoolData.region_id,
+          address: schoolData.address,
+          phone: schoolData.phone,
+          email: schoolData.email,
+          principal_name: schoolData.principal_name,
+          student_count: schoolData.student_count,
+          teacher_count: schoolData.teacher_count,
+          type: schoolData.type,
+          status: schoolData.status,
+          language: schoolData.language || 'az'
+        })
         .select()
         .single();
 
       if (error) throw error;
 
-      // Supabase-dən qayidan məlumatları School tipində düzgün casting edirləm
-      setSchools((prev) => [...prev, {
-        ...data,
-        status: data.status as 'active' | 'inactive'
-      } as School]);
-      
-      toast.success('Success', {
-        description: 'School created successfully'
-      });
+      toast.success('Məktəb uğurla yaradıldı');
+      await fetchSchools();
     } catch (err: any) {
       console.error('Error creating school:', err);
-      setError(err.message);
-      toast.error('Error', {
-        description: `Failed to create school: ${err.message}`
-      });
-    } finally {
-      setIsLoading(false);
+      toast.error('Məktəb yaradılarkən xəta baş verdi');
+      throw err;
     }
   };
 
   const updateSchool = async (schoolId: string, schoolData: Partial<School>) => {
     try {
-      setIsLoading(true);
-      setError(null);
-
-      // Ensure status is either "active" or "inactive"
-      const updatedData = {
-        ...schoolData,
-        status: schoolData.status === "active" || schoolData.status === "inactive" 
-          ? schoolData.status 
-          : "active" // Default value if status is invalid
-      };
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('schools')
-        .update(updatedData)
-        .eq('id', schoolId)
-        .select()
-        .single();
+        .update(schoolData)
+        .eq('id', schoolId);
 
       if (error) throw error;
 
-      setSchools((prev) =>
-        prev.map((school) => {
-          if (school.id === schoolId) {
-            // Ensure status is either 'active' or 'inactive'
-            const updatedStatus = data.status === 'active' || data.status === 'inactive' 
-              ? (data.status as 'active' | 'inactive') 
-              : 'active' as const;
-              
-            const updatedSchool: School = {
-              ...school,
-              ...data,
-              status: updatedStatus
-            };
-            return updatedSchool;
-          }
-          return school;
-        })
-      );
-      
-      toast.success('Success', {
-        description: 'School updated successfully'
-      });
+      toast.success('Məktəb məlumatları yeniləndi');
+      await fetchSchools();
     } catch (err: any) {
       console.error('Error updating school:', err);
-      setError(err.message);
-      toast.error('Error', {
-        description: `Failed to update school: ${err.message}`
-      });
-    } finally {
-      setIsLoading(false);
+      toast.error('Məktəb yenilənərkən xəta baş verdi');
+      throw err;
     }
   };
 
   const deleteSchool = async (schoolId: string) => {
     try {
-      setIsLoading(true);
-      setError(null);
-
       const { error } = await supabase
         .from('schools')
         .delete()
@@ -179,142 +179,64 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       if (error) throw error;
 
-      setSchools((prev) => prev.filter((school) => school.id !== schoolId));
-      
-      toast.success('Success', {
-        description: 'School deleted successfully'
-      });
+      toast.success('Məktəb silindi');
+      await fetchSchools();
     } catch (err: any) {
       console.error('Error deleting school:', err);
-      setError(err.message);
-      toast.error('Error', {
-        description: `Failed to delete school: ${err.message}`
-      });
-    } finally {
-      setIsLoading(false);
+      toast.error('Məktəb silinərkən xəta baş verdi');
+      throw err;
     }
   };
 
-  const assignSchoolAdmin = async (schoolId: string, userId: string) => {
+  const assignAdmin = async (schoolId: string, adminData: any) => {
     try {
-      setIsLoading(true);
-      setError(null);
+      // Call the assign_school_admin function
+      const { data, error } = await supabase
+        .rpc('assign_school_admin', {
+          user_id_param: adminData.userId,
+          school_id_param: schoolId
+        });
 
-      // Get school data to get region_id and sector_id
-      const { data: schoolData, error: schoolError } = await supabase
-        .from('schools')
-        .select('region_id, sector_id')
-        .eq('id', schoolId)
-        .single();
-    
-      if (schoolError) throw schoolError;
-      
-      if (!schoolData || !schoolData.region_id || !schoolData.sector_id) {
-        throw new Error('School data missing required fields');
+      if (error) throw error;
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Admin təyin edilərkən xəta baş verdi');
       }
 
-      // First, update the user_roles table
-      const { error: rolesError } = await supabase.rpc('assign_school_admin', {
-        user_id: userId,
-        school_id: schoolId,
-        region_id: schoolData.region_id,
-        sector_id: schoolData.sector_id
-      });
-      
-      if (rolesError) throw rolesError;
-
-      // Then update the schools table
-      const { error: schoolError2 } = await supabase
-        .from('schools')
-        .update({ admin_id: userId })
-        .eq('id', schoolId);
-      
-      if (schoolError2) throw schoolError2;
-      
-      toast.success('Success', {
-        description: 'School admin assigned successfully'
-      });
-      
+      toast.success('Məktəb admini uğurla təyin edildi');
       await fetchSchools();
     } catch (err: any) {
-      console.error('Error assigning school admin:', err);
-      setError(err.message);
-      toast.error('Error', {
-        description: `Failed to assign school admin: ${err.message}`
-      });
-    } finally {
-      setIsLoading(false);
+      console.error('Error assigning admin:', err);
+      toast.error(err.message || 'Admin təyin edilərkən xəta baş verdi');
+      throw err;
     }
   };
 
-  const bulkCreateSchools = async (schoolsData: Partial<School>[]) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const refreshSchools = async () => {
+    await fetchSchools();
+  };
 
-      // Ensure required fields are present
-      const validSchoolsData = schoolsData.filter(school => 
-        school.name && school.region_id && school.sector_id
-      );
-      
-      if (validSchoolsData.length === 0) {
-        throw new Error('No valid school data provided');
-      }
-      
-      // Insert schools one by one to avoid type errors
-      for (const schoolData of validSchoolsData) {
-        // Ensure we have the name field
-        if (schoolData.name) {
-          const { error } = await supabase
-            .from('schools')
-            .insert({
-              name: schoolData.name,
-              region_id: schoolData.region_id,
-              sector_id: schoolData.sector_id,
-              address: schoolData.address,
-              phone: schoolData.phone,
-              email: schoolData.email,
-              principal_name: schoolData.principal_name,
-              student_count: schoolData.student_count,
-              teacher_count: schoolData.teacher_count,
-              type: schoolData.type,
-              status: schoolData.status || 'active',
-              language: schoolData.language
-            });
-          
-          if (error) throw error;
-        }
-      }
-      
-      toast.success('Success', {
-        description: `${validSchoolsData.length} schools created successfully`
-      });
-      
-      await fetchSchools();
-    } catch (err: any) {
-      console.error('Error creating schools in bulk:', err);
-      setError(err.message);
-      toast.error('Error', {
-        description: `Failed to create schools: ${err.message}`
-      });
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (user) {
+      fetchSchools();
     }
-  };
+  }, [user]);
 
-  const value = {
-    schools,
-    isLoading,
-    error,
-    fetchSchools,
-    createSchool,
-    updateSchool,
-    deleteSchool,
-    assignSchoolAdmin,
-    bulkCreateSchools,
-  };
-
-  return <SchoolsContext.Provider value={value}>{children}</SchoolsContext.Provider>;
+  return (
+    <SchoolsContext.Provider
+      value={{
+        schools,
+        isLoading,
+        error,
+        fetchSchools,
+        createSchool,
+        updateSchool,
+        deleteSchool,
+        assignAdmin,
+        refreshSchools
+      }}
+    >
+      {children}
+    </SchoolsContext.Provider>
+  );
 };
-
-export default SchoolsContext;
