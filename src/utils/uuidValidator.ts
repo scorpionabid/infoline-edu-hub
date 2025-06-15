@@ -1,30 +1,66 @@
 
-export const validateUserIdForDB = (userId: string): boolean => {
-  // UUID v4 regex pattern
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(userId);
+/**
+ * UUID validation and conversion utilities
+ * Prevents sending invalid string values to UUID database columns
+ */
+
+import { v4 as uuidv4 } from 'uuid';
+
+export const isValidUUID = (str: any): boolean => {
+  if (!str || typeof str !== 'string') return false;
+  
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
 };
 
-export const validateUUID = (uuid: string): boolean => {
-  return validateUserIdForDB(uuid);
-};
-
-export const isValidUUID = (uuid: string): boolean => {
-  return validateUserIdForDB(uuid);
-};
-
-// Updated function signature to match usage
-export const getSafeUUID = (value: any, allowNull: boolean = true): string | null => {
-  if (typeof value === 'string' && validateUUID(value)) {
-    return value;
+/**
+ * Converts potentially invalid UUID values to database-safe values
+ * Returns null for system operations instead of "system" string
+ */
+export const getDBSafeUUID = (value: any, context?: string): string | null => {
+  // Log the validation attempt for debugging
+  console.log(`[UUID Validator] ${context || 'Unknown'} - Input:`, value, typeof value);
+  
+  // Handle null/undefined
+  if (!value) return null;
+  
+  // Handle string values
+  if (typeof value === 'string') {
+    // Never allow these system-like strings
+    if (value === 'system' || value === 'undefined' || value === 'null') {
+      console.warn(`[UUID Validator] ${context || 'Unknown'} - Blocked invalid system string: ${value}`);
+      return null;
+    }
+    
+    // Check if it's a valid UUID
+    if (isValidUUID(value)) {
+      return value;
+    }
+    
+    console.warn(`[UUID Validator] ${context || 'Unknown'} - Invalid UUID format: ${value}`);
+    return null;
   }
-  return allowNull ? null : '';
+  
+  console.warn(`[UUID Validator] ${context || 'Unknown'} - Non-string UUID value:`, value);
+  return null;
 };
 
-// Export alias for legacy usage
-export const getDBSafeUUID = getSafeUUID;
+/**
+ * Generates a new UUID for system operations
+ */
+export const generateSystemUUID = (): string => {
+  return uuidv4();
+};
 
-export const getUUIDOrDefault = (value: any, defaultValue: string = ''): string => {
-  const safeUUID = getSafeUUID(value, false);
-  return safeUUID || defaultValue;
+/**
+ * Validates and cleans user ID for database operations
+ */
+export const validateUserIdForDB = (userId: any, operation: string): string | null => {
+  const result = getDBSafeUUID(userId, `User ID for ${operation}`);
+  
+  if (!result) {
+    console.error(`[UUID Validator] Invalid user ID for ${operation}:`, userId);
+  }
+  
+  return result;
 };

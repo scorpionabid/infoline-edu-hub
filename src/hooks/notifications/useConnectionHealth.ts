@@ -3,13 +3,13 @@ export interface ConnectionHealth {
   status: 'connected' | 'disconnected' | 'reconnecting';
   lastConnected?: Date;
   reconnectCount: number;
-  health: 'excellent' | 'good' | 'poor' | 'offline';
+  health: 'good' | 'poor' | 'critical';
 }
 
 export const useConnectionHealth = () => {
   const connectionHealth: ConnectionHealth = {
     status: 'connected',
-    health: 'excellent',
+    health: 'good',
     reconnectCount: 0,
     lastConnected: new Date()
   };

@@ -56,12 +56,6 @@ export interface EmailPreferences {
   };
 }
 
-export interface NotificationSettings {
-  email_notifications: boolean;
-  sms_notifications: boolean;
-  push_notifications: boolean;
-}
-
 /**
  * Email Service for sending notifications via email
  * Integrates with Supabase Edge Functions for email delivery
@@ -549,37 +543,6 @@ export class EmailService {
       </body>
       </html>
     `;
-  }
-
-  /**
-   * Get user notification preferences
-   */
-  static async getUserNotificationPreferences(userId: string): Promise<NotificationSettings> {
-    try {
-      // Use profiles table instead of non-existent user_notification_preferences
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-
-      // Return default settings since we don't have notification preferences in profiles
-      return {
-        email_notifications: true,
-        sms_notifications: false,
-        push_notifications: true
-      };
-    } catch (error) {
-      console.error('Error fetching notification preferences:', error);
-      // Return default settings on error
-      return {
-        email_notifications: true,
-        sms_notifications: false,
-        push_notifications: true
-      };
-    }
   }
 }
 

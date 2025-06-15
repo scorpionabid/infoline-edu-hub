@@ -1,4 +1,3 @@
-
 // hooks/reports/useEnhancedSchoolColumnReport.ts
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -153,7 +152,6 @@ export const useEnhancedSchoolColumnReport = (categoryId?: string) => {
           sector_id: school.sector_id,
           sector_name: school.sectors.name,
           status: school.status,
-          completion_rate: 0,
           columns: {},
           completion_stats: {
             total_required: 0,
@@ -201,7 +199,6 @@ export const useEnhancedSchoolColumnReport = (categoryId?: string) => {
         const totalRequired = columnIds.length;
         const filledCount = Object.keys(schoolEntries).length; // Filled approved entries
         const approvedCount = filledCount; // All fetched entries are approved
-        const completionRate = totalRequired > 0 ? Math.round((approvedCount / totalRequired) * 100) : 0;
 
         return {
           id: school.id,
@@ -212,13 +209,12 @@ export const useEnhancedSchoolColumnReport = (categoryId?: string) => {
           sector_id: school.sector_id,
           sector_name: school.sectors.name,
           status: school.status,
-          completion_rate: completionRate,
           columns: schoolEntries,
           completion_stats: {
             total_required: totalRequired,
             filled_count: filledCount,
             approved_count: approvedCount,
-            completion_rate: completionRate
+            completion_rate: totalRequired > 0 ? Math.round((approvedCount / totalRequired) * 100) : 0
           }
         };
       });

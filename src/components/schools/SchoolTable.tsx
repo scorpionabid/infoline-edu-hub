@@ -99,7 +99,7 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
                   </span>
                 )}
               </TableCell>
-              <TableCell>{school.email || school.principal_email || '-'}</TableCell>
+              <TableCell>{school.email || '-'}</TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end space-x-2">
                   <Button

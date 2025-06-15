@@ -1,20 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
-interface SimpleUser {
-  id: string;
-  full_name: string;
-  email: string;
-}
+import { useLanguage } from '@/context/LanguageContext';
+import { FullUserData } from '@/types/auth';
 
 interface AdminUserSelectorProps {
-  entityId?: string;
+  entityId: string | undefined;
   entityType: 'region' | 'sector' | 'school';
-  selectedAdminId?: string | null;
+  selectedAdminId: string | null;
   onChange: (userId: string | null) => void;
 }
 
@@ -24,7 +19,8 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
   selectedAdminId,
   onChange
 }) => {
-  const [users, setUsers] = useState<SimpleUser[]>([]);
+  const { t } = useLanguage();
+  const [users, setUsers] = useState<FullUserData[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -33,39 +29,29 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 
       setLoading(true);
       try {
-        const roleMap = {
-          region: 'regionadmin',
-          sector: 'sectoradmin', 
-          school: 'schooladmin'
-        } as const;
-
-        const targetRole = roleMap[entityType];
-        
-        // Use a simple query since the RPC function might not exist
         let query = supabase
           .from('profiles')
-          .select('id, full_name, email')
-          .limit(10);
+          .select('*')
+          .eq('role', `${entityType.replace('region', 'regionadmin').replace('sector', 'sectoradmin').replace('school', 'schooladmin')}`);
 
-        const { data, error } = await query;
+        if (entityType === 'region') {
+          query = query.eq('region_id', entityId);
+        } else if (entityType === 'sector') {
+          query = query.eq('sector_id', entityId);
+        } else if (entityType === 'school') {
+          query = query.eq('school_id', entityId);
+        }
+
+        const { data, error } = await query.order('full_name');
 
         if (error) {
           console.error('Error fetching users:', error);
-          setUsers([]);
           return;
         }
 
-        // Safely cast the response to our expected type
-        const userData: SimpleUser[] = (data || []).map(item => ({
-          id: item.id,
-          full_name: item.full_name || 'İsimsiz İstifadəçi',
-          email: item.email || ''
-        }));
-
-        setUsers(userData);
+        setUsers(data as FullUserData[]);
       } catch (error) {
         console.error('Error fetching users:', error);
-        setUsers([]);
       } finally {
         setLoading(false);
       }
@@ -76,16 +62,16 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
 
   return (
     <div>
-      <Label htmlFor="admin">Admin</Label>
+      <Label htmlFor="admin">{t('admin')}</Label>
       <Select
         value={selectedAdminId || 'select-admin'}
         onValueChange={(value) => onChange(value === 'select-admin' ? null : value)}
       >
         <SelectTrigger>
-          <SelectValue placeholder="Admin seçin" />
+          <SelectValue placeholder={t('selectAdmin')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="select-admin">Admin seçin</SelectItem>
+          <SelectItem value="select-admin">{t('selectAdmin')}</SelectItem>
           {users.map((user) => (
             <SelectItem key={user.id} value={user.id}>
               {user.full_name}
@@ -96,7 +82,7 @@ const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
       {loading && (
         <div className="mt-2 flex items-center text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          İstifadəçilər yüklənir...
+          {t('loadingUsers')}
         </div>
       )}
     </div>

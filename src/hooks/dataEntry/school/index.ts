@@ -1,4 +1,4 @@
 
-// Export school data entry hooks
-export { useSchoolCategories } from './useSchoolCategories';
-export { default as useUnifiedDataEntry } from '../useUnifiedDataEntry';
+// School data entry hooks - cleaned up
+export { useUnifiedDataEntry } from '../useUnifiedDataEntry';
+export { useDataEntryManager } from '../useDataEntryManager';

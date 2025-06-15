@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnType, parseColumnOptions, parseValidationRules } from '@/types/column';
+import { Column } from '@/types/column';
 
 export interface UseColumnsQueryOptions {
   categoryId?: string;
@@ -13,28 +13,6 @@ export interface UseColumnsQueryOptions {
 }
 
 export interface ColumnsQueryOptions extends UseColumnsQueryOptions {}
-
-// Helper to safely convert database record to Column
-const convertToColumn = (item: any): Column => {
-  return {
-    id: item.id,
-    name: item.name,
-    type: item.type as ColumnType,
-    category_id: item.category_id,
-    placeholder: item.placeholder,
-    help_text: item.help_text,
-    description: item.description,
-    is_required: item.is_required || false,
-    default_value: item.default_value,
-    options: parseColumnOptions(item.options),
-    validation: parseValidationRules(item.validation),
-    order_index: item.order_index || 0,
-    status: item.status || 'active',
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-    section: item.section
-  };
-};
 
 export const useColumnsQuery = ({ 
   categoryId, 
@@ -97,9 +75,9 @@ export const useColumnsQuery = ({
       console.log('✅ Fetched columns:', data?.length || 0, 'columns');
       console.log('📊 Column data:', data);
       
-      return (data || []).map(convertToColumn);
+      return (data || []) as Column[];
     },
-    enabled: enabled,
+    enabled: enabled, // Remove categoryId dependency
     gcTime: 5 * 60 * 1000,
     staleTime: 30 * 1000,
     retry: 2,
@@ -124,9 +102,9 @@ export const useActiveColumnsQuery = ({ categoryId, enabled = true }: UseColumns
         throw error;
       }
       
-      return (data || []).map(convertToColumn);
+      return (data || []) as Column[];
     },
-    enabled: enabled,
+    enabled: enabled, // Remove categoryId dependency
     gcTime: 5 * 60 * 1000,
     staleTime: 30 * 1000,
     retry: 2,
@@ -151,9 +129,9 @@ export const useArchivedColumnsQuery = ({ categoryId, enabled = true }: UseColum
         throw error;
       }
       
-      return (data || []).map(convertToColumn);
+      return (data || []) as Column[];
     },
-    enabled: enabled,
+    enabled: enabled, // Remove categoryId dependency
     gcTime: 5 * 60 * 1000,
     staleTime: 30 * 1000,
     retry: 2,
@@ -178,7 +156,7 @@ export const useColumnQuery = ({ columnId, enabled = true }: { columnId?: string
         throw error;
       }
       
-      return convertToColumn(data);
+      return data as Column;
     },
     enabled: enabled && !!columnId,
     gcTime: 5 * 60 * 1000,

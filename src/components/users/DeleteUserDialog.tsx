@@ -9,44 +9,48 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
+import { useLanguage } from '@/context/LanguageContext';
 import { User } from '@/types/user';
 
 interface DeleteUserDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  user: Partial<User> | null;
-  isLoading?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  user: Partial<User>;
+  onDelete: () => void;
 }
 
 const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
+  open,
+  onOpenChange,
   user,
-  isLoading = false
+  onDelete
 }) => {
+  const { t } = useLanguage();
+  
+  const handleConfirmDelete = () => {
+    onDelete();
+  };
+
+  // Get user name from fullName, full_name, or email with fallback to "unknown user"
+  const userName = user.fullName || user.full_name || user.email || t('unknownUser');
+
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>İstifadəçini sil</AlertDialogTitle>
+          <AlertDialogTitle>{t('deleteUserConfirmation')}</AlertDialogTitle>
           <AlertDialogDescription>
-            <strong>{user?.full_name}</strong> istifadəçisini silmək istədiyinizə əminsiniz?
-            Bu əməliyyat geri qaytarıla bilməz.
+            {t('deleteUserWarning', { name: userName })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>
-            İmtina
-          </AlertDialogCancel>
+          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
           <AlertDialogAction 
-            onClick={onConfirm} 
-            disabled={isLoading}
-            className="bg-destructive hover:bg-destructive/90"
+            onClick={handleConfirmDelete}
+            className="bg-red-500 hover:bg-red-600"
           >
-            {isLoading ? 'Silinir...' : 'Sil'}
+            {t('delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

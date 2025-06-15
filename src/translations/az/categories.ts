@@ -3,151 +3,145 @@
  * Kateqoriya ilə bağlı tərcümələr
  */
 const categories = {
-  // Kateqoriya əsas sözlər
+  // Kateqoriya
   categories: "Kateqoriyalar",
   category: "Kateqoriya",
   categoriesPageTitle: "Kateqoriyalar",
   categoriesPageDescription: "Təhsil verilənlərini təşkil etmək üçün kateqoriyaları idarə edin",
-  
-  // Əməliyyatlar
   addCategory: "Kateqoriya əlavə et",
-  newCategory: "Yeni Kateqoriya",
   editCategory: "Kateqoriyanı redaktə et",
   deleteCategory: "Kateqoriyanı sil",
-  createCategory: "Kateqoriya yarat",
-  updateCategory: "Kateqoriyanı yenilə",
-  saveCategory: "Kateqoriyanı saxla",
-  
-  // Kateqoriya sahələri
   categoryName: "Kateqoriya adı",
   categoryDescription: "Kateqoriya təsviri",
   categoryDeadline: "Son tarix",
   categoryStatus: "Status",
   categoryAssignment: "Təyinat",
-  categoryPriority: "Prioritet",
   categoryCreatedAt: "Yaradılma tarixi",
   categoryUpdatedAt: "Yenilənmə tarixi",
   categoryActions: "Əməliyyatlar",
-  
-  // Status sözləri
-  active: "Aktiv",
-  inactive: "Deaktiv", 
-  draft: "Qaralama",
-  approved: "Təsdiqlənmiş",
-  archived: "Arxivlənmiş",
-  pending: "Gözləmədə",
-  
-  // Təyinat növləri
-  assignment: "Təyinat",
-  assignmentAll: "Hamısı",
-  assignmentSectors: "Sektorlar",
-  assignmentSchools: "Məktəblər",
-  assignmentRegions: "Regionlar",
-  allEntities: "Bütün vahidlər",
-  sectorsOnly: "Yalnız sektorlar",
-  schoolsOnly: "Yalnız məktəblər",
-  regionsOnly: "Yalnız regionlar",
-  
-  // Form əməliyyatları
-  save: "Saxla",
-  cancel: "Ləğv et",
-  create: "Yarat",
-  update: "Yenilə",
-  delete: "Sil",
-  edit: "Redaktə et",
-  
-  // Status və mesajlar
+  allCategories: "Bütün kateqoriyalar",
+  sectorCategories: "Sektor kateqoriyaları",
+  noCategoriesFound: "Kateqoriya tapılmadı",
+  searchCategories: "Kateqoriyaları axtar...",
   categoryAdded: "Kateqoriya əlavə edildi",
   categoryUpdated: "Kateqoriya yeniləndi",
   categoryDeleted: "Kateqoriya silindi",
-  categoryCreated: "Kateqoriya yaradıldı",
   categoryAddedDescription: "Kateqoriya uğurla əlavə edildi",
   categoryUpdatedDescription: "Kateqoriya uğurla yeniləndi",
   categoryDeletedDescription: "Kateqoriya uğurla silindi",
   categoryAddFailed: "Kateqoriya əlavə edilə bilmədi",
   categoryUpdateFailed: "Kateqoriya yenilənə bilmədi",
   categoryDeleteFailed: "Kateqoriya silinə bilmədi",
-  errorCreatingCategory: "Kateqoriya yaradılarkən xəta baş verdi",
-  
-  // Axtarış və filtrlər
-  searchCategories: "Kateqoriya axtar...",
-  search: "Axtar",
-  filter: "Filtr",
-  filters: "Filtrlər",
-  resetFilters: "Filtri sıfırla",
-  allStatuses: "Bütün statuslar",
-  allAssignments: "Bütün təyinatlar",
-  
-  // Boş hallar
-  noCategories: "Kateqoriya yoxdur",
-  noCategoriesDescription: "Hələ heç bir kateqoriya yaradılmayıb",
-  noCategoriesFound: "Kateqoriya tapılmadı",
-  
-  // Form təsdiqi
   confirmDeleteCategory: "Bu kateqoriyanı silmək istədiyinizə əminsiniz?",
   confirmDeleteCategoryDescription: "Bu əməliyyat geri qaytarıla bilməz. Bu kateqoriya ilə əlaqəli bütün sütunlar və məlumatlar silinəcək.",
   
-  // Form sahə tərcümələri
+  // Kateqoriya formasında sahə tərcümələri
   nameRequired: "Ad tələb olunur",
-  name: "Ad",
-  description: "Təsvir",
-  status: "Status",
-  priority: "Prioritet",
-  deadline: "Son tarix",
-  selectStatus: "Status seçin",
-  selectAssignment: "Təyinat seçin",
-  selectDate: "Tarix seçin",
-  
-  // Yüklənmə halları
-  loading: "Yüklənir...",
-  loadingCategories: "Kateqoriyalar yüklənir...",
-  saving: "Saxlanılır...",
-  creating: "Yaradılır...",
-  updating: "Yenilənir...",
-  deleting: "Silinir...",
-  
-  // Dialog səhifələri
-  createCategoryDescription: "Yeni kateqoriya yaratmaq üçün məlumatları doldurun",
-  addCategoryDescription: "Yeni kateqoriya yaratmaq üçün məlumatları doldurun",
-  
-  // Prioritet və digər xüsusiyyətlər
-  priorityDescription: "Daha yüksək rəqəm daha yüksək prioritet deməkdir",
-  deadlineDescription: "Kateqoriya üçün son tarix (istəyə bağlı)",
-  
-  // Sahə xətaları
-  fieldRequired: "Bu sahə tələb olunur",
-  invalidFormat: "Yanlış format",
-  
-  // Statistika
-  totalCategories: "Ümumi kateqoriyalar",
-  activeCategories: "Aktiv kateqoriyalar",
-  inactiveCategories: "Deaktiv kateqoriyalar",
-  draftCategories: "Qaralama kateqoriyalar",
-  
-  // Badge mətnləri
-  columns: "sütun",
-  completed: "tamamlandı",
-  dueDate: "Son tarix",
-  
-  // Filter və axtarış
-  filterByStatus: "Statusa görə filtr",
-  filterByAssignment: "Təyinata görə filtr",
-  clearFilters: "Filtri təmizlə",
-  noResultsFound: "Heç bir nəticə tapılmadı",
-  tryDifferentSearch: "Axtarış kriteriyalarını dəyişdirməyə çalışın",
-  
-  // Yeni əlavələr
+  descriptionOptional: "Təsvir (istəyə bağlı)",
+  assignmentLabel: "Bu kateqoriya kimə təyin edilsin?",
+  assignmentAll: "Hamısı",
+  assignmentSectors: "Yalnız sektorlar",
+  statusLabel: "Status",
   statusActive: "Aktiv",
   statusInactive: "Deaktiv",
-  statusDraft: "Qaralama", 
-  statusArchived: "Arxivlənmiş",
-  statusApproved: "Təsdiqlənmiş",
-  statusPending: "Gözləmədə",
+  statusDraft: "Qaralama",
+  priorityLabel: "Prioritet",
+  deadlineLabel: "Son tarix (istəyə bağlı)",
+  noDeadline: "Son tarix yoxdur",
   
-  assignmentAll: "Hamısı",
-  assignmentSchools: "Məktəblər",
-  assignmentSectors: "Sektorlar", 
-  assignmentRegions: "Regionlar"
+  // Columns Translations
+  columns: "Sütunlar",
+  columnsPageTitle: "Sütunlar",
+  columnsPageDescription: "Kateqoriyalar üçün məlumat sütunlarını idarə edin",
+  addColumn: "Sütun əlavə et",
+  editColumn: "Sütunu redaktə et",
+  deleteColumn: "Sütunu sil",
+  columnName: "Sütun adı",
+  columnType: "Tip",
+  columnCategory: "Kateqoriya",
+  columnRequired: "Məcburi",
+  columnStatus: "Status",
+  columnActions: "Əməliyyatlar",
+  allColumnTypes: "Bütün tiplər",
+  noColumnsFound: "Sütun tapılmadı",
+  noColumnsFoundDescription: "Bu kateqoriya üçün hələ heç bir sütun yaradılmayıb",
+  searchColumns: "Sütunları axtar...",
+  columnAdded: "Sütun əlavə edildi",
+  columnUpdated: "Sütun yeniləndi",
+  columnDeleted: "Sütun silindi",
+  columnAddedDescription: "Sütun uğurla əlavə edildi",
+  columnUpdatedDescription: "Sütun uğurla yeniləndi",
+  columnDeletedDescription: "Sütun uğurla silindi",
+  columnAddFailed: "Sütun əlavə edilə bilmədi",
+  columnUpdateFailed: "Sütun yenilənə bilmədi",
+  columnDeleteFailed: "Sütun silinə bilmədi",
+  confirmDeleteColumn: "Bu sütunu silmək istədiyinizə əminsiniz?",
+  confirmDeleteColumnDescription: "Bu əməliyyat geri qaytarıla bilməz. Bu sütunla əlaqəli bütün məlumatlar da silinəcək.",
+  
+  // Sütun tipləri
+  text: "Mətn",
+  textarea: "Uzun mətn",
+  number: "Rəqəm",
+  date: "Tarix",
+  select: "Seçim",
+  radio: "Radio düymələri",
+  checkbox: "Onay qutusu",
+  file: "Fayl",
+  image: "Şəkil",
+  email: "E-poçt",
+  url: "URL",
+  phone: "Telefon",
+  
+  // Sütun forması
+  basicInfo: "Əsas məlumat",
+  validation: "Validasiya",
+  options: "Seçimlər",
+  columnNamePlaceholder: "Sütunun adını daxil edin",
+  selectCategory: "Kateqoriya seçin",
+  selectType: "Sütun tipi",
+  helpText: "Köməkçi mətn",
+  helpTextPlaceholder: "İstifadəçiyə göstəriləcək köməkçi mətn",
+  placeholder: "Placeholder",
+  placeholderText: "Sahədə göstəriləcək placeholder",
+  isRequired: "Məcburi sahə",
+  defaultValue: "Default dəyər",
+  defaultValuePlaceholder: "Default dəyəri daxil edin",
+  parentColumn: "Asılı olduğu sütun",
+  selectParentColumn: "Asılı olduğu sütunu seçin",
+  
+  // Validasiya sahələri
+  minLength: "Minimum uzunluq",
+  maxLength: "Maksimum uzunluq",
+  minValue: "Minimum dəyər",
+  maxValue: "Maksimum dəyər",
+  pattern: "Pattern (Regex)",
+  patternExample: "Nümunə: ^[0-9]+$",
+  noValidationForType: "Bu tip üçün validasiya seçimləri yoxdur",
+  
+  // Seçim sahələri
+  optionLabel: "Etiket",
+  optionValue: "Dəyər",
+  addOption: "Seçim əlavə et",
+  noOptionsForType: "Bu tip üçün seçimlər nəzərdə tutulmayıb",
+  addNewOption: "Yeni seçim əlavə et",
+  
+  // Filtrlər
+  categoryFilter: "Kateqoriya filteri",
+  typeFilter: "Tip filteri",
+  statusFilter: "Status filteri",
+  allTypes: "Bütün tiplər",
+  allStatuses: "Bütün statuslar",
+  activeOnly: "Yalnız aktiv",
+  inactiveOnly: "Yalnız deaktiv",
+  
+  // Digər
+  columnsCount: "Sütun sayı",
+  addColumnToCategory: "Bu kateqoriyaya sütun əlavə edin",
+  viewColumns: "Sütunları göstər",
+  addNewColumn: "Yeni sütun əlavə et",
+  editColumnDescription: "Sütunu redaktə edin və tənzimləyin",
+  addColumnDescription: "Yeni sütun yaradın və tənzimləyin",
+  columnOrder: "Sütun sırası",
 };
 
 export default categories;

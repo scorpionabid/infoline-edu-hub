@@ -1,70 +1,65 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
-export type UserStatus = 'active' | 'inactive' | 'suspended';
+export interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  avatar?: string;
+  phone?: string;
+  position?: string;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserFilter {
+  region?: string;
+  sector?: string;
+  role?: string;
+  status?: string;
+  search?: string;
+  school?: string;
+}
 
 export interface NotificationSettings {
-  email: boolean;
-  push: boolean;
-  sms: boolean;
-  inApp: boolean;
-  system: boolean;
-  deadline: boolean;
-  deadlineReminders: boolean;
   email_notifications: boolean;
   sms_notifications: boolean;
   push_notifications: boolean;
   notification_frequency: 'immediate' | 'daily' | 'weekly';
+  // UI-specific notification preferences
+  email?: boolean;
+  inApp?: boolean;
+  push?: boolean;
+  sms?: boolean;
+  deadlineReminders?: boolean;
+  statusUpdates?: boolean;
+  weeklyReports?: boolean;
+  system?: boolean;
+  deadline?: boolean;
 }
 
-export interface UserPreferences {
-  theme: 'light' | 'dark' | 'system';
-  language: string;
-  timezone: string;
-  notifications: NotificationSettings;
-  dashboard: {
-    defaultView: string;
-    compactMode: boolean;
-  };
-}
-
-export interface EntityName {
-  region: string | null;
-  sector: string | null;  
-  school: string | null;
-}
-
-export interface User {
-  id: string;
+export interface UserFormData {
   full_name: string;
   email: string;
-  role: UserRole;
-  status: UserStatus;
   phone?: string;
   position?: string;
-  language?: string;
-  avatar?: string;
-  last_login?: string;
-  created_at: string;
-  updated_at: string;
-  entityName?: EntityName;
-}
-
-export interface FullUserData {
-  id: string;
-  email: string;
-  full_name: string;
-  name: string;
-  role: UserRole;
+  role: string;
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  phone?: string;
-  position?: string;
+  status: 'active' | 'inactive';
   language?: string;
-  avatar?: string;
-  status: UserStatus;
-  last_login?: string;
-  created_at: string;
-  updated_at: string;
-  notification_settings?: NotificationSettings;
+  notifications?: NotificationSettings;
 }
+
+export interface FullUserData extends User {
+  role: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  language?: string;
+  notifications?: NotificationSettings;
+  last_login?: string;
+  entityName?: string;
+}
+
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';

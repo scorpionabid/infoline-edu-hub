@@ -1,47 +1,41 @@
 
-import { useState } from 'react';
-import { UserRole, UserStatus } from '@/types/user';
+import { useState, useCallback } from 'react';
+import { UserFilter } from '@/types/user';
 
-export interface UserFilters {
-  search: string;
-  role: UserRole | '';
-  status: UserStatus | '';
-  regionId: string;
-  sectorId: string;
-  schoolId: string;
-}
-
-export const useUserFilters = () => {
-  const [filters, setFilters] = useState<UserFilters>({
+export const useUserFilters = (initialFilter: UserFilter = {}) => {
+  // Initialize with empty strings instead of undefined
+  const defaultFilter: UserFilter = {
     search: '',
-    role: '' as UserRole | '',
-    status: '' as UserStatus | '',
+    role: '',
+    status: '',
     regionId: '',
     sectorId: '',
-    schoolId: ''
-  });
-
-  const updateFilter = (key: keyof UserFilters, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
+    schoolId: '',
+    region_id: '',
+    sector_id: '',
+    school_id: '',
+    ...initialFilter
   };
 
-  const resetFilters = () => {
-    setFilters({
-      search: '',
-      role: '',
-      status: '',
-      regionId: '',
-      sectorId: '',
-      schoolId: ''
-    });
-  };
+  const [filter, setFilter] = useState<UserFilter>(defaultFilter);
+
+  const updateFilter = useCallback((newFilter: Partial<UserFilter>) => {
+    // Ensure no undefined values are set
+    const safeFilter = Object.entries(newFilter || {}).reduce((acc, [key, value]) => {
+      acc[key] = value === undefined ? '' : value;
+      return acc;
+    }, {} as Record<string, any>);
+    
+    setFilter(prev => ({ ...prev, ...safeFilter }));
+  }, []);
+
+  const resetFilter = useCallback(() => {
+    setFilter(defaultFilter);
+  }, [defaultFilter]);
 
   return {
-    filters,
+    filter,
     updateFilter,
-    resetFilters
+    resetFilter
   };
 };

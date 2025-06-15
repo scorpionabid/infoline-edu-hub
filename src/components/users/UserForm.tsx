@@ -1,89 +1,383 @@
 
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
-import { UserFormData, UserRole, UserStatus } from '@/types/user';
+import React, { useEffect, useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { usePermissions } from '@/hooks/auth/usePermissions';
+import { supabase } from '@/integrations/supabase/client';
 
-const userFormSchema = z.object({
-  full_name: z.string().min(2, 'Ad ən az 2 simvoldan ibarət olmalıdır'),
-  email: z.string().email('Düzgün email ünvanı daxil edin'),
-  phone: z.string().optional(),
-  position: z.string().optional(),
-  role: z.enum(['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin', 'user']),
-  region_id: z.string().optional(),
-  sector_id: z.string().optional(),
-  school_id: z.string().optional(),
-  status: z.enum(['active', 'inactive']),
-  language: z.string().optional(),
-  notifications: z.object({
-    email_notifications: z.boolean().optional(),
-    sms_notifications: z.boolean().optional(),
-    push_notifications: z.boolean().optional(),
-  }).optional(),
-});
-
-export interface UserFormProps {
-  formData?: UserFormData;
-  onChange?: (data: UserFormData) => void;
-  onSubmit: (data: UserFormData) => Promise<void>;
-  initialData?: UserFormData;
-  isLoading?: boolean;
+interface UserFormProps {
+  formData: any;
+  onChange: (data: any) => void;
   isEditMode?: boolean;
+  disableFields?: string[];
+  requiredFields?: string[];
 }
 
 const UserForm: React.FC<UserFormProps> = ({
   formData,
   onChange,
-  onSubmit,
-  initialData,
-  isLoading = false,
-  isEditMode = false
+  isEditMode = false,
+  disableFields = [],
+  requiredFields = ['fullName', 'email', 'password', 'role']
 }) => {
-  const [currentFormData, setCurrentFormData] = useState<UserFormData>(
-    initialData || formData || {
-      full_name: '',
-      email: '',
-      phone: '',
-      position: '',
-      role: 'user' as UserRole,
-      region_id: '',
-      sector_id: '',
-      school_id: '',
-      status: 'active' as UserStatus,
-      language: 'az',
-      notifications: {
-        email_notifications: true,
-        sms_notifications: false,
-        push_notifications: true,
-      }
-    }
-  );
-
-  const form = useForm<UserFormData>({
-    resolver: zodResolver(userFormSchema),
-    defaultValues: currentFormData,
+  const { t } = useLanguage();
+  const { isSuperAdmin, isRegionAdmin } = usePermissions();
+  const [regions, setRegions] = useState<any[]>([]);
+  const [sectors, setSectors] = useState<any[]>([]);
+  const [schools, setSchools] = useState<any[]>([]);
+  const [loading, setLoading] = useState({
+    regions: false,
+    sectors: false,
+    schools: false
   });
 
-  const handleSubmit = async (data: UserFormData) => {
-    setCurrentFormData(data);
-    onChange?.(data);
-    await onSubmit(data);
+  // Form məlumatlarını yeniləyək
+  const handleChange = (field: string, value: any) => {
+    onChange({
+      ...formData,
+      [field]: value
+    });
   };
 
+  // Sahənin disabled olub-olmadığını yoxlayaq
+  const isFieldDisabled = (fieldName: string): boolean => {
+    return disableFields.includes(fieldName);
+  };
+
+  // Sahənin required olub-olmadığını yoxlayaq
+  const isFieldRequired = (fieldName: string): boolean => {
+    return requiredFields.includes(fieldName);
+  };
+
+  // Regionları yükləyək
+  useEffect(() => {
+    const fetchRegions = async () => {
+      setLoading(prev => ({ ...prev, regions: true }));
+      try {
+        const { data, error } = await supabase
+          .from('regions')
+          .select('id, name')
+          .eq('status', 'active')
+          .order('name');
+          
+        if (error) throw error;
+        setRegions(data || []);
+      } catch (err) {
+        console.error('Error fetching regions:', err);
+      } finally {
+        setLoading(prev => ({ ...prev, regions: false }));
+      }
+    };
+
+    fetchRegions();
+  }, []);
+
+  // Regionu dəyişdikdə sektorları yükləyək
+  useEffect(() => {
+    if (!formData.regionId) {
+      setSectors([]);
+      return;
+    }
+
+    const fetchSectors = async () => {
+      setLoading(prev => ({ ...prev, sectors: true }));
+      try {
+        const { data, error } = await supabase
+          .from('sectors')
+          .select('id, name')
+          .eq('region_id', formData.regionId)
+          .eq('status', 'active')
+          .order('name');
+          
+        if (error) throw error;
+        setSectors(data || []);
+      } catch (err) {
+        console.error('Error fetching sectors:', err);
+      } finally {
+        setLoading(prev => ({ ...prev, sectors: false }));
+      }
+    };
+
+    fetchSectors();
+  }, [formData.regionId]);
+
+  // Sektoru dəyişdikdə məktəbləri yükləyək
+  useEffect(() => {
+    if (!formData.sectorId) {
+      setSchools([]);
+      return;
+    }
+
+    const fetchSchools = async () => {
+      setLoading(prev => ({ ...prev, schools: true }));
+      try {
+        const { data, error } = await supabase
+          .from('schools')
+          .select('id, name')
+          .eq('sector_id', formData.sectorId)
+          .eq('status', 'active')
+          .order('name');
+          
+        if (error) throw error;
+        setSchools(data || []);
+      } catch (err) {
+        console.error('Error fetching schools:', err);
+      } finally {
+        setLoading(prev => ({ ...prev, schools: false }));
+      }
+    };
+
+    fetchSchools();
+  }, [formData.sectorId]);
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        {/* Form content will be implemented based on requirements */}
-        <div className="flex justify-end space-x-2">
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saxlanılır...' : isEditMode ? 'Yenilə' : 'Yarat'}
-          </Button>
+    <div className="grid gap-4 py-4">
+      {/* Ad Soyad */}
+      {!isFieldDisabled('fullName') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="fullName" className="text-right">
+            {t('fullName')} {isFieldRequired('fullName') && <span className="text-red-500">*</span>}
+          </Label>
+          <Input
+            id="fullName"
+            value={formData.fullName}
+            onChange={(e) => handleChange('fullName', e.target.value)}
+            className="col-span-3"
+            disabled={isFieldDisabled('fullName')}
+            required={isFieldRequired('fullName')}
+          />
         </div>
-      </form>
-    </Form>
+      )}
+
+      {/* E-poçt */}
+      {!isFieldDisabled('email') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="email" className="text-right">
+            {t('email')} {isFieldRequired('email') && <span className="text-red-500">*</span>}
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange('email', e.target.value)}
+            className="col-span-3"
+            disabled={isFieldDisabled('email') || isEditMode}
+            required={isFieldRequired('email')}
+          />
+        </div>
+      )}
+
+      {/* Şifrə */}
+      {!isFieldDisabled('password') && !isEditMode && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="password" className="text-right">
+            {t('password')} {isFieldRequired('password') && <span className="text-red-500">*</span>}
+          </Label>
+          <Input
+            id="password"
+            type="password"
+            value={formData.password}
+            onChange={(e) => handleChange('password', e.target.value)}
+            className="col-span-3"
+            disabled={isFieldDisabled('password')}
+            required={isFieldRequired('password')}
+          />
+        </div>
+      )}
+
+      {/* Telefon */}
+      {!isFieldDisabled('phone') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="phone" className="text-right">
+            {t('phone')}
+          </Label>
+          <Input
+            id="phone"
+            value={formData.phone}
+            onChange={(e) => handleChange('phone', e.target.value)}
+            className="col-span-3"
+            disabled={isFieldDisabled('phone')}
+          />
+        </div>
+      )}
+
+      {/* Vəzifə */}
+      {!isFieldDisabled('position') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="position" className="text-right">
+            {t('position')}
+          </Label>
+          <Input
+            id="position"
+            value={formData.position}
+            onChange={(e) => handleChange('position', e.target.value)}
+            className="col-span-3"
+            disabled={isFieldDisabled('position')}
+          />
+        </div>
+      )}
+
+      {/* Rol */}
+      {!isFieldDisabled('role') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label className="text-right">
+            {t('role')} {isFieldRequired('role') && <span className="text-red-500">*</span>}
+          </Label>
+          <div className="col-span-3">
+            <RadioGroup
+              value={formData.role}
+              onValueChange={(value) => handleChange('role', value)}
+              className="flex flex-col space-y-1"
+              disabled={isFieldDisabled('role')}
+            >
+              {isSuperAdmin && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="regionadmin" id="regionadmin" />
+                  <Label htmlFor="regionadmin">{t('regionadmin')}</Label>
+                </div>
+              )}
+              {(isSuperAdmin || isRegionAdmin) && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="sectoradmin" id="sectoradmin" />
+                  <Label htmlFor="sectoradmin">{t('sectoradmin')}</Label>
+                </div>
+              )}
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="schooladmin" id="schooladmin" />
+                <Label htmlFor="schooladmin">{t('schooladmin')}</Label>
+              </div>
+            </RadioGroup>
+          </div>
+        </div>
+      )}
+
+      {/* Region */}
+      {!isFieldDisabled('regionId') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="regionId" className="text-right">
+            {t('region')} {isFieldRequired('regionId') && <span className="text-red-500">*</span>}
+          </Label>
+          <Select
+            value={formData.regionId || undefined}
+            onValueChange={(value) => handleChange('regionId', value === 'select-region' ? null : value)}
+            disabled={isFieldDisabled('regionId') || !isSuperAdmin || loading.regions}
+          >
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder={t('selectRegion')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="select-region">{t('selectRegion')}</SelectItem>
+              {regions.map((region) => {
+                // Ensure region has valid ID and is not empty
+                const regionId = region.id || `region-${region.name || Math.random()}`;
+                const safeRegionId = String(regionId).trim();
+                if (!safeRegionId || safeRegionId === '') {
+                  return null; // Skip empty values
+                }
+                return (
+                  <SelectItem key={regionId} value={safeRegionId}>
+                    {region.name || 'Unknown Region'}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Sektor */}
+      {!isFieldDisabled('sectorId') && formData.role !== 'regionadmin' && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="sectorId" className="text-right">
+            {t('sector')} {isFieldRequired('sectorId') && <span className="text-red-500">*</span>}
+          </Label>
+          <Select
+            value={formData.sectorId || undefined}
+            onValueChange={(value) => handleChange('sectorId', value === 'select-sector' ? null : value)}
+            disabled={isFieldDisabled('sectorId') || !formData.regionId || loading.sectors}
+          >
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder={t('selectSector')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="select-sector">{t('selectSector')}</SelectItem>
+              {sectors.map((sector) => {
+                // Ensure sector has valid ID and is not empty
+                const sectorId = sector.id || `sector-${sector.name || Math.random()}`;
+                const safeSectorId = String(sectorId).trim();
+                if (!safeSectorId || safeSectorId === '') {
+                  return null; // Skip empty values
+                }
+                return (
+                  <SelectItem key={sectorId} value={safeSectorId}>
+                    {sector.name || 'Unknown Sector'}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Məktəb */}
+      {!isFieldDisabled('schoolId') && formData.role === 'schooladmin' && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="schoolId" className="text-right">
+            {t('school')} {isFieldRequired('schoolId') && <span className="text-red-500">*</span>}
+          </Label>
+          <Select
+            value={formData.schoolId || undefined}
+            onValueChange={(value) => handleChange('schoolId', value === 'select-school' ? null : value)}
+            disabled={isFieldDisabled('schoolId') || !formData.sectorId || loading.schools}
+          >
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder={t('selectSchool')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="select-school">{t('selectSchool')}</SelectItem>
+              {schools.map((school) => {
+                // Ensure school has valid ID and is not empty
+                const schoolId = school.id || `school-${school.name || Math.random()}`;
+                const safeSchoolId = String(schoolId).trim();
+                if (!safeSchoolId || safeSchoolId === '') {
+                  return null; // Skip empty values
+                }
+                return (
+                  <SelectItem key={schoolId} value={safeSchoolId}>
+                    {school.name || 'Unknown School'}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Dil */}
+      {!isFieldDisabled('language') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="language" className="text-right">
+            {t('language')}
+          </Label>
+          <Select
+            value={formData.language || 'az'}
+            onValueChange={(value) => handleChange('language', value)}
+            disabled={isFieldDisabled('language')}
+          >
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder={t('selectLanguage')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="az">{t('azerbaijani')}</SelectItem>
+              <SelectItem value="en">{t('english')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+    </div>
   );
 };
 

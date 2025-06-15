@@ -7,11 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/context/LanguageContext';
-import { School, Region, Sector, CreateSchoolData } from '@/types/school';
+import { School, Region, Sector } from '@/types/school';
 
 export interface SchoolFormProps {
   school?: Partial<School>;
-  onSubmit: (data: CreateSchoolData) => Promise<void>;
+  onSubmit: (data: Omit<School, 'id'>) => Promise<void>;
   isSubmitting: boolean;
   regions: Region[];
   sectors: Sector[];
@@ -38,7 +38,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
     setValue,
     watch,
     formState: { errors }
-  } = useForm<CreateSchoolData>({
+  } = useForm<Omit<School, 'id'>>({
     defaultValues: {
       name: school?.name || '',
       region_id: school?.region_id || '',
@@ -83,7 +83,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
     }
   }, [watchedRegionId, validSectors, setValue, watch]);
 
-  const onFormSubmit = async (data: CreateSchoolData) => {
+  const onFormSubmit = async (data: Omit<School, 'id'>) => {
     try {
       await onSubmit(data);
     } catch (error) {

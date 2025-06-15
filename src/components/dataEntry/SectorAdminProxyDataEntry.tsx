@@ -132,9 +132,12 @@ export const SectorAdminProxyDataEntry: React.FC<SectorAdminProxyDataEntryProps>
         await ProxyDataEntryService.saveProxyFormData(formData, {
           categoryId,
           schoolId,
+          userId: user.id,
           proxyUserId: user.id,
+          proxyUserRole: user.role,
+          originalSchoolId: schoolId,
           proxyReason: 'Auto-save draft',
-          proxyOriginalEntity: schoolId
+          status: 'draft'
         });
         
         setLastAutoSaved(new Date());
@@ -199,20 +202,23 @@ export const SectorAdminProxyDataEntry: React.FC<SectorAdminProxyDataEntryProps>
     setIsSubmitting(true);
 
     try {
-      // Save and submit in one operation with updated interface
+      // Save and submit in one operation
       const saveResult = await ProxyDataEntryService.saveProxyFormData(formData, {
         categoryId,
         schoolId,
+        userId: user.id,
         proxyUserId: user.id,
+        proxyUserRole: user.role,
+        originalSchoolId: schoolId,
         proxyReason: 'SectorAdmin proxy data entry - final submission',
-        proxyOriginalEntity: schoolId
+        status: 'draft'
       });
 
       if (!saveResult.success) {
         throw new Error(saveResult.error || 'Saxlama xətası');
       }
 
-      // Submit for auto-approval with updated interface
+      // Submit for auto-approval
       const submitResult = await ProxyDataEntryService.submitProxyData({
         categoryId,
         schoolId,

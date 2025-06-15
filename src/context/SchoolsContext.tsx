@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { School, CreateSchoolData } from '@/types/school';
+import { School } from '@/types/school';
 import { FullUserData } from '@/types/auth';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
@@ -10,11 +10,11 @@ interface SchoolsContextProps {
   isLoading: boolean;
   error: string | null;
   fetchSchools: (regionId?: string, sectorId?: string) => Promise<void>;
-  createSchool: (schoolData: CreateSchoolData) => Promise<void>;
+  createSchool: (schoolData: Omit<School, 'id'>) => Promise<void>;
   updateSchool: (schoolId: string, schoolData: Partial<School>) => Promise<void>;
   deleteSchool: (schoolId: string) => Promise<void>;
   assignSchoolAdmin: (schoolId: string, userId: string) => Promise<void>;
-  bulkCreateSchools: (schoolsData: CreateSchoolData[]) => Promise<void>;
+  bulkCreateSchools: (schoolsData: Partial<School>[]) => Promise<void>;
 }
 
 const SchoolsContext = createContext<SchoolsContextProps | undefined>(undefined);
@@ -64,6 +64,21 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  // Məktəb yaratmaq üçün minimal tələbləri təyin edirləm
+  interface CreateSchoolData {
+    name: string;          // Məcburidir
+    region_id: string;     // Məcburidir
+    sector_id: string;     // Məcburidir
+    address?: string;
+    email?: string;
+    phone?: string;
+    status?: 'active' | 'inactive';
+    admin_id?: string;
+    admin_email?: string;
+    principal_name?: string;
+    [key: string]: any;    // Digər sahələr
+  }
+  
   const createSchool = async (schoolData: CreateSchoolData) => {
     try {
       setIsLoading(true);
@@ -80,7 +95,7 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Supabase-dən qayidan məlumatları School tipində düzgün casting edirləm
       setSchools((prev) => [...prev, {
         ...data,
-        status: data.status as 'active' | 'inactive' | 'pending' | 'archived'
+        status: data.status as 'active' | 'inactive'
       } as School]);
       
       toast.success('Success', {
@@ -232,7 +247,7 @@ export const SchoolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const bulkCreateSchools = async (schoolsData: CreateSchoolData[]) => {
+  const bulkCreateSchools = async (schoolsData: Partial<School>[]) => {
     try {
       setIsLoading(true);
       setError(null);

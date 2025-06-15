@@ -1,29 +1,20 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Column, ColumnFormValues, ColumnType, parseColumnOptions, parseValidationRules } from '@/types/column';
+import { Column, ColumnFormValues, ColumnType, ColumnOption } from '@/types/column';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { transformRawColumnData } from '@/utils/columnOptionsParser';
 
 // Helper function to convert database column to typed Column
 const convertDbColumnToColumn = (dbColumn: any): Column => {
   return {
-    id: dbColumn.id,
-    name: dbColumn.name,
+    ...dbColumn,
     type: dbColumn.type as ColumnType,
-    category_id: dbColumn.category_id,
-    placeholder: dbColumn.placeholder,
-    help_text: dbColumn.help_text,
-    description: dbColumn.description,
-    is_required: dbColumn.is_required || false,
-    default_value: dbColumn.default_value,
-    options: parseColumnOptions(dbColumn.options),
-    validation: parseValidationRules(dbColumn.validation),
-    order_index: dbColumn.order_index || 0,
-    status: dbColumn.status || 'active',
+    options: dbColumn.options ? (typeof dbColumn.options === 'string' ? JSON.parse(dbColumn.options) : dbColumn.options) : [],
+    validation: dbColumn.validation ? (typeof dbColumn.validation === 'string' ? JSON.parse(dbColumn.validation) : dbColumn.validation) : {},
+    status: dbColumn.status as 'active' | 'inactive',
     created_at: dbColumn.created_at,
-    updated_at: dbColumn.updated_at,
-    section: dbColumn.section
+    updated_at: dbColumn.updated_at
   };
 };
 
@@ -52,7 +43,7 @@ export const useColumnsQuery = ({ categoryId, enabled = true }: { categoryId?: s
       
       console.log('📊 useColumnsQuery - Raw data from Supabase:', data);
       
-      // Convert database columns to typed Columns with proper parsing
+      // Convert database columns to typed Columns
       const transformedColumns = (data || []).map(item => {
         const baseColumn = convertDbColumnToColumn(item);
         const transformed = {
@@ -115,7 +106,7 @@ export const useColumnMutation = () => {
       .single();
 
     if (error) throw error;
-    return convertDbColumnToColumn(data);
+    return data as Column;
   };
 
   const updateColumn = async (column: Column): Promise<Column> => {
@@ -133,7 +124,7 @@ export const useColumnMutation = () => {
       .single();
 
     if (error) throw error;
-    return convertDbColumnToColumn(data);
+    return data as Column;
   };
 
   const deleteColumn = async (id: string): Promise<string> => {

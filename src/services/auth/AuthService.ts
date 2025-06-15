@@ -1,5 +1,6 @@
+
 import { supabase } from '@/lib/supabase';
-import { FullUserData, UserStatus, NotificationSettings } from '@/types/auth';
+import { FullUserData, UserStatus } from '@/types/auth';
 import { Session, User } from '@supabase/supabase-js';
 
 // Cache keys
@@ -109,21 +110,20 @@ export class AuthService {
   }
 
   // Logout user
-  public static async signOut(): Promise<{ data: any; error: any }> {
+  public static async logout(): Promise<{ error: Error | null }> {
     try {
-      // Clear any local storage first
-      localStorage.removeItem('user');
-      localStorage.removeItem('authState');
+      const { error } = await supabase.auth.signOut();
       
-      // Then sign out from Supabase
-      const response = await supabase.auth.signOut();
-      return { data: response.error ? null : response, error: response.error };
-    } catch (error) {
-      console.error('Sign out error:', error);
-      return {
-        data: null,
-        error: error
-      };
+      if (error) throw error;
+      
+      // Clear cache on logout
+      this.clearCache();
+      
+      return { error: null };
+      
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      return { error };
     }
   }
 
@@ -160,13 +160,13 @@ export class AuthService {
       
       // Wait for other refresh to complete
       return new Promise((resolve) => {
-        const checkInterval = setInterval(async () => {
+        const checkInterval = setInterval(() => {
           if (!this.refreshInProgress) {
             clearInterval(checkInterval);
             
             // Get session from cache to avoid another API call
-            const sessionResult = await this.getSession();
-            resolve(sessionResult);
+            const { data, error } = supabase.auth.getSession();
+            resolve({ session: data.session, error: null });
           }
         }, 100);
         
@@ -256,27 +256,11 @@ export class AuthService {
         console.error('Error fetching profile:', profileError);
       }
       
-      // Create proper notification settings
-      const notificationSettings: NotificationSettings = {
-        email: true,
-        push: true,
-        sms: true,
-        inApp: true,
-        system: true,
-        deadline: true,
-        deadlineReminders: true,
-        email_notifications: true,
-        sms_notifications: true,
-        push_notifications: true,
-        notification_frequency: 'immediate'
-      };
-      
       // Build user data object with defaults
       const userData: FullUserData = {
         id: session.user.id,
         email: session.user.email || '',
         full_name: profileData?.full_name || session.user.email?.split('@')[0] || 'User',
-        name: profileData?.full_name || session.user.email?.split('@')[0] || 'User',
         role: roleData?.role || 'schooladmin',
         region_id: roleData?.region_id,
         sector_id: roleData?.sector_id,
@@ -289,7 +273,11 @@ export class AuthService {
         last_login: profileData?.last_login || new Date().toISOString(),
         created_at: profileData?.created_at || new Date().toISOString(),
         updated_at: profileData?.updated_at || new Date().toISOString(),
-        notification_settings: notificationSettings
+        notification_settings: {
+          email: true,
+          push: true,
+          app: true
+        }
       };
       
       // Store user in cache
@@ -302,104 +290,4 @@ export class AuthService {
       return null;
     }
   }
-
-  // Update user profile
-  public static async updateUserProfile(userId: string, updates: Partial<FullUserData>): Promise<FullUserData | null> {
-    try {
-      // Remove notification_settings from updates as it's not in profiles table
-      const { notification_settings, name, role, ...profileUpdates } = updates;
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(profileUpdates)
-        .eq('id', userId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      // Return complete user data
-      return {
-        ...data,
-        name: data.full_name,
-        role: 'schooladmin' // This should be fetched from user_roles
-      };
-    } catch (error) {
-      console.error('Error updating user profile:', error);
-      throw error;
-    }
-  }
 }
-
-export const signUp = async (email: string, password: string, userData: any) => {
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: userData
-      }
-    });
-
-    if (error) {
-      return { data: null, error };
-    }
-
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error: error as any };
-  }
-};
-
-export const signIn = async (email: string, password: string) => {
-  try {
-    const response = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    const { data, error } = response;
-    
-    if (error) {
-      return { data: null, error };
-    }
-
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error: error as any };
-  }
-};
-
-export const updateUserProfile = async (userId: string, updates: any) => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', userId)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Map the profile data to match FullUserData interface
-    const userData = {
-      id: data.id,
-      email: data.email,
-      full_name: data.full_name,
-      name: data.full_name,
-      role: 'schooladmin', // Default role, should be fetched from user_roles
-      phone: data.phone,
-      position: data.position,
-      language: data.language,
-      avatar: data.avatar,
-      status: data.status,
-      last_login: data.last_login,
-      created_at: data.created_at,
-      updated_at: data.updated_at
-    };
-
-    return userData;
-  } catch (error) {
-    throw error;
-  }
-};

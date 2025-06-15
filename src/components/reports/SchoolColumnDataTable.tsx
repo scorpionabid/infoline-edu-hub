@@ -23,7 +23,7 @@ import SchoolColumnPagination from './SchoolColumnPagination';
 import { useSchoolColumnFilters } from '@/hooks/reports/useSchoolColumnFilters';
 import { useSchoolColumnData } from '@/hooks/reports/useSchoolColumnData';
 import { useSchoolColumnExport } from '@/hooks/reports/useSchoolColumnExport';
-import { usePagination } from '@/hooks/reports/usePagination';
+import { usePagination } from '@/hooks/common/usePagination';
 
 // Utils
 import { getSelectionStats } from '@/utils/reports/schoolColumnDataUtils';
@@ -60,11 +60,12 @@ const SchoolColumnDataTable: React.FC = () => {
   
   const {
     currentPage,
-    itemsPerPage: pageSize,
+    pageSize,
     setCurrentPage,
     setPageSize,
     totalPages
-  } = usePagination(schoolColumnData.length, {
+  } = usePagination({
+    totalItems: schoolColumnData.length,
     initialPageSize: 10
   });
 

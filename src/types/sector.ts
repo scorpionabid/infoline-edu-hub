@@ -1,48 +1,34 @@
 
-export type SectorStatus = 'active' | 'inactive' | 'deleted';
-
 export interface Sector {
   id: string;
   name: string;
-  region_id: string;
   description?: string;
-  status: SectorStatus;
-  completion_rate?: number;
+  region_id: string;
   admin_id?: string;
   admin_email?: string;
+  status?: string;
+  completion_rate?: number;
   created_at: string;
   updated_at: string;
-  // Add missing properties that components expect
-  regionName?: string;
   region_name?: string;
+  regionName?: string;
 }
 
+// Enhanced sector with region info for display
 export interface EnhancedSector extends Sector {
   region_name?: string;
-  regionName?: string;
-  region_name_display?: string;
-  admin_name?: string;
-  total_schools?: number;
-}
-
-export interface SectorFormData {
-  name: string;
-  region_id: string;
-  description?: string;
-  status?: SectorStatus;
-  admin_id?: string;
-  admin_email?: string;
+  regions?: { name: string } | { name: string }[];
 }
 
 export interface CreateSectorData {
   name: string;
-  region_id: string;
   description?: string;
-  status?: SectorStatus;
+  region_id: string;
   admin_id?: string;
   admin_email?: string;
 }
 
 export interface UpdateSectorData extends Partial<CreateSectorData> {
-  id: string;
+  status?: 'active' | 'inactive';
+  completion_rate?: number;
 }

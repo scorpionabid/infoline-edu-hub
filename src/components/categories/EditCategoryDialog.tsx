@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   Dialog,
@@ -13,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useCategoryOperations } from '@/hooks/categories';
+import useCategoryActions from '@/hooks/categories/useCategoryActions';
 import { Category, CategoryAssignment, CategoryStatus } from '@/types/category';
 import {
   Select,
@@ -37,15 +36,13 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
   category,
   onSave,
 }) => {
-  const { updateCategory, createCategory, isUpdating, isCreating } = useCategoryOperations();
+  const { updateCategory, createCategory, isLoading } = useCategoryActions();
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [assignment, setAssignment] = useState<CategoryAssignment>('all');
   const [status, setStatus] = useState<CategoryStatus>('active');
   const [priority, setPriority] = useState<number>(0);
   const [deadline, setDeadline] = useState<Date | undefined>(undefined);
-
-  const isLoading = isUpdating || isCreating;
 
   useEffect(() => {
     if (category) {
@@ -80,6 +77,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
     try {
       if (category?.id) {
         const categoryData = {
+          id: category.id,
           name,
           description,
           assignment,
@@ -89,7 +87,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           updated_at: now
         };
         
-        updateCategory({ id: category.id, updates: categoryData });
+        await updateCategory(category.id, categoryData);
       } else {
         const categoryData = {
           name,
@@ -102,7 +100,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
           updated_at: now
         };
         
-        createCategory(categoryData);
+        await createCategory(categoryData);
       }
       
       if (onSave) {

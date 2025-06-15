@@ -1,71 +1,145 @@
 
 export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'requires_revision';
 
+export interface ApprovalItem {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  schoolId: string;
+  schoolName: string;
+  submittedAt: string;
+  submittedBy: string;
+  status: DataEntryStatus;
+  entries: any[];
+  completionRate: number;
+}
+
+export interface DataEntryFormData {
+  [key: string]: any;
+}
+
+export interface ValidationRule {
+  required?: boolean;
+  min?: number;
+  max?: number;
+  pattern?: RegExp;
+  custom?: (value: any) => boolean | string;
+}
+
+export interface FieldValidation {
+  [fieldId: string]: ValidationRule;
+}
+
+// Core data entry interface
 export interface DataEntry {
   id: string;
   school_id: string;
   category_id: string;
   column_id: string;
-  value: string;
-  status: DataEntryStatus;
+  value?: string;
+  status?: DataEntryStatus | string;
+  created_at: string;
   created_by?: string;
+  approved_at?: string;
   approved_by?: string;
   rejected_by?: string;
-  approval_comment?: string;
   rejection_reason?: string;
-  proxy_created_by?: string;
-  proxy_reason?: string;
-  proxy_original_entity?: string;
-  created_at: string;
   updated_at: string;
-  approved_at?: string;
-  rejected_at?: string;
-  deleted_at?: string;
 }
 
-export interface DataEntryFormData {
-  school_id: string;
-  category_id: string;
-  column_id: string;
-  value: string;
-  status?: DataEntryStatus;
-  created_by?: string;
-  proxy_created_by?: string;
-  proxy_reason?: string;
-  proxy_original_entity?: string;
+// Extended data entry with related entity names
+export interface DataEntryRecord extends DataEntry {
+  schoolName?: string;
+  categoryName?: string;
+  columnName?: string;
 }
 
-export interface SaveResult {
-  success: boolean;
-  error?: string;
-  savedCount: number;
-}
-
+// Table data representation
 export interface DataEntryTableData {
   columns: import('./column').Column[];
   values: Record<string, any>;
 }
 
+// Validation result
 export interface ValidationResult {
-  isValid: boolean;
-  errors: string[];
+  valid: boolean;
+  message?: string;
+  errors?: Record<string, string>;
 }
 
-// Export enum values for runtime usage
-export const DataEntryStatusEnum = {
-  DRAFT: 'draft' as const,
-  PENDING: 'pending' as const,
-  APPROVED: 'approved' as const,
-  REJECTED: 'rejected' as const,
-  REQUIRES_REVISION: 'requires_revision' as const
+// Form field interface
+export interface FormField {
+  id: string;
+  name: string;
+  type: string;
+  value: any;
+  required: boolean;
+  placeholder?: string;
+  helpText?: string;
+  options?: Array<{ id: string; label: string; value: string }>;
+  validation?: Record<string, any>;
+  onChange: (value: any) => void;
+  onBlur?: () => void;
+  error?: string;
+}
+
+// Form field props
+export interface FormFieldProps {
+  column: import('./column').Column;
+  value: any;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  onValueChange?: (value: any) => void;
+  isDisabled?: boolean;
+}
+
+// Form fields props
+export interface FormFieldsProps {
+  columns: import('./column').Column[];
+  disabled?: boolean;
+}
+
+// Status enum with const assertion for runtime use
+export const DataEntryStatus = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+  DRAFT: 'draft',
+  REQUIRES_REVISION: 'requires_revision'
 } as const;
 
-export const DATA_ENTRY_STATUSES: DataEntryStatus[] = ['draft', 'pending', 'approved', 'rejected', 'requires_revision'];
+// Save status enum
+export const DataEntrySaveStatus = {
+  IDLE: 'idle',
+  SAVING: 'saving',
+  SAVED: 'saved',
+  ERROR: 'error',
+  SUBMITTING: 'submitting',
+  SUBMITTED: 'submitted'
+} as const;
 
-export const DATA_ENTRY_STATUS_MAP: Record<DataEntryStatus, string> = {
-  'draft': 'Qaralama',
-  'pending': 'Gözləyir',
-  'approved': 'Təsdiqlənib',
-  'rejected': 'Rədd edilib',
-  'requires_revision': 'Düzəliş tələb olunur'
-};
+export type DataEntrySaveStatusType = typeof DataEntrySaveStatus[keyof typeof DataEntrySaveStatus];
+
+// Complete form data for a category
+export interface DataEntryForm {
+  id: string;
+  categoryId: string;
+  schoolId: string;
+  values: Record<string, string>;
+  status: DataEntryStatus;
+}
+
+// Props for save bar component
+export interface DataEntrySaveBarProps {
+  lastSaved?: string;
+  isSaving: boolean;
+  isSubmitting: boolean;
+  isDirty?: boolean;
+  completionPercentage?: number;
+  onSave: () => void;
+  onSubmit?: () => void;
+  onDownloadTemplate?: () => void;
+  onUploadData?: (file: File) => void;
+  readOnly?: boolean;
+  errors?: boolean;
+  isPendingApproval?: boolean;
+}

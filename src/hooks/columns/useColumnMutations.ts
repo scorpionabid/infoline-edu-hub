@@ -1,29 +1,8 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnFormData, ColumnType } from '@/types/column';
+import { Column, ColumnFormData } from '@/types/column';
 import { toast } from 'sonner';
-
-// Helper to safely convert database record to Column with proper type casting
-const convertToColumn = (item: any): Column => {
-  return {
-    id: item.id,
-    name: item.name,
-    type: item.type as ColumnType, // Proper type casting
-    category_id: item.category_id,
-    placeholder: item.placeholder,
-    help_text: item.help_text,
-    description: item.description,
-    is_required: item.is_required || false,
-    default_value: item.default_value,
-    options: item.options ? (typeof item.options === 'string' ? JSON.parse(item.options) : item.options) : [],
-    validation: item.validation ? (typeof item.validation === 'string' ? JSON.parse(item.validation) : item.validation) : {},
-    order_index: item.order_index || 0,
-    status: item.status || 'active',
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-    section: item.section
-  };
-};
 
 export const useColumnMutations = () => {
   const queryClient = useQueryClient();
@@ -61,7 +40,7 @@ export const useColumnMutations = () => {
         .single();
 
       if (error) throw error;
-      return convertToColumn(result); // Use converter
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
@@ -91,7 +70,7 @@ export const useColumnMutations = () => {
         .single();
 
       if (error) throw error;
-      return convertToColumn(result); // Use converter
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
@@ -172,7 +151,7 @@ export const useColumnMutations = () => {
         .single();
 
       if (error) throw error;
-      return convertToColumn(result); // Use converter
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
@@ -209,7 +188,7 @@ export const useColumnMutations = () => {
         .single();
 
       if (error) throw error;
-      return convertToColumn(data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
@@ -230,7 +209,7 @@ export const useColumnMutations = () => {
         .select();
 
       if (error) throw error;
-      return data.map(convertToColumn);
+      return data;
     },
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
@@ -251,7 +230,7 @@ export const useColumnMutations = () => {
         .select();
 
       if (error) throw error;
-      return data.map(convertToColumn);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
@@ -272,7 +251,7 @@ export const useColumnMutations = () => {
         .select();
 
       if (error) throw error;
-      return data.map(convertToColumn);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });

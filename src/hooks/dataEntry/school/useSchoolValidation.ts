@@ -1,50 +1,46 @@
 
-import { ValidationRules } from '@/types/column';
+import { useCallback } from 'react';
+import { Column } from '@/types/column';
 
-export const useSchoolValidation = () => {
-  const validateField = (value: any, rules: ValidationRules): string | null => {
-    if (!rules) return null;
+export interface UseSchoolValidationResult {
+  validateField: (column: Column, value: any) => string | null;
+  validateForm: (formData: Record<string, any>, columns: Column[]) => Record<string, string>;
+}
 
-    // Required validation
-    if (rules.required && (!value || value === '')) {
-      return 'Bu sahə tələb olunur';
+export const useSchoolValidation = (): UseSchoolValidationResult => {
+  const validateField = useCallback((column: Column, value: any): string | null => {
+    if (column.is_required && (!value || value === '')) {
+      return `${column.name} is required`;
     }
 
-    // Skip other validations if value is empty and not required
-    if (!value || value === '') return null;
-
-    // Min/Max validation for numbers
-    if (typeof value === 'number') {
-      if (rules.min !== undefined && value < Number(rules.min)) {
-        return `Minimum dəyər: ${rules.min}`;
-      }
-      if (rules.max !== undefined && value > Number(rules.max)) {
-        return `Maksimum dəyər: ${rules.max}`;
-      }
+    if (column.validation?.min_value && Number(value) < column.validation.min_value) {
+      return `Minimum value is ${column.validation.min_value}`;
     }
 
-    // String length validation
-    if (typeof value === 'string') {
-      if (rules.minLength && value.length < rules.minLength) {
-        return `Minimum uzunluq: ${rules.minLength}`;
-      }
-      if (rules.maxLength && value.length > rules.maxLength) {
-        return `Maksimum uzunluq: ${rules.maxLength}`;
-      }
-    }
-
-    // Email validation
-    if (rules.email && typeof value === 'string') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
-        return 'Düzgün email formatı daxil edin';
-      }
+    if (column.validation?.max_value && Number(value) > column.validation.max_value) {
+      return `Maximum value is ${column.validation.max_value}`;
     }
 
     return null;
-  };
+  }, []);
+
+  const validateForm = useCallback((formData: Record<string, any>, columns: Column[]): Record<string, string> => {
+    const errors: Record<string, string> = {};
+
+    columns.forEach(column => {
+      const error = validateField(column, formData[column.id]);
+      if (error) {
+        errors[column.id] = error;
+      }
+    });
+
+    return errors;
+  }, [validateField]);
 
   return {
-    validateField
+    validateField,
+    validateForm
   };
 };
+
+export default useSchoolValidation;

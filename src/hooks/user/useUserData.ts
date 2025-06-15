@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserStatus } from '@/types/user';
-import { ensureUserStatus, mapUserDataProperties } from '@/utils/buildFixes';
+import { FullUserData } from '@/types/user';
 
 export const useUserData = (userId?: string) => {
   const [userData, setUserData] = useState<FullUserData | null>(null);
@@ -42,10 +41,11 @@ export const useUserData = (userId?: string) => {
           
           const fullUserData: FullUserData = {
             id: data.id,
-            full_name: data.full_name || '',
+            fullName: data.full_name || '',
+            full_name: data.full_name,
             email: data.email,
             role: userRole?.role || 'user',
-            status: ensureUserStatus(data.status) as UserStatus,
+            status: data.status || 'active',
             phone: data.phone,
             language: data.language,
             position: data.position,
@@ -56,7 +56,11 @@ export const useUserData = (userId?: string) => {
             region_id: userRole?.region_id,
             sector_id: userRole?.sector_id,
             school_id: userRole?.school_id,
-            entityName: userRole?.regions?.name || userRole?.sectors?.name || userRole?.schools?.name || ''
+            entityName: {
+              region: userRole?.regions?.name || '',
+              sector: userRole?.sectors?.name || '',
+              school: userRole?.schools?.name || ''
+            }
           };
 
           setUserData(fullUserData);
@@ -77,17 +81,15 @@ export const useUserData = (userId?: string) => {
 
     setLoading(true);
     try {
-      const mappedUpdates = mapUserDataProperties(updates);
-      
       const { error } = await supabase
         .from('profiles')
         .update({
-          full_name: mappedUpdates.full_name,
-          email: mappedUpdates.email,
-          phone: mappedUpdates.phone,
-          position: mappedUpdates.position,
-          language: mappedUpdates.language,
-          status: mappedUpdates.status,
+          full_name: updates.fullName || updates.full_name,
+          email: updates.email,
+          phone: updates.phone,
+          position: updates.position,
+          language: updates.language,
+          status: updates.status,
           updated_at: new Date().toISOString()
         })
         .eq('id', userId);
@@ -130,10 +132,11 @@ export const useUserData = (userId?: string) => {
         
         const refreshedData: FullUserData = {
           id: data.id,
-          full_name: data.full_name || '',
+          fullName: data.full_name || '',
+          full_name: data.full_name,
           email: data.email,
           role: userRole?.role || 'user',
-          status: ensureUserStatus(data.status) as UserStatus,
+          status: data.status,
           phone: data.phone,
           language: data.language,
           position: data.position,

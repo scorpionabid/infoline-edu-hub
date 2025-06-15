@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/supabase';
-import { useRegions } from '@/context/RegionsContext';
+import { useRegions } from '@/hooks/regions/useRegions';
 import { useSectors } from '@/hooks/sectors/useSectors';
 import { toast } from 'sonner';
 import { useLanguageSafe } from '@/context/LanguageContext';
@@ -40,8 +40,8 @@ export const useSchoolsStore = () => {
   });
   
   // Regionları və sektorları əldə etmək üçün hookları istifadə edirik
-  const { regions = [], isLoading: regionsLoading } = useRegions() || {};
-  const { data: sectors = [], isLoading: sectorsLoading } = useSectors({ regionId: selectedRegion });
+  const { regions = [], loading: regionsLoading } = useRegions() || {};
+  const { sectors = [], loading: sectorsLoading } = useSectors(selectedRegion) || {};
 
   // Məktəbləri yükləmək metodu
   const fetchSchools = useCallback(async (forceRefresh = false) => {
@@ -245,6 +245,13 @@ export const useSchoolsStore = () => {
     selectedRegion,
     selectedSector,
     selectedStatus,
+    sortConfig,
+    currentPage: currentPage,
+    itemsPerPage,
+    filteredSchools,
+    sortedSchools,
+    currentItems,
+    totalPages: totalPages > 0 ? totalPages : 1,
     regions,
     sectors,
     sectorsLoading,
@@ -252,6 +259,8 @@ export const useSchoolsStore = () => {
     handleRegionFilter,
     handleSectorFilter,
     handleStatusFilter,
+    handleSort,
+    handlePageChange,
     resetFilters,
     fetchSchools,
     setSchools,

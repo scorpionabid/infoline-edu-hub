@@ -1,4 +1,3 @@
-
 // ============================================================================
 // İnfoLine Auth Types - Unified Type System
 // ============================================================================
@@ -13,44 +12,6 @@ export type UserStatus = 'active' | 'inactive' | 'pending' | 'suspended';
 // Core User Interfaces
 // ============================================================================
 
-export interface NotificationSettings {
-  email: boolean;
-  push: boolean;
-  inApp: boolean;
-  system: boolean;
-  deadline: boolean;
-  sms: boolean;
-  deadlineReminders: boolean;
-  statusUpdates: boolean;
-  weeklyReports: boolean;
-  email_notifications?: boolean;
-  sms_notifications?: boolean;
-  push_notifications?: boolean;
-}
-
-export interface UserPreferences {
-  theme: 'light' | 'dark' | 'system';
-  language: string;
-  timezone: string;
-  notifications: NotificationSettings;
-  dashboard: {
-    defaultView: string;
-    showQuickActions: boolean;
-    compactMode: boolean;
-  };
-}
-
-export interface UserPermissions {
-  canManageUsers: boolean;
-  canManageCategories: boolean;
-  canManageSchools: boolean;
-  canApproveData: boolean;
-  canExportData: boolean;
-  canViewReports: boolean;
-  canManageRegions: boolean;
-  canManageSectors: boolean;
-}
-
 export interface FullUserData {
   id: string;
   email: string;
@@ -63,20 +24,27 @@ export interface FullUserData {
   sectorId?: string;
   school_id?: string;
   schoolId?: string;
+  school_name?: string;
+  region_name?: string;
+  sector_name?: string;
   phone?: string;
   position?: string;
   language?: string;
   avatar?: string;
-  status: UserStatus;
-  last_login?: string;
+  status?: UserStatus;
   lastLogin?: string;
-  created_at: string;
+  last_login?: string;
   createdAt?: string;
-  updated_at: string;
   updatedAt?: string;
-  preferences?: UserPreferences;
-  permissions?: UserPermissions;
-  notification_settings?: NotificationSettings;
+  created_at?: string;
+  updated_at?: string;
+  permissions?: string[];
+  preferences?: any;
+  entityName?: string | {
+    region?: string;
+    sector?: string;
+    school?: string;
+  };
 }
 
 export interface User {
@@ -87,6 +55,9 @@ export interface User {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  school_name?: string;
+  region_name?: string;
+  sector_name?: string;
   phone?: string;
   position?: string;
   language?: string;
@@ -238,6 +209,22 @@ export interface PublicRouteProps {
 }
 
 // ============================================================================
+// Notification Settings (Auth Related)
+// ============================================================================
+
+export interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  inApp: boolean;
+  system: boolean;
+  deadline: boolean;
+  sms: boolean;
+  deadlineReminders: boolean;
+  statusUpdates: boolean;
+  weeklyReports: boolean;
+}
+
+// ============================================================================
 // Login/Register Form Types
 // ============================================================================
 
@@ -279,7 +266,6 @@ export interface UserFormData {
   status?: UserStatus;
   notifications?: NotificationSettings;
   notificationSettings?: NotificationSettings;
-  preferences?: UserPreferences;
 }
 
 // ============================================================================

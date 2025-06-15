@@ -3,8 +3,7 @@ export { useColumnMutations } from './useColumnMutations';
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnType, ColumnStatus } from '@/types/column';
-import { assertColumnStatus } from '@/utils/buildFixes';
+import { Column } from '@/types/column';
 
 // Fixed useColumnsQuery hook
 export const useColumnsQuery = (options: { status?: string; enabled?: boolean } = {}) => {
@@ -37,11 +36,11 @@ export const useColumnsQuery = (options: { status?: string; enabled?: boolean } 
 
       console.log('✅ Fetched columns:', data?.length || 0);
       
-      // Transform data to match Column interface with proper type casting
+      // Transform data to match Column interface
       const transformedColumns: Column[] = (data || []).map(item => ({
         id: item.id,
         name: item.name,
-        type: item.type as ColumnType, // Type assertion for database string to ColumnType
+        type: item.type,
         category_id: item.category_id,
         placeholder: item.placeholder,
         help_text: item.help_text,
@@ -50,7 +49,7 @@ export const useColumnsQuery = (options: { status?: string; enabled?: boolean } 
         options: item.options ? (typeof item.options === 'string' ? JSON.parse(item.options) : item.options) : [],
         validation: item.validation ? (typeof item.validation === 'string' ? JSON.parse(item.validation) : item.validation) : {},
         order_index: item.order_index || 0,
-        status: assertColumnStatus(item.status || 'active') as ColumnStatus,
+        status: item.status || 'active',
         created_at: item.created_at,
         updated_at: item.updated_at
       }));

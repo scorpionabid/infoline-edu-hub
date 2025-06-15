@@ -66,12 +66,10 @@ const SectorsContainer: React.FC<SectorsContainerProps> = ({
                   {sector.description && (
                     <p className="text-sm text-muted-foreground">{sector.description}</p>
                   )}
-                  {(sector.region_name || sector.regionName) && (
+                  {sector.region_name && (
                     <div className="flex items-center justify-between text-sm">
                       <span>Region:</span>
-                      <span className="text-primary font-medium">
-                        {sector.region_name || sector.regionName}
-                      </span>
+                      <span className="text-primary font-medium">{sector.region_name}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between text-sm">

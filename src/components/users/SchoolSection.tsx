@@ -1,53 +1,40 @@
 
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import React from 'react';
+import { useLanguage } from '@/context/LanguageContext';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
 import { UserFormData } from '@/types/user';
 
-interface School {
-  id: string;
-  name: string;
-}
-
 interface SchoolSectionProps {
-  form: ReturnType<typeof useForm<UserFormData>>;
+  form: any;
+  data: UserFormData;
+  onFormChange: (fieldName: string, value: any) => void;
+  filteredSchools: { id: string; name: string }[];
+  hideSection?: boolean;
 }
 
-const SchoolSection: React.FC<SchoolSectionProps> = ({ form }) => {
-  const [schools, setSchools] = useState<School[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const sectorId = form.watch('sector_id');
+const SchoolSection: React.FC<SchoolSectionProps> = ({
+  form,
+  data,
+  onFormChange,
+  filteredSchools,
+  hideSection = false,
+}) => {
+  const { t } = useLanguage();
 
-  useEffect(() => {
-    const fetchSchools = async () => {
-      if (!sectorId) {
-        setSchools([]);
-        return;
-      }
+  if (hideSection || !(data.role === 'schooladmin' && (data.sector_id || data.sectorId))) {
+    return null;
+  }
 
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('schools')
-          .select('id, name')
-          .eq('sector_id', sectorId)
-          .eq('status', 'active')
-          .order('name');
-
-        if (error) throw error;
-        setSchools(data || []);
-      } catch (error) {
-        console.error('Error fetching schools:', error);
-        setSchools([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSchools();
-  }, [sectorId]);
+  // Filter out schools with empty or invalid IDs with additional safety checks
+  const validSchools = filteredSchools.filter(school => 
+    school && 
+    school.id && 
+    String(school.id).trim() !== '' && 
+    school.id !== null && 
+    school.id !== undefined && 
+    school.name
+  );
 
   return (
     <FormField
@@ -55,25 +42,38 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({ form }) => {
       name="school_id"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Məktəb</FormLabel>
+          <FormLabel>{t('school')}</FormLabel>
           <Select
-            onValueChange={field.onChange}
-            value={field.value || ''}
-            disabled={!sectorId || isLoading}
+            value={data.school_id || data.schoolId || undefined}
+            onValueChange={(value) => {
+              field.onChange(value);
+              onFormChange('school_id', value);
+            }}
+            disabled={validSchools.length === 0}
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="Məktəb seçin" />
+                <SelectValue placeholder={t('selectSchool')} />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {schools.map((school) => (
-                <SelectItem key={school.id} value={school.id}>
-                  {school.name}
+              {validSchools.length > 0 ? (
+                validSchools.map((school) => (
+                  <SelectItem 
+                    key={school.id} 
+                    value={String(school.id)}
+                  >
+                    {school.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="no-schools-found" disabled>
+                  {t('noSchoolsFound') || 'Məktəb tapılmadı'}
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
+          <FormMessage />
         </FormItem>
       )}
     />

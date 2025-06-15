@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { SectorAdminSchoolList } from '@/components/schools/SectorAdminSchoolList'; // Fixed import
+import { SectorAdminSchoolList } from '@/components/schools/SectorAdminSchoolList';
 import { Building2 } from 'lucide-react';
 
 interface SectorDataEntryProps {

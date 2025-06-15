@@ -1,21 +1,17 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Region, RegionStatus } from '@/types/region';
-import { ensureRegionStatus } from '@/utils/buildFixes';
+import { Region } from '@/types/region';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
-interface RegionsContextType {
+interface RegionsContextProps {
   regions: Region[];
-  isLoading: boolean;
+  loading: boolean;
   error: string | null;
   refetch: () => void;
-  createRegion: (regionData: any) => Promise<void>;
-  updateRegion: (regionId: string, regionData: any) => Promise<void>;
-  deleteRegion: (regionId: string) => Promise<void>;
 }
 
-const RegionsContext = createContext<RegionsContextType | undefined>(undefined);
+const RegionsContext = createContext<RegionsContextProps | undefined>(undefined);
 
 export const useRegions = () => {
   const context = useContext(RegionsContext);
@@ -25,81 +21,68 @@ export const useRegions = () => {
   return context;
 };
 
-// Alias for backward compatibility
-export const useRegionsContext = useRegions;
+export const useRegionsContext = () => {
+  return useRegions();
+};
 
-export const RegionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const {
-    data: regions = [],
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['regions'],
-    queryFn: async (): Promise<Region[]> => {
-      const { data, error } = await supabase
+export const RegionsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const user = useAuthStore(state => state.user);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRegions = async () => {
+    setLoading(true);
+    try {
+      if (!user) {
+        setError('User not authenticated');
+        return;
+      }
+
+      let query = supabase
         .from('regions')
         .select('*')
-        .order('name');
+        .eq('status', 'active')
+        .order('name', { ascending: true });
 
-      if (error) throw error;
+      if (user.role === 'regionadmin' && user.region_id) {
+        query = query.eq('id', user.region_id);
+      }
 
-      // Transform data to ensure correct types
-      return (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        description: item.description || '',
-        status: ensureRegionStatus(item.status || 'active') as RegionStatus,
-        admin_id: item.admin_id || '',
-        admin_email: item.admin_email || '',
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
+      const { data, error } = await query;
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setRegions(data || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-  });
-
-  const createRegion = async (regionData: any) => {
-    const { error } = await supabase
-      .from('regions')
-      .insert([regionData]);
-
-    if (error) throw error;
-    refetch();
   };
 
-  const updateRegion = async (regionId: string, regionData: any) => {
-    const { error } = await supabase
-      .from('regions')
-      .update(regionData)
-      .eq('id', regionId);
+  useEffect(() => {
+    fetchRegions();
+  }, [user]);
 
-    if (error) throw error;
-    refetch();
+  const refetch = () => {
+    fetchRegions();
   };
 
-  const deleteRegion = async (regionId: string) => {
-    const { error } = await supabase
-      .from('regions')
-      .delete()
-      .eq('id', regionId);
-
-    if (error) throw error;
-    refetch();
+  const value: RegionsContextProps = {
+    regions,
+    loading,
+    error,
+    refetch,
   };
 
   return (
-    <RegionsContext.Provider
-      value={{
-        regions,
-        isLoading,
-        error: error?.message || null,
-        refetch,
-        createRegion,
-        updateRegion,
-        deleteRegion
-      }}
-    >
+    <RegionsContext.Provider value={value}>
       {children}
     </RegionsContext.Provider>
   );
 };
+
+export default RegionsProvider;

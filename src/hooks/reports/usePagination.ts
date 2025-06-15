@@ -5,14 +5,12 @@ export interface UsePaginationOptions {
   initialPage?: number;
   itemsPerPage?: number;
   totalItems?: number;
-  initialPageSize?: number;
 }
 
 export interface UsePaginationReturn {
   currentPage: number;
   itemsPerPage: number;
   setCurrentPage: (page: number) => void;
-  setPageSize: (size: number) => void;
   totalPages: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
@@ -26,9 +24,8 @@ export const usePagination = (
   totalItems: number,
   options: UsePaginationOptions = {}
 ): UsePaginationReturn => {
-  const { initialPage = 1, itemsPerPage: initialItemsPerPage = 10 } = options;
+  const { initialPage = 1, itemsPerPage = 10 } = options;
   const [currentPage, setCurrentPage] = useState(initialPage);
-  const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage);
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const hasNextPage = currentPage < totalPages;
@@ -39,16 +36,10 @@ export const usePagination = (
   const goToNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
   const goToPreviousPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
 
-  const setPageSize = (size: number) => {
-    setItemsPerPage(size);
-    setCurrentPage(1); // Reset to first page when changing page size
-  };
-
   return {
     currentPage,
     itemsPerPage,
     setCurrentPage,
-    setPageSize,
     totalPages,
     hasNextPage,
     hasPreviousPage,

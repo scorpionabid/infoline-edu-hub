@@ -1,66 +1,77 @@
 
+// Type definitions
+export type CategoryStatus = 'active' | 'inactive' | 'archived' | 'draft' | 'approved' | 'pending' | string;
+export type CategoryAssignment = 'all' | 'sectors' | 'schools' | 'regions' | string;
+
+// Main Category interface
 export interface Category {
   id: string;
-  created_at: string;
-  updated_at: string;
   name: string;
-  description: string;
-  assignment: 'all' | 'schools' | 'sectors' | 'regions';
-  status: 'active' | 'inactive' | 'draft' | 'approved' | 'archived' | 'pending';
-  priority: number;
-  deadline: string;
-  order_index: number;
-  column_count?: number;
-  completion_rate?: number;
-  completionRate?: number;
+  description?: string;
+  status?: CategoryStatus;
+  priority?: number;
+  created_at?: string;
+  updated_at?: string;
+  deadline?: string;
   archived?: boolean;
+  column_count?: number;
+  columnCount?: number; // Alias for compatibility
+  assignment?: CategoryAssignment;
+  completionRate?: number;
+  completion_rate?: number;
 }
 
-export interface CategoryWithColumns extends Category {
-  columns: Column[];
-}
-
-export interface Column {
-  id: string;
-  name: string;
-  type: string;
-  category_id: string;
-  placeholder?: string;
-  help_text?: string;
-  is_required: boolean;
-  default_value?: string;
-  options?: any;
-  validation?: any;
-  order_index: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface AddCategoryFormData {
-  name: string;
-  description: string;
-  assignment: 'all' | 'schools' | 'sectors' | 'regions';
-  status: 'active' | 'inactive' | 'draft' | 'approved' | 'archived' | 'pending';
-  priority: number;
-  deadline: string | Date;
-  order_index?: number;
-}
-
-export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'approved' | 'archived' | 'pending';
-export type CategoryAssignment = 'all' | 'schools' | 'sectors' | 'regions';
-
+// Filtering
 export interface CategoryFilter {
   search: string;
-  status: CategoryStatus | string | null;
-  assignment: CategoryAssignment | string | null;
+  status: string | null;
+  assignment: string | null;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
 
-export const formatDeadlineForApi = (deadline: string | Date): string => {
-  if (typeof deadline === 'string') {
-    return deadline;
-  }
-  return deadline.toISOString();
-};
+export interface CategoryFilterProps {
+  filter: CategoryFilter;
+  onFilterChange: (filter: Partial<CategoryFilter>) => void;
+}
+
+// Form data for creating/editing categories
+export interface AddCategoryFormData {
+  name: string;
+  description?: string;
+  deadline?: string | Date | null;
+  status?: CategoryStatus;
+  assignment?: CategoryAssignment;
+  priority?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Dialog props
+export interface CreateCategoryDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCategoryCreated: () => Promise<void>;
+}
+
+// Category with columns
+export interface CategoryWithColumns extends Category {
+  columns: any[];
+}
+
+// Tab definition
+export interface TabDefinition {
+  id: string;
+  title: string;
+  label?: string;
+  columns?: any[];
+  value?: string;
+  count?: number;
+}
+
+// Helper function to convert Date to string for API
+export function formatDeadlineForApi(deadline: Date | string | null | undefined): string | null {
+  if (!deadline) return null;
+  if (deadline instanceof Date) return deadline.toISOString();
+  return deadline;
+}

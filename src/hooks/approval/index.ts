@@ -1,7 +1,3 @@
 
-// Approval hooks - Complete approval workflow
+// Approval hooks
 export { useApprovalData } from './useApprovalData';
-export { useApprovalActions } from './useApprovalActions';
-
-// Re-export types for convenience
-export type { ApprovalActionResult } from './useApprovalActions';

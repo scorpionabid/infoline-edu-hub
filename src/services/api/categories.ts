@@ -1,117 +1,114 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Category } from '@/types/category';
 
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  assignment: 'all' | 'schools' | 'regions' | 'sectors';
-  status: 'pending' | 'approved' | 'archived' | 'active' | 'inactive' | 'draft';
-  deadline?: string;
-  priority?: number;
-  archived: boolean;
-  column_count: number;
-  order_index: number;
-  created_at: string;
-  updated_at: string;
-}
+export const fetchCategories = async (): Promise<Category[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-export const getCategories = async (): Promise<Category[]> => {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .order('order_index', { ascending: true });
+    if (error) throw error;
 
-  if (error) throw error;
-  
-  return (data || []).map(item => ({
-    ...item,
-    assignment: item.assignment as 'all' | 'schools' | 'regions' | 'sectors'
-  })) as Category[];
+    return data.map(category => ({
+      ...category,
+      assignment: category.assignment || 'all',
+      archived: category.archived || false,
+      column_count: category.column_count || 0,
+      priority: category.priority || 0,
+      status: category.status || 'active'
+    }));
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    throw error;
+  }
 };
 
-export const createCategory = async (categoryData: {
-  name: string;
-  description: string;
-  assignment: 'all' | 'schools' | 'regions' | 'sectors';
-  deadline: string;
-  priority: number;
-  status: 'pending' | 'approved' | 'archived' | 'active' | 'inactive' | 'draft';
-  archived: boolean;
-  column_count: number;
-}): Promise<Category> => {
-  const { data, error } = await supabase
-    .from('categories')
-    .insert([{
-      ...categoryData,
-      order_index: 0
-    }])
-    .select()
-    .single();
+export const createCategory = async (categoryData: Omit<Category, 'id' | 'created_at' | 'updated_at'>): Promise<Category> => {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .insert({
+        name: categoryData.name,
+        description: categoryData.description,
+        assignment: categoryData.assignment || 'all',
+        deadline: categoryData.deadline,
+        priority: categoryData.priority || 0,
+        status: categoryData.status || 'active',
+        archived: categoryData.archived || false,
+        column_count: categoryData.column_count || 0
+      })
+      .select()
+      .single();
 
-  if (error) throw error;
-  
-  return {
-    ...data,
-    assignment: data.assignment as 'all' | 'schools' | 'regions' | 'sectors'
-  } as Category;
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating category:', error);
+    throw error;
+  }
 };
 
-export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category> => {
-  const { data, error } = await supabase
-    .from('categories')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
+export const updateCategory = async (id: string, categoryData: Partial<Category>): Promise<Category> => {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .update({
+        ...categoryData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-  if (error) throw error;
-  
-  return {
-    ...data,
-    assignment: data.assignment as 'all' | 'schools' | 'regions' | 'sectors'
-  } as Category;
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating category:', error);
+    throw error;
+  }
 };
 
 export const deleteCategory = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('categories')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw error;
-};
-
-export const getCategoryById = async (id: string): Promise<Category | null> => {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    throw error;
-  }
-  
-  return {
-    ...data,
-    assignment: data.assignment as 'all' | 'schools' | 'regions' | 'sectors'
-  } as Category;
-};
-
-export const reorderCategories = async (categories: Category[]): Promise<void> => {
-  const updates = categories.map((category, index) => ({
-    id: category.id,
-    order_index: index
-  }));
-
-  for (const update of updates) {
+  try {
     const { error } = await supabase
       .from('categories')
-      .update({ order_index: update.order_index })
-      .eq('id', update.id);
+      .delete()
+      .eq('id', id);
 
     if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    throw error;
+  }
+};
+
+export const bulkUpdateCategories = async (categories: Category[]): Promise<Category[]> => {
+  try {
+    // Prepare categories for database insert with required fields
+    const categoriesToUpdate = categories.map(category => ({
+      id: category.id,
+      name: category.name,
+      description: category.description,
+      assignment: category.assignment || 'all',
+      deadline: category.deadline,
+      priority: category.priority || 0,
+      status: category.status || 'active',
+      archived: category.archived || false,
+      column_count: category.column_count || 0,
+      updated_at: new Date().toISOString()
+    }));
+
+    const { data, error } = await supabase
+      .from('categories')
+      .upsert(categoriesToUpdate)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error bulk updating categories:', error);
+    throw error;
   }
 };
