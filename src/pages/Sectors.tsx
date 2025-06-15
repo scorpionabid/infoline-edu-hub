@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useSectorsStore, type EnhancedSector } from '@/hooks/useSectorsStore';
 import SectorsContainer from '@/components/sectors/SectorsContainer';
 import { Loader2 } from 'lucide-react';
@@ -13,17 +13,15 @@ interface RefreshResult {
 }
 
 const Sectors = () => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   const { sectors, loading, error, refetch: storeRefetch } = useSectorsStore();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // refetch funksiyasını yaddaşa salmaq
   const refetch = useCallback(async (): Promise<RefreshResult> => {
     try {
       console.log('Məlumatlar yenilənir...');
       const result = await storeRefetch();
       
-      // Ensure sectors are properly typed as EnhancedSector[]
       const enhancedSectors = result.sectors.map(sector => ({
         ...sector,
         status: sector.status === 'inactive' ? 'inactive' as const : 'active' as const
@@ -44,7 +42,6 @@ const Sectors = () => {
     }
   }, [storeRefetch]);
 
-  // İlkin məlumatların yüklənməsi
   useEffect(() => {
     if (isInitialLoad) {
       console.log('İlkin məlumatlar yüklənir...');
@@ -62,7 +59,6 @@ const Sectors = () => {
     }
   }, [isInitialLoad, refetch]);
 
-  // Xəta mesajlarının göstərilməsi
   useEffect(() => {
     if (error && !isInitialLoad) {
       console.error('Səhifə xətası:', error);
@@ -70,7 +66,6 @@ const Sectors = () => {
     }
   }, [error, isInitialLoad]);
 
-  // Yükləmə zamanı yükləmə göstəricisi
   if (isInitialLoad) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -82,7 +77,7 @@ const Sectors = () => {
   return (
     <>
       <Helmet>
-        <title>{t('sectors')} | InfoLine</title>
+        <title>{t('navigation.sectors')} | InfoLine</title>
       </Helmet>
 
       <div className="container mx-auto py-6">
