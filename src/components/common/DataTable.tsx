@@ -75,8 +75,9 @@ const DataTable: React.FC<DataTableProps> = ({
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-center h-60">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="flex flex-col items-center justify-center h-60 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+            <p className="text-muted-foreground">{t('dataTable.loading')}</p>
           </div>
         </CardContent>
       </Card>
@@ -89,8 +90,8 @@ const DataTable: React.FC<DataTableProps> = ({
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center h-60 text-center">
             <div className="text-destructive text-4xl mb-4">!</div>
-            <h3 className="text-lg font-medium">{t("errorLoading")}</h3>
-            <p className="text-muted-foreground mt-2">{t("tryAgainLater")}</p>
+            <h3 className="text-lg font-medium">{t("dataTable.errorLoading")}</h3>
+            <p className="text-muted-foreground mt-2">{t("dataTable.tryAgainLater")}</p>
           </div>
         </CardContent>
       </Card>
@@ -102,9 +103,15 @@ const DataTable: React.FC<DataTableProps> = ({
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center h-60 text-center">
-            {emptyState.icon}
-            <h3 className="text-lg font-medium">{emptyState.title}</h3>
-            <p className="text-muted-foreground mt-2">{emptyState.description}</p>
+            {emptyState?.icon || (
+              <div className="text-muted-foreground text-4xl mb-4">📋</div>
+            )}
+            <h3 className="text-lg font-medium">
+              {emptyState?.title || t('dataTable.noData')}
+            </h3>
+            <p className="text-muted-foreground mt-2">
+              {emptyState?.description || t('dataTable.noDataDescription')}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -123,7 +130,11 @@ const DataTable: React.FC<DataTableProps> = ({
                     {column.header}
                   </TableHead>
                 ))}
-                {actionColumn?.canManage && <TableHead className="text-right">{t("actions")}</TableHead>}
+                {actionColumn?.canManage && (
+                  <TableHead className="text-right">
+                    {t('dataTable.actions')}
+                  </TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -179,7 +190,7 @@ const DataTable: React.FC<DataTableProps> = ({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+              <AlertDialogCancel>{t('dataTable.cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 onClick={async () => {
@@ -189,7 +200,7 @@ const DataTable: React.FC<DataTableProps> = ({
                   }
                 }}
               >
-                {t("delete")}
+                {t('dataTable.delete')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

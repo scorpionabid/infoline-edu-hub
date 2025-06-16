@@ -31,6 +31,7 @@ export interface TranslationValidationResult {
   valid: boolean;
   missingKeys: string[];
   invalidKeys: string[];
+  missingGroups?: string[];
 }
 
 export interface TranslationInterpolationOptions {

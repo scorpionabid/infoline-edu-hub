@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface DateInputProps {
   value: string | null;
@@ -19,10 +20,12 @@ export const DateInput: React.FC<DateInputProps> = ({
   min,
   max,
   required,
-  placeholder = "YYYY-MM-DD",
+  placeholder,
   className = "",
   disabled = false
 }) => {
+  const { t } = useLanguage();
+  const placeholderText = placeholder || t('common.dateInput.placeholder', 'YYYY-MM-DD');
   return (
     <Input
       type="date"
@@ -31,7 +34,7 @@ export const DateInput: React.FC<DateInputProps> = ({
       min={min}
       max={max}
       required={required}
-      placeholder={placeholder}
+      placeholder={placeholderText}
       className={className}
       disabled={disabled}
     />

@@ -2,7 +2,6 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
-import { LanguageProvider } from '@/context/LanguageContext';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { CacheHelpers } from '@/services/reports/cacheService';
@@ -33,10 +32,8 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AppRoutes />
-        <Toaster />
-      </LanguageProvider>
+      <AppRoutes />
+      <Toaster />
     </QueryClientProvider>
   );
 }

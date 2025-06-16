@@ -63,118 +63,118 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole: rawUserRole, isOpen, onTogg
   const navItems = [
     { 
       id: 'dashboard',
-      label: t('dashboard') || 'İdarəetmə paneli', 
+      label: t('navigation.dashboard'), 
       href: '/dashboard', 
       icon: LayoutDashboard,
       visible: true
     },
     { 
       id: 'regions',
-      label: t('regions') || 'Regionlar', 
+      label: t('navigation.regions'), 
       href: '/regions', 
       icon: Building,
       visible: isSuperAdmin
     },
     { 
       id: 'sectors',
-      label: t('sectors') || 'Sektorlar', 
+      label: t('navigation.sectors'), 
       href: '/sectors', 
       icon: Building2,
       visible: isSuperAdmin || isRegionAdmin
     },
     { 
       id: 'schools',
-      label: t('schools') || 'Məktəblər', 
+      label: t('navigation.schools'), 
       href: '/schools', 
       icon: School,
       visible: isAdmin
     },
     { 
       id: 'categories',
-      label: t('categories') || 'Kateqoriyalar', 
+      label: t('navigation.categories'), 
       href: '/categories', 
       icon: ClipboardList,
       visible: isAdmin
     },
     { 
       id: 'columns',
-      label: t('columns') || 'Sütunlar', 
+      label: t('navigation.columns'), 
       href: '/columns', 
       icon: Columns,
       visible: isSuperAdmin || isRegionAdmin
     },
     { 
       id: 'users',
-      label: t('users') || 'İstifadəçilər', 
+      label: t('navigation.users'), 
       href: '/users', 
       icon: Users,
       visible: isAdmin
     },
-    // ✅ YENİ: Sektor məlumatları - yalnız sektor adminləri üçün
+    // Sektor məlumatları - yalnız sektor adminləri üçün
     { 
       id: 'sector-data-entry',
-      label: 'Sektor Məlumatları', 
+      label: t('navigation.sectorDataEntry'), 
       href: '/sector-data-entry', 
       icon: Database,
       visible: isSectorAdmin
     },
-    // ✅ YENİ: Statistika - Region və Sektor adminləri üçün
+    // Statistika - Region və Sektor adminləri üçün
     { 
       id: 'statistics',
-      label: 'Statistika', 
+      label: t('navigation.statistics'), 
       href: '/statistics', 
       icon: TrendingUp,
       visible: isRegionAdmin || isSectorAdmin
     },
-    // ✅ YENİ: Proqres İzləmə - Region və Sektor adminləri üçün
+    // Proqres İzləmə - Region və Sektor adminləri üçün
     { 
       id: 'progress',
-      label: 'Proqres İzləmə', 
+      label: t('navigation.progress'), 
       href: '/progress', 
       icon: Activity,
       visible: isRegionAdmin || isSectorAdmin
     },
-    // ✅ YENİ: Performans - SuperAdmin üçün
+    // Performans - SuperAdmin üçün
     { 
       id: 'performance',
-      label: 'Performans', 
+      label: t('navigation.performance'), 
       href: '/performance', 
       icon: BarChart3,
       visible: isSuperAdmin
     },
-    // ✅ YENİ: Genişləndirilmiş İstifadəçi İdarəetməsi - SuperAdmin üçün
+    // İstifadəçi İdarəetməsi - SuperAdmin üçün
     { 
       id: 'user-management',
-      label: 'İstifadəçi İdarəetməsi', 
+      label: t('navigation.userManagement'), 
       href: '/user-management', 
       icon: Users,
       visible: isSuperAdmin
     },
     { 
       id: 'data-entry',
-      label: t('dataEntry') || 'Məlumat daxiletmə', 
+      label: t('navigation.dataEntry'), 
       href: isSchoolAdmin ? '/school-data-entry' : '/data-entry', 
       icon: FileText,
       visible: true
     },
     { 
       id: 'approvals',
-      label: t('approvals') || 'Təsdiqlər', 
+      label: t('navigation.approvals'), 
       href: '/approvals', 
       icon: CheckSquare,
       visible: isAdmin
     },
-    // ✅ YENİ: Reports mənyusu - adminlər üçün
+    // Reports mənyusu - adminlər üçün
     { 
       id: 'reports',
-      label: t('reports') || 'Hesabatlar', 
+      label: t('navigation.reports'), 
       href: '/reports', 
       icon: FileBarChart,
       visible: isAdmin
     },
     { 
       id: 'settings',
-      label: t('settings') || 'Parametrlər', 
+      label: t('navigation.settings'), 
       href: '/settings', 
       icon: Settings,
       visible: true

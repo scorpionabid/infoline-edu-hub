@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface DatePickerProps {
   selected?: Date;
@@ -21,9 +22,11 @@ interface DatePickerProps {
 export const DatePicker: React.FC<DatePickerProps> = ({
   selected,
   onSelect,
-  placeholder = "Pick a date",
+  placeholder,
   disabled = false
 }) => {
+  const { t } = useLanguage();
+  const placeholderText = placeholder || t('common.datePicker.pickDate', 'Pick a date');
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -36,7 +39,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           disabled={disabled}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {selected ? format(selected, "PPP") : <span>{placeholder}</span>}
+          {selected ? format(selected, "PPP") : <span>{placeholderText}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">

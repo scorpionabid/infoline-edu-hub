@@ -139,7 +139,7 @@ const UserForm: React.FC<UserFormProps> = ({
       {!isFieldDisabled('fullName') && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="fullName" className="text-right">
-            {t('fullName')} {isFieldRequired('fullName') && <span className="text-red-500">*</span>}
+            {t('userForm.fullName')} {isFieldRequired('fullName') && <span className="text-red-500">*</span>}
           </Label>
           <Input
             id="fullName"
@@ -156,7 +156,7 @@ const UserForm: React.FC<UserFormProps> = ({
       {!isFieldDisabled('email') && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="email" className="text-right">
-            {t('email')} {isFieldRequired('email') && <span className="text-red-500">*</span>}
+            {t('userForm.email')} {isFieldRequired('email') && <span className="text-red-500">*</span>}
           </Label>
           <Input
             id="email"
@@ -174,7 +174,7 @@ const UserForm: React.FC<UserFormProps> = ({
       {!isFieldDisabled('password') && !isEditMode && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="password" className="text-right">
-            {t('password')} {isFieldRequired('password') && <span className="text-red-500">*</span>}
+            {t('userForm.password')} {isFieldRequired('password') && <span className="text-red-500">*</span>}
           </Label>
           <Input
             id="password"
@@ -192,7 +192,7 @@ const UserForm: React.FC<UserFormProps> = ({
       {!isFieldDisabled('phone') && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="phone" className="text-right">
-            {t('phone')}
+            {t('userForm.phone')}
           </Label>
           <Input
             id="phone"
@@ -208,7 +208,7 @@ const UserForm: React.FC<UserFormProps> = ({
       {!isFieldDisabled('position') && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="position" className="text-right">
-            {t('position')}
+            {t('userForm.position')}
           </Label>
           <Input
             id="position"
@@ -224,7 +224,7 @@ const UserForm: React.FC<UserFormProps> = ({
       {!isFieldDisabled('role') && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label className="text-right">
-            {t('role')} {isFieldRequired('role') && <span className="text-red-500">*</span>}
+            {t('userForm.role')} {isFieldRequired('role') && <span className="text-red-500">*</span>}
           </Label>
           <div className="col-span-3">
             <RadioGroup
@@ -236,18 +236,18 @@ const UserForm: React.FC<UserFormProps> = ({
               {isSuperAdmin && (
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="regionadmin" id="regionadmin" />
-                  <Label htmlFor="regionadmin">{t('regionadmin')}</Label>
+                  <Label htmlFor="regionadmin">{t('userForm.regionadmin')}</Label>
                 </div>
               )}
               {(isSuperAdmin || isRegionAdmin) && (
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="sectoradmin" id="sectoradmin" />
-                  <Label htmlFor="sectoradmin">{t('sectoradmin')}</Label>
+                  <Label htmlFor="sectoradmin">{t('userForm.sectoradmin')}</Label>
                 </div>
               )}
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="schooladmin" id="schooladmin" />
-                <Label htmlFor="schooladmin">{t('schooladmin')}</Label>
+                <Label htmlFor="schooladmin">{t('userForm.schooladmin')}</Label>
               </div>
             </RadioGroup>
           </div>
@@ -258,7 +258,7 @@ const UserForm: React.FC<UserFormProps> = ({
       {!isFieldDisabled('regionId') && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="regionId" className="text-right">
-            {t('region')} {isFieldRequired('regionId') && <span className="text-red-500">*</span>}
+            {t('userForm.region')} {isFieldRequired('regionId') && <span className="text-red-500">*</span>}
           </Label>
           <Select
             value={formData.regionId || undefined}
@@ -266,10 +266,10 @@ const UserForm: React.FC<UserFormProps> = ({
             disabled={isFieldDisabled('regionId') || !isSuperAdmin || loading.regions}
           >
             <SelectTrigger className="col-span-3">
-              <SelectValue placeholder={t('selectRegion')} />
+              <SelectValue placeholder={t('userForm.selectRegion')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="select-region">{t('selectRegion')}</SelectItem>
+              <SelectItem value="select-region">{t('userForm.selectRegion')}</SelectItem>
               {regions.map((region) => {
                 // Ensure region has valid ID and is not empty
                 const regionId = region.id || `region-${region.name || Math.random()}`;
@@ -279,7 +279,7 @@ const UserForm: React.FC<UserFormProps> = ({
                 }
                 return (
                   <SelectItem key={regionId} value={safeRegionId}>
-                    {region.name || 'Unknown Region'}
+                    {region.name || t('unknownRegion')}
                   </SelectItem>
                 );
               })}
@@ -292,7 +292,7 @@ const UserForm: React.FC<UserFormProps> = ({
       {!isFieldDisabled('sectorId') && formData.role !== 'regionadmin' && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="sectorId" className="text-right">
-            {t('sector')} {isFieldRequired('sectorId') && <span className="text-red-500">*</span>}
+            {t('userForm.sector')} {isFieldRequired('sectorId') && <span className="text-red-500">*</span>}
           </Label>
           <Select
             value={formData.sectorId || undefined}
@@ -300,10 +300,10 @@ const UserForm: React.FC<UserFormProps> = ({
             disabled={isFieldDisabled('sectorId') || !formData.regionId || loading.sectors}
           >
             <SelectTrigger className="col-span-3">
-              <SelectValue placeholder={t('selectSector')} />
+              <SelectValue placeholder={t('userForm.selectSector')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="select-sector">{t('selectSector')}</SelectItem>
+              <SelectItem value="select-sector">{t('userForm.selectSector')}</SelectItem>
               {sectors.map((sector) => {
                 // Ensure sector has valid ID and is not empty
                 const sectorId = sector.id || `sector-${sector.name || Math.random()}`;
@@ -313,7 +313,7 @@ const UserForm: React.FC<UserFormProps> = ({
                 }
                 return (
                   <SelectItem key={sectorId} value={safeSectorId}>
-                    {sector.name || 'Unknown Sector'}
+                    {sector.name || t('unknownSector')}
                   </SelectItem>
                 );
               })}
@@ -326,7 +326,7 @@ const UserForm: React.FC<UserFormProps> = ({
       {!isFieldDisabled('schoolId') && formData.role === 'schooladmin' && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="schoolId" className="text-right">
-            {t('school')} {isFieldRequired('schoolId') && <span className="text-red-500">*</span>}
+            {t('userForm.school')} {isFieldRequired('schoolId') && <span className="text-red-500">*</span>}
           </Label>
           <Select
             value={formData.schoolId || undefined}
@@ -334,10 +334,10 @@ const UserForm: React.FC<UserFormProps> = ({
             disabled={isFieldDisabled('schoolId') || !formData.sectorId || loading.schools}
           >
             <SelectTrigger className="col-span-3">
-              <SelectValue placeholder={t('selectSchool')} />
+              <SelectValue placeholder={t('userForm.selectSchool')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="select-school">{t('selectSchool')}</SelectItem>
+              <SelectItem value="select-school">{t('userForm.selectSchool')}</SelectItem>
               {schools.map((school) => {
                 // Ensure school has valid ID and is not empty
                 const schoolId = school.id || `school-${school.name || Math.random()}`;
@@ -347,7 +347,7 @@ const UserForm: React.FC<UserFormProps> = ({
                 }
                 return (
                   <SelectItem key={schoolId} value={safeSchoolId}>
-                    {school.name || 'Unknown School'}
+                    {school.name || t('unknownSchool')}
                   </SelectItem>
                 );
               })}
@@ -360,7 +360,7 @@ const UserForm: React.FC<UserFormProps> = ({
       {!isFieldDisabled('language') && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="language" className="text-right">
-            {t('language')}
+            {t('userForm.language')}
           </Label>
           <Select
             value={formData.language || 'az'}
@@ -368,11 +368,11 @@ const UserForm: React.FC<UserFormProps> = ({
             disabled={isFieldDisabled('language')}
           >
             <SelectTrigger className="col-span-3">
-              <SelectValue placeholder={t('selectLanguage')} />
+              <SelectValue placeholder={t('userForm.selectLanguage')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="az">{t('azerbaijani')}</SelectItem>
-              <SelectItem value="en">{t('english')}</SelectItem>
+              <SelectItem value="az">{t('userForm.azerbaijani')}</SelectItem>
+              <SelectItem value="en">{t('userForm.english')}</SelectItem>
             </SelectContent>
           </Select>
         </div>

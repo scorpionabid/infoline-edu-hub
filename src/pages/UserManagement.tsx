@@ -36,8 +36,8 @@ const UserManagement: React.FC = () => {
   }
 
   useEffect(() => {
-    document.title = 'Genişləndirilmiş İstifadəçi İdarəetməsi | InfoLine';
-  }, []);
+    document.title = `${t('userManagement.title')} | InfoLine`;
+  }, [t]);
 
   return (
     <>
@@ -45,24 +45,24 @@ const UserManagement: React.FC = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">{t('advancedUserManagement') || 'Genişləndirilmiş İstifadəçi İdarəetməsi'}</h1>
+            <h1 className="text-3xl font-bold">{t('userManagement.title')}</h1>
             <p className="text-muted-foreground">
-              İstifadəçilərin, rolların və icazələrin hərtərəfli idarə edilməsi
+              {t('userManagement.description')}
             </p>
           </div>
           
           <div className="flex space-x-2">
             <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />
-              İxrac
+              {t('userManagement.export')}
             </Button>
             <Button variant="outline" size="sm">
               <Upload className="h-4 w-4 mr-2" />
-              İdxal
+              {t('userManagement.import')}
             </Button>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <UserPlus className="mr-2 h-4 w-4" />
-              {t('createUser') || 'İstifadəçi yarat'}
+              {t('userManagement.createUser')}
             </Button>
           </div>
         </div>
@@ -71,7 +71,7 @@ const UserManagement: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ümumi İstifadəçilər</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('userManagement.stats.totalUsers')}</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -84,7 +84,7 @@ const UserManagement: React.FC = () => {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Aktiv İstifadəçilər</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('userManagement.stats.activeUsers')}</CardTitle>
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -97,7 +97,7 @@ const UserManagement: React.FC = () => {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Adminlər</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('userManagement.stats.admins')}</CardTitle>
               <Settings className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -125,10 +125,10 @@ const UserManagement: React.FC = () => {
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Ümumi Baxış</TabsTrigger>
-            <TabsTrigger value="users">İstifadəçilər</TabsTrigger>
-            <TabsTrigger value="roles">Rollar</TabsTrigger>
-            <TabsTrigger value="permissions">İcazələr</TabsTrigger>
+            <TabsTrigger value="overview">{t('userManagement.tabs.overview')}</TabsTrigger>
+            <TabsTrigger value="users">{t('userManagement.tabs.users')}</TabsTrigger>
+            <TabsTrigger value="roles">{t('userManagement.tabs.roles')}</TabsTrigger>
+            <TabsTrigger value="permissions">{t('userManagement.tabs.permissions')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">

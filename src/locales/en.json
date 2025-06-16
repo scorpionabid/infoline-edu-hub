@@ -1,6 +1,10 @@
-
 {
   "common": {
+    "noResults": "No results found",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "apply": "Apply",
+    "reset": "Reset",
     "loginTitle": "Login",
     "loginButton": "Login",
     "loginDescription": "Sign in to your account",
@@ -45,9 +49,25 @@
     "actions": "Actions",
     "language": "Language",
     "selectLanguage": "Select Language",
-    "clear": "Clear"
+    "clear": "Clear",
+    "datePicker": {
+      "pickDate": "Pick a date",
+      "openCalendar": "Open calendar",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "This week",
+      "lastWeek": "Last week",
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "custom": "Custom range"
+    },
+    "dateInput": {
+      "placeholder": "YYYY-MM-DD"
+    }
   },
   "navigation": {
+    "help": "Help",
+    "notifications": "Notifications",
     "dashboard": "Dashboard",
     "regions": "Regions",
     "sectors": "Sectors",
@@ -61,7 +81,8 @@
     "approvals": "Approvals",
     "profile": "Profile",
     "logout": "Logout",
-    "statistics": "Statistics"
+    "statistics": "Statistics",
+    "auth": "Authentication"
   },
   "users": {
     "users": "Users",
@@ -143,6 +164,70 @@
     "team": "Team",
     "languageDescription": "Choose your preferred language"
   },
+  "dataTable": {
+    "actions": "Actions",
+    "loading": "Loading...",
+    "errorLoading": "Error loading data",
+    "tryAgainLater": "Please try again later",
+    "noData": "No data available",
+    "noDataDescription": "There is no data to display",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "confirmDelete": "Are you sure you want to delete?",
+    "deleteConfirmation": "This action cannot be undone. The selected data will be deleted.",
+    "edit": "Edit",
+    "view": "View",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "rowsPerPage": "Rows per page",
+    "of": "of",
+    "next": "Next",
+    "previous": "Previous",
+    "first": "First",
+    "last": "Last"
+  },
+  "userForm": {
+    "fullName": "Full Name",
+    "email": "Email",
+    "password": "Password",
+    "phone": "Phone",
+    "position": "Position",
+    "role": "Role",
+    "region": "Region",
+    "sector": "Sector",
+    "school": "School",
+    "language": "Language",
+    "selectRegion": "Select region",
+    "selectSector": "Select sector",
+    "selectSchool": "Select school",
+    "selectLanguage": "Select language",
+    "unknownRegion": "Unknown Region",
+    "unknownSector": "Unknown Sector",
+    "unknownSchool": "Unknown School",
+    "azerbaijani": "Azerbaijani",
+    "english": "English",
+    "russian": "Russian",
+    "turkish": "Turkish",
+    "regionadmin": "Region Admin",
+    "sectoradmin": "Sector Admin",
+    "schooladmin": "School Admin",
+    "superadmin": "Super Admin",
+    "user": "User",
+    "saveChanges": "Save Changes",
+    "createUser": "Create User"
+  },
+  "validation": {
+    "required": "This field is required",
+    "requiredField": "This field is required",
+    "invalidEmail": "Please enter a valid email address",
+    "minLength": "Must be at least {{min}} characters",
+    "maxLength": "Must be at most {{max}} characters",
+    "passwordsDontMatch": "Passwords don't match",
+    "invalidPhone": "Please enter a valid phone number",
+    "invalidDate": "Please enter a valid date",
+    "invalidNumber": "Please enter a valid number",
+    "invalidFormat": "Invalid format"
+  },
   "auth": {
     "resetEmailSent": "Password reset link sent to your email",
     "forgotPassword": "Forgot Password?",
@@ -192,5 +277,12 @@
     "approved": "Approved",
     "pending": "Pending",
     "rejected": "Rejected"
+  },
+  "dialogs": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "areYouSure": "Are you sure?",
+    "thisActionCannotBeUndone": "This action cannot be undone"
   }
 }
