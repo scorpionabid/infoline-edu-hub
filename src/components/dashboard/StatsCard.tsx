@@ -9,6 +9,7 @@ interface StatsCardProps {
   value: string | number;
   icon: React.ReactNode;
   color: 'blue' | 'green' | 'amber' | 'red' | 'purple';
+  description?: string;
   trend?: {
     value: number;
     isPositive?: boolean;
@@ -17,7 +18,15 @@ interface StatsCardProps {
   onClick?: () => void;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, trend, onClick }) => {
+const StatsCard: React.FC<StatsCardProps> = ({ 
+  title, 
+  value, 
+  icon, 
+  color, 
+  description,
+  trend, 
+  onClick 
+}) => {
   const colorClasses = {
     blue: 'bg-blue-50 dark:bg-blue-900/20',
     green: 'bg-green-50 dark:bg-green-900/20',
@@ -64,6 +73,9 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, trend,
             <div>
               <p className="text-sm text-muted-foreground mb-1">{title}</p>
               <div className="text-2xl font-bold">{value}</div>
+              {description && (
+                <p className="text-xs text-muted-foreground mt-1">{description}</p>
+              )}
               {renderTrend()}
             </div>
             <div className={`p-2 rounded-full ${colorClasses[color]}`}>

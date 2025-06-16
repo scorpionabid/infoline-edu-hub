@@ -10,3 +10,14 @@ export const validateUserIdForDB = (userId: string): string => {
   }
   return userId;
 };
+
+export const getDBSafeUUID = (uuid: string): string => {
+  if (!isValidUUID(uuid)) {
+    throw new Error('Invalid UUID format');
+  }
+  return uuid;
+};
+
+export const sanitizeUUID = (uuid: string): string => {
+  return uuid.replace(/[^a-f0-9-]/gi, '');
+};

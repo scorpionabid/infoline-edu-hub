@@ -12,7 +12,7 @@ const DeleteConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Sil',
     confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'sectors.deleting',
+    loadingTextKey: 'common.deleting',
     showIcon: true,
     dangerLevel: 'high' as const
   },
@@ -27,7 +27,7 @@ const DeleteConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Sil',
     confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'sectors.deleting',
+    loadingTextKey: 'common.deleting',
     showIcon: true,
     dangerLevel: 'high' as const
   },
@@ -42,7 +42,7 @@ const DeleteConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Sil',
     confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'sectors.deleting',
+    loadingTextKey: 'common.deleting',
     showIcon: true,
     dangerLevel: 'high' as const
   },
@@ -57,7 +57,7 @@ const DeleteConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Sil',
     confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'sectors.deleting',
+    loadingTextKey: 'common.deleting',
     showIcon: true,
     dangerLevel: 'high' as const
   },
@@ -72,7 +72,7 @@ const DeleteConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Sil',
     confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'sectors.deleting',
+    loadingTextKey: 'common.deleting',
     showIcon: true,
     dangerLevel: 'high' as const
   },
@@ -87,7 +87,7 @@ const DeleteConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Sil',
     confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'sectors.deleting',
+    loadingTextKey: 'common.deleting',
     showIcon: true,
     dangerLevel: 'high' as const
   },
@@ -102,7 +102,7 @@ const DeleteConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Sil',
     confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'sectors.deleting',
+    loadingTextKey: 'common.deleting',
     showIcon: true,
     dangerLevel: 'medium' as const
   },
@@ -117,7 +117,7 @@ const DeleteConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Sil',
     confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'sectors.deleting',
+    loadingTextKey: 'common.deleting',
     showIcon: true,
     dangerLevel: 'medium' as const
   },
@@ -132,7 +132,7 @@ const DeleteConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Sil',
     confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'sectors.deleting',
+    loadingTextKey: 'common.deleting',
     showIcon: true,
     dangerLevel: 'medium' as const
   },
@@ -147,7 +147,7 @@ const DeleteConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Sil',
     confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'sectors.deleting',
+    loadingTextKey: 'common.deleting',
     showIcon: true,
     dangerLevel: 'medium' as const
   }
@@ -161,7 +161,7 @@ const CreateConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Əlavə et',
     confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'dialogs.adding',
+    loadingTextKey: 'common.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -172,7 +172,7 @@ const CreateConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Əlavə et',
     confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'dialogs.adding',
+    loadingTextKey: 'common.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -183,7 +183,7 @@ const CreateConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Əlavə et',
     confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'dialogs.adding',
+    loadingTextKey: 'common.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -194,7 +194,7 @@ const CreateConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Əlavə et',
     confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'dialogs.adding',
+    loadingTextKey: 'common.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -205,7 +205,7 @@ const CreateConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Əlavə et',
     confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'dialogs.adding',
+    loadingTextKey: 'common.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -216,7 +216,7 @@ const CreateConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Əlavə et',
     confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'dialogs.adding',
+    loadingTextKey: 'common.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -225,9 +225,9 @@ const CreateConfigs: Record<EntityType, DialogConfig> = {
     title: 'Yeni bildiriş göndər',
     titleKey: 'dialogs.sendNotification',
     confirmText: 'Göndər',
-    confirmTextKey: 'dialogs.send',
+    confirmTextKey: 'common.send',
     loadingText: 'Göndərilir...',
-    loadingTextKey: 'dialogs.sending',
+    loadingTextKey: 'common.sending',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -236,9 +236,9 @@ const CreateConfigs: Record<EntityType, DialogConfig> = {
     title: 'Yeni hesabat yarat',
     titleKey: 'dialogs.createReport',
     confirmText: 'Yarat',
-    confirmTextKey: 'dialogs.create',
+    confirmTextKey: 'common.create',
     loadingText: 'Yaradılır...',
-    loadingTextKey: 'dialogs.creating',
+    loadingTextKey: 'common.creating',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -249,7 +249,7 @@ const CreateConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Yüklə',
     confirmTextKey: 'common.upload',
     loadingText: 'Yüklənir...',
-    loadingTextKey: 'dialogs.uploading',
+    loadingTextKey: 'common.uploading',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -260,7 +260,7 @@ const CreateConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Əlavə et',
     confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'dialogs.adding',
+    loadingTextKey: 'common.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   }
@@ -274,7 +274,7 @@ const EditConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Yadda saxla',
     confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'sectors.saving',
+    loadingTextKey: 'common.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -285,7 +285,7 @@ const EditConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Yadda saxla',
     confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'sectors.saving',
+    loadingTextKey: 'common.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -296,7 +296,7 @@ const EditConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Yadda saxla',
     confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'sectors.saving',
+    loadingTextKey: 'common.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -307,7 +307,7 @@ const EditConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Yadda saxla',
     confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'sectors.saving',
+    loadingTextKey: 'common.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -318,7 +318,7 @@ const EditConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Yadda saxla',
     confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'sectors.saving',
+    loadingTextKey: 'common.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -329,7 +329,7 @@ const EditConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Yadda saxla',
     confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'sectors.saving',
+    loadingTextKey: 'common.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -340,7 +340,7 @@ const EditConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Yadda saxla',
     confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'sectors.saving',
+    loadingTextKey: 'common.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -351,7 +351,7 @@ const EditConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Yadda saxla',
     confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'sectors.saving',
+    loadingTextKey: 'common.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -362,7 +362,7 @@ const EditConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Yadda saxla',
     confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'sectors.saving',
+    loadingTextKey: 'common.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
@@ -373,7 +373,7 @@ const EditConfigs: Record<EntityType, DialogConfig> = {
     confirmText: 'Yadda saxla',
     confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'sectors.saving',
+    loadingTextKey: 'common.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   }
