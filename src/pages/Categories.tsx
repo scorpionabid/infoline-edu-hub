@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
+import CreateCategoryDialog from '@/components/categories/CreateCategoryDialog';
 import CategoryCard from '@/components/categories/CategoryCard';
 import { toast } from 'sonner';
 import { Category } from '@/types/category';
@@ -158,10 +158,15 @@ const Categories = () => {
         </CardContent>
       </Card>
 
-      <AddCategoryDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        onSubmit={handleAddCategory}
+      <CreateCategoryDialog
+        open={isDialogOpen}
+        setOpen={setIsDialogOpen}
+        onSuccess={() => {
+          refetch();
+          toast.success(t('categoryAdded'), {
+            description: t('categoryAddedSuccess')
+          });
+        }}
       />
     </div>
   );
