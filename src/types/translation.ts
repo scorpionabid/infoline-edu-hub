@@ -5,27 +5,43 @@
 
 export type SupportedLanguage = 'az' | 'en' | 'ru' | 'tr';
 
-export interface TranslationNamespace {
-  common: Record<string, any>;
-  navigation: Record<string, string>;
-  users: Record<string, string>;
-  roles: Record<string, string>;
-  sectors: Record<string, string>;
-  schools: Record<string, string>;
-  dashboard: Record<string, string>;
-  categories: Record<string, string>;
-  columns: Record<string, string>;
-  settings: Record<string, string>;
-  auth: Record<string, string>;
-  statistics: Record<string, string>;
-  dialogs: Record<string, string>;
-}
+// Module types based on our generated structure
+export type TranslationModule = {
+  [key: string]: string | Record<string, any>;
+};
 
-export interface TranslationKey {
-  namespace: keyof TranslationNamespace;
-  key: string;
-  fullKey: string;
-}
+// Type for the complete translations for a language
+export type LanguageTranslations = {
+  auth: TranslationModule;
+  categories: TranslationModule;
+  dataEntry: TranslationModule;
+  feedback: TranslationModule;
+  general: TranslationModule;
+  navigation: TranslationModule;
+  notifications: TranslationModule;
+  organization: TranslationModule;
+  profile: TranslationModule;
+  schools: TranslationModule;
+  status: TranslationModule;
+  time: TranslationModule;
+  ui: TranslationModule;
+  user: TranslationModule;
+  validation: TranslationModule;
+};
+
+// Type for the translation modules
+export type TranslationModules = {
+  [K in keyof LanguageTranslations]: LanguageTranslations[K];
+};
+
+// Type for translation key paths
+export type TranslationKeyPath<T extends Record<string, any>, P extends string = ''> = {
+  [K in keyof T]: T[K] extends string
+    ? P extends '' ? K : `${P}.${K & string}`
+    : T[K] extends Record<string, any>
+      ? TranslationKeyPath<T[K], P extends '' ? K & string : `${P}.${K & string}`>
+      : never;
+}[keyof T];
 
 export interface TranslationValidationResult {
   valid: boolean;
@@ -37,3 +53,8 @@ export interface TranslationValidationResult {
 export interface TranslationInterpolationOptions {
   [key: string]: string | number;
 }
+
+// Helper type to extract all possible translation keys
+export type AllTranslationKeys = {
+  [K in keyof TranslationModules]: TranslationKeyPath<TranslationModules[K]>;
+}[keyof TranslationModules];

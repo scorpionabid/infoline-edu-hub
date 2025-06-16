@@ -1,4 +1,4 @@
-// Auto-generated index file for tr translations
+// Auto-generated index file for az translations
 import auth from './auth.js';
 import categories from './categories.js';
 import dataEntry from './dataEntry.js';

@@ -33,6 +33,7 @@ import Performance from "@/pages/Performance";
 import UserManagement from "@/pages/UserManagement";
 
 import { UserRole } from "@/types/supabase";
+import TranslationTest from "@/components/TranslationTest";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

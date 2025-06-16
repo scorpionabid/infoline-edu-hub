@@ -18,7 +18,8 @@
     "test:integration": "vitest run src/__tests__/integration",
     "test:integration:watch": "vitest src/__tests__/integration",
     "test:all": "vitest run",
-    "validate:translations": "tsx scripts/validate-translations-clean.ts"
+    "validate:translations": "tsx scripts/validate-translations-clean.ts",
+    "i18n:convert": "tsx scripts/convert-json-to-ts.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
