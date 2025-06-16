@@ -1,6 +1,6 @@
 // Auto-generated file - do not edit manually
 
-export const theme = {
+const theme = {
   light: 'Light',
   dark: 'Dark',
   system: 'System',
@@ -10,3 +10,4 @@ export const theme = {
 } as const;
 
 export type Theme = typeof theme;
+export default theme;

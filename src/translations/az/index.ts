@@ -1,24 +1,28 @@
 // Auto-generated index file for az translations
-import auth from './auth.js';
-import categories from './categories.js';
-import core from './core.js';
-import dashboard from './dashboard.js';
-import dataEntry from './dataEntry.js';
-import feedback from './feedback.js';
-import general from './general.js';
-import navigation from './navigation.js';
-import notifications from './notifications.js';
-import organization from './organization.js';
-import profile from './profile.js';
-import schools from './schools.js';
-import status from './status.js';
-import time from './time.js';
-import ui from './ui.js';
-import user from './user.js';
-import userManagement from './userManagement.js';
-import validation from './validation.js';
+import app from './app';
+import auth from './auth';
+import categories from './categories';
+import core from './core';
+import dashboard from './dashboard';
+import dataEntry from './dataEntry';
+import feedback from './feedback';
+import general from './general';
+import navigation from './navigation';
+import notifications from './notifications';
+import organization from './organization';
+import profile from './profile';
+import schools from './schools';
+import sectors from './sectors';
+import status from './status';
+import theme from './theme';
+import time from './time';
+import ui from './ui';
+import user from './user';
+import userManagement from './userManagement';
+import validation from './validation';
 
-export {
+export default {
+  app,
   auth,
   categories,
   core,
@@ -31,7 +35,9 @@ export {
   organization,
   profile,
   schools,
+  sectors,
   status,
+  theme,
   time,
   ui,
   user,
