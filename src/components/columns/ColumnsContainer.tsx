@@ -21,6 +21,7 @@ import { useColumnMutations } from '@/hooks/columns';
 interface ColumnsContainerProps {
   columns?: Column[];
   categories?: Category[];
+  selectedCategoryId?: string;
   isLoading?: boolean;
   onRefresh?: () => void;
   onCreate?: () => void;
@@ -28,18 +29,42 @@ interface ColumnsContainerProps {
   onDelete?: (id: string, name: string) => void;
   onRestore?: (id: string, name: string) => void;
   onPermanentDelete?: (id: string) => void;
+  onCategoryChange?: (categoryId: string) => void;
+  onCreateColumn?: () => void;
+  onEditColumn?: (column: Column) => void;
+  onArchiveColumn?: (column: Column) => void;
+  onRestoreColumn?: (column: Column) => void;
+  onDeleteColumn?: (column: Column, permanent?: boolean) => void;
+  isCreateDialogOpen?: boolean;
+  isEditDialogOpen?: boolean;
+  onCreateDialogClose?: () => void;
+  onEditDialogClose?: () => void;
+  createFormProps?: any;
+  editFormProps?: any;
 }
 
 const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   columns = [],
   categories = [],
+  selectedCategoryId = '',
   isLoading = false,
   onRefresh,
   onCreate,
   onEdit,
   onDelete,
   onRestore,
-  onPermanentDelete
+  onPermanentDelete,
+  onCategoryChange = () => {},
+  onCreateColumn = () => {},
+  onArchiveColumn = () => {},
+  onRestoreColumn = () => {},
+  onDeleteColumn = () => {},
+  isCreateDialogOpen = false,
+  isEditDialogOpen = false,
+  onCreateDialogClose = () => {},
+  onEditDialogClose = () => {},
+  createFormProps = {},
+  editFormProps = {}
 }) => {
   const { t } = useLanguage();
   

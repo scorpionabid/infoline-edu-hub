@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLanguage } from '@/context/LanguageContext';
-import { useCategoriesQuery } from '@/hooks/categories/useCategoriesQuery';
+import useCategoriesQuery from '@/hooks/categories/useCategoriesQuery';
 import { useColumns } from '@/hooks/columns/useColumns';
 import { useColumnManagement } from '@/hooks/columns/useColumnManagement';
 import { useColumnForm } from '@/hooks/columns/useColumnForm';
@@ -17,8 +17,8 @@ const Columns = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState<Column | undefined>();
 
-  // Use the correct property names from the query result
-  const { data: categories = [], isLoading: categoriesLoading } = useCategoriesQuery();
+  // Get categories directly from the query
+  const { categories = [], isLoading: categoriesLoading } = useCategoriesQuery();
   const { data: columns = [], isLoading: columnsLoading, refetch } = useColumns(selectedCategoryId);
   
   const { archiveColumn, restoreColumn, deleteColumn } = useColumnManagement();
