@@ -9,6 +9,7 @@ const translationCache: Partial<Record<SupportedLanguage, LanguageTranslations>>
 
 // List of all available modules with type safety - YENİLƏNDİ
 const MODULE_NAMES = [
+  'app',
   'auth',
   'categories',
   'core',
@@ -70,6 +71,7 @@ const loadTranslations = async (lang: SupportedLanguage): Promise<LanguageTransl
     
     // Ensure all required modules are present - YENİLƏNDİ
     const completeTranslations: LanguageTranslations = {
+      app: translations.app || {},
       auth: translations.auth || {},
       categories: translations.categories || {},
       core: translations.core || {},

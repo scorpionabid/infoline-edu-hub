@@ -11,6 +11,7 @@ export type TranslationModule = {
 
 // Type for the complete translations for a language
 export type LanguageTranslations = {
+  app: TranslationModule;
   auth: TranslationModule;
   categories: TranslationModule;
   core: TranslationModule;
