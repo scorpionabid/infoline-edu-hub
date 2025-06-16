@@ -1,60 +1,21 @@
-import { LucideIcon, School, Category, MapPin, Users, Building, FileText, User, Settings } from 'lucide-react';
 
-// Dialog types - genişlənə bilər
-export type DialogType = 
-  | 'delete' 
-  | 'create' 
-  | 'edit' 
-  | 'view' 
-  | 'confirm'
-  | 'assign'
-  | 'import'
-  | 'export';
+import { LucideIcon, AlertTriangle, Info, CheckCircle, XCircle, Trash2, Edit, Plus } from 'lucide-react';
 
-// Entity types - İnfoLine sisteminə uyğun
-export type EntityType = 
-  | 'school' 
-  | 'category' 
-  | 'sector' 
-  | 'region' 
-  | 'user'
-  | 'column'
-  | 'notification'
-  | 'report'
-  | 'file'
-  | 'link';
+export type DialogType = 'create' | 'edit' | 'delete' | 'info' | 'confirm';
+export type EntityType = 'school' | 'category' | 'sector' | 'region' | 'user' | 'column' | 'notification' | 'report' | 'file' | 'link';
 
-// Danger levels
-export type DangerLevel = 'low' | 'medium' | 'high' | 'critical';
-
-// Dialog configuration interface
 export interface DialogConfig {
-  title: string;
-  titleKey?: string; // Translation key
+  title?: string;
+  titleKey?: string;
   warningText?: string;
-  warningTextKey?: string; // Translation key with interpolation
+  warningTextKey?: string;
   consequences?: string;
-  consequencesKey?: string; // Translation key
+  consequencesKey?: string;
   confirmText?: string;
   confirmTextKey?: string;
   loadingText?: string;
   loadingTextKey?: string;
-  icon?: LucideIcon;
+  dangerLevel?: 'low' | 'medium' | 'high';
   showIcon?: boolean;
-  dangerLevel: DangerLevel;
-  variant?: 'default' | 'destructive' | 'outline';
+  icon?: LucideIcon;
 }
-
-// Entity metadata for icons and basic info
-export const EntityMetadata: Record<EntityType, { icon: LucideIcon; nameKey: string }> = {
-  school: { icon: School, nameKey: 'school' },
-  category: { icon: Category, nameKey: 'category' },
-  sector: { icon: Building, nameKey: 'sector' },
-  region: { icon: MapPin, nameKey: 'region' },
-  user: { icon: User, nameKey: 'user' },
-  column: { icon: FileText, nameKey: 'column' },
-  notification: { icon: Settings, nameKey: 'notification' },
-  report: { icon: FileText, nameKey: 'report' },
-  file: { icon: FileText, nameKey: 'file' },
-  link: { icon: FileText, nameKey: 'link' }
-};

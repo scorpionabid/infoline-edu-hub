@@ -1,8 +1,8 @@
+
 import React from 'react';
 import { UniversalDialog, useUniversalDialog } from '@/components/core';
-import { Category } from '@/types/category';
 import { toast } from 'sonner';
-import { useCategoryOperations } from '@/hooks/categories/useCategoryOperations';
+import { categoriesApi } from '@/services/api/categories';
 
 interface UniversalDeleteCategoryDialogProps {
   isOpen: boolean;
@@ -19,15 +19,11 @@ export const UniversalDeleteCategoryDialog: React.FC<UniversalDeleteCategoryDial
   categoryName,
   onSuccess
 }) => {
-  const { deleteCategory } = useCategoryOperations();
-
   const handleDelete = async () => {
     try {
-      const success = await deleteCategory(category);
-      if (success) {
-        toast.success('Kateqoriya uğurla silindi');
-        onSuccess?.();
-      }
+      await categoriesApi.deleteCategory(category);
+      toast.success('Kateqoriya uğurla silindi');
+      onSuccess?.();
     } catch (error: any) {
       console.error('Kateqoriya silmə xətası:', error);
       toast.error('Kateqoriya silinərkən xəta: ' + error.message);

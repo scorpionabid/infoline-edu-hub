@@ -1,9 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
-import { Database } from '@/types/supabase';
 import { DataEntry } from '@/types/dataEntry';
-
-type DataEntryRow = Database['public']['Tables']['data_entries']['Row'];
 
 export const approvalService = {
   async getApprovalQueue(

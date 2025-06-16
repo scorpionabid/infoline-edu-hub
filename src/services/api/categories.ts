@@ -36,7 +36,12 @@ export const categoriesApi = {
       .single();
 
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      assignment: data.assignment as CategoryAssignment,
+      status: data.status as 'active' | 'inactive' | 'archived'
+    };
   },
 
   async updateCategory(id: string, updates: Partial<Category>): Promise<Category> {
@@ -48,7 +53,12 @@ export const categoriesApi = {
       .single();
 
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      assignment: data.assignment as CategoryAssignment,
+      status: data.status as 'active' | 'inactive' | 'archived'
+    };
   },
 
   async deleteCategory(id: string): Promise<void> {
