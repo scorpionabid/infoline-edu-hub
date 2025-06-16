@@ -1,10 +1,15 @@
-
-import React from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useLanguage } from '@/context/LanguageContext';
-import { FilterOption, UserFilter } from './UserSelectParts/types';
+import React from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { FilterOption, UserFilter } from "./UserSelectParts/types";
 
 interface UserFiltersProps {
   filter: UserFilter;
@@ -16,15 +21,15 @@ interface UserFiltersProps {
 }
 
 export const UserFilters: React.FC<UserFiltersProps> = ({
-  filter = {}, 
+  filter = {},
   setFilter,
   roleOptions = [],
   statusOptions = [],
   onSearch,
-  regions = []
+  regions = [],
 }) => {
-  const { t } = useLanguage();
-  
+  const { t } = useTranslation();
+
   // Ensure filter is not undefined before accessing properties
   const safeFilter: UserFilter = filter || {};
 
@@ -45,71 +50,62 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       onSearch();
     }
   };
 
   // Safely access filter properties with fallbacks
-  const currentRole = safeFilter.role || '';
-  const currentStatus = safeFilter.status || '';
-  const currentRegionId = safeFilter.region_id || '';
+  const currentRole = safeFilter.role || "";
+  const currentStatus = safeFilter.status || "";
+  const currentRegionId = safeFilter.region_id || "";
 
   return (
     <div className="flex flex-col md:flex-row gap-3 mb-4">
       <Input
-        placeholder={t('searchByNameOrEmail')}
-        value={safeFilter.search || ''}
+        placeholder={t("searchByNameOrEmail")}
+        value={safeFilter.search || ""}
         onChange={handleSearchTermChange}
         onKeyDown={handleKeyDown}
         className="flex-grow md:w-auto"
       />
-      
-      <Select
-        value={currentRole}
-        onValueChange={handleRoleChange}
-      >
+
+      <Select value={currentRole} onValueChange={handleRoleChange}>
         <SelectTrigger className="w-full md:w-[180px]">
-          <SelectValue placeholder={t('role')} />
+          <SelectValue placeholder={t("role")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">{t('allRoles')}</SelectItem>
-          {roleOptions.map(role => (
+          <SelectItem value="">{t("allRoles")}</SelectItem>
+          {roleOptions.map((role) => (
             <SelectItem key={role.value} value={role.value}>
               {role.label}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      
-      <Select
-        value={currentStatus}
-        onValueChange={handleStatusChange}
-      >
+
+      <Select value={currentStatus} onValueChange={handleStatusChange}>
         <SelectTrigger className="w-full md:w-[180px]">
-          <SelectValue placeholder={t('status')} />
+          <SelectValue placeholder={t("status")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">{t('allStatuses')}</SelectItem>
-          {statusOptions.map(status => (
+          <SelectItem value="">{t("allStatuses")}</SelectItem>
+          {statusOptions.map((status) => (
             <SelectItem key={status.value} value={status.value}>
               {status.label}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      
+
       {regions && regions.length > 0 && (
-        <Select
-          value={currentRegionId}
-          onValueChange={handleRegionChange}
-        >
+        <Select value={currentRegionId} onValueChange={handleRegionChange}>
           <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder={t('region')} />
+            <SelectValue placeholder={t("region")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">{t('allRegions')}</SelectItem>
-            {regions.map(region => (
+            <SelectItem value="">{t("allRegions")}</SelectItem>
+            {regions.map((region) => (
               <SelectItem key={region.value} value={region.value}>
                 {region.label}
               </SelectItem>
@@ -117,10 +113,8 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
           </SelectContent>
         </Select>
       )}
-      
-      <Button onClick={onSearch}>
-        {t('search')}
-      </Button>
+
+      <Button onClick={onSearch}>{t("search")}</Button>
     </div>
   );
 };

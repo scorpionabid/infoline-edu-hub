@@ -1,30 +1,32 @@
-
-import React from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { SchoolStat } from '@/types/dashboard';
-import { Badge } from '@/components/ui/badge';
-import { Eye } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '@/context/LanguageContext';
+import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { SchoolStat } from "@/types/dashboard";
+import { Badge } from "@/components/ui/badge";
+import { Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface SchoolsTableProps {
   schools: SchoolStat[];
   onViewSchool?: (id: string) => void;
 }
 
-const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools, onViewSchool }) => {
+const SchoolsTable: React.FC<SchoolsTableProps> = ({
+  schools,
+  onViewSchool,
+}) => {
   const navigate = useNavigate();
-  const { t } = useLanguage();
-  
+  const { t } = useTranslation();
+
   const handleViewSchool = (id: string) => {
     if (onViewSchool) {
       onViewSchool(id);
@@ -35,30 +37,56 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools, onViewSchool }) =>
 
   const getStatusBadge = (status?: string) => {
     switch (status) {
-      case 'active':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>;
-      case 'inactive':
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Inactive</Badge>;
+      case "active":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-green-50 text-green-700 border-green-200"
+          >
+            Active
+          </Badge>
+        );
+      case "inactive":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-gray-50 text-gray-700 border-gray-200"
+          >
+            Inactive
+          </Badge>
+        );
       default:
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Unknown</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="bg-blue-50 text-blue-700 border-blue-200"
+          >
+            Unknown
+          </Badge>
+        );
     }
   };
-  
+
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>{t('school')}</TableHead>
-            <TableHead>{t('status')}</TableHead>
-            <TableHead>{t('completion')}</TableHead>
-            <TableHead className="text-right">{t('actions')}</TableHead>
+            <TableHead>{t("school")}</TableHead>
+            <TableHead>{t("status")}</TableHead>
+            <TableHead>{t("completion")}</TableHead>
+            <TableHead className="text-right">{t("actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {schools.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">{t('noSchools')}</TableCell>
+              <TableCell
+                colSpan={4}
+                className="text-center py-4 text-muted-foreground"
+              >
+                {t("noSchools")}
+              </TableCell>
             </TableRow>
           ) : (
             schools.map((school) => (
@@ -74,13 +102,13 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({ schools, onViewSchool }) =>
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleViewSchool(school.id)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
-                    {t('view')}
+                    {t("view")}
                   </Button>
                 </TableCell>
               </TableRow>

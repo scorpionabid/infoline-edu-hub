@@ -1,21 +1,22 @@
-
-import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { DashboardFormStats } from '@/types/dashboard';
-import StatsGrid from '../StatsGrid';
-import DashboardChart from '../DashboardChart';
-import SectorStatsTable from './SectorStatsTable';
+import React from "react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { DashboardFormStats } from "@/types/dashboard";
+import StatsGrid from "../StatsGrid";
+import DashboardChart from "../DashboardChart";
+import SectorStatsTable from "./SectorStatsTable";
 
 interface RegionAdminDashboardProps {
   dashboardData?: any;
 }
 
-const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ dashboardData }) => {
-  const { t } = useLanguage();
+const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
+  dashboardData,
+}) => {
+  const { t } = useTranslation();
 
   if (!dashboardData) {
     return (
-      <div className="p-8 text-center">{t('loading') || 'Yüklənir...'}</div>
+      <div className="p-8 text-center">{t("loading") || "Yüklənir..."}</div>
     );
   }
 
@@ -39,29 +40,29 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ dashboardDa
 
   const statsGridData = [
     {
-      title: t('totalApproved'),
+      title: t("totalApproved"),
       value: formStats.approved || 0,
-      color: 'text-green-600',
-      description: t('approved')
+      color: "text-green-600",
+      description: t("approved"),
     },
     {
-      title: t('totalPending'),
+      title: t("totalPending"),
       value: formStats.pending || 0,
-      color: 'text-yellow-600',
-      description: t('pending')
+      color: "text-yellow-600",
+      description: t("pending"),
     },
     {
-      title: t('totalRejected'),
+      title: t("totalRejected"),
       value: formStats.rejected || 0,
-      color: 'text-red-600',
-      description: t('rejected')
+      color: "text-red-600",
+      description: t("rejected"),
     },
     {
-      title: t('completion'),
+      title: t("completion"),
       value: `${formStats.percentage || 0}%`,
-      color: 'text-blue-600',
-      description: t('completionRate')
-    }
+      color: "text-blue-600",
+      description: t("completionRate"),
+    },
   ];
 
   // Real sector data

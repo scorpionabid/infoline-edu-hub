@@ -1,20 +1,20 @@
-import React from 'react';
+import React from "react";
 
-import SchoolColumnDataTable from '@/components/reports/SchoolColumnDataTable';
-import { useLanguage } from '@/context/LanguageContext';
-import { Helmet } from 'react-helmet';
-import { useRoleBasedReports } from '@/hooks/reports/useRoleBasedReports';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, Info } from 'lucide-react';
+import SchoolColumnDataTable from "@/components/reports/SchoolColumnDataTable";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Helmet } from "react-helmet";
+import { useRoleBasedReports } from "@/hooks/reports/useRoleBasedReports";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, AlertCircle, Info } from "lucide-react";
 
 const Reports: React.FC = () => {
-  const { t } = useLanguage();
-  
-  const { 
-    userRole, 
-    loading: roleLoading, 
+  const { t } = useTranslation();
+
+  const {
+    userRole,
+    loading: roleLoading,
     error: roleError,
-    getPermissionsSummary
+    getPermissionsSummary,
   } = useRoleBasedReports();
 
   // Show loading state while determining user role
@@ -49,18 +49,18 @@ const Reports: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>{t('reports')} | InfoLine</title>
+        <title>{t("reports")} | InfoLine</title>
       </Helmet>
 
       <div className="container mx-auto py-3 space-y-4">
         <div className="space-y-4">
-
           {/* Role-based access info */}
-          {permissions && permissions.role !== 'superadmin' && (
+          {permissions && permissions.role !== "superadmin" && (
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                <strong>Giriş səlahiyyəti:</strong> {permissions.role} kimi sistemə daxil olmusunuz.
+                <strong>Giriş səlahiyyəti:</strong> {permissions.role} kimi
+                sistemə daxil olmusunuz.
                 {permissions.restrictions.region_id && (
                   <span> Region məhdudiyyəti aktiv.</span>
                 )}
@@ -73,7 +73,7 @@ const Reports: React.FC = () => {
               </AlertDescription>
             </Alert>
           )}
-          
+
           {/* Only Məktəb-Sütun Məlumatları component */}
           <SchoolColumnDataTable />
         </div>

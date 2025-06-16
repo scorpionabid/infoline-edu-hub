@@ -1,12 +1,17 @@
-
-import React, { useEffect, useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { usePermissions } from "@/hooks/auth/usePermissions";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UserFormProps {
   formData: any;
@@ -21,9 +26,9 @@ const UserForm: React.FC<UserFormProps> = ({
   onChange,
   isEditMode = false,
   disableFields = [],
-  requiredFields = ['fullName', 'email', 'password', 'role']
+  requiredFields = ["fullName", "email", "password", "role"],
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { isSuperAdmin, isRegionAdmin } = usePermissions();
   const [regions, setRegions] = useState<any[]>([]);
   const [sectors, setSectors] = useState<any[]>([]);
@@ -31,14 +36,14 @@ const UserForm: React.FC<UserFormProps> = ({
   const [loading, setLoading] = useState({
     regions: false,
     sectors: false,
-    schools: false
+    schools: false,
   });
 
   // Form məlumatlarını yeniləyək
   const handleChange = (field: string, value: any) => {
     onChange({
       ...formData,
-      [field]: value
+      [field]: value,
     });
   };
 
@@ -55,20 +60,20 @@ const UserForm: React.FC<UserFormProps> = ({
   // Regionları yükləyək
   useEffect(() => {
     const fetchRegions = async () => {
-      setLoading(prev => ({ ...prev, regions: true }));
+      setLoading((prev) => ({ ...prev, regions: true }));
       try {
         const { data, error } = await supabase
-          .from('regions')
-          .select('id, name')
-          .eq('status', 'active')
-          .order('name');
-          
+          .from("regions")
+          .select("id, name")
+          .eq("status", "active")
+          .order("name");
+
         if (error) throw error;
         setRegions(data || []);
       } catch (err) {
-        console.error('Error fetching regions:', err);
+        console.error("Error fetching regions:", err);
       } finally {
-        setLoading(prev => ({ ...prev, regions: false }));
+        setLoading((prev) => ({ ...prev, regions: false }));
       }
     };
 
@@ -83,21 +88,21 @@ const UserForm: React.FC<UserFormProps> = ({
     }
 
     const fetchSectors = async () => {
-      setLoading(prev => ({ ...prev, sectors: true }));
+      setLoading((prev) => ({ ...prev, sectors: true }));
       try {
         const { data, error } = await supabase
-          .from('sectors')
-          .select('id, name')
-          .eq('region_id', formData.regionId)
-          .eq('status', 'active')
-          .order('name');
-          
+          .from("sectors")
+          .select("id, name")
+          .eq("region_id", formData.regionId)
+          .eq("status", "active")
+          .order("name");
+
         if (error) throw error;
         setSectors(data || []);
       } catch (err) {
-        console.error('Error fetching sectors:', err);
+        console.error("Error fetching sectors:", err);
       } finally {
-        setLoading(prev => ({ ...prev, sectors: false }));
+        setLoading((prev) => ({ ...prev, sectors: false }));
       }
     };
 
@@ -112,21 +117,21 @@ const UserForm: React.FC<UserFormProps> = ({
     }
 
     const fetchSchools = async () => {
-      setLoading(prev => ({ ...prev, schools: true }));
+      setLoading((prev) => ({ ...prev, schools: true }));
       try {
         const { data, error } = await supabase
-          .from('schools')
-          .select('id, name')
-          .eq('sector_id', formData.sectorId)
-          .eq('status', 'active')
-          .order('name');
-          
+          .from("schools")
+          .select("id, name")
+          .eq("sector_id", formData.sectorId)
+          .eq("status", "active")
+          .order("name");
+
         if (error) throw error;
         setSchools(data || []);
       } catch (err) {
-        console.error('Error fetching schools:', err);
+        console.error("Error fetching schools:", err);
       } finally {
-        setLoading(prev => ({ ...prev, schools: false }));
+        setLoading((prev) => ({ ...prev, schools: false }));
       }
     };
 
@@ -136,118 +141,132 @@ const UserForm: React.FC<UserFormProps> = ({
   return (
     <div className="grid gap-4 py-4">
       {/* Ad Soyad */}
-      {!isFieldDisabled('fullName') && (
+      {!isFieldDisabled("fullName") && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="fullName" className="text-right">
-            {t('userForm.fullName')} {isFieldRequired('fullName') && <span className="text-red-500">*</span>}
+            {t("userForm.fullName")}{" "}
+            {isFieldRequired("fullName") && (
+              <span className="text-red-500">*</span>
+            )}
           </Label>
           <Input
             id="fullName"
             value={formData.fullName}
-            onChange={(e) => handleChange('fullName', e.target.value)}
+            onChange={(e) => handleChange("fullName", e.target.value)}
             className="col-span-3"
-            disabled={isFieldDisabled('fullName')}
-            required={isFieldRequired('fullName')}
+            disabled={isFieldDisabled("fullName")}
+            required={isFieldRequired("fullName")}
           />
         </div>
       )}
 
       {/* E-poçt */}
-      {!isFieldDisabled('email') && (
+      {!isFieldDisabled("email") && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="email" className="text-right">
-            {t('userForm.email')} {isFieldRequired('email') && <span className="text-red-500">*</span>}
+            {t("userForm.email")}{" "}
+            {isFieldRequired("email") && (
+              <span className="text-red-500">*</span>
+            )}
           </Label>
           <Input
             id="email"
             type="email"
             value={formData.email}
-            onChange={(e) => handleChange('email', e.target.value)}
+            onChange={(e) => handleChange("email", e.target.value)}
             className="col-span-3"
-            disabled={isFieldDisabled('email') || isEditMode}
-            required={isFieldRequired('email')}
+            disabled={isFieldDisabled("email") || isEditMode}
+            required={isFieldRequired("email")}
           />
         </div>
       )}
 
       {/* Şifrə */}
-      {!isFieldDisabled('password') && !isEditMode && (
+      {!isFieldDisabled("password") && !isEditMode && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="password" className="text-right">
-            {t('userForm.password')} {isFieldRequired('password') && <span className="text-red-500">*</span>}
+            {t("userForm.password")}{" "}
+            {isFieldRequired("password") && (
+              <span className="text-red-500">*</span>
+            )}
           </Label>
           <Input
             id="password"
             type="password"
             value={formData.password}
-            onChange={(e) => handleChange('password', e.target.value)}
+            onChange={(e) => handleChange("password", e.target.value)}
             className="col-span-3"
-            disabled={isFieldDisabled('password')}
-            required={isFieldRequired('password')}
+            disabled={isFieldDisabled("password")}
+            required={isFieldRequired("password")}
           />
         </div>
       )}
 
       {/* Telefon */}
-      {!isFieldDisabled('phone') && (
+      {!isFieldDisabled("phone") && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="phone" className="text-right">
-            {t('userForm.phone')}
+            {t("userForm.phone")}
           </Label>
           <Input
             id="phone"
             value={formData.phone}
-            onChange={(e) => handleChange('phone', e.target.value)}
+            onChange={(e) => handleChange("phone", e.target.value)}
             className="col-span-3"
-            disabled={isFieldDisabled('phone')}
+            disabled={isFieldDisabled("phone")}
           />
         </div>
       )}
 
       {/* Vəzifə */}
-      {!isFieldDisabled('position') && (
+      {!isFieldDisabled("position") && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="position" className="text-right">
-            {t('userForm.position')}
+            {t("userForm.position")}
           </Label>
           <Input
             id="position"
             value={formData.position}
-            onChange={(e) => handleChange('position', e.target.value)}
+            onChange={(e) => handleChange("position", e.target.value)}
             className="col-span-3"
-            disabled={isFieldDisabled('position')}
+            disabled={isFieldDisabled("position")}
           />
         </div>
       )}
 
       {/* Rol */}
-      {!isFieldDisabled('role') && (
+      {!isFieldDisabled("role") && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label className="text-right">
-            {t('userForm.role')} {isFieldRequired('role') && <span className="text-red-500">*</span>}
+            {t("userForm.role")}{" "}
+            {isFieldRequired("role") && <span className="text-red-500">*</span>}
           </Label>
           <div className="col-span-3">
             <RadioGroup
               value={formData.role}
-              onValueChange={(value) => handleChange('role', value)}
+              onValueChange={(value) => handleChange("role", value)}
               className="flex flex-col space-y-1"
-              disabled={isFieldDisabled('role')}
+              disabled={isFieldDisabled("role")}
             >
               {isSuperAdmin && (
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="regionadmin" id="regionadmin" />
-                  <Label htmlFor="regionadmin">{t('userForm.regionadmin')}</Label>
+                  <Label htmlFor="regionadmin">
+                    {t("userForm.regionadmin")}
+                  </Label>
                 </div>
               )}
               {(isSuperAdmin || isRegionAdmin) && (
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="sectoradmin" id="sectoradmin" />
-                  <Label htmlFor="sectoradmin">{t('userForm.sectoradmin')}</Label>
+                  <Label htmlFor="sectoradmin">
+                    {t("userForm.sectoradmin")}
+                  </Label>
                 </div>
               )}
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="schooladmin" id="schooladmin" />
-                <Label htmlFor="schooladmin">{t('userForm.schooladmin')}</Label>
+                <Label htmlFor="schooladmin">{t("userForm.schooladmin")}</Label>
               </div>
             </RadioGroup>
           </div>
@@ -255,31 +274,41 @@ const UserForm: React.FC<UserFormProps> = ({
       )}
 
       {/* Region */}
-      {!isFieldDisabled('regionId') && (
+      {!isFieldDisabled("regionId") && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="regionId" className="text-right">
-            {t('userForm.region')} {isFieldRequired('regionId') && <span className="text-red-500">*</span>}
+            {t("userForm.region")}{" "}
+            {isFieldRequired("regionId") && (
+              <span className="text-red-500">*</span>
+            )}
           </Label>
           <Select
             value={formData.regionId || undefined}
-            onValueChange={(value) => handleChange('regionId', value === 'select-region' ? null : value)}
-            disabled={isFieldDisabled('regionId') || !isSuperAdmin || loading.regions}
+            onValueChange={(value) =>
+              handleChange("regionId", value === "select-region" ? null : value)
+            }
+            disabled={
+              isFieldDisabled("regionId") || !isSuperAdmin || loading.regions
+            }
           >
             <SelectTrigger className="col-span-3">
-              <SelectValue placeholder={t('userForm.selectRegion')} />
+              <SelectValue placeholder={t("userForm.selectRegion")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="select-region">{t('userForm.selectRegion')}</SelectItem>
+              <SelectItem value="select-region">
+                {t("userForm.selectRegion")}
+              </SelectItem>
               {regions.map((region) => {
                 // Ensure region has valid ID and is not empty
-                const regionId = region.id || `region-${region.name || Math.random()}`;
+                const regionId =
+                  region.id || `region-${region.name || Math.random()}`;
                 const safeRegionId = String(regionId).trim();
-                if (!safeRegionId || safeRegionId === '') {
+                if (!safeRegionId || safeRegionId === "") {
                   return null; // Skip empty values
                 }
                 return (
                   <SelectItem key={regionId} value={safeRegionId}>
-                    {region.name || t('unknownRegion')}
+                    {region.name || t("unknownRegion")}
                   </SelectItem>
                 );
               })}
@@ -289,31 +318,43 @@ const UserForm: React.FC<UserFormProps> = ({
       )}
 
       {/* Sektor */}
-      {!isFieldDisabled('sectorId') && formData.role !== 'regionadmin' && (
+      {!isFieldDisabled("sectorId") && formData.role !== "regionadmin" && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="sectorId" className="text-right">
-            {t('userForm.sector')} {isFieldRequired('sectorId') && <span className="text-red-500">*</span>}
+            {t("userForm.sector")}{" "}
+            {isFieldRequired("sectorId") && (
+              <span className="text-red-500">*</span>
+            )}
           </Label>
           <Select
             value={formData.sectorId || undefined}
-            onValueChange={(value) => handleChange('sectorId', value === 'select-sector' ? null : value)}
-            disabled={isFieldDisabled('sectorId') || !formData.regionId || loading.sectors}
+            onValueChange={(value) =>
+              handleChange("sectorId", value === "select-sector" ? null : value)
+            }
+            disabled={
+              isFieldDisabled("sectorId") ||
+              !formData.regionId ||
+              loading.sectors
+            }
           >
             <SelectTrigger className="col-span-3">
-              <SelectValue placeholder={t('userForm.selectSector')} />
+              <SelectValue placeholder={t("userForm.selectSector")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="select-sector">{t('userForm.selectSector')}</SelectItem>
+              <SelectItem value="select-sector">
+                {t("userForm.selectSector")}
+              </SelectItem>
               {sectors.map((sector) => {
                 // Ensure sector has valid ID and is not empty
-                const sectorId = sector.id || `sector-${sector.name || Math.random()}`;
+                const sectorId =
+                  sector.id || `sector-${sector.name || Math.random()}`;
                 const safeSectorId = String(sectorId).trim();
-                if (!safeSectorId || safeSectorId === '') {
+                if (!safeSectorId || safeSectorId === "") {
                   return null; // Skip empty values
                 }
                 return (
                   <SelectItem key={sectorId} value={safeSectorId}>
-                    {sector.name || t('unknownSector')}
+                    {sector.name || t("unknownSector")}
                   </SelectItem>
                 );
               })}
@@ -323,31 +364,43 @@ const UserForm: React.FC<UserFormProps> = ({
       )}
 
       {/* Məktəb */}
-      {!isFieldDisabled('schoolId') && formData.role === 'schooladmin' && (
+      {!isFieldDisabled("schoolId") && formData.role === "schooladmin" && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="schoolId" className="text-right">
-            {t('userForm.school')} {isFieldRequired('schoolId') && <span className="text-red-500">*</span>}
+            {t("userForm.school")}{" "}
+            {isFieldRequired("schoolId") && (
+              <span className="text-red-500">*</span>
+            )}
           </Label>
           <Select
             value={formData.schoolId || undefined}
-            onValueChange={(value) => handleChange('schoolId', value === 'select-school' ? null : value)}
-            disabled={isFieldDisabled('schoolId') || !formData.sectorId || loading.schools}
+            onValueChange={(value) =>
+              handleChange("schoolId", value === "select-school" ? null : value)
+            }
+            disabled={
+              isFieldDisabled("schoolId") ||
+              !formData.sectorId ||
+              loading.schools
+            }
           >
             <SelectTrigger className="col-span-3">
-              <SelectValue placeholder={t('userForm.selectSchool')} />
+              <SelectValue placeholder={t("userForm.selectSchool")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="select-school">{t('userForm.selectSchool')}</SelectItem>
+              <SelectItem value="select-school">
+                {t("userForm.selectSchool")}
+              </SelectItem>
               {schools.map((school) => {
                 // Ensure school has valid ID and is not empty
-                const schoolId = school.id || `school-${school.name || Math.random()}`;
+                const schoolId =
+                  school.id || `school-${school.name || Math.random()}`;
                 const safeSchoolId = String(schoolId).trim();
-                if (!safeSchoolId || safeSchoolId === '') {
+                if (!safeSchoolId || safeSchoolId === "") {
                   return null; // Skip empty values
                 }
                 return (
                   <SelectItem key={schoolId} value={safeSchoolId}>
-                    {school.name || t('unknownSchool')}
+                    {school.name || t("unknownSchool")}
                   </SelectItem>
                 );
               })}
@@ -357,22 +410,22 @@ const UserForm: React.FC<UserFormProps> = ({
       )}
 
       {/* Dil */}
-      {!isFieldDisabled('language') && (
+      {!isFieldDisabled("language") && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="language" className="text-right">
-            {t('userForm.language')}
+            {t("userForm.language")}
           </Label>
           <Select
-            value={formData.language || 'az'}
-            onValueChange={(value) => handleChange('language', value)}
-            disabled={isFieldDisabled('language')}
+            value={formData.language || "az"}
+            onValueChange={(value) => handleChange("language", value)}
+            disabled={isFieldDisabled("language")}
           >
             <SelectTrigger className="col-span-3">
-              <SelectValue placeholder={t('userForm.selectLanguage')} />
+              <SelectValue placeholder={t("userForm.selectLanguage")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="az">{t('userForm.azerbaijani')}</SelectItem>
-              <SelectItem value="en">{t('userForm.english')}</SelectItem>
+              <SelectItem value="az">{t("userForm.azerbaijani")}</SelectItem>
+              <SelectItem value="en">{t("userForm.english")}</SelectItem>
             </SelectContent>
           </Select>
         </div>

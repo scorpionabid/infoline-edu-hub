@@ -1,10 +1,14 @@
-
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useLanguage } from '@/context/LanguageContext';
-import { Sector } from '@/types/supabase';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Sector } from "@/types/supabase";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SectorDialogProps {
   open: boolean;
@@ -12,12 +16,12 @@ interface SectorDialogProps {
   sectorId?: string;
 }
 
-const SectorDialog: React.FC<SectorDialogProps> = ({ 
-  open, 
+const SectorDialog: React.FC<SectorDialogProps> = ({
+  open,
   onOpenChange,
-  sectorId
+  sectorId,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [sector, setSector] = React.useState<Sector | null>(null);
   const [loading, setLoading] = React.useState(false);
 
@@ -31,16 +35,16 @@ const SectorDialog: React.FC<SectorDialogProps> = ({
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('sectors')
-        .select('*')
-        .eq('id', id)
+        .from("sectors")
+        .select("*")
+        .eq("id", id)
         .single();
 
       if (error) throw error;
       setSector(data);
     } catch (error: any) {
-      console.error('Error loading sector:', error);
-      toast.error(t('errorLoadingSector'));
+      console.error("Error loading sector:", error);
+      toast.error(t("errorLoadingSector"));
     } finally {
       setLoading(false);
     }
@@ -51,7 +55,7 @@ const SectorDialog: React.FC<SectorDialogProps> = ({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {sectorId ? t('viewSector') : t('addSector')}
+            {sectorId ? t("viewSector") : t("addSector")}
           </DialogTitle>
         </DialogHeader>
 
@@ -64,41 +68,45 @@ const SectorDialog: React.FC<SectorDialogProps> = ({
             {sector ? (
               <>
                 <div>
-                  <h3 className="font-medium">{t('name')}</h3>
+                  <h3 className="font-medium">{t("name")}</h3>
                   <p>{sector.name}</p>
                 </div>
-                
+
                 <div>
-                  <h3 className="font-medium">{t('description')}</h3>
-                  <p>{sector.description || t('noDescription')}</p>
+                  <h3 className="font-medium">{t("description")}</h3>
+                  <p>{sector.description || t("noDescription")}</p>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <h3 className="font-medium">{t('status')}</h3>
-                    <p>{t(sector.status || 'active')}</p>
+                    <h3 className="font-medium">{t("status")}</h3>
+                    <p>{t(sector.status || "active")}</p>
                   </div>
                   <div>
-                    <h3 className="font-medium">{t('completionRate')}</h3>
+                    <h3 className="font-medium">{t("completionRate")}</h3>
                     <p>{sector.completion_rate || 0}%</p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <h3 className="font-medium">{t('createdAt')}</h3>
+                    <h3 className="font-medium">{t("createdAt")}</h3>
                     <p>{new Date(sector.created_at).toLocaleDateString()}</p>
                   </div>
                   <div>
-                    <h3 className="font-medium">{t('updatedAt')}</h3>
-                    <p>{sector.updated_at ? new Date(sector.updated_at).toLocaleDateString() : '-'}</p>
+                    <h3 className="font-medium">{t("updatedAt")}</h3>
+                    <p>
+                      {sector.updated_at
+                        ? new Date(sector.updated_at).toLocaleDateString()
+                        : "-"}
+                    </p>
                   </div>
                 </div>
               </>
             ) : !sectorId ? (
-              <p>{t('addSectorDescription')}</p>
+              <p>{t("addSectorDescription")}</p>
             ) : (
-              <p>{t('sectorNotFound')}</p>
+              <p>{t("sectorNotFound")}</p>
             )}
           </div>
         )}

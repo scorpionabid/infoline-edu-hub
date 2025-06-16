@@ -1,11 +1,14 @@
-
-import React, { useState } from 'react';
-import { Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useLanguage } from '@/context/LanguageContext';
-import NotificationList from './NotificationList';
-import { AppNotification } from '@/types/notification';
+import React, { useState } from "react";
+import { Bell } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useTranslation } from "@/contexts/TranslationContext";
+import NotificationList from "./NotificationList";
+import { AppNotification } from "@/types/notification";
 
 // Props interfeysi əlavə edildi
 interface NotificationControlProps {
@@ -19,13 +22,15 @@ const NotificationControl: React.FC<NotificationControlProps> = ({
   notifications,
   onMarkAsRead,
   onMarkAllAsRead,
-  onClearAll
+  onClearAll,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  
-  const unreadCount = notifications.filter(notification => !notification.isRead).length;
-  
+
+  const unreadCount = notifications.filter(
+    (notification) => !notification.isRead,
+  ).length;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

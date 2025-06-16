@@ -1,11 +1,10 @@
-
-import React, { useEffect, useState, useCallback } from 'react';
-import { Helmet } from 'react-helmet';
-import { useLanguage } from '@/context/LanguageContext';
-import { useSectorsStore, type EnhancedSector } from '@/hooks/useSectorsStore';
-import SectorsContainer from '@/components/sectors/SectorsContainer';
-import { Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import React, { useEffect, useState, useCallback } from "react";
+import { Helmet } from "react-helmet";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { useSectorsStore, type EnhancedSector } from "@/hooks/useSectorsStore";
+import SectorsContainer from "@/components/sectors/SectorsContainer";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface RefreshResult {
   sectors: EnhancedSector[];
@@ -13,44 +12,48 @@ interface RefreshResult {
 }
 
 const Sectors = () => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { sectors, loading, error, refetch: storeRefetch } = useSectorsStore();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const refetch = useCallback(async (): Promise<RefreshResult> => {
     try {
-      console.log('Məlumatlar yenilənir...');
+      console.log("Məlumatlar yenilənir...");
       const result = await storeRefetch();
-      
-      const enhancedSectors = result.sectors.map(sector => ({
+
+      const enhancedSectors = result.sectors.map((sector) => ({
         ...sector,
-        status: sector.status === 'inactive' ? 'inactive' as const : 'active' as const
+        status:
+          sector.status === "inactive"
+            ? ("inactive" as const)
+            : ("active" as const),
       }));
-      
-      console.log('Məlumatlar uğurla yeniləndi', {
+
+      console.log("Məlumatlar uğurla yeniləndi", {
         sectorsCount: enhancedSectors.length,
-        regionsCount: result.regions?.length
+        regionsCount: result.regions?.length,
       });
-      
+
       return {
         sectors: enhancedSectors,
-        regions: result.regions || []
+        regions: result.regions || [],
       };
     } catch (error) {
-      console.error('Xəta baş verdi:', error);
+      console.error("Xəta baş verdi:", error);
       throw error;
     }
   }, [storeRefetch]);
 
   useEffect(() => {
     if (isInitialLoad) {
-      console.log('İlkin məlumatlar yüklənir...');
+      console.log("İlkin məlumatlar yüklənir...");
       const loadData = async () => {
         try {
           await refetch();
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Naməlum xəta';
-          toast.error('Məlumatlar yüklənərkən xəta baş verdi: ' + errorMessage);
+          const errorMessage =
+            error instanceof Error ? error.message : "Naməlum xəta";
+          toast.error("Məlumatlar yüklənərkən xəta baş verdi: " + errorMessage);
         } finally {
           setIsInitialLoad(false);
         }
@@ -61,7 +64,7 @@ const Sectors = () => {
 
   useEffect(() => {
     if (error && !isInitialLoad) {
-      console.error('Səhifə xətası:', error);
+      console.error("Səhifə xətası:", error);
       toast.error(error);
     }
   }, [error, isInitialLoad]);
@@ -77,7 +80,7 @@ const Sectors = () => {
   return (
     <>
       <Helmet>
-        <title>{t('navigation.sectors')} | InfoLine</title>
+        <title>{t("navigation.sectors")} | InfoLine</title>
       </Helmet>
 
       <div className="container mx-auto py-6">

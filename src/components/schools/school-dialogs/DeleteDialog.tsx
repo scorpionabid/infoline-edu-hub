@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,8 +8,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { useLanguage } from '@/context/LanguageContext';
+} from "@/components/ui/alert-dialog";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface DeleteDialogProps {
   isOpen: boolean;
@@ -18,25 +17,29 @@ interface DeleteDialogProps {
   onConfirm: () => void;
 }
 
-const DeleteDialog: React.FC<DeleteDialogProps> = ({ isOpen, onClose, onConfirm }) => {
-  const { t } = useLanguage();
+const DeleteDialog: React.FC<DeleteDialogProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+}) => {
+  const { t } = useTranslation();
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t('deleteSchoolTitle')}</AlertDialogTitle>
+          <AlertDialogTitle>{t("deleteSchoolTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteSchoolDescription')}
+            {t("deleteSchoolDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {t('delete')}
+            {t("delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

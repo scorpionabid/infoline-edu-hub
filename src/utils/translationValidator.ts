@@ -1,182 +1,323 @@
-
-import { SupportedLanguage, TranslationValidationResult } from '@/types/translation';
+import type { 
+  TranslationValidationResult, 
+  TranslationCoverage,
+  SupportedLanguage,
+  LanguageTranslations 
+} from '@/types/translation';
+import { getTranslations } from '@/translations';
 
 /**
- * Validates translation completeness across languages
+ * Translation Validation System
+ * 
+ * Bu sistem translation coverage və keyfiyyətini yoxlamaq üçün istifadə olunur
  */
 export class TranslationValidator {
-  // Define all required translation keys organized by feature/module
-  private static requiredKeys = {
-    common: [
-      'add', 'edit', 'delete', 'save', 'cancel', 'confirm', 'loading', 'error', 'success',
-      'search', 'noResults', 'actions', 'selectAll', 'deselectAll', 'apply', 'reset'
-    ],
-    dataTable: [
-      'actions', 'loading', 'errorLoading', 'tryAgainLater', 'noData', 'noDataDescription',
-      'delete', 'cancel', 'confirmDelete', 'deleteConfirmation', 'edit', 'view',
-      'selectAll', 'deselectAll', 'rowsPerPage', 'of', 'next', 'previous', 'first', 'last'
-    ],
-    userForm: [
-      'fullName', 'email', 'password', 'phone', 'position', 'role', 'region', 'sector', 'school',
-      'language', 'selectRegion', 'selectSector', 'selectSchool', 'selectLanguage',
-      'unknownRegion', 'unknownSector', 'unknownSchool', 'azerbaijani', 'english', 'russian', 'turkish',
-      'regionadmin', 'sectoradmin', 'schooladmin', 'superadmin', 'user', 'saveChanges', 'createUser'
-    ],
-    navigation: [
-      'dashboard', 'users', 'schools', 'sectors', 'reports', 'settings', 'logout',
-      'profile', 'help', 'notifications', 'categories', 'columns', 'statistics', 'auth'
-    ],
-    validation: [
-      'required', 'invalidEmail', 'minLength', 'maxLength', 'passwordsDontMatch',
-      'invalidPhone', 'invalidDate', 'invalidNumber', 'requiredField', 'invalidFormat'
-    ],
-    dialogs: [
-      'confirm', 'cancel', 'delete', 'areYouSure', 'thisActionCannotBeUndone'
-    ]
-  };
-
-  // Define required translation groups that must be present
-  private static requiredGroups = [
-    'common', 'dataTable', 'navigation', 'validation'
-  ];
-
-  // Optional groups that may be present but aren't required
-  private static optionalGroups = [
-    'userForm', 'dialogs', 'userManagement', 'auth', 'statistics'
-  ];
+  private static cache: Map<string, TranslationValidationResult> = new Map();
 
   /**
-   * Checks if a key exists in the translations
+   * Bir modulun translation completeness-ini yoxlayır
    */
-  private static keyExists(translationFunction: (key: string) => string, key: string): boolean {
-    const value = translationFunction(key);
-    return value !== '' && value !== `[missing "${key}" translation]`;
+  static async validateModule(
+    module: string, 
+    language: SupportedLanguage = 'az'
+  ): Promise<TranslationValidationResult> {
+    const cacheKey = `${module}-${language}`;
+    
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey)!;
+    }
+
+    try {
+      const azTranslations = await getTranslations('az');
+      const targetTranslations = language === 'az' ? 
+        azTranslations : 
+        await getTranslations(language);
+
+      const azModule = azTranslations[module as keyof LanguageTranslations];
+      const targetModule = targetTranslations[module as keyof LanguageTranslations];
+
+      const result = this.compareModules(azModule, targetModule, module);
+      
+      // Cache result for 5 minutes
+      this.cache.set(cacheKey, result);
+      setTimeout(() => this.cache.delete(cacheKey), 5 * 60 * 1000);
+      
+      return result;
+    } catch (error) {
+      console.error(`Translation validation error for ${module}:`, error);
+      return {
+        valid: false,
+        missingKeys: [],
+        invalidKeys: [],
+        coverage: 0
+      };
+    }
   }
 
   /**
-   * Validates translation completeness for a specific language
+   * Bütün modulları validate edir
    */
-  static validateLanguage(
-    language: SupportedLanguage,
-    translationFunction: (key: string) => string
-  ): TranslationValidationResult {
-    const missingKeys: string[] = [];
-    const invalidKeys: string[] = [];
-    const missingGroups: string[] = [];
-    
-    // Track which groups are actually present
-    const presentGroups = new Set<string>();
-    
-    // Check all possible groups (required + optional)
-    const allGroups = [...this.requiredGroups, ...this.optionalGroups];
-    
-    for (const group of allGroups) {
-      const groupKey = `${group}.dummy`; // Test with a dummy key to see if group exists
-      if (this.keyExists(translationFunction, groupKey.replace('.dummy', '.dummy'))) {
-        presentGroups.add(group);
+  static async validateAllModules(
+    language: SupportedLanguage = 'az'
+  ): Promise<TranslationCoverage> {
+    const modules = [
+      'auth', 'categories', 'core', 'dashboard', 'dataEntry',
+      'feedback', 'general', 'navigation', 'notifications',
+      'organization', 'profile', 'schools', 'status', 'time',
+      'ui', 'user', 'userManagement', 'validation'
+    ];
+
+    const coverage: TranslationCoverage = {};
+
+    for (const module of modules) {
+      try {
+        const result = await this.validateModule(module, language);
+        coverage[module] = {
+          completed: result.valid,
+          percentage: result.coverage || 0,
+          missingKeys: result.missingKeys,
+          totalKeys: this.countKeys(result)
+        };
+      } catch (error) {
+        console.error(`Error validating module ${module}:`, error);
+        coverage[module] = {
+          completed: false,
+          percentage: 0,
+          missingKeys: [],
+          totalKeys: 0
+        };
       }
     }
 
-    // Check for missing required groups
-    this.requiredGroups.forEach(group => {
-      if (!presentGroups.has(group)) {
-        missingGroups.push(group);
+    return coverage;
+  }
+
+  /**
+   * İki modulun müqayisəsi
+   */
+  private static compareModules(
+    sourceModule: any,
+    targetModule: any,
+    moduleName: string
+  ): TranslationValidationResult {
+    const missingKeys: string[] = [];
+    const invalidKeys: string[] = [];
+    
+    const sourceKeys = this.flattenObject(sourceModule);
+    const targetKeys = this.flattenObject(targetModule);
+    
+    const totalKeys = Object.keys(sourceKeys).length;
+    let validKeys = 0;
+
+    // Check for missing keys
+    for (const key of Object.keys(sourceKeys)) {
+      if (!(key in targetKeys)) {
+        missingKeys.push(`${moduleName}.${key}`);
+      } else if (targetKeys[key] === sourceKeys[key] && moduleName !== 'az') {
+        // Key exists but value is the same (not translated)
+        invalidKeys.push(`${moduleName}.${key}`);
+      } else {
+        validKeys++;
       }
-    });
+    }
 
-    // Check for missing keys in each group
-    Object.entries(this.requiredKeys).forEach(([group, keys]) => {
-      // Skip if group is optional and not present
-      if (this.optionalGroups.includes(group) && !presentGroups.has(group)) {
-        return;
-      }
-
-      // Check each key in the group
-      keys.forEach(key => {
-        const fullKey = `${group}.${key}`;
-        const keyParts = key.split('.');
-        let currentKey = group;
-        let keyExists = true;
-
-        // Handle nested keys (e.g., 'user.name')
-        for (const part of keyParts) {
-          const testKey = `${currentKey}.${part}`;
-          if (!this.keyExists(translationFunction, testKey)) {
-            keyExists = false;
-            break;
-          }
-          currentKey = testKey;
-        }
-
-        if (!keyExists) {
-          missingKeys.push(fullKey);
-        }
-      });
-    });
-
-    // Check for keys with empty values
-    const allKeys = Object.entries(this.requiredKeys).flatMap(([group, keys]) => 
-      keys.map(key => `${group}.${key}`)
-    );
-
-    allKeys.forEach(fullKey => {
-      const value = translationFunction(fullKey);
-      if (value === '' || value === `[missing "${fullKey}" translation]`) {
-        if (!missingKeys.includes(fullKey)) {
-          missingKeys.push(fullKey);
-        }
-      } else if (value === fullKey) {
-        // Key exists but has the same value as the key (likely untranslated)
-        invalidKeys.push(fullKey);
-      } else if (value.includes('{{') && !value.includes('}}')) {
-        invalidKeys.push(`${fullKey} (unclosed placeholder)`);
-      }
-    });
-
-    const isValid = missingKeys.length === 0 && missingGroups.length === 0 && invalidKeys.length === 0;
+    const coverage = totalKeys > 0 ? Math.round((validKeys / totalKeys) * 100) : 0;
 
     return {
-      valid: missingKeys.length === 0 && invalidKeys.length === 0 && missingGroups.length === 0,
+      valid: missingKeys.length === 0 && invalidKeys.length === 0,
       missingKeys,
       invalidKeys,
-      missingGroups
+      coverage
     };
   }
 
   /**
-   * Logs validation results to the console
+   * Nested object-i flatten edir
    */
-  static logValidationResults(language: SupportedLanguage, result: TranslationValidationResult) {
-    if (!result.valid) {
-      console.warn(`\n=== Translation Validation Results (${language}) ===`);
-      
-      if (result.missingGroups && result.missingGroups.length > 0) {
-        console.warn('\n❌ Missing translation groups:');
-        result.missingGroups.forEach(group => console.warn(`  - ${group}`));
-      }
-      
-      if (result.missingKeys && result.missingKeys.length > 0) {
-        console.warn(`\n❌ Missing ${result.missingKeys.length} translation keys:`);
-        result.missingKeys.slice(0, 20).forEach(key => console.warn(`  - ${key}`));
+  private static flattenObject(
+    obj: any, 
+    prefix: string = ''
+  ): Record<string, string> {
+    const flattened: Record<string, string> = {};
+
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const newKey = prefix ? `${prefix}.${key}` : key;
         
-        if (result.missingKeys.length > 20) {
-          console.warn(`  ... and ${result.missingKeys.length - 20} more`);
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+          Object.assign(flattened, this.flattenObject(obj[key], newKey));
+        } else {
+          flattened[newKey] = obj[key];
         }
       }
-      
-      if (result.invalidKeys && result.invalidKeys.length > 0) {
-        console.warn(`\n⚠️  ${result.invalidKeys.length} translations need attention:`);
-        result.invalidKeys.slice(0, 10).forEach(key => console.warn(`  - ${key}`));
-        
-        if (result.invalidKeys.length > 10) {
-          console.warn(`  ... and ${result.invalidKeys.length - 10} more`);
-        }
-      }
-      
-      console.log('\nRun `npm run validate:translations` to see all issues.\n');
-    } else {
-      console.log(`\n✅ Translation validation passed for ${language}\n`);
     }
+
+    return flattened;
+  }
+
+  /**
+   * Açarların sayını hesablayır
+   */
+  private static countKeys(result: TranslationValidationResult): number {
+    return result.missingKeys.length + 
+           result.invalidKeys.length + 
+           Math.round((result.coverage || 0) / 100 * 
+           (result.missingKeys.length + result.invalidKeys.length));
+  }
+
+  /**
+   * Console-da report çap edir
+   */
+  static async generateConsoleReport(language: SupportedLanguage = 'az'): Promise<void> {
+    console.log(`\n🌐 TRANSLATION COVERAGE REPORT - ${language.toUpperCase()}`);
+    console.log('='.repeat(50));
+
+    const coverage = await this.validateAllModules(language);
+    
+    const sortedModules = Object.entries(coverage)
+      .sort(([,a], [,b]) => b.percentage - a.percentage);
+
+    let totalKeys = 0;
+    let totalMissing = 0;
+
+    sortedModules.forEach(([module, data]) => {
+      const status = data.completed ? '✅' : '❌';
+      const percentage = `${data.percentage}%`.padStart(4);
+      const missing = data.missingKeys?.length || 0;
+      
+      console.log(`${status} ${module.padEnd(15)} ${percentage} (${missing} missing)`);
+      
+      totalKeys += data.totalKeys || 0;
+      totalMissing += missing;
+    });
+
+    const overallPercentage = totalKeys > 0 ? 
+      Math.round(((totalKeys - totalMissing) / totalKeys) * 100) : 0;
+
+    console.log('\n📊 OVERALL STATISTICS');
+    console.log('-'.repeat(25));
+    console.log(`Total modules: ${sortedModules.length}`);
+    console.log(`Total keys: ${totalKeys}`);
+    console.log(`Missing keys: ${totalMissing}`);
+    console.log(`Overall coverage: ${overallPercentage}%`);
+
+    // Show worst performing modules
+    const worstModules = sortedModules
+      .filter(([,data]) => data.percentage < 80)
+      .slice(0, 5);
+
+    if (worstModules.length > 0) {
+      console.log('\n🔥 MODULES NEEDING ATTENTION');
+      console.log('-'.repeat(30));
+      worstModules.forEach(([module, data]) => {
+        console.log(`${module}: ${data.percentage}% (${data.missingKeys?.length || 0} missing)`);
+      });
+    }
+  }
+
+  /**
+   * HTML report yaradır
+   */
+  static async generateHTMLReport(language: SupportedLanguage = 'az'): Promise<string> {
+    const coverage = await this.validateAllModules(language);
+    
+    const html = `
+    <!DOCTYPE html>
+    <html lang="${language}">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>İnfoLine Translation Coverage Report</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .module { margin-bottom: 20px; padding: 15px; border-radius: 8px; }
+        .completed { background-color: #e8f5e8; border-left: 4px solid #4caf50; }
+        .incomplete { background-color: #ffeaa7; border-left: 4px solid #f39c12; }
+        .critical { background-color: #ffebee; border-left: 4px solid #f44336; }
+        .percentage { font-size: 24px; font-weight: bold; }
+        .missing-keys { margin-top: 10px; font-size: 12px; color: #666; }
+        .summary { background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🌐 İnfoLine Translation Coverage Report</h1>
+        <h2>Language: ${language.toUpperCase()}</h2>
+        <p>Generated: ${new Date().toLocaleString()}</p>
+      </div>
+
+      <div class="summary">
+        <h3>📊 Summary</h3>
+        <p><strong>Total Modules:</strong> ${Object.keys(coverage).length}</p>
+        <p><strong>Completed Modules:</strong> ${Object.values(coverage).filter(m => m.completed).length}</p>
+        <p><strong>Overall Coverage:</strong> ${Math.round(Object.values(coverage).reduce((acc, m) => acc + m.percentage, 0) / Object.keys(coverage).length)}%</p>
+      </div>
+
+      ${Object.entries(coverage)
+        .sort(([,a], [,b]) => b.percentage - a.percentage)
+        .map(([module, data]) => {
+          const cssClass = data.percentage >= 90 ? 'completed' : 
+                          data.percentage >= 70 ? 'incomplete' : 'critical';
+          return `
+            <div class="module ${cssClass}">
+              <h3>${module}</h3>
+              <div class="percentage">${data.percentage}%</div>
+              <p><strong>Status:</strong> ${data.completed ? 'Completed' : 'Incomplete'}</p>
+              <p><strong>Total Keys:</strong> ${data.totalKeys || 0}</p>
+              <p><strong>Missing Keys:</strong> ${data.missingKeys?.length || 0}</p>
+              ${data.missingKeys && data.missingKeys.length > 0 ? `
+                <div class="missing-keys">
+                  <strong>Missing:</strong> ${data.missingKeys.slice(0, 10).join(', ')}
+                  ${data.missingKeys.length > 10 ? `... (+${data.missingKeys.length - 10} more)` : ''}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
+    </body>
+    </html>`;
+
+    return html;
+  }
+
+  /**
+   * Missing keys üçün auto-fix təklifləri
+   */
+  static async generateAutoFixSuggestions(
+    module: string,
+    language: SupportedLanguage = 'az'
+  ): Promise<Record<string, string>> {
+    const result = await this.validateModule(module, language);
+    const suggestions: Record<string, string> = {};
+
+    result.missingKeys.forEach(key => {
+      // Generate suggestion based on key name
+      const keyParts = key.split('.');
+      const lastPart = keyParts[keyParts.length - 1];
+      
+      // Convert camelCase or snake_case to readable text
+      const readable = lastPart
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/_/g, ' ')
+        .toLowerCase()
+        .trim();
+      
+      suggestions[key] = this.capitalizeFirst(readable);
+    });
+
+    return suggestions;
+  }
+
+  private static capitalizeFirst(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  /**
+   * Cache-i təmizləyir
+   */
+  static clearCache(): void {
+    this.cache.clear();
   }
 }
 

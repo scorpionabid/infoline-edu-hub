@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,7 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
   onClose,
   onImportColumns,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -36,7 +35,7 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFile = e.target.files[0];
-      
+
       // Check if it's an Excel file
       if (
         selectedFile.type === "application/vnd.ms-excel" ||
@@ -77,11 +76,11 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
       const result = await onImportColumns(file);
 
       clearInterval(progressInterval);
-      
+
       if (result) {
         setProgress(100);
         setSuccess(true);
-        
+
         // Close dialog after success
         setTimeout(() => {
           handleClose();
@@ -168,7 +167,11 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isUploading}>
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={isUploading}
+          >
             {t("cancel")}
           </Button>
           <Button

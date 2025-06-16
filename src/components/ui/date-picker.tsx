@@ -1,16 +1,15 @@
-
-import React from 'react';
-import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import React from "react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { useLanguage } from '@/context/LanguageContext';
+} from "@/components/ui/popover";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface DatePickerProps {
   selected?: Date;
@@ -23,10 +22,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   selected,
   onSelect,
   placeholder,
-  disabled = false
+  disabled = false,
 }) => {
-  const { t } = useLanguage();
-  const placeholderText = placeholder || t('common.datePicker.pickDate', 'Pick a date');
+  const { t } = useTranslation();
+  const placeholderText =
+    placeholder || t("common.datePicker.pickDate", "Pick a date");
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -34,7 +34,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           variant="outline"
           className={cn(
             "w-full justify-start text-left font-normal",
-            !selected && "text-muted-foreground"
+            !selected && "text-muted-foreground",
           )}
           disabled={disabled}
         >

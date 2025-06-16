@@ -1,16 +1,15 @@
-
-import React, { useState, useEffect } from 'react';
-import { ChevronsUpDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import React, { useState, useEffect } from "react";
+import { ChevronsUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { useLanguage } from '@/context/LanguageContext';
+} from "@/components/ui/popover";
+import { useTranslation } from "@/contexts/TranslationContext";
 import { SimpleUserSelect } from "./UserSelectParts/SimpleUserSelect";
-import { useUserSelectData } from './UserSelectParts/useUserSelectData';
+import { useUserSelectData } from "./UserSelectParts/useUserSelectData";
 
 interface UserSelectProps {
   value: string;
@@ -21,40 +20,48 @@ interface UserSelectProps {
   description?: string;
 }
 
-export function UserSelect({ value, onChange, placeholder, disabled, label, description }: UserSelectProps) {
-  const { t } = useLanguage();
+export function UserSelect({
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  label,
+  description,
+}: UserSelectProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const {
-    users,
-    loading,
-    error,
-    fetchUsers,
-    selectedUser
-  } = useUserSelectData(value);
-  
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const { users, loading, error, fetchUsers, selectedUser } =
+    useUserSelectData(value);
+
   // Filter and validate users to ensure no empty values
-  const safeUsers = users && Array.isArray(users) ? users
-    .filter(user => user && user.id && String(user.id).trim() !== '')
-    .map((user, index) => {
-      // Ensure user.id is never empty
-      const userId = user.id && String(user.id).trim() !== '' ? user.id : `user-${index}-${Math.random().toString(36).slice(2)}`;
-      return {
-        ...user,
-        id: userId
-      };
-    }) : [];
-  
+  const safeUsers =
+    users && Array.isArray(users)
+      ? users
+          .filter((user) => user && user.id && String(user.id).trim() !== "")
+          .map((user, index) => {
+            // Ensure user.id is never empty
+            const userId =
+              user.id && String(user.id).trim() !== ""
+                ? user.id
+                : `user-${index}-${Math.random().toString(36).slice(2)}`;
+            return {
+              ...user,
+              id: userId,
+            };
+          })
+      : [];
+
   const displayText = selectedUser
-    ? (selectedUser.full_name || selectedUser.email || 'İsimsiz İstifadəçi')
-    : (placeholder || 'İstifadəçi seçin');
-  
+    ? selectedUser.full_name || selectedUser.email || "İsimsiz İstifadəçi"
+    : placeholder || "İstifadəçi seçin";
+
   const handleSelect = (userId: string) => {
     onChange(userId);
     setOpen(false);
   };
-  
+
   // Popover açıldıqda istifadəçiləri yenidən yüklə
   useEffect(() => {
     if (open) {

@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,26 +17,26 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { 
-  ChevronDown, 
-  Trash2, 
-  Eye, 
-  EyeOff, 
+} from "@/components/ui/select";
+import {
+  ChevronDown,
+  Trash2,
+  Eye,
+  EyeOff,
   FolderInput,
   X,
-  Loader2
-} from 'lucide-react';
-import { Column } from '@/types/column';
-import { Category } from '@/types/category';
-import { useLanguage } from '@/context/LanguageContext';
+  Loader2,
+} from "lucide-react";
+import { Column } from "@/types/column";
+import { Category } from "@/types/category";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface BulkOperationsPanelProps {
   selectedColumns: string[];
@@ -44,8 +44,14 @@ interface BulkOperationsPanelProps {
   categories: Category[];
   isLoading?: boolean;
   onBulkDelete?: (columnIds: string[]) => Promise<boolean>;
-  onBulkToggleStatus?: (columnIds: string[], status: 'active' | 'inactive') => Promise<boolean>;
-  onBulkMoveToCategory?: (columnIds: string[], categoryId: string) => Promise<boolean>;
+  onBulkToggleStatus?: (
+    columnIds: string[],
+    status: "active" | "inactive",
+  ) => Promise<boolean>;
+  onBulkMoveToCategory?: (
+    columnIds: string[],
+    categoryId: string,
+  ) => Promise<boolean>;
   onClearSelection?: () => void;
 }
 
@@ -57,25 +63,31 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
   onBulkDelete,
   onBulkToggleStatus,
   onBulkMoveToCategory,
-  onClearSelection
+  onClearSelection,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [operationLoading, setOperationLoading] = useState(false);
 
   if (selectedColumns.length === 0) {
     return null;
   }
 
-  const selectedColumnsData = columns.filter(col => selectedColumns.includes(col.id));
-  const activeColumnsCount = selectedColumnsData.filter(col => col.status === 'active').length;
-  const inactiveColumnsCount = selectedColumnsData.filter(col => col.status === 'inactive').length;
+  const selectedColumnsData = columns.filter((col) =>
+    selectedColumns.includes(col.id),
+  );
+  const activeColumnsCount = selectedColumnsData.filter(
+    (col) => col.status === "active",
+  ).length;
+  const inactiveColumnsCount = selectedColumnsData.filter(
+    (col) => col.status === "inactive",
+  ).length;
 
   const handleBulkDelete = async () => {
     if (!onBulkDelete) return;
-    
+
     setOperationLoading(true);
     try {
       const success = await onBulkDelete(selectedColumns);
@@ -84,15 +96,15 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
         setDeleteDialogOpen(false);
       }
     } catch (error) {
-      console.error('Bulk delete error:', error);
+      console.error("Bulk delete error:", error);
     } finally {
       setOperationLoading(false);
     }
   };
 
-  const handleBulkToggleStatus = async (status: 'active' | 'inactive') => {
+  const handleBulkToggleStatus = async (status: "active" | "inactive") => {
     if (!onBulkToggleStatus) return;
-    
+
     setOperationLoading(true);
     try {
       const success = await onBulkToggleStatus(selectedColumns, status);
@@ -100,7 +112,7 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
         onClearSelection?.();
       }
     } catch (error) {
-      console.error('Bulk toggle status error:', error);
+      console.error("Bulk toggle status error:", error);
     } finally {
       setOperationLoading(false);
     }
@@ -108,17 +120,20 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
 
   const handleBulkMoveToCategory = async () => {
     if (!onBulkMoveToCategory || !selectedCategoryId) return;
-    
+
     setOperationLoading(true);
     try {
-      const success = await onBulkMoveToCategory(selectedColumns, selectedCategoryId);
+      const success = await onBulkMoveToCategory(
+        selectedColumns,
+        selectedCategoryId,
+      );
       if (success) {
         onClearSelection?.();
         setMoveDialogOpen(false);
-        setSelectedCategoryId('');
+        setSelectedCategoryId("");
       }
     } catch (error) {
-      console.error('Bulk move to category error:', error);
+      console.error("Bulk move to category error:", error);
     } finally {
       setOperationLoading(false);
     }
@@ -129,20 +144,29 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
       <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Badge variant="secondary" className="bg-primary text-primary-foreground">
+            <Badge
+              variant="secondary"
+              className="bg-primary text-primary-foreground"
+            >
               {selectedColumns.length} sütun seçildi
             </Badge>
-            
+
             <div className="text-sm text-muted-foreground">
               {activeColumnsCount > 0 && (
                 <span className="mr-3">
-                  <Badge variant="outline" className="text-green-600 border-green-600">
+                  <Badge
+                    variant="outline"
+                    className="text-green-600 border-green-600"
+                  >
                     {activeColumnsCount} aktiv
                   </Badge>
                 </span>
               )}
               {inactiveColumnsCount > 0 && (
-                <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                <Badge
+                  variant="outline"
+                  className="text-yellow-600 border-yellow-600"
+                >
                   {inactiveColumnsCount} deaktiv
                 </Badge>
               )}
@@ -153,7 +177,10 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
             {/* Bulk Actions Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" disabled={isLoading || operationLoading}>
+                <Button
+                  variant="outline"
+                  disabled={isLoading || operationLoading}
+                >
                   {operationLoading && (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   )}
@@ -164,8 +191,8 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
               <DropdownMenuContent align="end">
                 {/* Status toggle options */}
                 {activeColumnsCount > 0 && (
-                  <DropdownMenuItem 
-                    onClick={() => handleBulkToggleStatus('inactive')}
+                  <DropdownMenuItem
+                    onClick={() => handleBulkToggleStatus("inactive")}
                     disabled={operationLoading}
                   >
                     <EyeOff className="h-4 w-4 mr-2" />
@@ -173,30 +200,30 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
                   </DropdownMenuItem>
                 )}
                 {inactiveColumnsCount > 0 && (
-                  <DropdownMenuItem 
-                    onClick={() => handleBulkToggleStatus('active')}
+                  <DropdownMenuItem
+                    onClick={() => handleBulkToggleStatus("active")}
                     disabled={operationLoading}
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     Deaktiv sütunları aktivləşdir ({inactiveColumnsCount})
                   </DropdownMenuItem>
                 )}
-                
+
                 <DropdownMenuSeparator />
-                
+
                 {/* Move to category */}
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setMoveDialogOpen(true)}
                   disabled={operationLoading}
                 >
                   <FolderInput className="h-4 w-4 mr-2" />
                   Kateqoriyaya köçür
                 </DropdownMenuItem>
-                
+
                 <DropdownMenuSeparator />
-                
+
                 {/* Delete */}
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setDeleteDialogOpen(true)}
                   className="text-red-600"
                   disabled={operationLoading}
@@ -208,9 +235,9 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
             </DropdownMenu>
 
             {/* Clear Selection */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onClearSelection}
               disabled={operationLoading}
             >
@@ -229,9 +256,11 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
               Toplu silmə təsdiqi
             </AlertDialogTitle>
             <AlertDialogDescription>
-              <strong>{selectedColumns.length} sütunu</strong> silmək istədiyinizə əminsiniz?
+              <strong>{selectedColumns.length} sütunu</strong> silmək
+              istədiyinizə əminsiniz?
               <div className="mt-2 text-sm text-muted-foreground">
-                Bu əməliyyat sütunları arxivə köçürəcək və onları sonradan bərpa etmək mümkün olacaq.
+                Bu əməliyyat sütunları arxivə köçürəcək və onları sonradan bərpa
+                etmək mümkün olacaq.
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -239,7 +268,7 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
             <AlertDialogCancel disabled={operationLoading}>
               Ləğv et
             </AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleBulkDelete}
               disabled={operationLoading}
               className="bg-red-600 hover:bg-red-700"
@@ -269,12 +298,16 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
               Kateqoriyaya köçürmə
             </AlertDialogTitle>
             <AlertDialogDescription>
-              <strong>{selectedColumns.length} sütunu</strong> hansı kateqoriyaya köçürmək istəyirsiniz?
+              <strong>{selectedColumns.length} sütunu</strong> hansı
+              kateqoriyaya köçürmək istəyirsiniz?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
+
           <div className="py-4">
-            <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+            <Select
+              value={selectedCategoryId}
+              onValueChange={setSelectedCategoryId}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Kateqoriya seçin..." />
               </SelectTrigger>
@@ -287,12 +320,12 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
               </SelectContent>
             </Select>
           </div>
-          
+
           <AlertDialogFooter>
             <AlertDialogCancel disabled={operationLoading}>
               Ləğv et
             </AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleBulkMoveToCategory}
               disabled={operationLoading || !selectedCategoryId}
               className="bg-blue-600 hover:bg-blue-700"

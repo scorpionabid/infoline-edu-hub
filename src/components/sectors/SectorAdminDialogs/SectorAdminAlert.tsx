@@ -1,19 +1,21 @@
-
-import React from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import React from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface SectorAdminAlertProps {
   error: string | null;
   usersError: Error | null;
 }
 
-export const SectorAdminAlert: React.FC<SectorAdminAlertProps> = ({ error, usersError }) => {
-  const { t } = useLanguage();
-  
+export const SectorAdminAlert: React.FC<SectorAdminAlertProps> = ({
+  error,
+  usersError,
+}) => {
+  const { t } = useTranslation();
+
   if (!error && !usersError) return null;
-  
+
   return (
     <>
       {error && (
@@ -22,12 +24,13 @@ export const SectorAdminAlert: React.FC<SectorAdminAlertProps> = ({ error, users
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      
+
       {usersError && !error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            {t('errorLoadingUsers') || 'İstifadəçilər yüklənərkən xəta'}: {usersError.message}
+            {t("errorLoadingUsers") || "İstifadəçilər yüklənərkən xəta"}:{" "}
+            {usersError.message}
           </AlertDescription>
         </Alert>
       )}

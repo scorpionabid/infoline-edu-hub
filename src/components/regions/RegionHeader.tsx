@@ -1,8 +1,7 @@
-
-import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import React from "react";
+import { useTranslation } from "@/contexts/TranslationContext";
 import { Button } from "@/components/ui/button";
-import { PlusIcon } from 'lucide-react';
+import { PlusIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -27,9 +26,9 @@ const RegionHeader: React.FC<RegionHeaderProps> = ({
   onSearchChange,
   selectedStatus,
   onStatusChange,
-  onResetFilters
+  onResetFilters,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-col space-y-4">
@@ -40,7 +39,7 @@ const RegionHeader: React.FC<RegionHeaderProps> = ({
           {t("addRegion")}
         </Button>
       </div>
-      
+
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <Input
@@ -50,11 +49,13 @@ const RegionHeader: React.FC<RegionHeaderProps> = ({
             className="max-w-sm"
           />
         </div>
-        
+
         <div className="w-full sm:w-[200px]">
           <Select
             value={selectedStatus || "all"}
-            onValueChange={(value) => onStatusChange(value === "all" ? null : value)}
+            onValueChange={(value) =>
+              onStatusChange(value === "all" ? null : value)
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder={t("filterByStatus")} />
@@ -67,7 +68,7 @@ const RegionHeader: React.FC<RegionHeaderProps> = ({
             </SelectContent>
           </Select>
         </div>
-        
+
         <Button variant="outline" onClick={onResetFilters}>
           {t("resetFilters")}
         </Button>

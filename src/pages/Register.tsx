@@ -1,41 +1,47 @@
-
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UserPlus } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { UserPlus } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    fullName: ''
+    email: "",
+    password: "",
+    confirmPassword: "",
+    fullName: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { t } = useLanguage();
+  const [error, setError] = useState("");
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      setError(t('auth.passwordMismatch'));
+      setError(t("auth.passwordMismatch"));
       setIsLoading(false);
       return;
     }
@@ -46,16 +52,16 @@ const Register = () => {
         password: formData.password,
         options: {
           data: {
-            full_name: formData.fullName
-          }
-        }
+            full_name: formData.fullName,
+          },
+        },
       });
 
       if (error) throw error;
 
-      navigate('/register-success');
+      navigate("/register-success");
     } catch (error: any) {
-      setError(error.message || t('common.unexpectedError'));
+      setError(error.message || t("common.unexpectedError"));
     } finally {
       setIsLoading(false);
     }
@@ -67,15 +73,17 @@ const Register = () => {
         <div className="flex justify-end">
           <LanguageSwitcher />
         </div>
-        
+
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">{t('auth.register')}</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              {t("auth.register")}
+            </CardTitle>
             <CardDescription className="text-center">
-              {t('auth.registerDescription')}
+              {t("auth.registerDescription")}
             </CardDescription>
           </CardHeader>
-          
+
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               {error && (
@@ -86,13 +94,13 @@ const Register = () => {
 
               <div className="space-y-2">
                 <label htmlFor="fullName" className="text-sm font-medium">
-                  {t('auth.fullName')}
+                  {t("auth.fullName")}
                 </label>
                 <Input
                   id="fullName"
                   name="fullName"
                   type="text"
-                  placeholder={t('auth.enterFullName')}
+                  placeholder={t("auth.enterFullName")}
                   value={formData.fullName}
                   onChange={handleChange}
                   required
@@ -102,13 +110,13 @@ const Register = () => {
 
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm font-medium">
-                  {t('common.email')}
+                  {t("common.email")}
                 </label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder={t('auth.enterEmail')}
+                  placeholder={t("auth.enterEmail")}
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -118,13 +126,13 @@ const Register = () => {
 
               <div className="space-y-2">
                 <label htmlFor="password" className="text-sm font-medium">
-                  {t('common.password')}
+                  {t("common.password")}
                 </label>
                 <Input
                   id="password"
                   name="password"
                   type="password"
-                  placeholder={t('auth.enterPassword')}
+                  placeholder={t("auth.enterPassword")}
                   value={formData.password}
                   onChange={handleChange}
                   required
@@ -133,14 +141,17 @@ const Register = () => {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="text-sm font-medium">
-                  {t('auth.confirmPassword')}
+                <label
+                  htmlFor="confirmPassword"
+                  className="text-sm font-medium"
+                >
+                  {t("auth.confirmPassword")}
                 </label>
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
                   type="password"
-                  placeholder={t('auth.confirmPassword')}
+                  placeholder={t("auth.confirmPassword")}
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
@@ -148,27 +159,23 @@ const Register = () => {
                 />
               </div>
             </CardContent>
-            
+
             <CardFooter className="flex flex-col space-y-4">
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <UserPlus className="mr-2 h-4 w-4 animate-spin" />
-                    {t('auth.registering')}
+                    {t("auth.registering")}
                   </>
                 ) : (
-                  t('auth.register')
+                  t("auth.register")
                 )}
               </Button>
-              
+
               <p className="text-center text-sm text-gray-600">
-                {t('auth.alreadyHaveAccount')}{' '}
+                {t("auth.alreadyHaveAccount")}{" "}
                 <Link to="/login" className="text-blue-600 hover:text-blue-500">
-                  {t('auth.signIn')}
+                  {t("auth.signIn")}
                 </Link>
               </p>
             </CardFooter>

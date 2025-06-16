@@ -1,24 +1,23 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
-import PerformanceMonitor from './PerformanceMonitor';
-import LazyLoadingWrapper from './LazyLoadingWrapper';
-import VirtualTable from './VirtualTable';
-import { Monitor, Zap, Database, Loader2 } from 'lucide-react';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/contexts/TranslationContext";
+import PerformanceMonitor from "./PerformanceMonitor";
+import LazyLoadingWrapper from "./LazyLoadingWrapper";
+import VirtualTable from "./VirtualTable";
+import { Monitor, Zap, Database, Loader2 } from "lucide-react";
 
 const PerformanceDashboard: React.FC = () => {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState('monitor');
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState("monitor");
 
   // Sample data for virtual table demo
   const sampleData = Array.from({ length: 10000 }, (_, i) => ({
     id: i + 1,
     name: `Item ${i + 1}`,
-    status: i % 3 === 0 ? 'active' : i % 3 === 1 ? 'pending' : 'inactive',
-    value: Math.floor(Math.random() * 1000)
+    status: i % 3 === 0 ? "active" : i % 3 === 1 ? "pending" : "inactive",
+    value: Math.floor(Math.random() * 1000),
   }));
 
   return (
@@ -26,7 +25,9 @@ const PerformanceDashboard: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Performans Optimallaşdırması</h1>
-          <p className="text-muted-foreground">Sistem performansını izləyin və optimallaşdırın</p>
+          <p className="text-muted-foreground">
+            Sistem performansını izləyin və optimallaşdırın
+          </p>
         </div>
       </div>
 
@@ -70,11 +71,12 @@ const PerformanceDashboard: React.FC = () => {
                     Bundle-ları Analiz Et
                   </Button>
                 </div>
-                
+
                 <div className="space-y-2">
                   <h4 className="font-medium">Code Splitting</h4>
                   <p className="text-sm text-muted-foreground">
-                    Kodları kiçik hissələrə bölərək yükləmə performansını artırın
+                    Kodları kiçik hissələrə bölərək yükləmə performansını
+                    artırın
                   </p>
                   <Button variant="outline" size="sm">
                     Code Splitting Optimallaşdır
@@ -97,7 +99,7 @@ const PerformanceDashboard: React.FC = () => {
                     Yaddaş Sızıntılarını Tap
                   </Button>
                 </div>
-                
+
                 <div className="space-y-2">
                   <h4 className="font-medium">Garbage Collection</h4>
                   <p className="text-sm text-muted-foreground">
@@ -122,7 +124,7 @@ const PerformanceDashboard: React.FC = () => {
                 <p className="text-sm text-muted-foreground">
                   {sampleData.length} məlumat ilə virtual scrolling nümayişi
                 </p>
-                
+
                 <VirtualTable
                   items={sampleData}
                   itemHeight={50}
@@ -134,14 +136,20 @@ const PerformanceDashboard: React.FC = () => {
                         <span>{item.name}</span>
                       </div>
                       <div className="flex items-center space-x-3">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          item.status === 'active' ? 'bg-green-100 text-green-800' :
-                          item.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${
+                            item.status === "active"
+                              ? "bg-green-100 text-green-800"
+                              : item.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
                           {item.status}
                         </span>
-                        <span className="text-sm text-muted-foreground">{item.value}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {item.value}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -161,7 +169,7 @@ const PerformanceDashboard: React.FC = () => {
                 <p className="text-sm text-muted-foreground">
                   Komponentlərin tənbəl yüklənmə nümayişi
                 </p>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Array.from({ length: 9 }).map((_, index) => (
                     <LazyLoadingWrapper key={index} height="200px">

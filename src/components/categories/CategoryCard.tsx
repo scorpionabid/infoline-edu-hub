@@ -1,13 +1,18 @@
-
-import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Category } from '@/types/category';
-import { useLanguage } from '@/context/LanguageContext';
-import { CalendarIcon, PenIcon, Trash2Icon, EyeIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { Progress } from '@/components/ui/progress';
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Category } from "@/types/category";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { CalendarIcon, PenIcon, Trash2Icon, EyeIcon } from "lucide-react";
+import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
 
 interface CategoryCardProps {
   category: Category;
@@ -20,38 +25,39 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   category,
   onEdit,
   onDelete,
-  onView
+  onView,
 }) => {
-  const { t } = useLanguage();
-  
+  const { t } = useTranslation();
+
   const getBadgeVariant = (status: string) => {
     switch (status) {
-      case 'active':
-        return 'default';
-      case 'draft':
-        return 'secondary';
-      case 'inactive':
-        return 'outline';
-      case 'archived':
-        return 'destructive';
+      case "active":
+        return "default";
+      case "draft":
+        return "secondary";
+      case "inactive":
+        return "outline";
+      case "archived":
+        return "destructive";
       default:
-        return 'default';
+        return "default";
     }
   };
-  
+
   const formatDeadline = (deadline: string | Date | undefined | null) => {
-    if (!deadline) return t('noDeadline');
-    
+    if (!deadline) return t("noDeadline");
+
     try {
-      const date = typeof deadline === 'string' ? new Date(deadline) : deadline;
-      return format(date, 'PPP');
+      const date = typeof deadline === "string" ? new Date(deadline) : deadline;
+      return format(date, "PPP");
     } catch (error) {
-      return t('invalidDate');
+      return t("invalidDate");
     }
   };
-  
+
   // Safe access to completionRate with default value
-  const completionRate = category.completionRate !== undefined ? category.completionRate : 0;
+  const completionRate =
+    category.completionRate !== undefined ? category.completionRate : 0;
 
   return (
     <Card className="overflow-hidden">
@@ -69,15 +75,17 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
             {category.description}
           </p>
         )}
-        
+
         <div className="flex items-center gap-1 text-muted-foreground text-xs mb-4">
           <CalendarIcon className="h-3 w-3" />
-          <span>{t('deadline')}: {formatDeadline(category.deadline)}</span>
+          <span>
+            {t("deadline")}: {formatDeadline(category.deadline)}
+          </span>
         </div>
-        
+
         <div className="space-y-1">
           <div className="flex justify-between text-xs">
-            <span>{t('completion')}</span>
+            <span>{t("completion")}</span>
             <span>{completionRate}%</span>
           </div>
           <Progress value={completionRate} />
@@ -91,9 +99,9 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
             onClick={() => onView && onView(category.id)}
           >
             <EyeIcon className="h-4 w-4 mr-1" />
-            {t('view')}
+            {t("view")}
           </Button>
-          
+
           <div className="flex gap-2">
             <Button
               variant="ghost"
@@ -101,7 +109,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
               onClick={() => onEdit && onEdit(category)}
             >
               <PenIcon className="h-4 w-4" />
-              <span className="sr-only">{t('edit')}</span>
+              <span className="sr-only">{t("edit")}</span>
             </Button>
             <Button
               variant="ghost"
@@ -110,7 +118,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
               className="text-destructive hover:text-destructive"
             >
               <Trash2Icon className="h-4 w-4" />
-              <span className="sr-only">{t('delete')}</span>
+              <span className="sr-only">{t("delete")}</span>
             </Button>
           </div>
         </div>

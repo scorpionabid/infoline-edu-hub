@@ -1,26 +1,31 @@
-
-import React from 'react';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { useDataEntryManager } from '@/hooks/dataEntry/useDataEntryManager';
-import { DataEntryForm } from '@/components/dataEntry/DataEntryForm';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Save, Send, RefreshCw, AlertCircle } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import React from "react";
+import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
+import { useDataEntryManager } from "@/hooks/dataEntry/useDataEntryManager";
+import { DataEntryForm } from "@/components/dataEntry/DataEntryForm";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Save, Send, RefreshCw, AlertCircle } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 /**
  * Məktəb Admin Məlumat Daxil Etmə Komponenti
- * 
+ *
  * Bu komponent məktəb adminləri üçün məxsus məlumat daxil etmə interfeysidir.
  * Yalnız assignment="all" olan kateqoriyaları göstərir.
  * Real-time auto-save və form state management dəstəkləyir.
  */
 const SchoolAdminDataEntry: React.FC = () => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const user = useAuthStore(selectUser);
-  
+
   // Get school ID from user data
   const schoolId = user?.school_id || user?.schoolId;
 
@@ -43,15 +48,14 @@ const SchoolAdminDataEntry: React.FC = () => {
     handleSubmit,
     handleSave,
     resetForm,
-    loadData
+    loadData,
   } = useDataEntryManager({
     // Obyekt şəklində parametrləri ötürürük
     schoolId: schoolId as string, // Məktəb ID-sini ötürürük
-    userId: user?.id,             // İstifadəçi ID-sini ötürürük
-    autoSave: true,               // Avtomatik yadda saxlama aktivləşdiririk
-    enableRealTime: true          // Real-time yeniləməni aktivləşdiririk
+    userId: user?.id, // İstifadəçi ID-sini ötürürük
+    autoSave: true, // Avtomatik yadda saxlama aktivləşdiririk
+    enableRealTime: true, // Real-time yeniləməni aktivləşdiririk
   });
-
 
   // Loading state
   if (loading || isLoading) {
@@ -59,7 +63,7 @@ const SchoolAdminDataEntry: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p>{t('loadingData') || 'Məlumatlar yüklənir...'}</p>
+          <p>{t("loadingData") || "Məlumatlar yüklənir..."}</p>
         </div>
       </div>
     );
@@ -72,9 +76,9 @@ const SchoolAdminDataEntry: React.FC = () => {
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           {error}
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={refetch}
             className="ml-2"
           >
@@ -92,7 +96,8 @@ const SchoolAdminDataEntry: React.FC = () => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Sizə hələ məktəb təyin edilməyib. Zəhmət olmasa, sistem administratoru ilə əlaqə saxlayın.
+          Sizə hələ məktəb təyin edilməyib. Zəhmət olmasa, sistem administratoru
+          ilə əlaqə saxlayın.
         </AlertDescription>
       </Alert>
     );
@@ -120,29 +125,42 @@ const SchoolAdminDataEntry: React.FC = () => {
             Məktəbiniz üçün lazımi məlumatları daxil edin
           </p>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           {/* Status badge */}
-          <Badge 
-            variant={entryStatus === 'approved' ? 'default' : 
-                   entryStatus === 'pending' ? 'secondary' : 
-                   entryStatus === 'rejected' ? 'destructive' : 'outline'}
+          <Badge
+            variant={
+              entryStatus === "approved"
+                ? "default"
+                : entryStatus === "pending"
+                  ? "secondary"
+                  : entryStatus === "rejected"
+                    ? "destructive"
+                    : "outline"
+            }
           >
-            {entryStatus === 'approved' ? 'Təsdiqləndi' :
-             entryStatus === 'pending' ? 'Gözləyir' :
-             entryStatus === 'rejected' ? 'Rədd edildi' : 'Qaralama'}
+            {entryStatus === "approved"
+              ? "Təsdiqləndi"
+              : entryStatus === "pending"
+                ? "Gözləyir"
+                : entryStatus === "rejected"
+                  ? "Rədd edildi"
+                  : "Qaralama"}
           </Badge>
-          
+
           {/* Last saved indicator */}
           {lastSaved && (
             <span className="text-sm text-muted-foreground">
               Son yenilənmə: {lastSaved.toLocaleTimeString()}
             </span>
           )}
-          
+
           {/* Modified indicator */}
           {isDataModified && (
-            <Badge variant="outline" className="text-amber-600 border-amber-600">
+            <Badge
+              variant="outline"
+              className="text-amber-600 border-amber-600"
+            >
               Dəyişikliklər var
             </Badge>
           )}
@@ -153,7 +171,7 @@ const SchoolAdminDataEntry: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Button
-            onClick={() => handleSave('draft')}
+            onClick={() => handleSave("draft")}
             disabled={isSaving || !isDataModified}
             variant="outline"
           >
@@ -164,7 +182,7 @@ const SchoolAdminDataEntry: React.FC = () => {
             )}
             Yadda saxla
           </Button>
-          
+
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting || !Object.keys(formData).length}
@@ -177,12 +195,8 @@ const SchoolAdminDataEntry: React.FC = () => {
             Təsdiq üçün göndər
           </Button>
         </div>
-        
-        <Button
-          onClick={resetForm}
-          variant="ghost"
-          disabled={!isDataModified}
-        >
+
+        <Button onClick={resetForm} variant="ghost" disabled={!isDataModified}>
           Sıfırla
         </Button>
       </div>
@@ -194,9 +208,7 @@ const SchoolAdminDataEntry: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 {category.name}
-                <Badge variant="outline">
-                  {category.columns.length} sahə
-                </Badge>
+                <Badge variant="outline">{category.columns.length} sahə</Badge>
               </CardTitle>
               {category.description && (
                 <CardDescription>{category.description}</CardDescription>
@@ -209,7 +221,7 @@ const SchoolAdminDataEntry: React.FC = () => {
                 formData={formData}
                 onFormDataChange={handleFormDataChange}
                 onFieldChange={handleFieldChange}
-                readOnly={entryStatus === 'approved'}
+                readOnly={entryStatus === "approved"}
                 isLoading={isLoading}
               />
             </CardContent>

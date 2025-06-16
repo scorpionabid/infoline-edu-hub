@@ -1,20 +1,19 @@
-
-import React from 'react';
+import React from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { useLanguage } from '@/context/LanguageContext';
-import SchoolForm from './SchoolForm';
-import { School, Region, Sector } from '@/types/school';
+} from "@/components/ui/dialog";
+import { useTranslation } from "@/contexts/TranslationContext";
+import SchoolForm from "./SchoolForm";
+import { School, Region, Sector } from "@/types/school";
 
 export interface AddSchoolDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<School, 'id'>) => Promise<void>;
+  onSubmit: (data: Omit<School, "id">) => Promise<void>;
   isSubmitting: boolean;
   regions: Region[];
   sectors: Sector[];
@@ -32,16 +31,14 @@ const AddSchoolDialog: React.FC<AddSchoolDialogProps> = ({
   regionNames,
   sectorNames,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t('addSchool')}</DialogTitle>
-          <DialogDescription>
-            {t('addSchoolDescription')}
-          </DialogDescription>
+          <DialogTitle>{t("addSchool")}</DialogTitle>
+          <DialogDescription>{t("addSchoolDescription")}</DialogDescription>
         </DialogHeader>
         <SchoolForm
           onSubmit={onSubmit}

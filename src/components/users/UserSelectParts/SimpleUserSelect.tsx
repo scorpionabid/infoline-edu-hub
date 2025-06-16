@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Check, Search, Loader2, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useLanguage } from '@/context/LanguageContext';
-import { SimpleUser } from './useUserSelectData';
+import React, { useState, useEffect } from "react";
+import { Check, Search, Loader2, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { SimpleUser } from "./useUserSelectData";
 
 interface SimpleUserSelectProps {
   users: SimpleUser[];
@@ -23,47 +23,49 @@ export const SimpleUserSelect: React.FC<SimpleUserSelectProps> = ({
   searchTerm,
   onSearchChange,
   onSelect,
-  onRetry
+  onRetry,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [filteredUsers, setFilteredUsers] = useState<SimpleUser[]>([]);
-  
+
   // Təhlükəsiz istifadə üçün users massivini əlavə yoxlama
   const safeUsers = users && Array.isArray(users) ? users : [];
-  
+
   // Axtarış termini dəyişdikdə istifadəçiləri filtrlə
   useEffect(() => {
     if (!safeUsers || !Array.isArray(safeUsers)) {
       setFilteredUsers([]);
       return;
     }
-    
+
     if (!searchTerm) {
       setFilteredUsers(safeUsers);
       return;
     }
-    
+
     const lowercaseSearchTerm = searchTerm.toLowerCase();
-    const filtered = safeUsers.filter(user => {
+    const filtered = safeUsers.filter((user) => {
       if (!user) return false;
-      
-      const fullName = user.full_name || '';
-      const email = user.email || '';
-      
-      return fullName.toLowerCase().includes(lowercaseSearchTerm) || 
-             email.toLowerCase().includes(lowercaseSearchTerm);
+
+      const fullName = user.full_name || "";
+      const email = user.email || "";
+
+      return (
+        fullName.toLowerCase().includes(lowercaseSearchTerm) ||
+        email.toLowerCase().includes(lowercaseSearchTerm)
+      );
     });
-    
+
     setFilteredUsers(filtered);
   }, [safeUsers, searchTerm]);
-  
+
   // Xəta komponenti
   const ErrorComponent = () => (
     <div className="p-4 text-center">
       <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-2" />
       <p className="text-sm text-muted-foreground mb-2">{error}</p>
       {onRetry && (
-        <button 
+        <button
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
           onClick={onRetry}
         >
@@ -72,16 +74,16 @@ export const SimpleUserSelect: React.FC<SimpleUserSelectProps> = ({
       )}
     </div>
   );
-  
+
   // Boş komponenti
   const EmptyComponent = () => (
     <div className="p-4 text-center">
       <p className="text-sm text-muted-foreground">
-        {t('noUsersFound') || 'İstifadəçi tapılmadı'}
+        {t("noUsersFound") || "İstifadəçi tapılmadı"}
       </p>
     </div>
   );
-  
+
   return (
     <div className="w-full rounded-md border border-input bg-background">
       {/* Axtarış sahəsi */}
@@ -90,12 +92,12 @@ export const SimpleUserSelect: React.FC<SimpleUserSelectProps> = ({
         <input
           type="text"
           className="flex-1 bg-transparent outline-none"
-          placeholder={t('searchUser') || "İstifadəçi axtar..."}
+          placeholder={t("searchUser") || "İstifadəçi axtar..."}
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />
       </div>
-      
+
       {/* Məzmun */}
       <div className="max-h-[300px] overflow-auto">
         {error ? (
@@ -111,25 +113,27 @@ export const SimpleUserSelect: React.FC<SimpleUserSelectProps> = ({
             {filteredUsers.map((user) => {
               // Undefined və ya id-si olmayan istifadəçiləri keç
               if (!user || !user.id) return null;
-              
+
               return (
                 <button
                   key={user.id}
                   className={cn(
                     "flex items-center w-full px-3 py-2 text-left hover:bg-accent",
-                    value === user.id && "bg-accent"
+                    value === user.id && "bg-accent",
                   )}
                   onClick={() => onSelect(user.id)}
                 >
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === user.id ? "opacity-100" : "opacity-0"
+                      value === user.id ? "opacity-100" : "opacity-0",
                     )}
                   />
                   <div className="flex flex-col">
-                    <span>{user.full_name || 'İsimsiz İstifadəçi'}</span>
-                    <span className="text-xs text-muted-foreground">{user.email || ''}</span>
+                    <span>{user.full_name || "İsimsiz İstifadəçi"}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {user.email || ""}
+                    </span>
                   </div>
                 </button>
               );

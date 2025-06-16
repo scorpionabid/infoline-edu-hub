@@ -1,13 +1,18 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useLanguage } from '@/context/LanguageContext';
-import { Region } from '@/types/supabase';
-import { EnhancedSector } from '@/types/sector';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Region } from "@/types/supabase";
+import { EnhancedSector } from "@/types/sector";
 
 export interface SectorFormProps {
   initialData?: Partial<EnhancedSector>;
@@ -22,15 +27,15 @@ const SectorForm: React.FC<SectorFormProps> = ({
   regions = [],
   onSubmit,
   onCancel,
-  isSubmitting = false
+  isSubmitting = false,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<Partial<EnhancedSector>>({
-    name: initialData?.name || '',
-    description: initialData?.description || '',
-    region_id: initialData?.region_id || '',
-    status: initialData?.status || 'active',
-    ...initialData
+    name: initialData?.name || "",
+    description: initialData?.description || "",
+    region_id: initialData?.region_id || "",
+    status: initialData?.status || "active",
+    ...initialData,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,56 +43,56 @@ const SectorForm: React.FC<SectorFormProps> = ({
     if (!formData.name?.trim() || !formData.region_id) {
       return;
     }
-    
+
     try {
       await onSubmit(formData);
     } catch (error) {
-      console.error('Error submitting sector form:', error);
+      console.error("Error submitting sector form:", error);
     }
   };
 
   const handleInputChange = (field: keyof EnhancedSector, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">{t('common.name')}</Label>
+        <Label htmlFor="name">{t("common.name")}</Label>
         <Input
           id="name"
-          value={formData.name || ''}
-          onChange={(e) => handleInputChange('name', e.target.value)}
-          placeholder={t('sectors.enterSectorName')}
+          value={formData.name || ""}
+          onChange={(e) => handleInputChange("name", e.target.value)}
+          placeholder={t("sectors.enterSectorName")}
           required
           disabled={isSubmitting}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">{t('common.description')}</Label>
+        <Label htmlFor="description">{t("common.description")}</Label>
         <Textarea
           id="description"
-          value={formData.description || ''}
-          onChange={(e) => handleInputChange('description', e.target.value)}
-          placeholder={t('sectors.enterSectorDescription')}
+          value={formData.description || ""}
+          onChange={(e) => handleInputChange("description", e.target.value)}
+          placeholder={t("sectors.enterSectorDescription")}
           disabled={isSubmitting}
           rows={3}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="region">{t('sectors.region')}</Label>
+        <Label htmlFor="region">{t("sectors.region")}</Label>
         <Select
-          value={formData.region_id || ''}
-          onValueChange={(value) => handleInputChange('region_id', value)}
+          value={formData.region_id || ""}
+          onValueChange={(value) => handleInputChange("region_id", value)}
           disabled={isSubmitting}
         >
           <SelectTrigger>
-            <SelectValue placeholder={t('sectors.selectRegion')} />
+            <SelectValue placeholder={t("sectors.selectRegion")} />
           </SelectTrigger>
           <SelectContent>
             {regions.map((region) => (
@@ -100,18 +105,18 @@ const SectorForm: React.FC<SectorFormProps> = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="status">{t('common.status')}</Label>
+        <Label htmlFor="status">{t("common.status")}</Label>
         <Select
-          value={formData.status || 'active'}
-          onValueChange={(value) => handleInputChange('status', value)}
+          value={formData.status || "active"}
+          onValueChange={(value) => handleInputChange("status", value)}
           disabled={isSubmitting}
         >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="active">{t('common.active')}</SelectItem>
-            <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
+            <SelectItem value="active">{t("common.active")}</SelectItem>
+            <SelectItem value="inactive">{t("common.inactive")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -124,14 +129,16 @@ const SectorForm: React.FC<SectorFormProps> = ({
             onClick={onCancel}
             disabled={isSubmitting}
           >
-            {t('common.cancel')}
+            {t("common.cancel")}
           </Button>
         )}
         <Button
           type="submit"
-          disabled={!formData.name?.trim() || !formData.region_id || isSubmitting}
+          disabled={
+            !formData.name?.trim() || !formData.region_id || isSubmitting
+          }
         >
-          {isSubmitting ? t('sectors.saving') : t('common.save')}
+          {isSubmitting ? t("sectors.saving") : t("common.save")}
         </Button>
       </div>
     </form>

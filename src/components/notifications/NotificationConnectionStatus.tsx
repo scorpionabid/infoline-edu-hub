@@ -1,15 +1,14 @@
-
-import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import React from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { WifiOff, RefreshCw, AlertTriangle } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface ConnectionHealth {
-  status: 'connected' | 'disconnected' | 'reconnecting';
+  status: "connected" | "disconnected" | "reconnecting";
   lastConnected?: Date;
   reconnectCount: number;
-  health: 'excellent' | 'good' | 'poor' | 'offline';
+  health: "excellent" | "good" | "poor" | "offline";
 }
 
 interface NotificationConnectionStatusProps {
@@ -19,39 +18,36 @@ interface NotificationConnectionStatusProps {
   className?: string;
 }
 
-export const NotificationConnectionStatus: React.FC<NotificationConnectionStatusProps> = ({
-  status,
-  health,
-  onReconnect,
-  className = ''
-}) => {
-  const { t } = useLanguage();
+export const NotificationConnectionStatus: React.FC<
+  NotificationConnectionStatusProps
+> = ({ status, health, onReconnect, className = "" }) => {
+  const { t } = useTranslation();
 
   const getStatusBadge = () => {
     switch (health.health) {
-      case 'excellent':
-      case 'good':
+      case "excellent":
+      case "good":
         return null; // Don't show badge for good connections
-      case 'poor':
+      case "poor":
         return (
           <Badge variant="destructive">
             <AlertTriangle className="h-3 w-3 mr-1" />
-            {t('unstable')}
+            {t("unstable")}
           </Badge>
         );
-      case 'offline':
+      case "offline":
       default:
         return (
           <Badge variant="destructive">
             <WifiOff className="h-3 w-3 mr-1" />
-            {t('disconnected')}
+            {t("disconnected")}
           </Badge>
         );
     }
   };
 
   // Only show if connection is poor or offline
-  if (health.health === 'excellent' || health.health === 'good') {
+  if (health.health === "excellent" || health.health === "good") {
     return null;
   }
 
@@ -62,7 +58,7 @@ export const NotificationConnectionStatus: React.FC<NotificationConnectionStatus
           {getStatusBadge()}
           {health.reconnectCount > 0 && (
             <span className="text-xs text-muted-foreground">
-              {t('reconnectAttempts')}: {health.reconnectCount}
+              {t("reconnectAttempts")}: {health.reconnectCount}
             </span>
           )}
         </div>
@@ -74,7 +70,7 @@ export const NotificationConnectionStatus: React.FC<NotificationConnectionStatus
           className="h-6 px-2 text-xs"
         >
           <RefreshCw className="h-3 w-3 mr-1" />
-          {t('reconnect')}
+          {t("reconnect")}
         </Button>
       </div>
     </div>

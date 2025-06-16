@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
@@ -7,6 +6,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import NavigationMenu from './NavigationMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useMobile } from '@/hooks/common/useMobile';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface HeaderProps {
   onSidebarToggle?: () => void;
@@ -15,6 +15,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
   const isMobile = useMobile();
+  const { t } = useTranslation();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur w-full">
@@ -34,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
                 <Menu className="h-5 w-5" />
               )}
               <span className="sr-only">
-                {isSidebarOpen ? 'Menyunu bağla' : 'Menyunu aç'}
+                {isSidebarOpen ? t('navigation.close_menu') : t('navigation.open_menu')}
               </span>
             </Button>
           )}
@@ -50,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
           {isMobile && (
             <div className="flex items-center">
               <span className="font-semibold text-sm sm:text-base text-primary">
-                InfoLine
+                {t('app.name') || 'InfoLine'}
               </span>
             </div>
           )}

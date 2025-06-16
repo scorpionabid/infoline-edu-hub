@@ -1,63 +1,75 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, Plus, Filter } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import ReportCard from './ReportCard';
-import ReportEmptyState from './reportList/ReportEmptyState';
-import ReportLoading from './reportList/ReportLoading';
-import ExportButtons from './ExportButtons';
-import { useAdvancedReports } from '@/hooks/reports/useAdvancedReports';
-import CreateReportDialog from './CreateReportDialog';
-import { Report } from '@/types/core/report';
-import { AdvancedReportData } from '@/types/advanced-report';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, Plus, Filter } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import ReportCard from "./ReportCard";
+import ReportEmptyState from "./reportList/ReportEmptyState";
+import ReportLoading from "./reportList/ReportLoading";
+import ExportButtons from "./ExportButtons";
+import { useAdvancedReports } from "@/hooks/reports/useAdvancedReports";
+import CreateReportDialog from "./CreateReportDialog";
+import { Report } from "@/types/core/report";
+import { AdvancedReportData } from "@/types/advanced-report";
 
 export const ReportList: React.FC = () => {
-  const { t } = useLanguage();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { t } = useTranslation();
+  const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  
+
   // Real data hook kullanaq
-  const { reports: advancedReports, loading: isLoading, error } = useAdvancedReports();
+  const {
+    reports: advancedReports,
+    loading: isLoading,
+    error,
+  } = useAdvancedReports();
 
   // Convert AdvancedReportData to Report format for compatibility
-  const reports: Report[] = advancedReports.map((advReport): Report => ({
-    id: advReport.id,
-    title: advReport.title,
-    description: advReport.description,
-    type: convertAdvancedTypeToReportType(advReport.type),
-    status: 'published', // Default status for generated reports
-    created_at: advReport.generatedAt,
-    updated_at: advReport.generatedAt,
-    created_by: advReport.generatedBy,
-    content: {
-      data: advReport.data,
-      filters: advReport.filters,
-      metadata: advReport.metadata
-    },
-    insights: advReport.insights,
-    recommendations: advReport.recommendations
-  }));
+  const reports: Report[] = advancedReports.map(
+    (advReport): Report => ({
+      id: advReport.id,
+      title: advReport.title,
+      description: advReport.description,
+      type: convertAdvancedTypeToReportType(advReport.type),
+      status: "published", // Default status for generated reports
+      created_at: advReport.generatedAt,
+      updated_at: advReport.generatedAt,
+      created_by: advReport.generatedBy,
+      content: {
+        data: advReport.data,
+        filters: advReport.filters,
+        metadata: advReport.metadata,
+      },
+      insights: advReport.insights,
+      recommendations: advReport.recommendations,
+    }),
+  );
 
-  const filteredReports = reports.filter(report =>
-    report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredReports = reports.filter(
+    (report) =>
+      report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      report.description?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Helper function to convert advanced report type to legacy report type
   function convertAdvancedTypeToReportType(advType: string): any {
     switch (advType) {
-      case 'performance': return 'metrics';
-      case 'completion': return 'bar';
-      case 'comparison': return 'pie';
-      case 'trend': return 'line';
-      default: return 'table';
+      case "performance":
+        return "metrics";
+      case "completion":
+        return "bar";
+      case "comparison":
+        return "pie";
+      case "trend":
+        return "line";
+      default:
+        return "table";
     }
   }
 
   const handleViewReport = (reportId: string) => {
-    console.log('Viewing report:', reportId);
+    console.log("Viewing report:", reportId);
     // Burada report görüntüleme logic-i əlavə olunacaq
   };
 
@@ -69,7 +81,7 @@ export const ReportList: React.FC = () => {
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          <p className="text-destructive">{t('errorLoadingReports')}</p>
+          <p className="text-destructive">{t("errorLoadingReports")}</p>
         </CardContent>
       </Card>
     );
@@ -81,12 +93,12 @@ export const ReportList: React.FC = () => {
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <CardTitle>{t('allReports')}</CardTitle>
+            <CardTitle>{t("allReports")}</CardTitle>
             <div className="flex gap-2 w-full sm:w-auto">
               <div className="relative flex-1 sm:w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder={t('searchReports')}
+                  placeholder={t("searchReports")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -98,12 +110,9 @@ export const ReportList: React.FC = () => {
                 onClick={() => setIsCreateDialogOpen(true)}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                {t('createReport')}
+                {t("createReport")}
               </Button>
-              <ExportButtons 
-                reportType="school-performance"
-                className=""
-              />
+              <ExportButtons reportType="school-performance" className="" />
             </div>
           </div>
         </CardHeader>

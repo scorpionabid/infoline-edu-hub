@@ -1,25 +1,26 @@
-
-import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { DashboardFormStats } from '@/types/dashboard';
-import StatsGrid from '../StatsGrid';
-import DashboardChart from '../DashboardChart';
-import SchoolsTable from './SchoolsTable';
+import React from "react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { DashboardFormStats } from "@/types/dashboard";
+import StatsGrid from "../StatsGrid";
+import DashboardChart from "../DashboardChart";
+import SchoolsTable from "./SchoolsTable";
 
 interface SectorAdminDashboardProps {
   dashboardData?: any;
 }
 
-const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ dashboardData }) => {
-  const { t } = useLanguage();
+const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
+  dashboardData,
+}) => {
+  const { t } = useTranslation();
 
   if (!dashboardData) {
     return (
-      <div className="p-8 text-center">{t('loading') || 'Yüklənir...'}</div>
+      <div className="p-8 text-center">{t("loading") || "Yüklənir..."}</div>
     );
   }
 
-  console.log('[SectorAdminDashboard] Dashboard data:', dashboardData);
+  console.log("[SectorAdminDashboard] Dashboard data:", dashboardData);
 
   // Real Backend Data
   const formStats: DashboardFormStats = {
@@ -34,36 +35,43 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ dashboardDa
     draft: dashboardData.formStats?.draft || 0,
     dueSoon: dashboardData.formStats?.dueSoon || 0,
     overdue: dashboardData.formStats?.overdue || 0,
-    percentage: dashboardData.formStats?.percentage || dashboardData.completionRate || 0,
-    completion_rate: dashboardData.formStats?.completion_rate || dashboardData.completionRate || 0,
-    completionRate: dashboardData.formStats?.completionRate || dashboardData.completionRate || 0,
+    percentage:
+      dashboardData.formStats?.percentage || dashboardData.completionRate || 0,
+    completion_rate:
+      dashboardData.formStats?.completion_rate ||
+      dashboardData.completionRate ||
+      0,
+    completionRate:
+      dashboardData.formStats?.completionRate ||
+      dashboardData.completionRate ||
+      0,
   };
 
   const statsGridData = [
     {
-      title: t('totalApproved') || 'Təsdiqlənmiş',
+      title: t("totalApproved") || "Təsdiqlənmiş",
       value: formStats.approved || 0,
-      color: 'text-green-600',
-      description: t('approved') || 'Təsdiqləndi'
+      color: "text-green-600",
+      description: t("approved") || "Təsdiqləndi",
     },
     {
-      title: t('totalPending') || 'Gözləyən',
+      title: t("totalPending") || "Gözləyən",
       value: formStats.pending || 0,
-      color: 'text-yellow-600',
-      description: t('pending') || 'Gözləyir'
+      color: "text-yellow-600",
+      description: t("pending") || "Gözləyir",
     },
     {
-      title: t('totalRejected') || 'Rədd edilmiş',
+      title: t("totalRejected") || "Rədd edilmiş",
       value: formStats.rejected || 0,
-      color: 'text-red-600',
-      description: t('rejected') || 'Rədd edildi'
+      color: "text-red-600",
+      description: t("rejected") || "Rədd edildi",
     },
     {
-      title: t('completion') || 'Tamamlanma',
+      title: t("completion") || "Tamamlanma",
       value: `${Math.round(formStats.percentage || 0)}%`,
-      color: 'text-blue-600',
-      description: t('completionRate') || 'Tamamlanma dərəcəsi'
-    }
+      color: "text-blue-600",
+      description: t("completionRate") || "Tamamlanma dərəcəsi",
+    },
   ];
 
   // Real schools data

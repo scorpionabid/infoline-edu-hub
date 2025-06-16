@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { ChevronDown, LayoutDashboard, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import {
 import { toast } from 'sonner';
 
 const DashboardHeader: React.FC = () => {
-  const { t } = useLanguageSafe();
+  const { t } = useTranslation();
   const user = useAuthStore(selectUser);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   
@@ -23,16 +23,16 @@ const DashboardHeader: React.FC = () => {
     // Yeniləmə prosesini simulyasiya edirik
     setTimeout(() => {
       setIsRefreshing(false);
-      toast.success(t('dashboardRefreshed'), {
-        description: t('dashboardRefreshedDesc')
+      toast.success(t('dashboard.refresh.success'), {
+        description: t('dashboard.refresh.description')
       });
     }, 1000);
   };
   
   // Dövr vaxtını dəyişmək
   const handlePeriodChange = (period: string) => {
-    toast.info(t('periodChanged'), {
-      description: `${t('periodChangedTo')} ${period}`
+    toast.info(t('dashboard.time_period.changed'), {
+      description: `${t('dashboard.time_period.changed_to')} ${period}`
     });
   };
   
@@ -41,7 +41,7 @@ const DashboardHeader: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <LayoutDashboard className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-semibold">{t('dashboard')}</h1>
+          <h1 className="text-2xl font-semibold">{t('dashboard.title')}</h1>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -52,31 +52,31 @@ const DashboardHeader: React.FC = () => {
             disabled={isRefreshing}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? t('refreshing') : t('refresh')}
+            {isRefreshing ? t('dashboard.refresh.refreshing') : t('dashboard.refresh.refresh_data')}
           </Button>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                {t('thisMonth')}
+                {t('dashboard.time_period.this_month')}
                 <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handlePeriodChange(t('today'))}>
-                {t('today')}
+              <DropdownMenuItem onClick={() => handlePeriodChange(t('dashboard.time_period.today'))}>
+                {t('dashboard.time_period.today')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handlePeriodChange(t('thisWeek'))}>
-                {t('thisWeek')}
+              <DropdownMenuItem onClick={() => handlePeriodChange(t('dashboard.time_period.this_week'))}>
+                {t('dashboard.time_period.this_week')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handlePeriodChange(t('thisMonth'))}>
-                {t('thisMonth')}
+              <DropdownMenuItem onClick={() => handlePeriodChange(t('dashboard.time_period.this_month'))}>
+                {t('dashboard.time_period.this_month')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handlePeriodChange(t('thisQuarter'))}>
-                {t('thisQuarter')}
+              <DropdownMenuItem onClick={() => handlePeriodChange(t('dashboard.time_period.this_quarter'))}>
+                {t('dashboard.time_period.this_quarter')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handlePeriodChange(t('thisYear'))}>
-                {t('thisYear')}
+              <DropdownMenuItem onClick={() => handlePeriodChange(t('dashboard.time_period.this_year'))}>
+                {t('dashboard.time_period.this_year')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -88,7 +88,7 @@ const DashboardHeader: React.FC = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder={t('searchDashboard')} 
+              placeholder={t('dashboard.filters.search_dashboard')} 
               className="pl-10"
             />
           </div>
@@ -96,16 +96,28 @@ const DashboardHeader: React.FC = () => {
         
         <div className="text-sm text-muted-foreground">
           {user?.role === 'superadmin' && (
-            <p>{t('totalSchools')}: <span className="font-medium">634</span> | {t('activeUsers')}: <span className="font-medium">912</span></p>
+            <p>
+              {t('dashboard.stats.total_schools')}: <span className="font-medium">634</span> | {' '}
+              {t('dashboard.stats.active_users')}: <span className="font-medium">912</span>
+            </p>
           )}
           {user?.role === 'regionadmin' && (
-            <p>{t('regionSchools')}: <span className="font-medium">126</span> | {t('activeUsers')}: <span className="font-medium">158</span></p>
+            <p>
+              {t('dashboard.stats.region_schools')}: <span className="font-medium">126</span> | {' '}
+              {t('dashboard.stats.active_users')}: <span className="font-medium">158</span>
+            </p>
           )}
           {user?.role === 'sectoradmin' && (
-            <p>{t('sectorSchools')}: <span className="font-medium">24</span> | {t('completionRate')}: <span className="font-medium">68%</span></p>
+            <p>
+              {t('dashboard.stats.sector_schools')}: <span className="font-medium">24</span> | {' '}
+              {t('dashboard.stats.completion_rate')}: <span className="font-medium">68%</span>
+            </p>
           )}
           {user?.role === 'schooladmin' && (
-            <p>{t('pendingForms')}: <span className="font-medium">3</span> | {t('completionRate')}: <span className="font-medium">85%</span></p>
+            <p>
+              {t('dashboard.stats.pending_forms')}: <span className="font-medium">3</span> | {' '}
+              {t('dashboard.stats.completion_rate')}: <span className="font-medium">85%</span>
+            </p>
           )}
         </div>
       </div>

@@ -1,9 +1,9 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Clock, User } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ExternalLink, Clock, User } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface Link {
   id: string;
@@ -28,36 +28,36 @@ export const LinkListForSchools: React.FC<LinkListForSchoolsProps> = ({
   schoolId,
   links = [],
   isLoading = false,
-  onLinkClick
+  onLinkClick,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const handleLinkClick = (link: Link) => {
     // Track link access
     onLinkClick?.(link);
-    
+
     // Open link in new tab
-    window.open(link.url, '_blank', 'noopener,noreferrer');
+    window.open(link.url, "_blank", "noopener,noreferrer");
   };
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      general: 'bg-gray-100 text-gray-800',
-      education: 'bg-blue-100 text-blue-800',
-      forms: 'bg-green-100 text-green-800',
-      reports: 'bg-purple-100 text-purple-800',
-      resources: 'bg-orange-100 text-orange-800'
+      general: "bg-gray-100 text-gray-800",
+      education: "bg-blue-100 text-blue-800",
+      forms: "bg-green-100 text-green-800",
+      reports: "bg-purple-100 text-purple-800",
+      resources: "bg-orange-100 text-orange-800",
     };
     return colors[category as keyof typeof colors] || colors.general;
   };
 
   const getCategoryLabel = (category: string) => {
     const labels = {
-      general: t('Ümumi'),
-      education: t('Təhsil'),
-      forms: t('Formlar'),
-      reports: t('Hesabatlar'),
-      resources: t('Resurslar')
+      general: t("Ümumi"),
+      education: t("Təhsil"),
+      forms: t("Formlar"),
+      reports: t("Hesabatlar"),
+      resources: t("Resurslar"),
     };
     return labels[category as keyof typeof labels] || category;
   };
@@ -66,7 +66,7 @@ export const LinkListForSchools: React.FC<LinkListForSchoolsProps> = ({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t('Paylaşılan Linklər')}</CardTitle>
+          <CardTitle>{t("Paylaşılan Linklər")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -86,14 +86,14 @@ export const LinkListForSchools: React.FC<LinkListForSchoolsProps> = ({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t('Paylaşılan Linklər')}</CardTitle>
+          <CardTitle>{t("Paylaşılan Linklər")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
             <ExternalLink className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>{t('Hələ heç bir link paylaşılmayıb')}</p>
+            <p>{t("Hələ heç bir link paylaşılmayıb")}</p>
             <p className="text-sm mt-2">
-              {t('Admin tərəfindən paylaşılan linklər burada görünəcək')}
+              {t("Admin tərəfindən paylaşılan linklər burada görünəcək")}
             </p>
           </div>
         </CardContent>
@@ -105,7 +105,7 @@ export const LinkListForSchools: React.FC<LinkListForSchoolsProps> = ({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          {t('Paylaşılan Linklər')}
+          {t("Paylaşılan Linklər")}
           <Badge variant="secondary">{links.length}</Badge>
         </CardTitle>
       </CardHeader>
@@ -124,16 +124,16 @@ export const LinkListForSchools: React.FC<LinkListForSchoolsProps> = ({
                       {getCategoryLabel(link.category)}
                     </Badge>
                     {!link.isActive && (
-                      <Badge variant="secondary">{t('Deaktiv')}</Badge>
+                      <Badge variant="secondary">{t("Deaktiv")}</Badge>
                     )}
                   </div>
-                  
+
                   {link.description && (
                     <p className="text-sm text-muted-foreground mb-3">
                       {link.description}
                     </p>
                   )}
-                  
+
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <User className="h-3 w-3" />
@@ -141,15 +141,15 @@ export const LinkListForSchools: React.FC<LinkListForSchoolsProps> = ({
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {new Date(link.createdAt).toLocaleDateString('az')}
+                      {new Date(link.createdAt).toLocaleDateString("az")}
                     </div>
                     <div className="flex items-center gap-1">
                       <ExternalLink className="h-3 w-3" />
-                      {link.accessCount} {t('dəfə açılıb')}
+                      {link.accessCount} {t("dəfə açılıb")}
                     </div>
                   </div>
                 </div>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -158,7 +158,7 @@ export const LinkListForSchools: React.FC<LinkListForSchoolsProps> = ({
                   className="ml-4"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  {t('Aç')}
+                  {t("Aç")}
                 </Button>
               </div>
             </div>

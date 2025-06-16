@@ -1,5 +1,12 @@
-import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useRole } from "@/context/auth/useRole";
 import { useLanguage } from "@/context/LanguageContext";
 import { Badge } from "@/components/ui/badge";
@@ -69,7 +76,7 @@ const DataTable: React.FC<DataTableProps> = ({
   actionColumn,
   deleteDialog,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -77,7 +84,7 @@ const DataTable: React.FC<DataTableProps> = ({
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center h-60 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-            <p className="text-muted-foreground">{t('dataTable.loading')}</p>
+            <p className="text-muted-foreground">{t("dataTable.loading")}</p>
           </div>
         </CardContent>
       </Card>
@@ -90,8 +97,12 @@ const DataTable: React.FC<DataTableProps> = ({
         <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center h-60 text-center">
             <div className="text-destructive text-4xl mb-4">!</div>
-            <h3 className="text-lg font-medium">{t("dataTable.errorLoading")}</h3>
-            <p className="text-muted-foreground mt-2">{t("dataTable.tryAgainLater")}</p>
+            <h3 className="text-lg font-medium">
+              {t("dataTable.errorLoading")}
+            </h3>
+            <p className="text-muted-foreground mt-2">
+              {t("dataTable.tryAgainLater")}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -107,10 +118,10 @@ const DataTable: React.FC<DataTableProps> = ({
               <div className="text-muted-foreground text-4xl mb-4">📋</div>
             )}
             <h3 className="text-lg font-medium">
-              {emptyState?.title || t('dataTable.noData')}
+              {emptyState?.title || t("dataTable.noData")}
             </h3>
             <p className="text-muted-foreground mt-2">
-              {emptyState?.description || t('dataTable.noDataDescription')}
+              {emptyState?.description || t("dataTable.noDataDescription")}
             </p>
           </div>
         </CardContent>
@@ -132,7 +143,7 @@ const DataTable: React.FC<DataTableProps> = ({
                 ))}
                 {actionColumn?.canManage && (
                   <TableHead className="text-right">
-                    {t('dataTable.actions')}
+                    {t("dataTable.actions")}
                   </TableHead>
                 )}
               </TableRow>
@@ -141,7 +152,10 @@ const DataTable: React.FC<DataTableProps> = ({
               {data.map((item, index) => (
                 <TableRow key={item.id}>
                   {columns.map((column) => (
-                    <TableCell key={`${item.id}-${column.key}`} className={column.className}>
+                    <TableCell
+                      key={`${item.id}-${column.key}`}
+                      className={column.className}
+                    >
                       {column.cell(item, index)}
                     </TableCell>
                   ))}
@@ -154,18 +168,22 @@ const DataTable: React.FC<DataTableProps> = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          {actionColumn.actions.map((action, idx) => (
+                          {actionColumn.actions.map((action, idx) =>
                             !action.isHidden || !action.isHidden(item) ? (
                               <DropdownMenuItem
                                 key={idx}
-                                className={action.variant === "destructive" ? "text-destructive" : ""}
+                                className={
+                                  action.variant === "destructive"
+                                    ? "text-destructive"
+                                    : ""
+                                }
                                 onClick={() => action.onClick(item)}
                               >
                                 {action.icon}
                                 {action.label}
                               </DropdownMenuItem>
-                            ) : null
-                          ))}
+                            ) : null,
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -178,8 +196,8 @@ const DataTable: React.FC<DataTableProps> = ({
       </Card>
 
       {deleteDialog && (
-        <AlertDialog 
-          open={!!deleteDialog.itemToDelete} 
+        <AlertDialog
+          open={!!deleteDialog.itemToDelete}
           onOpenChange={(open) => !open && deleteDialog.setItemToDelete(null)}
         >
           <AlertDialogContent>
@@ -190,7 +208,7 @@ const DataTable: React.FC<DataTableProps> = ({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>{t('dataTable.cancel')}</AlertDialogCancel>
+              <AlertDialogCancel>{t("dataTable.cancel")}</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 onClick={async () => {
@@ -200,7 +218,7 @@ const DataTable: React.FC<DataTableProps> = ({
                   }
                 }}
               >
-                {t('dataTable.delete')}
+                {t("dataTable.delete")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

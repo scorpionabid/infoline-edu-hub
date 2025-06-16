@@ -1,11 +1,24 @@
-
-import React from 'react';
-import { Map } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { Map } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { useNavigate } from "react-router-dom";
 
 interface RegionsTabProps {
   regionSchoolsData: Array<{
@@ -14,18 +27,20 @@ interface RegionsTabProps {
   }>;
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
 const RegionsTab: React.FC<RegionsTabProps> = ({ regionSchoolsData }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  
-  const navigateToRegions = () => navigate('/regions');
-  
+
+  const navigateToRegions = () => navigate("/regions");
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Bölgələr üzrə məktəb paylanması</CardTitle>
+        <CardTitle className="text-lg">
+          Bölgələr üzrə məktəb paylanması
+        </CardTitle>
         <CardDescription>Hər bölgə üzrə məktəb sayı</CardDescription>
       </CardHeader>
       <CardContent>
@@ -37,13 +52,18 @@ const RegionsTab: React.FC<RegionsTabProps> = ({ regionSchoolsData }) => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) =>
+                  `${name}: ${(percent * 100).toFixed(0)}%`
+                }
                 outerRadius={100}
                 fill="#8884d8"
                 dataKey="value"
               >
                 {regionSchoolsData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip />

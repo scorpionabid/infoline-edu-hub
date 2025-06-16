@@ -1,11 +1,25 @@
-
-import React from 'react';
-import { FileBarChart, Clock, Calendar } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { FileBarChart, Clock, Calendar } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { useNavigate } from "react-router-dom";
 
 interface ActivityTabProps {
   activityData: Array<{
@@ -15,15 +29,15 @@ interface ActivityTabProps {
 }
 
 const ActivityTab: React.FC<ActivityTabProps> = ({ activityData }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  
-  const navigateToReports = () => navigate('/reports');
-  
+
+  const navigateToReports = () => navigate("/reports");
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">{t('systemActivity')}</CardTitle>
+        <CardTitle className="text-lg">{t("systemActivity")}</CardTitle>
         <CardDescription>Sistem aktivliyi statistikası</CardDescription>
       </CardHeader>
       <CardContent>
@@ -42,7 +56,12 @@ const ActivityTab: React.FC<ActivityTabProps> = ({ activityData }) => {
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Area type="monotone" dataKey="value" stroke="#8884d8" fill="#8884d8" />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="#8884d8"
+                fill="#8884d8"
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>

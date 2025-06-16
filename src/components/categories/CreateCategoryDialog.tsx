@@ -1,17 +1,41 @@
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCategoryOperations } from "@/hooks/categories/useCategoryOperations";
 import { toast } from "sonner";
 import { useLanguage } from "@/context/LanguageContext";
-import { CategoryStatus, AddCategoryFormData, CategoryAssignment } from "@/types/category";
+import {
+  CategoryStatus,
+  AddCategoryFormData,
+  CategoryAssignment,
+} from "@/types/category";
 
 interface CreateCategoryDialogProps {
   open: boolean;
@@ -28,8 +52,12 @@ const formSchema = z.object({
   deadline: z.string().optional().nullable(),
 });
 
-const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOpen, onSuccess }) => {
-  const { t } = useLanguage();
+const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
+  open,
+  setOpen,
+  onSuccess,
+}) => {
+  const { t } = useTranslation();
   const { addCategory, isLoading } = useCategoryOperations();
 
   const form = useForm({
@@ -46,7 +74,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      if (!values.name || values.name.trim() === '') {
+      if (!values.name || values.name.trim() === "") {
         toast.error(t("nameRequired"));
         return;
       }
@@ -63,7 +91,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
       };
 
       await addCategory(categoryData);
-      
+
       setOpen(false);
       form.reset();
       onSuccess?.();
@@ -98,7 +126,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="description"
@@ -112,7 +140,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
                 </FormItem>
               )}
             />
-            
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -132,14 +160,16 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
                       <SelectContent>
                         <SelectItem value="draft">{t("draft")}</SelectItem>
                         <SelectItem value="active">{t("active")}</SelectItem>
-                        <SelectItem value="inactive">{t("inactive")}</SelectItem>
+                        <SelectItem value="inactive">
+                          {t("inactive")}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="assignment"
@@ -166,7 +196,7 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
                 )}
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -175,17 +205,19 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
                   <FormItem>
                     <FormLabel>{t("priority")}</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        {...field} 
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} 
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value) || 0)
+                        }
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="deadline"
@@ -193,10 +225,10 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
                   <FormItem>
                     <FormLabel>{t("deadline")}</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="date" 
-                        {...field} 
-                        value={field.value || ''} 
+                      <Input
+                        type="date"
+                        {...field}
+                        value={field.value || ""}
                         onChange={(e) => field.onChange(e.target.value)}
                       />
                     </FormControl>
@@ -207,18 +239,18 @@ const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({ open, setOp
             </div>
           </form>
         </Form>
-        
+
         <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => setOpen(false)} 
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
             disabled={isLoading}
           >
             {t("cancel")}
           </Button>
-          <Button 
-            type="submit" 
-            onClick={form.handleSubmit(onSubmit)} 
+          <Button
+            type="submit"
+            onClick={form.handleSubmit(onSubmit)}
             disabled={isLoading}
           >
             {isLoading ? t("creating") : t("create")}

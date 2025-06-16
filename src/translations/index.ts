@@ -7,10 +7,12 @@ import type {
 // Cache for loaded translations
 const translationCache: Partial<Record<SupportedLanguage, LanguageTranslations>> = {};
 
-// List of all available modules with type safety
+// List of all available modules with type safety - YENİLƏNDİ
 const MODULE_NAMES = [
   'auth',
   'categories',
+  'core',
+  'dashboard',
   'dataEntry',
   'feedback',
   'general',
@@ -19,10 +21,12 @@ const MODULE_NAMES = [
   'organization',
   'profile',
   'schools',
+  'sectors',
   'status',
   'time',
   'ui',
   'user',
+  'userManagement',
   'validation'
 ] as const;
 
@@ -64,10 +68,12 @@ const loadTranslations = async (lang: SupportedLanguage): Promise<LanguageTransl
       ...module
     }), {});
     
-    // Ensure all required modules are present
+    // Ensure all required modules are present - YENİLƏNDİ
     const completeTranslations: LanguageTranslations = {
       auth: translations.auth || {},
       categories: translations.categories || {},
+      core: translations.core || {},
+      dashboard: translations.dashboard || {},
       dataEntry: translations.dataEntry || {},
       feedback: translations.feedback || {},
       general: translations.general || {},
@@ -80,6 +86,7 @@ const loadTranslations = async (lang: SupportedLanguage): Promise<LanguageTransl
       time: translations.time || {},
       ui: translations.ui || {},
       user: translations.user || {},
+      userManagement: translations.userManagement || {},
       validation: translations.validation || {}
     };
 
@@ -91,7 +98,7 @@ const loadTranslations = async (lang: SupportedLanguage): Promise<LanguageTransl
     console.error(`Failed to load translations for ${lang}:`, error);
     throw error;
   }
-};;
+};
 
 /**
  * Get translations for a specific language

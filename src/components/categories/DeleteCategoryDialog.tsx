@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,9 +8,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { useLanguage } from '@/context/LanguageContext';
-import { Category } from '@/types/category';
+} from "@/components/ui/alert-dialog";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Category } from "@/types/category";
 
 interface DeleteCategoryDialogProps {
   isOpen: boolean;
@@ -28,36 +27,40 @@ const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
   onConfirm,
   category,
   categoryName,
-  isSubmitting = false
+  isSubmitting = false,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const handleConfirm = async () => {
     if (!category) return;
     await onConfirm(category);
     onClose();
   };
-  
+
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t('deleteConfirmationTitle')}</AlertDialogTitle>
+          <AlertDialogTitle>{t("deleteConfirmationTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            <span className="font-medium">{categoryName}</span> kateqoriyasını silmək istədiyinizə əminsiniz?
+            <span className="font-medium">{categoryName}</span> kateqoriyasını
+            silmək istədiyinizə əminsiniz?
             <br />
             <br />
-            Bu əməliyyat geri qaytarıla bilməz. Bu kateqoriyaya aid bütün məlumatlar silinəcək.
+            Bu əməliyyat geri qaytarıla bilməz. Bu kateqoriyaya aid bütün
+            məlumatlar silinəcək.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isSubmitting}>{t('cancel')}</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={handleConfirm} 
+          <AlertDialogCancel disabled={isSubmitting}>
+            {t("cancel")}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleConfirm}
             disabled={isSubmitting}
             className="bg-destructive hover:bg-destructive/90"
           >
-            {isSubmitting ? 'Silinir...' : t('delete')}
+            {isSubmitting ? "Silinir..." : t("delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

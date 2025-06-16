@@ -1,11 +1,10 @@
-
-import React from 'react';
-import { Activity, PieChart, BarChart } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ActivityTab from './tabs/ActivityTab';
-import RegionsTab from './tabs/RegionsTab';
-import CategoriesTab from './tabs/CategoriesTab';
+import React from "react";
+import { Activity, PieChart, BarChart } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ActivityTab from "./tabs/ActivityTab";
+import RegionsTab from "./tabs/RegionsTab";
+import CategoriesTab from "./tabs/CategoriesTab";
 
 interface DashboardTabsProps {
   activityData: Array<{
@@ -22,24 +21,28 @@ interface DashboardTabsProps {
   }>;
 }
 
-const DashboardTabs: React.FC<DashboardTabsProps> = ({ 
-  activityData = [], 
-  regionSchoolsData = [], 
-  categoryCompletionData = [] 
+const DashboardTabs: React.FC<DashboardTabsProps> = ({
+  activityData = [],
+  regionSchoolsData = [],
+  categoryCompletionData = [],
 }) => {
-  const { t } = useLanguage();
-  
+  const { t } = useTranslation();
+
   // Dataların təmizliyi üçün əlavə yoxlama
   const safeActivityData = Array.isArray(activityData) ? activityData : [];
-  const safeRegionSchoolsData = Array.isArray(regionSchoolsData) ? regionSchoolsData : [];
-  const safeCategoryCompletionData = Array.isArray(categoryCompletionData) ? categoryCompletionData : [];
-  
+  const safeRegionSchoolsData = Array.isArray(regionSchoolsData)
+    ? regionSchoolsData
+    : [];
+  const safeCategoryCompletionData = Array.isArray(categoryCompletionData)
+    ? categoryCompletionData
+    : [];
+
   return (
     <Tabs defaultValue="activity" className="w-full">
       <TabsList className="grid grid-cols-3 mb-4">
         <TabsTrigger value="activity">
           <Activity className="h-4 w-4 mr-2" />
-          {t('systemActivity')}
+          {t("systemActivity")}
         </TabsTrigger>
         <TabsTrigger value="regions">
           <PieChart className="h-4 w-4 mr-2" />
@@ -50,15 +53,15 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
           Kateqoriyalar üzrə tamamlanma
         </TabsTrigger>
       </TabsList>
-      
+
       <TabsContent value="activity">
         <ActivityTab activityData={safeActivityData} />
       </TabsContent>
-      
+
       <TabsContent value="regions">
         <RegionsTab regionSchoolsData={safeRegionSchoolsData} />
       </TabsContent>
-      
+
       <TabsContent value="categories">
         <CategoriesTab categoryCompletionData={safeCategoryCompletionData} />
       </TabsContent>

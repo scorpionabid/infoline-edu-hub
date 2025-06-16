@@ -1,10 +1,9 @@
-
-import React, { useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, Upload, FileSpreadsheet } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { useExcelIntegration } from '@/hooks/exports/useExcelIntegration';
+import React, { useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Download, Upload, FileSpreadsheet } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { useExcelIntegration } from "@/hooks/exports/useExcelIntegration";
 
 interface ExcelIntegrationPanelProps {
   category?: any;
@@ -15,35 +14,39 @@ interface ExcelIntegrationPanelProps {
 const ExcelIntegrationPanel: React.FC<ExcelIntegrationPanelProps> = ({
   category,
   data,
-  onImportComplete
+  onImportComplete,
 }) => {
-  const { t } = useLanguage();
-  const { downloadTemplate, exportData, importFile, isProcessing } = useExcelIntegration({
-    category,
-    data
-  });
+  const { t } = useTranslation();
+  const { downloadTemplate, exportData, importFile, isProcessing } =
+    useExcelIntegration({
+      category,
+      data,
+    });
 
-  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    try {
-      const importedData = await importFile(file);
-      onImportComplete?.(importedData);
-    } catch (error) {
-      console.error('Import failed:', error);
-    }
+      try {
+        const importedData = await importFile(file);
+        onImportComplete?.(importedData);
+      } catch (error) {
+        console.error("Import failed:", error);
+      }
 
-    // Reset file input
-    event.target.value = '';
-  }, [importFile, onImportComplete]);
+      // Reset file input
+      event.target.value = "";
+    },
+    [importFile, onImportComplete],
+  );
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileSpreadsheet className="h-5 w-5" />
-          {t('excelIntegration')}
+          {t("excelIntegration")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -55,7 +58,7 @@ const ExcelIntegrationPanel: React.FC<ExcelIntegrationPanelProps> = ({
             className="flex items-center gap-2"
           >
             <Download className="h-4 w-4" />
-            {t('downloadTemplate')}
+            {t("downloadTemplate")}
           </Button>
 
           <div className="relative">
@@ -72,7 +75,7 @@ const ExcelIntegrationPanel: React.FC<ExcelIntegrationPanelProps> = ({
               className="w-full flex items-center gap-2"
             >
               <Upload className="h-4 w-4" />
-              {t('importData')}
+              {t("importData")}
             </Button>
           </div>
 
@@ -83,13 +86,13 @@ const ExcelIntegrationPanel: React.FC<ExcelIntegrationPanelProps> = ({
             className="flex items-center gap-2"
           >
             <Download className="h-4 w-4" />
-            {t('exportData')}
+            {t("exportData")}
           </Button>
         </div>
 
         {isProcessing && (
           <div className="text-center text-sm text-muted-foreground">
-            {t('processingFile')}...
+            {t("processingFile")}...
           </div>
         )}
       </CardContent>

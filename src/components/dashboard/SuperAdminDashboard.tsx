@@ -1,22 +1,23 @@
-
-import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DashboardFormStats, StatsGridItem } from '@/types/dashboard';
-import StatsGrid from './StatsGrid';
-import DashboardChart from './DashboardChart';
-import { BarChart3, Users, School, MapPin } from 'lucide-react';
+import React from "react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardFormStats, StatsGridItem } from "@/types/dashboard";
+import StatsGrid from "./StatsGrid";
+import DashboardChart from "./DashboardChart";
+import { BarChart3, Users, School, MapPin } from "lucide-react";
 
 interface SuperAdminDashboardProps {
   dashboardData?: any;
 }
 
-const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData }) => {
-  const { t } = useLanguage();
+const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
+  dashboardData,
+}) => {
+  const { t } = useTranslation();
 
   if (!dashboardData) {
     return (
-      <div className="p-8 text-center">{t('loading') || 'Yüklənir...'}</div>
+      <div className="p-8 text-center">{t("loading") || "Yüklənir..."}</div>
     );
   }
 
@@ -40,29 +41,29 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
 
   const statsGridData: StatsGridItem[] = [
     {
-      title: t('totalApproved') || 'Təsdiqlənmiş',
+      title: t("totalApproved") || "Təsdiqlənmiş",
       value: formStats.approved || 0,
-      color: 'text-green-600',
-      description: t('approved') || 'Təsdiqləndi'
+      color: "text-green-600",
+      description: t("approved") || "Təsdiqləndi",
     },
     {
-      title: t('totalPending') || 'Gözləyən',
+      title: t("totalPending") || "Gözləyən",
       value: formStats.pending || 0,
-      color: 'text-yellow-600',
-      description: t('pending') || 'Gözləyir'
+      color: "text-yellow-600",
+      description: t("pending") || "Gözləyir",
     },
     {
-      title: t('totalRejected') || 'Rədd edilmiş',
+      title: t("totalRejected") || "Rədd edilmiş",
       value: formStats.rejected || 0,
-      color: 'text-red-600',
-      description: t('rejected') || 'Rədd edildi'
+      color: "text-red-600",
+      description: t("rejected") || "Rədd edildi",
     },
     {
-      title: t('completion') || 'Tamamlanma',
+      title: t("completion") || "Tamamlanma",
       value: `${Math.round(formStats.percentage || 0)}%`,
-      color: 'text-blue-600',
-      description: t('completionRate') || 'Tamamlanma dərəcəsi'
-    }
+      color: "text-blue-600",
+      description: t("completionRate") || "Tamamlanma dərəcəsi",
+    },
   ];
 
   return (
@@ -71,12 +72,14 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('totalUsers') || 'İstifadəçilər'}
+              {t("totalUsers") || "İstifadəçilər"}
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.totalUsers || 0}</div>
+            <div className="text-2xl font-bold">
+              {dashboardData.totalUsers || 0}
+            </div>
             <p className="text-xs text-muted-foreground">
               Sistem istifadəçiləri
             </p>
@@ -86,12 +89,14 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('totalSchools') || 'Məktəblər'}
+              {t("totalSchools") || "Məktəblər"}
             </CardTitle>
             <School className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.totalSchools || 0}</div>
+            <div className="text-2xl font-bold">
+              {dashboardData.totalSchools || 0}
+            </div>
             <p className="text-xs text-muted-foreground">
               Qeydiyyatlı məktəblər
             </p>
@@ -101,30 +106,30 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('totalRegions') || 'Regionlar'}
+              {t("totalRegions") || "Regionlar"}
             </CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.totalRegions || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              İdarə regionları
-            </p>
+            <div className="text-2xl font-bold">
+              {dashboardData.totalRegions || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">İdarə regionları</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('completion') || 'Tamamlanma'}
+              {t("completion") || "Tamamlanma"}
             </CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Math.round(dashboardData.completionRate || 0)}%</div>
-            <p className="text-xs text-muted-foreground">
-              Ortalama tamamlanma
-            </p>
+            <div className="text-2xl font-bold">
+              {Math.round(dashboardData.completionRate || 0)}%
+            </div>
+            <p className="text-xs text-muted-foreground">Ortalama tamamlanma</p>
           </CardContent>
         </Card>
       </div>
@@ -132,7 +137,9 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>{t('formStatistics') || 'Form Statistikaları'}</CardTitle>
+            <CardTitle>
+              {t("formStatistics") || "Form Statistikaları"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
             <DashboardChart stats={formStats} />
@@ -140,7 +147,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
         </Card>
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>{t('recentActivity') || 'Son Fəaliyyətlər'}</CardTitle>
+            <CardTitle>{t("recentActivity") || "Son Fəaliyyətlər"}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -151,13 +158,15 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ dashboardData
                       {region.name}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {region.sectorCount} sektor • {region.adminEmail || 'Admin təyin edilməyib'}
+                      {region.sectorCount} sektor •{" "}
+                      {region.adminEmail || "Admin təyin edilməyib"}
                     </p>
                   </div>
                 </div>
               ))}
-              
-              {(!dashboardData.regions || dashboardData.regions.length === 0) && (
+
+              {(!dashboardData.regions ||
+                dashboardData.regions.length === 0) && (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   Hələ heç bir fəaliyyət yoxdur
                 </p>

@@ -1,18 +1,15 @@
-
-import React, { useEffect } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import PerformanceDashboard from '@/components/performance/PerformanceDashboard';
+import React, { useEffect } from "react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import PerformanceDashboard from "@/components/performance/PerformanceDashboard";
 
 const Performance: React.FC = () => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   useEffect(() => {
-    document.title = 'Performans | InfoLine';
+    document.title = "Performans | InfoLine";
   }, []);
 
-  return (
-    <PerformanceDashboard />
-  );
+  return <PerformanceDashboard />;
 };
 
 export default Performance;

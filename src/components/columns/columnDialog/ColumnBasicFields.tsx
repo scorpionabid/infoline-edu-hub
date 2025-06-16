@@ -1,18 +1,23 @@
-
-import React from 'react';
-import { Control } from 'react-hook-form';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { ColumnFormValues } from '@/types/column';
-import { useLanguage } from '@/context/LanguageContext';
+import React from "react";
+import { Control } from "react-hook-form";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ColumnFormValues } from "@/types/column";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface ColumnBasicFieldsProps {
   control: Control<ColumnFormValues>;
 }
 
 const ColumnBasicFields: React.FC<ColumnBasicFieldsProps> = ({ control }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-4">
@@ -21,9 +26,9 @@ const ColumnBasicFields: React.FC<ColumnBasicFieldsProps> = ({ control }) => {
         name="name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t('columnName')}</FormLabel>
+            <FormLabel>{t("columnName")}</FormLabel>
             <FormControl>
-              <Input placeholder={t('enterColumnName')} {...field} />
+              <Input placeholder={t("enterColumnName")} {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -35,9 +40,9 @@ const ColumnBasicFields: React.FC<ColumnBasicFieldsProps> = ({ control }) => {
         name="placeholder"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t('placeholder')}</FormLabel>
+            <FormLabel>{t("placeholder")}</FormLabel>
             <FormControl>
-              <Input placeholder={t('enterPlaceholder')} {...field} />
+              <Input placeholder={t("enterPlaceholder")} {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -49,10 +54,10 @@ const ColumnBasicFields: React.FC<ColumnBasicFieldsProps> = ({ control }) => {
         name="help_text"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t('helpText')}</FormLabel>
+            <FormLabel>{t("helpText")}</FormLabel>
             <FormControl>
-              <Textarea 
-                placeholder={t('enterHelpText')}
+              <Textarea
+                placeholder={t("enterHelpText")}
                 className="resize-none"
                 {...field}
               />

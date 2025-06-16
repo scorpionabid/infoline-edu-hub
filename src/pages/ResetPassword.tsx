@@ -1,32 +1,38 @@
-
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Lock } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Lock } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 
 const ResetPassword = () => {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   useEffect(() => {
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    
+    const accessToken = searchParams.get("access_token");
+    const refreshToken = searchParams.get("refresh_token");
+
     if (accessToken && refreshToken) {
       supabase.auth.setSession({
         access_token: accessToken,
-        refresh_token: refreshToken
+        refresh_token: refreshToken,
       });
     }
   }, [searchParams]);
@@ -34,32 +40,32 @@ const ResetPassword = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     if (password !== confirmPassword) {
-      setError(t('auth.passwordMismatch'));
+      setError(t("auth.passwordMismatch"));
       setIsLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setError(t('common.passwordTooShort'));
+      setError(t("common.passwordTooShort"));
       setIsLoading(false);
       return;
     }
 
     try {
       const { error } = await supabase.auth.updateUser({
-        password: password
+        password: password,
       });
 
       if (error) throw error;
 
-      navigate('/login', { 
-        state: { message: t('auth.passwordResetSuccess') }
+      navigate("/login", {
+        state: { message: t("auth.passwordResetSuccess") },
       });
     } catch (error: any) {
-      setError(error.message || t('common.unexpectedError'));
+      setError(error.message || t("common.unexpectedError"));
     } finally {
       setIsLoading(false);
     }
@@ -71,15 +77,17 @@ const ResetPassword = () => {
         <div className="flex justify-end">
           <LanguageSwitcher />
         </div>
-        
+
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">{t('auth.resetPassword')}</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              {t("auth.resetPassword")}
+            </CardTitle>
             <CardDescription className="text-center">
-              {t('auth.resetPasswordDescription')}
+              {t("auth.resetPasswordDescription")}
             </CardDescription>
           </CardHeader>
-          
+
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               {error && (
@@ -90,12 +98,12 @@ const ResetPassword = () => {
 
               <div className="space-y-2">
                 <label htmlFor="password" className="text-sm font-medium">
-                  {t('auth.newPassword')}
+                  {t("auth.newPassword")}
                 </label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder={t('auth.enterNewPassword')}
+                  placeholder={t("auth.enterNewPassword")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -104,13 +112,16 @@ const ResetPassword = () => {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="text-sm font-medium">
-                  {t('auth.confirmNewPassword')}
+                <label
+                  htmlFor="confirmPassword"
+                  className="text-sm font-medium"
+                >
+                  {t("auth.confirmNewPassword")}
                 </label>
                 <Input
                   id="confirmPassword"
                   type="password"
-                  placeholder={t('auth.confirmNewPassword')}
+                  placeholder={t("auth.confirmNewPassword")}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -118,20 +129,16 @@ const ResetPassword = () => {
                 />
               </div>
             </CardContent>
-            
+
             <CardFooter>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Lock className="mr-2 h-4 w-4 animate-spin" />
-                    {t('auth.updating')}
+                    {t("auth.updating")}
                   </>
                 ) : (
-                  t('auth.updatePassword')
+                  t("auth.updatePassword")
                 )}
               </Button>
             </CardFooter>

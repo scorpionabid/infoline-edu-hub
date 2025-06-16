@@ -1,9 +1,8 @@
-
-import React from 'react';
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { useLanguage } from '@/context/LanguageContext';
-import { Plus, UploadCloud, ArrowLeft } from 'lucide-react';
-import PageHeader from '@/components/layout/PageHeader';
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Plus, UploadCloud, ArrowLeft } from "lucide-react";
+import PageHeader from "@/components/layout/PageHeader";
 
 interface ColumnHeaderProps {
   categoryName: string;
@@ -20,38 +19,42 @@ export function ColumnHeader({
   onImportClick,
   onBackClick,
   title,
-  subtitle
+  subtitle,
 }: ColumnHeaderProps) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-6 mb-6">
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         onClick={onBackClick}
         className="flex items-center gap-2 px-2 hover:bg-muted"
       >
         <ArrowLeft size={16} />
-        {t('backToCategories')}
+        {t("backToCategories")}
       </Button>
 
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
-        <PageHeader 
-          title={title || categoryName} 
-          subtitle={subtitle || t('columnsDescription')} 
+        <PageHeader
+          title={title || categoryName}
+          subtitle={subtitle || t("columnsDescription")}
         />
-        
+
         <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
           {onImportClick && (
-            <Button variant="outline" onClick={onImportClick} className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={onImportClick}
+              className="flex items-center gap-2"
+            >
               <UploadCloud size={16} />
-              {t('import')}
+              {t("import")}
             </Button>
           )}
-          
+
           <Button onClick={onAddClick} className="flex items-center gap-2">
             <Plus size={16} />
-            {t('addColumn')}
+            {t("addColumn")}
           </Button>
         </div>
       </div>

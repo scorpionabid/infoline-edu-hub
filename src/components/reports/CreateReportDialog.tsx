@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,31 +6,35 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useLanguage } from '@/context/LanguageContext';
-import { CreateReportDialogProps, REPORT_TYPE_VALUES, ReportTypeValues } from '@/types/core/report';
+} from "@/components/ui/select";
+import { useTranslation } from "@/contexts/TranslationContext";
+import {
+  CreateReportDialogProps,
+  REPORT_TYPE_VALUES,
+  ReportTypeValues,
+} from "@/types/core/report";
 
-const CreateReportDialog: React.FC<CreateReportDialogProps> = ({ 
-  open, 
+const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
+  open,
   isOpen,
   onOpenChange,
   onCreate,
   onSubmit,
-  onClose
+  onClose,
 }) => {
-  const { t } = useLanguage();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const { t } = useTranslation();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [type, setType] = useState<ReportTypeValues>(REPORT_TYPE_VALUES.BAR);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -38,7 +42,7 @@ const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
-    
+
     setIsSubmitting(true);
     try {
       const reportData = { title, description, type };
@@ -50,7 +54,7 @@ const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
       resetForm();
       handleClose();
     } catch (error) {
-      console.error('Error creating report:', error);
+      console.error("Error creating report:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -66,70 +70,92 @@ const CreateReportDialog: React.FC<CreateReportDialogProps> = ({
   };
 
   const resetForm = () => {
-    setTitle('');
-    setDescription('');
+    setTitle("");
+    setDescription("");
     setType(REPORT_TYPE_VALUES.BAR);
   };
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={(newOpen) => !newOpen && handleClose()}>
+    <Dialog
+      open={dialogOpen}
+      onOpenChange={(newOpen) => !newOpen && handleClose()}
+    >
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t('createNewReport')}</DialogTitle>
-          <DialogDescription>
-            {t('createReportDescription')}
-          </DialogDescription>
+          <DialogTitle>{t("createNewReport")}</DialogTitle>
+          <DialogDescription>{t("createReportDescription")}</DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <label htmlFor="title" className="text-sm font-medium">{t('title')}</label>
+            <label htmlFor="title" className="text-sm font-medium">
+              {t("title")}
+            </label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={t('reportTitlePlaceholder')}
+              placeholder={t("reportTitlePlaceholder")}
             />
           </div>
-          
+
           <div className="grid gap-2">
-            <label htmlFor="description" className="text-sm font-medium">{t('description')}</label>
+            <label htmlFor="description" className="text-sm font-medium">
+              {t("description")}
+            </label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={t('reportDescriptionPlaceholder')}
+              placeholder={t("reportDescriptionPlaceholder")}
               rows={3}
             />
           </div>
-          
+
           <div className="grid gap-2">
-            <label htmlFor="type" className="text-sm font-medium">{t('reportType')}</label>
-            <Select 
-              value={type} 
+            <label htmlFor="type" className="text-sm font-medium">
+              {t("reportType")}
+            </label>
+            <Select
+              value={type}
               onValueChange={(value: ReportTypeValues) => setType(value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder={t('selectReportType')} />
+                <SelectValue placeholder={t("selectReportType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={REPORT_TYPE_VALUES.BAR}>{t('barChart')}</SelectItem>
-                <SelectItem value={REPORT_TYPE_VALUES.LINE}>{t('lineChart')}</SelectItem>
-                <SelectItem value={REPORT_TYPE_VALUES.PIE}>{t('pieChart')}</SelectItem>
-                <SelectItem value={REPORT_TYPE_VALUES.TABLE}>{t('tableReport')}</SelectItem>
-                <SelectItem value={REPORT_TYPE_VALUES.METRICS}>{t('metricsReport')}</SelectItem>
-                <SelectItem value={REPORT_TYPE_VALUES.CUSTOM}>{t('customReport')}</SelectItem>
+                <SelectItem value={REPORT_TYPE_VALUES.BAR}>
+                  {t("barChart")}
+                </SelectItem>
+                <SelectItem value={REPORT_TYPE_VALUES.LINE}>
+                  {t("lineChart")}
+                </SelectItem>
+                <SelectItem value={REPORT_TYPE_VALUES.PIE}>
+                  {t("pieChart")}
+                </SelectItem>
+                <SelectItem value={REPORT_TYPE_VALUES.TABLE}>
+                  {t("tableReport")}
+                </SelectItem>
+                <SelectItem value={REPORT_TYPE_VALUES.METRICS}>
+                  {t("metricsReport")}
+                </SelectItem>
+                <SelectItem value={REPORT_TYPE_VALUES.CUSTOM}>
+                  {t("customReport")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            {t('cancel')}
+            {t("cancel")}
           </Button>
-          <Button onClick={handleSubmit} disabled={!title.trim() || isSubmitting}>
-            {isSubmitting ? t('creating') : t('create')}
+          <Button
+            onClick={handleSubmit}
+            disabled={!title.trim() || isSubmitting}
+          >
+            {isSubmitting ? t("creating") : t("create")}
           </Button>
         </DialogFooter>
       </DialogContent>

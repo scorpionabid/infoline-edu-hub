@@ -1,10 +1,11 @@
-
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { CacheHelpers } from '@/services/reports/cacheService';
+import { TranslationProvider } from '@/contexts/TranslationContext';
+import TranslationDevPanel from '@/components/dev/TranslationDevPanel';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,8 +33,16 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppRoutes />
-      <Toaster />
+      <TranslationProvider>
+        <AppRoutes />
+        <Toaster />
+        
+        {/* Development Translation Panel */}
+        <TranslationDevPanel 
+          enabled={process.env.NODE_ENV === 'development'}
+          position="bottom-right"
+        />
+      </TranslationProvider>
     </QueryClientProvider>
   );
 }

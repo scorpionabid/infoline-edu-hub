@@ -1,26 +1,30 @@
-
-import React, { useState, useCallback } from 'react';
-import { Helmet } from 'react-helmet';
-import { useLanguage } from '@/context/LanguageContext';
-import useCategoriesQuery from '@/hooks/categories/useCategoriesQuery';
-import { useColumns } from '@/hooks/columns/useColumns';
-import { useColumnManagement } from '@/hooks/columns/useColumnManagement';
-import { useColumnForm } from '@/hooks/columns/useColumnForm';
-import ColumnsContainer from '@/components/columns/ColumnsContainer';
-import { Column } from '@/types/column';
-import { toast } from 'sonner';
+import React, { useState, useCallback } from "react";
+import { Helmet } from "react-helmet";
+import { useTranslation } from "@/contexts/TranslationContext";
+import useCategoriesQuery from "@/hooks/categories/useCategoriesQuery";
+import { useColumns } from "@/hooks/columns/useColumns";
+import { useColumnManagement } from "@/hooks/columns/useColumnManagement";
+import { useColumnForm } from "@/hooks/columns/useColumnForm";
+import ColumnsContainer from "@/components/columns/ColumnsContainer";
+import { Column } from "@/types/column";
+import { toast } from "sonner";
 
 const Columns = () => {
-  const { t } = useLanguage();
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const { t } = useTranslation();
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState<Column | undefined>();
 
   // Get categories directly from the query
-  const { categories = [], isLoading: categoriesLoading } = useCategoriesQuery();
-  const { data: columns = [], isLoading: columnsLoading, refetch } = useColumns(selectedCategoryId);
-  
+  const { categories = [], isLoading: categoriesLoading } =
+    useCategoriesQuery();
+  const {
+    data: columns = [],
+    isLoading: columnsLoading,
+    refetch,
+  } = useColumns(selectedCategoryId);
+
   const { archiveColumn, restoreColumn, deleteColumn } = useColumnManagement();
 
   const handleCategoryChange = useCallback((categoryId: string) => {
@@ -29,7 +33,7 @@ const Columns = () => {
 
   const handleCreateColumn = useCallback(() => {
     if (!selectedCategoryId) {
-      toast.error(t('columns.selectCategoryFirst'));
+      toast.error(t("columns.selectCategoryFirst"));
       return;
     }
     setIsCreateDialogOpen(true);
@@ -51,33 +55,44 @@ const Columns = () => {
     refetch();
   }, [refetch]);
 
-  const handleArchiveColumn = useCallback((column: Column) => {
-    archiveColumn(column.id);
-  }, [archiveColumn]);
+  const handleArchiveColumn = useCallback(
+    (column: Column) => {
+      archiveColumn(column.id);
+    },
+    [archiveColumn],
+  );
 
-  const handleRestoreColumn = useCallback((column: Column) => {
-    restoreColumn(column.id);
-  }, [restoreColumn]);
+  const handleRestoreColumn = useCallback(
+    (column: Column) => {
+      restoreColumn(column.id);
+    },
+    [restoreColumn],
+  );
 
-  const handleDeleteColumn = useCallback((column: Column, permanent: boolean = false) => {
-    deleteColumn(column.id);
-  }, [deleteColumn]);
+  const handleDeleteColumn = useCallback(
+    (column: Column, permanent: boolean = false) => {
+      deleteColumn(column.id);
+    },
+    [deleteColumn],
+  );
 
   const createFormProps = {
     categoryId: selectedCategoryId,
-    onSuccess: handleCreateSuccess
+    onSuccess: handleCreateSuccess,
   };
 
-  const editFormProps = selectedColumn ? {
-    column: selectedColumn,
-    categoryId: selectedColumn.category_id,
-    onSuccess: handleEditSuccess
-  } : undefined;
+  const editFormProps = selectedColumn
+    ? {
+        column: selectedColumn,
+        categoryId: selectedColumn.category_id,
+        onSuccess: handleEditSuccess,
+      }
+    : undefined;
 
   return (
     <>
       <Helmet>
-        <title>{t('navigation.columns')} | InfoLine</title>
+        <title>{t("navigation.columns")} | InfoLine</title>
       </Helmet>
 
       <div className="container mx-auto py-6">

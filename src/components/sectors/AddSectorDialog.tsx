@@ -1,10 +1,14 @@
-
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useLanguage } from '@/context/LanguageContext';
-import { Region } from '@/types/supabase';
-import { EnhancedSector } from '@/types/sector';
-import SectorForm from './SectorForm';
+import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Region } from "@/types/supabase";
+import { EnhancedSector } from "@/types/sector";
+import SectorForm from "./SectorForm";
 
 interface AddSectorDialogProps {
   isOpen: boolean;
@@ -19,19 +23,19 @@ const AddSectorDialog: React.FC<AddSectorDialogProps> = ({
   onClose,
   regions,
   onSubmit,
-  isSubmitting = false
+  isSubmitting = false,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const handleSubmit = async (data: Partial<EnhancedSector>) => {
     const success = await onSubmit({
-      name: data.name || '',
-      description: data.description || '',
-      region_id: data.region_id || '',
-      status: data.status || 'active',
+      name: data.name || "",
+      description: data.description || "",
+      region_id: data.region_id || "",
+      status: data.status || "active",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      region_name: regions.find(r => r.id === data.region_id)?.name
+      region_name: regions.find((r) => r.id === data.region_id)?.name,
     });
     if (success) {
       onClose();
@@ -42,7 +46,7 @@ const AddSectorDialog: React.FC<AddSectorDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t('sectors.addSector')}</DialogTitle>
+          <DialogTitle>{t("sectors.addSector")}</DialogTitle>
         </DialogHeader>
         <SectorForm
           regions={regions}

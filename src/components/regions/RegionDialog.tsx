@@ -1,18 +1,33 @@
-
-import React, { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogHeader, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useLanguage } from '@/context/LanguageContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useTranslation } from "@/contexts/TranslationContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 export interface RegionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (data: { name: string; description: string; status: string }) => Promise<any>;
+  onSave: (data: {
+    name: string;
+    description: string;
+    status: string;
+  }) => Promise<any>;
   initialData?: { name: string; description?: string; status?: string };
   title?: string;
   loading?: boolean;
@@ -23,37 +38,39 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
   onOpenChange,
   onSave,
   initialData,
-  title = 'Region əlavə et',
-  loading = false
+  title = "Region əlavə et",
+  loading = false,
 }) => {
-  const { t } = useLanguage();
-  const [name, setName] = useState(initialData?.name || '');
-  const [description, setDescription] = useState(initialData?.description || '');
-  const [status, setStatus] = useState(initialData?.status || 'active');
+  const { t } = useTranslation();
+  const [name, setName] = useState(initialData?.name || "");
+  const [description, setDescription] = useState(
+    initialData?.description || "",
+  );
+  const [status, setStatus] = useState(initialData?.status || "active");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
-      toast.error('Region adı boş ola bilməz');
+      toast.error("Region adı boş ola bilməz");
       return;
     }
-    
+
     setIsSaving(true);
-    
+
     try {
       const result = await onSave({ name, description, status });
-      
+
       if (result && result.success === false) {
-        toast.error(result.error || 'Xəta baş verdi');
+        toast.error(result.error || "Xəta baş verdi");
         return;
       }
-      
-      toast.success(`Region ${initialData ? 'yeniləndi' : 'əlavə edildi'}`);
+
+      toast.success(`Region ${initialData ? "yeniləndi" : "əlavə edildi"}`);
       onOpenChange(false);
     } catch (error: any) {
-      toast.error(error.message || 'Xəta baş verdi');
+      toast.error(error.message || "Xəta baş verdi");
     } finally {
       setIsSaving(false);
     }
@@ -98,21 +115,29 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
             </Select>
           </div>
           <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)} 
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
               disabled={isSaving || loading}
             >
               Ləğv et
             </Button>
-            <Button type="submit" disabled={isSaving || loading} className="min-w-[80px]">
+            <Button
+              type="submit"
+              disabled={isSaving || loading}
+              className="min-w-[80px]"
+            >
               {isSaving || loading ? (
                 <div className="flex items-center">
                   <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
                   Gözləyin
                 </div>
-              ) : initialData ? 'Yenilə' : 'Əlavə et'}
+              ) : initialData ? (
+                "Yenilə"
+              ) : (
+                "Əlavə et"
+              )}
             </Button>
           </DialogFooter>
         </form>

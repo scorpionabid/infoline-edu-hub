@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import SettingsHeader from '@/components/settings/SettingsHeader';
-import SettingsTabs from '@/components/settings/SettingsTabs';
-import { useLanguage } from '@/context/LanguageContext';
-import { Separator } from '@/components/ui/separator';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { DatabaseBackup, RefreshCw, Settings2, Trash2 } from 'lucide-react';
+import React, { useState } from "react";
+import SettingsHeader from "@/components/settings/SettingsHeader";
+import SettingsTabs from "@/components/settings/SettingsTabs";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { DatabaseBackup, RefreshCw, Settings2, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,22 +19,22 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const Settings: React.FC = () => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [isResettingData, setIsResettingData] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
   const [isImportingData, setIsImportingData] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
-  
+
   const handleResetData = async () => {
     setIsResettingData(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       toast.success(t("dataReset"), {
         description: t("dataResetSuccess"),
       });
-      
+
       setIsResetDialogOpen(false);
     } catch (error) {
       console.error("Error resetting data:", error);
@@ -45,13 +45,13 @@ const Settings: React.FC = () => {
       setIsResettingData(false);
     }
   };
-  
+
   const handleExportData = async () => {
     setIsExportingData(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       toast.success(t("dataExported"), {
         description: t("dataExportSuccess"),
       });
@@ -69,8 +69,8 @@ const Settings: React.FC = () => {
     setIsImportingData(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       toast.success(t("dataImported"), {
         description: t("dataImportSuccess"),
       });
@@ -90,23 +90,25 @@ const Settings: React.FC = () => {
         <SettingsHeader />
         <Separator className="my-6" />
         <SettingsTabs />
-        
+
         <div className="mt-10">
           <h2 className="text-xl font-semibold mb-4 flex items-center">
             <Settings2 className="mr-2 h-5 w-5" />
             {t("systemSettings")}
           </h2>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div>
                     <h3 className="font-medium">{t("exportData")}</h3>
-                    <p className="text-sm text-muted-foreground">{t("exportDataDesc")}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("exportDataDesc")}
+                    </p>
                   </div>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="sm:self-end"
                     onClick={handleExportData}
                     disabled={isExportingData}
@@ -124,16 +126,18 @@ const Settings: React.FC = () => {
                     )}
                   </Button>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div>
                     <h3 className="font-medium">{t("importData")}</h3>
-                    <p className="text-sm text-muted-foreground">{t("importDataDesc")}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("importDataDesc")}
+                    </p>
                   </div>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="sm:self-end"
                     onClick={handleImportData}
                     disabled={isImportingData}
@@ -151,16 +155,20 @@ const Settings: React.FC = () => {
                     )}
                   </Button>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div>
-                    <h3 className="font-medium text-destructive">{t("resetData")}</h3>
-                    <p className="text-sm text-muted-foreground">{t("resetDataDesc")}</p>
+                    <h3 className="font-medium text-destructive">
+                      {t("resetData")}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {t("resetDataDesc")}
+                    </p>
                   </div>
-                  <Button 
-                    variant="destructive" 
+                  <Button
+                    variant="destructive"
                     className="sm:self-end"
                     onClick={() => setIsResetDialogOpen(true)}
                   >
@@ -173,7 +181,7 @@ const Settings: React.FC = () => {
           </Card>
         </div>
       </div>
-      
+
       <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

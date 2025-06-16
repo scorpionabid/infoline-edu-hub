@@ -1,33 +1,37 @@
-
-import React from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, BarChart } from 'lucide-react';
-import { SectorStat } from '@/types/dashboard';
-import { useLanguage } from '@/context/LanguageContext';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, BarChart } from "lucide-react";
+import { SectorStat } from "@/types/dashboard";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { useNavigate } from "react-router-dom";
 
 interface SectorStatsTableProps {
   sectors: SectorStat[];
   showActions?: boolean;
 }
 
-const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors, showActions = true }) => {
-  const { t } = useLanguage();
+const SectorStatsTable: React.FC<SectorStatsTableProps> = ({
+  sectors,
+  showActions = true,
+}) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // Sort sectors by completion rate in descending order
   const sortedSectors = [...sectors].sort((a, b) => {
-    const completionA = a.completionRate ?? a.completion_rate ?? a.completion ?? 0;
-    const completionB = b.completionRate ?? b.completion_rate ?? b.completion ?? 0;
+    const completionA =
+      a.completionRate ?? a.completion_rate ?? a.completion ?? 0;
+    const completionB =
+      b.completionRate ?? b.completion_rate ?? b.completion ?? 0;
     return completionB - completionA;
   });
 
@@ -38,7 +42,7 @@ const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors, showAction
   if (!sectors || sectors.length === 0) {
     return (
       <div className="text-center py-6 text-muted-foreground">
-        {t('noSectorsFound')}
+        {t("noSectorsFound")}
       </div>
     );
   }
@@ -48,29 +52,35 @@ const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors, showAction
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>{t('sector')}</TableHead>
-            <TableHead className="text-right">{t('progress')}</TableHead>
-            <TableHead className="text-center">{t('schoolCount')}</TableHead>
-            {showActions && <TableHead className="text-right">{t('actions')}</TableHead>}
+            <TableHead>{t("sector")}</TableHead>
+            <TableHead className="text-right">{t("progress")}</TableHead>
+            <TableHead className="text-center">{t("schoolCount")}</TableHead>
+            {showActions && (
+              <TableHead className="text-right">{t("actions")}</TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedSectors.map((sector) => {
-            const completionRate = sector.completionRate ?? sector.completion_rate ?? sector.completion ?? 0;
-            
+            const completionRate =
+              sector.completionRate ??
+              sector.completion_rate ??
+              sector.completion ??
+              0;
+
             return (
               <TableRow key={sector.id}>
                 <TableCell className="font-medium">{sector.name}</TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-2">
-                    <Progress 
-                      value={completionRate} 
-                      className="h-2" 
+                    <Progress
+                      value={completionRate}
+                      className="h-2"
                       indicatorClassName={
-                        completionRate < 30 
-                          ? "bg-red-500" 
-                          : completionRate < 70 
-                            ? "bg-yellow-500" 
+                        completionRate < 30
+                          ? "bg-red-500"
+                          : completionRate < 70
+                            ? "bg-yellow-500"
                             : "bg-green-500"
                       }
                     />
@@ -79,7 +89,9 @@ const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors, showAction
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="text-center">{sector.schoolCount || sector.totalSchools}</TableCell>
+                <TableCell className="text-center">
+                  {sector.schoolCount || sector.totalSchools}
+                </TableCell>
                 {showActions && (
                   <TableCell className="text-right">
                     <Button
@@ -88,7 +100,7 @@ const SectorStatsTable: React.FC<SectorStatsTableProps> = ({ sectors, showAction
                       onClick={() => handleViewSector(sector.id)}
                     >
                       <BarChart className="mr-2 h-4 w-4" />
-                      {t('view')}
+                      {t("view")}
                     </Button>
                   </TableCell>
                 )}

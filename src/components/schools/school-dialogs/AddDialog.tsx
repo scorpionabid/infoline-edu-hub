@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,21 +6,29 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLanguage } from '@/context/LanguageContext';
-import { SchoolFormData } from '@/types/school-form';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { SchoolFormData } from "@/types/school-form";
 
 interface AddDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: () => void;
   formData: SchoolFormData;
-  handleFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  handleFormChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => void;
   currentTab: string;
   setCurrentTab: (tab: string) => void;
   filteredSectors: Array<{ id: string; name: string; regionId: string }>;
@@ -35,9 +42,9 @@ const AddDialog: React.FC<AddDialogProps> = ({
   handleFormChange,
   currentTab,
   setCurrentTab,
-  filteredSectors
+  filteredSectors,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,21 +55,19 @@ const AddDialog: React.FC<AddDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{t('addSchool')}</DialogTitle>
-          <DialogDescription>
-            {t('addSchoolDescription')}
-          </DialogDescription>
+          <DialogTitle>{t("addSchool")}</DialogTitle>
+          <DialogDescription>{t("addSchoolDescription")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <Tabs value={currentTab} onValueChange={setCurrentTab}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="school">{t('schoolDetails')}</TabsTrigger>
-              <TabsTrigger value="admin">{t('adminDetails')}</TabsTrigger>
+              <TabsTrigger value="school">{t("schoolDetails")}</TabsTrigger>
+              <TabsTrigger value="admin">{t("adminDetails")}</TabsTrigger>
             </TabsList>
             <TabsContent value="school" className="space-y-4 pt-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">{t('schoolName')}</Label>
+                  <Label htmlFor="name">{t("schoolName")}</Label>
                   <Input
                     id="name"
                     name="name"
@@ -72,7 +77,7 @@ const AddDialog: React.FC<AddDialogProps> = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="principalName">{t('principalName')}</Label>
+                  <Label htmlFor="principalName">{t("principalName")}</Label>
                   <Input
                     id="principalName"
                     name="principalName"
@@ -84,17 +89,17 @@ const AddDialog: React.FC<AddDialogProps> = ({
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="sectorId">{t('sector')}</Label>
+                  <Label htmlFor="sectorId">{t("sector")}</Label>
                   <Select
                     value={formData.sectorId}
                     onValueChange={(value) =>
                       handleFormChange({
-                        target: { name: 'sectorId', value },
+                        target: { name: "sectorId", value },
                       } as React.ChangeEvent<HTMLSelectElement>)
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t('selectSector')} />
+                      <SelectValue placeholder={t("selectSector")} />
                     </SelectTrigger>
                     <SelectContent>
                       {filteredSectors.map((sector) => (
@@ -106,21 +111,21 @@ const AddDialog: React.FC<AddDialogProps> = ({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="status">{t('status')}</Label>
+                  <Label htmlFor="status">{t("status")}</Label>
                   <Select
                     value={formData.status}
                     onValueChange={(value) =>
                       handleFormChange({
-                        target: { name: 'status', value },
+                        target: { name: "status", value },
                       } as React.ChangeEvent<HTMLSelectElement>)
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t('selectStatus')} />
+                      <SelectValue placeholder={t("selectStatus")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">{t('active')}</SelectItem>
-                      <SelectItem value="inactive">{t('inactive')}</SelectItem>
+                      <SelectItem value="active">{t("active")}</SelectItem>
+                      <SelectItem value="inactive">{t("inactive")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -128,7 +133,7 @@ const AddDialog: React.FC<AddDialogProps> = ({
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">{t('phone')}</Label>
+                  <Label htmlFor="phone">{t("phone")}</Label>
                   <Input
                     id="phone"
                     name="phone"
@@ -137,7 +142,7 @@ const AddDialog: React.FC<AddDialogProps> = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">{t('email')}</Label>
+                  <Label htmlFor="email">{t("email")}</Label>
                   <Input
                     id="email"
                     name="email"
@@ -149,7 +154,7 @@ const AddDialog: React.FC<AddDialogProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">{t('address')}</Label>
+                <Label htmlFor="address">{t("address")}</Label>
                 <Input
                   id="address"
                   name="address"
@@ -160,50 +165,56 @@ const AddDialog: React.FC<AddDialogProps> = ({
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor="type">{t('schoolType')}</Label>
+                  <Label htmlFor="type">{t("schoolType")}</Label>
                   <Select
                     value={formData.type}
                     onValueChange={(value) =>
                       handleFormChange({
-                        target: { name: 'type', value },
+                        target: { name: "type", value },
                       } as React.ChangeEvent<HTMLSelectElement>)
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t('selectType')} />
+                      <SelectValue placeholder={t("selectType")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="full_secondary">{t('fullSecondary')}</SelectItem>
-                      <SelectItem value="general_secondary">{t('generalSecondary')}</SelectItem>
-                      <SelectItem value="primary">{t('primary')}</SelectItem>
-                      <SelectItem value="lyceum">{t('lyceum')}</SelectItem>
-                      <SelectItem value="gymnasium">{t('gymnasium')}</SelectItem>
+                      <SelectItem value="full_secondary">
+                        {t("fullSecondary")}
+                      </SelectItem>
+                      <SelectItem value="general_secondary">
+                        {t("generalSecondary")}
+                      </SelectItem>
+                      <SelectItem value="primary">{t("primary")}</SelectItem>
+                      <SelectItem value="lyceum">{t("lyceum")}</SelectItem>
+                      <SelectItem value="gymnasium">
+                        {t("gymnasium")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="language">{t('language')}</Label>
+                  <Label htmlFor="language">{t("language")}</Label>
                   <Select
                     value={formData.language}
                     onValueChange={(value) =>
                       handleFormChange({
-                        target: { name: 'language', value },
+                        target: { name: "language", value },
                       } as React.ChangeEvent<HTMLSelectElement>)
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t('selectLanguage')} />
+                      <SelectValue placeholder={t("selectLanguage")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="az">{t('azerbaijani')}</SelectItem>
-                      <SelectItem value="ru">{t('russian')}</SelectItem>
-                      <SelectItem value="en">{t('english')}</SelectItem>
-                      <SelectItem value="tr">{t('turkish')}</SelectItem>
+                      <SelectItem value="az">{t("azerbaijani")}</SelectItem>
+                      <SelectItem value="ru">{t("russian")}</SelectItem>
+                      <SelectItem value="en">{t("english")}</SelectItem>
+                      <SelectItem value="tr">{t("turkish")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="studentCount">{t('studentCount')}</Label>
+                  <Label htmlFor="studentCount">{t("studentCount")}</Label>
                   <Input
                     id="studentCount"
                     name="studentCount"
@@ -216,33 +227,33 @@ const AddDialog: React.FC<AddDialogProps> = ({
             </TabsContent>
             <TabsContent value="admin" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="adminEmail">{t('adminEmail')}</Label>
+                <Label htmlFor="adminEmail">{t("adminEmail")}</Label>
                 <Input
                   id="adminEmail"
                   name="adminEmail"
                   type="email"
-                  value={formData.adminEmail || ''}
+                  value={formData.adminEmail || ""}
                   onChange={handleFormChange}
                   placeholder="admin@example.com"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="adminFullName">{t('adminFullName')}</Label>
+                <Label htmlFor="adminFullName">{t("adminFullName")}</Label>
                 <Input
                   id="adminFullName"
                   name="adminFullName"
-                  value={formData.adminFullName || ''}
+                  value={formData.adminFullName || ""}
                   onChange={handleFormChange}
-                  placeholder={t('fullNamePlaceholder')}
+                  placeholder={t("fullNamePlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="adminPassword">{t('password')}</Label>
+                <Label htmlFor="adminPassword">{t("password")}</Label>
                 <Input
                   id="adminPassword"
                   name="adminPassword"
                   type="password"
-                  value={formData.adminPassword || ''}
+                  value={formData.adminPassword || ""}
                   onChange={handleFormChange}
                   placeholder="••••••••"
                 />
@@ -251,9 +262,9 @@ const AddDialog: React.FC<AddDialogProps> = ({
           </Tabs>
           <DialogFooter className="mt-6">
             <Button variant="outline" type="button" onClick={onClose}>
-              {t('cancel')}
+              {t("cancel")}
             </Button>
-            <Button type="submit">{t('save')}</Button>
+            <Button type="submit">{t("save")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

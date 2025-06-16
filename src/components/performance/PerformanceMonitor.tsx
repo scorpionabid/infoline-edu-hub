@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
-import { Monitor, Zap, TrendingUp, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Monitor, Zap, TrendingUp, RefreshCw } from "lucide-react";
 
 interface PerformanceMetrics {
   memoryUsage: number;
@@ -14,53 +14,66 @@ interface PerformanceMetrics {
 }
 
 const PerformanceMonitor: React.FC = () => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
 
   const collectMetrics = () => {
     const startTime = performance.now();
-    
+
     // Simulate metrics collection
     const mockMetrics: PerformanceMetrics = {
-      memoryUsage: Math.round((performance as any).memory?.usedJSHeapSize / 1024 / 1024) || 45,
+      memoryUsage:
+        Math.round((performance as any).memory?.usedJSHeapSize / 1024 / 1024) ||
+        45,
       renderTime: Math.round(performance.now() - startTime),
       bundleSize: 1200, // KB
-      loadTime: Math.round(performance.timing?.loadEventEnd - performance.timing?.navigationStart) || 2500,
-      componentsCount: document.querySelectorAll('[data-testid]').length || 24
+      loadTime:
+        Math.round(
+          performance.timing?.loadEventEnd -
+            performance.timing?.navigationStart,
+        ) || 2500,
+      componentsCount: document.querySelectorAll("[data-testid]").length || 24,
     };
 
     setMetrics(mockMetrics);
   };
 
-  const getPerformanceStatus = (metric: string, value: number): 'good' | 'warning' | 'critical' => {
+  const getPerformanceStatus = (
+    metric: string,
+    value: number,
+  ): "good" | "warning" | "critical" => {
     const thresholds = {
       memoryUsage: { warning: 100, critical: 200 },
       renderTime: { warning: 100, critical: 200 },
       loadTime: { warning: 3000, critical: 5000 },
-      bundleSize: { warning: 1500, critical: 2000 }
+      bundleSize: { warning: 1500, critical: 2000 },
     };
 
     const threshold = thresholds[metric as keyof typeof thresholds];
-    if (!threshold) return 'good';
+    if (!threshold) return "good";
 
-    if (value >= threshold.critical) return 'critical';
-    if (value >= threshold.warning) return 'warning';
-    return 'good';
+    if (value >= threshold.critical) return "critical";
+    if (value >= threshold.warning) return "warning";
+    return "good";
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'good': return 'bg-green-100 text-green-800';
-      case 'warning': return 'bg-yellow-100 text-yellow-800';
-      case 'critical': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "good":
+        return "bg-green-100 text-green-800";
+      case "warning":
+        return "bg-yellow-100 text-yellow-800";
+      case "critical":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   useEffect(() => {
     collectMetrics();
-    
+
     if (isMonitoring) {
       const interval = setInterval(collectMetrics, 5000);
       return () => clearInterval(interval);
@@ -106,7 +119,11 @@ const PerformanceMonitor: React.FC = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Yaddaş İstifadəsi</span>
-                <Badge className={getStatusColor(getPerformanceStatus('memoryUsage', metrics.memoryUsage))}>
+                <Badge
+                  className={getStatusColor(
+                    getPerformanceStatus("memoryUsage", metrics.memoryUsage),
+                  )}
+                >
                   {metrics.memoryUsage} MB
                 </Badge>
               </div>
@@ -115,7 +132,11 @@ const PerformanceMonitor: React.FC = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Render Vaxtı</span>
-                <Badge className={getStatusColor(getPerformanceStatus('renderTime', metrics.renderTime))}>
+                <Badge
+                  className={getStatusColor(
+                    getPerformanceStatus("renderTime", metrics.renderTime),
+                  )}
+                >
                   {metrics.renderTime} ms
                 </Badge>
               </div>
@@ -124,7 +145,11 @@ const PerformanceMonitor: React.FC = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Yükləmə Vaxtı</span>
-                <Badge className={getStatusColor(getPerformanceStatus('loadTime', metrics.loadTime))}>
+                <Badge
+                  className={getStatusColor(
+                    getPerformanceStatus("loadTime", metrics.loadTime),
+                  )}
+                >
                   {(metrics.loadTime / 1000).toFixed(2)} s
                 </Badge>
               </div>
@@ -133,7 +158,11 @@ const PerformanceMonitor: React.FC = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Bundle Ölçüsü</span>
-                <Badge className={getStatusColor(getPerformanceStatus('bundleSize', metrics.bundleSize))}>
+                <Badge
+                  className={getStatusColor(
+                    getPerformanceStatus("bundleSize", metrics.bundleSize),
+                  )}
+                >
                   {metrics.bundleSize} KB
                 </Badge>
               </div>
@@ -177,9 +206,7 @@ const PerformanceMonitor: React.FC = () => {
               {metrics.loadTime > 3000 && (
                 <li>• Yükləmə vaxtını optimallaşdırın</li>
               )}
-              {metrics.bundleSize > 1500 && (
-                <li>• Bundle ölçüsünü azaldın</li>
-              )}
+              {metrics.bundleSize > 1500 && <li>• Bundle ölçüsünü azaldın</li>}
             </ul>
           </div>
         )}

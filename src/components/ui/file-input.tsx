@@ -1,9 +1,8 @@
-
-import React, { useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Upload, X } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import React, { useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Upload, X } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface FileInputProps {
   value: File | null;
@@ -22,9 +21,9 @@ export const FileInput: React.FC<FileInputProps> = ({
   required,
   multiple = false,
   disabled = false,
-  className = ""
+  className = "",
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleClick = () => {
@@ -44,7 +43,7 @@ export const FileInput: React.FC<FileInputProps> = ({
     e.stopPropagation();
     onChange(null);
     if (inputRef.current) {
-      inputRef.current.value = '';
+      inputRef.current.value = "";
     }
   };
 
@@ -70,7 +69,7 @@ export const FileInput: React.FC<FileInputProps> = ({
         {!value ? (
           <>
             <Upload className="mr-2 h-4 w-4" />
-            {t('uploadFile')}
+            {t("uploadFile")}
           </>
         ) : (
           <div className="flex items-center justify-between w-full">
@@ -83,7 +82,7 @@ export const FileInput: React.FC<FileInputProps> = ({
               onClick={handleClear}
             >
               <X className="h-4 w-4" />
-              <span className="sr-only">{t('clear')}</span>
+              <span className="sr-only">{t("clear")}</span>
             </Button>
           </div>
         )}

@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,7 +8,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -17,12 +16,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, Loader2 } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { DialogConfig, DialogType, EntityType } from './types';
-import { getDialogConfig } from './dialogConfigs';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { DialogConfig, DialogType, EntityType } from "./types";
+import { getDialogConfig } from "./dialogConfigs";
 
 interface UniversalDialogProps {
   type: DialogType;
@@ -43,37 +42,44 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
   onConfirm,
   data,
   isSubmitting = false,
-  customConfig = {}
+  customConfig = {},
 }) => {
-  const { t } = useLanguage();
-  
+  const { t } = useTranslation();
+
   // Get base config and merge with custom overrides
   const baseConfig = getDialogConfig(type, entity);
   const config = { ...baseConfig, ...customConfig };
-  
+
   // Extract entity name safely
-  const entityName = data?.name || data?.full_name || data?.title || t('common.items.unknown');
-  
+  const entityName =
+    data?.name || data?.full_name || data?.title || t("common.items.unknown");
+
   // Build title with translation fallback
   const title = config.titleKey ? t(config.titleKey) : config.title;
-  
+
   // Build warning text with entity name
-  const warningText = config.warningTextKey 
+  const warningText = config.warningTextKey
     ? t(config.warningTextKey, { name: entityName })
-    : config.warningText?.replace('{name}', entityName);
-  
+    : config.warningText?.replace("{name}", entityName);
+
   // Build consequences text
-  const consequences = config.consequencesKey ? t(config.consequencesKey) : config.consequences;
-  
+  const consequences = config.consequencesKey
+    ? t(config.consequencesKey)
+    : config.consequences;
+
   // Build confirm text
-  const confirmText = config.confirmTextKey ? t(config.confirmTextKey) : config.confirmText;
-  
+  const confirmText = config.confirmTextKey
+    ? t(config.confirmTextKey)
+    : config.confirmText;
+
   // Build loading text
-  const loadingText = config.loadingTextKey ? t(config.loadingTextKey) : config.loadingText;
-  
+  const loadingText = config.loadingTextKey
+    ? t(config.loadingTextKey)
+    : config.loadingText;
+
   // Use AlertDialog for destructive actions, Dialog for others
-  const isDestructive = type === 'delete' || config.dangerLevel === 'high';
-  
+  const isDestructive = type === "delete" || config.dangerLevel === "high";
+
   if (isDestructive) {
     return (
       <AlertDialog open={isOpen} onOpenChange={onClose}>
@@ -90,18 +96,16 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
                 <strong>"{entityName}"</strong> {warningText}
               </div>
               {consequences && (
-                <div className="mt-2 text-sm">
-                  {consequences}
-                </div>
+                <div className="mt-2 text-sm">{consequences}</div>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
+
           <AlertDialogFooter>
             <AlertDialogCancel onClick={onClose} disabled={isSubmitting}>
-              {t('common.cancel')}
+              {t("common.cancel")}
             </AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={onConfirm}
               disabled={isSubmitting}
               className="bg-destructive hover:bg-destructive/90"
@@ -120,7 +124,7 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
       </AlertDialog>
     );
   }
-  
+
   // Non-destructive dialog (create, edit, info, etc.)
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -140,22 +144,20 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
                 </div>
               )}
               {consequences && (
-                <div className="mt-2 text-sm">
-                  {consequences}
-                </div>
+                <div className="mt-2 text-sm">{consequences}</div>
               )}
             </DialogDescription>
           )}
         </DialogHeader>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            {t('common.cancel')}
+            {t("common.cancel")}
           </Button>
-          <Button 
+          <Button
             onClick={onConfirm}
             disabled={isSubmitting}
-            variant={config.dangerLevel === 'high' ? 'destructive' : 'default'}
+            variant={config.dangerLevel === "high" ? "destructive" : "default"}
           >
             {isSubmitting ? (
               <>

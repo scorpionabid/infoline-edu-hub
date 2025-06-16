@@ -1,8 +1,12 @@
-
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useLanguage } from '@/context/LanguageContext';
-import { Sector } from '@/types/supabase';
+import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Sector } from "@/types/supabase";
 
 interface SectorAdminDialogProps {
   open: boolean;
@@ -10,35 +14,35 @@ interface SectorAdminDialogProps {
   sector?: Sector;
 }
 
-export const SectorAdminDialog: React.FC<SectorAdminDialogProps> = ({ 
-  open, 
+export const SectorAdminDialog: React.FC<SectorAdminDialogProps> = ({
+  open,
   onOpenChange,
-  sector 
+  sector,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('sectorAdmin')}</DialogTitle>
+          <DialogTitle>{t("sectorAdmin")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {sector ? (
             <>
               <div>
-                <h3 className="font-medium">{t('sectorName')}</h3>
+                <h3 className="font-medium">{t("sectorName")}</h3>
                 <p>{sector.name}</p>
               </div>
-              
+
               <div>
-                <h3 className="font-medium">{t('adminEmail')}</h3>
-                <p>{sector.admin_email || t('noAdminAssigned')}</p>
+                <h3 className="font-medium">{t("adminEmail")}</h3>
+                <p>{sector.admin_email || t("noAdminAssigned")}</p>
               </div>
             </>
           ) : (
-            <p>{t('sectorNotSelected')}</p>
+            <p>{t("sectorNotSelected")}</p>
           )}
         </div>
       </DialogContent>

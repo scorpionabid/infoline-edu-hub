@@ -1,13 +1,23 @@
-
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserData, UserRole } from '@/types/user';
-import { useLanguage } from '@/context/LanguageContext';
-import { toast } from 'sonner';
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { UserData, UserRole } from "@/types/user";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { toast } from "sonner";
 
 interface EditUserDialogProps {
   user: UserData | null;
@@ -20,9 +30,9 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   user,
   open,
   onOpenChange,
-  onSave
+  onSave,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<Partial<UserData>>({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -45,10 +55,10 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     try {
       await onSave(formData);
       onOpenChange(false);
-      toast.success('İstifadəçi məlumatları yeniləndi');
+      toast.success("İstifadəçi məlumatları yeniləndi");
     } catch (error) {
-      console.error('Error updating user:', error);
-      toast.error('İstifadəçi yenilənərkən xəta baş verdi');
+      console.error("Error updating user:", error);
+      toast.error("İstifadəçi yenilənərkən xəta baş verdi");
     } finally {
       setIsLoading(false);
     }
@@ -60,77 +70,91 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('editUser') || 'İstifadəçini redaktə et'}</DialogTitle>
+          <DialogTitle>
+            {t("editUser") || "İstifadəçini redaktə et"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="full_name">{t('fullName') || 'Ad Soyad'}</Label>
+            <Label htmlFor="full_name">{t("fullName") || "Ad Soyad"}</Label>
             <Input
               id="full_name"
-              value={formData.full_name || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
+              value={formData.full_name || ""}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, full_name: e.target.value }))
+              }
               required
             />
           </div>
 
           <div>
-            <Label htmlFor="email">{t('email') || 'E-poçt'}</Label>
+            <Label htmlFor="email">{t("email") || "E-poçt"}</Label>
             <Input
               id="email"
               type="email"
-              value={formData.email || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              value={formData.email || ""}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, email: e.target.value }))
+              }
               required
             />
           </div>
 
           <div>
-            <Label htmlFor="phone">{t('phone') || 'Telefon'}</Label>
+            <Label htmlFor="phone">{t("phone") || "Telefon"}</Label>
             <Input
               id="phone"
-              value={formData.phone || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              value={formData.phone || ""}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, phone: e.target.value }))
+              }
             />
           </div>
 
           <div>
-            <Label htmlFor="position">{t('position') || 'Vəzifə'}</Label>
+            <Label htmlFor="position">{t("position") || "Vəzifə"}</Label>
             <Input
               id="position"
-              value={formData.position || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
+              value={formData.position || ""}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, position: e.target.value }))
+              }
             />
           </div>
 
           <div>
-            <Label htmlFor="status">{t('status') || 'Status'}</Label>
+            <Label htmlFor="status">{t("status") || "Status"}</Label>
             <Select
-              value={formData.status || 'active'}
-              onValueChange={(value: 'active' | 'inactive') => 
-                setFormData(prev => ({ ...prev, status: value }))
+              value={formData.status || "active"}
+              onValueChange={(value: "active" | "inactive") =>
+                setFormData((prev) => ({ ...prev, status: value }))
               }
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">{t('active') || 'Aktiv'}</SelectItem>
-                <SelectItem value="inactive">{t('inactive') || 'Qeyri-aktiv'}</SelectItem>
+                <SelectItem value="active">{t("active") || "Aktiv"}</SelectItem>
+                <SelectItem value="inactive">
+                  {t("inactive") || "Qeyri-aktiv"}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              {t('cancel') || 'İmtina'}
+              {t("cancel") || "İmtina"}
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? (t('saving') || 'Yadda saxlanır...') : (t('save') || 'Yadda saxla')}
+              {isLoading
+                ? t("saving") || "Yadda saxlanır..."
+                : t("save") || "Yadda saxla"}
             </Button>
           </div>
         </form>

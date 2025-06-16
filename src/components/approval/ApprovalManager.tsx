@@ -1,14 +1,13 @@
-
-import React, { useState, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, XCircle, Clock, Eye, MessageSquare } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { useToast } from '@/hooks/use-toast';
-import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
-import { CategoryWithColumns } from '@/types/category';
+import React, { useState, useCallback, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CheckCircle, XCircle, Clock, Eye, MessageSquare } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { useToast } from "@/hooks/use-toast";
+import { DataEntry, DataEntryStatus } from "@/types/dataEntry";
+import { CategoryWithColumns } from "@/types/category";
 
 interface ApprovalItem {
   id: string;
@@ -40,69 +39,77 @@ const ApprovalManager: React.FC<ApprovalManagerProps> = ({
   onApprove,
   onReject,
   onView,
-  isLoading = false
+  isLoading = false,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState("pending");
 
   // Handle single approval
-  const handleSingleApproval = useCallback(async (itemId: string) => {
-    try {
-      await onApprove(itemId);
-      toast({
-        title: t('success'),
-        description: t('itemApprovedSuccessfully'),
-      });
-    } catch (error) {
-      toast({
-        title: t('error'),
-        description: t('errorApprovingItem'),
-        variant: 'destructive'
-      });
-    }
-  }, [onApprove, t, toast]);
+  const handleSingleApproval = useCallback(
+    async (itemId: string) => {
+      try {
+        await onApprove(itemId);
+        toast({
+          title: t("success"),
+          description: t("itemApprovedSuccessfully"),
+        });
+      } catch (error) {
+        toast({
+          title: t("error"),
+          description: t("errorApprovingItem"),
+          variant: "destructive",
+        });
+      }
+    },
+    [onApprove, t, toast],
+  );
 
   // Handle single rejection
-  const handleSingleRejection = useCallback(async (itemId: string, reason: string) => {
-    try {
-      await onReject(itemId, reason);
-      toast({
-        title: t('success'),
-        description: t('itemRejectedSuccessfully'),
-      });
-    } catch (error) {
-      toast({
-        title: t('error'),
-        description: t('errorRejectingItem'),
-        variant: 'destructive'
-      });
-    }
-  }, [onReject, t, toast]);
+  const handleSingleRejection = useCallback(
+    async (itemId: string, reason: string) => {
+      try {
+        await onReject(itemId, reason);
+        toast({
+          title: t("success"),
+          description: t("itemRejectedSuccessfully"),
+        });
+      } catch (error) {
+        toast({
+          title: t("error"),
+          description: t("errorRejectingItem"),
+          variant: "destructive",
+        });
+      }
+    },
+    [onReject, t, toast],
+  );
 
   // Handle batch approval
   const handleBatchApproval = useCallback(async () => {
     try {
-      const promises = Array.from(selectedItems).map(itemId => onApprove(itemId));
+      const promises = Array.from(selectedItems).map((itemId) =>
+        onApprove(itemId),
+      );
       await Promise.all(promises);
       setSelectedItems(new Set());
       toast({
-        title: t('success'),
-        description: t('itemsApprovedSuccessfully'),
+        title: t("success"),
+        description: t("itemsApprovedSuccessfully"),
       });
     } catch (error) {
       toast({
-        title: t('error'),
-        description: t('errorApprovingItems'),
-        variant: 'destructive'
+        title: t("error"),
+        description: t("errorApprovingItems"),
+        variant: "destructive",
       });
     }
   }, [selectedItems, onApprove, t, toast]);
 
   // Toggle item selection
   const toggleItemSelection = useCallback((itemId: string) => {
-    setSelectedItems(prev => {
+    setSelectedItems((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(itemId)) {
         newSet.delete(itemId);
@@ -115,7 +122,7 @@ const ApprovalManager: React.FC<ApprovalManagerProps> = ({
 
   // Select all items
   const selectAllItems = useCallback(() => {
-    setSelectedItems(new Set(pendingApprovals.map(item => item.id)));
+    setSelectedItems(new Set(pendingApprovals.map((item) => item.id)));
   }, [pendingApprovals]);
 
   // Clear selection
@@ -126,19 +133,23 @@ const ApprovalManager: React.FC<ApprovalManagerProps> = ({
   // Render approval item
   const renderApprovalItem = (item: ApprovalItem) => {
     const isSelected = selectedItems.has(item.id);
-    const statusColor = {
-      pending: 'bg-yellow-500',
-      approved: 'bg-green-500',
-      rejected: 'bg-red-500',
-      draft: 'bg-gray-500'
-    }[item.status] || 'bg-gray-500';
+    const statusColor =
+      {
+        pending: "bg-yellow-500",
+        approved: "bg-green-500",
+        rejected: "bg-red-500",
+        draft: "bg-gray-500",
+      }[item.status] || "bg-gray-500";
 
     return (
-      <Card key={item.id} className={`transition-all ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+      <Card
+        key={item.id}
+        className={`transition-all ${isSelected ? "ring-2 ring-primary" : ""}`}
+      >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
-              {activeTab === 'pending' && (
+              {activeTab === "pending" && (
                 <input
                   type="checkbox"
                   checked={isSelected}
@@ -148,50 +159,59 @@ const ApprovalManager: React.FC<ApprovalManagerProps> = ({
               )}
               <div>
                 <CardTitle className="text-lg">{item.categoryName}</CardTitle>
-                <p className="text-sm text-muted-foreground">{item.schoolName}</p>
+                <p className="text-sm text-muted-foreground">
+                  {item.schoolName}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  {t('submittedBy')}: {item.submittedBy} • {new Date(item.submittedAt).toLocaleDateString()}
+                  {t("submittedBy")}: {item.submittedBy} •{" "}
+                  {new Date(item.submittedAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Badge className={statusColor}>
-                {item.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
-                {item.status === 'approved' && <CheckCircle className="w-3 h-3 mr-1" />}
-                {item.status === 'rejected' && <XCircle className="w-3 h-3 mr-1" />}
+                {item.status === "pending" && (
+                  <Clock className="w-3 h-3 mr-1" />
+                )}
+                {item.status === "approved" && (
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                )}
+                {item.status === "rejected" && (
+                  <XCircle className="w-3 h-3 mr-1" />
+                )}
                 {t(item.status)}
               </Badge>
-              <span className="text-sm font-medium">{Math.round(item.completionRate)}%</span>
+              <span className="text-sm font-medium">
+                {Math.round(item.completionRate)}%
+              </span>
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="pt-0">
           <div className="flex justify-between items-center">
             <div className="text-sm text-muted-foreground">
-              {item.entries?.length || 0} {t('dataEntries')}
+              {item.entries?.length || 0} {t("dataEntries")}
             </div>
-            
+
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onView(item)}
-              >
+              <Button variant="outline" size="sm" onClick={() => onView(item)}>
                 <Eye className="w-4 h-4 mr-1" />
-                {t('view')}
+                {t("view")}
               </Button>
-              
-              {item.status === 'pending' && (
+
+              {item.status === "pending" && (
                 <>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleSingleRejection(item.id, 'Manual rejection')}
+                    onClick={() =>
+                      handleSingleRejection(item.id, "Manual rejection")
+                    }
                     className="text-red-600 hover:text-red-700"
                   >
                     <XCircle className="w-4 h-4 mr-1" />
-                    {t('reject')}
+                    {t("reject")}
                   </Button>
                   <Button
                     size="sm"
@@ -199,7 +219,7 @@ const ApprovalManager: React.FC<ApprovalManagerProps> = ({
                     className="bg-green-600 hover:bg-green-700"
                   >
                     <CheckCircle className="w-4 h-4 mr-1" />
-                    {t('approve')}
+                    {t("approve")}
                   </Button>
                 </>
               )}
@@ -213,24 +233,25 @@ const ApprovalManager: React.FC<ApprovalManagerProps> = ({
   return (
     <div className="space-y-4">
       {/* Header with batch actions */}
-      {activeTab === 'pending' && pendingApprovals.length > 0 && (
+      {activeTab === "pending" && pendingApprovals.length > 0 && (
         <Card>
           <CardContent className="p-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-4">
                 <span className="text-sm font-medium">
-                  {selectedItems.size} / {pendingApprovals.length} {t('selected')}
+                  {selectedItems.size} / {pendingApprovals.length}{" "}
+                  {t("selected")}
                 </span>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={selectAllItems}>
-                    {t('selectAll')}
+                    {t("selectAll")}
                   </Button>
                   <Button variant="outline" size="sm" onClick={clearSelection}>
-                    {t('clearSelection')}
+                    {t("clearSelection")}
                   </Button>
                 </div>
               </div>
-              
+
               {selectedItems.size > 0 && (
                 <div className="flex gap-2">
                   <Button
@@ -239,7 +260,7 @@ const ApprovalManager: React.FC<ApprovalManagerProps> = ({
                     className="bg-green-600 hover:bg-green-700"
                   >
                     <CheckCircle className="w-4 h-4 mr-1" />
-                    {t('approveSelected')} ({selectedItems.size})
+                    {t("approveSelected")} ({selectedItems.size})
                   </Button>
                 </div>
               )}
@@ -253,15 +274,15 @@ const ApprovalManager: React.FC<ApprovalManagerProps> = ({
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            {t('pending')} ({pendingApprovals.length})
+            {t("pending")} ({pendingApprovals.length})
           </TabsTrigger>
           <TabsTrigger value="approved" className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4" />
-            {t('approved')} ({approvedItems.length})
+            {t("approved")} ({approvedItems.length})
           </TabsTrigger>
           <TabsTrigger value="rejected" className="flex items-center gap-2">
             <XCircle className="w-4 h-4" />
-            {t('rejected')} ({rejectedItems.length})
+            {t("rejected")} ({rejectedItems.length})
           </TabsTrigger>
         </TabsList>
 
@@ -270,7 +291,7 @@ const ApprovalManager: React.FC<ApprovalManagerProps> = ({
             <Card>
               <CardContent className="p-8 text-center text-muted-foreground">
                 <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-                <p>{t('noPendingApprovals')}</p>
+                <p>{t("noPendingApprovals")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -283,7 +304,7 @@ const ApprovalManager: React.FC<ApprovalManagerProps> = ({
             <Card>
               <CardContent className="p-8 text-center text-muted-foreground">
                 <CheckCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-                <p>{t('noApprovedItems')}</p>
+                <p>{t("noApprovedItems")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -296,7 +317,7 @@ const ApprovalManager: React.FC<ApprovalManagerProps> = ({
             <Card>
               <CardContent className="p-8 text-center text-muted-foreground">
                 <XCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-                <p>{t('noRejectedItems')}</p>
+                <p>{t("noRejectedItems")}</p>
               </CardContent>
             </Card>
           ) : (

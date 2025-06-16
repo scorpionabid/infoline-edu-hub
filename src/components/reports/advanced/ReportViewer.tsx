@@ -1,20 +1,19 @@
-
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useLanguage } from '@/context/LanguageContext';
-import { AdvancedReportData } from '@/types/advanced-report';
-import ChartView from '../views/ChartView';
-import { format } from 'date-fns';
-import { Calendar, User, Database, TrendingUp, Lightbulb } from 'lucide-react';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { AdvancedReportData } from "@/types/advanced-report";
+import ChartView from "../views/ChartView";
+import { format } from "date-fns";
+import { Calendar, User, Database, TrendingUp, Lightbulb } from "lucide-react";
 
 interface ReportViewerProps {
   report: AdvancedReportData;
 }
 
 const ReportViewer: React.FC<ReportViewerProps> = ({ report }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-6">
@@ -27,24 +26,22 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report }) => {
               <p className="text-muted-foreground mt-1">{report.description}</p>
             )}
           </div>
-          <Badge className="bg-blue-100 text-blue-800">
-            {t(report.type)}
-          </Badge>
+          <Badge className="bg-blue-100 text-blue-800">{t(report.type)}</Badge>
         </div>
 
         <div className="flex items-center gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <Calendar className="h-4 w-4" />
-            {format(new Date(report.generatedAt), 'PPp')}
+            {format(new Date(report.generatedAt), "PPp")}
           </div>
           <div className="flex items-center gap-1">
             <User className="h-4 w-4" />
-            {t('generatedBy')}: {report.generatedBy}
+            {t("generatedBy")}: {report.generatedBy}
           </div>
           {report.metadata && (
             <div className="flex items-center gap-1">
               <Database className="h-4 w-4" />
-              {report.metadata.totalRecords} {t('records')}
+              {report.metadata.totalRecords} {t("records")}
             </div>
           )}
         </div>
@@ -57,7 +54,7 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report }) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            {t('dataVisualization')}
+            {t("dataVisualization")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -66,11 +63,11 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report }) => {
             type="bar"
             height={400}
             config={{
-              xAxisKey: 'name',
-              yAxisKey: 'completion_rate',
-              colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+              xAxisKey: "name",
+              yAxisKey: "completion_rate",
+              colors: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"],
               showGrid: true,
-              showLegend: true
+              showLegend: true,
             }}
           />
         </CardContent>
@@ -79,25 +76,35 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report }) => {
       {/* Data Table */}
       <Card>
         <CardHeader>
-          <CardTitle>{t('rawData')}</CardTitle>
+          <CardTitle>{t("rawData")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse border border-gray-200">
               <thead>
                 <tr className="bg-gray-50">
-                  {report.data.length > 0 && Object.keys(report.data[0]).map(key => (
-                    <th key={key} className="border border-gray-200 px-4 py-2 text-left font-medium">
-                      {t(key)}
-                    </th>
-                  ))}
+                  {report.data.length > 0 &&
+                    Object.keys(report.data[0]).map((key) => (
+                      <th
+                        key={key}
+                        className="border border-gray-200 px-4 py-2 text-left font-medium"
+                      >
+                        {t(key)}
+                      </th>
+                    ))}
                 </tr>
               </thead>
               <tbody>
                 {report.data.map((row, index) => (
-                  <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <tr
+                    key={index}
+                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  >
                     {Object.values(row).map((value, colIndex) => (
-                      <td key={colIndex} className="border border-gray-200 px-4 py-2">
+                      <td
+                        key={colIndex}
+                        className="border border-gray-200 px-4 py-2"
+                      >
                         {String(value)}
                       </td>
                     ))}
@@ -115,7 +122,7 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report }) => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lightbulb className="h-5 w-5" />
-              {t('insights')}
+              {t("insights")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -137,7 +144,7 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report }) => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              {t('recommendations')}
+              {t("recommendations")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -157,22 +164,26 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report }) => {
       {report.metadata && (
         <Card>
           <CardHeader>
-            <CardTitle>{t('reportMetadata')}</CardTitle>
+            <CardTitle>{t("reportMetadata")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
-                <span className="font-medium">{t('dataSource')}:</span>
-                <p className="text-muted-foreground">{report.metadata.dataSource}</p>
-              </div>
-              <div>
-                <span className="font-medium">{t('totalRecords')}:</span>
-                <p className="text-muted-foreground">{report.metadata.totalRecords}</p>
-              </div>
-              <div>
-                <span className="font-medium">{t('lastUpdated')}:</span>
+                <span className="font-medium">{t("dataSource")}:</span>
                 <p className="text-muted-foreground">
-                  {format(new Date(report.metadata.lastUpdated), 'PPp')}
+                  {report.metadata.dataSource}
+                </p>
+              </div>
+              <div>
+                <span className="font-medium">{t("totalRecords")}:</span>
+                <p className="text-muted-foreground">
+                  {report.metadata.totalRecords}
+                </p>
+              </div>
+              <div>
+                <span className="font-medium">{t("lastUpdated")}:</span>
+                <p className="text-muted-foreground">
+                  {format(new Date(report.metadata.lastUpdated), "PPp")}
                 </p>
               </div>
             </div>

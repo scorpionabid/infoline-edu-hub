@@ -1,10 +1,9 @@
-
-import React from 'react';
-import { AppNotification } from '@/types/notification';
-import NotificationItem from './NotificationItem';
-import { useLanguage } from '@/context/LanguageContext';
-import { Button } from '@/components/ui/button';
-import { BellOff } from 'lucide-react';
+import React from "react";
+import { AppNotification } from "@/types/notification";
+import NotificationItem from "./NotificationItem";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Button } from "@/components/ui/button";
+import { BellOff } from "lucide-react";
 
 interface NotificationListProps {
   notifications: AppNotification[];
@@ -19,17 +18,17 @@ const NotificationList: React.FC<NotificationListProps> = ({
   onMarkAllAsRead,
   onClearAll,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   if (notifications.length === 0) {
     return (
       <div className="p-6 text-center">
         <BellOff className="mx-auto h-12 w-12 text-muted-foreground/50" />
         <h3 className="mt-2 text-base font-semibold text-foreground">
-          {t('noNotifications')}
+          {t("noNotifications")}
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          {t('noNotificationsDesc')}
+          {t("noNotificationsDesc")}
         </p>
       </div>
     );
@@ -38,24 +37,16 @@ const NotificationList: React.FC<NotificationListProps> = ({
   return (
     <div>
       <div className="flex justify-between p-4">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onMarkAllAsRead}
-        >
-          {t('markAllAsRead')}
+        <Button variant="outline" size="sm" onClick={onMarkAllAsRead}>
+          {t("markAllAsRead")}
         </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onClearAll}
-        >
-          {t('clearAll')}
+        <Button variant="outline" size="sm" onClick={onClearAll}>
+          {t("clearAll")}
         </Button>
       </div>
-      
+
       <div className="max-h-[400px] overflow-y-auto p-4">
-        {notifications.map(notification => (
+        {notifications.map((notification) => (
           <NotificationItem
             key={notification.id}
             notification={notification}

@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,8 +9,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useLanguage } from '@/context/LanguageContext';
-import { Loader2 } from 'lucide-react';
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Loader2 } from "lucide-react";
 
 interface DeleteColumnDialogProps {
   open: boolean;
@@ -22,15 +21,15 @@ interface DeleteColumnDialogProps {
   isSubmitting?: boolean;
 }
 
-const DeleteColumnDialog: React.FC<DeleteColumnDialogProps> = ({ 
-  open, 
-  onOpenChange, 
-  columnId, 
+const DeleteColumnDialog: React.FC<DeleteColumnDialogProps> = ({
+  open,
+  onOpenChange,
+  columnId,
   columnName,
   onConfirm,
-  isSubmitting = false
+  isSubmitting = false,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const handleClose = () => onOpenChange(false);
 
@@ -48,15 +47,15 @@ const DeleteColumnDialog: React.FC<DeleteColumnDialogProps> = ({
           <AlertDialogCancel onClick={handleClose} disabled={isSubmitting}>
             {t("cancel")}
           </AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={onConfirm} 
+          <AlertDialogAction
+            onClick={onConfirm}
             className="bg-destructive hover:bg-destructive/90"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('deleting')}
+                {t("deleting")}
               </>
             ) : (
               t("delete")

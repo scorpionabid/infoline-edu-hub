@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface LoginFormProps {
   error?: string | null;
@@ -23,11 +24,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isSubmitting) return; // Duplicate submission qarşısını al
+    if (isSubmitting) return; // Prevent duplicate submission
     
     setIsSubmitting(true);
     
@@ -40,11 +42,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       await signIn(formData.email, formData.password);
       console.log('[LoginForm] Login successful, navigating...');
       navigate('/dashboard');
-      toast.success('Uğurla daxil oldunuz');
+      toast.success(t?.('auth.login.success') || 'Login successful');
     } catch (error: any) {
       console.error('[LoginForm] Login error:', error);
-      toast.error('Giriş uğursuz', {
-        description: error.message || 'Email və ya şifrə yanlışdır'
+      toast.error(t?.('auth.login.error.title') || 'Login failed', {
+        description: error.message || t?.('auth.login.error.default') || 'Incorrect email or password'
       });
     } finally {
       setIsSubmitting(false);
@@ -61,7 +63,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Giriş</CardTitle>
+        <CardTitle>{t?.('auth.login.title') || 'Login'}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -69,7 +71,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
             <Input
               name="email"
               type="email"
-              placeholder="Email"
+              placeholder={t?.('auth.login.email') || 'Email'}
               value={formData.email}
               onChange={handleChange}
               required
@@ -80,7 +82,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
             <Input
               name="password"
               type="password"
-              placeholder="Şifrə"
+              placeholder={t?.('auth.login.password') || 'Password'}
               value={formData.password}
               onChange={handleChange}
               required
@@ -95,7 +97,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
             disabled={isLoading || isSubmitting} 
             className="w-full"
           >
-            {isLoading || isSubmitting ? 'Giriş edilir...' : 'Giriş et'}
+            {isLoading || isSubmitting 
+              ? t?.('auth.login.submitting') || 'Logging in...' 
+              : t?.('auth.login.submit') || 'Log in'}
           </Button>
         </form>
       </CardContent>

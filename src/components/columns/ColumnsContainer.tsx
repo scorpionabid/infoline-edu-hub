@@ -1,22 +1,22 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { Column } from '@/types/column';
-import { Category } from '@/types/category';
-import { Button } from '@/components/ui/button';
-import { Plus, Filter, Search, CheckSquare, Square } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Input } from '@/components/ui/input';
+import React, { useState, useCallback, useEffect } from "react";
+import { Column } from "@/types/column";
+import { Category } from "@/types/category";
+import { Button } from "@/components/ui/button";
+import { Plus, Filter, Search, CheckSquare, Square } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import ColumnTabs from './ColumnTabs';
-import EnhancedColumnList from './EnhancedColumnList';
-import BulkOperationsPanel from './BulkOperationsPanel';
-import { useColumnMutations } from '@/hooks/columns';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import ColumnTabs from "./ColumnTabs";
+import EnhancedColumnList from "./EnhancedColumnList";
+import BulkOperationsPanel from "./BulkOperationsPanel";
+import { useColumnMutations } from "@/hooks/columns";
 
 interface ColumnsContainerProps {
   columns?: Column[];
@@ -46,7 +46,7 @@ interface ColumnsContainerProps {
 const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   columns = [],
   categories = [],
-  selectedCategoryId = '',
+  selectedCategoryId = "",
   isLoading = false,
   onRefresh,
   onCreate,
@@ -64,10 +64,10 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   onCreateDialogClose = () => {},
   onEditDialogClose = () => {},
   createFormProps = {},
-  editFormProps = {}
+  editFormProps = {},
 }) => {
-  const { t } = useLanguage();
-  
+  const { t } = useTranslation();
+
   // Enhanced column mutations - with all required methods
   const {
     duplicateColumn,
@@ -79,26 +79,32 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
     moveColumnsToCategoryAsync,
     bulkDeleteAsync,
   } = useColumnMutations();
-  
+
   // Persistent tab state with localStorage
-  const [activeTab, setActiveTab] = React.useState<'active' | 'archived'>(() => {
-    try {
-      return (localStorage.getItem('columns-active-tab') as 'active' | 'archived') || 'active';
-    } catch {
-      return 'active';
-    }
-  });
-  
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = React.useState<"active" | "archived">(
+    () => {
+      try {
+        return (
+          (localStorage.getItem("columns-active-tab") as
+            | "active"
+            | "archived") || "active"
+        );
+      } catch {
+        return "active";
+      }
+    },
+  );
+
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
 
   // Persist tab state
   useEffect(() => {
     try {
-      localStorage.setItem('columns-active-tab', activeTab);
+      localStorage.setItem("columns-active-tab", activeTab);
     } catch {
       // Ignore localStorage errors
     }
@@ -106,15 +112,15 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
 
   // Selection management functions
   const toggleColumnSelection = useCallback((columnId: string) => {
-    setSelectedColumns(prev => 
+    setSelectedColumns((prev) =>
       prev.includes(columnId)
-        ? prev.filter(id => id !== columnId)
-        : [...prev, columnId]
+        ? prev.filter((id) => id !== columnId)
+        : [...prev, columnId],
     );
   }, []);
 
   const selectAllColumns = useCallback((columns: Column[]) => {
-    setSelectedColumns(columns.map(col => col.id));
+    setSelectedColumns(columns.map((col) => col.id));
   }, []);
 
   const clearSelection = useCallback(() => {
@@ -123,56 +129,79 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
 
   // Separate active and archived columns
   const activeColumns = React.useMemo(() => {
-    return columns?.filter(column => column.status === 'active') || [];
+    return columns?.filter((column) => column.status === "active") || [];
   }, [columns]);
-  
+
   const archivedColumns = React.useMemo(() => {
     // Include both 'deleted' and 'inactive' columns in archived
-    return columns?.filter(column => column.status === 'deleted' || column.status === 'inactive') || [];
+    return (
+      columns?.filter(
+        (column) => column.status === "deleted" || column.status === "inactive",
+      ) || []
+    );
   }, [columns]);
 
   // Calculate stats
-  const stats = React.useMemo(() => ({
-    total: columns.length,
-    active: activeColumns.length,
-    archived: archivedColumns.length,
-    selected: selectedColumns.length
-  }), [columns.length, activeColumns.length, archivedColumns.length, selectedColumns.length]);
-  
+  const stats = React.useMemo(
+    () => ({
+      total: columns.length,
+      active: activeColumns.length,
+      archived: archivedColumns.length,
+      selected: selectedColumns.length,
+    }),
+    [
+      columns.length,
+      activeColumns.length,
+      archivedColumns.length,
+      selectedColumns.length,
+    ],
+  );
+
   // Get current columns based on active tab
-  const currentColumns = activeTab === 'active' ? activeColumns : archivedColumns;
-  
+  const currentColumns =
+    activeTab === "active" ? activeColumns : archivedColumns;
+
   // Enhanced filtering
   const filteredColumns = React.useMemo(() => {
     if (!currentColumns || !Array.isArray(currentColumns)) return [];
-    
-    const filtered = currentColumns.filter(column => {
-      const matchesSearch = searchQuery === '' || 
+
+    const filtered = currentColumns.filter((column) => {
+      const matchesSearch =
+        searchQuery === "" ||
         column.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         column.help_text?.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'all' || column.status === statusFilter;
-      const matchesType = typeFilter === 'all' || column.type === typeFilter;
-      const matchesCategory = categoryFilter === 'all' || column.category_id === categoryFilter;
-      
+
+      const matchesStatus =
+        statusFilter === "all" || column.status === statusFilter;
+      const matchesType = typeFilter === "all" || column.type === typeFilter;
+      const matchesCategory =
+        categoryFilter === "all" || column.category_id === categoryFilter;
+
       return matchesSearch && matchesStatus && matchesType && matchesCategory;
     });
-    
+
     return filtered;
-  }, [currentColumns, searchQuery, statusFilter, typeFilter, categoryFilter, activeTab]);
+  }, [
+    currentColumns,
+    searchQuery,
+    statusFilter,
+    typeFilter,
+    categoryFilter,
+    activeTab,
+  ]);
 
   // Get unique types for filter dropdown
   const uniqueTypes = React.useMemo(() => {
     const types = new Set(
       columns
-        .map(col => col.type)
-        .filter(type => type && type.trim() !== '')
+        .map((col) => col.type)
+        .filter((type) => type && type.trim() !== ""),
     );
     return Array.from(types);
   }, [columns]);
 
   const handleSelectAll = () => {
-    const allFilteredIds = filteredColumns.map(col => col.id);
+    const allFilteredIds = filteredColumns.map((col) => col.id);
     if (selectedColumns.length === allFilteredIds.length) {
       clearSelection();
     } else {
@@ -181,24 +210,27 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   };
 
   // FIXED: Handle toggle status with proper function signatures
-  const handleToggleStatus = async (columnId: string, status: 'active' | 'inactive') => {
+  const handleToggleStatus = async (
+    columnId: string,
+    status: "active" | "inactive",
+  ) => {
     try {
       console.log(`Toggling column ${columnId} to status: ${status}`);
-      
+
       if (bulkToggleStatusAsync) {
         await bulkToggleStatusAsync([columnId], status);
       } else {
         bulkToggleStatus([columnId], status);
       }
-      
-      if (status === 'inactive') {
-        setActiveTab('archived');
+
+      if (status === "inactive") {
+        setActiveTab("archived");
       }
-      
+
       onRefresh?.();
       console.log(`Successfully toggled column ${columnId} to ${status}`);
     } catch (error) {
-      console.error('Toggle status error:', error);
+      console.error("Toggle status error:", error);
     }
   };
 
@@ -211,7 +243,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
       }
       onRefresh?.();
     } catch (error) {
-      console.error('Duplicate error:', error);
+      console.error("Duplicate error:", error);
     }
   };
 
@@ -226,12 +258,15 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
       onRefresh?.();
       return true;
     } catch (error) {
-      console.error('Bulk delete error:', error);
+      console.error("Bulk delete error:", error);
       return false;
     }
   };
 
-  const handleBulkToggle = async (columnIds: string[], status: 'active' | 'inactive') => {
+  const handleBulkToggle = async (
+    columnIds: string[],
+    status: "active" | "inactive",
+  ) => {
     try {
       if (bulkToggleStatusAsync) {
         await bulkToggleStatusAsync(columnIds, status);
@@ -241,12 +276,15 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
       onRefresh?.();
       return true;
     } catch (error) {
-      console.error('Bulk toggle error:', error);
+      console.error("Bulk toggle error:", error);
       return false;
     }
   };
 
-  const handleBulkMoveCategory = async (columnIds: string[], categoryId: string) => {
+  const handleBulkMoveCategory = async (
+    columnIds: string[],
+    categoryId: string,
+  ) => {
     try {
       if (moveColumnsToCategoryAsync) {
         await moveColumnsToCategoryAsync(columnIds, categoryId);
@@ -256,13 +294,13 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
       onRefresh?.();
       return true;
     } catch (error) {
-      console.error('Bulk move error:', error);
+      console.error("Bulk move error:", error);
       return false;
     }
   };
 
   const handleDragAndDropReorder = async (reorderedColumns: Column[]) => {
-    console.log('Drag and drop reorder:', reorderedColumns);
+    console.log("Drag and drop reorder:", reorderedColumns);
     return true;
   };
 
@@ -271,7 +309,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>{t('loadingColumns') || 'Loading columns...'}</p>
+          <p>{t("loadingColumns") || "Loading columns..."}</p>
         </div>
       </div>
     );
@@ -282,33 +320,35 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{t('columns')}</h1>
-          <p className="text-muted-foreground">{t('manageDataColumns')}</p>
-          
+          <h1 className="text-3xl font-bold">{t("columns")}</h1>
+          <p className="text-muted-foreground">{t("manageDataColumns")}</p>
+
           {/* Stats */}
           <div className="flex items-center space-x-4 mt-2">
-            <Badge variant="outline">
-              Ümumi: {stats.total}
-            </Badge>
-            <Badge variant="outline" className="text-green-600 border-green-600">
+            <Badge variant="outline">Ümumi: {stats.total}</Badge>
+            <Badge
+              variant="outline"
+              className="text-green-600 border-green-600"
+            >
               Aktiv: {stats.active}
             </Badge>
             {stats.archived > 0 && (
-              <Badge variant="outline" className="text-amber-600 border-amber-600">
+              <Badge
+                variant="outline"
+                className="text-amber-600 border-amber-600"
+              >
                 Arxiv: {stats.archived}
               </Badge>
             )}
             {stats.selected > 0 && (
-              <Badge variant="default">
-                Seçilmiş: {stats.selected}
-              </Badge>
+              <Badge variant="default">Seçilmiş: {stats.selected}</Badge>
             )}
           </div>
         </div>
-        
+
         <Button onClick={() => onCreate && onCreate()}>
           <Plus className="h-4 w-4 mr-2" />
-          {t('createColumn')}
+          {t("createColumn")}
         </Button>
       </div>
 
@@ -318,7 +358,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder={t('searchColumns') || 'Search columns...'}
+            placeholder={t("searchColumns") || "Search columns..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -328,7 +368,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
         {/* Filters */}
         <div className="flex items-center space-x-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
-          
+
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Kateqoriya" />
@@ -336,13 +376,12 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
             <SelectContent>
               <SelectItem value="all">Bütün kateqoriyalar</SelectItem>
               {categories
-                .filter(category => category.id && category.id.trim() !== '')
+                .filter((category) => category.id && category.id.trim() !== "")
                 .map((category) => (
                   <SelectItem key={category.id} value={category.id}>
-                    {category.name || 'Adsız kateqoriya'}
+                    {category.name || "Adsız kateqoriya"}
                   </SelectItem>
-                ))
-              }
+                ))}
             </SelectContent>
           </Select>
 
@@ -353,24 +392,23 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
             <SelectContent>
               <SelectItem value="all">Bütün tiplər</SelectItem>
               {uniqueTypes
-                .filter(type => type && type.trim() !== '')
+                .filter((type) => type && type.trim() !== "")
                 .map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
                   </SelectItem>
-                ))
-              }
+                ))}
             </SelectContent>
           </Select>
 
           <Button variant="outline" onClick={onRefresh}>
-            {t('refresh')}
+            {t("refresh")}
           </Button>
         </div>
       </div>
 
       {/* Bulk Selection Controls */}
-      {activeTab === 'active' && filteredColumns.length > 0 && (
+      {activeTab === "active" && filteredColumns.length > 0 && (
         <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
@@ -383,10 +421,9 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
             ) : (
               <Square className="h-4 w-4 mr-2" />
             )}
-            {selectedColumns.length === filteredColumns.length 
-              ? 'Seçimi ləğv et' 
-              : `Hamısını seç (${filteredColumns.length})`
-            }
+            {selectedColumns.length === filteredColumns.length
+              ? "Seçimi ləğv et"
+              : `Hamısını seç (${filteredColumns.length})`}
           </Button>
         </div>
       )}
@@ -417,15 +454,15 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
         selectedColumns={selectedColumns}
         onEditColumn={onEdit}
         onDeleteColumn={onDelete}
-        onRestoreColumn={(columnId) => onRestore?.(columnId, '')}
+        onRestoreColumn={(columnId) => onRestore?.(columnId, "")}
         onPermanentDeleteColumn={onPermanentDelete}
         onDuplicateColumn={handleDuplicate}
         onToggleColumnStatus={handleToggleStatus}
         onColumnSelection={toggleColumnSelection}
         onReorderColumns={handleDragAndDropReorder}
         canManageColumns={true}
-        enableDragDrop={activeTab === 'active'}
-        showBulkActions={activeTab === 'active'}
+        enableDragDrop={activeTab === "active"}
+        showBulkActions={activeTab === "active"}
       />
     </div>
   );

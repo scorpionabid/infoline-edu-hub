@@ -1,10 +1,9 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Search, Users } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Search, Users } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface User {
   id: string;
@@ -26,14 +25,15 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
   loading,
   selectedUserId,
   onUserSelect,
-  error
+  error,
 }) => {
-  const { t } = useLanguage();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { t } = useTranslation();
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredUsers = users.filter(user => 
-    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   if (loading) {
@@ -42,7 +42,7 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
         <div className="flex items-center gap-2">
           <Search className="h-4 w-4 animate-spin" />
           <span className="text-sm text-muted-foreground">
-            {t('loadingUsers') || 'İstifadəçilər yüklənir...'}
+            {t("loadingUsers") || "İstifadəçilər yüklənir..."}
           </span>
         </div>
       </div>
@@ -52,7 +52,7 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
   if (error) {
     return (
       <div className="text-red-500 text-sm">
-        {t('errorLoadingUsers') || 'İstifadəçilər yüklənərkən xəta baş verdi'}
+        {t("errorLoadingUsers") || "İstifadəçilər yüklənərkən xəta baş verdi"}
       </div>
     );
   }
@@ -61,13 +61,15 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="search">
-          {t('searchUsers') || 'İstifadəçi axtarın'}
+          {t("searchUsers") || "İstifadəçi axtarın"}
         </Label>
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             id="search"
-            placeholder={t('searchPlaceholder') || 'Ad və ya email daxil edin...'}
+            placeholder={
+              t("searchPlaceholder") || "Ad və ya email daxil edin..."
+            }
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-8"
@@ -80,7 +82,7 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
           <div className="flex flex-col items-center justify-center py-6 text-center">
             <Users className="h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">
-              {t('noUsersFound') || 'İstifadəçi tapılmadı'}
+              {t("noUsersFound") || "İstifadəçi tapılmadı"}
             </p>
           </div>
         ) : (
@@ -89,8 +91,8 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
               key={user.id}
               className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                 selectedUserId === user.id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:bg-muted/50'
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:bg-muted/50"
               }`}
               onClick={() => onUserSelect(user.id)}
             >

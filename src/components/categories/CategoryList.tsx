@@ -15,11 +15,16 @@ interface CategoryListProps {
 }
 
 const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
-  const { data: categories, isLoading: loading, error, refetch } = useCategories();
+  const {
+    data: categories,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useCategories();
   const [open, setOpen] = useState(false);
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<CategoryStatus>("active");
-  
+
   // Add refs to prevent excessive refetches and track mount state
   const didMountRef = useRef(false);
   const lastRefetchTime = useRef(Date.now());
@@ -28,13 +33,13 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
   // Optimize refetch with useCallback and debounce
   const safeRefetch = useCallback(() => {
     const now = Date.now();
-    
+
     // Clear any pending timeout
     if (refetchTimeoutRef.current) {
       clearTimeout(refetchTimeoutRef.current);
       refetchTimeoutRef.current = null;
     }
-    
+
     // Only refetch if 2 seconds have passed since the last refetch
     if (now - lastRefetchTime.current > 2000) {
       lastRefetchTime.current = now;
@@ -59,7 +64,7 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
       refetch();
       didMountRef.current = true;
     }
-    
+
     // Clean up any pending timeout on unmount
     return () => {
       if (refetchTimeoutRef.current) {
@@ -75,14 +80,17 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
   // Handle errors in a separate effect
   useEffect(() => {
     if (error) {
-      const errorMessage = typeof error === 'string' ? error : 'An unknown error occurred';
+      const errorMessage =
+        typeof error === "string" ? error : "An unknown error occurred";
       toast.error("Failed to load categories", {
         description: errorMessage,
       });
     }
   }, [error]);
 
-  const filteredCategories = categories?.filter((category) => category.status === activeTab);
+  const filteredCategories = categories?.filter(
+    (category) => category.status === activeTab,
+  );
 
   const handleCategorySelect = (categoryId: string) => {
     onCategorySelect?.(categoryId);
@@ -103,13 +111,19 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
           <TabsTrigger value="active" onClick={() => handleTabChange("active")}>
             {t("active")}
           </TabsTrigger>
-          <TabsTrigger value="inactive" onClick={() => handleTabChange("inactive")}>
+          <TabsTrigger
+            value="inactive"
+            onClick={() => handleTabChange("inactive")}
+          >
             {t("inactive")}
           </TabsTrigger>
           <TabsTrigger value="draft" onClick={() => handleTabChange("draft")}>
             {t("draft")}
           </TabsTrigger>
-          <TabsTrigger value="archived" onClick={() => handleTabChange("archived")}>
+          <TabsTrigger
+            value="archived"
+            onClick={() => handleTabChange("archived")}
+          >
             {t("archived")}
           </TabsTrigger>
         </TabsList>
@@ -121,7 +135,11 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
             </div>
           ) : error ? (
             <div className="p-8 text-center text-red-500">
-              <p>{typeof error === 'string' ? error : "Failed to load categories"}</p>
+              <p>
+                {typeof error === "string"
+                  ? error
+                  : "Failed to load categories"}
+              </p>
             </div>
           ) : filteredCategories && filteredCategories.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -143,7 +161,11 @@ const CategoryList: React.FC<CategoryListProps> = ({ onCategorySelect }) => {
       </Tabs>
 
       {/* Use the safeRefetch callback for dialog success */}
-      <CreateCategoryDialog open={open} setOpen={setOpen} onSuccess={safeRefetch} />
+      <CreateCategoryDialog
+        open={open}
+        setOpen={setOpen}
+        onSuccess={safeRefetch}
+      />
     </>
   );
 };

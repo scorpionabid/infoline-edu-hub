@@ -1,10 +1,16 @@
-
-import React from 'react';
-import { Database } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { Database } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface CategoryCompletionItem {
   name: string;
@@ -15,17 +21,21 @@ interface CategoriesTabProps {
   categoryCompletionData: CategoryCompletionItem[];
 }
 
-const CategoriesTab: React.FC<CategoriesTabProps> = ({ categoryCompletionData }) => {
-  const { t } = useLanguage();
+const CategoriesTab: React.FC<CategoriesTabProps> = ({
+  categoryCompletionData,
+}) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  
-  const navigateToCategories = () => navigate('/categories');
-  
+
+  const navigateToCategories = () => navigate("/categories");
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-lg">Kateqoriyalar üzrə tamamlanma</CardTitle>
-        <CardDescription>Hər kateqoriya üçün məlumat doldurlması faizi</CardDescription>
+        <CardDescription>
+          Hər kateqoriya üçün məlumat doldurlması faizi
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -33,11 +43,13 @@ const CategoriesTab: React.FC<CategoriesTabProps> = ({ categoryCompletionData })
             <div key={category.name} className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">{category.name}</span>
-                <span className="text-sm font-medium">{category.completed}%</span>
+                <span className="text-sm font-medium">
+                  {category.completed}%
+                </span>
               </div>
               <div className="h-2 bg-gray-100 rounded overflow-hidden">
-                <div 
-                  className="h-full bg-primary" 
+                <div
+                  className="h-full bg-primary"
                   style={{ width: `${category.completed}%` }}
                 />
               </div>

@@ -1,9 +1,9 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { X, Plus } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { X, Plus } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface ColumnOption {
   value: string;
@@ -13,7 +13,7 @@ interface ColumnOption {
 interface ColumnOptionsManagerProps {
   options: ColumnOption[];
   newOption: ColumnOption;
-  onNewOptionChange: (field: 'value' | 'label', value: string) => void;
+  onNewOptionChange: (field: "value" | "label", value: string) => void;
   onAddOption: () => void;
   onRemoveOption: (index: number) => void;
 }
@@ -23,27 +23,27 @@ const ColumnOptionsManager: React.FC<ColumnOptionsManagerProps> = ({
   newOption,
   onNewOptionChange,
   onAddOption,
-  onRemoveOption
+  onRemoveOption,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-4">
-      <Label>{t('options')}</Label>
-      
+      <Label>{t("options")}</Label>
+
       {/* Existing options */}
       <div className="space-y-2">
         {options.map((option, index) => (
           <div key={index} className="flex items-center space-x-2">
-            <Input 
+            <Input
               value={option.value}
-              placeholder={t('optionValue')}
+              placeholder={t("optionValue")}
               className="flex-1"
               readOnly
             />
-            <Input 
+            <Input
               value={option.label}
-              placeholder={t('optionLabel')}
+              placeholder={t("optionLabel")}
               className="flex-1"
               readOnly
             />
@@ -63,14 +63,14 @@ const ColumnOptionsManager: React.FC<ColumnOptionsManagerProps> = ({
       <div className="flex items-center space-x-2">
         <Input
           value={newOption.value}
-          onChange={(e) => onNewOptionChange('value', e.target.value)}
-          placeholder={t('optionValue')}
+          onChange={(e) => onNewOptionChange("value", e.target.value)}
+          placeholder={t("optionValue")}
           className="flex-1"
         />
         <Input
           value={newOption.label}
-          onChange={(e) => onNewOptionChange('label', e.target.value)}
-          placeholder={t('optionLabel')}
+          onChange={(e) => onNewOptionChange("label", e.target.value)}
+          placeholder={t("optionLabel")}
           className="flex-1"
         />
         <Button

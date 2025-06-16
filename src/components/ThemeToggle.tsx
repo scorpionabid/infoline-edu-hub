@@ -1,36 +1,100 @@
+import React from "react";
+import { Moon, Sun } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { useThemeSafe } from "@/context/ThemeContext";
 
-import React, { useEffect, useState } from 'react';
-import { Moon, Sun } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
-import { useThemeSafe } from '@/context/ThemeContext'; // useThemeSafe istifadə edirik
+// Simple error boundary component
+class ErrorBoundary extends React.Component<
+  { fallback: React.ReactNode; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
 
-const ThemeToggle = () => {
-  const { t } = useLanguage();
-  const { theme, setTheme } = useThemeSafe(); // useTheme əvəzinə useThemeSafe istifadə edirik
-  
-  // Toggle theme
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error in ThemeToggle:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || null;
+    }
+    return this.props.children;
+  }
+}
+
+const ThemeToggle: React.FC = () => {
+  // Default values in case translation fails
+  const defaultTranslations = {
+    light: 'Light',
+    dark: 'Dark'
   };
 
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={toggleTheme}
-      aria-label={theme === 'dark' ? t('light') : t('dark')}
-      title={theme === 'dark' ? t('light') : t('dark')}
-    >
-      {theme === 'dark' ? (
-        <Sun className="h-5 w-5 text-muted-foreground" />
-      ) : (
-        <Moon className="h-5 w-5 text-muted-foreground" />
-      )}
-    </Button>
-  );
+  try {
+    // Safely get translation function with optional chaining
+    const { t } = useTranslation?.() || {};
+    const { theme = 'light', setTheme } = useThemeSafe?.() || {};
+
+    // Don't render if theme context is not available
+    if (!setTheme) {
+      console.warn('Theme context not available');
+      return null;
+    }
+
+    // Toggle theme with error handling
+    const toggleTheme = () => {
+      try {
+        // Directly set the new theme value instead of using a function
+        const newTheme = theme === "light" ? "dark" : "light";
+        console.log(`Toggling theme from ${theme} to ${newTheme}`);
+        setTheme(newTheme);
+      } catch (error) {
+        console.error('Error toggling theme:', error);
+      }
+    };
+
+    // Get theme display names with fallbacks
+    const lightText = t?.('theme.light', { defaultValue: defaultTranslations.light }) || defaultTranslations.light;
+    const darkText = t?.('theme.dark', { defaultValue: defaultTranslations.dark }) || defaultTranslations.dark;
+    const label = theme === "dark" ? lightText : darkText;
+
+    // Memoize the icon to prevent unnecessary re-renders
+    const ThemeIcon = theme === "dark" ? Sun : Moon;
+    const iconClass = "h-5 w-5 text-muted-foreground";
+
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleTheme}
+        aria-label={label}
+        title={label}
+        className="relative"
+        data-testid="theme-toggle"
+      >
+        <ThemeIcon className={iconClass} />
+      </Button>
+    );
+  } catch (error) {
+    console.error('Error in ThemeToggle:', error);
+    // Fallback UI in case of unexpected errors
+    return (
+      <Button variant="ghost" size="icon" disabled>
+        <Sun className="h-5 w-5 text-muted-foreground/50" />
+      </Button>
+    );
+  }
 };
 
-// Həm default, həm də named export etməklə hər iki import üslubunu dəstəkləyirik
-export default ThemeToggle;
-export { ThemeToggle };
+// Wrap with error boundary
+export default function SafeThemeToggle() {
+  return (
+    <ErrorBoundary fallback={null}>
+      <ThemeToggle />
+    </ErrorBoundary>
+  );
+}

@@ -1,11 +1,10 @@
-
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { toast } from 'sonner';
-import { UserRole } from '@/types/auth';
-import { useLanguage } from '@/context/LanguageContext';
+import { toast } from "sonner";
+import { UserRole } from "@/types/auth";
+import { useSmartTranslation } from "@/hooks/translation/useSmartTranslation";
 import {
   Dialog,
   DialogContent,
@@ -14,22 +13,36 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useRegions } from '@/hooks/regions';
-import { useSectorsStore } from '@/hooks/useSectorsStore';
-import { useSchools } from '@/hooks/schools';
-import { Region } from '@/types/school';
-import { Sector } from '@/types/school';
-import { School } from '@/types/school';
+import { useRegions } from "@/hooks/regions";
+import { useSectorsStore } from "@/hooks/useSectorsStore";
+import { useSchools } from "@/hooks/schools";
+import { Region } from "@/types/school";
+import { Sector } from "@/types/school";
+import { School } from "@/types/school";
 
 interface AddUserDialogProps {
   open: boolean;
   onClose: () => void;
   onComplete?: () => void;
-  entityTypes?: Array<'region' | 'sector' | 'school'>;
+  entityTypes?: Array<"region" | "sector" | "school">;
 }
 
 interface UserFormData {
@@ -41,41 +54,45 @@ interface UserFormData {
   school_id?: string;
 }
 
-const AddUserDialog: React.FC<AddUserDialogProps> = ({ 
-  open, 
-  onClose, 
+const AddUserDialog: React.FC<AddUserDialogProps> = ({
+  open,
+  onClose,
   onComplete,
-  entityTypes = ['region', 'sector', 'school'] 
+  entityTypes = ["region", "sector", "school"],
 }) => {
-  const { t } = useLanguage();
+  const { tSafe, tModule, tValidation } = useSmartTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { regions } = useRegions();
   const { sectors } = useSectorsStore();
   const { schools } = useSchools();
 
-  const initialRole: UserRole = entityTypes.includes('school') 
-    ? 'schooladmin' 
-    : entityTypes.includes('sector') 
-    ? 'sectoradmin' 
-    : entityTypes.includes('region') 
-    ? 'regionadmin' 
-    : 'schooladmin'; // Changed from 'user' to 'schooladmin'
+  const initialRole: UserRole = entityTypes.includes("school")
+    ? "schooladmin"
+    : entityTypes.includes("sector")
+      ? "sectoradmin"
+      : entityTypes.includes("region")
+        ? "regionadmin"
+        : "schooladmin";
 
   const [formData, setFormData] = useState<UserFormData>(() => ({
-    email: '',
-    full_name: '',
+    email: "",
+    full_name: "",
     role: initialRole,
-    region_id: '',
-    sector_id: '',
-    school_id: '',
+    region_id: "",
+    sector_id: "",
+    school_id: "",
   }));
 
   const formSchema = z.object({
-    email: z.string().email({ message: t('invalidEmail') }),
-    full_name: z.string().min(2, { message: t('fullNameRequired') }),
-    role: z.enum(['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'], {
-      required_error: t('roleRequired'),
+    email: z.string().email({ 
+      message: tValidation("email", "invalid_email")
+    }),
+    full_name: z.string().min(2, { 
+      message: tValidation("full_name", "min_length", { min: 2 })
+    }),
+    role: z.enum(["superadmin", "regionadmin", "sectoradmin", "schooladmin"], {
+      required_error: tValidation("role", "required"),
     }),
     region_id: z.string().optional(),
     sector_id: z.string().optional(),
@@ -85,19 +102,28 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const form = useForm<UserFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
-      full_name: '',
+      email: "",
+      full_name: "",
       role: initialRole,
-      region_id: '',
-      sector_id: '',
-      school_id: '',
+      region_id: "",
+      sector_id: "",
+      school_id: "",
     },
   });
 
   const availableRoles = [
-    { value: 'schooladmin' as UserRole, label: t('schoolAdmin') },
-    { value: 'sectoradmin' as UserRole, label: t('sectorAdmin') },
-    { value: 'regionadmin' as UserRole, label: t('regionAdmin') },
+    { 
+      value: "schooladmin" as UserRole, 
+      label: tModule("userManagement", "roles.schooladmin") 
+    },
+    { 
+      value: "sectoradmin" as UserRole, 
+      label: tModule("userManagement", "roles.sectoradmin") 
+    },
+    { 
+      value: "regionadmin" as UserRole, 
+      label: tModule("userManagement", "roles.regionadmin") 
+    },
   ];
 
   const handleRoleChange = (value: string) => {
@@ -105,9 +131,12 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     setFormData((prevData) => ({
       ...prevData,
       role: newRole,
-      region_id: newRole === 'regionadmin' || newRole === 'sectoradmin' ? prevData.region_id : '',
-      sector_id: newRole === 'sectoradmin' ? prevData.sector_id : '',
-      school_id: newRole === 'schooladmin' ? prevData.school_id : '',
+      region_id:
+        newRole === "regionadmin" || newRole === "sectoradmin"
+          ? prevData.region_id
+          : "",
+      sector_id: newRole === "sectoradmin" ? prevData.sector_id : "",
+      school_id: newRole === "schooladmin" ? prevData.school_id : "",
     }));
   };
 
@@ -125,13 +154,14 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
 
     try {
       // Simulate success
-      toast.success(t('userCreatedSuccessfully'));
+      toast.success(tModule("userManagement", "messages.user_created"));
       onComplete?.();
       onClose();
       form.reset();
     } catch (error: any) {
-      setError(error.message || t('createUserError'));
-      toast.error(error.message || t('createUserError'));
+      const errorMessage = error.message || tModule("userManagement", "messages.user_not_found");
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -141,25 +171,35 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('createUser')}</DialogTitle>
+          <DialogTitle>
+            {tModule("userManagement", "actions.create_user")}
+          </DialogTitle>
           <DialogDescription>
-            {t('createUserDescription')}
+            {tSafe("userManagement.form.description", 
+              "İstifadəçi məlumatlarını daxil edib yeni hesab yaradın")}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {error && (
-              <p className="text-red-500 text-sm">{error}</p>
+              <div className="text-red-500 text-sm bg-red-50 p-2 rounded">
+                {error}
+              </div>
             )}
-            
+
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('email')}</FormLabel>
+                  <FormLabel>
+                    {tModule("userManagement", "form.email")}
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="example@example.com" {...field} />
+                    <Input 
+                      placeholder={tSafe("userManagement.form.enter_email", "example@example.com")}
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -171,11 +211,13 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               name="full_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('fullName')}</FormLabel>
+                  <FormLabel>
+                    {tModule("userManagement", "form.full_name")}
+                  </FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder={t('enterFullName')} 
-                      {...field} 
+                    <Input
+                      placeholder={tModule("userManagement", "form.enter_full_name")}
+                      {...field}
                       value={formData.full_name}
                       onChange={(e) => {
                         field.onChange(e);
@@ -193,8 +235,10 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('role')}</FormLabel>
-                  <Select 
+                  <FormLabel>
+                    {tModule("userManagement", "form.role")}
+                  </FormLabel>
+                  <Select
                     onValueChange={(value) => {
                       field.onChange(value);
                       handleRoleChange(value);
@@ -203,7 +247,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('selectRole')} />
+                        <SelectValue placeholder={tModule("userManagement", "form.select_role")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -219,20 +263,23 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               )}
             />
 
-            {(formData.role === 'regionadmin' || formData.role === 'sectoradmin') && (
+            {(formData.role === "regionadmin" ||
+              formData.role === "sectoradmin") && (
               <FormField
                 control={form.control}
                 name="region_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('region')}</FormLabel>
+                    <FormLabel>
+                      {tModule("userManagement", "form.region")}
+                    </FormLabel>
                     <Select
                       onValueChange={(value) => {
                         field.onChange(value);
                         setFormData((prev) => ({
                           ...prev,
                           region_id: value,
-                          sector_id: '',
+                          sector_id: "",
                         }));
                       }}
                       value={formData.region_id}
@@ -240,7 +287,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={t('selectRegion')} />
+                          <SelectValue placeholder={tModule("userManagement", "form.select_region")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -257,13 +304,15 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               />
             )}
 
-            {formData.role === 'sectoradmin' && formData.region_id && (
+            {formData.role === "sectoradmin" && formData.region_id && (
               <FormField
                 control={form.control}
                 name="sector_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('sector')}</FormLabel>
+                    <FormLabel>
+                      {tModule("userManagement", "form.sector")}
+                    </FormLabel>
                     <Select
                       onValueChange={(value) => {
                         field.onChange(value);
@@ -277,7 +326,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={t('selectSector')} />
+                          <SelectValue placeholder={tModule("userManagement", "form.select_sector")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -294,13 +343,15 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               />
             )}
 
-            {formData.role === 'schooladmin' && (
+            {formData.role === "schooladmin" && (
               <FormField
                 control={form.control}
                 name="school_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('school')}</FormLabel>
+                    <FormLabel>
+                      {tModule("userManagement", "form.school")}
+                    </FormLabel>
                     <Select
                       onValueChange={(value) => {
                         field.onChange(value);
@@ -314,7 +365,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={t('selectSchool')} />
+                          <SelectValue placeholder={tModule("userManagement", "form.select_school")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -331,16 +382,31 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               />
             )}
 
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  {t('creating')}...
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent ml-2"></div>
-                </>
-              ) : (
-                t('createUser')
-              )}
-            </Button>
+            <div className="flex gap-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                disabled={isLoading}
+                className="flex-1"
+              >
+                {tSafe("core.actions.cancel")}
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="flex-1"
+              >
+                {isLoading ? (
+                  <>
+                    {tSafe("core.loading.creating")}
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent ml-2"></div>
+                  </>
+                ) : (
+                  tModule("userManagement", "actions.create_user")
+                )}
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>

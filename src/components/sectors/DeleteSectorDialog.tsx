@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,10 +8,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { EnhancedSector } from '@/types/sector';
-import { useLanguage } from '@/context/LanguageContext';
-import { Loader2 } from 'lucide-react';
+} from "@/components/ui/alert-dialog";
+import { EnhancedSector } from "@/types/sector";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Loader2 } from "lucide-react";
 
 interface DeleteSectorDialogProps {
   isOpen: boolean;
@@ -27,32 +26,35 @@ const DeleteSectorDialog: React.FC<DeleteSectorDialogProps> = ({
   onClose,
   onConfirm,
   sector,
-  isSubmitting = false
+  isSubmitting = false,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t('sectors.deleteSector')}</AlertDialogTitle>
+          <AlertDialogTitle>{t("sectors.deleteSector")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('sectors.deleteSectorConfirmation')}
+            {t("sectors.deleteSectorConfirmation")}
             {sector && (
               <span className="font-semibold block mt-2">{sector.name}</span>
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} className="bg-destructive hover:bg-destructive/90">
+          <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={onConfirm}
+            className="bg-destructive hover:bg-destructive/90"
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('sectors.deleting')}
+                {t("sectors.deleting")}
               </>
             ) : (
-              t('common.delete')
+              t("common.delete")
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

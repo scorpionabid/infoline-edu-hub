@@ -1,9 +1,13 @@
-
-import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { FormField, FormItem, FormControl, FormLabel } from '@/components/ui/form';
-import { Checkbox } from '@/components/ui/checkbox';
-import { UseFormReturn } from 'react-hook-form';
+import React from "react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import {
+  FormField,
+  FormItem,
+  FormControl,
+  FormLabel,
+} from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { UseFormReturn } from "react-hook-form";
 
 interface AdminFiltersProps {
   form: UseFormReturn<any>;
@@ -14,10 +18,10 @@ interface AdminFiltersProps {
 export const AdminFilters: React.FC<AdminFiltersProps> = ({
   form,
   showExistingAdmins,
-  onCheckboxChange
+  onCheckboxChange,
 }) => {
-  const { t } = useLanguage();
-  
+  const { t } = useTranslation();
+
   return (
     <FormField
       control={form.control}
@@ -31,7 +35,9 @@ export const AdminFilters: React.FC<AdminFiltersProps> = ({
             />
           </FormControl>
           <div className="space-y-0 leading-none">
-            <FormLabel>{t("showExistingAdmins") || 'Mövcud adminləri göstər'}</FormLabel>
+            <FormLabel>
+              {t("showExistingAdmins") || "Mövcud adminləri göstər"}
+            </FormLabel>
           </div>
         </FormItem>
       )}

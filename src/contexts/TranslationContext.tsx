@@ -3,9 +3,15 @@ import {
   SupportedLanguage, 
   LanguageTranslations, 
   TranslationModules, 
-  TranslationKeyPath,
-  TranslationInterpolationOptions 
+  TranslationInterpolationOptions
 } from '../types/translation';
+
+// Helper type to extract all possible nested paths in an object
+type NestedKeyOf<ObjectType extends object> = {
+  [Key in keyof ObjectType & (string | number)]: ObjectType[Key] extends object
+    ? `${Key}` | `${Key}.${NestedKeyOf<ObjectType[Key]>}`
+    : Key;
+}[keyof ObjectType & (string | number)];
 import { getTranslations, preloadTranslations } from '../translations';
 
 // Default language (can be loaded from user preferences or browser settings)
@@ -15,7 +21,7 @@ type TranslationContextType = {
   language: SupportedLanguage;
   setLanguage: (lang: SupportedLanguage) => void;
   t: <T extends keyof TranslationModules>(
-    key: T | TranslationKeyPath<TranslationModules[T]>, 
+    key: T | NestedKeyOf<TranslationModules[T]> | string, 
     params?: TranslationInterpolationOptions
   ) => string;
   isLoading: boolean;
@@ -25,12 +31,54 @@ type TranslationContextType = {
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
-// Helper function to get nested translation value with type safety
-const getNestedValue = <T extends Record<string, any>>(obj: T, path: string): string => {
-  return path.split('.').reduce<string>((o, p) => {
-    if (o === undefined || o === null) return `[${path}]`;
-    return o[p] !== undefined ? o[p] : `[${path}]`;
-  }, obj as any);
+// Helper function to get nested translation value with type safety and fallback
+const getNestedValue = <T extends Record<string, any>>(
+  obj: T | undefined | null, 
+  path: string,
+  params?: TranslationInterpolationOptions & { defaultValue?: string }
+): string => {
+  // If no object is provided, return the default value or the path in brackets
+  if (!obj) return params?.defaultValue || `[${path}]`;
+  
+  // Try to get the nested value
+  const result = path.split('.').reduce<any>((current, key) => {
+    if (current === undefined || current === null) return undefined;
+    return current[key];
+  }, obj);
+
+  // If value is not found, return the default value or the last part of the path
+  if (result === undefined) {
+    // Try to get the last part of the path as a fallback
+    const lastPart = path.split('.').pop() || path;
+    // Convert camelCase to space-separated words for better readability
+    const readableText = lastPart
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/\./g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
+    
+    return params?.defaultValue || readableText;
+  }
+
+  // Handle string interpolation if params are provided
+  if (typeof result === 'string') {
+    let finalString = result;
+    
+    // Only process interpolation if we have params
+    if (params) {
+      finalString = Object.entries(params).reduce(
+        (str, [key, value]) => {
+          if (key === 'defaultValue') return str; // Skip defaultValue for interpolation
+          return str.replace(new RegExp(`{{${key}}}`, 'g'), String(value));
+        },
+        finalString
+      );
+    }
+    
+    return finalString;
+  }
+
+  // For non-string values, convert to string
+  return String(result);
 };
 
 export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -75,50 +123,61 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
       .forEach(lang => preloadTranslations(lang));
   }, [changeLanguage]);
 
-  // Translation function with type safety
+  // Type guard to check if a string is a valid module name
+  const isModuleName = (name: string): name is keyof LanguageTranslations => {
+    return name in translations;
+  };
+
+  // Translation function with type safety and module support
   const t = useCallback(<T extends keyof TranslationModules>(
-    key: T | TranslationKeyPath<TranslationModules[T]>,
+    key: T | NestedKeyOf<TranslationModules[T]> | string,
     params?: TranslationInterpolationOptions
   ): string => {
-    // Return loading/error state if translations aren't ready
     if (isLoading) return '...';
-    if (error) return `[${key}]`;
-    if (!translations) return `[${key}]`;
+    if (error) return `[${String(key)}]`;
+    if (!translations) return `[${String(key)}]`;
     
     const keyStr = String(key);
-    const [namespace, ...path] = keyStr.split('.');
     
-    try {
-      // Type-safe access to the module
-      const module = translations[namespace as keyof LanguageTranslations];
-      
-      if (!module) {
-        console.warn(`Translation namespace not found: ${namespace}`);
-        return `[${keyStr}]`;
-      }
-      
-      // Get the translation value
-      let result = getNestedValue(module, path.join('.'));
-      
-      // If translation is not found, try to find it in the default language as fallback
-      if (result === `[${path.join('.')}]` && language !== DEFAULT_LANGUAGE) {
-        // This is a simplified fallback - in a real app, you might want to load the default language
+    // Handle direct module access (e.g., t('auth'))
+    if (keyStr in translations) {
+      const module = translations[keyStr as keyof LanguageTranslations];
+      return typeof module === 'string' ? module : `[${keyStr}]`;
+    }
+    
+    // Handle nested keys (e.g., t('auth.login.title'))
+    const [moduleName, ...path] = keyStr.split('.');
+    
+    if (!moduleName || !isModuleName(moduleName) || !translations[moduleName]) {
+      // Try to find the key in the default language as fallback
+      if (language !== DEFAULT_LANGUAGE) {
         console.warn(`Translation not found for key "${keyStr}" in language "${language}"`);
       }
-      
-      // Replace placeholders if params provided
-      if (params && typeof result === 'string') {
-        result = Object.entries(params).reduce(
-          (str, [paramKey, value]) => str.replace(new RegExp(`{{${paramKey}}}`, 'g'), String(value)),
-          result
-        );
-      }
-      
-      return result || `[${keyStr}]`;
-    } catch (error) {
-      console.error(`Translation error for key "${keyStr}":`, error);
       return `[${keyStr}]`;
     }
+    
+    const module = translations[moduleName];
+    const nestedKey = path.join('.');
+    
+    // Handle cases where the module might be a string or object
+    if (typeof module === 'string') {
+      return module;
+    }
+    
+    // Get the nested value with proper type handling
+    const value = getNestedValue(module, nestedKey, params);
+    
+    // If the value is still not found and we're not using the default language,
+    // try to get it from the default language as a fallback
+    if (value === `[${nestedKey}]` && language !== DEFAULT_LANGUAGE) {
+      console.warn(`Using fallback translation for key "${keyStr}" from default language`);
+      const defaultValue = getNestedValue(translations, keyStr, params);
+      if (defaultValue !== `[${keyStr}]`) {
+        return defaultValue;
+      }
+    }
+    
+    return value;
   }, [translations, isLoading, error, language]);
 
   const value = useMemo(() => ({

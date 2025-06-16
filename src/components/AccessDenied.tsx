@@ -1,17 +1,16 @@
-
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { ShieldAlert, Home, ArrowLeft } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ShieldAlert, Home, ArrowLeft } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface AccessDeniedProps {
   title?: string;
@@ -23,11 +22,11 @@ interface AccessDeniedProps {
 const AccessDenied: React.FC<AccessDeniedProps> = ({
   title,
   description,
-  redirectPath = '/dashboard',
+  redirectPath = "/dashboard",
   canGoBack = true,
 }) => {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const goBack = () => {
     navigate(-1);
@@ -45,25 +44,25 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
             <ShieldAlert className="h-16 w-16 text-destructive" />
           </div>
           <CardTitle className="text-2xl">
-            {title || t('accessDenied')}
+            {title || t("accessDenied")}
           </CardTitle>
           <CardDescription className="text-base mt-2">
-            {description || t('accessDeniedDescription')}
+            {description || t("accessDeniedDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-4 text-center text-muted-foreground">
-          <p>{t('accessDeniedHelp')}</p>
+          <p>{t("accessDeniedHelp")}</p>
         </CardContent>
         <CardFooter className="flex justify-center space-x-3">
           {canGoBack && (
             <Button variant="outline" onClick={goBack}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {t('goBack')}
+              {t("goBack")}
             </Button>
           )}
           <Button onClick={goHome}>
             <Home className="mr-2 h-4 w-4" />
-            {t('goToDashboard')}
+            {t("goToDashboard")}
           </Button>
         </CardFooter>
       </Card>

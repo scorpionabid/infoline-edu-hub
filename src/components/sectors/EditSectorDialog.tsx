@@ -1,10 +1,14 @@
-
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useLanguage } from '@/context/LanguageContext';
-import { Region } from '@/types/supabase';
-import { EnhancedSector } from '@/types/sector';
-import SectorForm from './SectorForm';
+import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { Region } from "@/types/supabase";
+import { EnhancedSector } from "@/types/sector";
+import SectorForm from "./SectorForm";
 
 interface EditSectorDialogProps {
   isOpen: boolean;
@@ -21,15 +25,17 @@ const EditSectorDialog: React.FC<EditSectorDialogProps> = ({
   sector,
   regions,
   onSubmit,
-  isSubmitting = false
+  isSubmitting = false,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const handleSubmit = async (data: Partial<EnhancedSector>) => {
     const success = await onSubmit({
       id: sector.id,
       ...data,
-      region_name: regions.find(r => r.id === data.region_id)?.name || sector.region_name
+      region_name:
+        regions.find((r) => r.id === data.region_id)?.name ||
+        sector.region_name,
     });
     if (success) {
       onClose();
@@ -40,7 +46,7 @@ const EditSectorDialog: React.FC<EditSectorDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t('sectors.editSector')}</DialogTitle>
+          <DialogTitle>{t("sectors.editSector")}</DialogTitle>
         </DialogHeader>
         <SectorForm
           initialData={sector}

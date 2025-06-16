@@ -1,13 +1,12 @@
-
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, UserPlus, Filter, X } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { User } from '@/types/user';
-import { Pagination } from '@/components/ui/pagination';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Search, UserPlus, Filter, X } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { User } from "@/types/user";
+import { Pagination } from "@/components/ui/pagination";
 
 interface UserListProps {
   users?: User[];
@@ -36,11 +35,11 @@ const UserList: React.FC<UserListProps> = ({
   totalPages = 1,
   onPageChange = () => {},
   refreshTrigger,
-  filterParams = {}
+  filterParams = {},
 }) => {
   const safeUsers = Array.isArray(users) ? users : [];
-  const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { t } = useTranslation();
+  const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -58,45 +57,50 @@ const UserList: React.FC<UserListProps> = ({
   };
 
   const handleClearSearch = () => {
-    setSearchQuery('');
+    setSearchQuery("");
     if (onSearch) {
-      onSearch('');
+      onSearch("");
     }
   };
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case 'superadmin':
-        return 'destructive';
-      case 'regionadmin':
-        return 'default';
-      case 'sectoradmin':
-        return 'secondary';
-      case 'schooladmin':
-        return 'outline';
+      case "superadmin":
+        return "destructive";
+      case "regionadmin":
+        return "default";
+      case "sectoradmin":
+        return "secondary";
+      case "schooladmin":
+        return "outline";
       default:
-        return 'outline';
+        return "outline";
     }
   };
 
-  const showPagination = typeof currentPage === 'number' && 
-    typeof totalPages === 'number' && 
-    totalPages > 1 && 
-    typeof onPageChange === 'function';
+  const showPagination =
+    typeof currentPage === "number" &&
+    typeof totalPages === "number" &&
+    totalPages > 1 &&
+    typeof onPageChange === "function";
 
   return (
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{t('navigation.users')}</CardTitle>
+        <CardTitle>{t("navigation.users")}</CardTitle>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+          >
             <Filter className="h-4 w-4 mr-2" />
-            {t('common.filter')}
+            {t("common.filter")}
           </Button>
           {onAddUser && (
             <Button size="sm" onClick={onAddUser}>
               <UserPlus className="h-4 w-4 mr-2" />
-              {t('users.addUser')}
+              {t("users.addUser")}
             </Button>
           )}
         </div>
@@ -106,7 +110,7 @@ const UserList: React.FC<UserListProps> = ({
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={t('users.searchUsers')}
+              placeholder={t("users.searchUsers")}
               className="pl-8"
               value={searchQuery}
               onChange={handleSearchChange}
@@ -123,7 +127,7 @@ const UserList: React.FC<UserListProps> = ({
 
           {showFilters && (
             <div className="bg-muted/50 p-3 rounded-md">
-              <h4 className="text-sm font-medium mb-2">{t('users.filters')}</h4>
+              <h4 className="text-sm font-medium mb-2">{t("users.filters")}</h4>
             </div>
           )}
 
@@ -133,7 +137,7 @@ const UserList: React.FC<UserListProps> = ({
             </div>
           ) : safeUsers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchQuery ? t('users.noUsersFound') : t('users.noUsers')}
+              {searchQuery ? t("users.noUsersFound") : t("users.noUsers")}
             </div>
           ) : (
             <div className="space-y-2">
@@ -143,14 +147,24 @@ const UserList: React.FC<UserListProps> = ({
                   className="flex items-center justify-between p-3 border rounded-md hover:bg-muted/50 transition-colors"
                 >
                   <div>
-                    <div className="font-medium">{user.full_name || user.email}</div>
-                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                    <div className="font-medium">
+                      {user.full_name || user.email}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {user.email}
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Badge variant={getRoleBadgeVariant(user.role)}>{t(`roles.${user.role}`)}</Badge>
+                    <Badge variant={getRoleBadgeVariant(user.role)}>
+                      {t(`roles.${user.role}`)}
+                    </Badge>
                     {onEditUser && (
-                      <Button variant="ghost" size="sm" onClick={() => onEditUser(user)}>
-                        {t('common.edit')}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEditUser(user)}
+                      >
+                        {t("common.edit")}
                       </Button>
                     )}
                     {onDeleteUser && (
@@ -160,7 +174,7 @@ const UserList: React.FC<UserListProps> = ({
                         className="text-destructive hover:text-destructive"
                         onClick={() => onDeleteUser(user)}
                       >
-                        {t('common.delete')}
+                        {t("common.delete")}
                       </Button>
                     )}
                   </div>

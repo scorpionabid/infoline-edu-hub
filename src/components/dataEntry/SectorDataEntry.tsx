@@ -1,11 +1,10 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useLanguage } from '@/context/LanguageContext';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { SectorAdminSchoolList } from '@/components/schools/SectorAdminSchoolList';
-import { Building2 } from 'lucide-react';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
+import { SectorAdminSchoolList } from "@/components/schools/SectorAdminSchoolList";
+import { Building2 } from "lucide-react";
 
 interface SectorDataEntryProps {
   onDataEntry?: (schoolId: string) => void;
@@ -16,9 +15,9 @@ interface SectorDataEntryProps {
 export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
   onDataEntry,
   onSendNotification,
-  onBulkAction
+  onBulkAction,
 }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const user = useAuthStore(selectUser);
 
   const handleDataEntry = (schoolId: string) => {
@@ -39,7 +38,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-6 w-6" />
             Sektor Məlumat İdarəetməsi
-            {user?.role === 'sectoradmin' && (
+            {user?.role === "sectoradmin" && (
               <Badge className="bg-blue-100 text-blue-800">
                 Sektor Administratoru
               </Badge>
