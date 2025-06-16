@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
-import { StatsCard } from '../common/StatsCard';
-import { CompletionRateCard } from '../common/CompletionRateCard';
+import StatsCard from '../StatsCard';
+import CompletionRateCard from '../CompletionRateCard';
 import NotificationsCard from '../common/NotificationsCard';
 import { SchoolAdminDashboardData, CategoryItem, DeadlineItem, FormItem } from '@/types/dashboard';
 import { AppNotification, adaptDashboardNotificationToApp } from '@/types/notification';
