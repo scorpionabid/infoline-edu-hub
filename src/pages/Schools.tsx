@@ -5,14 +5,14 @@ import { School } from '@/types/school';
 import { Region } from '@/types/region';
 import { Sector } from '@/types/sector';
 import { FullUserData } from '@/types/user';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { usePagination } from '@/hooks/common/usePagination';
 import { toast } from 'sonner';
 import SchoolsContainer from '@/components/schools/SchoolsContainer';
 
 const Schools = () => {
-  const { t } = useLanguageSafe();
+  const { t } = useTranslation();
   const [schools, setSchools] = useState<School[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [sectors, setSectors] = useState<Sector[]>([]);

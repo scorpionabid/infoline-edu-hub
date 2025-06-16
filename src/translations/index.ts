@@ -50,26 +50,34 @@ const loadTranslations = async (lang: SupportedLanguage): Promise<LanguageTransl
   }
 
   try {
-    // Import all modules in parallel
+    // Import all modules in parallel with better error handling
     const moduleImports = await Promise.all(
       MODULE_NAMES.map(async (moduleName) => {
         try {
-          const module = await import(`./${lang}/${moduleName}.js`);
-          return { [moduleName]: module.default };
+          // Skip validation module if it doesn't exist
+          if (moduleName === 'validation' && lang !== 'en') {
+            return { [moduleName]: {} };
+          }
+          
+          // Try to import the module
+          const module = await import(`./${lang}/${moduleName}.ts`);
+          return { [moduleName]: module.default || {} };
         } catch (error) {
-          console.warn(`Failed to load module ${moduleName} for language ${lang}:`, error);
+          // For non-critical modules, just return an empty object
+          if (moduleName !== 'validation') {
+            console.warn(`[i18n] Missing module '${moduleName}' for '${lang}', using empty fallback`);
+          }
           return { [moduleName]: {} };
         }
       })
     );
 
     // Combine all modules into a single object with proper typing
-    const translations = moduleImports.reduce<Partial<LanguageTranslations>>((acc, module) => ({
-      ...acc,
-      ...module
-    }), {});
+    const translations = moduleImports.reduce<Partial<LanguageTranslations>>((acc, module) => {
+      return { ...acc, ...module };
+    }, {});
     
-    // Ensure all required modules are present - YENİLƏNDİ
+    // Ensure all required modules are present with proper typing
     const completeTranslations: LanguageTranslations = {
       app: translations.app || {},
       auth: translations.auth || {},
@@ -84,6 +92,7 @@ const loadTranslations = async (lang: SupportedLanguage): Promise<LanguageTransl
       organization: translations.organization || {},
       profile: translations.profile || {},
       schools: translations.schools || {},
+      sectors: translations.sectors || {},
       status: translations.status || {},
       time: translations.time || {},
       ui: translations.ui || {},

@@ -1,2 +1,2 @@
 
-export { useOptimizedTranslation } from './useOptimizedTranslation';
+export { useSmartTranslation } from './useSmartTranslation';

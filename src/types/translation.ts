@@ -24,6 +24,7 @@ export type LanguageTranslations = {
   organization: TranslationModule;
   profile: TranslationModule;
   schools: TranslationModule;
+  sectors: TranslationModule;
   status: TranslationModule;
   time: TranslationModule;
   ui: TranslationModule;

@@ -6,7 +6,7 @@ import { Pencil, Trash2, Plus, RefreshCw } from 'lucide-react';
 import { EnhancedSector } from '@/types/sector';
 import { useToast } from '@/components/ui/use-toast';
 import { useSectorsStore } from '@/hooks/useSectorsStore';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import AddSectorDialog from './AddSectorDialog';
 import EditSectorDialog from './EditSectorDialog';
 import DeleteSectorDialog from './DeleteSectorDialog';
@@ -33,7 +33,7 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
   isLoading,
   onRefresh
 }) {
-  const { t } = useLanguageSafe();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { createSector, updateSector, deleteSector } = useSectorsStore();
   
