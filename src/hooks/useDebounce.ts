@@ -1,18 +1,9 @@
+/**
+ * DEPRECATED: Bu hook artıq hooks/common/useDebounce.ts ilə əvəz edilib
+ * Bu, əvvəlki import yollarının işləməsini təmin etmək üçün bir körpüdür
+ * 
+ * @deprecated Use hooks/common/useDebounce.ts instead
+ */
 
-import { useState, useEffect } from 'react';
-
-export function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
+export { useDebounce } from './common/useDebounce';
+export { default } from './common/useDebounce';
