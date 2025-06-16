@@ -4,150 +4,150 @@ import { DialogConfig, DialogType, EntityType, EntityMetadata } from './types';
 const DeleteConfigs: Record<EntityType, DialogConfig> = {
   school: {
     title: 'Məktəbi sil',
-    titleKey: 'deleteSchool',
+    titleKey: 'dialogs.deleteSchool',
     warningText: 'məktəbini silmək istədiyinizə əminsiniz?',
-    warningTextKey: 'deleteSchoolWarning',
+    warningTextKey: 'dialogs.deleteSchoolWarning',
     consequences: 'Bu əməliyyat geri qaytarıla bilməz və bütün məktəblə əlaqəli məlumatlar silinəcək.',
-    consequencesKey: 'deleteSchoolConsequences',
+    consequencesKey: 'dialogs.deleteSchoolConsequences',
     confirmText: 'Sil',
-    confirmTextKey: 'delete',
+    confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'deleting',
+    loadingTextKey: 'sectors.deleting',
     showIcon: true,
     dangerLevel: 'high' as const
   },
   
   category: {
     title: 'Kateqoriyanı sil',
-    titleKey: 'deleteCategory',
+    titleKey: 'dialogs.deleteCategory',
     warningText: 'kateqoriyasını silmək istədiyinizə əminsiniz?',
-    warningTextKey: 'deleteCategoryWarning',
+    warningTextKey: 'dialogs.deleteCategoryWarning',
     consequences: 'Bu əməliyyat geri qaytarıla bilməz. Bu kateqoriyaya aid bütün məlumatlar silinəcək.',
-    consequencesKey: 'deleteCategoryConsequences',
+    consequencesKey: 'dialogs.deleteCategoryConsequences',
     confirmText: 'Sil',
-    confirmTextKey: 'delete',
+    confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'deleting',
+    loadingTextKey: 'sectors.deleting',
     showIcon: true,
     dangerLevel: 'high' as const
   },
   
   sector: {
     title: 'Sektoru sil',
-    titleKey: 'deleteSector',
+    titleKey: 'dialogs.deleteSector',
     warningText: 'sektorunu silmək istədiyinizə əminsiniz?',
-    warningTextKey: 'deleteSectorWarning',
+    warningTextKey: 'dialogs.deleteSectorWarning',
     consequences: 'Bu əməliyyat geri qaytarıla bilməz və sektora aid bütün məlumatlar silinəcək.',
-    consequencesKey: 'deleteSectorConsequences',
+    consequencesKey: 'dialogs.deleteSectorConsequences',
     confirmText: 'Sil',
-    confirmTextKey: 'delete',
+    confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'deleting',
+    loadingTextKey: 'sectors.deleting',
     showIcon: true,
     dangerLevel: 'high' as const
   },
   
   region: {
     title: 'Regionu sil',
-    titleKey: 'deleteRegion',
+    titleKey: 'dialogs.deleteRegion',
     warningText: 'regionunu silmək istədiyinizə əminsiniz?',
-    warningTextKey: 'deleteRegionWarning',
+    warningTextKey: 'dialogs.deleteRegionWarning',
     consequences: 'Bu əməliyyat geri qaytarıla bilməz və regiona aid bütün məlumatlar silinəcək.',
-    consequencesKey: 'deleteRegionConsequences',
+    consequencesKey: 'dialogs.deleteRegionConsequences',
     confirmText: 'Sil',
-    confirmTextKey: 'delete',
+    confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'deleting',
+    loadingTextKey: 'sectors.deleting',
     showIcon: true,
     dangerLevel: 'high' as const
   },
   
   user: {
     title: 'İstifadəçini sil',
-    titleKey: 'deleteUser',
+    titleKey: 'dialogs.deleteUser',
     warningText: 'istifadəçisini silmək istədiyinizə əminsiniz?',
-    warningTextKey: 'deleteUserWarning',
+    warningTextKey: 'dialogs.deleteUserWarning',
     consequences: 'Bu əməliyyat geri qaytarıla bilməz və istifadəçinin bütün məlumatları silinəcək.',
-    consequencesKey: 'deleteUserConsequences',
+    consequencesKey: 'dialogs.deleteUserConsequences',
     confirmText: 'Sil',
-    confirmTextKey: 'delete',
+    confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'deleting',
+    loadingTextKey: 'sectors.deleting',
     showIcon: true,
     dangerLevel: 'high' as const
   },
   
   column: {
     title: 'Sütunu sil',
-    titleKey: 'deleteColumn',
+    titleKey: 'dialogs.deleteColumn',
     warningText: 'sütununu silmək istədiyinizə əminsiniz?',
-    warningTextKey: 'deleteColumnWarning',
+    warningTextKey: 'dialogs.deleteColumnWarning',
     consequences: 'Bu əməliyyat geri qaytarıla bilməz və sütuna aid bütün məlumatlar silinəcək.',
-    consequencesKey: 'deleteColumnConsequences',
+    consequencesKey: 'dialogs.deleteColumnConsequences',
     confirmText: 'Sil',
-    confirmTextKey: 'delete',
+    confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'deleting',
+    loadingTextKey: 'sectors.deleting',
     showIcon: true,
     dangerLevel: 'high' as const
   },
   
   notification: {
     title: 'Bildirişi sil',
-    titleKey: 'deleteNotification',
+    titleKey: 'dialogs.deleteNotification',
     warningText: 'bildirişini silmək istədiyinizə əminsiniz?',
-    warningTextKey: 'deleteNotificationWarning',
+    warningTextKey: 'dialogs.deleteNotificationWarning',
     consequences: 'Bu əməliyyat geri qaytarıla bilməz.',
-    consequencesKey: 'deleteNotificationConsequences',
+    consequencesKey: 'dialogs.deleteNotificationConsequences',
     confirmText: 'Sil',
-    confirmTextKey: 'delete',
+    confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'deleting',
+    loadingTextKey: 'sectors.deleting',
     showIcon: true,
     dangerLevel: 'medium' as const
   },
   
   report: {
     title: 'Hesabatı sil',
-    titleKey: 'deleteReport',
+    titleKey: 'dialogs.deleteReport',
     warningText: 'hesabatını silmək istədiyinizə əminsiniz?',
-    warningTextKey: 'deleteReportWarning',
+    warningTextKey: 'dialogs.deleteReportWarning',
     consequences: 'Bu əməliyyat geri qaytarıla bilməz.',
-    consequencesKey: 'deleteReportConsequences',
+    consequencesKey: 'dialogs.deleteReportConsequences',
     confirmText: 'Sil',
-    confirmTextKey: 'delete',
+    confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'deleting',
+    loadingTextKey: 'sectors.deleting',
     showIcon: true,
     dangerLevel: 'medium' as const
   },
   
   file: {
     title: 'Faylı sil',
-    titleKey: 'deleteFile',
+    titleKey: 'dialogs.deleteFile',
     warningText: 'faylını silmək istədiyinizə əminsiniz?',
-    warningTextKey: 'deleteFileWarning',
+    warningTextKey: 'dialogs.deleteFileWarning',
     consequences: 'Bu əməliyyat geri qaytarıla bilməz.',
-    consequencesKey: 'deleteFileConsequences',
+    consequencesKey: 'dialogs.deleteFileConsequences',
     confirmText: 'Sil',
-    confirmTextKey: 'delete',
+    confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'deleting',
+    loadingTextKey: 'sectors.deleting',
     showIcon: true,
     dangerLevel: 'medium' as const
   },
   
   link: {
     title: 'Linki sil',
-    titleKey: 'deleteLink',
+    titleKey: 'dialogs.deleteLink',
     warningText: 'linkini silmək istədiyinizə əminsiniz?',
-    warningTextKey: 'deleteLinkWarning',
+    warningTextKey: 'dialogs.deleteLinkWarning',
     consequences: 'Bu əməliyyat geri qaytarıla bilməz.',
-    consequencesKey: 'deleteLinkConsequences',
+    consequencesKey: 'dialogs.deleteLinkConsequences',
     confirmText: 'Sil',
-    confirmTextKey: 'delete',
+    confirmTextKey: 'common.delete',
     loadingText: 'Silinir...',
-    loadingTextKey: 'deleting',
+    loadingTextKey: 'sectors.deleting',
     showIcon: true,
     dangerLevel: 'medium' as const
   }
@@ -157,110 +157,110 @@ const DeleteConfigs: Record<EntityType, DialogConfig> = {
 const CreateConfigs: Record<EntityType, DialogConfig> = {
   school: {
     title: 'Yeni məktəb əlavə et',
-    titleKey: 'addSchool',
+    titleKey: 'dialogs.addSchool',
     confirmText: 'Əlavə et',
-    confirmTextKey: 'add',
+    confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'adding',
+    loadingTextKey: 'dialogs.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   category: {
     title: 'Yeni kateqoriya əlavə et',
-    titleKey: 'addCategory',
+    titleKey: 'dialogs.addCategory',
     confirmText: 'Əlavə et',
-    confirmTextKey: 'add',
+    confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'adding',
+    loadingTextKey: 'dialogs.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   sector: {
     title: 'Yeni sektor əlavə et',
-    titleKey: 'addSector',
+    titleKey: 'dialogs.addSector',
     confirmText: 'Əlavə et',
-    confirmTextKey: 'add',
+    confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'adding',
+    loadingTextKey: 'dialogs.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   region: {
     title: 'Yeni region əlavə et',
-    titleKey: 'addRegion',
+    titleKey: 'dialogs.addRegion',
     confirmText: 'Əlavə et',
-    confirmTextKey: 'add',
+    confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'adding',
+    loadingTextKey: 'dialogs.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   user: {
     title: 'Yeni istifadəçi əlavə et',
-    titleKey: 'addUser',
+    titleKey: 'dialogs.addUser',
     confirmText: 'Əlavə et',
-    confirmTextKey: 'add',
+    confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'adding',
+    loadingTextKey: 'dialogs.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   column: {
     title: 'Yeni sütun əlavə et',
-    titleKey: 'addColumn',
+    titleKey: 'dialogs.addColumn',
     confirmText: 'Əlavə et',
-    confirmTextKey: 'add',
+    confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'adding',
+    loadingTextKey: 'dialogs.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   notification: {
     title: 'Yeni bildiriş göndər',
-    titleKey: 'sendNotification',
+    titleKey: 'dialogs.sendNotification',
     confirmText: 'Göndər',
-    confirmTextKey: 'send',
+    confirmTextKey: 'dialogs.send',
     loadingText: 'Göndərilir...',
-    loadingTextKey: 'sending',
+    loadingTextKey: 'dialogs.sending',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   report: {
     title: 'Yeni hesabat yarat',
-    titleKey: 'createReport',
+    titleKey: 'dialogs.createReport',
     confirmText: 'Yarat',
-    confirmTextKey: 'create',
+    confirmTextKey: 'dialogs.create',
     loadingText: 'Yaradılır...',
-    loadingTextKey: 'creating',
+    loadingTextKey: 'dialogs.creating',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   file: {
     title: 'Fayl yüklə',
-    titleKey: 'uploadFile',
+    titleKey: 'dialogs.uploadFile',
     confirmText: 'Yüklə',
-    confirmTextKey: 'upload',
+    confirmTextKey: 'common.upload',
     loadingText: 'Yüklənir...',
-    loadingTextKey: 'uploading',
+    loadingTextKey: 'dialogs.uploading',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   link: {
     title: 'Yeni link əlavə et',
-    titleKey: 'addLink',
+    titleKey: 'dialogs.addLink',
     confirmText: 'Əlavə et',
-    confirmTextKey: 'add',
+    confirmTextKey: 'common.add',
     loadingText: 'Əlavə edilir...',
-    loadingTextKey: 'adding',
+    loadingTextKey: 'dialogs.adding',
     showIcon: false,
     dangerLevel: 'low' as const
   }
@@ -270,110 +270,110 @@ const CreateConfigs: Record<EntityType, DialogConfig> = {
 const EditConfigs: Record<EntityType, DialogConfig> = {
   school: {
     title: 'Məktəbi redaktə et',
-    titleKey: 'editSchool',
+    titleKey: 'dialogs.editSchool',
     confirmText: 'Yadda saxla',
-    confirmTextKey: 'save',
+    confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'saving',
+    loadingTextKey: 'sectors.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   category: {
     title: 'Kateqoriyanı redaktə et',
-    titleKey: 'editCategory',
+    titleKey: 'dialogs.editCategory',
     confirmText: 'Yadda saxla',
-    confirmTextKey: 'save',
+    confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'saving',
+    loadingTextKey: 'sectors.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   sector: {
     title: 'Sektoru redaktə et',
-    titleKey: 'editSector',
+    titleKey: 'dialogs.editSector',
     confirmText: 'Yadda saxla',
-    confirmTextKey: 'save',
+    confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'saving',
+    loadingTextKey: 'sectors.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   region: {
     title: 'Regionu redaktə et',
-    titleKey: 'editRegion',
+    titleKey: 'dialogs.editRegion',
     confirmText: 'Yadda saxla',
-    confirmTextKey: 'save',
+    confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'saving',
+    loadingTextKey: 'sectors.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   user: {
     title: 'İstifadəçini redaktə et',
-    titleKey: 'editUser',
+    titleKey: 'dialogs.editUser',
     confirmText: 'Yadda saxla',
-    confirmTextKey: 'save',
+    confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'saving',
+    loadingTextKey: 'sectors.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   column: {
     title: 'Sütunu redaktə et',
-    titleKey: 'editColumn',
+    titleKey: 'dialogs.editColumn',
     confirmText: 'Yadda saxla',
-    confirmTextKey: 'save',
+    confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'saving',
+    loadingTextKey: 'sectors.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   notification: {
     title: 'Bildirişi redaktə et',
-    titleKey: 'editNotification',
+    titleKey: 'dialogs.editNotification',
     confirmText: 'Yadda saxla',
-    confirmTextKey: 'save',
+    confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'saving',
+    loadingTextKey: 'sectors.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   report: {
     title: 'Hesabatı redaktə et',
-    titleKey: 'editReport',
+    titleKey: 'dialogs.editReport',
     confirmText: 'Yadda saxla',
-    confirmTextKey: 'save',
+    confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'saving',
+    loadingTextKey: 'sectors.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   file: {
     title: 'Faylı redaktə et',
-    titleKey: 'editFile',
+    titleKey: 'dialogs.editFile',
     confirmText: 'Yadda saxla',
-    confirmTextKey: 'save',
+    confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'saving',
+    loadingTextKey: 'sectors.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   },
   
   link: {
     title: 'Linki redaktə et',
-    titleKey: 'editLink',
+    titleKey: 'dialogs.editLink',
     confirmText: 'Yadda saxla',
-    confirmTextKey: 'save',
+    confirmTextKey: 'common.save',
     loadingText: 'Yadda saxlanır...',
-    loadingTextKey: 'saving',
+    loadingTextKey: 'sectors.saving',
     showIcon: false,
     dangerLevel: 'low' as const
   }
@@ -383,101 +383,110 @@ const EditConfigs: Record<EntityType, DialogConfig> = {
 const ConfirmConfigs: Record<EntityType, DialogConfig> = {
   school: {
     title: 'Təsdiqləyin',
-    titleKey: 'confirm',
+    titleKey: 'common.confirm',
     confirmText: 'Təsdiq',
-    confirmTextKey: 'confirm',
+    confirmTextKey: 'common.confirm',
     loadingText: 'İşlənir...',
-    loadingTextKey: 'processing',
+    loadingTextKey: 'common.processing',
     showIcon: false,
     dangerLevel: 'medium' as const
   },
+  
   category: {
     title: 'Təsdiqləyin',
-    titleKey: 'confirm',
+    titleKey: 'common.confirm',
     confirmText: 'Təsdiq',
-    confirmTextKey: 'confirm',
+    confirmTextKey: 'common.confirm',
     loadingText: 'İşlənir...',
-    loadingTextKey: 'processing',
+    loadingTextKey: 'common.processing',
     showIcon: false,
     dangerLevel: 'medium' as const
   },
+  
   sector: {
     title: 'Təsdiqləyin',
-    titleKey: 'confirm',
+    titleKey: 'common.confirm',
     confirmText: 'Təsdiq',
-    confirmTextKey: 'confirm',
+    confirmTextKey: 'common.confirm',
     loadingText: 'İşlənir...',
-    loadingTextKey: 'processing',
+    loadingTextKey: 'common.processing',
     showIcon: false,
     dangerLevel: 'medium' as const
   },
+  
   region: {
     title: 'Təsdiqləyin',
-    titleKey: 'confirm',
+    titleKey: 'common.confirm',
     confirmText: 'Təsdiq',
-    confirmTextKey: 'confirm',
+    confirmTextKey: 'common.confirm',
     loadingText: 'İşlənir...',
-    loadingTextKey: 'processing',
+    loadingTextKey: 'common.processing',
     showIcon: false,
     dangerLevel: 'medium' as const
   },
+  
   user: {
     title: 'Təsdiqləyin',
-    titleKey: 'confirm',
+    titleKey: 'common.confirm',
     confirmText: 'Təsdiq',
-    confirmTextKey: 'confirm',
+    confirmTextKey: 'common.confirm',
     loadingText: 'İşlənir...',
-    loadingTextKey: 'processing',
+    loadingTextKey: 'common.processing',
     showIcon: false,
     dangerLevel: 'medium' as const
   },
+  
   column: {
     title: 'Təsdiqləyin',
-    titleKey: 'confirm',
+    titleKey: 'common.confirm',
     confirmText: 'Təsdiq',
-    confirmTextKey: 'confirm',
+    confirmTextKey: 'common.confirm',
     loadingText: 'İşlənir...',
-    loadingTextKey: 'processing',
+    loadingTextKey: 'common.processing',
     showIcon: false,
     dangerLevel: 'medium' as const
   },
+  
   notification: {
     title: 'Təsdiqləyin',
-    titleKey: 'confirm',
+    titleKey: 'common.confirm',
     confirmText: 'Təsdiq',
-    confirmTextKey: 'confirm',
+    confirmTextKey: 'common.confirm',
     loadingText: 'İşlənir...',
-    loadingTextKey: 'processing',
+    loadingTextKey: 'common.processing',
     showIcon: false,
     dangerLevel: 'medium' as const
   },
+  
   report: {
     title: 'Təsdiqləyin',
-    titleKey: 'confirm',
+    titleKey: 'common.confirm',
     confirmText: 'Təsdiq',
-    confirmTextKey: 'confirm',
+    confirmTextKey: 'common.confirm',
     loadingText: 'İşlənir...',
-    loadingTextKey: 'processing',
+    loadingTextKey: 'common.processing',
     showIcon: false,
     dangerLevel: 'medium' as const
   },
+  
   file: {
     title: 'Təsdiqləyin',
-    titleKey: 'confirm',
+    titleKey: 'common.confirm',
     confirmText: 'Təsdiq',
-    confirmTextKey: 'confirm',
+    confirmTextKey: 'common.confirm',
     loadingText: 'İşlənir...',
-    loadingTextKey: 'processing',
+    loadingTextKey: 'common.processing',
     showIcon: false,
     dangerLevel: 'medium' as const
   },
+  
   link: {
     title: 'Təsdiqləyin',
-    titleKey: 'confirm',
+    titleKey: 'common.confirm',
     confirmText: 'Təsdiq',
-    confirmTextKey: 'confirm',
+    confirmTextKey: 'common.confirm',
     loadingText: 'İşlənir...',
-    loadingTextKey: 'processing',
+    loadingTextKey: 'common.processing',
     showIcon: false,
     dangerLevel: 'medium' as const
   }
@@ -496,7 +505,7 @@ const DialogConfigs: Record<DialogType, Record<EntityType, DialogConfig>> = {
         {
           title: `${entity} məlumatları`,
           confirmText: 'Bağla',
-          confirmTextKey: 'close',
+          confirmTextKey: 'common.close',
           showIcon: false,
           dangerLevel: 'low' as const
         }
@@ -511,11 +520,11 @@ const DialogConfigs: Record<DialogType, Record<EntityType, DialogConfig>> = {
         entity,
         {
           title: 'Admin təyin et',
-          titleKey: 'assignAdmin',
+          titleKey: 'dialogs.assignAdmin',
           confirmText: 'Təyin et',
-          confirmTextKey: 'assign',
+          confirmTextKey: 'dialogs.assign',
           loadingText: 'Təyin edilir...',
-          loadingTextKey: 'assigning',
+          loadingTextKey: 'dialogs.assigning',
           showIcon: false,
           dangerLevel: 'medium' as const
         }
@@ -529,11 +538,11 @@ const DialogConfigs: Record<DialogType, Record<EntityType, DialogConfig>> = {
         entity,
         {
           title: 'İdxal et',
-          titleKey: 'import',
+          titleKey: 'dialogs.import',
           confirmText: 'İdxal et',
-          confirmTextKey: 'import',
+          confirmTextKey: 'dialogs.import',
           loadingText: 'İdxal edilir...',
-          loadingTextKey: 'importing',
+          loadingTextKey: 'dialogs.importing',
           showIcon: false,
           dangerLevel: 'low' as const
         }
@@ -547,11 +556,11 @@ const DialogConfigs: Record<DialogType, Record<EntityType, DialogConfig>> = {
         entity,
         {
           title: 'İxrac et',
-          titleKey: 'export',
+          titleKey: 'dialogs.export',
           confirmText: 'İxrac et',
-          confirmTextKey: 'export',
+          confirmTextKey: 'dialogs.export',
           loadingText: 'İxrac edilir...',
-          loadingTextKey: 'exporting',
+          loadingTextKey: 'dialogs.exporting',
           showIcon: false,
           dangerLevel: 'low' as const
         }

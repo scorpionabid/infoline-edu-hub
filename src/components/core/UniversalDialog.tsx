@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   AlertDialog,
@@ -51,7 +52,7 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
   const config = { ...baseConfig, ...customConfig };
   
   // Extract entity name safely
-  const entityName = data?.name || data?.full_name || data?.title || t('items.unknown');
+  const entityName = data?.name || data?.full_name || data?.title || t('common.items.unknown');
   
   // Build title with translation fallback
   const title = config.titleKey ? t(config.titleKey) : config.title;
@@ -63,6 +64,12 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
   
   // Build consequences text
   const consequences = config.consequencesKey ? t(config.consequencesKey) : config.consequences;
+  
+  // Build confirm text
+  const confirmText = config.confirmTextKey ? t(config.confirmTextKey) : config.confirmText;
+  
+  // Build loading text
+  const loadingText = config.loadingTextKey ? t(config.loadingTextKey) : config.loadingText;
   
   // Use AlertDialog for destructive actions, Dialog for others
   const isDestructive = type === 'delete' || config.dangerLevel === 'high';
@@ -92,7 +99,7 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
           
           <AlertDialogFooter>
             <AlertDialogCancel onClick={onClose} disabled={isSubmitting}>
-              {t('cancel') || 'Ləğv et'}
+              {t('common.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={onConfirm}
@@ -102,10 +109,10 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {config.loadingText || t('deleting') || 'Silinir...'}
+                  {loadingText}
                 </>
               ) : (
-                config.confirmText || t('delete') || 'Sil'
+                confirmText
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -143,7 +150,7 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
         
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            {t('cancel') || 'Ləğv et'}
+            {t('common.cancel')}
           </Button>
           <Button 
             onClick={onConfirm}
@@ -153,10 +160,10 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {config.loadingText || t('processing') || 'İşlənir...'}
+                {loadingText}
               </>
             ) : (
-              config.confirmText || t('confirm') || 'Təsdiq'
+              confirmText
             )}
           </Button>
         </DialogFooter>

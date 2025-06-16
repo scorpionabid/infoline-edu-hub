@@ -5,6 +5,9 @@ import { initReactI18next } from 'react-i18next';
 import en from '@/locales/en.json';
 import az from '@/locales/az.json';
 import ru from '@/locales/ru.json';
+import tr from '@/locales/tr.json';
+import { SupportedLanguage } from '@/types/translation';
+import { TranslationValidator } from '@/utils/translationValidator';
 
 interface Language {
   nativeName: string;
@@ -17,26 +20,27 @@ export interface LanguageContextProps {
   t: (key: string, options?: any) => string;
   i18n: typeof i18next;
   isRtl: boolean;
-  availableLanguages: string[];
-  currentLanguage: string;
-  languages: Record<string, Language>;
-  supportedLanguages: string[];
+  availableLanguages: SupportedLanguage[];
+  currentLanguage: SupportedLanguage;
+  languages: Record<SupportedLanguage, Language>;
+  supportedLanguages: SupportedLanguage[];
 }
 
-const languages: Record<string, Language> = {
+const languages: Record<SupportedLanguage, Language> = {
   az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
   en: { nativeName: 'English', flag: '🇬🇧' },
   ru: { nativeName: 'Русский', flag: '🇷🇺' },
   tr: { nativeName: 'Türkçe', flag: '🇹🇷' }
 };
 
-const availableLanguages = ['az', 'en', 'ru', 'tr'];
-const supportedLanguages = ['az', 'en', 'ru'];
+const supportedLanguages: SupportedLanguage[] = ['az', 'en', 'ru', 'tr'];
 
 const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState(localStorage.getItem('i18nextLng') || 'az');
+  const [language, setLanguage] = useState<SupportedLanguage>(
+    (localStorage.getItem('i18nextLng') as SupportedLanguage) || 'az'
+  );
 
   const i18n = useMemo(() => {
     const instance = i18next.createInstance();
@@ -47,20 +51,34 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           en: { translation: en },
           az: { translation: az },
           ru: { translation: ru },
+          tr: { translation: tr },
         },
         lng: language,
         fallbackLng: 'az',
         interpolation: {
           escapeValue: false,
         },
+        debug: process.env.NODE_ENV === 'development',
       });
     return instance;
   }, [language]);
 
   const changeLanguage = useCallback((lang: string) => {
-    i18n.changeLanguage(lang);
-    setLanguage(lang);
-    localStorage.setItem('i18nextLng', lang);
+    const supportedLang = lang as SupportedLanguage;
+    if (supportedLanguages.includes(supportedLang)) {
+      i18n.changeLanguage(supportedLang);
+      setLanguage(supportedLang);
+      localStorage.setItem('i18nextLng', supportedLang);
+      
+      // Validate translations in development
+      if (process.env.NODE_ENV === 'development') {
+        const validationResult = TranslationValidator.validateLanguage(
+          supportedLang,
+          (key: string) => i18n.t(key)
+        );
+        TranslationValidator.logValidationResults(supportedLang, validationResult);
+      }
+    }
   }, [i18n]);
 
   const t = useCallback((key: string, options?: any): string => {
@@ -76,7 +94,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     t,
     i18n,
     isRtl,
-    availableLanguages,
+    availableLanguages: supportedLanguages,
     currentLanguage: language,
     languages,
     supportedLanguages,
@@ -102,7 +120,7 @@ export const useLanguageSafe = (): LanguageContextProps => {
       t: (key) => key,
       i18n: i18next,
       isRtl: false,
-      availableLanguages: ['az', 'en', 'ru'],
+      availableLanguages: ['az', 'en', 'ru', 'tr'],
       currentLanguage: 'az',
       languages,
       supportedLanguages,

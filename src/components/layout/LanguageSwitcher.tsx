@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 
 const LanguageSwitcher = () => {
-  const { t, setLanguage, currentLanguage } = useLanguage();
+  const { t, setLanguage, currentLanguage, availableLanguages, languages } = useLanguage();
   
   const handleLanguageChange = (value: string) => {
     setLanguage(value);
@@ -26,10 +26,11 @@ const LanguageSwitcher = () => {
         </div>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="az">Azərbaycan</SelectItem>
-        <SelectItem value="en">English</SelectItem>
-        <SelectItem value="ru">Русский</SelectItem>
-        <SelectItem value="tr">Türkçe</SelectItem>
+        {availableLanguages.map((lang) => (
+          <SelectItem key={lang} value={lang}>
+            {languages[lang]?.flag} {languages[lang]?.nativeName}
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
   );
