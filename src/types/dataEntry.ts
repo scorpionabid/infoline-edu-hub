@@ -1,159 +1,73 @@
-export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'requires_revision';
+import { ColumnDef } from "@tanstack/react-table";
 
-export interface ApprovalItem {
+export interface Category {
   id: string;
-  categoryId: string;
-  categoryName: string;
-  schoolId: string;
-  schoolName: string;
-  submittedAt: string;
-  submittedBy: string;
-  status: DataEntryStatus;
-  entries: any[];
-  completionRate: number;
+  name: string;
+  description: string;
+  deadline: Date | null;
+  column_count: number;
 }
 
-export interface DataEntryFormData {
-  [key: string]: any;
+export interface Column {
+  id: string;
+  name: string;
+  category_id: string;
+  type: 'text' | 'number' | 'date' | 'select' | 'boolean';
+  options?: string[];
+  required: boolean;
+  validation_rules?: string[];
 }
 
-export interface ValidationRule {
-  required?: boolean;
-  min?: number;
-  max?: number;
-  pattern?: RegExp;
-  custom?: (value: any) => boolean | string;
+export interface DataEntryTableData {
+  columns: Column[];
+  values: Record<string, any>;
 }
 
-export interface FieldValidation {
-  [fieldId: string]: ValidationRule;
+export interface DataEntryColumn extends ColumnDef<any> {
+  id: string;
+  name: string;
+  category_id: string;
+  type: 'text' | 'number' | 'date' | 'select' | 'boolean';
+  options?: string[];
+  required: boolean;
+  validation_rules?: string[];
 }
 
-// Core data entry interface
+export interface DataEntryValue {
+  column_id: string;
+  value: any;
+}
+
 export interface DataEntry {
   id: string;
   school_id: string;
   category_id: string;
-  column_id: string;
-  value?: string;
-  status?: DataEntryStatus | string;
-  created_at: string;
-  created_by?: string;
-  approved_at?: string;
-  approved_by?: string;
-  rejected_by?: string;
-  rejection_reason?: string;
-  updated_at: string;
+  values: DataEntryValue[];
+  status: 'draft' | 'pending' | 'approved' | 'rejected';
+  created_at: Date;
+  updated_at: Date;
 }
 
-// Extended data entry with related entity names
-export interface DataEntryRecord extends DataEntry {
-  schoolName?: string;
-  categoryName?: string;
-  columnName?: string;
-}
-
-// Table data representation
-export interface DataEntryTableData {
-  columns: import('./column').Column[];
-  values: Record<string, any>;
-}
-
-// Validation result
-export interface ValidationResult {
-  valid: boolean;
-  message?: string;
-  errors?: Record<string, string>;
-}
-
-// Form field interface
-export interface FormField {
+export interface School {
   id: string;
   name: string;
+  address: string;
+  city: string;
+  region_id: string;
+  sector_id: string;
   type: string;
-  value: any;
-  required: boolean;
-  placeholder?: string;
-  helpText?: string;
-  options?: Array<{ id: string; label: string; value: string }>;
-  validation?: Record<string, any>;
-  onChange: (value: any) => void;
-  onBlur?: () => void;
-  error?: string;
-}
-
-// Form field props
-export interface FormFieldProps {
-  column: import('./column').Column;
-  value: any;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  onValueChange?: (value: any) => void;
-  isDisabled?: boolean;
-}
-
-// Form fields props
-export interface FormFieldsProps {
-  columns: import('./column').Column[];
-  disabled?: boolean;
-}
-
-// Status enum with const assertion for runtime use
-export const DataEntryStatus = {
-  PENDING: 'pending',
-  APPROVED: 'approved',
-  REJECTED: 'rejected',
-  DRAFT: 'draft',
-  REQUIRES_REVISION: 'requires_revision'
-} as const;
-
-// Save status enum
-export const DataEntrySaveStatus = {
-  IDLE: 'idle',
-  SAVING: 'saving',
-  SAVED: 'saved',
-  ERROR: 'error',
-  SUBMITTING: 'submitting',
-  SUBMITTED: 'submitted'
-} as const;
-
-export type DataEntrySaveStatusType = typeof DataEntrySaveStatus[keyof typeof DataEntrySaveStatus];
-
-// Complete form data for a category
-export interface DataEntryForm {
-  id: string;
-  categoryId: string;
-  schoolId: string;
-  values: Record<string, string>;
-  status: DataEntryStatus;
-}
-
-// Props for save bar component
-export interface DataEntrySaveBarProps {
-  lastSaved?: string;
-  isSaving: boolean;
-  isSubmitting: boolean;
-  isDirty?: boolean;
-  completionPercentage?: number;
-  onSave: () => void;
-  onSubmit?: () => void;
-  onDownloadTemplate?: () => void;
-  onUploadData?: (file: File) => void;
-  readOnly?: boolean;
-  errors?: boolean;
-  isPendingApproval?: boolean;
+  email: string;
+  phone: string;
+  website: string;
+  principal: string;
+  vice_principal: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface ProxyDataEntryOptions {
-  categoryId: string;
-  schoolId: string;
-  userId?: string;
-  status?: 'draft' | 'pending' | 'approved' | 'rejected';
-}
-
-export interface SaveResult {
-  success: boolean;
-  error?: string;
-  savedCount?: number;
-  autoApproved?: boolean;
-  proxyInfo?: any;
+  readonly: boolean;
+  showValidation: boolean;
+  autoSave: boolean;
+  status?: string; // Add the missing status property
 }

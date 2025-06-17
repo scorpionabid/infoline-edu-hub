@@ -22,17 +22,22 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
+import { cn } from '@/lib/utils';
+import { CalendarIcon } from '@radix-ui/react-icons';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { format } from 'date-fns';
 
 interface EditCategoryDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   category?: Category;
   onSave?: () => void;
 }
 
 export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
   category,
   onSave,
 }) => {
@@ -60,7 +65,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
     } else {
       resetForm();
     }
-  }, [category, isOpen]);
+  }, [category, open]);
 
   const resetForm = () => {
     setName('');
@@ -104,7 +109,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
         onSave();
       }
       
-      onClose();
+      onOpenChange(false);
       resetForm();
     } catch (error) {
       console.error('Error saving category:', error);
@@ -112,7 +117,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{category ? 'Kateqoriyanı Düzəlt' : 'Yeni Kateqoriya'}</DialogTitle>
@@ -180,24 +185,34 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="priority">Prioritet</Label>
-              <Input
-                id="priority"
-                type="number"
-                min="0"
-                value={priority}
-                onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="deadline">Son tarix</Label>
-              <DatePicker
-                selected={deadline}
-                onSelect={setDeadline}
-              />
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="deadline" className="text-right">
+              Son tarix
+            </Label>
+            <div className="col-span-3">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !deadline && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {deadline ? format(deadline, "PPP") : <span>Tarix seçin</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={deadline}
+                    onSelect={setDeadline}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>

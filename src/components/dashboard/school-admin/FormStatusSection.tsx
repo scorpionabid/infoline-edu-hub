@@ -1,76 +1,37 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Grid } from '@/components/ui/grid';
-import { AlertTriangle, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
 
 interface FormStatusSectionProps {
-  dueSoonCount: number;
-  overdueCount: number;
-  totalCount: number;
+  dashboardData?: any;
+  // Add other props as needed
 }
 
-const FormStatusSection: React.FC<FormStatusSectionProps> = ({ 
-  dueSoonCount, 
-  overdueCount, 
-  totalCount 
-}) => {
-  // Hesablamalar
-  const dueSoonPercentage = totalCount ? Math.round((dueSoonCount / totalCount) * 100) : 0;
-  const overduePercentage = totalCount ? Math.round((overdueCount / totalCount) * 100) : 0;
-  
+export const FormStatusSection: React.FC<FormStatusSectionProps> = ({ dashboardData }) => {
+  // Mock data for demonstration
+  const totalForms = 100;
+  const completedForms = 75;
+  const completionPercentage = (completedForms / totalForms) * 100;
+
   return (
-    <Grid columns={2} className="gap-6">
-      <Card>
-        <CardHeader className="pb-2">
+    <Card>
+      <CardHeader>
+        <CardTitle>Form Status</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center">
-              <Clock className="mr-2 h-4 w-4 text-amber-500" />
-              Son tarix yaxınlaşanlar
-            </CardTitle>
-            <span className="text-2xl font-bold">{dueSoonCount}</span>
+            <span>Completed Forms</span>
+            <Badge>{completedForms}/{totalForms}</Badge>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Faiz</span>
-              <span>{dueSoonPercentage}%</span>
-            </div>
-            <Progress value={dueSoonPercentage} className={cn("h-2", dueSoonPercentage > 30 ? "bg-amber-200" : "")} />
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Növbəti 7 gün ərzində son tarixi olan formlar
+          <Progress value={completionPercentage} />
+          <p className="text-sm text-muted-foreground">
+            {completionPercentage.toFixed(2)}% completed
           </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center">
-              <AlertTriangle className="mr-2 h-4 w-4 text-red-500" />
-              Gecikənlər
-            </CardTitle>
-            <span className="text-2xl font-bold">{overdueCount}</span>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Faiz</span>
-              <span>{overduePercentage}%</span>
-            </div>
-            <Progress value={overduePercentage} className={cn("h-2", overduePercentage > 0 ? "bg-red-200" : "")} />
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Son tarixi keçmiş və tamamlanmamış formlar
-          </p>
-        </CardContent>
-      </Card>
-    </Grid>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
