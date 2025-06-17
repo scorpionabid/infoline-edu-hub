@@ -106,11 +106,11 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="name">{t("schoolName")} *</Label>
+          <Label htmlFor="name">{t('schools.school_name')} *</Label>
           <Input
             id="name"
-            {...register("name", { required: t("schoolNameRequired") })}
-            placeholder={t("enterSchoolName")}
+            {...register("name", { required: t('schools.school_name_required') })}
+            placeholder={t('schools.enter_school_name')}
           />
           {errors.name && (
             <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -118,22 +118,22 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
         </div>
 
         <div>
-          <Label htmlFor="type">{t("schoolType")}</Label>
+          <Label htmlFor="type">{t('schools.school_type')}</Label>
           <Input
             id="type"
             {...register("type")}
-            placeholder={t("enterSchoolType")}
+            placeholder={t('schools.enter_school_type')}
           />
         </div>
 
         <div>
-          <Label htmlFor="region_id">{t("region")} *</Label>
+          <Label htmlFor="region_id">{t('schools.region')} *</Label>
           <Select
             value={watch("region_id") || undefined}
             onValueChange={(value) => setValue("region_id", value)}
           >
             <SelectTrigger>
-              <SelectValue placeholder={t("selectRegion")} />
+              <SelectValue placeholder={t('schools.select_region')} />
             </SelectTrigger>
             <SelectContent>
               {validRegions.length > 0 ? (
@@ -144,7 +144,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
                 ))
               ) : (
                 <SelectItem value="no-regions" disabled>
-                  {t("noRegionsAvailable") || "No regions available"}
+                  {t('schools.no_regions_available')}
                 </SelectItem>
               )}
             </SelectContent>
@@ -155,14 +155,14 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
         </div>
 
         <div>
-          <Label htmlFor="sector_id">{t("sector")} *</Label>
+          <Label htmlFor="sector_id">{t('schools.sector')} *</Label>
           <Select
             value={watch("sector_id") || undefined}
             onValueChange={(value) => setValue("sector_id", value)}
             disabled={!selectedRegionId}
           >
             <SelectTrigger>
-              <SelectValue placeholder={t("selectSector")} />
+              <SelectValue placeholder={t('schools.select_sector')} />
             </SelectTrigger>
             <SelectContent>
               {filteredSectors.length > 0 ? (
@@ -174,8 +174,8 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               ) : (
                 <SelectItem value="no-sectors" disabled>
                   {selectedRegionId
-                    ? t("noSectorsAvailable") || "No sectors available"
-                    : t("selectRegionFirst") || "Select region first"}
+                    ? t('schools.no_sectors_available')
+                    : t('schools.select_region_first')}
                 </SelectItem>
               )}
             </SelectContent>
@@ -186,35 +186,35 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
         </div>
 
         <div>
-          <Label htmlFor="principal_name">{t("principalName")}</Label>
+          <Label htmlFor="principal_name">{t('schools.principal_name')}</Label>
           <Input
             id="principal_name"
             {...register("principal_name")}
-            placeholder={t("enterPrincipalName")}
+            placeholder={t('schools.enter_principal_name')}
           />
         </div>
 
         <div>
-          <Label htmlFor="phone">{t("phone")}</Label>
+          <Label htmlFor="phone">{t('schools.phone')}</Label>
           <Input
             id="phone"
             {...register("phone")}
-            placeholder={t("enterPhone")}
+            placeholder={t('schools.enter_phone')}
           />
         </div>
 
         <div>
-          <Label htmlFor="email">{t("email")}</Label>
+          <Label htmlFor="email">{t('schools.email')}</Label>
           <Input
             id="email"
             type="email"
             {...register("email")}
-            placeholder={t("enterEmail")}
+            placeholder={t('schools.enter_email')}
           />
         </div>
 
         <div>
-          <Label htmlFor="language">{t("language")}</Label>
+          <Label htmlFor="language">{t('schools.language')}</Label>
           <Select
             value={watch("language") || "az"}
             onValueChange={(value) => setValue("language", value)}
@@ -223,16 +223,16 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="az">Azərbaycan</SelectItem>
-              <SelectItem value="ru">Русский</SelectItem>
-              <SelectItem value="tr">Türkçe</SelectItem>
-              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="az">{t('schools.teaching_languages.azerbaijani')}</SelectItem>
+              <SelectItem value="ru">{t('schools.teaching_languages.russian')}</SelectItem>
+              <SelectItem value="tr">{t('schools.teaching_languages.turkish')}</SelectItem>
+              <SelectItem value="en">{t('schools.teaching_languages.other')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label htmlFor="student_count">{t("studentCount")}</Label>
+          <Label htmlFor="student_count">{t('schools.student_count')}</Label>
           <Input
             id="student_count"
             type="number"
@@ -242,7 +242,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
         </div>
 
         <div>
-          <Label htmlFor="teacher_count">{t("teacherCount")}</Label>
+          <Label htmlFor="teacher_count">{t('schools.teacher_count')}</Label>
           <Input
             id="teacher_count"
             type="number"
@@ -252,7 +252,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
         </div>
 
         <div>
-          <Label htmlFor="status">{t("status")}</Label>
+          <Label htmlFor="status">{t('schools.status')}</Label>
           <Select
             value={watch("status") || "active"}
             onValueChange={(value: "active" | "inactive") =>
@@ -263,26 +263,26 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="active">{t("active")}</SelectItem>
-              <SelectItem value="inactive">{t("inactive")}</SelectItem>
+              <SelectItem value="active">{t('schools.status_options.active')}</SelectItem>
+              <SelectItem value="inactive">{t('schools.status_options.inactive')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
       <div>
-        <Label htmlFor="address">{t("address")}</Label>
+        <Label htmlFor="address">{t('schools.address')}</Label>
         <Textarea
           id="address"
           {...register("address")}
-          placeholder={t("enterAddress")}
+          placeholder={t('schools.enter_address')}
           rows={3}
         />
       </div>
 
       <div className="flex justify-end gap-2">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? t("saving") : t("save")}
+          {isSubmitting ? t('ui.saving') : t('ui.save')}
         </Button>
       </div>
     </form>

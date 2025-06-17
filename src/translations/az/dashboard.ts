@@ -40,6 +40,8 @@ export const dashboard = {
     completed_forms: 'Tamamlanmış Formlar',
     form_completion: 'Form Tamamlanma Faizi',
     overdue_forms: 'Vaxtı keçən Formlar',
+    total_forms: 'Ümumi Formlar',
+    total_forms_description: 'Ümumi form sayı',
     
     // Performans göstəriciləri
     completion_rate: 'Tamamlanma Faizi',
@@ -109,6 +111,7 @@ export const dashboard = {
 
   // Bildirişlər
   notifications: {
+    title: 'Bildirişlər',
     new_notifications: 'Yeni Bildirişlər',
     no_notifications: 'Bildiriş yoxdur',
     mark_all_read: 'Hamısını oxunmuş kimi işarələ',

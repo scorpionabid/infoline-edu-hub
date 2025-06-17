@@ -37,8 +37,8 @@ const AddSchoolDialog: React.FC<AddSchoolDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("addSchool")}</DialogTitle>
-          <DialogDescription>{t("addSchoolDescription")}</DialogDescription>
+          <DialogTitle>{t('schools.add_school')}</DialogTitle>
+          <DialogDescription>{t('schools.add_school_description')}</DialogDescription>
         </DialogHeader>
         <SchoolForm
           onSubmit={onSubmit}

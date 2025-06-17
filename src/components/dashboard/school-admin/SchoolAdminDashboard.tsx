@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import StatsCard from '../StatsCard';
@@ -11,6 +10,7 @@ import FormTabs from './FormTabs';
 import { Button } from '@/components/ui/button';
 import { LinksCard } from './LinksCard';
 import { FilesCard } from './FilesCard';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
@@ -29,17 +29,19 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   navigateToDataEntry,
   handleFormClick
 }) => {
+  const { t } = useTranslation();
+
   if (isLoading) {
-    return <div className="p-8 text-center">Yüklənir...</div>;
+    return <div className="p-8 text-center">{t('ui.loading')}</div>;
   }
 
   if (error || !data) {
     return (
       <div className="p-8 text-center">
-        <p className="text-red-600 mb-4">Xəta baş verdi</p>
+        <p className="text-red-600 mb-4">{t('ui.error')}</p>
         {onRefresh && (
           <Button onClick={onRefresh} variant="outline">
-            Yenidən cəhd et
+            {t('ui.retry')}
           </Button>
         )}
       </div>
@@ -111,43 +113,43 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Məktəb Dashboard</h2>
+      <h2 className="text-2xl font-bold">{t('dashboard.role_specific.schooladmin.welcome')}</h2>
       
       <Grid columns={4} className="gap-4">
         <StatsCard
-          title="Təsdiq gözləyən"
+          title={t('status.pending_approval')}
           value={status.pending}
           icon={<ClockIcon className="h-4 w-4 text-primary" />}
-          description="Təsdiq gözləyən formlar"
+          description={t('dashboard.stats.pending_forms')}
         />
         <StatsCard
-          title="Təsdiqlənmiş"
+          title={t('status.approved')}
           value={status.approved}
           icon={<CheckCircleIcon className="h-4 w-4 text-primary" />}
-          description="Təsdiqlənmiş formlar"
+          description={t('dashboard.stats.completed_forms')}
         />
         <StatsCard
-          title="Son tarixə yaxın"
+          title={t('status.due_soon')}
           value={formStats.dueSoon || 0}
           icon={<AlertTriangleIcon className="h-4 w-4 text-primary" />}
-          description="Tezliklə bitəcək formlar"
+          description={t('dashboard.stats.overdue_forms')}
         />
         <StatsCard
-          title="Toplam form"
+          title={t('dashboard.stats.total_forms')}
           value={status.total || 0}
           icon={<FileText className="h-4 w-4 text-primary" />}
-          description="Ümumi form sayı"
+          description={t('dashboard.stats.total_forms_description')}
         />
       </Grid>
 
       <Grid columns={2} className="gap-6">
         <CompletionRateCard
           completionRate={completionPercentage}
-          title="Tamamlanma dərəcəsi"
+          title={t('dashboard.stats.completion_rate')}
         />
         
         <NotificationsCard
-          title="Bildirişlər"
+          title={t('dashboard.notifications.title')}
           notifications={adaptedNotifications}
         />
       </Grid>

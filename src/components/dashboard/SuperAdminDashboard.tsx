@@ -138,7 +138,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         <Card className="col-span-4">
           <CardHeader>
             <CardTitle>
-              {t("formStatistics") || "Form Statistikaları"}
+              {t("general.form_statistics")}
             </CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
@@ -147,7 +147,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         </Card>
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>{t("recentActivity") || "Son Fəaliyyətlər"}</CardTitle>
+            <CardTitle>{t("general.recent_activity")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

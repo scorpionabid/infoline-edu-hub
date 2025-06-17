@@ -320,8 +320,8 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{t("columns")}</h1>
-          <p className="text-muted-foreground">{t("manageDataColumns")}</p>
+          <h1 className="text-3xl font-bold">{t("navigation.columns")}</h1>
+          <p className="text-muted-foreground">{t("general.manage_data_columns")}</p>
 
           {/* Stats */}
           <div className="flex items-center space-x-4 mt-2">
