@@ -131,12 +131,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) {
         console.error('[AuthStore] SignIn error:', error);
+        set({ isLoading: false });
         throw error;
       }
 
-      console.log('[AuthStore] SignIn successful - session will be handled by auth state change listener');
-      // CRITICAL FIX: Do not set isLoading: false here
-      // Let the auth state change listener handle the loading state
+      console.log('[AuthStore] SignIn successful');
+      
+      // CRITICAL FIX: Fetch user immediately and update state
+      if (data.session?.user) {
+        set({ session: data.session });
+        await get().fetchUser();
+      }
       
     } catch (error: any) {
       console.error('[AuthStore] SignIn failed:', error);
@@ -315,6 +320,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           updatedAt: new Date().toISOString()
         };
         
+        console.log('[AuthStore] Using fallback user data');
         set({ 
           user: basicUserData, 
           isAuthenticated: true, 

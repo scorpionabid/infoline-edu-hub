@@ -5,23 +5,29 @@ import App from "./App.tsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { TranslationProvider } from "./contexts/TranslationContext";
+import { useAuthStore } from "./hooks/auth/useAuthStore";
 
-// CRITICAL: Initialize for Azerbaijani language priority with immediate readiness
-console.log('[Main] Initializing translation system with immediate Azerbaijani readiness...');
+// CRITICAL: Initialize auth system immediately
+console.log('[Main] Initializing application with immediate auth readiness...');
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
   throw new Error("Root element not found");
 }
 
-// Ensure immediate Azerbaijani language availability
-const ensureAzerbaijaniReadiness = () => {
-  console.log('[Main] Ensuring Azerbaijani translation readiness...');
-  // Translation system will start ready with fallback content
-  return Promise.resolve();
+// Initialize auth store immediately
+const initializeApp = async () => {
+  try {
+    console.log('[Main] Initializing auth store...');
+    await useAuthStore.getState().initializeAuth(false);
+    console.log('[Main] Auth store initialized successfully');
+  } catch (error) {
+    console.error('[Main] Auth initialization error:', error);
+  }
 };
 
-ensureAzerbaijaniReadiness();
+// Initialize immediately
+initializeApp();
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>

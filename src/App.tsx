@@ -3,15 +3,13 @@ import { Suspense } from "react";
 import { Toaster } from "sonner";
 import AppRoutes from "./routes/AppRoutes";
 import ErrorBoundary from "./components/ErrorBoundary";
-import AuthDebugger from "./components/debug/AuthDebugger";
 import TranslationWrapper from "./components/translation/TranslationWrapper";
 import "./App.css";
 
 function App() {
   return (
     <ErrorBoundary>
-      <AuthDebugger />
-      <TranslationWrapper skipLoading={false}>
+      <TranslationWrapper skipLoading={true}>
         <Suspense 
           fallback={
             <div className="min-h-screen flex items-center justify-center">
