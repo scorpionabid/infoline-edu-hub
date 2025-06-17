@@ -4,8 +4,6 @@
  * Comprehensive security utilities for input validation and CSRF protection
  */
 
-import { ENV } from './environment';
-
 // Input validation patterns
 const VALIDATION_PATTERNS = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
@@ -173,37 +171,6 @@ export const checkRateLimit = (
   };
 };
 
-// Environment validation
-export const validateEnvironment = (): { valid: boolean; errors: string[] } => {
-  const errors: string[] = [];
-  
-  // Check required environment variables
-  if (!ENV.supabase?.url) {
-    errors.push('VITE_SUPABASE_URL is required');
-  }
-  
-  if (!ENV.supabase?.anonKey) {
-    errors.push('VITE_SUPABASE_ANON_KEY is required');
-  }
-  
-  // Validate URL format
-  if (ENV.supabase?.url && !validateInput.url(ENV.supabase.url)) {
-    errors.push('VITE_SUPABASE_URL has invalid format');
-  }
-  
-  // Check for development credentials in production
-  if (ENV.app?.environment === 'production') {
-    if (ENV.supabase?.url?.includes('localhost') || ENV.supabase?.url?.includes('127.0.0.1')) {
-      errors.push('Development Supabase URL detected in production');
-    }
-  }
-  
-  return {
-    valid: errors.length === 0,
-    errors
-  };
-};
-
 // Security headers middleware
 export const getSecurityHeaders = (): Record<string, string> => {
   return {
@@ -235,6 +202,5 @@ export default {
   validateInput,
   validateFileUpload,
   checkRateLimit,
-  validateEnvironment,
   getSecurityHeaders,
 };

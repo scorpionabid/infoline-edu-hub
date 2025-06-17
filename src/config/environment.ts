@@ -4,8 +4,6 @@
  * This file validates and exports environment variables safely
  */
 
-import { validateEnvironment } from './security';
-
 // Environment variable interface
 interface ViteEnv {
   VITE_SUPABASE_URL?: string;
@@ -18,6 +16,66 @@ interface ViteEnv {
   VITE_ENABLE_ERROR_TRACKING?: string;
   PROD?: boolean;
 }
+
+// Basic URL validation for environment variables
+const isValidUrl = (url: string): boolean => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// Check if running in production
+const isProduction = (): boolean => {
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+    const env = (import.meta as any).env as ViteEnv;
+    return env.PROD === true;
+  }
+  return false;
+};
+
+// Environment validation function (moved from security.ts to break circular dependency)
+const validateEnvironment = (): { valid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  
+  // Get environment variables directly here to avoid circular dependency
+  let supabaseUrl: string | undefined;
+  let supabaseAnonKey: string | undefined;
+  
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+    const env = (import.meta as any).env as ViteEnv;
+    supabaseUrl = env.VITE_SUPABASE_URL;
+    supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY;
+  }
+  
+  // Check required environment variables
+  if (!supabaseUrl) {
+    errors.push('VITE_SUPABASE_URL is required');
+  }
+  
+  if (!supabaseAnonKey) {
+    errors.push('VITE_SUPABASE_ANON_KEY is required');
+  }
+  
+  // Validate URL format
+  if (supabaseUrl && !isValidUrl(supabaseUrl)) {
+    errors.push('VITE_SUPABASE_URL has invalid format');
+  }
+  
+  // Check for development credentials in production
+  if (isProduction()) {
+    if (supabaseUrl && (supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1'))) {
+      errors.push('Development Supabase URL detected in production');
+    }
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+};
 
 // Secure environment variable getter
 const getEnvVar = (key: string, defaultValue?: string): string => {
@@ -49,15 +107,6 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
   }
   
   return value || defaultValue || '';
-};
-
-// Check if running in production
-const isProduction = (): boolean => {
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    const env = (import.meta as any).env as ViteEnv;
-    return env.PROD === true;
-  }
-  return false;
 };
 
 // Validate environment on module load
