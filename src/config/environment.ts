@@ -1,12 +1,12 @@
 
 /**
- * Environment Configuration with Security Validation
+ * Environment Configuration with Enhanced Security
  * This file validates and exports environment variables safely
  */
 
 import { validateEnvironment } from './security';
 
-// Vite environment variable interface
+// Environment variable interface
 interface ViteEnv {
   VITE_SUPABASE_URL?: string;
   VITE_SUPABASE_ANON_KEY?: string;
@@ -19,7 +19,7 @@ interface ViteEnv {
   PROD?: boolean;
 }
 
-// Get environment variable safely with proper Vite env access
+// Secure environment variable getter
 const getEnvVar = (key: string, defaultValue?: string): string => {
   // Handle Vite environment variables properly
   let value: string | undefined;
@@ -29,27 +29,22 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
     value = env[key as keyof ViteEnv] as string;
   }
   
-  // Fallback for specific known variables
-  if (!value) {
+  // SECURITY: Remove hardcoded fallbacks for production
+  if (!value && !defaultValue) {
+    if (isProduction()) {
+      throw new Error(`Missing required environment variable: ${key}`);
+    }
+    
+    // Development-only fallbacks with clear warnings
+    console.warn(`[SECURITY WARNING] Using development fallback for ${key}`);
+    
     switch (key) {
       case 'VITE_SUPABASE_URL':
-        value = 'https://olbfnauhzpdskqnxtwav.supabase.co';
-        break;
+        return 'https://olbfnauhzpdskqnxtwav.supabase.co';
       case 'VITE_SUPABASE_ANON_KEY':
-        value = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4';
-        break;
+        return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4';
       default:
-        value = defaultValue;
-    }
-  }
-  
-  if (!value && !defaultValue) {
-    // For critical variables, provide hardcoded fallbacks
-    if (key === 'VITE_SUPABASE_URL') {
-      return 'https://olbfnauhzpdskqnxtwav.supabase.co';
-    }
-    if (key === 'VITE_SUPABASE_ANON_KEY') {
-      return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4';
+        throw new Error(`No fallback available for ${key}`);
     }
   }
   
@@ -92,6 +87,11 @@ interface EnvironmentConfig {
     enableErrorTracking: boolean;
     enableDebugMode: boolean;
   };
+  security: {
+    enableCSRF: boolean;
+    enableRateLimit: boolean;
+    sessionTimeout: number;
+  };
 }
 
 // Export validated configuration
@@ -111,18 +111,14 @@ export const ENV: EnvironmentConfig = {
     enableErrorTracking: getEnvVar('VITE_ENABLE_ERROR_TRACKING', 'false') === 'true',
     enableDebugMode: getEnvVar('VITE_APP_ENV', 'development') !== 'production',
   },
+  security: {
+    enableCSRF: true,
+    enableRateLimit: true,
+    sessionTimeout: 3600000, // 1 hour
+  },
 };
 
-// Utility function for components - simplified
-export const getEnv = (key: string): string | undefined => {
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    const env = (import.meta as any).env as ViteEnv;
-    return env[key as keyof ViteEnv] as string;
-  }
-  return undefined;
-};
-
-// Security headers for production
+// Enhanced security headers for production
 export const SECURITY_HEADERS = {
   'Content-Security-Policy': `
     default-src 'self';
@@ -134,11 +130,14 @@ export const SECURITY_HEADERS = {
     object-src 'none';
     media-src 'self';
     frame-src 'none';
+    base-uri 'self';
+    form-action 'self';
   `.replace(/\s+/g, ' ').trim(),
   'X-Frame-Options': 'DENY',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
 } as const;
 
 export default ENV;

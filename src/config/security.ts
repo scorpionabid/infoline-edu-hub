@@ -1,150 +1,240 @@
 
 /**
- * Security Configuration for İnfoLine
- * Centralized security settings and validation
+ * Enhanced Security Configuration and Validation
+ * Comprehensive security utilities for input validation and CSRF protection
  */
 
-// Rate limiting configuration
-export const RATE_LIMITS = {
-  LOGIN_ATTEMPTS: {
-    max: 5,
-    windowMinutes: 15,
-  },
-  API_REQUESTS: {
-    max: 60,
-    windowMinutes: 1,
-  },
-  FILE_UPLOADS: {
-    max: 10,
-    windowMinutes: 5,
-  },
+import { ENV } from './environment';
+
+// Input validation patterns
+const VALIDATION_PATTERNS = {
+  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  phone: /^[\+]?[0-9\s\-\(\)]{10,15}$/,
+  url: /^https?:\/\/.+/,
+  uuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+  sqlInjection: /('|(\\')|(;)|(\s*(union|select|insert|update|delete|drop|create|alter|exec|script)\s*)/i,
+  xss: /<[^>]*script[^>]*>|javascript:|on\w+\s*=/i,
+  path: /^[a-zA-Z0-9\-_\/\.]+$/,
 } as const;
 
-// File upload security
-export const FILE_UPLOAD_SECURITY = {
-  maxSize: 50 * 1024 * 1024, // 50MB
-  allowedTypes: [
-    'application/pdf',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-excel',
+// Dangerous input patterns
+const DANGEROUS_PATTERNS = [
+  /<script[^>]*>.*?<\/script>/gi,
+  /javascript:/gi,
+  /on\w+\s*=/gi,
+  /eval\s*\(/gi,
+  /expression\s*\(/gi,
+  /vbscript:/gi,
+  /data:text\/html/gi,
+];
+
+// CSRF Token Management
+export const generateCSRFToken = (): string => {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
+export const validateCSRFToken = (token: string, sessionToken: string): boolean => {
+  return token === sessionToken && token.length === 64;
+};
+
+// Input Sanitization
+export const sanitizeInput = (input: string): string => {
+  if (!input || typeof input !== 'string') return '';
+  
+  let sanitized = input;
+  
+  // Remove dangerous patterns
+  DANGEROUS_PATTERNS.forEach(pattern => {
+    sanitized = sanitized.replace(pattern, '');
+  });
+  
+  // HTML encode special characters
+  sanitized = sanitized
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+  
+  return sanitized.trim();
+};
+
+// Input Validation
+export const validateInput = {
+  email: (email: string): boolean => {
+    if (!email || typeof email !== 'string') return false;
+    return VALIDATION_PATTERNS.email.test(email.trim());
+  },
+  
+  phone: (phone: string): boolean => {
+    if (!phone || typeof phone !== 'string') return false;
+    return VALIDATION_PATTERNS.phone.test(phone.trim());
+  },
+  
+  url: (url: string): boolean => {
+    if (!url || typeof url !== 'string') return false;
+    return VALIDATION_PATTERNS.url.test(url.trim());
+  },
+  
+  uuid: (uuid: string): boolean => {
+    if (!uuid || typeof uuid !== 'string') return false;
+    return VALIDATION_PATTERNS.uuid.test(uuid.trim());
+  },
+  
+  password: (password: string): boolean => {
+    if (!password || typeof password !== 'string') return false;
+    return password.length >= 8 && /[A-Za-z]/.test(password) && /[0-9]/.test(password);
+  },
+  
+  text: (text: string, maxLength: number = 1000): boolean => {
+    if (!text || typeof text !== 'string') return false;
+    if (text.length > maxLength) return false;
+    return !VALIDATION_PATTERNS.sqlInjection.test(text) && !VALIDATION_PATTERNS.xss.test(text);
+  },
+  
+  filename: (filename: string): boolean => {
+    if (!filename || typeof filename !== 'string') return false;
+    return /^[a-zA-Z0-9\-_\.]+$/.test(filename) && filename.length <= 255;
+  }
+};
+
+// File Upload Validation
+export const validateFileUpload = (file: File): { valid: boolean; error?: string } => {
+  // Check file size (max 10MB)
+  if (file.size > 10 * 1024 * 1024) {
+    return { valid: false, error: 'File size exceeds 10MB limit' };
+  }
+  
+  // Check file type
+  const allowedTypes = [
     'image/jpeg',
     'image/png',
     'image/gif',
-    'text/csv',
-  ] as const,
-  allowedExtensions: ['.pdf', '.xlsx', '.xls', '.jpg', '.jpeg', '.png', '.gif', '.csv'] as const,
-} as const;
-
-// Input validation patterns
-export const VALIDATION_PATTERNS = {
-  EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  PHONE: /^[\+]?[1-9][\d]{0,15}$/,
-  NAME: /^[a-zA-ZÀ-ÿ\u0100-\u017F\u0400-\u04FF\s\-'\.]{2,50}$/,
-  PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-} as const;
-
-// XSS prevention
-export const sanitizeInput = (input: string): string => {
-  if (!input) return '';
+    'application/pdf',
+    'text/plain',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ];
   
-  return input
-    .replace(/<script[^>]*>.*?<\/script>/gi, '')
-    .replace(/javascript:/gi, '')
-    .replace(/vbscript:/gi, '')
-    .replace(/onload=/gi, '')
-    .replace(/onerror=/gi, '')
-    .replace(/onclick=/gi, '')
-    .replace(/onmouseover=/gi, '')
-    .trim();
-};
-
-// Validate file upload
-export const validateFileUpload = (file: File): { valid: boolean; error?: string } => {
-  if (file.size > FILE_UPLOAD_SECURITY.maxSize) {
-    return { valid: false, error: 'File size exceeds 50MB limit' };
-  }
-  
-  if (!FILE_UPLOAD_SECURITY.allowedTypes.includes(file.type as any)) {
+  if (!allowedTypes.includes(file.type)) {
     return { valid: false, error: 'File type not allowed' };
   }
   
-  const extension = '.' + file.name.split('.').pop()?.toLowerCase();
-  if (!FILE_UPLOAD_SECURITY.allowedExtensions.includes(extension as any)) {
-    return { valid: false, error: 'File extension not allowed' };
+  // Check filename
+  if (!validateInput.filename(file.name)) {
+    return { valid: false, error: 'Invalid filename' };
   }
   
   return { valid: true };
 };
 
-// Input validation
-export const validateInput = {
-  email: (email: string): boolean => VALIDATION_PATTERNS.EMAIL.test(email),
-  phone: (phone: string): boolean => !phone || VALIDATION_PATTERNS.PHONE.test(phone),
-  name: (name: string): boolean => VALIDATION_PATTERNS.NAME.test(name),
-  password: (password: string): boolean => VALIDATION_PATTERNS.PASSWORD.test(password),
-};
-
-// CSRF token generation (for forms)
-export const generateCSRFToken = (): string => {
-  return crypto.getRandomValues(new Uint32Array(4)).join('-');
-};
-
-// Vite environment variable interface
-interface ViteEnv {
-  VITE_SUPABASE_URL?: string;
-  VITE_SUPABASE_ANON_KEY?: string;
+// Rate Limiting
+interface RateLimitState {
+  [key: string]: {
+    count: number;
+    resetTime: number;
+  };
 }
+
+const rateLimitState: RateLimitState = {};
+
+export const checkRateLimit = (
+  identifier: string,
+  maxAttempts: number = 5,
+  windowMs: number = 15 * 60 * 1000 // 15 minutes
+): { allowed: boolean; remainingAttempts: number; resetTime?: Date } => {
+  const now = Date.now();
+  const key = `rate_limit_${identifier}`;
+  
+  if (!rateLimitState[key] || now > rateLimitState[key].resetTime) {
+    rateLimitState[key] = {
+      count: 1,
+      resetTime: now + windowMs
+    };
+    return { allowed: true, remainingAttempts: maxAttempts - 1 };
+  }
+  
+  rateLimitState[key].count++;
+  
+  if (rateLimitState[key].count > maxAttempts) {
+    return {
+      allowed: false,
+      remainingAttempts: 0,
+      resetTime: new Date(rateLimitState[key].resetTime)
+    };
+  }
+  
+  return {
+    allowed: true,
+    remainingAttempts: maxAttempts - rateLimitState[key].count
+  };
+};
 
 // Environment validation
 export const validateEnvironment = (): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
   
-  // Check if we can access environment variables
-  let hasSupabaseUrl = false;
-  let hasSupabaseKey = false;
-  
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    const env = (import.meta as any).env as ViteEnv;
-    hasSupabaseUrl = !!env.VITE_SUPABASE_URL;
-    hasSupabaseKey = !!env.VITE_SUPABASE_ANON_KEY;
-    
-    // Validate Supabase URL format if present
-    if (hasSupabaseUrl && !env.VITE_SUPABASE_URL!.startsWith('https://')) {
-      errors.push('VITE_SUPABASE_URL must use HTTPS');
-    }
-  } else {
-    // Fallback - assume we have the hardcoded values
-    hasSupabaseUrl = true;
-    hasSupabaseKey = true;
-  }
-  
-  if (!hasSupabaseUrl) {
+  // Check required environment variables
+  if (!ENV.supabase?.url) {
     errors.push('VITE_SUPABASE_URL is required');
   }
   
-  if (!hasSupabaseKey) {
+  if (!ENV.supabase?.anonKey) {
     errors.push('VITE_SUPABASE_ANON_KEY is required');
+  }
+  
+  // Validate URL format
+  if (ENV.supabase?.url && !validateInput.url(ENV.supabase.url)) {
+    errors.push('VITE_SUPABASE_URL has invalid format');
+  }
+  
+  // Check for development credentials in production
+  if (ENV.app?.environment === 'production') {
+    if (ENV.supabase?.url?.includes('localhost') || ENV.supabase?.url?.includes('127.0.0.1')) {
+      errors.push('Development Supabase URL detected in production');
+    }
   }
   
   return {
     valid: errors.length === 0,
-    errors,
+    errors
   };
 };
 
-// Production debug cleanup utility
-export const isDebugMode = (): boolean => {
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    const env = (import.meta as any).env as ViteEnv & { PROD?: boolean };
-    return !env.PROD;
-  }
-  return true; // Default to debug mode if can't determine
+// Security headers middleware
+export const getSecurityHeaders = (): Record<string, string> => {
+  return {
+    'Content-Security-Policy': `
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' https://*.supabase.co;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https://*.supabase.co;
+      connect-src 'self' https://*.supabase.co;
+      font-src 'self';
+      object-src 'none';
+      media-src 'self';
+      frame-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    `.replace(/\s+/g, ' ').trim(),
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  };
 };
 
-// Secure logging for production
-export const secureLog = (message: string, data?: any): void => {
-  if (isDebugMode()) {
-    console.log(message, data);
-  }
-  // In production, only log errors or send to monitoring service
+export default {
+  generateCSRFToken,
+  validateCSRFToken,
+  sanitizeInput,
+  validateInput,
+  validateFileUpload,
+  checkRateLimit,
+  validateEnvironment,
+  getSecurityHeaders,
 };
