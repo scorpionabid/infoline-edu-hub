@@ -1,3 +1,4 @@
+
 import type { 
   SupportedLanguage, 
   LanguageTranslations,
@@ -7,11 +8,12 @@ import type {
 // Cache for loaded translations
 const translationCache: Partial<Record<SupportedLanguage, LanguageTranslations>> = {};
 
-// List of all available modules with type safety - YENİLƏNDİ
+// List of all available modules with type safety
 const MODULE_NAMES = [
   'app',
   'auth',
   'categories',
+  'columns',
   'core',
   'dashboard',
   'dataEntry',
@@ -24,6 +26,7 @@ const MODULE_NAMES = [
   'schools',
   'sectors',
   'status',
+  'theme',
   'time',
   'ui',
   'user',
@@ -32,11 +35,6 @@ const MODULE_NAMES = [
 ] as const;
 
 type ModuleName = typeof MODULE_NAMES[number];
-
-// Type guard to check if a string is a valid module name
-const isModuleName = (name: string): name is ModuleName => {
-  return (MODULE_NAMES as readonly string[]).includes(name);
-};
 
 /**
  * Load translations for a specific language
@@ -54,19 +52,11 @@ const loadTranslations = async (lang: SupportedLanguage): Promise<LanguageTransl
     const moduleImports = await Promise.all(
       MODULE_NAMES.map(async (moduleName) => {
         try {
-          // Skip validation module if it doesn't exist
-          if (moduleName === 'validation' && lang !== 'en') {
-            return { [moduleName]: {} };
-          }
-          
           // Try to import the module
           const module = await import(`./${lang}/${moduleName}.ts`);
           return { [moduleName]: module.default || {} };
         } catch (error) {
-          // For non-critical modules, just return an empty object
-          if (moduleName !== 'validation') {
-            console.warn(`[i18n] Missing module '${moduleName}' for '${lang}', using empty fallback`);
-          }
+          console.warn(`[i18n] Missing module '${moduleName}' for '${lang}', using empty fallback`);
           return { [moduleName]: {} };
         }
       })
@@ -82,6 +72,7 @@ const loadTranslations = async (lang: SupportedLanguage): Promise<LanguageTransl
       app: translations.app || {},
       auth: translations.auth || {},
       categories: translations.categories || {},
+      columns: translations.columns || {},
       core: translations.core || {},
       dashboard: translations.dashboard || {},
       dataEntry: translations.dataEntry || {},
@@ -94,6 +85,7 @@ const loadTranslations = async (lang: SupportedLanguage): Promise<LanguageTransl
       schools: translations.schools || {},
       sectors: translations.sectors || {},
       status: translations.status || {},
+      theme: translations.theme || {},
       time: translations.time || {},
       ui: translations.ui || {},
       user: translations.user || {},

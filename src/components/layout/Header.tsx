@@ -4,10 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import UserProfile from './UserProfile';
 import LanguageSwitcher from './LanguageSwitcher';
-import NavigationMenu from './NavigationMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useMobile } from '@/hooks/common/useMobile';
-import { useTranslation } from '@/contexts/TranslationContext';
 
 interface HeaderProps {
   onSidebarToggle?: () => void;
@@ -16,7 +14,6 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
   const isMobile = useMobile();
-  const { t } = useTranslation();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur w-full">

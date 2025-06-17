@@ -8,12 +8,16 @@ export type DangerLevel = 'low' | 'medium' | 'high';
 export interface DialogConfig {
   title?: string;
   titleKey?: string;
+  description?: string;
+  descriptionKey?: string;
   warningText?: string;
   warningTextKey?: string;
   consequences?: string;
   consequencesKey?: string;
   confirmText?: string;
   confirmTextKey?: string;
+  cancelText?: string;
+  cancelTextKey?: string;
   loadingText?: string;
   loadingTextKey?: string;
   dangerLevel?: DangerLevel;

@@ -1,7 +1,7 @@
 
-// UI translation module - Common UI elements and actions
+// UI translation module - User Interface elements
 export const ui = {
-  // Basic actions
+  // Actions
   save: 'Saxla',
   cancel: 'İmtina',
   delete: 'Sil',
@@ -11,95 +11,90 @@ export const ui = {
   remove: 'Sil',
   update: 'Yenilə',
   submit: 'Təqdim et',
+  confirm: 'Təsdiq et',
+  close: 'Bağla',
+  ok: 'Tamam',
+  yes: 'Bəli',
+  no: 'Xeyr',
+  upload: 'Yüklə',
+  download: 'Endir',
+  export: 'İxrac et',
+  import: 'İdxal et',
+  refresh: 'Yenilə',
   reset: 'Sıfırla',
   clear: 'Təmizlə',
   search: 'Axtar',
   filter: 'Filtr',
   sort: 'Sırala',
-  export: 'İxrac et',
-  import: 'İdxal et',
-  upload: 'Yüklə',
-  download: 'Endir',
-  print: 'Çap et',
-  copy: 'Kopyala',
-  paste: 'Yerləşdir',
-  cut: 'Kəs',
   
-  // States
-  loading: 'Yüklənir...',
-  saving: 'Saxlanır...',
-  creating: 'Yaradılır...',
-  updating: 'Yenilənir...',
-  deleting: 'Silinir...',
-  importing: 'İdxal edilir...',
-  exporting: 'İxrac edilir...',
-  uploading: 'Yüklənir...',
-  downloading: 'Endirilir...',
-  processing: 'İşlənir...',
-  
-  // Common terms
-  yes: 'Bəli',
-  no: 'Xeyr',
-  ok: 'Tamam',
-  close: 'Bağla',
+  // Navigation
+  next: 'Sonra',
+  previous: 'Əvvəl',
   back: 'Geri',
-  next: 'Növbəti',
-  previous: 'Əvvəlki',
-  finish: 'Bitir',
-  done: 'Hazır',
+  forward: 'İrəli',
+  home: 'Ana səhifə',
   
-  // Form elements
-  name: 'Ad',
-  title: 'Başlıq',
-  description: 'Təsvir',
-  status: 'Status',
-  type: 'Tip',
-  category: 'Kateqoriya',
-  date: 'Tarix',
-  time: 'Vaxt',
-  email: 'E-poçt',
-  phone: 'Telefon',
-  address: 'Ünvan',
-  
-  // Selection and dates
-  select: 'Seç',
-  select_all: 'Hamısını seç',
-  deselect_all: 'Seçimi ləğv et',
-  select_date: 'Tarix seç',
-  select_time: 'Vaxt seç',
-  
-  // Data states
-  no_data: 'Məlumat yoxdur',
-  no_data_available: 'Mövcud məlumat yoxdur',
-  empty: 'Boş',
-  loading_data: 'Məlumatlar yüklənir...',
-  
-  // Notifications
-  success: 'Uğur',
+  // Status
+  loading: 'Yüklənir...',
+  success: 'Uğurlu',
   error: 'Xəta',
   warning: 'Xəbərdarlıq',
   info: 'Məlumat',
   
+  // Common phrases
+  please_wait: 'Zəhmət olmasa gözləyin',
+  try_again: 'Yenidən cəhd edin',
+  something_went_wrong: 'Nəsə səhv getdi',
+  no_data: 'Məlumat yoxdur',
+  not_found: 'Tapılmadı',
+  access_denied: 'Giriş qadağandır',
+  unauthorized: 'İcazəsiz',
+  
+  // Form elements
+  required: 'Mütləq',
+  optional: 'İxtiyari',
+  placeholder: 'Daxil edin...',
+  select_option: 'Seçim edin',
+  choose_file: 'Fayl seçin',
+  
+  // Dialog
+  dialog_title: 'Dialoq',
+  confirm_action: 'Əməliyyatı təsdiq edin',
+  are_you_sure: 'Əminsiniz?',
+  
+  // Language
+  language: 'Dil',
+  change_language: 'Dili dəyişdir',
+  
+  // Theme
+  theme: 'Tema',
+  light_mode: 'İşıqlı rejim',
+  dark_mode: 'Qaranlıq rejim',
+  
+  // Time
+  date: 'Tarix',
+  time: 'Vaxt',
+  today: 'Bu gün',
+  yesterday: 'Dünən',
+  tomorrow: 'Sabah',
+  
   // Pagination
   page: 'Səhifə',
-  of: 'dan',
-  items: 'element',
+  of: 'dən',
+  total: 'Ümumi',
+  show: 'Göstər',
   per_page: 'səhifə başına',
-  first: 'İlk',
-  last: 'Son',
   
-  // File operations
-  file: 'Fayl',
-  files: 'Fayllar',
-  choose_file: 'Fayl seç',
-  upload_file: 'Fayl yüklə',
-  download_file: 'Fayl endir',
+  // Validation
+  invalid: 'Düzgün deyil',
+  valid: 'Düzgün',
+  required_field: 'Bu sahə mütləqdir',
   
-  // View modes
-  list_view: 'Siyahı görünüşü',
-  grid_view: 'Şəbəkə görünüşü',
-  card_view: 'Kart görünüşü',
-  table_view: 'Cədvəl görünüşü'
+  // Progress
+  progress: 'İrəliləyiş',
+  completed: 'Tamamlandı',
+  in_progress: 'Davam edir',
+  pending: 'Gözləyir'
 } as const;
 
 export type UI = typeof ui;
