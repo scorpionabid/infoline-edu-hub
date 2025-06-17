@@ -1,74 +1,55 @@
 
-import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { RATE_LIMITS } from '@/config/security';
+/**
+ * Rate Limiting Hook for Authentication
+ * Prevents brute force attacks and abuse
+ */
 
-interface RateLimitState {
+import { useState, useEffect } from 'react';
+import { checkRateLimit } from '@/config/security';
+
+interface RateLimitResult {
   isBlocked: boolean;
   remainingAttempts: number;
   resetTime?: Date;
+  checkRateLimit: () => Promise<boolean>;
+  recordAttempt: () => Promise<void>;
 }
 
-export const useRateLimit = (actionType: keyof typeof RATE_LIMITS) => {
-  const [state, setState] = useState<RateLimitState>({
-    isBlocked: false,
-    remainingAttempts: RATE_LIMITS[actionType].max,
-  });
+export const useRateLimit = (
+  identifier: string,
+  maxAttempts: number = 5,
+  windowMs: number = 15 * 60 * 1000 // 15 minutes
+): RateLimitResult => {
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [remainingAttempts, setRemainingAttempts] = useState(maxAttempts);
+  const [resetTime, setResetTime] = useState<Date | undefined>();
 
-  const checkRateLimit = useCallback(async (identifier?: string): Promise<boolean> => {
-    try {
-      const userIdentifier = identifier || (await supabase.auth.getUser()).data.user?.id || 'anonymous';
-      
-      const { data, error } = await supabase.rpc('check_rate_limit', {
-        user_identifier: userIdentifier,
-        action_type: actionType,
-        max_attempts: RATE_LIMITS[actionType].max,
-        window_minutes: RATE_LIMITS[actionType].windowMinutes,
-      });
+  const checkLimit = async (): Promise<boolean> => {
+    const result = checkRateLimit(identifier, maxAttempts, windowMs);
+    
+    setIsBlocked(!result.allowed);
+    setRemainingAttempts(result.remainingAttempts);
+    setResetTime(result.resetTime);
+    
+    return result.allowed;
+  };
 
-      if (error) {
-        console.error('Rate limit check error:', error);
-        return true; // Allow on error to avoid blocking legitimate users
-      }
+  const recordAttempt = async (): Promise<void> => {
+    await checkLimit();
+  };
 
-      const isAllowed = data as boolean;
-      
-      if (!isAllowed) {
-        const resetTime = new Date();
-        resetTime.setMinutes(resetTime.getMinutes() + RATE_LIMITS[actionType].windowMinutes);
-        
-        setState({
-          isBlocked: true,
-          remainingAttempts: 0,
-          resetTime,
-        });
-      }
-
-      return isAllowed;
-    } catch (error) {
-      console.error('Rate limit check failed:', error);
-      return true; // Allow on error
-    }
-  }, [actionType]);
-
-  const recordAttempt = useCallback(async (identifier?: string) => {
-    try {
-      const userIdentifier = identifier || (await supabase.auth.getUser()).data.user?.id || 'anonymous';
-      
-      await supabase.from('audit_logs').insert({
-        action: actionType,
-        entity_type: 'rate_limit',
-        user_id: userIdentifier !== 'anonymous' ? userIdentifier : null,
-        ip_address: 'client', // In a real app, you'd get this from the server
-      });
-    } catch (error) {
-      console.error('Failed to record rate limit attempt:', error);
-    }
-  }, [actionType]);
+  useEffect(() => {
+    // Check rate limit on mount
+    checkLimit();
+  }, [identifier]);
 
   return {
-    ...state,
-    checkRateLimit,
+    isBlocked,
+    remainingAttempts,
+    resetTime,
+    checkRateLimit: checkLimit,
     recordAttempt,
   };
 };
+
+export default useRateLimit;

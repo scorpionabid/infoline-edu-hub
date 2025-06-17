@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { validateInput, sanitizeInput, generateCSRFToken } from '@/config/security';
+import { securityLogger, getClientContext } from '@/utils/securityLogger';
 import { secureConsole } from '@/utils/productionUtils';
 import { Shield, Lock, AlertTriangle } from 'lucide-react';
 
@@ -33,33 +34,55 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useTranslation();
 
-  // Rate limiting
-  const { isBlocked, remainingAttempts, resetTime, checkRateLimit, recordAttempt } = useRateLimit('LOGIN_ATTEMPTS');
+  // Enhanced rate limiting with user context
+  const { isBlocked, remainingAttempts, resetTime, checkRateLimit, recordAttempt } = useRateLimit(
+    `login_${formData.email || 'anonymous'}`,
+    5, // max attempts
+    15 * 60 * 1000 // 15 minutes
+  );
 
   useEffect(() => {
     if (isBlocked && resetTime) {
+      securityLogger.logRateLimit('login', {
+        ...getClientContext(),
+        action: 'login_blocked',
+        userId: formData.email
+      });
+      
       const timer = setInterval(() => {
         if (new Date() > resetTime) {
-          window.location.reload(); // Reset the component
+          window.location.reload();
         }
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [isBlocked, resetTime]);
+  }, [isBlocked, resetTime, formData.email]);
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
     
+    // Enhanced email validation
     if (!formData.email) {
       errors.email = t?.('auth.validation.email.required') || 'Email is required';
     } else if (!validateInput.email(formData.email)) {
       errors.email = t?.('auth.validation.email.invalid') || 'Invalid email format';
+      securityLogger.logValidationFailure('email', formData.email, getClientContext());
     }
     
+    // Enhanced password validation
     if (!formData.password) {
       errors.password = t?.('auth.validation.password.required') || 'Password is required';
     } else if (formData.password.length < 6) {
       errors.password = t?.('auth.validation.password.minLength') || 'Password must be at least 6 characters';
+    }
+    
+    // Check for suspicious patterns
+    if (formData.email && !validateInput.text(formData.email)) {
+      errors.email = 'Invalid characters detected';
+      securityLogger.logSuspiciousActivity('malicious_input', {
+        field: 'email',
+        value: formData.email.substring(0, 50)
+      });
     }
     
     setValidationErrors(errors);
@@ -70,6 +93,12 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
     e.preventDefault();
     
     if (isSubmitting || isBlocked) return;
+    
+    // Log login attempt
+    securityLogger.logAuthEvent('login_attempt', {
+      ...getClientContext(),
+      userId: formData.email
+    });
     
     // Validate form
     if (!validateForm()) {
@@ -96,13 +125,28 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
       
       secureConsole.log('[SecureLoginForm] Starting secure login process...');
       await signIn(sanitizedEmail, sanitizedPassword);
+      
+      // Log successful login
+      securityLogger.logAuthEvent('login_success', {
+        ...getClientContext(),
+        userId: sanitizedEmail
+      });
+      
       secureConsole.log('[SecureLoginForm] Login successful, navigating...');
       navigate('/dashboard');
       toast.success(t?.('auth.login.success') || 'Login successful');
+      
     } catch (error: any) {
       secureConsole.error('[SecureLoginForm] Login error:', error);
       
-      // Record failed attempt
+      // Log failed login attempt
+      securityLogger.logAuthEvent('login_failure', {
+        ...getClientContext(),
+        userId: formData.email,
+        severity: 'high'
+      });
+      
+      // Record failed attempt for rate limiting
       await recordAttempt();
       
       // Sanitize error message to prevent XSS
@@ -118,7 +162,18 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
+    // Enhanced input sanitization
     const sanitizedValue = sanitizeInput(value);
+    
+    // Detect suspicious input patterns
+    if (value !== sanitizedValue) {
+      securityLogger.logSuspiciousActivity('input_sanitized', {
+        field: name,
+        original: value.substring(0, 50),
+        sanitized: sanitizedValue.substring(0, 50)
+      });
+    }
     
     setFormData(prev => ({
       ...prev,
@@ -191,6 +246,7 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
               disabled={isLoading || isSubmitting}
               className={validationErrors.email ? 'border-red-500' : ''}
               autoComplete="email"
+              maxLength={100}
             />
             {validationErrors.email && (
               <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
@@ -208,6 +264,7 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
               disabled={isLoading || isSubmitting}
               className={validationErrors.password ? 'border-red-500' : ''}
               autoComplete="current-password"
+              maxLength={100}
             />
             {validationErrors.password && (
               <p className="text-red-500 text-sm mt-1">{validationErrors.password}</p>
