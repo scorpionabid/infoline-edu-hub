@@ -1,7 +1,9 @@
+
 // Auto-generated index file for az translations
 import app from './app';
 import auth from './auth';
 import categories from './categories';
+import columns from './columns';
 import core from './core';
 import dashboard from './dashboard';
 import dataEntry from './dataEntry';
@@ -25,6 +27,7 @@ export default {
   app,
   auth,
   categories,
+  columns,
   core,
   dashboard,
   dataEntry,

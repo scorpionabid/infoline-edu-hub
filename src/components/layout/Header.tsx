@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Settings } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import UserProfile from './UserProfile';
 import LanguageSwitcher from './LanguageSwitcher';
 import NavigationMenu from './NavigationMenu';
@@ -29,25 +29,16 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
               size="icon"
               className="mr-3 flex-shrink-0 min-h-[44px] min-w-[44px] touch-manipulation"
               onClick={onSidebarToggle}
+              aria-label={isSidebarOpen ? 'Menyunu bağla' : 'Menyunu aç'}
             >
               {isSidebarOpen ? (
                 <X className="h-5 w-5" />
               ) : (
                 <Menu className="h-5 w-5" />
               )}
-              <span className="sr-only">
-                {isSidebarOpen ? 'Menyunu bağla' : 'Menyunu aç'}
-              </span>
             </Button>
           )}
           
-          {/* Desktop navigation - hide on mobile to avoid duplication */}
-          {!isMobile && (
-            <div className="min-w-0 flex-1">
-              <NavigationMenu isSidebarOpen={isSidebarOpen} onMenuClick={onSidebarToggle} />
-            </div>
-          )}
-
           {/* Mobile: Show logo/title when sidebar is closed */}
           {isMobile && (
             <div className="flex items-center">
@@ -60,9 +51,7 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
         
         {/* Right side controls - using icons primarily */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {!isMobile && (
-            <LanguageSwitcher showLabels={false} />
-          )}
+          <LanguageSwitcher showLabels={false} />
           <ThemeToggle />
           <UserProfile />
         </div>

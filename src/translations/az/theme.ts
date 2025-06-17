@@ -1,12 +1,15 @@
-// Auto-generated file - do not edit manually
 
-const theme = {
-  light: 'Açıq',
+// Theme translation module
+export const theme = {
+  // Basic terms
+  theme: 'Tema',
+  light: 'İşıqlı',
   dark: 'Qaranlıq',
   system: 'Sistem',
-  theme: 'Mövzu',
-  themeDescription: 'Tətbiqin görünüşünü fərdiləşdirin.',
-  selectTheme: 'Mövzunu seçin'
+  
+  // Actions
+  change_theme: 'Tema dəyişdir',
+  toggle_theme: 'Tema aç/bağla'
 } as const;
 
 export type Theme = typeof theme;

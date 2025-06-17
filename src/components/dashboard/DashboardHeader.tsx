@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
@@ -17,23 +18,16 @@ const DashboardHeader: React.FC = () => {
   const user = useAuthStore(selectUser);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   
-  // Dashboard məlumatlarını yeniləmək
   const handleRefresh = () => {
     setIsRefreshing(true);
-    // Yeniləmə prosesini simulyasiya edirik
     setTimeout(() => {
       setIsRefreshing(false);
-      toast.success(t('dashboard.refresh.success'), {
-        description: t('dashboard.refresh.description')
-      });
+      toast.success(t('dashboard.refresh.refresh_data'));
     }, 1000);
   };
   
-  // Dövr vaxtını dəyişmək
   const handlePeriodChange = (period: string) => {
-    toast.info(t('dashboard.time_period.changed'), {
-      description: `${t('dashboard.time_period.changed_to')} ${period}`
-    });
+    toast.info(t('ui.success'));
   };
   
   return (
@@ -52,7 +46,7 @@ const DashboardHeader: React.FC = () => {
             disabled={isRefreshing}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? t('dashboard.refresh.refreshing') : t('dashboard.refresh.refresh_data')}
+            {isRefreshing ? t('ui.loading') : t('dashboard.refresh.refresh_data')}
           </Button>
           
           <DropdownMenu>
@@ -71,9 +65,6 @@ const DashboardHeader: React.FC = () => {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handlePeriodChange(t('dashboard.time_period.this_month'))}>
                 {t('dashboard.time_period.this_month')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handlePeriodChange(t('dashboard.time_period.this_quarter'))}>
-                {t('dashboard.time_period.this_quarter')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handlePeriodChange(t('dashboard.time_period.this_year'))}>
                 {t('dashboard.time_period.this_year')}

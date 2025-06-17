@@ -1,3 +1,4 @@
+
 // General translation module - Common terms and phrases
 export const general = {
   // Common page elements
@@ -22,8 +23,8 @@ export const general = {
   // Statistics and analytics
   statistics: 'Statistika',
   analytics: 'Analitika',
-  form_statistics: 'Form statistikası',
-  recent_activity: 'Son fəaliyyət',
+  form_statistics: 'Form Statistikaları',
+  recent_activity: 'Son Fəaliyyət',
   activity_log: 'Fəaliyyət jurnalı',
   
   // Data operations
@@ -80,6 +81,10 @@ export const general = {
   documentation: 'Sənədlər',
   support: 'Dəstək',
   contact: 'Əlaqə',
+  
+  // Common fields
+  name: 'Ad',
+  title: 'Başlıq',
   
   // Miscellaneous
   other: 'Digər',

@@ -6,7 +6,7 @@ export const dashboard = {
   welcome: 'Xoş gəlmisiniz',
   loading: 'Yüklənir...',
   
-  // Naviqasiya
+  // Navigation
   navigation: {
     overview: 'Ümumi baxış',
     analytics: 'Analitika',
@@ -17,9 +17,9 @@ export const dashboard = {
     settings: 'Parametrlər'
   },
 
-  // Əsas statistikalar
+  // Main statistics
   stats: {
-    // Ümumi rəqəmlər
+    // General numbers
     total_schools: 'Ümumi Məktəblər',
     total_students: 'Ümumi Şagirdlər',
     total_teachers: 'Ümumi Müəllimlər',
@@ -28,17 +28,17 @@ export const dashboard = {
     online_users: 'Onlayn İstifadəçilər',
     total_regions: 'Ümumi Regionlar',
     
-    // Region statistikaları
+    // Region statistics
     region_schools: 'Region Məktəbləri',
     region_users: 'Region İstifadəçiləri',
     region_completion: 'Region Tamamlanma Faizi',
     
-    // Sektor statistikaları
+    // Sector statistics
     sector_schools: 'Sektor Məktəbləri',
     sector_completion: 'Sektor Tamamlanma Faizi',
     pending_approvals: 'Gözləyən Təsdiqlər',
     
-    // Məktəb statistikaları
+    // School statistics
     pending_forms: 'Gözləyən Formlar',
     completed_forms: 'Tamamlanmış Formlar',
     form_completion: 'Form Tamamlanma Faizi',
@@ -47,7 +47,7 @@ export const dashboard = {
     total_forms_description: 'Ümumi form sayı',
     due_soon: 'Tezliklə bitəcək',
     
-    // Performans göstəriciləri
+    // Performance indicators
     completion_rate: 'Tamamlanma Faizi',
     approval_rate: 'Təsdiq Faizi',
     response_time: 'Cavab Vaxtı',
@@ -56,7 +56,7 @@ export const dashboard = {
     system_uptime: 'Sistem İşləmə Vaxtı'
   },
 
-  // SuperAdmin üçün xüsusi tərcümələr
+  // SuperAdmin specific translations
   superadmin: {
     total_users: 'İstifadəçilər',
     total_schools: 'Məktəblər',
@@ -69,7 +69,7 @@ export const dashboard = {
     no_activity_yet: 'Hələ heç bir fəaliyyət yoxdur'
   },
 
-  // Kartlar və widgetlər
+  // Cards and widgets
   cards: {
     overview: 'Ümumi Baxış',
     quick_stats: 'Tez Statistika',
@@ -83,7 +83,7 @@ export const dashboard = {
     system_status: 'Sistem Statusu'
   },
 
-  // Proqres göstəriciləri
+  // Progress indicators
   progress: {
     data_entry: 'Məlumat Daxil Etmə',
     form_completion: 'Form Tamamlanması',
@@ -92,7 +92,7 @@ export const dashboard = {
     deadline_tracking: 'Son Tarix İzləmə',
     overall_progress: 'Ümumi Proqres',
     
-    // Proqres statusları
+    // Progress statuses
     not_started: 'Başlanmayıb',
     in_progress: 'Davam edir',
     nearly_complete: 'Demək olar ki, tamam',
@@ -101,7 +101,7 @@ export const dashboard = {
     needs_attention: 'Diqqət tələb edir'
   },
 
-  // Son fəaliyyət
+  // Recent activity
   activity: {
     recent_logins: 'Son Girişlər',
     recent_submissions: 'Son Təqdimatlar',
@@ -113,7 +113,7 @@ export const dashboard = {
     no_activity: 'Fəaliyyət yoxdur',
     loading_activity: 'Fəaliyyət yüklənir...',
     
-    // Fəaliyyət növləri
+    // Activity types
     login: 'Giriş',
     logout: 'Çıxış',
     created: 'Yaradıldı',
@@ -126,76 +126,17 @@ export const dashboard = {
     downloaded: 'Endirildi'
   },
 
-  // Bildirişlər
+  // Notifications
   notifications: {
     title: 'Bildirişlər',
     new_notifications: 'Yeni Bildirişlər',
     no_notifications: 'Bildiriş yoxdur',
     mark_all_read: 'Hamısını oxunmuş kimi işarələ',
     clear_all: 'Hamısını təmizlə',
-    view_all: 'Hamısına bax',
-    
-    // Bildiriş növləri
-    info: 'Məlumat',
-    warning: 'Xəbərdarlıq',
-    error: 'Xəta',
-    success: 'Uğur',
-    reminder: 'Xatırlatma',
-    deadline: 'Son tarix',
-    approval: 'Təsdiq',
-    system: 'Sistem',
-    
-    // Bildiriş mesajları
-    form_submitted: 'Form təqdim edildi',
-    approval_required: 'Təsdiq tələb olunur',
-    deadline_approaching: 'Son tarix yaxınlaşır',
-    deadline_passed: 'Son tarix keçdi',
-    data_updated: 'Məlumatlar yeniləndi',
-    new_message: 'Yeni mesaj',
-    system_maintenance: 'Sistem baxımı',
-    backup_completed: 'Ehtiyat nüsxəsi tamamlandı'
+    view_all: 'Hamısına bax'
   },
 
-  // Son tarixlər
-  deadlines: {
-    upcoming_deadlines: 'Yaxınlaşan Son Tarixlər',
-    overdue_items: 'Vaxtı Keçən Elementlər',
-    no_deadlines: 'Son tarix yoxdur',
-    days_left: 'gün qalıb',
-    hours_left: 'saat qalıb',
-    overdue_by: 'vaxtı keçib',
-    
-    // Prioritet səviyyələri
-    critical: 'Kritik',
-    high: 'Yüksək',
-    medium: 'Orta',
-    low: 'Aşağı',
-    
-    // Tarix formatları
-    today: 'Bu gün',
-    tomorrow: 'Sabah',
-    this_week: 'Bu həftə',
-    next_week: 'Gələn həftə',
-    this_month: 'Bu ay',
-    overdue: 'Vaxtı keçib'
-  },
-
-  // Tez əməliyyatlar
-  quick_actions: {
-    title: 'Tez Əməliyyatlar',
-    create_user: 'İstifadəçi Yarat',
-    add_school: 'Məktəb Əlavə Et',
-    new_category: 'Yeni Kateqoriya',
-    generate_report: 'Hesabat Yarat',
-    export_data: 'Məlumatları İxrac Et',
-    import_data: 'Məlumat İdxal Et',
-    send_notification: 'Bildiriş Göndər',
-    backup_system: 'Sistem Ehtiyat Nüsxəsi',
-    view_logs: 'Jurналlara Bax',
-    system_settings: 'Sistem Parametrləri'
-  },
-
-  // Filtrlər və axtarış
+  // Filters and search
   filters: {
     filter_by_date: 'Tarixə görə filtr',
     filter_by_status: 'Statusa görə filtr',
@@ -208,7 +149,7 @@ export const dashboard = {
     apply_filters: 'Filtrləri tətbiq et'
   },
 
-  // Yenilənmə və sinxronizasiya
+  // Refresh and sync
   refresh: {
     refresh_data: 'Məlumatları Yenilə',
     auto_refresh: 'Avtomatik Yenilənmə',
@@ -220,7 +161,7 @@ export const dashboard = {
     sync_failed: 'Sinxronizasiya uğursuz'
   },
 
-  // Vaxt seçimi
+  // Time selection
   time_period: {
     today: 'Bu gün',
     yesterday: 'Dünən',
@@ -236,43 +177,11 @@ export const dashboard = {
     select_period: 'Dövr seçin'
   },
 
-  // Eksport və hesabatlar
-  export: {
-    export_dashboard: 'Dashboard-u İxrac Et',
-    export_pdf: 'PDF kimi ixrac et',
-    export_excel: 'Excel kimi ixrac et',
-    export_csv: 'CSV kimi ixrac et',
-    generate_report: 'Hesabat Yarat',
-    schedule_report: 'Hesabatı Planlaşdır',
-    email_report: 'Hesabatı Email Et',
-    print_dashboard: 'Dashboard-u Çap Et'
-  },
+  // Form statistics
+  formStatistics: 'Form Statistikaları',
+  recentActivity: 'Son Fəaliyyət',
 
-  // Rol-əsaslı mesajlar
-  role_specific: {
-    superadmin: {
-      welcome: 'Super Admin olaraq xoş gəlmisiniz',
-      total_system_overview: 'Bütün sistemə ümumi baxış',
-      manage_all: 'Bütün məlumatları idarə edin'
-    },
-    regionadmin: {
-      welcome: 'Region Admini olaraq xoş gəlmisiniz',
-      region_overview: 'Region məlumatlarına baxış',
-      manage_region: 'Region məlumatlarını idarə edin'
-    },
-    sectoradmin: {
-      welcome: 'Sektor Admini olaraq xoş gəlmisiniz',
-      sector_overview: 'Sektor məlumatlarına baxış',
-      manage_sector: 'Sektor məlumatlarını idarə edin'
-    },
-    schooladmin: {
-      welcome: 'Məktəb Admini olaraq xoş gəlmisiniz',
-      school_overview: 'Məktəb məlumatlarına baxış',
-      manage_school: 'Məktəb məlumatlarını idarə edin'
-    }
-  },
-
-  // Səhv və yükləmə statusları
+  // States
   states: {
     loading: 'Yüklənir...',
     error: 'Xəta baş verdi',
@@ -281,17 +190,6 @@ export const dashboard = {
     timeout: 'Vaxt bitdi',
     retry: 'Yenidən cəhd et',
     reload: 'Yenidən yüklə'
-  },
-
-  // Məlumat tooltipləri
-  tooltips: {
-    completion_rate: 'Tamamlanmış formların ümumi forma görə faizi',
-    approval_rate: 'Təsdiqlənmiş təqdimatların ümumi təqdimata görə faizi',
-    response_time: 'Orta cavab vaxtı',
-    user_engagement: 'Aktiv istifadəçilərin faizi',
-    data_quality: 'Məlumatların düzgünlük faizi',
-    click_for_details: 'Təfərrüatlar üçün klikləyin',
-    hover_for_info: 'Məlumat üçün üzərinə gəlin'
   }
 } as const;
 
