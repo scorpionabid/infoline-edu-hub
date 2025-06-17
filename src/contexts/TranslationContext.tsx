@@ -225,18 +225,19 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
       // Load the target language
       await changeLanguage(initialLanguage);
       
-      // Preload other languages in background (low priority)
-      setTimeout(() => {
-        (['en', 'ru', 'tr'] as SupportedLanguage[])
-          .filter(lang => lang !== initialLanguage && lang !== PRIORITY_LANGUAGE)
-          .forEach(lang => {
-            // FIXED: Properly handle async preload
-            preloadTranslations(lang).then(() => {
-              console.log(`Background preload completed for ${lang}`);
-            }).catch(err => {
-              console.warn(`Background preload failed for ${lang}:`, err);
-            });
-          });
+      // FIXED: Preload other languages properly
+      setTimeout(async () => {
+        const otherLanguages = (['en', 'ru', 'tr'] as SupportedLanguage[])
+          .filter(lang => lang !== initialLanguage && lang !== PRIORITY_LANGUAGE);
+        
+        for (const lang of otherLanguages) {
+          try {
+            await preloadTranslations(lang);
+            console.log(`Background preload completed for ${lang}`);
+          } catch (err) {
+            console.warn(`Background preload failed for ${lang}:`, err);
+          }
+        }
       }, 2000);
     };
 
