@@ -2,7 +2,7 @@ import React from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/contexts/TranslationContext";
-import { useThemeSafe } from "@/context/ThemeContext";
+import { useThemeSafe } from "@/contexts/ThemeContext";
 
 // Simple error boundary component
 class ErrorBoundary extends React.Component<

@@ -16,7 +16,7 @@ import {
   selectUser,
   selectUpdateProfile,
 } from "@/hooks/auth/useAuthStore";
-import { useOptimizedTranslation } from "@/context/LanguageContext";
+import { useOptimizedTranslation } from "@/contexts/LanguageContext";
 import {
   Select,
   SelectContent,

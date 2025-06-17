@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/contexts/LanguageContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { supabase } from '@/integrations/supabase/client';
