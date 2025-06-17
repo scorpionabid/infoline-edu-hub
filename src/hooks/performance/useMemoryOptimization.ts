@@ -22,29 +22,33 @@ export const useMemoryOptimization = (options: MemoryMonitorOptions = {}) => {
    * Check memory usage and trigger cleanup if needed
    */
   const checkMemoryUsage = useCallback(async () => {
-    if ('memory' in performance) {
-      const memInfo = (performance as any).memory;
-      
-      if (memInfo.usedJSHeapSize > memoryThreshold) {
-        console.warn('[MemoryOptimization] High memory usage detected:', {
-          used: Math.round(memInfo.usedJSHeapSize / 1024 / 1024) + 'MB',
-          total: Math.round(memInfo.totalJSHeapSize / 1024 / 1024) + 'MB',
-          limit: Math.round(memInfo.jsHeapSizeLimit / 1024 / 1024) + 'MB'
-        });
-
-        // Trigger memory pressure callback
-        if (onMemoryPressure) {
-          onMemoryPressure();
-        }
-
-        // Force cache cleanup
-        enhancedCache.cleanup();
+    try {
+      if ('memory' in performance) {
+        const memInfo = (performance as any).memory;
         
-        // Suggest garbage collection
-        if ('gc' in window) {
-          (window as any).gc();
+        if (memInfo.usedJSHeapSize > memoryThreshold) {
+          console.warn('[MemoryOptimization] High memory usage detected:', {
+            used: Math.round(memInfo.usedJSHeapSize / 1024 / 1024) + 'MB',
+            total: Math.round(memInfo.totalJSHeapSize / 1024 / 1024) + 'MB',
+            limit: Math.round(memInfo.jsHeapSizeLimit / 1024 / 1024) + 'MB'
+          });
+
+          // Trigger memory pressure callback
+          if (onMemoryPressure) {
+            onMemoryPressure();
+          }
+
+          // Force cache cleanup
+          enhancedCache.cleanup();
+          
+          // Suggest garbage collection
+          if ('gc' in window) {
+            (window as any).gc();
+          }
         }
       }
+    } catch (error) {
+      console.warn('[MemoryOptimization] Memory check failed:', error);
     }
   }, [memoryThreshold, onMemoryPressure]);
 

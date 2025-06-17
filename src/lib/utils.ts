@@ -36,3 +36,11 @@ export const formatDateTime = (date: Date | string): string => {
     minute: '2-digit'
   });
 };
+
+// Error handling utility
+export const handleError = (error: any): string => {
+  if (typeof error === 'object' && error !== null) {
+    return error.message || 'An unexpected error occurred';
+  }
+  return 'An unexpected error occurred';
+};

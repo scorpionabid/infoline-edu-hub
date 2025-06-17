@@ -14,15 +14,19 @@ export const CacheMonitor: React.FC = () => {
   const { forceCleanup, getMemoryStats } = useMemoryOptimization();
 
   const refreshStats = () => {
-    const cacheStats = enhancedCache.getStats();
-    const translationStats = translationCache.getInfo();
-    const memoryStats = getMemoryStats();
-    
-    setStats({
-      cache: cacheStats,
-      translations: translationStats,
-      memory: memoryStats
-    });
+    try {
+      const cacheStats = enhancedCache.getStats();
+      const translationStats = translationCache.getInfo();
+      const memoryStats = getMemoryStats();
+      
+      setStats({
+        cache: cacheStats,
+        translations: translationStats,
+        memory: memoryStats
+      });
+    } catch (error) {
+      console.error('Failed to refresh cache stats:', error);
+    }
   };
 
   useEffect(() => {
@@ -44,22 +48,34 @@ export const CacheMonitor: React.FC = () => {
   }, [getMemoryStats]);
 
   const handleClearCache = () => {
-    enhancedCache.clear();
-    refreshStats();
+    try {
+      enhancedCache.clear();
+      refreshStats();
+    } catch (error) {
+      console.error('Failed to clear cache:', error);
+    }
   };
 
   const handleClearTranslations = () => {
-    translationCache.clear();
-    refreshStats();
+    try {
+      translationCache.clear();
+      refreshStats();
+    } catch (error) {
+      console.error('Failed to clear translations:', error);
+    }
   };
 
   const handleForceCleanup = () => {
-    forceCleanup();
-    refreshStats();
+    try {
+      forceCleanup();
+      refreshStats();
+    } catch (error) {
+      console.error('Failed to force cleanup:', error);
+    }
   };
 
   if (!stats) {
-    return <div>Yüklənir...</div>;
+    return <div className="flex items-center justify-center p-4">Yüklənir...</div>;
   }
 
   return (
@@ -79,29 +95,29 @@ export const CacheMonitor: React.FC = () => {
           {/* Enhanced Cache Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{stats.cache.memorySize}</div>
+              <div className="text-2xl font-bold text-primary">{stats.cache?.memorySize || 0}</div>
               <div className="text-sm text-muted-foreground">Memory Entries</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                {Math.round(stats.cache.hitRate)}%
+                {Math.round(stats.cache?.hitRate || 0)}%
               </div>
               <div className="text-sm text-muted-foreground">Hit Rate</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.cache.version}</div>
+              <div className="text-2xl font-bold text-blue-600">{stats.cache?.version || 'N/A'}</div>
               <div className="text-sm text-muted-foreground">Cache Version</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600">
-                {stats.translations.languages.length}
+                {stats.translations?.languages?.length || 0}
               </div>
               <div className="text-sm text-muted-foreground">Languages</div>
             </div>
           </div>
 
           {/* Memory Stats */}
-          {stats.memory.memory && (
+          {stats.memory?.memory && (
             <div className="border rounded-lg p-4">
               <h4 className="font-medium mb-2 flex items-center gap-2">
                 <HardDrive className="h-4 w-4" />
@@ -128,7 +144,7 @@ export const CacheMonitor: React.FC = () => {
           <div className="border rounded-lg p-4">
             <h4 className="font-medium mb-2">Translation Cache</h4>
             <div className="flex flex-wrap gap-2 mb-3">
-              {stats.translations.languages.map((lang: string) => (
+              {(stats.translations?.languages || []).map((lang: string) => (
                 <Badge 
                   key={lang} 
                   variant={lang === 'az' ? "default" : "secondary"}
@@ -139,7 +155,7 @@ export const CacheMonitor: React.FC = () => {
               ))}
             </div>
             <div className="text-sm text-muted-foreground">
-              Priority Language: {stats.translations.priority ? '✅' : '❌'}
+              Priority Language: {stats.translations?.priority ? '✅' : '❌'}
             </div>
           </div>
 

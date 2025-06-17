@@ -83,24 +83,6 @@ export const useCrossTabSync = (options: CrossTabSyncOptions) => {
         // Setup periodic heartbeat
         const heartbeatInterval = setInterval(sendHeartbeat, 30000); // Every 30 seconds
         
-        // Cleanup stale tabs
-        const cleanupInterval = setInterval(() => {
-          // Remove tabs that haven't sent heartbeat in 60 seconds
-          const now = Date.now();
-          const staleTabs = Array.from(activeTabs.current).filter(tab => {
-            // This is a simplified check - in real implementation you'd track timestamps
-            return false;
-          });
-          
-          staleTabs.forEach(tab => {
-            activeTabs.current.delete(tab);
-          });
-          
-          if (staleTabs.length > 0 && onTabsChange) {
-            onTabsChange(activeTabs.current.size);
-          }
-        }, 60000); // Every minute
-
         // Handle page unload
         const handleBeforeUnload = () => {
           sendMessage({ type: 'tab_closing' });
@@ -111,7 +93,6 @@ export const useCrossTabSync = (options: CrossTabSyncOptions) => {
 
         return () => {
           clearInterval(heartbeatInterval);
-          clearInterval(cleanupInterval);
           window.removeEventListener('beforeunload', handleBeforeUnload);
           
           if (broadcastChannel.current) {
