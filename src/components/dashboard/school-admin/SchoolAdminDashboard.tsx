@@ -16,6 +16,7 @@ import FormStatusSection from "./FormStatusSection";
 import { NotificationList } from "./NotificationList";
 import EnhancedCard from "@/components/ui/enhanced-card";
 import { EnhancedStatsGrid } from "../enhanced/EnhancedStatsGrid";
+import { TranslationWrapper } from "@/components/translation/TranslationWrapper";
 
 interface SchoolAdminDashboardProps {
   dashboardData?: any;
@@ -29,17 +30,17 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   const statsData = [
     {
       id: 'total-forms',
-      title: t('dashboard.forms.total'),
+      title: t('dashboard.stats.total_forms'),
       value: dashboardData?.totalForms || 0,
-      description: t('dashboard.forms.all_categories'),
+      description: t('dashboard.stats.total_forms_description'),
       icon: FileText,
       variant: 'default' as const
     },
     {
       id: 'completed',
-      title: t('dashboard.forms.completed'),
+      title: t('status.completed'),
       value: dashboardData?.completedForms || 0,
-      description: t('dashboard.forms.ready_for_review'),
+      description: t('dashboard.progress.completed'),
       icon: CheckCircle,
       variant: 'success' as const,
       trend: {
@@ -49,9 +50,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     },
     {
       id: 'pending',
-      title: t('dashboard.forms.pending'),
+      title: t('status.pending'),
       value: dashboardData?.pendingForms || 0,
-      description: t('dashboard.forms.awaiting_completion'),
+      description: t('status.pending_approval'),
       icon: Clock,
       variant: 'warning' as const
     },
@@ -59,7 +60,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       id: 'completion-rate',
       title: t('dashboard.stats.completion_rate'),
       value: `${dashboardData?.completionRate || 0}%`,
-      description: t('dashboard.stats.overall_progress'),
+      description: t('dashboard.progress.overall_progress'),
       icon: TrendingUp,
       variant: 'primary' as const,
       trend: {
@@ -70,72 +71,74 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      {/* Stats Grid */}
-      <EnhancedStatsGrid stats={statsData} />
+    <TranslationWrapper minimal>
+      <div className="space-y-6 animate-fade-in-up">
+        {/* Stats Grid */}
+        <EnhancedStatsGrid stats={statsData} />
 
-      {/* Main Content Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Form Status Section */}
-        <div className="lg:col-span-2">
+        {/* Main Content Grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Form Status Section */}
+          <div className="lg:col-span-2">
+            <EnhancedCard 
+              title={t('dashboard.cards.overview')}
+              variant="elevated"
+              className="h-full"
+            >
+              <FormStatusSection dashboardData={dashboardData} />
+            </EnhancedCard>
+          </div>
+
+          {/* Quick Actions */}
           <EnhancedCard 
-            title={t('dashboard.forms.status_overview')}
+            title={t('navigation.dashboard')}
             variant="elevated"
-            className="h-full"
+            className="h-fit"
           >
-            <FormStatusSection data={dashboardData} />
+            <div className="space-y-3">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                size="sm"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                {t('ui.create')}
+              </Button>
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                size="sm"
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                {t('time.today')}
+              </Button>
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                size="sm"
+              >
+                <Bell className="mr-2 h-4 w-4" />
+                {t('notifications.notifications')}
+              </Button>
+            </div>
           </EnhancedCard>
         </div>
 
-        {/* Quick Actions */}
+        {/* Files and Links Section */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <FilesCard />
+          <LinksCard />
+        </div>
+
+        {/* Recent Notifications */}
         <EnhancedCard 
-          title={t('dashboard.quick_actions')}
-          variant="elevated"
-          className="h-fit"
+          title={t('notifications.notifications')}
+          variant="outlined"
         >
-          <div className="space-y-3">
-            <Button 
-              className="w-full justify-start" 
-              variant="outline"
-              size="sm"
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              {t('dashboard.actions.new_form')}
-            </Button>
-            <Button 
-              className="w-full justify-start" 
-              variant="outline"
-              size="sm"
-            >
-              <Calendar className="mr-2 h-4 w-4" />
-              {t('dashboard.actions.view_deadlines')}
-            </Button>
-            <Button 
-              className="w-full justify-start" 
-              variant="outline"
-              size="sm"
-            >
-              <Bell className="mr-2 h-4 w-4" />
-              {t('dashboard.actions.notifications')}
-            </Button>
-          </div>
+          <NotificationList notifications={dashboardData?.notifications || []} />
         </EnhancedCard>
       </div>
-
-      {/* Files and Links Section */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <FilesCard />
-        <LinksCard />
-      </div>
-
-      {/* Recent Notifications */}
-      <EnhancedCard 
-        title={t('dashboard.recent_notifications')}
-        variant="outlined"
-      >
-        <NotificationList notifications={dashboardData?.notifications || []} />
-      </EnhancedCard>
-    </div>
+    </TranslationWrapper>
   );
 };
 
