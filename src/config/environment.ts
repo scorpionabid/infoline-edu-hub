@@ -54,7 +54,7 @@ export const ENV: EnvironmentConfig = {
     name: getEnvVar('VITE_APP_NAME', 'İnfoLine'),
     version: getEnvVar('VITE_APP_VERSION', '1.0.0'),
     environment: (getEnvVar('VITE_APP_ENV', 'development') as EnvironmentConfig['app']['environment']),
-    baseUrl: getEnvVar('VITE_BASE_URL', window.location.origin),
+    baseUrl: getEnvVar('VITE_BASE_URL', typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'),
   },
   features: {
     enableAnalytics: getEnvVar('VITE_ENABLE_ANALYTICS', 'false') === 'true',

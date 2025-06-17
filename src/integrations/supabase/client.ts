@@ -53,5 +53,56 @@ if (ENV.app.environment === 'production') {
   console.log('Production mode: Additional security measures should be configured at the infrastructure level');
 }
 
+// API functions for sectors and regions
+export const getSectors = async (regionId?: string) => {
+  try {
+    let query = supabase
+      .from('sectors')
+      .select(`
+        *,
+        regions!inner(id, name)
+      `)
+      .order('name');
+
+    if (regionId) {
+      query = query.eq('region_id', regionId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching sectors:', error);
+      throw error;
+    }
+
+    return data?.map(sector => ({
+      ...sector,
+      region_name: sector.regions?.name || ''
+    })) || [];
+  } catch (error) {
+    console.error('Error in getSectors:', error);
+    throw error;
+  }
+};
+
+export const getRegions = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('regions')
+      .select('*')
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching regions:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getRegions:', error);
+    throw error;
+  }
+};
+
 // Export types for better TypeScript support
 export type { Database } from './types';

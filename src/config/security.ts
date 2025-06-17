@@ -31,8 +31,8 @@ export const FILE_UPLOAD_SECURITY = {
     'image/png',
     'image/gif',
     'text/csv',
-  ],
-  allowedExtensions: ['.pdf', '.xlsx', '.xls', '.jpg', '.jpeg', '.png', '.gif', '.csv'],
+  ] as const,
+  allowedExtensions: ['.pdf', '.xlsx', '.xls', '.jpg', '.jpeg', '.png', '.gif', '.csv'] as const,
 } as const;
 
 // Input validation patterns
@@ -64,12 +64,12 @@ export const validateFileUpload = (file: File): { valid: boolean; error?: string
     return { valid: false, error: 'File size exceeds 50MB limit' };
   }
   
-  if (!FILE_UPLOAD_SECURITY.allowedTypes.includes(file.type)) {
+  if (!FILE_UPLOAD_SECURITY.allowedTypes.includes(file.type as any)) {
     return { valid: false, error: 'File type not allowed' };
   }
   
   const extension = '.' + file.name.split('.').pop()?.toLowerCase();
-  if (!FILE_UPLOAD_SECURITY.allowedExtensions.includes(extension)) {
+  if (!FILE_UPLOAD_SECURITY.allowedExtensions.includes(extension as any)) {
     return { valid: false, error: 'File extension not allowed' };
   }
   
