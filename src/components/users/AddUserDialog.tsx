@@ -1,10 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { toast } from "sonner";
-import { UserRole } from "@/types/auth";
-import { useOptimizedTranslation } from "@/context/LanguageContext";
+import React, { useState } from 'react';
+import { useLanguageSafe } from '@/context/LanguageContext';
+import { UserRole } from '@/types/user';
 import {
   Dialog,
   DialogContent,
@@ -12,403 +8,126 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { useRegions } from "@/hooks/regions";
-import { useSectorsStore } from "@/hooks/useSectorsStore";
-import { useSchools } from "@/hooks/schools";
-import { Region } from "@/types/school";
-import { Sector } from "@/types/school";
-import { School } from "@/types/school";
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { toast } from 'sonner';
+import { createUser } from '@/services/users/userService';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AddUserDialogProps {
-  open: boolean;
+  isOpen: boolean;
   onClose: () => void;
-  onComplete?: () => void;
-  entityTypes?: Array<"region" | "sector" | "school">;
+  onSuccess: () => void;
 }
 
-interface UserFormData {
-  email: string;
-  full_name: string;
-  role: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-}
-
-const AddUserDialog: React.FC<AddUserDialogProps> = ({
-  open,
-  onClose,
-  onComplete,
-  entityTypes = ["region", "sector", "school"],
+const AddUserDialog: React.FC<AddUserDialogProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSuccess 
 }) => {
-  const { t, tSafe } = useOptimizedTranslation();
+  const { tSafe } = useLanguageSafe();
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<UserRole>('user');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { regions } = useRegions();
-  const { sectors } = useSectorsStore();
-  const { schools } = useSchools();
+  const { toast } = useToast();
 
-  const initialRole: UserRole = entityTypes.includes("school")
-    ? "schooladmin"
-    : entityTypes.includes("sector")
-      ? "sectoradmin"
-      : entityTypes.includes("region")
-        ? "regionadmin"
-        : "schooladmin";
-
-  const [formData, setFormData] = useState<UserFormData>(() => ({
-    email: "",
-    full_name: "",
-    role: initialRole,
-    region_id: "",
-    sector_id: "",
-    school_id: "",
-  }));
-
-  const formSchema = z.object({
-    email: z.string().email({ 
-      message: tSafe("validation.email.invalid", "Invalid email format")
-    }),
-    full_name: z.string().min(2, { 
-      message: tSafe("validation.full_name.min_length", "Full name must be at least 2 characters")
-    }),
-    role: z.enum(["superadmin", "regionadmin", "sectoradmin", "schooladmin"], {
-      required_error: tSafe("validation.role.required", "Role is required"),
-    }),
-    region_id: z.string().optional(),
-    sector_id: z.string().optional(),
-    school_id: z.string().optional(),
-  });
-
-  const form = useForm<UserFormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      full_name: "",
-      role: initialRole,
-      region_id: "",
-      sector_id: "",
-      school_id: "",
-    },
-  });
-
-  const availableRoles = [
-    { 
-      value: "schooladmin" as UserRole, 
-      label: tSafe("userManagement.roles.schooladmin", "School Admin")
-    },
-    { 
-      value: "sectoradmin" as UserRole, 
-      label: tSafe("userManagement.roles.sectoradmin", "Sector Admin")
-    },
-    { 
-      value: "regionadmin" as UserRole, 
-      label: tSafe("userManagement.roles.regionadmin", "Region Admin")
-    },
-  ];
-
-  const handleRoleChange = (value: string) => {
-    const newRole = value as UserRole;
-    setFormData((prevData) => ({
-      ...prevData,
-      role: newRole,
-      region_id:
-        newRole === "regionadmin" || newRole === "sectoradmin"
-          ? prevData.region_id
-          : "",
-      sector_id: newRole === "sectoradmin" ? prevData.sector_id : "",
-      school_id: newRole === "schooladmin" ? prevData.school_id : "",
-    }));
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
-  const onSubmit = async (data: UserFormData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
-    setError(null);
 
     try {
-      // Simulate success
-      toast.success(tSafe("userManagement.messages.user_created", "User created successfully"));
-      onComplete?.();
+      await createUser({
+        full_name: fullName,
+        email: email,
+        password: password,
+        role: role,
+      });
+
+      toast({
+        title: tSafe('userCreated'),
+        description: tSafe('userCreatedSuccessfully'),
+      });
+
+      onSuccess();
       onClose();
-      form.reset();
     } catch (error: any) {
-      const errorMessage = error.message || tSafe("userManagement.messages.error", "An error occurred");
-      setError(errorMessage);
-      toast.error(errorMessage);
+      toast({
+        variant: 'destructive',
+        title: tSafe('error'),
+        description: error.message || tSafe('userCreationFailed'),
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
-            {tSafe("userManagement.actions.create_user", "Create User")}
-          </DialogTitle>
+          <DialogTitle>{tSafe('createUser')}</DialogTitle>
           <DialogDescription>
-            {tSafe("userManagement.form.description", 
-              "İstifadəçi məlumatlarını daxil edib yeni hesab yaradın")}
+            {tSafe('createUserDescription')}
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {error && (
-              <div className="text-red-500 text-sm bg-red-50 p-2 rounded">
-                {error}
-              </div>
-            )}
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {tSafe("userManagement.form.email", "Email")}
-                  </FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder={tSafe("userManagement.form.enter_email", "example@example.com")}
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="name">{tSafe('fullName')}</Label>
+            <Input
+              id="name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder={tSafe('fullNamePlaceholder')}
+              required
             />
-
-            <FormField
-              control={form.control}
-              name="full_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {tSafe("userManagement.form.full_name", "Full Name")}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={tSafe("userManagement.form.enter_full_name", "Enter full name")}
-                      {...field}
-                      value={formData.full_name}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleInputChange(e);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="email">{tSafe('email')}</Label>
+            <Input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={tSafe('emailPlaceholder')}
+              required
             />
-
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {tSafe("userManagement.form.role", "Role")}
-                  </FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      handleRoleChange(value);
-                    }}
-                    value={formData.role}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={tSafe("userManagement.form.select_role", "Select a role")} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {availableRoles.map((role) => (
-                        <SelectItem key={role.value} value={role.value}>
-                          {role.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">{tSafe('password')}</Label>
+            <Input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={tSafe('passwordPlaceholder')}
+              required
             />
-
-            {(formData.role === "regionadmin" ||
-              formData.role === "sectoradmin") && (
-              <FormField
-                control={form.control}
-                name="region_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {tSafe("userManagement.form.region", "Region")}
-                    </FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        setFormData((prev) => ({
-                          ...prev,
-                          region_id: value,
-                          sector_id: "",
-                        }));
-                      }}
-                      value={formData.region_id}
-                      disabled={isLoading}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={tSafe("userManagement.form.select_region", "Select a region")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {regions?.map((region) => (
-                          <SelectItem key={region.id} value={region.id}>
-                            {region.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {formData.role === "sectoradmin" && formData.region_id && (
-              <FormField
-                control={form.control}
-                name="sector_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {tSafe("userManagement.form.sector", "Sector")}
-                    </FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        setFormData((prev) => ({
-                          ...prev,
-                          sector_id: value,
-                        }));
-                      }}
-                      value={formData.sector_id}
-                      disabled={isLoading || !formData.region_id}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={tSafe("userManagement.form.select_sector", "Select a sector")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {sectors?.map((sector) => (
-                          <SelectItem key={sector.id} value={sector.id}>
-                            {sector.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {formData.role === "schooladmin" && (
-              <FormField
-                control={form.control}
-                name="school_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {tSafe("userManagement.form.school", "School")}
-                    </FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        setFormData((prev) => ({
-                          ...prev,
-                          school_id: value,
-                        }));
-                      }}
-                      value={formData.school_id}
-                      disabled={isLoading}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={tSafe("userManagement.form.select_school", "Select a school")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {schools?.map((school) => (
-                          <SelectItem key={school.id} value={school.id}>
-                            {school.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <div className="flex gap-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose}
-                disabled={isLoading}
-                className="flex-1"
-              >
-                {tSafe("core.actions.cancel", "Cancel")}
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isLoading}
-                className="flex-1"
-              >
-                {isLoading ? (
-                  <>
-                    {tSafe("core.loading.creating", "Creating...")}
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent ml-2"></div>
-                  </>
-                ) : (
-                  tSafe("userManagement.actions.create_user", "Create User")
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="role">{tSafe('role')}</Label>
+            <Select onValueChange={(value) => setRole(value as UserRole)}>
+              <SelectTrigger id="role">
+                <SelectValue placeholder={tSafe('selectRole')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="superadmin">{tSafe('superadmin')}</SelectItem>
+                <SelectItem value="regionadmin">{tSafe('regionadmin')}</SelectItem>
+                <SelectItem value="sectoradmin">{tSafe('sectoradmin')}</SelectItem>
+                <SelectItem value="schooladmin">{tSafe('schooladmin')}</SelectItem>
+                <SelectItem value="teacher">{tSafe('teacher')}</SelectItem>
+                <SelectItem value="user">{tSafe('user')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? tSafe('creating') : tSafe('createUser')}
+          </Button>
+        </form>
       </DialogContent>
     </Dialog>
   );

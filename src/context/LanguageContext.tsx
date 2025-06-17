@@ -1,213 +1,130 @@
-/**
- * Legacy Compatibility Layer for LanguageContext
- * 
- * Bu fayl köhnə import-ları saxlamaq üçün yaradılmışdır.
- * Yeni kod yazmaq üçün @/contexts/TranslationContext istifadə edin.
- * 
- * @deprecated Use @/contexts/TranslationContext instead
- */
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { SupportedLanguage, LanguageContextValue } from '@/types/language';
 
-import React from 'react';
-import { 
-  useTranslation as useBaseTranslation, 
-  TranslationProvider as BaseTranslationProvider 
-} from '@/contexts/TranslationContext';
-import { useSmartTranslation } from '@/hooks/translation/useSmartTranslation';
-import type { SupportedLanguage } from '@/types/translation';
+interface Translation {
+  [key: string]: string | Translation;
+}
 
-// Legacy context export for backward compatibility
-export const LanguageContext = React.createContext<any>(null);
+const defaultLanguage: SupportedLanguage = (localStorage.getItem('language') as SupportedLanguage) || 'az';
 
-/**
- * Legacy LanguageProvider - wraps the new TranslationProvider
- * @deprecated Use TranslationProvider from @/contexts/TranslationContext
- */
-export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return (
-    <BaseTranslationProvider>
-      {children}
-    </BaseTranslationProvider>
-  );
-};
+const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
-/**
- * Legacy useLanguage hook for backward compatibility
- * @deprecated Use useTranslation from @/contexts/TranslationContext
- */
-export const useLanguage = () => {
-  const { t, language, setLanguage, isLoading, error } = useBaseTranslation();
-  
-  return {
-    t,
-    language,
-    setLanguage,
-    isLoading,
-    error,
-    // Legacy aliases
-    currentLanguage: language,
-    changeLanguage: setLanguage,
+interface LanguageProviderProps {
+  children: React.ReactNode;
+  translations: {
+    [lang in SupportedLanguage]: Translation;
   };
-};
+}
 
-/**
- * Safe translation hook with automatic fallback and error handling
- * This provides enhanced safety for translation calls
- */
-export const useLanguageSafe = () => {
-  const { 
-    t: baseT, 
-    tSafe, 
-    tContext, 
-    language, 
-    setLanguage, 
-    isLoading, 
-    error 
-  } = useSmartTranslation();
+const LanguageProvider: React.FC<LanguageProviderProps> = ({ children, translations }) => {
+  const [language, setLanguage] = useState<SupportedLanguage>(defaultLanguage);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Safe translation function that never throws and always returns a string
-  const t = (key: string, params?: Record<string, any>): string => {
+  useEffect(() => {
+    localStorage.setItem('language', language);
+    document.documentElement.setAttribute('lang', language);
+  }, [language]);
+
+  useEffect(() => {
+    setIsLoading(true);
     try {
-      if (!key) {
-        console.warn('Translation key is empty or undefined');
-        return '';
-      }
-
-      // Use tSafe which has built-in fallback logic
-      const result = tSafe(key, undefined, {
-        interpolation: params,
-        warnMissing: process.env.NODE_ENV === 'development'
-      });
-
-      return result || key.split('.').pop() || key;
-    } catch (error) {
-      console.error('Translation error for key:', key, error);
-      // Return a readable fallback from the key
-      return key.split('.').pop()?.replace(/([A-Z])/g, ' $1').trim() || key;
+      // Simulate loading translations (if needed)
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+    } catch (e: any) {
+      setError(e);
+      setIsLoading(false);
     }
+  }, [language]);
+
+  const t = (key: string, params: Record<string, any> = {}): string => {
+    if (!translations[language]) {
+      console.warn(`No translations found for language: ${language}`);
+      return key;
+    }
+
+    let translation = translations[language][key] as string;
+
+    if (!translation) {
+      console.warn(`Translation not found for key: ${key} in language: ${language}`);
+      return key;
+    }
+
+    for (const param in params) {
+      const regex = new RegExp(`{${param}}`, 'g');
+      translation = translation.replace(regex, params[param]);
+    }
+
+    return translation;
   };
 
-  // Context-aware translation with enhanced error handling
-  const tWithContext = (key: string, context: Record<string, any>): string => {
+  const tBatch = (keys: string[], params: Record<string, any> = {}): Record<string, string> => {
+    const batchTranslations: Record<string, string> = {};
+    keys.forEach(key => {
+      batchTranslations[key] = t(key, params);
+    });
+    return batchTranslations;
+  };
+
+  const tSafe = (key: string, fallback: string = key, params: Record<string, any> = {}): string => {
     try {
-      return tContext(key, context);
-    } catch (error) {
-      console.error('Context translation error:', error);
-      return t(key, context);
+      return t(key, params);
+    } catch (e) {
+      return fallback;
     }
   };
 
-  // Validation-specific translation helper
-  const tValidation = (field: string, rule: string, params?: Record<string, any>): string => {
-    const key = `validation.${rule}`;
-    return tWithContext(key, { field, ...params });
-  };
-
-  // Component-specific translation helper
-  const tComponent = (component: string, key: string, defaultValue?: string): string => {
-    const componentKey = `components.${component}.${key}`;
-    const result = tSafe(componentKey, null, { warnMissing: false });
-    
-    if (result && result !== componentKey) {
-      return result;
-    }
-    
-    // Try UI namespace as fallback
-    const uiKey = `ui.${key}`;
-    const uiResult = tSafe(uiKey, null, { warnMissing: false });
-    
-    if (uiResult && uiResult !== uiKey) {
-      return uiResult;
-    }
-    
-    // Return default value or processed key
-    return defaultValue || key.replace(/([A-Z])/g, ' $1').trim();
-  };
-
-  return {
+  const value: LanguageContextValue = {
+    _performance: {
+      language,
+      isLoading,
+      error: !!error
+    },
     t,
-    tSafe,
-    tContext: tWithContext,
-    tValidation,
-    tComponent,
-    language,
-    setLanguage,
-    isLoading,
-    error,
-    // Legacy compatibility properties
-    currentLanguage: language,
-    changeLanguage: setLanguage,
-    isReady: !isLoading && !error,
-  };
-};
-
-/**
- * Optimized translation hook for performance-critical components
- * Uses memoization and smart caching
- */
-export const useOptimizedTranslation = () => {
-  const {
-    t: baseT,
+    tBatch,
     tSafe,
     language,
     setLanguage,
     isLoading,
     error
-  } = useSmartTranslation();
-
-  // Memoized translation function for better performance
-  const t = React.useCallback((key: string, params?: Record<string, any>): string => {
-    if (!key) return '';
-    
-    try {
-      return tSafe(key, undefined, {
-        interpolation: params,
-        warnMissing: false // Suppress warnings in optimized mode
-      });
-    } catch (error) {
-      console.error('Optimized translation error:', error);
-      return key.split('.').pop() || key;
-    }
-  }, [tSafe]);
-
-  // Batch translation function for multiple keys
-  const tBatch = React.useCallback((keys: string[], params?: Record<string, any>) => {
-    return keys.reduce((acc, key) => {
-      acc[key] = t(key, params);
-      return acc;
-    }, {} as Record<string, string>);
-  }, [t]);
-
-  // Namespace-specific translation helper
-  const tNamespace = React.useCallback((namespace: string) => {
-    return (key: string, params?: Record<string, any>) => {
-      return t(`${namespace}.${key}`, params);
-    };
-  }, [t]);
-
-  return {
-    t,
-    tBatch,
-    tNamespace,
-    language,
-    setLanguage,
-    isLoading,
-    error,
-    // Performance metrics (for development)
-    ...(process.env.NODE_ENV === 'development' && {
-      _performance: {
-        language,
-        isLoading,
-        error: !!error
-      }
-    })
   };
+
+  return (
+    <LanguageContext.Provider value={value}>
+      {children}
+    </LanguageContext.Provider>
+  );
 };
 
-// Default export for legacy compatibility
-export default {
-  LanguageContext,
-  LanguageProvider,
-  useLanguage,
-  useLanguageSafe,
-  useOptimizedTranslation,
+export const useLanguage = (): LanguageContextValue => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error("useLanguage must be used within a LanguageProvider");
+  }
+  return context;
+};
+
+export { LanguageProvider, LanguageContext };
+
+export const useLanguageSafe = (): LanguageContextValue => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    return {
+      _performance: {
+        language: 'az' as SupportedLanguage,
+        isLoading: false,
+        error: false
+      },
+      t: (key: string) => key,
+      tBatch: (keys: string[]) => keys.reduce((acc, key) => ({ ...acc, [key]: key }), {}),
+      tSafe: (key: string, fallback?: string) => fallback || key,
+      language: 'az' as SupportedLanguage,
+      setLanguage: () => {},
+      isLoading: false,
+      error: null
+    };
+  }
+  return context;
 };

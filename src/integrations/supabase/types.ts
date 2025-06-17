@@ -424,7 +424,7 @@ export type Database = {
         Row: {
           content: Json | null
           created_at: string | null
-          created_by: string | null
+          created_by: string
           description: string | null
           filters: Json | null
           id: string
@@ -440,7 +440,7 @@ export type Database = {
         Insert: {
           content?: Json | null
           created_at?: string | null
-          created_by?: string | null
+          created_by: string
           description?: string | null
           filters?: Json | null
           id?: string
@@ -456,7 +456,7 @@ export type Database = {
         Update: {
           content?: Json | null
           created_at?: string | null
-          created_by?: string | null
+          created_by?: string
           description?: string | null
           filters?: Json | null
           id?: string

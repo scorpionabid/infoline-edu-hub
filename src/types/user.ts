@@ -1,81 +1,50 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+// User types with proper enums
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'teacher' | 'user';
+
 export type UserStatus = 'active' | 'inactive';
 
-export interface UserData {
+export interface FullUserData {
   id: string;
   email: string;
   full_name: string;
-  name?: string; // alias for full_name
-  fullName?: string; // alias for full_name
-  role: UserRole;
+  name?: string;
+  role?: UserRole;
   region_id?: string;
-  regionId?: string; // alias for region_id
+  regionId?: string;
   sector_id?: string;
-  sectorId?: string; // alias for sector_id
+  sectorId?: string;
   school_id?: string;
-  schoolId?: string; // alias for school_id
+  schoolId?: string;
   phone?: string;
   position?: string;
   language?: string;
   avatar?: string;
-  status: UserStatus;
+  status?: UserStatus;
   last_login?: string;
-  lastLogin?: string; // alias for last_login
-  created_at: string;
-  createdAt?: string; // alias for created_at
-  updated_at: string;
-  updatedAt?: string; // alias for updated_at
-  entity_name?: string;
-  entityName?: string; // alias for entity_name
-  adminEntity?: string | null;
+  lastLogin?: string;
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
 }
 
-// Alias exports for backward compatibility
-export type User = UserData;
-export type FullUserData = UserData;
-
-export interface UserFilter {
-  role?: UserRole[];
-  regionId?: string;
-  region_id?: string; // alias for regionId
-  sectorId?: string;
-  sector_id?: string; // alias for sectorId
-  schoolId?: string;
-  school_id?: string; // alias for schoolId
-  status?: UserStatus[];
-  search?: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface UserFormData {
-  full_name: string;
-  fullName?: string; // alias for full_name
+export interface UserCreateData {
   email: string;
+  password: string;
+  full_name: string;
   role: UserRole;
   region_id?: string;
-  regionId?: string; // alias for region_id
   sector_id?: string;
-  sectorId?: string; // alias for sector_id
   school_id?: string;
-  schoolId?: string; // alias for school_id
+  phone?: string;
+  position?: string;
+}
+
+export interface UpdateUserData {
+  full_name?: string;
   phone?: string;
   position?: string;
   language?: string;
   status?: UserStatus;
-  password?: string;
-  notifications?: NotificationSettings;
-}
-
-export interface NotificationSettings {
-  email_notifications: boolean;
-  sms_notifications: boolean;
-  push_notifications: boolean; // Added missing field
-  notification_frequency: 'immediate' | 'daily' | 'weekly' | 'never';
-  email?: boolean;
-  inApp?: boolean;
-  sms?: boolean;
-  deadlineReminders?: boolean;
-  system?: boolean;
 }
