@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Card,
@@ -15,7 +16,7 @@ import {
   selectUser,
   selectUpdateProfile,
 } from "@/hooks/auth/useAuthStore";
-import { useTranslation } from "@/contexts/TranslationContext";
+import { useOptimizedTranslation } from "@/context/LanguageContext";
 import {
   Select,
   SelectContent,
@@ -41,7 +42,7 @@ const languages: Language[] = [
 export const AccountSettings = () => {
   const user = useAuthStore(selectUser);
   const updateProfile = useAuthStore(selectUpdateProfile);
-  const { t, language } = useLanguage();
+  const { t, language } = useOptimizedTranslation();
   const [fullName, setFullName] = useState(user?.full_name || "");
   const [email] = useState(user?.email || "");
   const [phone, setPhone] = useState(user?.phone || "");

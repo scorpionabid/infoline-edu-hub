@@ -5,22 +5,23 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Clock, Eye } from 'lucide-react';
+import { DataEntryStatus } from '@/types/dataEntry';
 
-interface Approval {
+interface ApprovalItem {
   id: string;
   schoolName: string;
   categoryName: string;
-  status: 'pending' | 'approved' | 'rejected';
-  // Add other relevant fields
+  status: DataEntryStatus;
+  // Add other relevant fields as needed
 }
 
 interface ApprovalManagerProps {
-  pendingApprovals?: Approval[];
-  approvedItems?: Approval[];
-  rejectedItems?: Approval[];
-  onApprove: (id: string) => void;
-  onReject: (id: string) => void;
-  onView?: (id: string) => void;
+  pendingApprovals?: ApprovalItem[];
+  approvedItems?: ApprovalItem[];
+  rejectedItems?: ApprovalItem[];
+  onApprove: (id: string, comment?: string) => void;
+  onReject: (id: string, reason: string) => void;
+  onView?: (item: ApprovalItem) => void;
   isLoading?: boolean;
 }
 
@@ -42,16 +43,22 @@ export const ApprovalManager: React.FC<ApprovalManagerProps> = ({
     setRejectedCount(rejectedItems.length);
   }, [approvedItems, rejectedItems]);
 
-  const handleApprove = (id: string) => {
-    onApprove(id);
+  const handleApprove = (approval: ApprovalItem) => {
+    onApprove(approval.id);
     // Optimistically update the UI
     setApprovedCount((prev) => prev + 1);
   };
 
-  const handleReject = (id: string) => {
-    onReject(id);
+  const handleReject = (approval: ApprovalItem) => {
+    onReject(approval.id, 'Rejected by admin');
     // Optimistically update the UI
     setRejectedCount((prev) => prev + 1);
+  };
+
+  const handleView = (approval: ApprovalItem) => {
+    if (onView) {
+      onView(approval);
+    }
   };
 
   if (isLoading) {
@@ -103,7 +110,7 @@ export const ApprovalManager: React.FC<ApprovalManagerProps> = ({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" onClick={() => onView(approval.id)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleView(approval)}>
                             <Eye className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
@@ -117,7 +124,7 @@ export const ApprovalManager: React.FC<ApprovalManagerProps> = ({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleApprove(approval.id)}
+                          onClick={() => handleApprove(approval)}
                         >
                           <CheckCircle className="h-4 w-4 text-green-600" />
                         </Button>
@@ -140,7 +147,7 @@ export const ApprovalManager: React.FC<ApprovalManagerProps> = ({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button 
-                        onClick={() => handleApprove(approval.id)}
+                        onClick={() => handleApprove(approval)}
                         className="flex-1"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
@@ -155,7 +162,7 @@ export const ApprovalManager: React.FC<ApprovalManagerProps> = ({
                     <TooltipTrigger asChild>
                       <Button 
                         variant="destructive" 
-                        onClick={() => handleReject(approval.id)}
+                        onClick={() => handleReject(approval)}
                         className="flex-1"
                       >
                         <XCircle className="mr-2 h-4 w-4" />

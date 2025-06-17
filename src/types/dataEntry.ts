@@ -79,3 +79,14 @@ export interface ProxyDataEntryOptions {
   autoSave: boolean;
   status?: string;
 }
+
+// Add missing exports
+export interface DataEntryFormData {
+  [columnId: string]: any;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  message?: string;
+  errors?: Record<string, string>;
+}

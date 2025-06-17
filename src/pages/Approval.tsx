@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/contexts/TranslationContext";
@@ -25,6 +26,19 @@ const ApprovalPage: React.FC = () => {
       </div>
     );
   }
+
+  // Convert function signatures to match component expectations
+  const handleApprove = (id: string, comment?: string) => {
+    approveItem(id, comment);
+  };
+
+  const handleReject = (id: string, reason: string) => {
+    rejectItem(id, reason);
+  };
+
+  const handleView = (item: any) => {
+    viewItem(item);
+  };
 
   return (
     <div className="container mx-auto py-4 px-2">
@@ -83,9 +97,9 @@ const ApprovalPage: React.FC = () => {
           pendingApprovals={pendingApprovals}
           approvedItems={approvedItems}
           rejectedItems={rejectedItems}
-          onApprove={approveItem}
-          onReject={rejectItem}
-          onView={viewItem}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onView={handleView}
           isLoading={isLoading}
         />
       </div>

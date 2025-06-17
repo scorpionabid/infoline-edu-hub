@@ -55,7 +55,10 @@ export const useSectorValidation = ({
   
   const errors = useMemo(() => {
     const formData = entries.reduce((acc, entry) => {
-      acc[entry.column_id] = entry.value;
+      // Use the values array from DataEntry
+      entry.values.forEach(entryValue => {
+        acc[entryValue.column_id] = entryValue.value;
+      });
       return acc;
     }, {} as Record<string, any>);
     
