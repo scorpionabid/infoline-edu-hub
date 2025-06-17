@@ -162,7 +162,6 @@ export const useApprovalData = () => {
     } catch (error) {
       console.error('Error loading approval data:', error);
       toast({
-        title: t('error') || 'Error',
         description: t('errorLoadingApprovalData') || 'Error loading approval data',
         variant: 'destructive'
       });
@@ -192,14 +191,12 @@ export const useApprovalData = () => {
       await loadApprovalData();
       
       toast({
-        title: t('success') || 'Success',
         description: t('itemApproved') || 'Item approved successfully',
       });
       
     } catch (error) {
       console.error('Error approving item:', error);
       toast({
-        title: t('error') || 'Error',
         description: t('errorApprovingItem') || 'Error approving item',
         variant: 'destructive'
       });
@@ -227,14 +224,12 @@ export const useApprovalData = () => {
       await loadApprovalData();
       
       toast({
-        title: t('success') || 'Success',
         description: t('itemRejected') || 'Item rejected successfully',
       });
       
     } catch (error) {
       console.error('Error rejecting item:', error);
       toast({
-        title: t('error') || 'Error',
         description: t('errorRejectingItem') || 'Error rejecting item',
         variant: 'destructive'
       });

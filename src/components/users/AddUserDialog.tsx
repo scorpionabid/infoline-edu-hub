@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { UserRole } from "@/types/auth";
-import { useSmartTranslation } from "@/hooks/translation/useSmartTranslation";
+import { useOptimizedTranslation } from "@/context/LanguageContext";
 import {
   Dialog,
   DialogContent,
@@ -60,7 +60,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   onComplete,
   entityTypes = ["region", "sector", "school"],
 }) => {
-  const { tSafe, tModule, tValidation } = useSmartTranslation();
+  const { t, tSafe } = useOptimizedTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { regions } = useRegions();
@@ -86,13 +86,13 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
 
   const formSchema = z.object({
     email: z.string().email({ 
-      message: tValidation("email", "invalid_email")
+      message: tSafe("validation.email.invalid", "Invalid email format")
     }),
     full_name: z.string().min(2, { 
-      message: tValidation("full_name", "min_length", { min: 2 })
+      message: tSafe("validation.full_name.min_length", "Full name must be at least 2 characters")
     }),
     role: z.enum(["superadmin", "regionadmin", "sectoradmin", "schooladmin"], {
-      required_error: tValidation("role", "required"),
+      required_error: tSafe("validation.role.required", "Role is required"),
     }),
     region_id: z.string().optional(),
     sector_id: z.string().optional(),
@@ -114,15 +114,15 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const availableRoles = [
     { 
       value: "schooladmin" as UserRole, 
-      label: tModule("userManagement", "roles.schooladmin") 
+      label: tSafe("userManagement.roles.schooladmin", "School Admin")
     },
     { 
       value: "sectoradmin" as UserRole, 
-      label: tModule("userManagement", "roles.sectoradmin") 
+      label: tSafe("userManagement.roles.sectoradmin", "Sector Admin")
     },
     { 
       value: "regionadmin" as UserRole, 
-      label: tModule("userManagement", "roles.regionadmin") 
+      label: tSafe("userManagement.roles.regionadmin", "Region Admin")
     },
   ];
 
@@ -154,12 +154,12 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
 
     try {
       // Simulate success
-      toast.success(tModule("userManagement", "messages.user_created"));
+      toast.success(tSafe("userManagement.messages.user_created", "User created successfully"));
       onComplete?.();
       onClose();
       form.reset();
     } catch (error: any) {
-      const errorMessage = error.message || tModule("userManagement", "messages.user_not_found");
+      const errorMessage = error.message || tSafe("userManagement.messages.error", "An error occurred");
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -172,7 +172,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {tModule("userManagement", "actions.create_user")}
+            {tSafe("userManagement.actions.create_user", "Create User")}
           </DialogTitle>
           <DialogDescription>
             {tSafe("userManagement.form.description", 
@@ -193,7 +193,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {tModule("userManagement", "form.email")}
+                    {tSafe("userManagement.form.email", "Email")}
                   </FormLabel>
                   <FormControl>
                     <Input 
@@ -212,11 +212,11 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {tModule("userManagement", "form.full_name")}
+                    {tSafe("userManagement.form.full_name", "Full Name")}
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder={tModule("userManagement", "form.enter_full_name")}
+                      placeholder={tSafe("userManagement.form.enter_full_name", "Enter full name")}
                       {...field}
                       value={formData.full_name}
                       onChange={(e) => {
@@ -236,7 +236,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {tModule("userManagement", "form.role")}
+                    {tSafe("userManagement.form.role", "Role")}
                   </FormLabel>
                   <Select
                     onValueChange={(value) => {
@@ -247,7 +247,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={tModule("userManagement", "form.select_role")} />
+                        <SelectValue placeholder={tSafe("userManagement.form.select_role", "Select a role")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -271,7 +271,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {tModule("userManagement", "form.region")}
+                      {tSafe("userManagement.form.region", "Region")}
                     </FormLabel>
                     <Select
                       onValueChange={(value) => {
@@ -287,7 +287,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={tModule("userManagement", "form.select_region")} />
+                          <SelectValue placeholder={tSafe("userManagement.form.select_region", "Select a region")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -311,7 +311,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {tModule("userManagement", "form.sector")}
+                      {tSafe("userManagement.form.sector", "Sector")}
                     </FormLabel>
                     <Select
                       onValueChange={(value) => {
@@ -326,7 +326,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={tModule("userManagement", "form.select_sector")} />
+                          <SelectValue placeholder={tSafe("userManagement.form.select_sector", "Select a sector")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -350,7 +350,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {tModule("userManagement", "form.school")}
+                      {tSafe("userManagement.form.school", "School")}
                     </FormLabel>
                     <Select
                       onValueChange={(value) => {
@@ -365,7 +365,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={tModule("userManagement", "form.select_school")} />
+                          <SelectValue placeholder={tSafe("userManagement.form.select_school", "Select a school")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -390,7 +390,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                 disabled={isLoading}
                 className="flex-1"
               >
-                {tSafe("core.actions.cancel")}
+                {tSafe("core.actions.cancel", "Cancel")}
               </Button>
               <Button 
                 type="submit" 
@@ -399,11 +399,11 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               >
                 {isLoading ? (
                   <>
-                    {tSafe("core.loading.creating")}
+                    {tSafe("core.loading.creating", "Creating...")}
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent ml-2"></div>
                   </>
                 ) : (
-                  tModule("userManagement", "actions.create_user")
+                  tSafe("userManagement.actions.create_user", "Create User")
                 )}
               </Button>
             </div>
