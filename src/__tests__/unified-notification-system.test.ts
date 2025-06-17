@@ -7,8 +7,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useNotifications } from '@/notifications';
-import { notificationManager } from '@/notifications';
+
+// Mock the entire notifications module
+const mockUseNotifications = vi.fn();
+const mockNotificationManager = {
+  createNotification: vi.fn(),
+  markAsRead: vi.fn(),
+  deleteNotification: vi.fn()
+};
+
+vi.mock('@/notifications', () => ({
+  useNotifications: mockUseNotifications,
+  notificationManager: mockNotificationManager
+}));
 
 // Mock Supabase client
 vi.mock('@/integrations/supabase/client', () => ({
@@ -33,16 +44,6 @@ vi.mock('@/integrations/supabase/client', () => ({
         }))
       }))
     }))
-  }
-}));
-
-// Mock notification manager
-vi.mock('@/notifications', () => ({
-  useNotifications: vi.fn(),
-  notificationManager: {
-    createNotification: vi.fn(),
-    markAsRead: vi.fn(),
-    deleteNotification: vi.fn()
   }
 }));
 
@@ -81,7 +82,7 @@ describe('Unified Notification System', () => {
         }
       ];
 
-      (useNotifications as any).mockReturnValue({
+      mockUseNotifications.mockReturnValue({
         notifications: mockNotifications,
         unreadCount: 1,
         isLoading: false,
@@ -90,7 +91,7 @@ describe('Unified Notification System', () => {
         deleteNotification: vi.fn()
       });
 
-      const result = useNotifications('user1');
+      const result = mockUseNotifications('user1');
 
       expect(result.notifications).toEqual(mockNotifications);
       expect(result.unreadCount).toBe(1);
@@ -101,7 +102,7 @@ describe('Unified Notification System', () => {
     });
 
     it('should handle loading state', () => {
-      (useNotifications as any).mockReturnValue({
+      mockUseNotifications.mockReturnValue({
         notifications: [],
         unreadCount: 0,
         isLoading: true,
@@ -110,7 +111,7 @@ describe('Unified Notification System', () => {
         deleteNotification: vi.fn()
       });
 
-      const result = useNotifications('user1');
+      const result = mockUseNotifications('user1');
 
       expect(result.isLoading).toBe(true);
       expect(result.notifications).toEqual([]);
@@ -127,31 +128,31 @@ describe('Unified Notification System', () => {
         priority: 'normal' as const
       };
 
-      notificationManager.createNotification(mockNotification);
+      mockNotificationManager.createNotification(mockNotification);
 
-      expect(notificationManager.createNotification).toHaveBeenCalledWith(mockNotification);
+      expect(mockNotificationManager.createNotification).toHaveBeenCalledWith(mockNotification);
     });
 
     it('should mark notifications as read', async () => {
       const notificationId = 'notification1';
 
-      notificationManager.markAsRead(notificationId);
+      mockNotificationManager.markAsRead(notificationId);
 
-      expect(notificationManager.markAsRead).toHaveBeenCalledWith(notificationId);
+      expect(mockNotificationManager.markAsRead).toHaveBeenCalledWith(notificationId);
     });
 
     it('should delete notifications', async () => {
       const notificationId = 'notification1';
 
-      notificationManager.deleteNotification(notificationId);
+      mockNotificationManager.deleteNotification(notificationId);
 
-      expect(notificationManager.deleteNotification).toHaveBeenCalledWith(notificationId);
+      expect(mockNotificationManager.deleteNotification).toHaveBeenCalledWith(notificationId);
     });
   });
 
   describe('Error Handling', () => {
     it('should handle API errors gracefully', () => {
-      (useNotifications as any).mockReturnValue({
+      mockUseNotifications.mockReturnValue({
         notifications: [],
         unreadCount: 0,
         isLoading: false,
@@ -161,7 +162,7 @@ describe('Unified Notification System', () => {
         deleteNotification: vi.fn()
       });
 
-      const result = useNotifications('user1');
+      const result = mockUseNotifications('user1');
 
       expect(result.error).toBeInstanceOf(Error);
       expect(result.notifications).toEqual([]);
@@ -183,7 +184,7 @@ describe('Unified Notification System', () => {
         }
       ];
 
-      (useNotifications as any).mockReturnValue({
+      mockUseNotifications.mockReturnValue({
         notifications: mockNotifications,
         unreadCount: 1,
         isLoading: false,
@@ -192,7 +193,7 @@ describe('Unified Notification System', () => {
         deleteNotification: vi.fn()
       });
 
-      const result = useNotifications('user1');
+      const result = mockUseNotifications('user1');
 
       await waitFor(() => {
         expect(result.notifications).toEqual(mockNotifications);
@@ -218,7 +219,7 @@ describe('Unified Notification System', () => {
           }
         ];
 
-        (useNotifications as any).mockReturnValue({
+        mockUseNotifications.mockReturnValue({
           notifications: mockNotifications,
           unreadCount: 1,
           isLoading: false,
@@ -227,7 +228,7 @@ describe('Unified Notification System', () => {
           deleteNotification: vi.fn()
         });
 
-        const result = useNotifications('user1');
+        const result = mockUseNotifications('user1');
         expect(result.notifications[0].type).toBe(type);
       });
     });
@@ -246,7 +247,7 @@ describe('Unified Notification System', () => {
         created_at: new Date().toISOString()
       }));
 
-      (useNotifications as any).mockReturnValue({
+      mockUseNotifications.mockReturnValue({
         notifications: largeNotificationList,
         unreadCount: 500,
         isLoading: false,
@@ -255,7 +256,7 @@ describe('Unified Notification System', () => {
         deleteNotification: vi.fn()
       });
 
-      const result = useNotifications('user1');
+      const result = mockUseNotifications('user1');
 
       expect(result.notifications).toHaveLength(1000);
       expect(result.unreadCount).toBe(500);
