@@ -1,4 +1,12 @@
+
 import { ColumnDef } from "@tanstack/react-table";
+
+export enum DataEntryStatus {
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected'
+}
 
 export interface Category {
   id: string;
@@ -69,5 +77,5 @@ export interface ProxyDataEntryOptions {
   readonly: boolean;
   showValidation: boolean;
   autoSave: boolean;
-  status?: string; // Add the missing status property
+  status?: string;
 }

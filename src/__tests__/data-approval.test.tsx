@@ -40,22 +40,16 @@ describe('Data Approval Tests', () => {
 
   it('renders approval manager correctly', () => {
     renderWithQueryClient(<ApprovalManager {...mockApprovalManagerProps} />);
-    expect(screen.getByText(/approval/i)).toBeInTheDocument();
+    expect(screen.getByText(/Təsdiq Meneceri/i)).toBeInTheDocument();
   });
 
   it('displays pending approvals', () => {
     const mockPendingApprovals = [
       {
         id: '1',
-        categoryId: 'cat1',
         categoryName: 'Test Category',
-        schoolId: 'school1',
         schoolName: 'Test School',
-        submittedAt: new Date().toISOString(),
-        submittedBy: 'user1',
-        status: 'pending' as DataEntryStatus,
-        entries: [],
-        completionRate: 75
+        status: 'pending' as const
       }
     ];
 
@@ -79,7 +73,7 @@ describe('Data Approval Tests', () => {
     renderWithQueryClient(<ApprovalManager {...props} />);
     
     // Check for loading indicator
-    expect(screen.getByTestId('loading-spinner') || screen.getByText(/loading/i)).toBeInTheDocument();
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
   });
 
   it('handles approval action', async () => {
@@ -87,15 +81,9 @@ describe('Data Approval Tests', () => {
     const mockPendingApprovals = [
       {
         id: '1',
-        categoryId: 'cat1',
         categoryName: 'Test Category',
-        schoolId: 'school1',
         schoolName: 'Test School',
-        submittedAt: new Date().toISOString(),
-        submittedBy: 'user1',
-        status: 'pending' as DataEntryStatus,
-        entries: [],
-        completionRate: 75
+        status: 'pending' as const
       }
     ];
 
@@ -114,15 +102,9 @@ describe('Data Approval Tests', () => {
     const mockApprovedItems = [
       {
         id: '2',
-        categoryId: 'cat2',
         categoryName: 'Approved Category',
-        schoolId: 'school2',
         schoolName: 'Approved School',
-        submittedAt: new Date().toISOString(),
-        submittedBy: 'user2',
-        status: 'approved' as DataEntryStatus,
-        entries: [],
-        completionRate: 100
+        status: 'approved' as const
       }
     ];
 
@@ -133,6 +115,7 @@ describe('Data Approval Tests', () => {
 
     renderWithQueryClient(<ApprovalManager {...props} />);
     
-    expect(screen.getByText('Approved Category')).toBeInTheDocument();
+    // Check that approved count is displayed correctly
+    expect(screen.getByText(/Təsdiqlənmiş: 1/)).toBeInTheDocument();
   });
 });

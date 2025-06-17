@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,43 +15,52 @@ interface Approval {
 }
 
 interface ApprovalManagerProps {
-  approvals: Approval[];
+  pendingApprovals?: Approval[];
+  approvedItems?: Approval[];
+  rejectedItems?: Approval[];
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+  onView?: (id: string) => void;
+  isLoading?: boolean;
 }
 
 export const ApprovalManager: React.FC<ApprovalManagerProps> = ({
-  approvals,
+  pendingApprovals = [],
+  approvedItems = [],
+  rejectedItems = [],
   onApprove,
-  onReject
+  onReject,
+  onView,
+  isLoading = false
 }) => {
-  const [pendingApprovals, setPendingApprovals] = useState<Approval[]>([]);
   const [approvedCount, setApprovedCount] = useState(0);
   const [rejectedCount, setRejectedCount] = useState(0);
 
   useEffect(() => {
-    // Filter pending approvals on mount
-    const pending = approvals.filter((approval) => approval.status === 'pending');
-    setPendingApprovals(pending);
-
     // Calculate initial counts
-    setApprovedCount(approvals.filter((approval) => approval.status === 'approved').length);
-    setRejectedCount(approvals.filter((approval) => approval.status === 'rejected').length);
-  }, [approvals]);
+    setApprovedCount(approvedItems.length);
+    setRejectedCount(rejectedItems.length);
+  }, [approvedItems, rejectedItems]);
 
   const handleApprove = (id: string) => {
     onApprove(id);
     // Optimistically update the UI
-    setPendingApprovals((prev) => prev.filter((approval) => approval.id !== id));
     setApprovedCount((prev) => prev + 1);
   };
 
   const handleReject = (id: string) => {
     onReject(id);
     // Optimistically update the UI
-    setPendingApprovals((prev) => prev.filter((approval) => approval.id !== id));
     setRejectedCount((prev) => prev + 1);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8" data-testid="loading-spinner">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -89,16 +99,18 @@ export const ApprovalManager: React.FC<ApprovalManagerProps> = ({
                     <Clock className="mr-1 h-3 w-3" />
                     Gözləyir
                   </Badge>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Ətraflı bax</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  {onView && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="sm" onClick={() => onView(approval.id)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Ətraflı bax</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
