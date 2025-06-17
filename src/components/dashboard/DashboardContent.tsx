@@ -6,7 +6,7 @@ import {
   selectUser,
   selectUserRole,
 } from "@/hooks/auth/useAuthStore";
-import { useTranslation } from "@/contexts/TranslationContext";
+import { useSmartTranslation } from "@/hooks/translation/useSmartTranslation";
 import { useRealDashboardData } from "@/hooks/dashboard/useRealDashboardData";
 import LoadingScreen from "@/components/auth/LoadingScreen";
 import SuperAdminDashboard from "./SuperAdminDashboard";
@@ -19,7 +19,7 @@ import { toast } from "sonner";
 const DashboardContent: React.FC = () => {
   const user = useAuthStore(selectUser);
   const userRole = useAuthStore(selectUserRole);
-  const { t, isLoading: translationLoading, isReady } = useTranslation();
+  const { t, tSafe, isLoading: translationLoading, isReady } = useSmartTranslation();
 
   const { loading, error, dashboardData } = useRealDashboardData();
 
@@ -32,8 +32,8 @@ const DashboardContent: React.FC = () => {
     isReady
   });
 
-  // Show loading only if both translation and dashboard are loading
-  if (loading || (!isReady && translationLoading)) {
+  // Show loading only if dashboard data is loading and no fallback ready
+  if (loading && !dashboardData) {
     return <LoadingScreen message="İdarə paneli yüklənir..." />;
   }
 
@@ -71,10 +71,10 @@ const DashboardContent: React.FC = () => {
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>{t("dashboard.title")}</CardTitle>
+                <CardTitle>{tSafe("dashboard.title", "İdarə Paneli")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>{t("dashboard.subtitle")}</p>
+                <p>{tSafe("dashboard.subtitle", "Dashboard məzmunu")}</p>
               </CardContent>
             </Card>
           </div>

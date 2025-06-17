@@ -20,8 +20,26 @@ import { getTranslations } from '../translations';
 const DEFAULT_LANGUAGE: SupportedLanguage = 'az';
 const PRIORITY_LANGUAGE: SupportedLanguage = 'az';
 
-// In-memory cache for instant access
+// Enhanced in-memory cache with immediate Azerbaijani fallback
 const translationMemoryCache = new Map<SupportedLanguage, LanguageTranslations>();
+
+// Immediate Azerbaijani fallback content
+const IMMEDIATE_AZ_FALLBACK = {
+  dashboard: {
+    title: 'İdarə Paneli',
+    loading: 'Yüklənir...',
+    error: 'Xəta baş verdi'
+  },
+  auth: {
+    login: 'Daxil ol',
+    logout: 'Çıxış'
+  },
+  navigation: {
+    dashboard: 'İdarə Paneli',
+    categories: 'Kateqoriyalar',
+    schools: 'Məktəblər'
+  }
+};
 
 type TranslationContextType = {
   language: SupportedLanguage;
@@ -38,13 +56,17 @@ type TranslationContextType = {
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
-// Enhanced nested value getter with robust fallback
+// Enhanced nested value getter with Azerbaijani fallback
 const getNestedValue = <T extends Record<string, any>>(
   obj: T | undefined | null, 
   path: string,
   params?: TranslationInterpolationOptions & { defaultValue?: string }
 ): string => {
   if (!obj) {
+    // Try immediate fallback first
+    const fallbackResult = getNestedValue(IMMEDIATE_AZ_FALLBACK as any, path);
+    if (fallbackResult !== path) return fallbackResult;
+    
     const fallback = params?.defaultValue || path.split('.').pop() || path;
     return fallback.replace(/([A-Z])/g, ' $1').trim();
   }
@@ -55,6 +77,10 @@ const getNestedValue = <T extends Record<string, any>>(
   }, obj);
 
   if (result === undefined) {
+    // Try immediate fallback for Azerbaijani
+    const fallbackResult = getNestedValue(IMMEDIATE_AZ_FALLBACK as any, path);
+    if (fallbackResult !== path) return fallbackResult;
+    
     const lastPart = path.split('.').pop() || path;
     const readableText = lastPart
       .replace(/([a-z])([A-Z])/g, '$1 $2')
@@ -86,11 +112,11 @@ const getNestedValue = <T extends Record<string, any>>(
 export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
   const [translations, setTranslations] = useState<LanguageTranslations | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const [isReady, setIsReady] = useState<boolean>(false);
+  const [isReady, setIsReady] = useState<boolean>(true); // Start ready with fallback
 
-  // Enhanced changeLanguage with better error handling
+  // Enhanced changeLanguage with immediate readiness
   const changeLanguage = useCallback(async (lang: SupportedLanguage) => {
     // Early return if already loaded
     if (lang === language && translations && isReady) {
@@ -122,22 +148,17 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
       console.error(`[TranslationContext] Failed to load language ${lang}:`, err);
       setError(err instanceof Error ? err : new Error('Failed to load translations'));
       
-      // Fallback to Azerbaijani if available
-      if (lang !== PRIORITY_LANGUAGE) {
-        console.log(`[TranslationContext] Falling back to priority language: ${PRIORITY_LANGUAGE}`);
-        const fallbackTranslations = translationMemoryCache.get(PRIORITY_LANGUAGE);
-        if (fallbackTranslations) {
-          setTranslations(fallbackTranslations);
-          setLanguageState(PRIORITY_LANGUAGE);
-          setIsReady(true);
-        }
+      // Maintain readiness with fallback
+      if (lang === PRIORITY_LANGUAGE) {
+        setLanguageState(PRIORITY_LANGUAGE);
+        setIsReady(true);
       }
     } finally {
       setIsLoading(false);
     }
   }, [language, translations, isReady]);
 
-  // Initialize with Azerbaijani translations
+  // Initialize with immediate Azerbaijani readiness
   useEffect(() => {
     const initializeTranslations = async () => {
       console.log('[TranslationContext] Initializing translation system...');
@@ -146,6 +167,12 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
       const initialLanguage = (savedLanguage && ['az', 'en', 'ru', 'tr'].includes(savedLanguage)) 
         ? savedLanguage 
         : PRIORITY_LANGUAGE;
+      
+      // Start ready immediately for Azerbaijani
+      if (initialLanguage === 'az') {
+        setLanguageState('az');
+        setIsReady(true);
+      }
       
       await changeLanguage(initialLanguage);
     };
@@ -158,29 +185,30 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     return translations && name in translations;
   };
 
-  // Enhanced translation function with better fallback
+  // Enhanced translation function with immediate fallback
   const t = useCallback(<T extends keyof TranslationModules>(
     key: T | NestedKeyOf<TranslationModules[T]> | string,
     params?: TranslationInterpolationOptions
   ): string => {
-    // Show minimal loading indicator
-    if (isLoading && !translations) {
-      return '...';
-    }
-    
-    // Handle error state gracefully
-    if (error && !translations) {
-      const fallback = String(key).split('.').pop() || String(key);
-      return fallback.replace(/([A-Z])/g, ' $1').trim();
-    }
-    
-    // No translations available
-    if (!translations) {
-      const fallback = String(key).split('.').pop() || String(key);
-      return fallback.replace(/([A-Z])/g, ' $1').trim();
-    }
-    
     const keyStr = String(key);
+    
+    // Always try fallback first for Azerbaijani
+    if (language === 'az' || !translations) {
+      const fallbackResult = getNestedValue(IMMEDIATE_AZ_FALLBACK as any, keyStr);
+      if (fallbackResult !== keyStr && translations) {
+        // If we have both fallback and full translations, prefer full
+        const fullResult = getNestedValue(translations, keyStr, params);
+        return fullResult !== keyStr ? fullResult : fallbackResult;
+      } else if (fallbackResult !== keyStr) {
+        return fallbackResult;
+      }
+    }
+    
+    // No translations available, use fallback
+    if (!translations) {
+      const fallback = keyStr.split('.').pop() || keyStr;
+      return fallback.replace(/([A-Z])/g, ' $1').trim();
+    }
     
     // Handle direct module access
     if (keyStr in translations) {
@@ -204,7 +232,7 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
     
     return getNestedValue(module, nestedKey, params);
-  }, [translations, isLoading, error]);
+  }, [translations, language]);
 
   const value = useMemo(() => ({
     language,

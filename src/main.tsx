@@ -6,25 +6,22 @@ import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { TranslationProvider } from "./contexts/TranslationContext";
 
-// CRITICAL: Initialize for Azerbaijani language priority
-console.log('[Main] Initializing translation system with Azerbaijani priority...');
+// CRITICAL: Initialize for Azerbaijani language priority with immediate readiness
+console.log('[Main] Initializing translation system with immediate Azerbaijani readiness...');
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
   throw new Error("Root element not found");
 }
 
-// Preload Azerbaijani translations
-const preloadAzerbaijaniTranslations = async () => {
-  try {
-    console.log('[Main] Preloading Azerbaijani translations...');
-    // This will be handled by TranslationProvider
-  } catch (error) {
-    console.error('[Main] Failed to preload translations:', error);
-  }
+// Ensure immediate Azerbaijani language availability
+const ensureAzerbaijaniReadiness = () => {
+  console.log('[Main] Ensuring Azerbaijani translation readiness...');
+  // Translation system will start ready with fallback content
+  return Promise.resolve();
 };
 
-preloadAzerbaijaniTranslations();
+ensureAzerbaijaniReadiness();
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>

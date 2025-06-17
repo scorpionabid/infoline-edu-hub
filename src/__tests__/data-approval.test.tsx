@@ -47,9 +47,15 @@ describe('Data Approval Tests', () => {
     const mockPendingApprovals = [
       {
         id: '1',
+        categoryId: 'cat-1',
         categoryName: 'Test Category',
+        schoolId: 'school-1',
         schoolName: 'Test School',
-        status: 'pending' as const
+        submittedBy: 'Test User',
+        submittedAt: '2025-01-01',
+        status: DataEntryStatus.PENDING,
+        entries: [],
+        completionRate: 75
       }
     ];
 
@@ -81,9 +87,15 @@ describe('Data Approval Tests', () => {
     const mockPendingApprovals = [
       {
         id: '1',
+        categoryId: 'cat-1',
         categoryName: 'Test Category',
+        schoolId: 'school-1',
         schoolName: 'Test School',
-        status: 'pending' as const
+        submittedBy: 'Test User',
+        submittedAt: '2025-01-01',
+        status: DataEntryStatus.PENDING,
+        entries: [],
+        completionRate: 75
       }
     ];
 
@@ -102,9 +114,15 @@ describe('Data Approval Tests', () => {
     const mockApprovedItems = [
       {
         id: '2',
+        categoryId: 'cat-2',
         categoryName: 'Approved Category',
+        schoolId: 'school-2',
         schoolName: 'Approved School',
-        status: 'approved' as const
+        submittedBy: 'Test User',
+        submittedAt: '2025-01-01',
+        status: DataEntryStatus.APPROVED,
+        entries: [],
+        completionRate: 100
       }
     ];
 
