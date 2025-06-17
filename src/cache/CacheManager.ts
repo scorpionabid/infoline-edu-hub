@@ -150,45 +150,19 @@ export class UnifiedCacheManager {
   }
 
   /**
-   * Get localStorage cache adapter with proper key prefixing
+   * Get localStorage cache adapter
    */
   localStorage(): CacheAdapter {
-    return {
-      get: (key: string) => this.localStorageAdapter.get(key),
-      set: (key: string, value: any, options: CacheOptions = {}) => {
-        this.localStorageAdapter.set(key, value, {
-          ...options,
-          storage: 'localStorage' // Ensure storage type is explicitly set
-        });
-      },
-      delete: (key: string) => this.localStorageAdapter.delete(key),
-      clear: () => this.localStorageAdapter.clear(),
-      has: (key: string) => this.localStorageAdapter.has(key),
-      keys: () => this.localStorageAdapter['keys']?.() || [],
-      cleanup: () => this.localStorageAdapter.cleanup(),
-      getStats: () => this.localStorageAdapter.getStats()
-    };
+    // Return the adapter directly to ensure consistent key handling
+    return this.localStorageAdapter;
   }
 
   /**
-   * Get sessionStorage cache adapter with proper key prefixing
+   * Get sessionStorage cache adapter
    */
   sessionStorage(): CacheAdapter {
-    return {
-      get: (key: string) => this.sessionStorageAdapter.get(key),
-      set: (key: string, value: any, options: CacheOptions = {}) => {
-        this.sessionStorageAdapter.set(key, value, {
-          ...options,
-          storage: 'sessionStorage' // Ensure storage type is explicitly set
-        });
-      },
-      delete: (key: string) => this.sessionStorageAdapter.delete(key),
-      clear: () => this.sessionStorageAdapter.clear(),
-      has: (key: string) => this.sessionStorageAdapter.has(key),
-      keys: () => this.sessionStorageAdapter['keys']?.() || [],
-      cleanup: () => this.sessionStorageAdapter.cleanup(),
-      getStats: () => this.sessionStorageAdapter.getStats()
-    };
+    // Return the adapter directly to ensure consistent key handling
+    return this.sessionStorageAdapter;
   }
 
   /**

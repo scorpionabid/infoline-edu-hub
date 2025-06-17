@@ -1,11 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntryStatus } from '@/types/core/dataEntry';
+import { StatusHistoryService } from './statusHistoryService';
 
 /**
  * Status Transition Engine for InfoLine Data Entry System
  * 
  * Bu servis data entry-lərin status keçidlərini idarə edir və
  * PRD-yə uyğun iş axını qaydalarını tətbiq edir.
+ * 
+ * Updated: Status history integration ilə yeniləndi
  */
 
 export interface StatusTransition {
@@ -203,6 +206,64 @@ export const STATUS_TRANSITIONS: StatusTransition[] = [
  */
 export class StatusTransitionService {
   /**
+   * Status keçidini yeni status history service ilə qeydə alır
+   */
+  private static async logStatusTransitionNew(
+    schoolId: string,
+    categoryId: string,
+    oldStatus: DataEntryStatus,
+    newStatus: DataEntryStatus,
+    userId: string,
+    comment?: string
+  ): Promise<void> {
+    try {
+      // Create data entry identifier
+      const dataEntryId = `${schoolId}-${categoryId}`;
+      
+      // Use new StatusHistoryService
+      const result = await StatusHistoryService.logStatusChange(
+        dataEntryId,
+        oldStatus,
+        newStatus,
+        comment
+      );
+      
+      if (result.success) {
+        console.log('Status transition logged successfully:', {
+          schoolId,
+          categoryId,
+          oldStatus,
+          newStatus,
+          userId,
+          comment
+        });
+      } else {
+        console.error('Failed to log status transition:', result.error);
+        // Fallback to old method
+        await this.logStatusTransition(
+          schoolId,
+          categoryId,
+          oldStatus,
+          newStatus,
+          userId,
+          comment
+        );
+      }
+    } catch (error) {
+      console.error('Error in new status transition logging:', error);
+      // Fallback to old method
+      await this.logStatusTransition(
+        schoolId,
+        categoryId,
+        oldStatus,
+        newStatus,
+        userId,
+        comment
+      );
+    }
+  }
+
+  /**
    * Status keçidinin mümkün olub-olmadığını yoxlayır
    */
   static async canTransition(
@@ -301,8 +362,8 @@ export class StatusTransitionService {
         throw error;
       }
 
-      // Log the transition
-      await this.logStatusTransition(
+      // Log the transition using new StatusHistoryService
+      await this.logStatusTransitionNew(
         context.schoolId,
         context.categoryId,
         currentStatus,
@@ -585,6 +646,23 @@ export class StatusTransitionService {
         return 'red';
       default:
         return 'gray';
+    }
+  }
+
+  /**
+   * Status tarixçəsini əldə edir
+   */
+  static async getStatusHistory(schoolId: string, categoryId: string) {
+    try {
+      const dataEntryId = `${schoolId}-${categoryId}`;
+      return await StatusHistoryService.getEntryStatusHistory(dataEntryId);
+    } catch (error) {
+      console.error('Error getting status history:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        data: []
+      };
     }
   }
 

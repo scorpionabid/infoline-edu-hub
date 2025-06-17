@@ -7,8 +7,9 @@ import { BaseCacheAdapter } from '../core/BaseCacheAdapter';
 import type { CacheEntry, CacheOptions, CacheStorageType } from '../core/types';
 
 export class StorageCacheAdapter<T = any> extends BaseCacheAdapter<T> {
-  private storage: Storage;
-  private storageType: CacheStorageType;
+  protected storage: Storage;
+  protected storageType: CacheStorageType;
+  private initialized: boolean = false;
 
   constructor(
     storageType: CacheStorageType = 'localStorage',
@@ -26,6 +27,7 @@ export class StorageCacheAdapter<T = any> extends BaseCacheAdapter<T> {
     
     // Initialize cache from storage
     this.initializeFromStorage();
+    this.initialized = true;
   }
 
   /**
@@ -68,21 +70,14 @@ export class StorageCacheAdapter<T = any> extends BaseCacheAdapter<T> {
    */
   private saveToStorage(key: string, entry: CacheEntry<T>): boolean {
     try {
-      this.storage.setItem(key, JSON.stringify(entry));
+      const data = JSON.stringify(entry);
+      console.log(`[StorageCache] Saving to ${this.storageType} - Key: ${key}, Data:`, entry);
+      this.storage.setItem(key, data);
+      console.log(`[StorageCache] Saved to ${this.storageType} - Key: ${key}`);
       return true;
     } catch (error) {
       console.warn(`[StorageCache] Failed to save to ${this.storageType}:`, error);
-      
-      // Try to free space by cleaning expired entries
-      this.cleanup();
-      
-      try {
-        this.storage.setItem(key, JSON.stringify(entry));
-        return true;
-      } catch {
-        console.error(`[StorageCache] Still unable to save after cleanup`);
-        return false;
-      }
+      return false;
     }
   }
 
@@ -91,60 +86,72 @@ export class StorageCacheAdapter<T = any> extends BaseCacheAdapter<T> {
    */
   private removeFromStorage(key: string): void {
     try {
+      console.log(`[StorageCache] Removing from ${this.storageType} - Key: ${key}`);
       this.storage.removeItem(key);
     } catch (error) {
       console.warn(`[StorageCache] Failed to remove from ${this.storageType}:`, error);
     }
   }
 
-  /**
-   * FIFO eviction strategy for storage
-   */
-  protected evict(): void {
-    if (this.cache.size < this.stats.maxSize) return;
-
-    // Find oldest entry (FIFO)
-    let oldestKey = '';
-    let oldestTime = Infinity;
-
-    for (const [key, entry] of this.cache.entries()) {
-      if (entry.timestamp < oldestTime) {
-        oldestTime = entry.timestamp;
-        oldestKey = key;
-      }
-    }
-
-    if (oldestKey) {
-      this.cache.delete(oldestKey);
-      this.removeFromStorage(oldestKey);
-      console.log(`[StorageCache] Evicted oldest entry: ${oldestKey}`);
-    }
+  protected getCacheKey(key: string): string {
+    // Use the parent's prefix handling to maintain consistency
+    return super.getCacheKey(key);
   }
 
-  /**
-   * Override get to handle storage
-   */
-  get(key: string): T | null {
+  protected isValid(entry: CacheEntry<T>): boolean {
+    if (!entry) return false;
+    
+    const now = Date.now();
+    
+    // Check TTL
+    if (entry.ttl > 0 && (now - entry.timestamp) > entry.ttl) {
+      return false;
+    }
+    
+    // Check version
+    if (entry.version !== this.version) {
+      return false;
+    }
+    
+    return true;
+  }
+
+  override get(key: string): T | null {
     const cacheKey = this.getCacheKey(key);
+    console.log(`[StorageCache] Getting from ${this.storageType} - Key: ${key}, CacheKey: ${cacheKey}`);
     
     // Try memory first
     let entry = this.cache.get(cacheKey);
+    console.log(`[StorageCache] Memory cache ${entry ? 'hit' : 'miss'} for key: ${key}`);
     
     // If not in memory, try storage
-    if (!entry) {
+    if (!entry && this.initialized) {
       try {
+        console.log(`[StorageCache] Checking storage for key: ${key}`);
         const stored = this.storage.getItem(cacheKey);
+        console.log(`[StorageCache] Raw stored value for ${key}:`, stored);
+        
         if (stored) {
-          entry = JSON.parse(stored) as CacheEntry<T>;
-          
-          if (this.isValid(entry)) {
-            // Add back to memory cache
-            this.cache.set(cacheKey, entry);
-          } else {
-            // Remove invalid entry from storage
+          try {
+            entry = JSON.parse(stored) as CacheEntry<T>;
+            console.log(`[StorageCache] Parsed entry for ${key}:`, entry);
+            
+            if (this.isValid(entry)) {
+              // Add back to memory cache
+              console.log(`[StorageCache] Entry is valid, adding to memory cache`);
+              this.cache.set(cacheKey, entry);
+            } else {
+              console.log(`[StorageCache] Entry is invalid, removing from storage`);
+              // Remove invalid entry from storage
+              this.removeFromStorage(cacheKey);
+              entry = undefined;
+            }
+          } catch (parseError) {
+            console.warn(`[StorageCache] Failed to parse stored data for ${key}:`, parseError);
             this.removeFromStorage(cacheKey);
-            entry = undefined;
           }
+        } else {
+          console.log(`[StorageCache] No stored value found for key: ${key}`);
         }
       } catch (error) {
         console.warn(`[StorageCache] Failed to read from ${this.storageType}:`, error);
@@ -169,10 +176,7 @@ export class StorageCacheAdapter<T = any> extends BaseCacheAdapter<T> {
     return entry.data;
   }
 
-  /**
-   * Override set to handle storage
-   */
-  set(key: string, value: T, options: CacheOptions = {}): void {
+  override set(key: string, value: T, options: CacheOptions = {}): void {
     const cacheKey = this.getCacheKey(key);
     
     // Check if we need to evict
@@ -182,17 +186,16 @@ export class StorageCacheAdapter<T = any> extends BaseCacheAdapter<T> {
     
     const entry = this.createEntry(value, options);
     
-    // Save to storage first
-    if (this.saveToStorage(cacheKey, entry)) {
-      // Only set in memory if storage succeeded
-      this.cache.set(cacheKey, entry);
-      this.updateStats(false);
+    // Save to storage first if initialized
+    if (this.initialized) {
+      this.saveToStorage(cacheKey, entry);
     }
+    
+    // Update in-memory cache
+    this.cache.set(cacheKey, entry);
+    this.updateStats(false);
   }
 
-  /**
-   * Override delete to handle storage
-   */
   delete(key: string): void {
     const cacheKey = this.getCacheKey(key);
     this.cache.delete(cacheKey);
@@ -200,12 +203,8 @@ export class StorageCacheAdapter<T = any> extends BaseCacheAdapter<T> {
     this.updateStats(false);
   }
 
-  /**
-   * Override clear to handle storage
-   */
   clear(): void {
-    // Clear memory cache
-    super.clear();
+    super.clear(); // Call parent clear to handle cache and stats
     
     // Clear storage entries
     try {
@@ -224,53 +223,91 @@ export class StorageCacheAdapter<T = any> extends BaseCacheAdapter<T> {
     }
   }
 
-  /**
-   * Override cleanup to handle storage
-   */
-  cleanup(): void {
-    const now = Date.now();
-    const keysToDelete: string[] = [];
+  getStats() {
+    return super.getStats();
+  }
+
+  override has(key: string): boolean {
+    const cacheKey = this.getCacheKey(key);
+    const entry = this.cache.get(cacheKey);
     
-    // Check memory cache
-    for (const [key, entry] of this.cache.entries()) {
-      if (!this.isValid(entry)) {
-        keysToDelete.push(key);
-      }
-    }
-    
-    // Check storage entries
-    try {
-      for (let i = 0; i < this.storage.length; i++) {
-        const key = this.storage.key(i);
-        if (key?.startsWith(this.prefix)) {
-          try {
-            const stored = this.storage.getItem(key);
-            if (stored) {
-              const entry: CacheEntry<T> = JSON.parse(stored);
-              if (!this.isValid(entry)) {
-                keysToDelete.push(key);
-              }
+    if (!entry) {
+      // Check storage if not in memory
+      if (this.initialized) {
+        try {
+          const stored = this.storage.getItem(cacheKey);
+          if (stored) {
+            const storedEntry = JSON.parse(stored) as CacheEntry<T>;
+            if (this.isValid(storedEntry)) {
+              this.cache.set(cacheKey, storedEntry);
+              return true;
+            } else {
+              this.removeFromStorage(cacheKey);
             }
-          } catch {
-            // Remove corrupted entries
-            keysToDelete.push(key);
           }
+        } catch (error) {
+          console.warn(`[StorageCache] Failed to check storage for key ${key}:`, error);
         }
       }
-    } catch (error) {
-      console.warn(`[StorageCache] Failed to scan ${this.storageType} during cleanup:`, error);
+      return false;
     }
     
-    // Remove invalid entries
-    keysToDelete.forEach(key => {
-      this.cache.delete(key);
-      this.removeFromStorage(key);
+    if (!this.isValid(entry)) {
+      this.cache.delete(cacheKey);
+      if (this.initialized) {
+        this.removeFromStorage(cacheKey);
+      }
+      return false;
+    }
+    
+    return true;
+  }
+
+  keys(): string[] {
+    return super.keys();
+  }
+
+
+
+  override entries(): [string, T][] {
+    return Array.from(this.cache.entries())
+      .filter(([_, entry]) => this.isValid(entry))
+      .map(([key, entry]) => [key.replace(`${this.prefix}_`, ''), entry.data]);
+  }
+
+  /**
+   * Remove an entry from cache
+   */
+  protected remove(key: string): boolean {
+    console.log(`[StorageCache] Removing entry: ${key}`);
+    const cacheKey = this.getCacheKey(key);
+    const wasDeleted = this.cache.delete(cacheKey);
+    
+    if (this.initialized) {
+      this.removeFromStorage(cacheKey);
+    }
+    
+    return wasDeleted;
+  }
+
+  /**
+   * FIFO eviction strategy for storage
+   */
+  protected override evict(): void {
+    const entries = Array.from(this.cache.entries());
+    if (entries.length === 0) return;
+    
+    // Find the oldest entry
+    const [keyToRemove] = entries.reduce((oldest, current) => {
+      return (current[1].lastAccess < oldest[1].lastAccess) ? current : oldest;
     });
     
-    this.stats.lastCleanup = now;
-    this.updateStats(false);
+    console.log(`[StorageCache] Evicting key: ${keyToRemove}`);
+    this.cache.delete(keyToRemove);
     
-    console.log(`[StorageCache] Cleaned up ${keysToDelete.length} entries from ${this.storageType}`);
+    if (this.initialized) {
+      this.removeFromStorage(keyToRemove);
+    }
   }
 
   /**
