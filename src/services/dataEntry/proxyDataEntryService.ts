@@ -74,6 +74,65 @@ export class ProxyDataEntryService {
     }
   }
 
+  // Əlavə metodlar
+  static async saveProxyFormData(
+    schoolId: string,
+    categoryId: string,
+    formData: Record<string, any>
+  ): Promise<ProxyDataEntryResult> {
+    try {
+      const results = [];
+      for (const [columnId, value] of Object.entries(formData)) {
+        const result = await this.createProxyDataEntry(columnId, value, {
+          schoolId,
+          categoryId,
+          autoApprove: false
+        });
+        results.push(result);
+      }
+
+      const allSuccessful = results.every(r => r.success);
+      return {
+        success: allSuccessful,
+        message: allSuccessful ? 'All data saved successfully' : 'Some data failed to save'
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message || 'Failed to save proxy form data'
+      };
+    }
+  }
+
+  static async submitProxyData(
+    schoolId: string,
+    categoryId: string,
+    formData: Record<string, any>
+  ): Promise<ProxyDataEntryResult> {
+    try {
+      const results = [];
+      for (const [columnId, value] of Object.entries(formData)) {
+        const result = await this.createProxyDataEntry(columnId, value, {
+          schoolId,
+          categoryId,
+          autoApprove: true
+        });
+        results.push(result);
+      }
+
+      const allSuccessful = results.every(r => r.success);
+      return {
+        success: allSuccessful,
+        message: allSuccessful ? 'All data submitted successfully' : 'Some data failed to submit'
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message || 'Failed to submit proxy data'
+      };
+    }
+  }
+
   private static async getUserRole(userId: string): Promise<string> {
     const { data } = await supabase
       .from('user_roles')

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { SupportedLanguage, LanguageContextValue } from '@/types/language';
 
@@ -105,6 +106,9 @@ export const useLanguage = (): LanguageContextValue => {
   }
   return context;
 };
+
+// useOptimizedTranslation alias - əsas səbəb bu idi
+export const useOptimizedTranslation = useLanguage;
 
 export { LanguageProvider, LanguageContext };
 

@@ -29,6 +29,10 @@ export interface FullUserData {
   updatedAt?: string;
 }
 
+// Legacy aliases for backward compatibility
+export type User = FullUserData;
+export type UserData = FullUserData;
+
 export interface UserCreateData {
   email: string;
   password: string;
@@ -45,6 +49,19 @@ export interface UpdateUserData {
   full_name?: string;
   phone?: string;
   position?: string;
+  language?: string;
+  status?: UserStatus;
+}
+
+export interface UserFormData {
+  email: string;
+  full_name: string;
+  phone?: string;
+  position?: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
   language?: string;
   status?: UserStatus;
 }

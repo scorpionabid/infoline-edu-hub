@@ -10,6 +10,8 @@ export type NotificationType =
   | 'proxy_data_entry'
   | 'system_update';
 
+export type NotificationPriority = 'low' | 'normal' | 'high';
+
 export interface NotificationData {
   id: string;
   user_id: string;
@@ -17,8 +19,25 @@ export interface NotificationData {
   title: string;
   message?: string;
   is_read?: boolean;
-  priority?: 'low' | 'normal' | 'high';
+  priority?: NotificationPriority;
   related_entity_type?: string;
   related_entity_id?: string;
   created_at: string;
+}
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  priority: NotificationPriority;
+  created_at: string;
+  is_read: boolean;
+  user_id: string;
+}
+
+export interface NotificationsCardProps {
+  notifications: AppNotification[];
+  onMarkAsRead?: (id: string) => void;
+  onMarkAllAsRead?: () => void;
 }

@@ -37,3 +37,13 @@ export interface DataEntryValidation {
   isValid: boolean;
   errors: Record<string, string>;
 }
+
+export interface DataEntryTableData {
+  id: string;
+  school_name: string;
+  category_name: string;
+  status: DataEntryStatus;
+  created_at: string;
+  updated_at: string;
+  submitted_by: string;
+}
