@@ -1,4 +1,6 @@
-import React from "react";
+
+import React from 'react';
+import { useTranslation } from '@/contexts/TranslationContext';
 import {
   Table,
   TableBody,
@@ -6,225 +8,59 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useRole } from "@/context/auth/useRole";
-import { useLanguage } from "@/context/LanguageContext";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { MoreVertical } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-
-export interface Column {
-  key: string;
-  header: string;
-  cell: (item: any, index: number) => React.ReactNode;
-  className?: string;
-}
+} from '@/components/ui/table';
 
 interface DataTableProps {
   data: any[];
-  columns: Column[];
-  isLoading: boolean;
-  isError: boolean;
-  emptyState: {
-    icon: React.ReactNode;
-    title: string;
-    description: string;
-  };
-  actionColumn?: {
-    canManage: boolean;
-    actions: {
-      icon: React.ReactNode;
-      label: string;
-      onClick: (item: any) => void;
-      variant?: "default" | "destructive";
-      isHidden?: (item: any) => boolean;
-    }[];
-  };
-  deleteDialog?: {
-    title: string;
-    description: string;
-    itemToDelete: string | null;
-    setItemToDelete: (id: string | null) => void;
-    onDelete: (id: string) => Promise<boolean>;
-  };
+  columns: Array<{
+    key: string;
+    label: string;
+  }>;
+  onRowClick?: (row: any) => void;
 }
 
-const DataTable: React.FC<DataTableProps> = ({
-  data,
-  columns,
-  isLoading,
-  isError,
-  emptyState,
-  actionColumn,
-  deleteDialog,
+export const DataTable: React.FC<DataTableProps> = ({ 
+  data, 
+  columns, 
+  onRowClick 
 }) => {
   const { t } = useTranslation();
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center h-60 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-            <p className="text-muted-foreground">{t("dataTable.loading")}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center h-60 text-center">
-            <div className="text-destructive text-4xl mb-4">!</div>
-            <h3 className="text-lg font-medium">
-              {t("dataTable.errorLoading")}
-            </h3>
-            <p className="text-muted-foreground mt-2">
-              {t("dataTable.tryAgainLater")}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   if (data.length === 0) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center h-60 text-center">
-            {emptyState?.icon || (
-              <div className="text-muted-foreground text-4xl mb-4">📋</div>
-            )}
-            <h3 className="text-lg font-medium">
-              {emptyState?.title || t("dataTable.noData")}
-            </h3>
-            <p className="text-muted-foreground mt-2">
-              {emptyState?.description || t("dataTable.noDataDescription")}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="text-center py-8 text-muted-foreground">
+        {t('ui.no_data_available')}
+      </div>
     );
   }
 
   return (
-    <>
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.map((column) => (
-                  <TableHead key={column.key} className={column.className}>
-                    {column.header}
-                  </TableHead>
-                ))}
-                {actionColumn?.canManage && (
-                  <TableHead className="text-right">
-                    {t("dataTable.actions")}
-                  </TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.map((item, index) => (
-                <TableRow key={item.id}>
-                  {columns.map((column) => (
-                    <TableCell
-                      key={`${item.id}-${column.key}`}
-                      className={column.className}
-                    >
-                      {column.cell(item, index)}
-                    </TableCell>
-                  ))}
-                  {actionColumn?.canManage && (
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {actionColumn.actions.map((action, idx) =>
-                            !action.isHidden || !action.isHidden(item) ? (
-                              <DropdownMenuItem
-                                key={idx}
-                                className={
-                                  action.variant === "destructive"
-                                    ? "text-destructive"
-                                    : ""
-                                }
-                                onClick={() => action.onClick(item)}
-                              >
-                                {action.icon}
-                                {action.label}
-                              </DropdownMenuItem>
-                            ) : null,
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  )}
-                </TableRow>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {columns.map((column) => (
+              <TableHead key={column.key}>{column.label}</TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.map((row, index) => (
+            <TableRow 
+              key={index}
+              className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
+              onClick={() => onRowClick?.(row)}
+            >
+              {columns.map((column) => (
+                <TableCell key={column.key}>
+                  {row[column.key] || '-'}
+                </TableCell>
               ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {deleteDialog && (
-        <AlertDialog
-          open={!!deleteDialog.itemToDelete}
-          onOpenChange={(open) => !open && deleteDialog.setItemToDelete(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{deleteDialog.title}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {deleteDialog.description}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t("dataTable.cancel")}</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={async () => {
-                  if (deleteDialog.itemToDelete) {
-                    await deleteDialog.onDelete(deleteDialog.itemToDelete);
-                    deleteDialog.setItemToDelete(null);
-                  }
-                }}
-              >
-                {t("dataTable.delete")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-    </>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

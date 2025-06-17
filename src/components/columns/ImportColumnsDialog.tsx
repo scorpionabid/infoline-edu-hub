@@ -1,187 +1,78 @@
-import React, { useState } from "react";
-import { useLanguage } from "@/context/LanguageContext";
-import { Button } from "@/components/ui/button";
+
+import React, { useState } from 'react';
+import { useTranslation } from '@/contexts/TranslationContext';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { FileUp, AlertCircle, CheckCircle2 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface ImportColumnsDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onImportColumns: (file: File) => Promise<boolean>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onImport: (file: File) => Promise<void>;
 }
 
-const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
-  isOpen,
-  onClose,
-  onImportColumns,
+export const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
+  open,
+  onOpenChange,
+  onImport
 }) => {
   const { t } = useTranslation();
-  const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const selectedFile = e.target.files[0];
-
-      // Check if it's an Excel file
-      if (
-        selectedFile.type === "application/vnd.ms-excel" ||
-        selectedFile.type ===
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      ) {
-        setFile(selectedFile);
-        setError(null);
-      } else {
-        setFile(null);
-        setError(t("invalidFileType"));
-      }
-    }
+    const file = e.target.files?.[0];
+    setSelectedFile(file || null);
   };
 
   const handleImport = async () => {
-    if (!file) return;
+    if (!selectedFile) return;
 
+    setIsImporting(true);
     try {
-      setIsUploading(true);
-      setProgress(0);
-      setError(null);
-      setSuccess(false);
-
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          const newProgress = prev + 10;
-          if (newProgress >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return newProgress;
-        });
-      }, 300);
-
-      // Perform import
-      const result = await onImportColumns(file);
-
-      clearInterval(progressInterval);
-
-      if (result) {
-        setProgress(100);
-        setSuccess(true);
-
-        // Close dialog after success
-        setTimeout(() => {
-          handleClose();
-        }, 2000);
-      } else {
-        setError(t("importFailed"));
-        setProgress(0);
-      }
+      await onImport(selectedFile);
+      setSelectedFile(null);
+      onOpenChange(false);
     } catch (error) {
-      console.error("Import error:", error);
-      setError(t("importError"));
-      setProgress(0);
+      console.error('Error importing columns:', error);
     } finally {
-      setIsUploading(false);
+      setIsImporting(false);
     }
   };
 
-  const handleClose = () => {
-    setFile(null);
-    setIsUploading(false);
-    setProgress(0);
-    setError(null);
-    setSuccess(false);
-    onClose();
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("importColumns")}</DialogTitle>
+          <DialogTitle>{t('columns.import_columns')}</DialogTitle>
+          <DialogDescription>
+            {t('columns.import_description')}
+          </DialogDescription>
         </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          {!isUploading && !success && (
-            <>
-              <div className="flex items-center gap-4">
-                <Label htmlFor="file" className="text-right">
-                  {t("excelFile")}
-                </Label>
-                <Input
-                  id="file"
-                  type="file"
-                  accept=".xls,.xlsx"
-                  onChange={handleFileChange}
-                  disabled={isUploading}
-                />
-              </div>
-
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>{t("error")}</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="text-sm text-muted-foreground">
-                <p>{t("importColumnsDescription")}</p>
-                <ul className="list-disc pl-5 mt-2">
-                  <li>{t("importColumnsFormat")}</li>
-                  <li>{t("importColumnsWarning")}</li>
-                </ul>
-              </div>
-            </>
-          )}
-
-          {isUploading && (
-            <div className="space-y-4">
-              <p>{t("uploading")}</p>
-              <Progress value={progress} className="h-2" />
-            </div>
-          )}
-
-          {success && (
-            <Alert className="border-green-500 text-green-500">
-              <CheckCircle2 className="h-4 w-4" />
-              <AlertTitle>{t("importSuccess")}</AlertTitle>
-              <AlertDescription>
-                {t("importSuccessDescription")}
-              </AlertDescription>
-            </Alert>
-          )}
+        <div className="space-y-4">
+          <Input
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            onChange={handleFileChange}
+          />
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              {t('ui.cancel')}
+            </Button>
+            <Button 
+              onClick={handleImport} 
+              disabled={!selectedFile || isImporting}
+            >
+              {isImporting ? t('ui.importing') : t('ui.import')}
+            </Button>
+          </div>
         </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isUploading}
-          >
-            {t("cancel")}
-          </Button>
-          <Button
-            onClick={handleImport}
-            disabled={!file || isUploading || success}
-          >
-            <FileUp className="mr-2 h-4 w-4" />
-            {t("import")}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

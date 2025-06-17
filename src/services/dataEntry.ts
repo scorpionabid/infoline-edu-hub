@@ -1,30 +1,37 @@
 
-export interface SaveFormDataOptions {
-  categoryId: string;
+// Service for handling data entry operations
+import { ColumnFormData, ColumnType } from '@/types/column';
+import { DataEntryFormData, DataEntryStatus } from '@/types/dataEntry';
+
+export interface SaveDataEntryOptions {
   schoolId: string;
-  status: 'draft' | 'pending';
-  userId?: string;
+  categoryId: string;
+  data: DataEntryFormData;
+  autoApprove?: boolean;
 }
 
 export interface SaveResult {
-  id: string;
   success: boolean;
+  savedCount: number;
   error?: string;
-  savedCount?: number;
 }
 
-export class DataEntryService {
-  static async saveFormData(formData: Record<string, any>, options: SaveFormDataOptions): Promise<SaveResult> {
-    console.log('Saving form data:', formData, options);
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          id: Date.now().toString(),
-          success: true,
-          savedCount: Object.keys(formData).length
-        });
-      }, 1000);
-    });
+export const saveDataEntry = async (options: SaveDataEntryOptions): Promise<SaveResult> => {
+  try {
+    // Implementation for saving data entry
+    return {
+      success: true,
+      savedCount: 1
+    };
+  } catch (error) {
+    return {
+      success: false,
+      savedCount: 0,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
-}
+};
+
+export const validateDataEntry = (data: DataEntryFormData): boolean => {
+  return Object.keys(data).length > 0;
+};
