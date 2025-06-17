@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, FileSpreadsheet, FileText } from 'lucide-react';
-import { useOptimizedTranslation } from '@/hooks/translation';
+import { useSmartTranslation } from '@/hooks/translation/useSmartTranslation';
 import * as XLSX from 'xlsx';
 
 interface StatisticsExportProps {
@@ -16,7 +16,7 @@ export const StatisticsExport: React.FC<StatisticsExportProps> = ({
   filters,
   onExport
 }) => {
-  const { t } = useOptimizedTranslation();
+  const { tSafe } = useSmartTranslation();
 
   const exportToExcel = () => {
     try {

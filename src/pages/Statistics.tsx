@@ -94,13 +94,7 @@ const Statistics = () => {
 
           <StatisticsExport
             data={statisticsData}
-            userRole={
-              isSuperAdmin
-                ? "superadmin"
-                : isRegionAdmin
-                  ? "regionadmin"
-                  : "sectoradmin"
-            }
+            filters={filters}
           />
         </div>
 
